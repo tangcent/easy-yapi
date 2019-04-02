@@ -1,0 +1,65 @@
+buildscript {
+    ext.kotlin_version = '1.3.11'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.2.51'
+    id "org.jetbrains.intellij" version "0.3.7"
+}
+
+group 'com.itangcent'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'kotlin'
+apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.intellij'
+apply plugin: 'idea'
+
+intellij {
+//    version idea_version
+//    version '2018.2.1'
+    version '2017.3.5'
+//    plugins 'git4idea'
+    pluginName plugin_name
+    updateSinceUntilBuild false
+    downloadSources true
+    sandboxDirectory "idea-sandbox"
+    updateSinceUntilBuild false
+    sameSinceUntilBuild false
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile "com.google.inject:guice:4.2.0"
+
+    compile group: 'org.gitlab4j', name: 'gitlab4j-api', version: '4.8.44'
+    // https://mvnrepository.com/artifact/io.reactivex.rxjava2/rxjava
+//    compile group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.2.1'
+
+    compile "org.jetbrains.kotlin:kotlin-reflect:1.2.10"
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+
+// https://mvnrepository.com/artifact/commons-io/commons-io
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
