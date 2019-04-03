@@ -1,11 +1,12 @@
 <idea-plugin>
-    <id>cn.tangcent.idea.plugin</id>
-    <name>TmPlugin</name>
+    <id>com.itangcent.idea.plugin.easy-api</id>
+    <name>EasyApi</name>
     <version>1.0</version>
     <vendor email="tangcent@tangcent.cn" url="http://www.itangcent.com">TmNg</vendor>
 
     <description><![CDATA[
-      Tm-Plugin<br>
+      easy-api<br>
+      1.Support Export Api To Postman[Code -> ExportPostman]
     ]]></description>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->

@@ -16,7 +16,7 @@ plugins {
 group 'com.itangcent'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'kotlin'
+apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'idea'
@@ -34,8 +34,28 @@ intellij {
     sameSinceUntilBuild false
 }
 
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
 repositories {
     mavenCentral()
+}
+
+jar {
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 dependencies {

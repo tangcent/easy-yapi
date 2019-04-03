@@ -11,7 +11,6 @@
 .mtj.tmp/
 
 # Package Files #
-*.jar
 *.war
 *.nar
 *.ear
@@ -27,3 +26,6 @@ gradle/wrapper/
 
 /build
 /idea-plugin/build
+/idea-plugin/idea-sandbox/
+
+\.DS_Store
