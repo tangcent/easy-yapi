@@ -50,7 +50,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
                         if (postManApiHelper.importApiInfo(exportedPostman)) {
                             logger.info("Export to postman success")
                             logger.info("To disable automatically import to postman you could remove privateToken" +
-                                    " of host [https://api.getpostman.com] in \"TM -> Setting\"")
+                                    " of host [https://api.getpostman.com] in \"File -> Other Setting -> EasyApiSetting \"")
                         } else {
                             logger.error("Export to postman failed,You could check below:" +
                                     "1.the network " +
@@ -74,7 +74,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
                             logger.info("Apis save failed")
                         })
                         logger.info("To enable automatically import to postman you could set privateToken" +
-                                " of host [https://api.getpostman.com] in \"TM -> Setting\"")
+                                " of host [https://api.getpostman.com] in \"File -> Other Setting -> EasyApiSetting \"")
                         logger.info("If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
                                 " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api].")
                     }
