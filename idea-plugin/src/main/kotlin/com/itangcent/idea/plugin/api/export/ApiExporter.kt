@@ -374,7 +374,7 @@ open class ApiExporter {
                         pathName = param.name
                     }
 
-                    pathName?.let { itemInfo.addPathVal(it, attr!!) }
+                    pathName?.let { itemInfo.addPathVal(it, attr) }
                     continue
                 }
 
@@ -395,8 +395,8 @@ open class ApiExporter {
                 var defaultVal: Any? = null
                 if (unboxType is PsiPrimitiveType) { //primitive Type
                     defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
-                } else if (psiClassHelper!!.isNormalType(unboxType.canonicalText)) {//normal type
-                    defaultVal = psiClassHelper!!.getDefaultValue(unboxType.canonicalText)
+                } else if (psiClassHelper.isNormalType(unboxType.canonicalText)) {//normal type
+                    defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
                 } else if (paramType.canonicalText.contains(SpringClassName.MULTIPARTFILE)) {
                     defaultVal = PsiClassHelper.multipartFileInstance
                     if (httpMethod == "GET") {
