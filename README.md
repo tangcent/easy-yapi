@@ -23,7 +23,7 @@ Simplifies API Development
 
 
 ## Feature
-- [ ] Support Spring
-- [ ] Export api to Postman
+- [X] Support Spring
+- [X] Export api to Postman
 - [ ] Export api to Excel
 - [ ] Export api to Markdown
