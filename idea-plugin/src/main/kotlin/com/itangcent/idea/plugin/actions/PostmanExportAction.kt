@@ -10,6 +10,8 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.file.DefaultLocalFileRepository
+import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
 import com.itangcent.intellij.psi.DefaultClassRuleConfig
@@ -23,6 +25,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
     override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
         super.onBuildActionContext(builder)
 
+        builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
         builder.bind(PostmanApiHelper::class) { it.singleton() }
         builder.bind(PostmanExporter::class) { it.singleton() }
