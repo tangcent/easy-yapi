@@ -6,7 +6,7 @@ interface ParseHandle {
 
     fun setName(request: Request, name: String)
 
-    fun setMethod(request: Request, httpMethod: String)
+    fun setMethod(request: Request, method: String)
 
     fun setPath(request: Request, path: String)
 
@@ -24,11 +24,27 @@ interface ParseHandle {
 
     fun addPathParam(request: Request, pathParam: PathParam)
 
-    fun setJsonBody(request: Request, body: Any?)
+    fun setJsonBody(request: Request, body: Any?, bodyAttr: String?)
 
     fun appendDesc(request: Request, desc: String?)
 
     fun addHeader(request: Request, header: Header)
+
+    //region response
+    fun addResponse(request: Request, response: Response)
+
+    fun addResponseHeader(response: Response, header: Header)
+
+    fun setResponseBody(response: Response, bodyType: String, body: Any?)
+
+    fun setResponseCode(response: Response, code: Int)
+    //endregion
+
+    fun linkToClass(linkClass: Any): String?
+
+    fun linkToMethod(linkMethod: Any): String?
+
+    fun linkToProperty(linkField: Any): String?
 }
 
 //region utils------------------------------------------------------------------
@@ -55,6 +71,16 @@ fun ParseHandle.addFormParam(request: Request, paramName: String, defaultVal: St
     param.value = defaultVal
     param.required = required
     param.desc = desc
+    param.type = "text"
+    this.addFormParam(request, param)
+}
+
+fun ParseHandle.addFormFileParam(request: Request, paramName: String, required: Boolean, desc: String?) {
+    val param = FormParam()
+    param.name = paramName
+    param.required = required
+    param.desc = desc
+    param.type = "file"
     this.addFormParam(request, param)
 }
 
@@ -71,5 +97,12 @@ fun ParseHandle.addPathParam(request: Request, name: String, desc: String) {
     pathParam.name = name
     pathParam.desc = desc
     this.addPathParam(request, pathParam)
+}
+
+fun ParseHandle.addResponseHeader(response: Response, name: String, value: String) {
+    val header = Header()
+    header.name = name
+    header.value = value
+    addResponseHeader(response, header)
 }
 //endregion utils------------------------------------------------------------------
