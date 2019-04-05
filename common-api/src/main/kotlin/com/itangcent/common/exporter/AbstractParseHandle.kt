@@ -3,7 +3,7 @@ package com.itangcent.common.exporter
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.*
 
-class DefaultParseHandle : ParseHandle {
+abstract class AbstractParseHandle : ParseHandle {
     override fun setName(request: Request, name: String) {
         request.name = name
     }
@@ -51,7 +51,7 @@ class DefaultParseHandle : ParseHandle {
         request.paths!!.add(pathParam)
     }
 
-    override fun setJsonBody(request: Request, body: Any?) {
+    override fun setJsonBody(request: Request, body: Any?, bodyAttr: String?) {
         request.body = body
     }
 
@@ -68,5 +68,29 @@ class DefaultParseHandle : ParseHandle {
             request.headers = ArrayList()
         }
         request.headers!!.add(header)
+    }
+
+    override fun addResponse(request: Request, response: Response) {
+        if (request.response == null) {
+            request.response = ArrayList()
+        }
+        request.response!!.add(response)
+    }
+
+    override fun addResponseHeader(response: Response, header: Header) {
+
+        if (response.headers == null) {
+            response.headers = ArrayList()
+        }
+        response.headers!!.add(header)
+    }
+
+    override fun setResponseBody(response: Response, bodyType: String, body: Any?) {
+        response.bodyType = bodyType
+        response.body = body
+    }
+
+    override fun setResponseCode(response: Response, code: Int) {
+        response.code = code
     }
 }
