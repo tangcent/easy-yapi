@@ -29,3 +29,5 @@ gradle/wrapper/
 /idea-plugin/idea-sandbox/
 
 \.DS_Store
+
+plugin/
