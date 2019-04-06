@@ -2,7 +2,7 @@ package com.itangcent.common.model
 
 class Response {
 
-    var headers: Array<Header>? = null
+    var headers: ArrayList<Header>? = null
 
     /**
      * raw/json/xml
@@ -10,4 +10,6 @@ class Response {
     var bodyType: String? = null
 
     var body: Any? = null
+
+    var code: Int? = null
 }
