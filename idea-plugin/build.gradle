@@ -16,7 +16,6 @@ plugins {
 group 'com.itangcent'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'idea'
@@ -25,7 +24,6 @@ intellij {
 //    version idea_version
 //    version '2018.2.1'
     version '2017.3.5'
-//    plugins 'git4idea'
     pluginName plugin_name
     updateSinceUntilBuild false
     downloadSources true
@@ -44,6 +42,11 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
+
+jar {
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
 artifacts {
     archives jar
     archives javadocJar
@@ -54,22 +57,18 @@ repositories {
     mavenCentral()
 }
 
-jar {
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-}
-
 dependencies {
-    implementation project(":common-api")
+    compile project(path: ':common-api', configuration: 'default')
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation "com.google.inject:guice:4.2.0"
+    compile "com.google.inject:guice:4.2.0"
 
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
-    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }

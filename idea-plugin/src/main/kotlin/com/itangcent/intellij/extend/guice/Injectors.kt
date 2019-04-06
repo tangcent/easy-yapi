@@ -46,6 +46,7 @@ fun <T : Any> LinkedBindingBuilder<T>.with(implementation: KClass<out T>): Scope
 /**
  * #todo:provider暂时无法完成PostConstruct
  */
+@Suppress("NOTHING_TO_INLINE")
 inline fun <T : Any, TE : T> LinkedBindingBuilder<T>.withProvider(noinline provider: () -> TE): ScopedBindingBuilder {
     return this.toProvider(com.google.inject.Provider { provider() })
 }

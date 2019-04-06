@@ -31,3 +31,5 @@ gradle/wrapper/
 \.DS_Store
 
 common-api/build/
+
+/plugin/
