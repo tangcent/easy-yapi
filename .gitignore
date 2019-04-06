@@ -30,4 +30,6 @@ gradle/wrapper/
 
 \.DS_Store
 
-plugin/
+common-api/build/
+
+/plugin/
