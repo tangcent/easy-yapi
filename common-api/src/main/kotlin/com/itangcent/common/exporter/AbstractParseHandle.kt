@@ -67,6 +67,7 @@ abstract class AbstractParseHandle : ParseHandle {
         if (request.headers == null) {
             request.headers = ArrayList()
         }
+        request.headers!!.removeIf { it.name == header.name }
         request.headers!!.add(header)
     }
 
