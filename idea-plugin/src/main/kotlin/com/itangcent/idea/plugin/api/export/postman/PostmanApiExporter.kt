@@ -143,7 +143,7 @@ class PostmanApiExporter {
         }
 
 
-        //only one class
+        //only one module
         if (moduleGroupedMap.size == 1) {
             moduleGroupedMap.entries.first()
                     .let {

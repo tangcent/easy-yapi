@@ -2,11 +2,19 @@
     <id>com.itangcent.idea.plugin.easy-api</id>
     <name>EasyApi</name>
     <version>1.0</version>
-    <vendor email="tangcent@tangcent.cn" url="http://www.itangcent.com">TmNg</vendor>
+    <vendor email="pentatangcent@gmail.com" url="http://www.itangcent.com">Tangcent</vendor>
 
     <description><![CDATA[
-      easy-api<br>
-      1.Support Export Api To Postman[Code -> ExportPostman]
+    <html>
+    <<body>
+    <h2>easy-api</h2>
+    <span> <a href="https://github.com/tangcent/easy-api">GitHub</a> | <a href="https://github.com/tangcent/easy-api/issues">Issues</a> </span>
+    <h3>Features</h2>
+    <ul>
+        <li>Support Export Api To Postman[Code -> ExportPostman]</li>
+    </ul>
+    </body>
+    </html>
     ]]></description>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
@@ -47,6 +55,5 @@
                     text="_ToJson" description="ToJson">
             </action>
         </group>
-
     </actions>
 </idea-plugin>
