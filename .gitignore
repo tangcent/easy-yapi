@@ -33,3 +33,5 @@ gradle/wrapper/
 common-api/build/
 
 /plugin/
+/gradlew
+/gradlew.bat

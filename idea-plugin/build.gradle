@@ -14,16 +14,14 @@ plugins {
 }
 
 group 'com.itangcent'
-version '0.0.2'
+version plugin_version
 
 apply plugin: 'kotlin'
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'idea'
 
 intellij {
-//    version idea_version
-//    version '2018.2.1'
-    version '2017.3.5'
+    version idea_version
     pluginName plugin_name
     updateSinceUntilBuild false
     downloadSources true
@@ -42,6 +40,10 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
+patchPluginXml {
+    pluginDescription(file(descriptionFile).text)
+    changeNotes(file(changesFile).text)
+}
 
 jar {
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }

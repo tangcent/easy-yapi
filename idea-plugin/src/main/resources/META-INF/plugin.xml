@@ -4,27 +4,12 @@
     <version>0.0.2</version>
     <vendor email="pentatangcent@gmail.com" url="http://www.itangcent.com">Tangcent</vendor>
 
-    <description><![CDATA[
-    <html>
-    <<body>
-    <h2>easy-api</h2>
-    <span> <a href="https://github.com/tangcent/easy-api">GitHub</a> | <a href="https://github.com/tangcent/easy-api/issues">Issues</a> </span>
-    <h3>Features</h2>
-    <ul>
-        <li>Support Export Api To Postman[Code -> ExportPostman]</li>
-    </ul>
-    </body>
-    </html>
-    ]]></description>
+    <description><![CDATA[ Description will be added by gradle build]]></description>
+
+    <category>Web</category>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
     <idea-version since-build="145.0"/>
-
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <!-- uncomment to enable plugin inIndex all products
-    <depends>com.intellij.modules.lang</depends>
-    -->
 
     <actions>
 
@@ -56,4 +41,7 @@
             </action>
         </group>
     </actions>
+
+    <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
+    </change-notes>
 </idea-plugin>
