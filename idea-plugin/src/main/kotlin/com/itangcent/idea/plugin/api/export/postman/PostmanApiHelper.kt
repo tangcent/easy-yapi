@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.plugin.api.export.TMResponseHandler
+import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.setting.SettingManager
 import org.apache.commons.lang3.StringUtils
@@ -47,7 +47,7 @@ class PostmanApiHelper {
 
         httpPost.setHeader("x-api-key", getPrivateToken())
         httpPost.entity = requestEntity
-        val responseHandler = TMResponseHandler()
+        val responseHandler = StringResponseHandler()
 
         try {
             val returnValue = httpClient.execute(httpPost, responseHandler) //调接口获取返回值时，必须用此方法

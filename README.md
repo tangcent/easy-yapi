@@ -27,3 +27,4 @@ Simplifies API Development
 - [X] Export api to Postman
 - [ ] Export api to Excel
 - [ ] Export api to Markdown
+- [ ] Call api in code

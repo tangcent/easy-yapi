@@ -41,8 +41,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
-
-
         actionContext.instance(PostmanApiExporter::class).export()
     }
 

@@ -7,7 +7,7 @@ import org.apache.http.client.ResponseHandler
 import org.apache.http.util.EntityUtils
 import java.io.IOException
 
-class TMResponseHandler : ResponseHandler<String> {
+class StringResponseHandler : ResponseHandler<String> {
 
     @Throws(IOException::class)
     fun handleEntity(entity: HttpEntity): String {
