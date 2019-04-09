@@ -33,8 +33,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(DocParseHelper::class) { it.singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
-        builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
-        builder.bind(ClassExporter::class) { it.with(SpringClassExporter::class).singleton() }
 
         builder.bindInstance("file.save.default", "postman.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.postman.export.path")

@@ -18,7 +18,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 /**
  * @author tangcent
  */
-class FieldsToJsonAction : KotlinAnAction("To Json") {
+class FieldsToJsonAction : BasicAnAction("To Json") {
 
     @Inject
     private val logger: Logger? = null

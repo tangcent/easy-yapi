@@ -355,7 +355,7 @@ class PostmanApiExporter {
 
     private fun findResourceClass(resource: Any): PsiClass? {
         return when (resource) {
-            is PsiMethod -> resource.containingClass
+            is PsiMethod -> actionContext!!.callInReadUI { resource.containingClass }
             is PsiClass -> resource
             else -> null
         }
