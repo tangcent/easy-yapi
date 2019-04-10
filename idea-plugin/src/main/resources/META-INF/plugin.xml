@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.itangcent.idea.plugin.easy-api</id>
     <name>EasyApi</name>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
     <vendor email="pentatangcent@gmail.com" url="http://www.itangcent.com">Tangcent</vendor>
 
     <description><![CDATA[ Description will be added by gradle build]]></description>
