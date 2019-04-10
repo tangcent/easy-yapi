@@ -11,6 +11,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.FileUtils
 
 class CachedClassExporter : ClassExporter {
 
@@ -29,9 +30,13 @@ class CachedClassExporter : ClassExporter {
         }
 
         val psiFile = cls.containingFile
+        val text = psiFile.text
+        val md5 = "${text.length}x${text.hashCode()}"//use length+hashcode
         val path = ActionUtils.findCurrentPath(psiFile)!!.replace("/", "_")
         var fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
-        if (fileApiCache != null && fileApiCache.lastModified!! > psiFile.modificationStamp) {
+        if (fileApiCache != null
+                && fileApiCache.lastModified!! > FileUtils.getLastModified(psiFile) ?: System.currentTimeMillis()
+                && fileApiCache.md5 == md5) {
             readApiFromCache(cls, fileApiCache, requestHandle)
             return
         }
@@ -61,6 +66,7 @@ class CachedClassExporter : ClassExporter {
                     , tinyRequest
             ))
         }
+        fileApiCache.md5 = md5
         fileApiCache.lastModified = System.currentTimeMillis()
         fileApiCacheRepository.saveFileApiCache(path, fileApiCache)
     }
