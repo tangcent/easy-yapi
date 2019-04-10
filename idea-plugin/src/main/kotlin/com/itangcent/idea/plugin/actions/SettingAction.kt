@@ -13,7 +13,7 @@ import com.itangcent.intellij.setting.DefaultSettingManager
 import com.itangcent.intellij.setting.SettingManager
 import com.itangcent.intellij.util.UIUtils
 
-class SettingAction : KotlinAnAction() {
+class SettingAction : BasicAnAction() {
 
     override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
         super.onBuildActionContext(builder)
