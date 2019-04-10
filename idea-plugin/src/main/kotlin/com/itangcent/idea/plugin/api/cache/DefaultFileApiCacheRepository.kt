@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.itangcent.common.utils.FileUtils
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
 
 class DefaultFileApiCacheRepository : FileApiCacheRepository {
@@ -12,15 +13,30 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
     @Named("projectCacheRepository")
     private val projectCacheRepository: LocalFileRepository? = null
 
-//    private var indexFileBinder: FileBeanBinder<IndexInfo>? = null
+    private var emptyFileBinder: FileBeanBinder<EmptyApiCache>? = null
 
-//    private var indexInfo: IndexInfo? = null
+    private var emptyApiCache: EmptyApiCache? = null
+
+    private fun init() {
+        if (emptyFileBinder == null) {
+            emptyFileBinder = FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".easy.empty.files"),
+                    EmptyApiCache::class)
+            emptyApiCache = emptyFileBinder!!.read()
+        }
+    }
 
     override fun getFileApiCache(filePath: String): FileApiCache? {
+        init()
+
         try {
+            val fileApiCache = emptyApiCache!!.getFileApiCache(filePath)
+            if (fileApiCache != null) {
+                return fileApiCache
+            }
+
             val now = System.currentTimeMillis()
             val file = projectCacheRepository!!.getFile(".$filePath.cache")
-            if (file.lastModified() >= now) {
+            if (file == null || file.lastModified() >= now) {
                 return null
             }
             return GsonUtils.fromJson(FileUtils.read(file), FileApiCache::class)
@@ -30,53 +46,29 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
     }
 
     override fun saveFileApiCache(filePath: String, fileApiCache: FileApiCache) {
-        FileUtils.write(projectCacheRepository!!.getFile(".$filePath.cache"),
-                GsonUtils.toJson(fileApiCache))
-    }
-//
-//    fun getCacheFile(filePath: String) {
-//        val hashCode = filePath.hashCode()
-//    }
-//
-//    fun getIndexInfo(): IndexInfo {
-//        if (indexInfo == null) {
-//            indexFileBinder = FileBeanBinder(projectCacheRepository.getFile(".project_cache_index"),
-//                    IndexInfo::class)
-//            indexInfo = indexFileBinder!!.read()
-//        }
-//        return indexInfo ?: IndexInfo()
-//    }
-//
-//    fun saveIndexInfo(indexInfo: IndexInfo) {
-//        indexFileBinder!!.save(indexInfo)
-//    }
-//
-//    class IndexInfo {
-//
-//        private var lastIndex: Int? = null
-//
-//        private var indexes: HashMap<Int, ArrayList<Int>>? = null
-//
-//        fun findIndex(hashcode: Int): Int? {
-//            return indexes.entries
-//                    .filter { it.value.contains(hashcode) }
-//                    .map { it.key }
-//                    .firstOrNull(
-//        }
-//
-//        fun updateIndex(hashcode: Int, index: Int) {
-//            if (indexes == null) {
-//                indexes = HashMap()
-//            }
-//            indexes!!.values
-//                    .asSequence()
-//                    .filter { it.contains(hashcode) }
-//                    .forEach { it.remove(hashcode) }
-//            indexes!!.computeIfAbsent(index) { ArrayList() }
-//                    .add(hashcode)
-//        }
-//
-//    }
-}
+        init()
 
-typealias FileApiCacheIndo = List<FileApiCache>
+        if (fileApiCache.requests.isNullOrEmpty()) {
+            emptyApiCache!![filePath] = "${System.currentTimeMillis()}#${fileApiCache.md5}"
+            emptyFileBinder!!.save(emptyApiCache!!)
+            projectCacheRepository!!.deleteFile(".$filePath.cache")
+        } else {
+            FileUtils.write(projectCacheRepository!!.getOrCreateFile(".$filePath.cache"),
+                    GsonUtils.toJson(fileApiCache))
+            if (emptyApiCache!!.remove(filePath) != null) {
+                emptyFileBinder!!.save(emptyApiCache!!)
+            }
+        }
+    }
+
+    class EmptyApiCache : HashMap<String, String>() {
+        fun getFileApiCache(filePath: String): FileApiCache? {
+            val lastModifiedAndMd5 = get(filePath) ?: return null
+            val fileApiCache = FileApiCache()
+            fileApiCache.file = filePath
+            fileApiCache.lastModified = lastModifiedAndMd5.substringBefore("#", "0").toLong()
+            fileApiCache.md5 = lastModifiedAndMd5.substringAfter("#", "")
+            return fileApiCache
+        }
+    }
+}
