@@ -89,7 +89,7 @@ open class SpringClassExporter : ClassExporter {
         val httpPath = contractPath(basePath, findHttpPath(requestMappingAnn))!!
         parseHandle.setPath(request, httpPath)
 
-        var attr: String? = null
+        val attr: String?
         val attrOfMethod = findAttrOfMethod(method, parseHandle)!!
         val lines = attrOfMethod.lines()
         attr = if (lines.size > 1) {//multi line
