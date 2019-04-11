@@ -93,9 +93,20 @@ class PostmanApiExporter {
                         actionContext!!.runAsync {
                             try {
                                 if (postmanApiHelper!!.hasPrivateToken()) {
+                                    logger.info("PrivateToken of postman be found")
                                     if (postmanApiHelper.importApiInfo(postman)) {
                                         return@runAsync
+                                    } else {
+                                        logger.error("Export to postman failed,You could check below:" +
+                                                "1.the network " +
+                                                "2.the privateToken")
                                     }
+                                } else {
+                                    logger.info("PrivateToken of postman not be setting")
+                                    logger.info("To enable automatically import to postman you could set privateToken" +
+                                            " of host [https://api.getpostman.com] in \"File -> Other Setting -> EasyApiSetting\"")
+                                    logger.info("If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
+                                            " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api].")
                                 }
                                 fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
                                     logger.info("Exported data are copied to clipboard,you can paste to postman now")
@@ -362,7 +373,7 @@ class PostmanApiExporter {
     }
 
     private fun findAttrOfClass(cls: PsiClass, parseHandle: ParseHandle): String? {
-        val docComment = cls.docComment
+        val docComment = actionContext!!.callInReadUI { cls.docComment }
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> cls.name
