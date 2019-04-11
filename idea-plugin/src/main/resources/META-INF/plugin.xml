@@ -44,4 +44,6 @@
 
     <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
     </change-notes>
+    <!--unnecessary,just for suppress warning from jetbrains [Plugin descriptor plugin.xml does not include any module dependency tags. The plugin is assumed to be a legacy plugin and is loaded only in IntelliJ IDEA.]-->
+    <depends optional="true">com.intellij.modules.platform</depends>
 </idea-plugin>

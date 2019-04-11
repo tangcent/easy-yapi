@@ -5,13 +5,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.fields.FieldJsonGenerator
-import com.itangcent.intellij.actions.KotlinAnAction
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.psi.TmTypeHelper
-import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 
@@ -43,8 +41,6 @@ class FieldsToJsonAction : BasicAnAction("To Json") {
                     logger!!.log("\n$generateFieldJson\n")
                 }
                 //endregion 委托actionContext在UI线程执行---------------------------------
-            } else {
-                ActionUtils.format(anActionEvent)
             }
         } catch (e: Exception) {
             logger!!.error("To json failed:" + ExceptionUtils.getStackTrace(e))
