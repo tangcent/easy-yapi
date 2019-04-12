@@ -7,6 +7,8 @@ Simplifies API Development
 
 ## Guide
 
+* [custom config for project](https://github.com/tangcent/easy-api/wiki/Use-Config-Make-Plugin-More-Intelligent(Export-Spring-Api-To-Postman))
+
 * ExportPostman
 ```textCode
     There are two ways to export api.
