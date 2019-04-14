@@ -35,10 +35,6 @@
                     class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportPostman"
                     description="Export Postman"/>
 
-            <action id="com.itangcent.idea.plugin.actions.ApiCallAction"
-                    class="com.itangcent.idea.plugin.actions.ApiCallAction" text="Call"
-                    description="Call"/>
-
             <action id="com.itangcent.idea.plugin.actions.FieldsToJsonAction"
                     class="com.itangcent.idea.plugin.actions.FieldsToJsonAction"
                     text="_ToJson" description="ToJson">

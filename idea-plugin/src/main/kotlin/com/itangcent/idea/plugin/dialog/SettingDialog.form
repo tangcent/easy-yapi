@@ -28,7 +28,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="b1387" class="javax.swing.JList" binding="host_list">
+              <component id="b1387" class="javax.swing.JList" binding="hostList">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="2" anchor="0" fill="3" indent="0" use-parent-layout="false">
                     <preferred-size width="150" height="50"/>
@@ -48,7 +48,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="80ee0" class="javax.swing.JTextField" binding="host_textField">
+              <component id="80ee0" class="javax.swing.JTextField" binding="hostTextField">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                     <preferred-size width="150" height="-1"/>
@@ -56,7 +56,7 @@
                 </constraints>
                 <properties/>
               </component>
-              <component id="41a30" class="javax.swing.JTextArea" binding="token_textArea">
+              <component id="41a30" class="javax.swing.JTextArea" binding="tokenTextArea">
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
                     <preferred-size width="150" height="50"/>
@@ -72,7 +72,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="3d11" class="javax.swing.JButton" binding="save_button">
+                  <component id="3d11" class="javax.swing.JButton" binding="saveButton">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -80,7 +80,7 @@
                       <text value="Save"/>
                     </properties>
                   </component>
-                  <component id="e04d4" class="javax.swing.JButton" binding="remove_button">
+                  <component id="e04d4" class="javax.swing.JButton" binding="removeButton">
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>

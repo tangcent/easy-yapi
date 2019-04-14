@@ -14,18 +14,18 @@ import kotlin.streams.toList
 class SettingDialog : JDialog() {
     private var contentPane: JPanel? = null
 
-    private var host_list: JList<*>? = null
-    private var host_textField: JTextField? = null
-    private var token_textArea: JTextArea? = null
+    private var hostList: JList<*>? = null
+    private var hostTextField: JTextField? = null
+    private var tokenTextArea: JTextArea? = null
 
-    private var save_button: JButton? = null
-    private var remove_button: JButton? = null
+    private var saveButton: JButton? = null
+    private var removeButton: JButton? = null
     private var hosts: MutableList<String?>? = null
 
     private var selectedGitSetting: TokenSetting? = null
 
     @Inject
-    public val settingManager: SettingManager? = null
+    val settingManager: SettingManager? = null
 
     @Inject
     val actionContext: ActionContext? = null
@@ -46,22 +46,21 @@ class SettingDialog : JDialog() {
         // call onCancel() on ESCAPE
         contentPane!!.registerKeyboardAction({ onCancel() }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
 
-        host_list!!.addMouseListener(object : MouseAdapter() {
+        hostList!!.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
                 //已选项的下标
-                host_list?.selectedIndex?.let { selectHost(it) }
+                hostList?.selectedIndex?.let { selectHost(it) }
             }
         })
 
-        save_button!!.addActionListener { saveSetting() }
-        remove_button!!.addActionListener { removeSetting() }
+        saveButton!!.addActionListener { saveSetting() }
+        removeButton!!.addActionListener { removeSetting() }
 
         setLocationRelativeTo(owner)
     }
 
     @PostConstruct
     fun postConstruct() {
-
         actionContext!!.hold()
         refreshHost()
     }
@@ -74,8 +73,8 @@ class SettingDialog : JDialog() {
                 .toMutableList()
         hosts!!.add("-new-")
         val hostModel = DefaultComboBoxModel(hosts!!.toTypedArray())
-        host_list?.model = hostModel
-        host_list?.selectedIndex = 0
+        hostList?.model = hostModel
+        hostList?.selectedIndex = 0
         selectHost(0)
     }
 
@@ -84,20 +83,20 @@ class SettingDialog : JDialog() {
         if (index == -1 || index == maxSelectionIndex) {
             selectedGitSetting = null
 
-            host_textField!!.text = "host"
-            token_textArea!!.text = "private token"
+            hostTextField!!.text = "host"
+            tokenTextArea!!.text = "private token"
         } else {
             val host = hosts!![index]
             selectedGitSetting = settingManager!!.getSetting(host)
 
-            host_textField!!.text = host
-            token_textArea!!.text = selectedGitSetting!!.privateToken
+            hostTextField!!.text = host
+            tokenTextArea!!.text = selectedGitSetting!!.privateToken
         }
     }
 
     private fun saveSetting() {
 
-        var host = host_textField!!.text
+        var host = hostTextField!!.text
         if (org.apache.commons.lang3.StringUtils.isBlank(host)) {
             Messages.showMessageDialog(this, "Host should not be empty",
                     "Error", Messages.getErrorIcon())
@@ -110,7 +109,7 @@ class SettingDialog : JDialog() {
 
         //TODO:host 进行正则检测
 
-        var token = token_textArea!!.text
+        var token = tokenTextArea!!.text
         if (org.apache.commons.lang3.StringUtils.isBlank(token)) {
             Messages.showMessageDialog(this, "Token should not be empty",
                     "Error", Messages.getErrorIcon())
