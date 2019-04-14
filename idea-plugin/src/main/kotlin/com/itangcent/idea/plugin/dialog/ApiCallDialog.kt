@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.utils.RequestUtils
+import com.itangcent.idea.plugin.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
@@ -119,7 +120,11 @@ internal class ApiCallDialog : JDialog() {
                 val responseHandler = StringResponseHandler()
                 val returnValue = httpClient.execute(requestBuilder.build(), responseHandler)
 
-                actionContext!!.runInSwingUI { responseTextPane!!.text = returnValue }
+                actionContext!!.runInSwingUI {
+                    responseTextPane!!.text = returnValue
+                    SwingUtils.focus(this)
+                }
+
             } catch (e: Exception) {
                 actionContext!!.runInSwingUI { responseTextPane!!.text = "error to call:" + ExceptionUtils.getStackTrace(e) }
             }
@@ -169,6 +174,10 @@ internal class ApiCallDialog : JDialog() {
         autoComputer.bind(this.requestTextArea!!)
                 .with(this::currRequest)
                 .eval { formatRequestBody(it) }
+
+        autoComputer.bind(this.responseTextPane!!)
+                .with(this::currRequest)
+                .eval { "" }
 
         actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
 

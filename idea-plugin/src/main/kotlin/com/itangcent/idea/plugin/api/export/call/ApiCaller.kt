@@ -7,6 +7,7 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.dialog.ApiCallDialog
+import com.itangcent.idea.plugin.utils.SwingUtils
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -37,9 +38,7 @@ class ApiCaller {
 
         var apiCallDialog = project!!.getUserData(API_CALL_DIALOG)?.get()
         if (apiCallDialog != null) {
-            actionContext!!.runInSwingUI {
-                apiCallDialog!!.requestFocus()
-            }
+            SwingUtils.focus(apiCallDialog)
             return
         }
 
@@ -70,7 +69,6 @@ class ApiCaller {
                 }
                 .traversal()
     }
-
 
     companion object {
         private val API_CALL_DIALOG = Key.create<WeakReference<ApiCallDialog>>("API_CALL_DIALOG")
