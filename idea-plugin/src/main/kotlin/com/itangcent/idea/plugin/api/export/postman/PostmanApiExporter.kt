@@ -6,7 +6,6 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.constant.Attrs
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
@@ -15,6 +14,7 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.CommonRules
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.utils.FileSaveHelper
+import com.itangcent.idea.plugin.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
@@ -234,7 +234,7 @@ class PostmanApiExporter {
 
         url["host"] = host
         url["path"] = request.path!!.trim().trim('/').split("/")
-        url["raw"] = contractPath(host, request.path)
+        url["raw"] = RequestUtils.contractPath(host, request.path)
 
 
         val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
@@ -274,7 +274,7 @@ class PostmanApiExporter {
 
         if (request.body != null) {
             body["mode"] = "raw"
-            body["raw"] = parseRawBody(request.body!!)
+            body["raw"] = RequestUtils.parseRawBody(request.body!!)
         }
 
         if (body.isNotEmpty()) {
@@ -336,7 +336,7 @@ class PostmanApiExporter {
 
                 responseInfo["responseTime"] = RandomUtils.nextInt(10, 100)
 
-                responseInfo["body"] = response.body?.let { parseRawBody(it) }
+                responseInfo["body"] = response.body?.let { RequestUtils.parseRawBody(it) }
 
                 responses.add(responseInfo)
             }
@@ -344,24 +344,6 @@ class PostmanApiExporter {
         }
 
         return item
-    }
-
-    private fun parseRawBody(body: Any): String {
-        if (body is String) {
-            return body
-        }
-        if (body is Map<*, *>) {
-            if (body.containsKey(Attrs.COMMENT_ATTR)) {
-                return GsonUtils.prettyJson(body.filterKeys { it != Attrs.COMMENT_ATTR })
-            }
-        }
-        return GsonUtils.prettyJson(body)
-    }
-
-    private fun contractPath(pathPre: String?, pathAfter: String?): String? {
-        if (pathPre == null) return pathAfter
-        if (pathAfter == null) return pathPre
-        return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")
     }
 
     private fun findResourceClass(resource: Any): PsiClass? {
