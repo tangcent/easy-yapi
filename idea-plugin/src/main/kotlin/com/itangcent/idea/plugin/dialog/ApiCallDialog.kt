@@ -1,10 +1,9 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
-import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.idea.plugin.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
@@ -96,7 +95,9 @@ internal class ApiCallDialog : JDialog() {
         actionContext!!.runAsync {
             try {
                 val requestBuilder = RequestBuilder.create(request.method)
-                        .setUri(host + request.path + query)
+                        .setUri(RequestUtils.UrlBuild().host(host)
+                                .path(request.path)
+                                .query(query).url())
 
                 request.headers?.forEach { requestBuilder.addHeader(it.name, it.value) }
 
@@ -169,7 +170,7 @@ internal class ApiCallDialog : JDialog() {
                 .with(this::currRequest)
                 .eval { formatRequestBody(it) }
 
-        actionContext!!.runInSwingUI { hostTextField!!.text = "localhost:8080" }
+        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
 
         autoComputer.bind(this.pathTextLabel!!)
                 .from(this, "this.currRequest.path")
@@ -220,21 +221,9 @@ internal class ApiCallDialog : JDialog() {
         }
 
         if (request.body != null) {
-            return parseRawBody(request.body!!)
+            return RequestUtils.parseRawBody(request.body!!)
         }
         return ""
-    }
-
-    private fun parseRawBody(body: Any): String {
-        if (body is String) {
-            return body
-        }
-        if (body is Map<*, *>) {
-            if (body.containsKey(Attrs.COMMENT_ATTR)) {
-                return GsonUtils.prettyJson(body.filterKeys { it != Attrs.COMMENT_ATTR })
-            }
-        }
-        return GsonUtils.prettyJson(body)
     }
 
     companion object {
