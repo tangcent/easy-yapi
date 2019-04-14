@@ -28,10 +28,17 @@ Simplifies API Development
     [token] Get from https://go.postman.co/integrations/services/pm_pro_api
 ```
 
+* Quick API requests from code
+
+```textCode
+    Open existed Spring Controller File
+    You can use by this : "Right click in the file -> generate... " or use its shortcuts "Alt + Insert" , then
+    choose the action "Call"
+```
 
 ## Feature
 - [X] Support Spring
 - [X] Export api to Postman
 - [ ] Export api to Excel
 - [ ] Export api to Markdown
-- [ ] Call api in code
+- [X] Call api from code
