@@ -50,7 +50,7 @@ class PostmanApiHelper {
         val responseHandler = StringResponseHandler()
 
         try {
-            val returnValue = httpClient.execute(httpPost, responseHandler) //调接口获取返回值时，必须用此方法
+            val returnValue = httpClient.execute(httpPost, responseHandler)
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collectionName = returnObj?.asJsonObject?.get("collection")
