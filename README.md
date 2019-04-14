@@ -3,7 +3,13 @@ Simplifies API Development
 
 ## Install
 
+### release
+ 
 - [Download](https://github.com/tangcent/easy-api-plugins/raw/master/idea/easy-api.jar) the plugin jar and select "Install Plugin From Disk" in IntelliJ's plugin preferences.
+
+### snapshot
+ 
+- [Download](https://github.com/tangcent/easy-api-plugins/raw/snapshot/idea/easy-api.jar) the plugin jar and select "Install Plugin From Disk" in IntelliJ's plugin preferences.
 
 ## Guide
 
