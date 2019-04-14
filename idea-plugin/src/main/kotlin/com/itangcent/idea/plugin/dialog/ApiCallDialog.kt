@@ -1,22 +1,30 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
+import com.google.inject.name.Named
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.idea.plugin.utils.GsonExUtils
 import com.itangcent.idea.plugin.utils.RequestUtils
 import com.itangcent.idea.plugin.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
+import com.itangcent.intellij.file.FileBeanBinder
+import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.logger.Logger
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
 import org.apache.http.client.HttpClient
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.RequestBuilder
+import org.apache.http.client.protocol.HttpClientContext
+import org.apache.http.cookie.Cookie
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
+import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicNameValuePair
 import java.awt.event.KeyEvent
@@ -25,14 +33,15 @@ import java.awt.event.WindowEvent
 import java.io.Closeable
 import javax.swing.*
 
+
 internal class ApiCallDialog : JDialog() {
     private var contentPane: JPanel? = null
     private var apis: JList<*>? = null
     private var hostTextField: JTextField? = null
     private var callButton: JButton? = null
     private var requestTextArea: JTextArea? = null
-    private var responseTextPane: JTextPane? = null
-    private var pathTextLabel: JLabel? = null
+    private var responseTextArea: JTextArea? = null
+    private var pathTextField: JTextField? = null
     private var methodLabel: JLabel? = null
     private var requestPanel: JPanel? = null
     private var paramPanel: JPanel? = null
@@ -42,6 +51,10 @@ internal class ApiCallDialog : JDialog() {
 
     private var requestList: List<Request>? = null
     private var currRequest: Request? = null
+
+
+    @Inject
+    private val logger: Logger? = null
 
     @Inject
     var actionContext: ActionContext? = null
@@ -73,31 +86,53 @@ internal class ApiCallDialog : JDialog() {
         autoComputer.value(this::requestList, requestList)
     }
 
+    @Inject
+    @Named("projectCacheRepository")
+    private val projectCacheRepository: LocalFileRepository? = null
+
     @Volatile
     private var httpClient: HttpClient? = null
+
+    @Volatile
+    private var httpContextCacheBinder: FileBeanBinder<HttpContextCache>? = null
+
+    var httpClientContext: HttpClientContext? = null
 
     @Synchronized
     private fun getHttpClient(): HttpClient {
         if (httpClient == null) {
             httpClient = HttpClients.createDefault()
+            httpClientContext = HttpClientContext.create()
+            httpClientContext!!.cookieStore = BasicCookieStore()
+
+            try {
+                httpContextCacheBinder = FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".http_content_cache"), HttpContextCache::class)
+                httpContextCacheBinder!!.read().cookies?.forEach {
+                    httpClientContext!!.cookieStore.addCookie(GsonExUtils.fromJson<Cookie>(it))
+                }
+            } catch (e: Exception) {
+                logger!!.error("load cookie failed!" + ExceptionUtils.getStackTrace(e))
+            }
         }
         return httpClient!!
     }
 
     private fun onCallClick() {
         if (currRequest == null) {
-            actionContext!!.runInSwingUI { responseTextPane!!.text = "No api be selected" }
+            actionContext!!.runInSwingUI { responseTextArea!!.text = "No api be selected" }
             return
         }
         val request = currRequest!!
         val host = this.hostTextField!!.text
+        val path = this.pathTextField!!.text
         val query = this.paramsTextField!!.text
+
         val requestBodyOrForm = this.requestTextArea!!.text
         actionContext!!.runAsync {
             try {
                 val requestBuilder = RequestBuilder.create(request.method)
                         .setUri(RequestUtils.UrlBuild().host(host)
-                                .path(request.path)
+                                .path(path)
                                 .query(query).url())
 
                 request.headers?.forEach { requestBuilder.addHeader(it.name, it.value) }
@@ -121,12 +156,12 @@ internal class ApiCallDialog : JDialog() {
                 val returnValue = httpClient.execute(requestBuilder.build(), responseHandler)
 
                 actionContext!!.runInSwingUI {
-                    responseTextPane!!.text = returnValue
+                    responseTextArea!!.text = returnValue
                     SwingUtils.focus(this)
                 }
 
             } catch (e: Exception) {
-                actionContext!!.runInSwingUI { responseTextPane!!.text = "error to call:" + ExceptionUtils.getStackTrace(e) }
+                actionContext!!.runInSwingUI { responseTextArea!!.text = "error to call:" + ExceptionUtils.getStackTrace(e) }
             }
         }
     }
@@ -175,13 +210,13 @@ internal class ApiCallDialog : JDialog() {
                 .with(this::currRequest)
                 .eval { formatRequestBody(it) }
 
-        autoComputer.bind(this.responseTextPane!!)
+        autoComputer.bind(this.responseTextArea!!)
                 .with(this::currRequest)
                 .eval { "" }
 
         actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
 
-        autoComputer.bind(this.pathTextLabel!!)
+        autoComputer.bind(this.pathTextField!!)
                 .from(this, "this.currRequest.path")
 
         autoComputer.bindVisible(this.paramPanel!!)
@@ -248,10 +283,28 @@ internal class ApiCallDialog : JDialog() {
     }
 
     private fun onCancel() {
+        if (httpContextCacheBinder != null && httpClientContext != null) {
+            val httpContextCache = HttpContextCache()
+            val cookies: ArrayList<String> = ArrayList()
+            httpContextCache.cookies = cookies
+            try {
+                httpClientContext!!.cookieStore.cookies.forEach { cookies.add(GsonExUtils.toJson(it)) }
+                httpContextCacheBinder!!.save(httpContextCache)
+            } catch (e: Exception) {
+                logger!!.error("error to save http context.")
+            }
+
+        }
         if (httpClient != null && httpClient is Closeable) {
             (httpClient!! as Closeable).close()
         }
         dispose()
         actionContext!!.unHold()
+    }
+
+    class HttpContextCache {
+
+        var cookies: List<String>? = null
+
     }
 }
