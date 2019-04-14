@@ -35,3 +35,4 @@ common-api/build/
 /plugin/
 /gradlew
 /gradlew.bat
+/common-api/out/
