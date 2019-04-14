@@ -165,29 +165,38 @@ open class SpringClassExporter : ClassExporter {
 
     protected fun findHttpMethod(requestMappingAnn: PsiAnnotation?): String {
         if (requestMappingAnn != null) {
-            var method = PsiAnnotationUtils.findAttr(requestMappingAnn, "method") ?: return HttpMethod.NO_METHOD
-            if (method.contains(",")) {
-                method = method.substringBefore(",")
-            }
-            return when {
-                StringUtils.isBlank(method) -> {
-                    HttpMethod.NO_METHOD
+            when {
+                requestMappingAnn.qualifiedName == SpringClassName.REQUESTMAPPING_ANNOTATION -> {
+                    var method = PsiAnnotationUtils.findAttr(requestMappingAnn, "method") ?: return HttpMethod.NO_METHOD
+                    if (method.contains(",")) {
+                        method = method.substringBefore(",")
+                    }
+                    return when {
+                        StringUtils.isBlank(method) -> {
+                            HttpMethod.NO_METHOD
+                        }
+                        method.startsWith("RequestMethod.") -> {
+                            method.removePrefix("RequestMethod.")
+                        }
+                        else -> method
+                    }
                 }
-                method.startsWith("RequestMethod.") -> {
-                    method.removePrefix("RequestMethod.")
-                }
-                else -> method
+                requestMappingAnn.qualifiedName == SpringClassName.GET_MAPPING -> return HttpMethod.GET
+                requestMappingAnn.qualifiedName == SpringClassName.POST_MAPPING -> return HttpMethod.POST
+                requestMappingAnn.qualifiedName == SpringClassName.DELETE_MAPPING -> return HttpMethod.DELETE
+                requestMappingAnn.qualifiedName == SpringClassName.PATCH_MAPPING -> return HttpMethod.PATCH
+                requestMappingAnn.qualifiedName == SpringClassName.PUT_MAPPING -> return HttpMethod.PUT
             }
         }
         return HttpMethod.NO_METHOD
     }
 
     protected fun findRequestMapping(psiClass: PsiClass): PsiAnnotation? {
-        val requestMappingAnn = PsiAnnotationUtils.findAnn(psiClass, SpringClassName.REQUESTMAPPING_ANNOTATION)
+        val requestMappingAnn = findRequestMappingInAnn(psiClass)
         if (requestMappingAnn != null) return requestMappingAnn
         var superCls = psiClass.superClass
         while (superCls != null) {
-            val requestMappingAnnInSuper = PsiAnnotationUtils.findAnn(superCls, SpringClassName.REQUESTMAPPING_ANNOTATION)
+            val requestMappingAnnInSuper = findRequestMappingInAnn(superCls)
             if (requestMappingAnnInSuper != null) return requestMappingAnnInSuper
             superCls = superCls.superClass
         }
@@ -195,7 +204,13 @@ open class SpringClassExporter : ClassExporter {
     }
 
     protected fun findRequestMapping(method: PsiMethod): PsiAnnotation? {
-        return PsiAnnotationUtils.findAnn(method, SpringClassName.REQUESTMAPPING_ANNOTATION)
+        return findRequestMappingInAnn(method)
+    }
+
+    private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
+        return SPRING_REQUESTMAPPING_ANNOTATIONS
+                .map { PsiAnnotationUtils.findAnn(ele, it) }
+                .firstOrNull { it != null }
     }
 
     protected fun findRequestBody(parameter: PsiParameter): PsiAnnotation? {
@@ -499,5 +514,14 @@ open class SpringClassExporter : ClassExporter {
             return deepComponent(obj.first())
         }
         return obj
+    }
+
+    companion object {
+        val SPRING_REQUESTMAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
+                SpringClassName.GET_MAPPING,
+                SpringClassName.DELETE_MAPPING,
+                SpringClassName.PATCH_MAPPING,
+                SpringClassName.POST_MAPPING,
+                SpringClassName.PUT_MAPPING)
     }
 }
