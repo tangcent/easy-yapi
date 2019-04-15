@@ -10,9 +10,10 @@ object GsonExUtils {
             beanWithClass.c = bean.javaClass.name
             beanWithClass.j = GsonUtils.toJson(bean)
         }
-        return GsonUtils.toJson(bean)
+        return GsonUtils.toJson(beanWithClass)
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> fromJson(json: String): T? {
         val beanWithClass = GsonUtils.fromJson(json, BeanWithClass::class)
         if (beanWithClass.c == null) return null

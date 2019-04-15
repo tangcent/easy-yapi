@@ -46,6 +46,7 @@ patchPluginXml {
 }
 
 jar {
+    excludes = ["com/google/common/**"]
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
@@ -68,11 +69,10 @@ dependencies {
 
     compile("com.google.inject:guice:4.2.0") {
         exclude group: 'org.checkerframework', module: 'checker-compat-qual'
+        exclude group: 'com.google.guava', module: 'guava'
     }
 
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-
-    compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
