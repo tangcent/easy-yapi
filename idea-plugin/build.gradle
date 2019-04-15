@@ -74,6 +74,8 @@ dependencies {
 
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+
     testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
 
