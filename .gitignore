@@ -36,3 +36,4 @@ common-api/build/
 /gradlew
 /gradlew.bat
 /common-api/out/
+/idea-plugin/out/
