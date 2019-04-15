@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.utils.GsonExUtils
 import com.itangcent.idea.plugin.utils.RequestUtils
@@ -45,6 +46,7 @@ internal class ApiCallDialog : JDialog() {
     private var methodLabel: JLabel? = null
     private var requestPanel: JPanel? = null
     private var paramPanel: JPanel? = null
+    private var formatButton: JButton? = null
 
     private var paramsTextField: JTextField? = null
     private val autoComputer: AutoComputer = AutoComputer()
@@ -52,6 +54,7 @@ internal class ApiCallDialog : JDialog() {
     private var requestList: List<Request>? = null
     private var currRequest: Request? = null
 
+    private var currResponse: String? = null
 
     @Inject
     private val logger: Logger? = null
@@ -79,7 +82,69 @@ internal class ApiCallDialog : JDialog() {
 
         callButton!!.addActionListener { onCallClick() }
 
+        formatButton!!.addActionListener { onFormatClick() }
+
         setLocationRelativeTo(owner)
+    }
+
+    @PostConstruct
+    fun postConstruct() {
+        actionContext!!.hold()
+
+        autoComputer.bind(this.apis!!)
+                .with(this::requestList)
+                .eval { requests -> requests?.map { it.name }?.toList() }
+
+        autoComputer.bind(this::currRequest)
+                .withIndex(this.apis!!)
+                .eval {
+                    when (it) {
+                        null, -1 -> null
+                        else -> this.requestList!![it]
+                    }
+                }
+
+        autoComputer.bindIndex(this.apis!!)
+                .with(this::requestList)
+                .eval {
+                    if (it.isNullOrEmpty()) -1 else 0
+                }
+
+        autoComputer.bindVisible(this.requestPanel!!)
+                .with(this::currRequest)
+                .eval { it != null && it.method?.toUpperCase() != "GET" }
+
+        autoComputer.bind(this.requestTextArea!!)
+                .with(this::currRequest)
+                .eval { formatRequestBody(it) }
+
+        autoComputer.bind(this::currResponse)
+                .with(this::currRequest)
+                .eval { "" }
+
+        autoComputer.bind(this.responseTextArea!!)
+                .from(this::currResponse)
+
+        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
+
+        autoComputer.bind(this.pathTextField!!)
+                .from(this, "this.currRequest.path")
+
+        autoComputer.bindVisible(this.paramPanel!!)
+                .with(this::currRequest)
+                .eval { !it?.querys.isNullOrEmpty() }
+
+        autoComputer.bind(this.paramsTextField!!)
+                .with(this::currRequest)
+                .eval { formatQueryParams(it) }
+
+        autoComputer.bind(this.methodLabel!!)
+                .from(this, "this.currRequest.method")
+
+        autoComputer.bindVisible(this.formatButton!!)
+                .with(this::currResponse)
+                .eval { !it.isNullOrBlank() }
+
     }
 
     fun updateRequestList(requestList: List<Request>?) {
@@ -96,7 +161,7 @@ internal class ApiCallDialog : JDialog() {
     @Volatile
     private var httpContextCacheBinder: FileBeanBinder<HttpContextCache>? = null
 
-    var httpClientContext: HttpClientContext? = null
+    private var httpClientContext: HttpClientContext? = null
 
     @Synchronized
     private fun getHttpClient(): HttpClient {
@@ -115,6 +180,19 @@ internal class ApiCallDialog : JDialog() {
             }
         }
         return httpClient!!
+    }
+
+    private fun onFormatClick() {
+        val response = this.responseTextArea!!.text
+        actionContext!!.runAsync {
+            try {
+                val prettyJson = GsonUtils.prettyJson(GsonUtils.fromJson(response, Any::class))
+                actionContext!!.runInSwingUI {
+                    this.responseTextArea!!.text = prettyJson
+                }
+            } catch (e: Exception) {
+            }
+        }
     }
 
     private fun onCallClick() {
@@ -153,10 +231,10 @@ internal class ApiCallDialog : JDialog() {
                 }
                 val httpClient = getHttpClient()
                 val responseHandler = StringResponseHandler()
-                val returnValue = httpClient.execute(requestBuilder.build(), responseHandler)
+                val returnValue = httpClient.execute(requestBuilder.build(), responseHandler, httpClientContext)
 
                 actionContext!!.runInSwingUI {
-                    responseTextArea!!.text = returnValue
+                    autoComputer.value(this::currResponse, returnValue)
                     SwingUtils.focus(this)
                 }
 
@@ -176,59 +254,6 @@ internal class ApiCallDialog : JDialog() {
             nameValuePairs.add(BasicNameValuePair(name, value))
         }
         return nameValuePairs
-
-    }
-
-    @PostConstruct
-    fun postConstruct() {
-        actionContext!!.hold()
-
-        autoComputer.bind(this.apis!!)
-                .with(this::requestList)
-                .eval { requests -> requests?.map { it.name }?.toList() }
-
-        autoComputer.bind(this::currRequest)
-                .withIndex(this.apis!!)
-                .eval {
-                    when (it) {
-                        null, -1 -> null
-                        else -> this.requestList!![it]
-                    }
-                }
-
-        autoComputer.bindIndex(this.apis!!)
-                .with(this::requestList)
-                .eval {
-                    if (it.isNullOrEmpty()) -1 else 0
-                }
-
-        autoComputer.bindVisible(this.requestPanel!!)
-                .with(this::currRequest)
-                .eval { it != null && it.method?.toUpperCase() != "GET" }
-
-        autoComputer.bind(this.requestTextArea!!)
-                .with(this::currRequest)
-                .eval { formatRequestBody(it) }
-
-        autoComputer.bind(this.responseTextArea!!)
-                .with(this::currRequest)
-                .eval { "" }
-
-        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
-
-        autoComputer.bind(this.pathTextField!!)
-                .from(this, "this.currRequest.path")
-
-        autoComputer.bindVisible(this.paramPanel!!)
-                .with(this::currRequest)
-                .eval { !it?.querys.isNullOrEmpty() }
-
-        autoComputer.bind(this.paramsTextField!!)
-                .with(this::currRequest)
-                .eval { formatQueryParams(it) }
-
-        autoComputer.bind(this.methodLabel!!)
-                .from(this, "this.currRequest.method")
 
     }
 
