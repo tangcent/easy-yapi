@@ -67,7 +67,7 @@ dependencies {
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile("com.google.inject:guice:4.2.0") {
+    compile("com.google.inject:guice:4.2.2") {
         exclude group: 'org.checkerframework', module: 'checker-compat-qual'
         exclude group: 'com.google.guava', module: 'guava'
     }
