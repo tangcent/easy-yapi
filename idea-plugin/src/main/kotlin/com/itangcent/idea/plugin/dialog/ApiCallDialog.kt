@@ -2,9 +2,10 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.itangcent.common.http.HttpResponse
+import com.itangcent.common.http.UltimateResponseHandler
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.utils.GsonExUtils
 import com.itangcent.idea.plugin.utils.RequestUtils
 import com.itangcent.idea.plugin.utils.SwingUtils
@@ -16,6 +17,7 @@ import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.apache.http.Header
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
 import org.apache.http.client.HttpClient
@@ -27,6 +29,7 @@ import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
+import org.apache.http.message.BasicHeader
 import org.apache.http.message.BasicNameValuePair
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
@@ -52,9 +55,14 @@ internal class ApiCallDialog : JDialog() {
     private val autoComputer: AutoComputer = AutoComputer()
 
     private var requestList: List<Request>? = null
+
     private var currRequest: Request? = null
 
-    private var currResponse: String? = null
+    private var responseHeadersTextArea: JTextArea? = null
+
+    private var requestHeadersTextArea: JTextArea? = null
+
+    private var currResponse: HttpResponse? = null
 
     @Inject
     private val logger: Logger? = null
@@ -120,10 +128,11 @@ internal class ApiCallDialog : JDialog() {
 
         autoComputer.bind(this::currResponse)
                 .with(this::currRequest)
-                .eval { "" }
+                .eval { null }
 
         autoComputer.bind(this.responseTextArea!!)
-                .from(this::currResponse)
+                .with(this::currResponse)
+                .eval { it?.asString() ?: "" }
 
         actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
 
@@ -143,7 +152,15 @@ internal class ApiCallDialog : JDialog() {
 
         autoComputer.bindVisible(this.formatButton!!)
                 .with(this::currResponse)
-                .eval { !it.isNullOrBlank() }
+                .eval { it != null }
+
+        autoComputer.bind(this.requestHeadersTextArea!!)
+                .with(this::currRequest)
+                .eval { formatRequestHeaders(it) }
+
+        autoComputer.bind(this.responseHeadersTextArea!!)
+                .with(this::currResponse)
+                .eval { formatResponseHeaders(it) }
 
     }
 
@@ -163,11 +180,14 @@ internal class ApiCallDialog : JDialog() {
 
     private var httpClientContext: HttpClientContext? = null
 
+    private var ultimateResponseHandler: UltimateResponseHandler? = null
+
     @Synchronized
     private fun getHttpClient(): HttpClient {
         if (httpClient == null) {
             httpClient = HttpClients.createDefault()
             httpClientContext = HttpClientContext.create()
+            ultimateResponseHandler = UltimateResponseHandler()
             httpClientContext!!.cookieStore = BasicCookieStore()
 
             try {
@@ -205,6 +225,7 @@ internal class ApiCallDialog : JDialog() {
         val path = this.pathTextField!!.text
         val query = this.paramsTextField!!.text
 
+        val requestHeader = this.requestHeadersTextArea!!.text
         val requestBodyOrForm = this.requestTextArea!!.text
         actionContext!!.runAsync {
             try {
@@ -221,6 +242,10 @@ internal class ApiCallDialog : JDialog() {
                     if (!request.formParams.isNullOrEmpty()) {
                         requestEntity = UrlEncodedFormEntity(parseForm(requestBodyOrForm))
                     }
+                    if (!requestHeader.isNullOrBlank()) {
+                        parseHeader(requestHeader)
+                                .forEach { requestBuilder.addHeader(it) }
+                    }
                     if (request.body != null) {
                         requestEntity = StringEntity(requestBodyOrForm,
                                 ContentType.APPLICATION_JSON)
@@ -230,11 +255,11 @@ internal class ApiCallDialog : JDialog() {
                     }
                 }
                 val httpClient = getHttpClient()
-                val responseHandler = StringResponseHandler()
-                val returnValue = httpClient.execute(requestBuilder.build(), responseHandler, httpClientContext)
+
+                val response = httpClient.execute(requestBuilder.build(), ultimateResponseHandler, httpClientContext)
 
                 actionContext!!.runInSwingUI {
-                    autoComputer.value(this::currResponse, returnValue)
+                    autoComputer.value(this::currResponse, response)
                     SwingUtils.focus(this)
                 }
 
@@ -245,16 +270,23 @@ internal class ApiCallDialog : JDialog() {
     }
 
     private fun parseForm(formText: String): List<NameValuePair> {
-        val nameValuePairs: ArrayList<NameValuePair> = ArrayList()
+        return parseEqualLine(formText) { name, value -> BasicNameValuePair(name, value) }
+    }
+
+    private fun parseHeader(headerText: String): List<Header> {
+        return parseEqualLine(headerText) { name, value -> BasicHeader(name, value) }
+    }
+
+    private fun <T> parseEqualLine(formText: String, handle: ((String, String) -> T)): List<T> {
+        val nameValuePairs: ArrayList<T> = ArrayList()
         for (line in formText.lines()) {
             val name = line.substringBefore("=", "").trim()
             if (name.isBlank()) continue
 
             val value = line.substringAfter("=", "").trim()
-            nameValuePairs.add(BasicNameValuePair(name, value))
+            nameValuePairs.add(handle(name, value))
         }
         return nameValuePairs
-
     }
 
     private fun formatQueryParams(request: Request?): String? {
@@ -293,6 +325,30 @@ internal class ApiCallDialog : JDialog() {
             return RequestUtils.parseRawBody(request.body!!)
         }
         return ""
+    }
+
+    private fun formatRequestHeaders(request: Request?): String? {
+        if (request?.headers.isNullOrEmpty()) return ""
+        val sb = StringBuilder()
+        request?.headers?.forEach {
+            sb.append(it.name)
+                    .append("=")
+                    .append(it.value)
+                    .appendln()
+        }
+        return sb.toString()
+    }
+
+    private fun formatResponseHeaders(response: HttpResponse?): String? {
+        if (response?.getHeader() == null) return ""
+        val sb = StringBuilder()
+        response.getHeader()?.forEach {
+            sb.append(it.first)
+                    .append("=")
+                    .append(it.second)
+                    .appendln()
+        }
+        return sb.toString()
     }
 
     companion object {
