@@ -2,9 +2,9 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.itangcent.common.http.UltimateResponseHandler
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.utils.GsonExUtils
 import com.itangcent.idea.plugin.utils.RequestUtils
 import com.itangcent.idea.plugin.utils.SwingUtils
@@ -163,11 +163,14 @@ internal class ApiCallDialog : JDialog() {
 
     private var httpClientContext: HttpClientContext? = null
 
+    private var ultimateResponseHandler: UltimateResponseHandler? = null
+
     @Synchronized
     private fun getHttpClient(): HttpClient {
         if (httpClient == null) {
             httpClient = HttpClients.createDefault()
             httpClientContext = HttpClientContext.create()
+            ultimateResponseHandler = UltimateResponseHandler()
             httpClientContext!!.cookieStore = BasicCookieStore()
 
             try {
@@ -230,11 +233,11 @@ internal class ApiCallDialog : JDialog() {
                     }
                 }
                 val httpClient = getHttpClient()
-                val responseHandler = StringResponseHandler()
-                val returnValue = httpClient.execute(requestBuilder.build(), responseHandler, httpClientContext)
+
+                val returnValue = httpClient.execute(requestBuilder.build(), ultimateResponseHandler, httpClientContext)
 
                 actionContext!!.runInSwingUI {
-                    autoComputer.value(this::currResponse, returnValue)
+                    autoComputer.value(this::currResponse, returnValue.asString())
                     SwingUtils.focus(this)
                 }
 

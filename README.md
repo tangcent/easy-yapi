@@ -1,15 +1,23 @@
 # easy-api
 Simplifies API Development
 
-## Install
 
-### release
- 
-- [Download](https://github.com/tangcent/easy-api-plugins/raw/master/idea/easy-api.jar) the plugin jar and select "Install Plugin From Disk" in IntelliJ's plugin preferences.
+Installation
+----
 
-### snapshot
- 
-- [Download](https://github.com/tangcent/easy-api-plugins/raw/snapshot/idea/easy-api.jar) the plugin jar and select "Install Plugin From Disk" in IntelliJ's plugin preferences.
+**support following product build version > 173**
+
+- IntelliJ IDEA
+- IntelliJ IDEA Community Edition
+
+**using IDE plugin system**
+- <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Browse repositories...</kbd> > <kbd>find"EasyApi"</kbd> > <kbd>Install Plugin</kbd>
+
+**Manual:**
+- download from [Jetbrains](https://plugins.jetbrains.com/plugin/12211-easyapi/versions) or [Github](https://github.com/tangcent/easy-api-plugins/raw/master/idea/easy-api.jar) -> <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Install plugin from disk...</kbd>
+
+restart **IDE**.
+
 
 ## Guide
 
