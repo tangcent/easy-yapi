@@ -16,9 +16,7 @@ class UltimateResponseHandler : ResponseHandler<com.itangcent.common.http.HttpRe
         val code = statusLine.statusCode
         val headers: ArrayList<Pair<String, String>> = ArrayList()
         for (header in response.allHeaders) {
-            for (element in header.elements) {
-                headers.add(element.name to element.value)
-            }
+            headers.add(header.name to header.value)
         }
 
         val entity = response.entity
