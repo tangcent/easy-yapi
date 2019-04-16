@@ -11,7 +11,7 @@ class StringResponseHandler : ResponseHandler<String> {
 
     @Throws(IOException::class)
     fun handleEntity(entity: HttpEntity): String {
-        return EntityUtils.toString(entity)
+        return EntityUtils.toString(entity) ?: ""
     }
 
     @Throws(HttpResponseException::class, IOException::class)

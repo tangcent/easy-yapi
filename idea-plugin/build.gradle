@@ -47,6 +47,7 @@ patchPluginXml {
 
 jar {
     excludes = ["com/google/common/**"]
+//    excludes = ["com/google/common/**", "org/apache/http/util/**"]
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
@@ -61,7 +62,9 @@ repositories {
 }
 
 dependencies {
-    compile project(path: ':common-api', configuration: 'default')
+    compile(project(path: ':common-api', configuration: 'default')) {
+        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    }
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
