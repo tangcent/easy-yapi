@@ -4,16 +4,15 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.plugin.api.export.CommonRules
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.utils.FileSaveHelper
+import com.itangcent.idea.plugin.utils.ModuleHelper
 import com.itangcent.idea.plugin.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -27,6 +26,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+
 
 class PostmanApiExporter {
 
@@ -46,13 +46,13 @@ class PostmanApiExporter {
     private val parseHandle: ParseHandle? = null
 
     @Inject
-    private val commonRules: CommonRules? = null
-
-    @Inject
     private val docParseHelper: DocParseHelper? = null
 
     @Inject
     private val fileSaveHelper: FileSaveHelper? = null
+
+    @Inject
+    private val moduleHelper: ModuleHelper? = null
 
     fun export() {
 
@@ -140,7 +140,7 @@ class PostmanApiExporter {
         if (clsGroupedMap.size == 1) {
             clsGroupedMap.entries.first()
                     .let {
-                        val module = findModule(it.key) ?: "easy-api"
+                        val module = moduleHelper!!.findModule(it.key) ?: "easy-api"
                         return wrapRootInfo(module, arrayListOf(wrapInfo(it.key, it.value)))
                     }
         }
@@ -148,7 +148,7 @@ class PostmanApiExporter {
         //group by module
         val moduleGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
         clsGroupedMap.forEach { cls, items ->
-            val module = findModule(cls) ?: "easy-api"
+            val module = moduleHelper!!.findModule(cls) ?: "easy-api"
             moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
                     .add(wrapInfo(cls, items))
         }
@@ -167,7 +167,7 @@ class PostmanApiExporter {
                 .map { wrapInfo(it.key, arrayListOf(wrapRootInfo(it.key, it.value))) }
                 .forEach { modules.add(it) }
 
-        val rootModule = findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
+        val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
         return wrapRootInfo("$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}", modules)
     }
 
@@ -213,7 +213,7 @@ class PostmanApiExporter {
 
     private fun request2Item(request: Request): HashMap<String, Any?> {
 
-        val module = request.resource?.let { findModule(it) }
+        val module = request.resource?.let { moduleHelper!!.findModule(it) }
         var host = "{{host}}"
         if (module != null) {
             host = "{{$module}}"
@@ -362,61 +362,6 @@ class PostmanApiExporter {
             else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle)
         }
     }
-
-    //region find module
-    private fun findModule(resource: Any): String? {
-        return when (resource) {
-            is PsiMethod -> findModule(resource)
-            is PsiClass -> findModule(resource)
-            is PsiFile -> findModule(resource)
-            else -> null
-        }
-    }
-
-    private fun findModule(psiMethod: PsiMethod): String? {
-        val containingClass = psiMethod.containingClass
-        if (containingClass != null) {
-            return findModule(containingClass)
-        }
-        return null
-    }
-
-    private fun findModule(cls: PsiClass): String? {
-        val moduleRules = commonRules!!.readModuleRules()
-        if (!moduleRules.isEmpty()) {
-            val module = moduleRules
-                    .map { it(cls, cls, cls) }
-                    .firstOrNull { it != null }
-            if (!module.isNullOrBlank()) {
-                return module
-            }
-        }
-        return findModule(cls.containingFile)
-    }
-
-    private fun findModule(psiFile: PsiFile): String? {
-        val currentPath = ActionUtils.findCurrentPath(psiFile)
-        return findModuleByPath(currentPath)
-    }
-
-    private fun findModuleByPath(path: String?): String? {
-        if (path == null) return null
-        var module: String? = null
-        try {
-            var currentPath = path
-            when {
-                currentPath.contains("/src/") -> currentPath = StringUtils.substringBefore(currentPath, "/src/")
-                currentPath.contains("/main/") -> currentPath = StringUtils.substringBefore(currentPath, "/main/")
-                currentPath.contains("/java/") -> currentPath = StringUtils.substringBefore(currentPath, "/java/")
-            }
-            module = StringUtils.substringAfterLast(currentPath, "/")
-        } catch (e: Exception) {
-            logger!!.error("error in findCurrentPath:" + e.toString())
-        }
-        return module
-
-    }
-    //endregion
 
     companion object {
         val NULL_RESOURCE = Object()

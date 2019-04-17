@@ -9,6 +9,7 @@ import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.CommonRules
 import com.itangcent.idea.plugin.api.export.IdeaParseHandle
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
+import com.itangcent.idea.plugin.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -27,6 +28,7 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
         builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
         builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringClassExporter::class).singleton() }
         builder.bind(ClassExporter::class) { it.with(CachedClassExporter::class).singleton() }
+        builder.bind(ModuleHelper::class) { it.singleton() }
 
         builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {
