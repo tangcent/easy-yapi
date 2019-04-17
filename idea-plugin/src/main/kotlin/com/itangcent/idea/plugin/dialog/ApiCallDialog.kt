@@ -2,10 +2,13 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.intellij.openapi.ui.Messages
 import com.itangcent.common.http.HttpResponse
 import com.itangcent.common.http.UltimateResponseHandler
+import com.itangcent.common.http.getHeaderFileName
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.idea.plugin.utils.FileSaveHelper
 import com.itangcent.idea.plugin.utils.GsonExUtils
 import com.itangcent.idea.plugin.utils.RequestUtils
 import com.itangcent.idea.plugin.utils.SwingUtils
@@ -50,25 +53,31 @@ internal class ApiCallDialog : JDialog() {
     private var requestPanel: JPanel? = null
     private var paramPanel: JPanel? = null
     private var formatButton: JButton? = null
-
+    private var saveButton: JButton? = null
+    private var responseActionPanel: JPanel? = null
+    private var responseHeadersTextArea: JTextArea? = null
+    private var requestHeadersTextArea: JTextArea? = null
+    private var statusLabel: JLabel? = null
     private var paramsTextField: JTextField? = null
+
     private val autoComputer: AutoComputer = AutoComputer()
 
     private var requestList: List<Request>? = null
 
     private var currRequest: Request? = null
 
-    private var responseHeadersTextArea: JTextArea? = null
-
-    private var requestHeadersTextArea: JTextArea? = null
-
     private var currResponse: HttpResponse? = null
+
+    private var currUrl: String? = null
 
     @Inject
     private val logger: Logger? = null
 
     @Inject
     var actionContext: ActionContext? = null
+
+    @Inject
+    var fileSaveHelper: FileSaveHelper? = null
 
     init {
         setContentPane(contentPane)
@@ -91,6 +100,8 @@ internal class ApiCallDialog : JDialog() {
         callButton!!.addActionListener { onCallClick() }
 
         formatButton!!.addActionListener { onFormatClick() }
+
+        saveButton!!.addActionListener { onSaveClick() }
 
         setLocationRelativeTo(owner)
     }
@@ -134,8 +145,6 @@ internal class ApiCallDialog : JDialog() {
                 .with(this::currResponse)
                 .eval { it?.asString() ?: "" }
 
-        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
-
         autoComputer.bind(this.pathTextField!!)
                 .from(this, "this.currRequest.path")
 
@@ -150,7 +159,7 @@ internal class ApiCallDialog : JDialog() {
         autoComputer.bind(this.methodLabel!!)
                 .from(this, "this.currRequest.method")
 
-        autoComputer.bindVisible(this.formatButton!!)
+        autoComputer.bindVisible(this.responseActionPanel!!)
                 .with(this::currResponse)
                 .eval { it != null }
 
@@ -162,6 +171,11 @@ internal class ApiCallDialog : JDialog() {
                 .with(this::currResponse)
                 .eval { formatResponseHeaders(it) }
 
+        autoComputer.bind(this.statusLabel!!)
+                .with(this::currResponse)
+                .eval { "status:" + it?.getCode()?.toString() }
+
+        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
     }
 
     fun updateRequestList(requestList: List<Request>?) {
@@ -228,11 +242,14 @@ internal class ApiCallDialog : JDialog() {
         val requestHeader = this.requestHeadersTextArea!!.text
         val requestBodyOrForm = this.requestTextArea!!.text
         actionContext!!.runAsync {
+            var url: String? = null
             try {
+                url = RequestUtils.UrlBuild().host(host)
+                        .path(path)
+                        .query(query).url()
+                this.currUrl = url
                 val requestBuilder = RequestBuilder.create(request.method)
-                        .setUri(RequestUtils.UrlBuild().host(host)
-                                .path(path)
-                                .query(query).url())
+                        .setUri(url)
 
                 request.headers?.forEach { requestBuilder.addHeader(it.name, it.value) }
 
@@ -264,9 +281,48 @@ internal class ApiCallDialog : JDialog() {
                 }
 
             } catch (e: Exception) {
-                actionContext!!.runInSwingUI { responseTextArea!!.text = "error to call:" + ExceptionUtils.getStackTrace(e) }
+                actionContext!!.runInSwingUI {
+                    responseTextArea!!.text = "Could not get any response" +
+                            "\nThere was an error connecting:" + url +
+                            "\nThe stackTrace is:" +
+                            ExceptionUtils.getStackTrace(e)
+                }
             }
         }
+    }
+
+    private fun onSaveClick() {
+        if (this.currResponse == null) {
+            Messages.showMessageDialog(this, "No Response",
+                    "Error", Messages.getErrorIcon())
+            return
+        }
+
+        val response = this.currResponse
+        val url = this.currUrl
+//        var request = this.currRequest
+        fileSaveHelper!!.save({
+            response!!.asBytes()
+        }, {
+            var fileName = response!!.getHeaderFileName()
+            if (fileName == null && url != null) {
+                val dotIndex = url.lastIndexOf(".")
+                if (dotIndex != -1) {
+                    val name = url.substring(0, dotIndex).substringAfterLast("\\//?&")
+                    val suffix = url.substring(dotIndex).substringBefore("\\//?&")
+                    fileName = "$name.$suffix"
+                } else {
+                    fileName = url.substringAfterLast("/").substringBefore("?")
+                }
+            }
+            return@save fileName
+        }, {
+            logger!!.info("save response success")
+        }, {
+            logger!!.info("save response failed")
+        }, {
+            logger!!.info("cancel save response")
+        })
     }
 
     private fun parseForm(formText: String): List<NameValuePair> {
@@ -292,7 +348,7 @@ internal class ApiCallDialog : JDialog() {
     private fun formatQueryParams(request: Request?): String? {
         if (request == null) return ""
         if (request.querys.isNullOrEmpty()) {
-            return request.path
+            return ""
         }
         val path = StringBuilder()
                 .append("?")
