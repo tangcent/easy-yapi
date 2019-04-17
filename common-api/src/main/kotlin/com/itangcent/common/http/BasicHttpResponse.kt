@@ -15,6 +15,10 @@ class BasicHttpResponse : HttpResponse {
         return header
     }
 
+    override fun getContentType(): ContentType? {
+        return this.type
+    }
+
     override fun asBytes(): ByteArray {
         return this.raw!!.clone()
     }
