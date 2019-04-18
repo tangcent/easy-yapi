@@ -110,9 +110,25 @@ internal class ApiCallDialog : JDialog() {
     fun postConstruct() {
         actionContext!!.hold()
 
+        initApisModule()
+        initRequestModule()
+        initResponseModule()
+
+        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
+    }
+
+    //region api module
+    private fun initApisModule() {
+
         autoComputer.bind(this.apis!!)
                 .with(this::requestList)
                 .eval { requests -> requests?.map { it.name }?.toList() }
+
+        autoComputer.bindIndex(this.apis!!)
+                .with(this::requestList)
+                .eval {
+                    if (it.isNullOrEmpty()) -1 else 0
+                }
 
         autoComputer.bind(this::currRequest)
                 .withIndex(this.apis!!)
@@ -123,64 +139,14 @@ internal class ApiCallDialog : JDialog() {
                     }
                 }
 
-        autoComputer.bindIndex(this.apis!!)
-                .with(this::requestList)
-                .eval {
-                    if (it.isNullOrEmpty()) -1 else 0
-                }
-
-        autoComputer.bindVisible(this.requestPanel!!)
-                .with(this::currRequest)
-                .eval { it != null && it.method?.toUpperCase() != "GET" }
-
-        autoComputer.bind(this.requestTextArea!!)
-                .with(this::currRequest)
-                .eval { formatRequestBody(it) }
-
-        autoComputer.bind(this::currResponse)
-                .with(this::currRequest)
-                .eval { null }
-
-        autoComputer.bind(this.responseTextArea!!)
-                .with(this::currResponse)
-                .eval { it?.asString() ?: "" }
-
-        autoComputer.bind(this.pathTextField!!)
-                .from(this, "this.currRequest.path")
-
-        autoComputer.bindVisible(this.paramPanel!!)
-                .with(this::currRequest)
-                .eval { !it?.querys.isNullOrEmpty() }
-
-        autoComputer.bind(this.paramsTextField!!)
-                .with(this::currRequest)
-                .eval { formatQueryParams(it) }
-
-        autoComputer.bind(this.methodLabel!!)
-                .from(this, "this.currRequest.method")
-
-        autoComputer.bindVisible(this.responseActionPanel!!)
-                .with(this::currResponse)
-                .eval { it != null }
-
-        autoComputer.bind(this.requestHeadersTextArea!!)
-                .with(this::currRequest)
-                .eval { formatRequestHeaders(it) }
-
-        autoComputer.bind(this.responseHeadersTextArea!!)
-                .with(this::currResponse)
-                .eval { formatResponseHeaders(it) }
-
-        autoComputer.bind(this.statusLabel!!)
-                .with(this::currResponse)
-                .eval { "status:" + it?.getCode()?.toString() }
-
-        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
     }
 
     fun updateRequestList(requestList: List<Request>?) {
         autoComputer.value(this::requestList, requestList)
     }
+    //endregion
+
+    //region request module
 
     @Inject
     @Named("projectCacheRepository")
@@ -216,17 +182,33 @@ internal class ApiCallDialog : JDialog() {
         return httpClient!!
     }
 
-    private fun onFormatClick() {
-        val response = this.responseTextArea!!.text
-        actionContext!!.runAsync {
-            try {
-                val prettyJson = GsonUtils.prettyJson(GsonUtils.fromJson(response, Any::class))
-                actionContext!!.runInSwingUI {
-                    this.responseTextArea!!.text = prettyJson
-                }
-            } catch (e: Exception) {
-            }
-        }
+    private fun initRequestModule() {
+
+        autoComputer.bindVisible(this.requestPanel!!)
+                .with(this::currRequest)
+                .eval { it != null && it.method?.toUpperCase() != "GET" }
+
+        autoComputer.bind(this.requestTextArea!!)
+                .with(this::currRequest)
+                .eval { formatRequestBody(it) }
+
+        autoComputer.bind(this.methodLabel!!)
+                .from(this, "this.currRequest.method")
+
+        autoComputer.bind(this.paramsTextField!!)
+                .with(this::currRequest)
+                .eval { formatQueryParams(it) }
+
+        autoComputer.bind(this.requestHeadersTextArea!!)
+                .with(this::currRequest)
+                .eval { formatRequestHeaders(it) }
+
+        autoComputer.bind(this.pathTextField!!)
+                .from(this, "this.currRequest.path")
+
+        autoComputer.bindVisible(this.paramPanel!!)
+                .with(this::currRequest)
+                .eval { !it?.querys.isNullOrEmpty() }
     }
 
     private fun onCallClick() {
@@ -291,58 +273,8 @@ internal class ApiCallDialog : JDialog() {
         }
     }
 
-    private fun onSaveClick() {
-        if (this.currResponse == null) {
-            Messages.showMessageDialog(this, "No Response",
-                    "Error", Messages.getErrorIcon())
-            return
-        }
-
-        val response = this.currResponse
-        val url = this.currUrl
-//        var request = this.currRequest
-        fileSaveHelper!!.save({
-            response!!.asBytes()
-        }, {
-            var fileName = response!!.getHeaderFileName()
-            if (fileName == null && url != null) {
-                val dotIndex = url.lastIndexOf(".")
-                if (dotIndex != -1) {
-                    val name = url.substring(0, dotIndex).substringAfterLast("\\//?&")
-                    val suffix = url.substring(dotIndex).substringBefore("\\//?&")
-                    fileName = "$name.$suffix"
-                } else {
-                    fileName = url.substringAfterLast("/").substringBefore("?")
-                }
-            }
-            return@save fileName
-        }, {
-            logger!!.info("save response success")
-        }, {
-            logger!!.info("save response failed")
-        }, {
-            logger!!.info("cancel save response")
-        })
-    }
-
     private fun parseForm(formText: String): List<NameValuePair> {
         return parseEqualLine(formText) { name, value -> BasicNameValuePair(name, value) }
-    }
-
-    private fun parseHeader(headerText: String): List<Header> {
-        return parseEqualLine(headerText) { name, value -> BasicHeader(name, value) }
-    }
-
-    private fun <T> parseEqualLine(formText: String, handle: ((String, String) -> T)): List<T> {
-        val nameValuePairs: ArrayList<T> = ArrayList()
-        for (line in formText.lines()) {
-            val name = line.substringBefore("=", "").trim()
-            if (name.isBlank()) continue
-
-            val value = line.substringAfter("=", "").trim()
-            nameValuePairs.add(handle(name, value))
-        }
-        return nameValuePairs
     }
 
     private fun formatQueryParams(request: Request?): String? {
@@ -394,6 +326,32 @@ internal class ApiCallDialog : JDialog() {
         }
         return sb.toString()
     }
+    //endregion
+
+    //region response module
+    private fun initResponseModule() {
+
+        autoComputer.bind(this::currResponse)
+                .with(this::currRequest)
+                .eval { null }
+
+        autoComputer.bind(this.responseTextArea!!)
+                .with(this::currResponse)
+                .eval { it?.asString() ?: "" }
+
+        autoComputer.bindVisible(this.responseActionPanel!!)
+                .with(this::currResponse)
+                .eval { it != null }
+
+        autoComputer.bind(this.responseHeadersTextArea!!)
+                .with(this::currResponse)
+                .eval { formatResponseHeaders(it) }
+
+        autoComputer.bind(this.statusLabel!!)
+                .with(this::currResponse)
+                .eval { "status:" + it?.getCode()?.toString() }
+
+    }
 
     private fun formatResponseHeaders(response: HttpResponse?): String? {
         if (response?.getHeader() == null) return ""
@@ -407,17 +365,71 @@ internal class ApiCallDialog : JDialog() {
         return sb.toString()
     }
 
-    companion object {
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val frame = JFrame("ApiCallDialog")
-            frame.contentPane = ApiCallDialog().contentPane
-            frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-            frame.pack()
-            frame.isVisible = true
+    private fun onFormatClick() {
+        val response = this.responseTextArea!!.text
+        actionContext!!.runAsync {
+            try {
+                val prettyJson = GsonUtils.prettyJson(GsonUtils.fromJson(response, Any::class))
+                actionContext!!.runInSwingUI {
+                    this.responseTextArea!!.text = prettyJson
+                }
+            } catch (e: Exception) {
+            }
         }
     }
+
+    private fun onSaveClick() {
+        if (this.currResponse == null) {
+            Messages.showMessageDialog(this, "No Response",
+                    "Error", Messages.getErrorIcon())
+            return
+        }
+
+        val response = this.currResponse
+        val url = this.currUrl
+//        var request = this.currRequest
+        fileSaveHelper!!.save({
+            response!!.asBytes()
+        }, {
+            var fileName = response!!.getHeaderFileName()
+            if (fileName == null && url != null) {
+                val dotIndex = url.lastIndexOf(".")
+                if (dotIndex != -1) {
+                    val name = url.substring(0, dotIndex).substringAfterLast("\\//?&")
+                    val suffix = url.substring(dotIndex).substringBefore("\\//?&")
+                    fileName = "$name.$suffix"
+                } else {
+                    fileName = url.substringAfterLast("/").substringBefore("?")
+                }
+            }
+            return@save fileName
+        }, {
+            logger!!.info("save response success")
+        }, {
+            logger!!.info("save response failed")
+        }, {
+            logger!!.info("cancel save response")
+        })
+    }
+    //endregion
+
+    //region common func
+    private fun parseHeader(headerText: String): List<Header> {
+        return parseEqualLine(headerText) { name, value -> BasicHeader(name, value) }
+    }
+
+    private fun <T> parseEqualLine(formText: String, handle: ((String, String) -> T)): List<T> {
+        val nameValuePairs: ArrayList<T> = ArrayList()
+        for (line in formText.lines()) {
+            val name = line.substringBefore("=", "").trim()
+            if (name.isBlank()) continue
+
+            val value = line.substringAfter("=", "").trim()
+            nameValuePairs.add(handle(name, value))
+        }
+        return nameValuePairs
+    }
+    //endregion
 
     private fun onCancel() {
         if (httpContextCacheBinder != null && httpClientContext != null) {
@@ -440,8 +452,6 @@ internal class ApiCallDialog : JDialog() {
     }
 
     class HttpContextCache {
-
         var cookies: List<String>? = null
-
     }
 }
