@@ -44,7 +44,7 @@ import javax.swing.*
 internal class ApiCallDialog : JDialog() {
     private var contentPane: JPanel? = null
     private var apis: JList<*>? = null
-    private var hostTextField: JTextField? = null
+
     private var callButton: JButton? = null
     private var requestTextArea: JTextArea? = null
     private var responseTextArea: JTextArea? = null
@@ -69,6 +69,8 @@ internal class ApiCallDialog : JDialog() {
     private var currResponse: HttpResponse? = null
 
     private var currUrl: String? = null
+
+    private var hostComboBox: JComboBox<String>? = null
 
     @Inject
     private val logger: Logger? = null
@@ -114,7 +116,7 @@ internal class ApiCallDialog : JDialog() {
         initRequestModule()
         initResponseModule()
 
-        actionContext!!.runInSwingUI { hostTextField!!.text = "http://localhost:8080" }
+
     }
 
     //region api module
@@ -158,9 +160,20 @@ internal class ApiCallDialog : JDialog() {
     @Volatile
     private var httpContextCacheBinder: FileBeanBinder<HttpContextCache>? = null
 
+    @Volatile
+    private var httpContextCache: HttpContextCache? = null
+
     private var httpClientContext: HttpClientContext? = null
 
     private var ultimateResponseHandler: UltimateResponseHandler? = null
+
+    @Inject(optional = true)
+    @Named("host.history.max")
+    private var maxHostHistory: Int = 8
+
+    @Inject(optional = true)
+    @Named("host.default")
+    private var defaultHost: String = "http://localhost:8080"
 
     @Synchronized
     private fun getHttpClient(): HttpClient {
@@ -171,8 +184,7 @@ internal class ApiCallDialog : JDialog() {
             httpClientContext!!.cookieStore = BasicCookieStore()
 
             try {
-                httpContextCacheBinder = FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".http_content_cache"), HttpContextCache::class)
-                httpContextCacheBinder!!.read().cookies?.forEach {
+                getHttpContextCache().cookies?.forEach {
                     httpClientContext!!.cookieStore.addCookie(GsonExUtils.fromJson<Cookie>(it))
                 }
             } catch (e: Exception) {
@@ -209,6 +221,8 @@ internal class ApiCallDialog : JDialog() {
         autoComputer.bindVisible(this.paramPanel!!)
                 .with(this::currRequest)
                 .eval { !it?.querys.isNullOrEmpty() }
+
+        refreshHosts()
     }
 
     private fun onCallClick() {
@@ -217,13 +231,14 @@ internal class ApiCallDialog : JDialog() {
             return
         }
         val request = currRequest!!
-        val host = this.hostTextField!!.text
+        val host = this.hostComboBox!!.editor.item as String
         val path = this.pathTextField!!.text
         val query = this.paramsTextField!!.text
 
         val requestHeader = this.requestHeadersTextArea!!.text
         val requestBodyOrForm = this.requestTextArea!!.text
         actionContext!!.runAsync {
+            onNewHost(host)
             var url: String? = null
             try {
                 url = RequestUtils.UrlBuild().host(host)
@@ -326,6 +341,38 @@ internal class ApiCallDialog : JDialog() {
         }
         return sb.toString()
     }
+
+    private fun onNewHost(host: String) {
+        val httpContextCache = getHttpContextCache()
+        val hosts = httpContextCache.hosts?.toMutableList() ?: ArrayList()
+
+        if (hosts.contains(host)) {
+            if (hosts.indexOf(host) != 0) {
+                //move to first
+                hosts.remove(host)
+                hosts.add(0, host)//always add to first
+            }
+        } else {
+            while (hosts.size >= maxHostHistory) {
+                hosts.removeAt(hosts.size - 1)//remove the last host
+            }
+            hosts.add(0, host)//always add to first
+        }
+
+        httpContextCache.hosts = hosts
+        refreshHosts()
+    }
+
+    private fun refreshHosts() {
+        val httpContextCache = getHttpContextCache()
+        val hosts = httpContextCache.hosts?.toMutableList() ?: ArrayList()
+        if (hosts.isEmpty()) {
+            hosts.add(defaultHost)
+        }
+        actionContext!!.runInSwingUI {
+            this.hostComboBox!!.model = DefaultComboBoxModel(hosts.toTypedArray())
+        }
+    }
     //endregion
 
     //region response module
@@ -414,6 +461,21 @@ internal class ApiCallDialog : JDialog() {
     //endregion
 
     //region common func
+    private fun getHttpContextCacheBinder(): FileBeanBinder<HttpContextCache>? {
+        if (httpContextCacheBinder == null) {
+            httpContextCacheBinder = FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".http_content_cache"), HttpContextCache::class)
+        }
+        return httpContextCacheBinder!!
+    }
+
+    private fun getHttpContextCache(): HttpContextCache {
+        if (httpContextCache == null) {
+            httpContextCacheBinder = getHttpContextCacheBinder()
+            httpContextCache = httpContextCacheBinder!!.read()
+        }
+        return httpContextCache!!
+    }
+
     private fun parseHeader(headerText: String): List<Header> {
         return parseEqualLine(headerText) { name, value -> BasicHeader(name, value) }
     }
@@ -433,7 +495,7 @@ internal class ApiCallDialog : JDialog() {
 
     private fun onCancel() {
         if (httpContextCacheBinder != null && httpClientContext != null) {
-            val httpContextCache = HttpContextCache()
+            val httpContextCache = getHttpContextCache()
             val cookies: ArrayList<String> = ArrayList()
             httpContextCache.cookies = cookies
             try {
@@ -453,5 +515,6 @@ internal class ApiCallDialog : JDialog() {
 
     class HttpContextCache {
         var cookies: List<String>? = null
+        var hosts: List<String>? = null
     }
 }

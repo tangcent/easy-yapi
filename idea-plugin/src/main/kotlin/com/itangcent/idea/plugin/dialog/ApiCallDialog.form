@@ -73,15 +73,6 @@
                       <text value="GET"/>
                     </properties>
                   </component>
-                  <component id="35e6c" class="javax.swing.JTextField" binding="hostTextField">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0" indent="0" use-parent-layout="false">
-                        <preferred-size width="200" height="-1"/>
-                        <maximum-size width="300" height="-1"/>
-                      </grid>
-                    </constraints>
-                    <properties/>
-                  </component>
                   <component id="937ac" class="javax.swing.JTextField" binding="pathTextField">
                     <constraints>
                       <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
@@ -100,6 +91,19 @@
                     </constraints>
                     <properties>
                       <text value="Call"/>
+                    </properties>
+                  </component>
+                  <component id="7b440" class="javax.swing.JComboBox" binding="hostComboBox">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                        <minimum-size width="100" height="-1"/>
+                        <preferred-size width="200" height="-1"/>
+                        <maximum-size width="300" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties>
+                      <editable value="true"/>
+                      <enabled value="true"/>
                     </properties>
                   </component>
                 </children>
