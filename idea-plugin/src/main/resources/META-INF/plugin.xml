@@ -24,7 +24,7 @@
             <action id="com.itangcent.idea.easy_api.actions.PostmanExportAction"
                     class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportPostman"
                     description="Export Postman"/>
-            <action id="com.itangcent.idea.plugin.actions.FieldsJsonAction"
+            <action id="com.itangcent.idea.easy_api.actions.FieldsJsonAction"
                     class="com.itangcent.idea.plugin.actions.FieldsToJsonAction" text="ToJson" description="ToJson"/>
         </group>
 

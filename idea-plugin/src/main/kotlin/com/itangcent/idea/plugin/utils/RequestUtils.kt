@@ -1,8 +1,10 @@
 package com.itangcent.idea.plugin.utils
 
+import com.intellij.util.containers.stream
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
 import java.net.URL
+import kotlin.streams.toList
 
 object RequestUtils {
 
@@ -10,12 +12,28 @@ object RequestUtils {
         if (body is String) {
             return body
         }
+        return GsonUtils.prettyJson(toRawBody(body))
+    }
+
+    fun toRawBody(body: Any?): Any? {
+        if (body == null) return null
         if (body is Map<*, *>) {
-            if (body.containsKey(Attrs.COMMENT_ATTR)) {
-                return GsonUtils.prettyJson(body.filterKeys { it != Attrs.COMMENT_ATTR })
+            val mutableBody = body.toMutableMap()
+            if (mutableBody.containsKey(Attrs.COMMENT_ATTR)) {
+                mutableBody.remove(Attrs.COMMENT_ATTR)
             }
+            for (mutableEntry in mutableBody) {
+                mutableEntry.value?.let { mutableEntry.setValue(toRawBody(it)) }
+            }
+            return mutableBody
         }
-        return GsonUtils.prettyJson(body)
+        if (body is List<*>) {
+            return body.stream().map { toRawBody(it) }.toList()
+        }
+        if (body is Array<*>) {
+            return body.stream().map { toRawBody(it) }.toArray()
+        }
+        return body
     }
 
     fun contractPath(pathPre: String?, pathAfter: String?): String? {
