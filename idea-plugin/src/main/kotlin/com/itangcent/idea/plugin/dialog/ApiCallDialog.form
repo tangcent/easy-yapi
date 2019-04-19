@@ -198,6 +198,7 @@
                                       <component id="fb9f4" class="javax.swing.JTextArea" binding="responseTextArea">
                                         <constraints/>
                                         <properties>
+                                          <editable value="false"/>
                                           <text value=""/>
                                         </properties>
                                       </component>
@@ -265,7 +266,9 @@
                                 <preferred-size width="150" height="50"/>
                               </grid>
                             </constraints>
-                            <properties/>
+                            <properties>
+                              <editable value="false"/>
+                            </properties>
                           </component>
                         </children>
                       </grid>
