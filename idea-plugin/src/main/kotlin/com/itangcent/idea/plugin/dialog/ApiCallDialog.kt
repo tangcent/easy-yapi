@@ -7,7 +7,6 @@ import com.itangcent.common.http.HttpResponse
 import com.itangcent.common.http.UltimateResponseHandler
 import com.itangcent.common.http.getHeaderFileName
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.utils.FileSaveHelper
 import com.itangcent.idea.plugin.utils.GsonExUtils
 import com.itangcent.idea.plugin.utils.RequestUtils
@@ -52,7 +51,7 @@ internal class ApiCallDialog : JDialog() {
     private var methodLabel: JLabel? = null
     private var requestPanel: JPanel? = null
     private var paramPanel: JPanel? = null
-    private var formatButton: JButton? = null
+    private var formatOrRawButton: JButton? = null
     private var saveButton: JButton? = null
     private var responseActionPanel: JPanel? = null
     private var responseHeadersTextArea: JTextArea? = null
@@ -66,7 +65,7 @@ internal class ApiCallDialog : JDialog() {
 
     private var currRequest: Request? = null
 
-    private var currResponse: HttpResponse? = null
+    private var currResponse: ResponseStatus? = null
 
     private var currUrl: String? = null
 
@@ -101,7 +100,7 @@ internal class ApiCallDialog : JDialog() {
 
         callButton!!.addActionListener { onCallClick() }
 
-        formatButton!!.addActionListener { onFormatClick() }
+        formatOrRawButton!!.addActionListener { onFormatClick() }
 
         saveButton!!.addActionListener { onSaveClick() }
 
@@ -248,17 +247,15 @@ internal class ApiCallDialog : JDialog() {
                 val requestBuilder = RequestBuilder.create(request.method)
                         .setUri(url)
 
-                request.headers?.forEach { requestBuilder.addHeader(it.name, it.value) }
+                if (!requestHeader.isNullOrBlank()) {
+                    parseHeader(requestHeader).forEach { requestBuilder.addHeader(it) }
+                }
 
                 if (request.method?.toUpperCase() != "GET") {
 
                     var requestEntity: HttpEntity? = null
                     if (!request.formParams.isNullOrEmpty()) {
                         requestEntity = UrlEncodedFormEntity(parseForm(requestBodyOrForm))
-                    }
-                    if (!requestHeader.isNullOrBlank()) {
-                        parseHeader(requestHeader)
-                                .forEach { requestBuilder.addHeader(it) }
                     }
                     if (request.body != null) {
                         requestEntity = StringEntity(requestBodyOrForm,
@@ -273,7 +270,7 @@ internal class ApiCallDialog : JDialog() {
                 val response = httpClient.execute(requestBuilder.build(), ultimateResponseHandler, httpClientContext)
 
                 actionContext!!.runInSwingUI {
-                    autoComputer.value(this::currResponse, response)
+                    autoComputer.value(this::currResponse, ResponseStatus(response))
                     SwingUtils.focus(this)
                 }
 
@@ -384,7 +381,7 @@ internal class ApiCallDialog : JDialog() {
 
         autoComputer.bind(this.responseTextArea!!)
                 .with(this::currResponse)
-                .eval { it?.asString() ?: "" }
+                .eval { it?.getResponseAsString() ?: "" }
 
         autoComputer.bindVisible(this.responseActionPanel!!)
                 .with(this::currResponse)
@@ -392,11 +389,20 @@ internal class ApiCallDialog : JDialog() {
 
         autoComputer.bind(this.responseHeadersTextArea!!)
                 .with(this::currResponse)
-                .eval { formatResponseHeaders(it) }
+                .eval { formatResponseHeaders(it?.response) }
 
         autoComputer.bind(this.statusLabel!!)
                 .with(this::currResponse)
-                .eval { "status:" + it?.getCode()?.toString() }
+                .eval { "status:" + it?.response?.getCode()?.toString() }
+
+        autoComputer.bindText(this.formatOrRawButton!!)
+                .with(this::currResponse)
+                .eval {
+                    when {
+                        it?.isFormat == true -> "raw"
+                        else -> "format"
+                    }
+                }
 
     }
 
@@ -413,16 +419,8 @@ internal class ApiCallDialog : JDialog() {
     }
 
     private fun onFormatClick() {
-        val response = this.responseTextArea!!.text
-        actionContext!!.runAsync {
-            try {
-                val prettyJson = GsonExUtils.prettyJson(response)
-                actionContext!!.runInSwingUI {
-                    this.responseTextArea!!.text = prettyJson
-                }
-            } catch (e: Exception) {
-            }
-        }
+        this.currResponse!!.isFormat = !this.currResponse!!.isFormat
+        this.autoComputer.value(this::currResponse, this.currResponse)//refresh
     }
 
     private fun onSaveClick() {
@@ -432,13 +430,13 @@ internal class ApiCallDialog : JDialog() {
             return
         }
 
-        val response = this.currResponse
+        val response = this.currResponse!!.response
         val url = this.currUrl
 //        var request = this.currRequest
         fileSaveHelper!!.save({
-            response!!.asBytes()
+            response.asBytes()
         }, {
-            var fileName = response!!.getHeaderFileName()
+            var fileName = response.getHeaderFileName()
             if (fileName == null && url != null) {
                 val dotIndex = url.lastIndexOf(".")
                 if (dotIndex != -1) {
@@ -516,5 +514,32 @@ internal class ApiCallDialog : JDialog() {
     class HttpContextCache {
         var cookies: List<String>? = null
         var hosts: List<String>? = null
+    }
+
+    class ResponseStatus {
+
+        constructor(response: HttpResponse) {
+            this.response = response
+        }
+
+        var response: HttpResponse
+
+        //auto format
+        var isFormat: Boolean = true
+
+        var formatResult: String? = null
+
+        fun getResponseAsString(): String? {
+            return when {
+                isFormat -> {
+                    if (formatResult == null) {
+                        formatResult = GsonExUtils.prettyJson(response.asString())
+                    }
+                    formatResult
+                }
+                else -> response.asString()
+            }
+
+        }
     }
 }
