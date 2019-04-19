@@ -416,7 +416,7 @@ internal class ApiCallDialog : JDialog() {
         val response = this.responseTextArea!!.text
         actionContext!!.runAsync {
             try {
-                val prettyJson = GsonUtils.prettyJson(GsonUtils.fromJson(response, Any::class))
+                val prettyJson = GsonExUtils.prettyJson(response)
                 actionContext!!.runInSwingUI {
                     this.responseTextArea!!.text = prettyJson
                 }
