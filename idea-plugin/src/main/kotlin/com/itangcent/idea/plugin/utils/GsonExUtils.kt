@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.utils
 
+import com.google.gson.JsonParser
 import com.itangcent.common.utils.GsonUtils
 
 object GsonExUtils {
@@ -26,5 +27,12 @@ object GsonExUtils {
         var c: String? = null
         //json
         var j: String? = null
+    }
+
+
+    fun prettyJson(json: String): String {
+        val jsonParser = JsonParser()
+        val jsonObject = jsonParser.parse(json).asJsonObject
+        return GsonUtils.prettyJson(jsonObject)
     }
 }
