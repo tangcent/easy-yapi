@@ -17,5 +17,6 @@ interface HttpResponse {
     fun asString(charset: Charset): String
 
     fun asStream(): InputStream
+
     fun getContentType(): ContentType?
 }
