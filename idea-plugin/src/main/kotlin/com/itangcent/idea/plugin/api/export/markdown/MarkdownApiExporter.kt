@@ -214,7 +214,7 @@ class MarkdownApiExporter {
         if (!request.querys.isNullOrEmpty()) {
             handle("\n**Query：**\n\n")
             handle("| name  |  value  |  required | desc  |\n")
-            handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
+            handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.querys!!.forEach {
                 handle("| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
                         " ${it.desc ?: ""} |\n")
