@@ -105,6 +105,21 @@ internal class ApiCallDialog : JDialog() {
         saveButton!!.addActionListener { onSaveClick() }
 
         setLocationRelativeTo(owner)
+
+        callButton!!.isFocusPainted = false
+        formatOrRawButton!!.isFocusPainted = false
+        saveButton!!.isFocusPainted = false
+
+        underLine(this.hostComboBox!!)
+        underLine(this.pathTextField!!)
+        underLine(this.paramsTextField!!)
+
+    }
+
+    private fun underLine(component: JComponent) {
+//        component.isOpaque = true
+        component.border = BorderFactory.createMatteBorder(0, 0, 1, 0, component.foreground)
+        component.background = component.parent.background
     }
 
     @PostConstruct
@@ -527,19 +542,34 @@ internal class ApiCallDialog : JDialog() {
         //auto format
         var isFormat: Boolean = true
 
-        var formatResult: String? = null
+        private var formatResult: String? = null
+
+        private var rawResult: String? = null
 
         fun getResponseAsString(): String? {
             return when {
                 isFormat -> {
+                    try {
+                        if (formatResult == null) {
+                            formatResult = getRawResult()?.let { GsonExUtils.prettyJson(it) }
+                        }
+                    } catch (e: Exception) {
+                    }
                     if (formatResult == null) {
-                        formatResult = GsonExUtils.prettyJson(response.asString())
+                        formatResult = getRawResult()
                     }
                     formatResult
                 }
-                else -> response.asString()
+                else -> getRawResult()
             }
 
+        }
+
+        private fun getRawResult(): String? {
+            if (rawResult == null) {
+                rawResult = response.asString()
+            }
+            return rawResult
         }
     }
 }
