@@ -118,7 +118,7 @@ open class SpringClassExporter : ClassExporter {
             try {
                 val response = Response()
                 parseHandle.setResponseCode(response, 200)
-                val typedResponse = psiClassHelper!!.getTypeObject(returnType, method)
+                val typedResponse = psiClassHelper!!.getTypeObject(returnType, method, JsonOption.READ_COMMENT)
 
                 parseHandle.setResponseBody(response, "raw", typedResponse)
 
@@ -177,6 +177,9 @@ open class SpringClassExporter : ClassExporter {
                         }
                         method.startsWith("RequestMethod.") -> {
                             method.removePrefix("RequestMethod.")
+                        }
+                        method.contains("RequestMethod.") -> {
+                            method.substringAfterLast("RequestMethod.")
                         }
                         else -> method
                     }
