@@ -50,9 +50,19 @@ restart **IDE**.
     choose the action "Call"
 ```
 
+* ExportMarkdown
+```textCode
+    There are two ways to export api.
+    1. Open existed Spring Controller File
+    You can use by this : "Right click in the file -> generate... " or use its shortcuts "Alt + Insert" , then
+    choose the action "ExportMarkdown"
+    2. Select files or directories from project navigation
+    You can use by this : "Click [Code -> ExportMarkdown] in top"
+```
+
 ## Feature
 - [X] Support Spring
 - [X] Export api to Postman
 - [ ] Export api to Excel
-- [ ] Export api to Markdown
+- [X] Export api to Markdown
 - [X] Call api from code
