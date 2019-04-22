@@ -27,16 +27,16 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import java.util.regex.Pattern
 
-open class SpringClassExporter : ClassExporter {
+class SpringClassExporter : ClassExporter {
 
     @Inject
-    protected val logger: Logger? = null
+    private val logger: Logger? = null
 
     @Inject
-    protected val psiClassHelper: PsiClassHelper? = null
+    private val psiClassHelper: PsiClassHelper? = null
 
     @Inject
-    protected val commonRules: CommonRules? = null
+    private val commonRules: CommonRules? = null
 
     @Inject
     private val docParseHelper: DocParseHelper? = null
@@ -50,6 +50,7 @@ open class SpringClassExporter : ClassExporter {
                 return
             }
             else -> {
+                logger!!.info("search api from:${cls.qualifiedName}")
                 val ctrlRequestMappingAnn = findRequestMapping(cls)
                 val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
 
@@ -62,13 +63,13 @@ open class SpringClassExporter : ClassExporter {
         }
     }
 
-    protected fun isCtrl(psiClass: PsiClass): Boolean {
+    private fun isCtrl(psiClass: PsiClass): Boolean {
         return psiClass.annotations.any {
             SpringAttrs.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
         }
     }
 
-    protected fun shouldIgnore(psiClass: PsiClass): Boolean {
+    private fun shouldIgnore(psiClass: PsiClass): Boolean {
         val ignoreRules = commonRules!!.readIgnoreRules()
         return ignoreRules.any { it(psiClass, psiClass, psiClass) }
     }
@@ -135,7 +136,7 @@ open class SpringClassExporter : ClassExporter {
     /**
      * queryParam中的数组元素需要拆开
      */
-    protected fun tinyQueryParam(paramVal: String?): String? {
+    private fun tinyQueryParam(paramVal: String?): String? {
         if (paramVal == null) return null
         var pv = paramVal.trim()
         while (true) {
@@ -148,13 +149,13 @@ open class SpringClassExporter : ClassExporter {
         return pv
     }
 
-    protected fun contractPath(pathPre: String?, pathAfter: String?): String? {
+    private fun contractPath(pathPre: String?, pathAfter: String?): String? {
         if (pathPre == null) return pathAfter
         if (pathAfter == null) return pathPre
         return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")
     }
 
-    protected fun findHttpPath(requestMappingAnn: PsiAnnotation?): String? {
+    private fun findHttpPath(requestMappingAnn: PsiAnnotation?): String? {
         val path = PsiAnnotationUtils.findAttr(requestMappingAnn, "path", "value") ?: return null
 
         return when {
@@ -163,7 +164,7 @@ open class SpringClassExporter : ClassExporter {
         }
     }
 
-    protected fun findHttpMethod(requestMappingAnn: PsiAnnotation?): String {
+    private fun findHttpMethod(requestMappingAnn: PsiAnnotation?): String {
         if (requestMappingAnn != null) {
             when {
                 requestMappingAnn.qualifiedName == SpringClassName.REQUESTMAPPING_ANNOTATION -> {
@@ -194,7 +195,7 @@ open class SpringClassExporter : ClassExporter {
         return HttpMethod.NO_METHOD
     }
 
-    protected fun findRequestMapping(psiClass: PsiClass): PsiAnnotation? {
+    private fun findRequestMapping(psiClass: PsiClass): PsiAnnotation? {
         val requestMappingAnn = findRequestMappingInAnn(psiClass)
         if (requestMappingAnn != null) return requestMappingAnn
         var superCls = psiClass.superClass
@@ -206,7 +207,7 @@ open class SpringClassExporter : ClassExporter {
         return null
     }
 
-    protected fun findRequestMapping(method: PsiMethod): PsiAnnotation? {
+    private fun findRequestMapping(method: PsiMethod): PsiAnnotation? {
         return findRequestMappingInAnn(method)
     }
 
@@ -216,27 +217,27 @@ open class SpringClassExporter : ClassExporter {
                 .firstOrNull { it != null }
     }
 
-    protected fun findRequestBody(parameter: PsiParameter): PsiAnnotation? {
+    private fun findRequestBody(parameter: PsiParameter): PsiAnnotation? {
         return PsiAnnotationUtils.findAnn(parameter, SpringClassName.REQUESTBOODY_ANNOTATION)
     }
 
-    protected fun findModelAttr(parameter: PsiParameter): PsiAnnotation? {
+    private fun findModelAttr(parameter: PsiParameter): PsiAnnotation? {
         return PsiAnnotationUtils.findAnn(parameter, SpringClassName.MODELATTRIBUTE_ANNOTATION)
     }
 
-    protected fun findPathVariable(parameter: PsiParameter): PsiAnnotation? {
+    private fun findPathVariable(parameter: PsiParameter): PsiAnnotation? {
         return PsiAnnotationUtils.findAnn(parameter, SpringClassName.PATHVARIABLE_ANNOTATION)
     }
 
-    protected fun findRequestParam(parameter: PsiParameter): PsiAnnotation? {
+    private fun findRequestParam(parameter: PsiParameter): PsiAnnotation? {
         return PsiAnnotationUtils.findAnn(parameter, SpringClassName.REQUESTPARAM_ANNOTATION)
     }
 
-    protected fun findParamName(requestParamAnn: PsiAnnotation?): String? {
+    private fun findParamName(requestParamAnn: PsiAnnotation?): String? {
         return PsiAnnotationUtils.findAttr(requestParamAnn, "name", "value")
     }
 
-    protected fun findParamRequired(requestParamAnn: PsiAnnotation?): Boolean? {
+    private fun findParamRequired(requestParamAnn: PsiAnnotation?): Boolean? {
         val required = PsiAnnotationUtils.findAttr(requestParamAnn, "name", "required") ?: return null
         return when {
             required.contains("false") -> false
@@ -244,7 +245,7 @@ open class SpringClassExporter : ClassExporter {
         }
     }
 
-    protected fun findAttrOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
+    private fun findAttrOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
         val docComment = method.docComment
 
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
@@ -270,7 +271,7 @@ open class SpringClassExporter : ClassExporter {
     /**
      * 获得枚举值备注信息
      */
-    protected fun getOptionDesc(options: List<Map<String, Any?>>): String? {
+    private fun getOptionDesc(options: List<Map<String, Any?>>): String? {
         return options.stream()
                 .map { it["value"].toString() + " :" + it["desc"] }
                 .filter { it != null }
@@ -278,7 +279,7 @@ open class SpringClassExporter : ClassExporter {
                 .orElse(null)
     }
 
-    protected fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
+    private fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
         val docComment = psiMethod.docComment
         var methodParamComment: KV<String, Any>? = null
         if (docComment != null) {
@@ -326,7 +327,7 @@ open class SpringClassExporter : ClassExporter {
         return methodParamComment
     }
 
-    protected fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
+    private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         val ignoreRules = commonRules!!.readIgnoreRules()
         cls.allMethods
                 .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
@@ -335,7 +336,7 @@ open class SpringClassExporter : ClassExporter {
                 .forEach(handle)
     }
 
-    protected fun shouldIgnore(psiMethod: PsiMethod): Boolean {
+    private fun shouldIgnore(psiMethod: PsiMethod): Boolean {
         val ignoreRules = commonRules!!.readIgnoreRules()
         return when {
             ignoreRules.any { it(psiMethod, psiMethod, psiMethod) } -> {
@@ -346,8 +347,8 @@ open class SpringClassExporter : ClassExporter {
         }
     }
 
-    protected fun processMethodParameters(method: PsiMethod, request: Request,
-                                          parseHandle: ParseHandle) {
+    private fun processMethodParameters(method: PsiMethod, request: Request,
+                                        parseHandle: ParseHandle) {
 
         val params = method.parameterList.parameters
         var httpMethod = request.method ?: HttpMethod.NO_METHOD
