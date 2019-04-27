@@ -53,7 +53,7 @@ class MarkdownApiExporter {
         val requests: MutableList<Request> = Collections.synchronizedList(ArrayList<Request>())
 
         SelectedHelper.Builder()
-                .dirHandle { dir, callBack ->
+                .dirFilter { dir, callBack ->
                     actionContext!!.runInSwingUI {
                         try {
                             val project = actionContext.instance(Project::class)
@@ -111,6 +111,7 @@ class MarkdownApiExporter {
 
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun groupRequests(requests: MutableList<Request>): Any {
 
         //group by class into: {class:requests}
