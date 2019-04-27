@@ -2,6 +2,8 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
@@ -15,10 +17,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBody
 import com.itangcent.common.utils.appendlnIfNotEmpty
-import com.itangcent.idea.plugin.utils.FileSaveHelper
-import com.itangcent.idea.plugin.utils.GsonExUtils
-import com.itangcent.idea.plugin.utils.RequestUtils
-import com.itangcent.idea.plugin.utils.SwingUtils
+import com.itangcent.idea.plugin.utils.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
@@ -44,9 +43,7 @@ import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.apache.http.message.BasicNameValuePair
-import java.awt.event.KeyEvent
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
+import java.awt.event.*
 import java.io.Closeable
 import java.io.File
 import javax.swing.*
@@ -104,13 +101,16 @@ internal class ApiCallDialog : JDialog() {
     var actionContext: ActionContext? = null
 
     @Inject
+    var project: Project? = null
+
+    @Inject
     var fileSaveHelper: FileSaveHelper? = null
 
     init {
         setContentPane(contentPane)
         getRootPane().defaultButton = callButton
 
-        contentTypeComboBox!!.model = DefaultComboBoxModel(ContentTypes)
+        contentTypeComboBox!!.model = DefaultComboBoxModel(CONTENT_TYPES)
 
         // call onCancel() when cross is clicked
         defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
@@ -292,7 +292,7 @@ internal class ApiCallDialog : JDialog() {
         }
 //
         autoComputer.listen(this.contentTypeComboBox!!)
-                .filter { contentTypeChangeThrottle.acquire(200) }
+                .filter { contentTypeChangeThrottle.acquire(500) }
                 .action { changeFormForContentType(it) }
 
         refreshHosts()
@@ -332,10 +332,6 @@ internal class ApiCallDialog : JDialog() {
         return newHeader.toString()
     }
 
-    private fun parseForm(formText: String): List<NameValuePair> {
-        return parseEqualLine(formText) { name, value -> BasicNameValuePair(name, value) }
-    }
-
     private fun formatQueryParams(request: Request?): String? {
         if (request == null) return ""
         if (request.querys.isNullOrEmpty()) {
@@ -363,7 +359,7 @@ internal class ApiCallDialog : JDialog() {
         return "Disabled"
     }
 
-    //region form
+    //region form table
 
     private var formTableBinder: FormTableBinder = disabledFormTableBinder
 
@@ -371,23 +367,21 @@ internal class ApiCallDialog : JDialog() {
      * find a FormTableBinder for the contentType
      */
     private fun findFormTableBinder(contentType: String?): FormTableBinder {
-        if (contentType.isNullOrBlank()) {
-            return disabledFormTableBinder
-        }
-        if (contentType.startsWith("application/x-www-form-urlencoded")) {
-            return noTypedFormTableBinder
-
-        } else if (contentType.startsWith("multipart/form-data")) {
-            return typedFormTableBinder
+        val formTableBinder: FormTableBinder = when {
+            contentType.isNullOrBlank() -> disabledFormTableBinder
+            contentType.startsWith("application/x-www-form-urlencoded") -> noTypedFormTableBinder
+            contentType.startsWith("multipart/form-data") -> typedFormTableBinder
+            else -> disabledFormTableBinder
         }
 
-        return disabledFormTableBinder
+        formTableBinder.init(this)
+        return formTableBinder
     }
 
     private fun formatForm(request: Request?) {
         val findFormTableBinder = findFormTableBinder(request?.getContentType())
         findFormTableBinder.refreshTable(this.formTable!!, request?.formParams)
-        this.formTableBinder = findFormTableBinder
+        changeFormTableBinder(findFormTableBinder)
     }
 
     private fun changeFormForContentType(contentType: String?) {
@@ -395,16 +389,25 @@ internal class ApiCallDialog : JDialog() {
         try {
             val readForm = formTableBinder.readForm(this.formTable!!)
             newFormTableBinder.refreshTable(this.formTable!!, readForm)
-            this.formTableBinder = newFormTableBinder
+            changeFormTableBinder(newFormTableBinder)
         } catch (e: Throwable) {
             logger!!.error(ExceptionUtils.getStackTrace(e))
         }
+    }
+
+    private fun changeFormTableBinder(formTableBinder: FormTableBinder) {
+        this.formTableBinder.cleanTable(this.formTable!!)
+        this.formTableBinder = formTableBinder
     }
 
     interface FormTableBinder {
         fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?)
 
         fun readForm(formTable: JBTable): ArrayList<FormParam>?
+
+        fun cleanTable(formTable: JBTable) {}
+
+        fun init(apiCallDialog: ApiCallDialog) {}
     }
 
     class DisabledFormTableBinder : FormTableBinder {
@@ -474,6 +477,11 @@ internal class ApiCallDialog : JDialog() {
     }
 
     class TypedFormTableBinder : AbstractFormTableBinder() {
+        var apiCallDialog: ApiCallDialog? = null
+
+        override fun init(apiCallDialog: ApiCallDialog) {
+            this.apiCallDialog = apiCallDialog
+        }
 
         private fun typeTableColumn(): TableColumn {
             val tableColumn = TableColumn()
@@ -513,6 +521,8 @@ internal class ApiCallDialog : JDialog() {
                     return arrayListOf("text", "file")
                 }
             }
+
+            formTable.addMouseListener(getFileSelectListener(formTable))
         }
 
         override fun readParamFromRow(tableModel: TableModel, row: Int): FormParam? {
@@ -521,6 +531,53 @@ internal class ApiCallDialog : JDialog() {
             param.type = tableModel.getValueAt(row, 1).toString()
             param.value = tableModel.getValueAt(row, 2).toString()
             return param
+        }
+
+        override fun cleanTable(formTable: JBTable) {
+            if (fileSelectListener != null) {
+                formTable.removeMouseListener(fileSelectListener)
+                fileSelectListener = null
+            }
+        }
+
+        private var fileSelectListener: MouseListener? = null
+
+        private fun getFileSelectListener(formTable: JBTable): MouseListener {
+            if (fileSelectListener == null) {
+                fileSelectListener = object : MouseListener {
+                    override fun mouseReleased(e: MouseEvent?) {
+                    }
+
+                    override fun mouseEntered(e: MouseEvent?) {
+                    }
+
+                    override fun mouseClicked(e: MouseEvent?) {
+
+                        val column = formTable.selectedColumn
+                        if (column != 2) {//only third column can select file
+                            return
+                        }
+                        val row = formTable.selectedRow
+                        val type = formTable.getValueAt(row, 1).toString()
+                        if (type != "file") {//the type of param should be 'file'
+                            return
+                        }
+
+                        FileSelectHelper(apiCallDialog!!.actionContext!!, FileChooserDescriptorFactory.createSingleFileDescriptor())
+                                .lastSelectedLocation("file.form.param.select.last.location.key")
+                                .selectFile {
+                                    formTable.setValueAt(it?.path, row, column)
+                                }
+                    }
+
+                    override fun mouseExited(e: MouseEvent?) {
+                    }
+
+                    override fun mousePressed(e: MouseEvent?) {
+                    }
+                }
+            }
+            return fileSelectListener!!
         }
     }
 
@@ -602,7 +659,6 @@ internal class ApiCallDialog : JDialog() {
 
                     var requestEntity: HttpEntity? = null
                     if (!request.formParams.isNullOrEmpty()) {
-//                        requestEntity = UrlEncodedFormEntity(parseForm(requestBodyOrForm))
 
                         val formParams = formTableBinder.readForm(this.formTable!!)
                         if (formParams != null) {
@@ -616,14 +672,26 @@ internal class ApiCallDialog : JDialog() {
                                 val entityBuilder = MultipartEntityBuilder.create()
                                 for (param in formParams) {
                                     if (param.type == "file") {
-                                        entityBuilder.addBinaryBody(param.name, File(param.value))
+                                        val filePath = param.value
+                                        if (filePath.isNullOrBlank()) {
+                                            continue
+                                        }
+                                        val file = File(filePath)
+                                        if (!file.exists() || !file.isFile) {
+                                            actionContext!!.runInSwingUI {
+                                                Messages.showErrorDialog(project, "[$filePath] not exist", "File missing")
+                                            }
+                                            return@runAsync
+                                        }
+                                        entityBuilder.addBinaryBody(param.name, file)
                                     } else {
                                         entityBuilder.addTextBody(param.name, param.value)
                                     }
                                 }
                                 val boundary = EntityUtils.generateBoundary()
                                 entityBuilder.setBoundary(boundary)
-                                requestBuilder.setHeader("Content-type", "multipart/form-data; boundary=$boundary");
+                                //set boundary to header
+                                requestBuilder.setHeader("Content-type", "multipart/form-data; boundary=$boundary")
                                 requestEntity = entityBuilder.build()
                             }
                         }
@@ -656,6 +724,7 @@ internal class ApiCallDialog : JDialog() {
             }
         }
     }
+
     //endregion
 
     //region response module
@@ -802,13 +871,7 @@ internal class ApiCallDialog : JDialog() {
         var hosts: List<String>? = null
     }
 
-    class ResponseStatus {
-
-        constructor(response: HttpResponse) {
-            this.response = response
-        }
-
-        var response: HttpResponse
+    class ResponseStatus(var response: HttpResponse) {
 
         //auto format
         var isFormat: Boolean = true
@@ -845,7 +908,7 @@ internal class ApiCallDialog : JDialog() {
     }
 
     companion object {
-        var ContentTypes: Array<String> = arrayOf("",
+        var CONTENT_TYPES: Array<String> = arrayOf("",
                 "application/json",
                 "application/x-www-form-urlencoded",
                 "multipart/form-data",
