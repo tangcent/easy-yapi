@@ -3,10 +3,18 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.openapi.ui.Messages
+import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.table.JBTable
+import com.intellij.util.ui.ComboBoxCellEditor
+import com.itangcent.common.http.EntityUtils
 import com.itangcent.common.http.HttpResponse
 import com.itangcent.common.http.UltimateResponseHandler
 import com.itangcent.common.http.getHeaderFileName
+import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
+import com.itangcent.common.model.getContentType
+import com.itangcent.common.model.hasBody
+import com.itangcent.common.utils.appendlnIfNotEmpty
 import com.itangcent.idea.plugin.utils.FileSaveHelper
 import com.itangcent.idea.plugin.utils.GsonExUtils
 import com.itangcent.idea.plugin.utils.RequestUtils
@@ -14,6 +22,8 @@ import com.itangcent.idea.plugin.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
+import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.rx.consistent
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
@@ -29,6 +39,7 @@ import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.cookie.Cookie
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
+import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
@@ -37,7 +48,11 @@ import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.Closeable
+import java.io.File
 import javax.swing.*
+import javax.swing.table.DefaultTableModel
+import javax.swing.table.TableColumn
+import javax.swing.table.TableModel
 
 
 internal class ApiCallDialog : JDialog() {
@@ -45,12 +60,17 @@ internal class ApiCallDialog : JDialog() {
     private var apis: JList<*>? = null
 
     private var callButton: JButton? = null
-    private var requestTextArea: JTextArea? = null
+    private var requestBodyTextArea: JTextArea? = null
     private var responseTextArea: JTextArea? = null
     private var pathTextField: JTextField? = null
     private var methodLabel: JLabel? = null
-    private var requestPanel: JPanel? = null
     private var paramPanel: JPanel? = null
+
+    private var requestPanel: JBTabbedPane? = null
+    private var requestBodyPanel: JPanel? = null
+    private var requestHeaderPanel: JPanel? = null
+    private var formTable: JBTable? = null
+
     private var formatOrRawButton: JButton? = null
     private var saveButton: JButton? = null
     private var responseActionPanel: JPanel? = null
@@ -58,6 +78,9 @@ internal class ApiCallDialog : JDialog() {
     private var requestHeadersTextArea: JTextArea? = null
     private var statusLabel: JLabel? = null
     private var paramsTextField: JTextField? = null
+
+    private var contentTypePanel: JPanel? = null
+    private var contentTypeComboBox: JComboBox<String>? = null
 
     private val autoComputer: AutoComputer = AutoComputer()
 
@@ -68,6 +91,9 @@ internal class ApiCallDialog : JDialog() {
     private var currResponse: ResponseStatus? = null
 
     private var currUrl: String? = null
+
+    @Volatile
+    private var requestHeader: String? = null
 
     private var hostComboBox: JComboBox<String>? = null
 
@@ -83,6 +109,8 @@ internal class ApiCallDialog : JDialog() {
     init {
         setContentPane(contentPane)
         getRootPane().defaultButton = callButton
+
+        contentTypeComboBox!!.model = DefaultComboBoxModel(ContentTypes)
 
         // call onCancel() when cross is clicked
         defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
@@ -208,13 +236,16 @@ internal class ApiCallDialog : JDialog() {
         return httpClient!!
     }
 
+    private val throttleHelper = ThrottleHelper()
+
     private fun initRequestModule() {
+        val contentTypeChangeThrottle = throttleHelper.build("content_type")
 
-        autoComputer.bindVisible(this.requestPanel!!)
+        autoComputer.bindEnable(this.requestBodyTextArea!!)
                 .with(this::currRequest)
-                .eval { it != null && it.method?.toUpperCase() != "GET" }
+                .eval { it?.hasBody() ?: false }
 
-        autoComputer.bind(this.requestTextArea!!)
+        autoComputer.bind(this.requestBodyTextArea!!)
                 .with(this::currRequest)
                 .eval { formatRequestBody(it) }
 
@@ -226,8 +257,23 @@ internal class ApiCallDialog : JDialog() {
                 .eval { formatQueryParams(it) }
 
         autoComputer.bind(this.requestHeadersTextArea!!)
+                .consistent(this::requestHeader)
+
+        autoComputer.bind(this::requestHeader)
                 .with(this::currRequest)
                 .eval { formatRequestHeaders(it) }
+
+        autoComputer.bind(this::requestHeader)
+                .with(this.contentTypeComboBox!!)
+                .throttle(200)
+                .eval { changeHeaderForContentType(it) }
+
+        autoComputer.bind(this.contentTypeComboBox!!)
+                .with(this::currRequest)
+                .eval {
+                    contentTypeChangeThrottle.refresh()
+                    it?.getContentType() ?: ""
+                }
 
         autoComputer.bind(this.pathTextField!!)
                 .from(this, "this.currRequest.path")
@@ -236,68 +282,54 @@ internal class ApiCallDialog : JDialog() {
                 .with(this::currRequest)
                 .eval { !it?.querys.isNullOrEmpty() }
 
+        autoComputer.bindVisible(this.contentTypePanel!!)
+                .with(this::currRequest)
+                .eval { it != null && it.method?.toUpperCase() != "GET" }
+
+        autoComputer.listen(this::currRequest).action {
+            contentTypeChangeThrottle.refresh()
+            formatForm(it)
+        }
+//
+        autoComputer.listen(this.contentTypeComboBox!!)
+                .filter { contentTypeChangeThrottle.acquire(200) }
+                .action { changeFormForContentType(it) }
+
         refreshHosts()
     }
 
-    private fun onCallClick() {
-        if (currRequest == null) {
-            actionContext!!.runInSwingUI { responseTextArea!!.text = "No api be selected" }
-            return
-        }
-        val request = currRequest!!
-        val host = this.hostComboBox!!.editor.item as String
-        val path = this.pathTextField!!.text
-        val query = this.paramsTextField!!.text
+    private fun changeHeaderForContentType(contentType: String?): String? {
 
-        val requestHeader = this.requestHeadersTextArea!!.text
-        val requestBodyOrForm = this.requestTextArea!!.text
-        actionContext!!.runAsync {
-            onNewHost(host)
-            var url: String? = null
-            try {
-                url = RequestUtils.UrlBuild().host(host)
-                        .path(path)
-                        .query(query).url()
-                this.currUrl = url
-                val requestBuilder = RequestBuilder.create(request.method)
-                        .setUri(url)
+        val header = requestHeader
+        if (contentType.isNullOrBlank()) return header
 
-                if (!requestHeader.isNullOrBlank()) {
-                    parseHeader(requestHeader).forEach { requestBuilder.addHeader(it) }
-                }
+        val newHeader = StringBuilder()
+        var found = false
+        if (header != null) {
+            for (line in header.lines()) {
+                if (line.trim().startsWith("Content-Type")) {
+                    val value = line.substringAfter("=")
+                    if (value.trim() == contentType) {
+                        return header
+                    } else {
+                        found = true
 
-                if (request.method?.toUpperCase() != "GET") {
-
-                    var requestEntity: HttpEntity? = null
-                    if (!request.formParams.isNullOrEmpty()) {
-                        requestEntity = UrlEncodedFormEntity(parseForm(requestBodyOrForm))
+                        newHeader.appendlnIfNotEmpty()
+                                .append("Content-Type=")
+                                .append(contentType)
                     }
-                    if (request.body != null) {
-                        requestEntity = StringEntity(requestBodyOrForm,
-                                ContentType.APPLICATION_JSON)
-                    }
-                    if (requestEntity != null) {
-                        requestBuilder.entity = requestEntity
-                    }
-                }
-                val httpClient = getHttpClient()
-
-                val response = httpClient.execute(requestBuilder.build(), ultimateResponseHandler, httpClientContext)
-
-                actionContext!!.runInSwingUI {
-                    autoComputer.value(this::currResponse, ResponseStatus(response))
-                    SwingUtils.focus(this)
-                }
-
-            } catch (e: Exception) {
-                actionContext!!.runInSwingUI {
-                    responseTextArea!!.text = "Could not get any response" +
-                            "\nThere was an error connecting:" + url +
-                            "\nThe stackTrace is:" +
-                            ExceptionUtils.getStackTrace(e)
+                } else {
+                    newHeader.appendlnIfNotEmpty()
+                            .append(line)
                 }
             }
         }
+        if (!found) {
+            newHeader.appendlnIfNotEmpty()
+                    .append("Content-Type=")
+                    .append(contentType)
+        }
+        return newHeader.toString()
     }
 
     private fun parseForm(formText: String): List<NameValuePair> {
@@ -322,25 +354,177 @@ internal class ApiCallDialog : JDialog() {
     }
 
     private fun formatRequestBody(request: Request?): String {
-        if (request == null) return ""
-        if (request.formParams != null) {
-
-            val body = StringBuilder()
-            request.formParams!!.forEach { param ->
-                if (body.isNotEmpty()) {
-                    body.appendln()
-                }
-                body.append(param.name).append("=")
-                param.value?.let { body.append(it) }
+        if (request?.hasBody() == true) {
+            return when {
+                request.body != null -> RequestUtils.parseRawBody(request.body!!)
+                else -> ""
             }
-            return body.toString()
+        }
+        return "Disabled"
+    }
+
+    //region form
+
+    private var formTableBinder: FormTableBinder = disabledFormTableBinder
+
+    /**
+     * find a FormTableBinder for the contentType
+     */
+    private fun findFormTableBinder(contentType: String?): FormTableBinder {
+        if (contentType.isNullOrBlank()) {
+            return disabledFormTableBinder
+        }
+        if (contentType.startsWith("application/x-www-form-urlencoded")) {
+            return noTypedFormTableBinder
+
+        } else if (contentType.startsWith("multipart/form-data")) {
+            return typedFormTableBinder
         }
 
-        if (request.body != null) {
-            return RequestUtils.parseRawBody(request.body!!)
-        }
-        return ""
+        return disabledFormTableBinder
     }
+
+    private fun formatForm(request: Request?) {
+        val findFormTableBinder = findFormTableBinder(request?.getContentType())
+        findFormTableBinder.refreshTable(this.formTable!!, request?.formParams)
+        this.formTableBinder = findFormTableBinder
+    }
+
+    private fun changeFormForContentType(contentType: String?) {
+        val newFormTableBinder = findFormTableBinder(contentType)
+        try {
+            val readForm = formTableBinder.readForm(this.formTable!!)
+            newFormTableBinder.refreshTable(this.formTable!!, readForm)
+            this.formTableBinder = newFormTableBinder
+        } catch (e: Throwable) {
+            logger!!.error(ExceptionUtils.getStackTrace(e))
+        }
+    }
+
+    interface FormTableBinder {
+        fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?)
+
+        fun readForm(formTable: JBTable): ArrayList<FormParam>?
+    }
+
+    class DisabledFormTableBinder : FormTableBinder {
+        override fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?) {
+            formTable.removeAll()
+            (formTable.model as DefaultTableModel).dataVector.clear()
+            formTable.repaint()
+        }
+
+        override fun readForm(formTable: JBTable): ArrayList<FormParam>? {
+            return null
+        }
+    }
+
+    abstract class AbstractFormTableBinder : FormTableBinder {
+
+        protected fun textTableColumn(): TableColumn {
+            val tableColumn = TableColumn()
+            tableColumn.cellEditor = DefaultCellEditor(JTextField())
+            return tableColumn
+        }
+
+        override fun readForm(formTable: JBTable): ArrayList<FormParam>? {
+
+            val model = formTable.model
+            val formParams: ArrayList<FormParam> = ArrayList()
+            for (row in 0 until model.rowCount) {
+                readParamFromRow(model, row)?.let { formParams.add(it) }
+            }
+            return formParams
+        }
+
+        abstract fun readParamFromRow(tableModel: TableModel, row: Int): FormParam?
+    }
+
+    class NoTypedFormTableBinder : AbstractFormTableBinder() {
+
+        override fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?) {
+            formTable.removeAll()
+
+            (formTable.model as DefaultTableModel).columnCount = 0
+            (formTable.model as DefaultTableModel).rowCount = 0
+
+            formTable.addColumn(textTableColumn())
+
+            formTable.addColumn(textTableColumn())
+
+            val columns = arrayOf("name", "value")
+            val data: ArrayList<Array<String>> = ArrayList()
+
+            formParams?.forEach { param ->
+                data.add(arrayOf(param.name!!, param.value ?: ""))
+            }
+
+            val model = DefaultTableModel(data.toTypedArray(), columns)
+            formTable.model = model
+            return
+
+        }
+
+        override fun readParamFromRow(tableModel: TableModel, row: Int): FormParam? {
+            val param = FormParam()
+            param.name = tableModel.getValueAt(row, 0).toString()
+            param.value = tableModel.getValueAt(row, 1).toString()
+            return param
+        }
+    }
+
+    class TypedFormTableBinder : AbstractFormTableBinder() {
+
+        private fun typeTableColumn(): TableColumn {
+            val tableColumn = TableColumn()
+            tableColumn.cellEditor = object : ComboBoxCellEditor() {
+                override fun getComboBoxItems(): MutableList<String> {
+                    return arrayListOf("text", "file")
+                }
+            }
+            return tableColumn
+        }
+
+        override fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?) {
+            formTable.removeAll()
+
+            (formTable.model as DefaultTableModel).columnCount = 0
+            (formTable.model as DefaultTableModel).rowCount = 0
+
+            formTable.addColumn(textTableColumn())
+
+            formTable.addColumn(typeTableColumn())
+
+            formTable.addColumn(textTableColumn())
+
+            val columns = arrayOf("name", "type", "value")
+            val data: ArrayList<Array<String>> = ArrayList()
+
+            formParams?.forEach { param ->
+                data.add(arrayOf(param.name!!, param.type ?: "text", param.value ?: ""))
+            }
+
+            val model = DefaultTableModel(data.toTypedArray(), columns)
+
+            formTable.model = model
+
+            formTable.columnModel.getColumn(1).cellEditor = object : ComboBoxCellEditor() {
+                override fun getComboBoxItems(): MutableList<String> {
+                    return arrayListOf("text", "file")
+                }
+            }
+        }
+
+        override fun readParamFromRow(tableModel: TableModel, row: Int): FormParam? {
+            val param = FormParam()
+            param.name = tableModel.getValueAt(row, 0).toString()
+            param.type = tableModel.getValueAt(row, 1).toString()
+            param.value = tableModel.getValueAt(row, 2).toString()
+            return param
+        }
+    }
+
+    //endregion
 
     private fun formatRequestHeaders(request: Request?): String? {
         if (request?.headers.isNullOrEmpty()) return ""
@@ -383,6 +567,93 @@ internal class ApiCallDialog : JDialog() {
         }
         actionContext!!.runInSwingUI {
             this.hostComboBox!!.model = DefaultComboBoxModel(hosts.toTypedArray())
+        }
+    }
+
+    private fun onCallClick() {
+        if (currRequest == null) {
+            actionContext!!.runInSwingUI { responseTextArea!!.text = "No api be selected" }
+            return
+        }
+        val request = currRequest!!
+        val host = this.hostComboBox!!.editor.item as String
+        val path = this.pathTextField!!.text
+        val query = this.paramsTextField!!.text
+
+        val requestHeader = this.requestHeadersTextArea!!.text
+        val requestBodyOrForm = this.requestBodyTextArea!!.text
+        val contentType = this.contentTypeComboBox!!.selectedItem.toString()
+        actionContext!!.runAsync {
+            onNewHost(host)
+            var url: String? = null
+            try {
+                url = RequestUtils.UrlBuild().host(host)
+                        .path(path)
+                        .query(query).url()
+                this.currUrl = url
+                val requestBuilder = RequestBuilder.create(request.method)
+                        .setUri(url)
+
+                if (!requestHeader.isNullOrBlank()) {
+                    parseHeader(requestHeader).forEach { requestBuilder.addHeader(it) }
+                }
+
+                if (request.method?.toUpperCase() != "GET") {
+
+                    var requestEntity: HttpEntity? = null
+                    if (!request.formParams.isNullOrEmpty()) {
+//                        requestEntity = UrlEncodedFormEntity(parseForm(requestBodyOrForm))
+
+                        val formParams = formTableBinder.readForm(this.formTable!!)
+                        if (formParams != null) {
+                            if (contentType.startsWith("application/x-www-form-urlencoded")) {
+                                val nameValuePairs: ArrayList<NameValuePair> = ArrayList()
+                                for (param in formParams) {
+                                    nameValuePairs.add(BasicNameValuePair(param.name, param.value))
+                                }
+                                requestEntity = UrlEncodedFormEntity(nameValuePairs)
+                            } else if (contentType.startsWith("multipart/form-data")) {
+                                val entityBuilder = MultipartEntityBuilder.create()
+                                for (param in formParams) {
+                                    if (param.type == "file") {
+                                        entityBuilder.addBinaryBody(param.name, File(param.value))
+                                    } else {
+                                        entityBuilder.addTextBody(param.name, param.value)
+                                    }
+                                }
+                                val boundary = EntityUtils.generateBoundary()
+                                entityBuilder.setBoundary(boundary)
+                                requestBuilder.setHeader("Content-type", "multipart/form-data; boundary=$boundary");
+                                requestEntity = entityBuilder.build()
+                            }
+                        }
+                    }
+                    if (request.body != null) {
+                        requestEntity = StringEntity(requestBodyOrForm,
+                                ContentType.APPLICATION_JSON)
+                    }
+                    if (requestEntity != null) {
+                        requestBuilder.entity = requestEntity
+                    }
+                }
+
+                val httpClient = getHttpClient()
+
+                val response = httpClient.execute(requestBuilder.build(), ultimateResponseHandler, httpClientContext)
+
+                actionContext!!.runInSwingUI {
+                    autoComputer.value(this::currResponse, ResponseStatus(response))
+                    SwingUtils.focus(this)
+                }
+
+            } catch (e: Exception) {
+                actionContext!!.runInSwingUI {
+                    responseTextArea!!.text = "Could not get any response" +
+                            "\nThere was an error connecting:" + url +
+                            "\nThe stackTrace is:" +
+                            ExceptionUtils.getStackTrace(e)
+                }
+            }
         }
     }
     //endregion
@@ -571,5 +842,18 @@ internal class ApiCallDialog : JDialog() {
             }
             return rawResult
         }
+    }
+
+    companion object {
+        var ContentTypes: Array<String> = arrayOf("",
+                "application/json",
+                "application/x-www-form-urlencoded",
+                "multipart/form-data",
+                "application/xml")
+
+
+        val disabledFormTableBinder: FormTableBinder = DisabledFormTableBinder()
+        val noTypedFormTableBinder: FormTableBinder = NoTypedFormTableBinder()
+        val typedFormTableBinder: FormTableBinder = TypedFormTableBinder()
     }
 }

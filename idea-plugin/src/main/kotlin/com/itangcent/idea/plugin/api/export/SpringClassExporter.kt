@@ -490,6 +490,7 @@ class SpringClassExporter : ClassExporter {
                 if (filedName != Attrs.COMMENT_ATTR) {
                     val fv = deepComponent(fieldVal)
                     if (fv is MultipartFile) {
+                        parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
                         parseHandle.addFormFileParam(request, filedName, false, comment?.getAs(filedName))
                     } else {
                         parseHandle.addFormParam(request, filedName, null, comment?.getAs(filedName))
@@ -501,7 +502,7 @@ class SpringClassExporter : ClassExporter {
         }
     }
 
-    protected open fun parseRequestBody(psiType: PsiType?, context: PsiElement): Any? {
+    private fun parseRequestBody(psiType: PsiType?, context: PsiElement): Any? {
         return psiClassHelper!!.getTypeObject(psiType, context, JsonOption.READ_COMMENT)
     }
 
