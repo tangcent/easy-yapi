@@ -558,16 +558,22 @@ internal class ApiCallDialog : JDialog() {
                             return
                         }
                         val row = formTable.selectedRow
+                        if (row == -1) {
+                            return
+                        }
                         val type = formTable.getValueAt(row, 1).toString()
                         if (type != "file") {//the type of param should be 'file'
                             return
                         }
 
-                        FileSelectHelper(apiCallDialog!!.actionContext!!, FileChooserDescriptorFactory.createSingleFileDescriptor())
-                                .lastSelectedLocation("file.form.param.select.last.location.key")
-                                .selectFile {
-                                    formTable.setValueAt(it?.path, row, column)
-                                }
+                        if (apiCallDialog!!.throttleHelper.acquire("select_file_for_form_param", 1000)) {
+                            FileSelectHelper(apiCallDialog!!.actionContext!!, FileChooserDescriptorFactory.createSingleFileDescriptor())
+                                    .lastSelectedLocation("file.form.param.select.last.location.key")
+                                    .selectFile {
+                                        formTable.setValueAt(it?.path, row, column)
+                                    }
+                        }
+                        formTable.selectionModel.clearSelection()
                     }
 
                     override fun mouseExited(e: MouseEvent?) {
