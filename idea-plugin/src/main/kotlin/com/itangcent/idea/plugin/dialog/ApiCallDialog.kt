@@ -561,8 +561,12 @@ internal class ApiCallDialog : JDialog() {
                         if (row == -1) {
                             return
                         }
-                        val type = formTable.getValueAt(row, 1).toString()
-                        if (type != "file") {//the type of param should be 'file'
+                        try {
+                            val type = formTable.getValueAt(row, 1).toString()
+                            if (type != "file") {//the type of param should be 'file'
+                                return
+                            }
+                        } catch (e: java.lang.ArrayIndexOutOfBoundsException) {//error to get type
                             return
                         }
 
