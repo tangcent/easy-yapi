@@ -43,6 +43,8 @@ import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.apache.http.message.BasicNameValuePair
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import java.awt.event.*
 import java.io.Closeable
 import java.io.File
@@ -893,20 +895,29 @@ internal class ApiCallDialog : JDialog() {
         fun getResponseAsString(): String? {
             return when {
                 isFormat -> {
-                    try {
-                        if (formatResult == null) {
-                            formatResult = getRawResult()?.let { GsonExUtils.prettyJson(it) }
-                        }
-                    } catch (e: Exception) {
-                    }
-                    if (formatResult == null) {
-                        formatResult = getRawResult()
-                    }
+                    formatResult = formatResponse()
                     formatResult
                 }
                 else -> getRawResult()
             }
+        }
 
+        private fun formatResponse(): String? {
+            return try {
+                val contentType = response.getContentType()
+                if (contentType != null) {
+                    if (contentType.mimeType.startsWith("text/html") ||
+                            contentType.mimeType.startsWith("text/xml")) {
+                        val doc: Document = Jsoup.parse(getRawResult())
+                        doc.outputSettings().prettyPrint(true)
+                        return doc.outerHtml()
+                    }
+                }
+
+                getRawResult()?.let { GsonExUtils.prettyJson(it) }
+            } catch (e: Exception) {
+                getRawResult()
+            }
         }
 
         private fun getRawResult(): String? {

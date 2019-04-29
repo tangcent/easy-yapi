@@ -80,6 +80,10 @@ dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
     testImplementation group: 'junit', name: 'junit', version: '4.12'
+
+    // https://mvnrepository.com/artifact/org.jsoup/jsoup
+    compile group: 'org.jsoup', name: 'jsoup', version: '1.11.3'
+
 }
 
 compileKotlin {
