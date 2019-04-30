@@ -9,6 +9,7 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
@@ -25,6 +26,9 @@ class CachedClassExporter : ClassExporter {
 
     @Inject
     private val fileApiCacheRepository: FileApiCacheRepository? = null
+
+    @Inject
+    private val actionContext: ActionContext? = null
 
     private var disabled: Boolean = false
 
@@ -77,7 +81,9 @@ class CachedClassExporter : ClassExporter {
             }
             fileApiCache.md5 = md5
             fileApiCache.lastModified = System.currentTimeMillis()
-            fileApiCacheRepository.saveFileApiCache(path, fileApiCache)
+            actionContext!!.runAsync {
+                fileApiCacheRepository.saveFileApiCache(path, fileApiCache)
+            }
         } catch (e: Exception) {
             logger!!.error("error to cache api info," + e.message)
             disabled = true
