@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.itangcent.common.utils.FileUtils
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.intellij.extend.lazy
+import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
 
@@ -13,14 +15,14 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
     @Named("projectCacheRepository")
     private val projectCacheRepository: LocalFileRepository? = null
 
-    private var emptyFileBinder: FileBeanBinder<EmptyApiCache>? = null
+    private var emptyFileBinder: BeanBinder<EmptyApiCache>? = null
 
     private var emptyApiCache: EmptyApiCache? = null
 
     private fun init() {
         if (emptyFileBinder == null) {
             emptyFileBinder = FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".easy.empty.files"),
-                    EmptyApiCache::class)
+                    EmptyApiCache::class).lazy()
             emptyApiCache = emptyFileBinder!!.read()
         }
     }

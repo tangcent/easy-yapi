@@ -20,10 +20,12 @@ import com.itangcent.common.utils.appendlnIfNotEmpty
 import com.itangcent.idea.plugin.utils.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.extend.lazy
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.consistent
 import com.itangcent.intellij.extend.rx.from
+import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
@@ -43,6 +45,9 @@ import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.apache.http.message.BasicNameValuePair
+import org.jdesktop.swingx.prompt.PromptSupport
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import java.awt.event.*
 import java.io.Closeable
 import java.io.File
@@ -157,8 +162,6 @@ internal class ApiCallDialog : JDialog() {
         initApisModule()
         initRequestModule()
         initResponseModule()
-
-
     }
 
     //region api module
@@ -200,7 +203,7 @@ internal class ApiCallDialog : JDialog() {
     private var httpClient: HttpClient? = null
 
     @Volatile
-    private var httpContextCacheBinder: FileBeanBinder<HttpContextCache>? = null
+    private var httpContextCacheBinder: BeanBinder<HttpContextCache>? = null
 
     @Volatile
     private var httpContextCache: HttpContextCache? = null
@@ -561,8 +564,12 @@ internal class ApiCallDialog : JDialog() {
                         if (row == -1) {
                             return
                         }
-                        val type = formTable.getValueAt(row, 1).toString()
-                        if (type != "file") {//the type of param should be 'file'
+                        try {
+                            val type = formTable.getValueAt(row, 1).toString()
+                            if (type != "file") {//the type of param should be 'file'
+                                return
+                            }
+                        } catch (e: java.lang.ArrayIndexOutOfBoundsException) {//error to get type
                             return
                         }
 
@@ -765,6 +772,13 @@ internal class ApiCallDialog : JDialog() {
                     }
                 }
 
+        autoComputer.listen(this::currRequest)
+                .action { request ->
+                    val response = request?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
+                            ?: ""
+                    PromptSupport.setPrompt(response, responseTextArea)
+                }
+
     }
 
     private fun formatResponseHeaders(response: HttpResponse?): String? {
@@ -820,9 +834,10 @@ internal class ApiCallDialog : JDialog() {
     //endregion
 
     //region common func
-    private fun getHttpContextCacheBinder(): FileBeanBinder<HttpContextCache>? {
+    private fun getHttpContextCacheBinder(): BeanBinder<HttpContextCache>? {
         if (httpContextCacheBinder == null) {
             httpContextCacheBinder = FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".http_content_cache"), HttpContextCache::class)
+                    .lazy()
         }
         return httpContextCacheBinder!!
     }
@@ -863,7 +878,6 @@ internal class ApiCallDialog : JDialog() {
             } catch (e: Exception) {
                 logger!!.error("error to save http context.")
             }
-
         }
         if (httpClient != null && httpClient is Closeable) {
             (httpClient!! as Closeable).close()
@@ -889,20 +903,29 @@ internal class ApiCallDialog : JDialog() {
         fun getResponseAsString(): String? {
             return when {
                 isFormat -> {
-                    try {
-                        if (formatResult == null) {
-                            formatResult = getRawResult()?.let { GsonExUtils.prettyJson(it) }
-                        }
-                    } catch (e: Exception) {
-                    }
-                    if (formatResult == null) {
-                        formatResult = getRawResult()
-                    }
+                    formatResult = formatResponse()
                     formatResult
                 }
                 else -> getRawResult()
             }
+        }
 
+        private fun formatResponse(): String? {
+            return try {
+                val contentType = response.getContentType()
+                if (contentType != null) {
+                    if (contentType.mimeType.startsWith("text/html") ||
+                            contentType.mimeType.startsWith("text/xml")) {
+                        val doc: Document = Jsoup.parse(getRawResult())
+                        doc.outputSettings().prettyPrint(true)
+                        return doc.outerHtml()
+                    }
+                }
+
+                getRawResult()?.let { GsonExUtils.prettyJson(it) }
+            } catch (e: Exception) {
+                getRawResult()
+            }
         }
 
         private fun getRawResult(): String? {
