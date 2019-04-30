@@ -20,10 +20,12 @@ import com.itangcent.common.utils.appendlnIfNotEmpty
 import com.itangcent.idea.plugin.utils.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.extend.lazy
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.consistent
 import com.itangcent.intellij.extend.rx.from
+import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
@@ -159,8 +161,6 @@ internal class ApiCallDialog : JDialog() {
         initApisModule()
         initRequestModule()
         initResponseModule()
-
-
     }
 
     //region api module
@@ -202,7 +202,7 @@ internal class ApiCallDialog : JDialog() {
     private var httpClient: HttpClient? = null
 
     @Volatile
-    private var httpContextCacheBinder: FileBeanBinder<HttpContextCache>? = null
+    private var httpContextCacheBinder: BeanBinder<HttpContextCache>? = null
 
     @Volatile
     private var httpContextCache: HttpContextCache? = null
@@ -826,9 +826,10 @@ internal class ApiCallDialog : JDialog() {
     //endregion
 
     //region common func
-    private fun getHttpContextCacheBinder(): FileBeanBinder<HttpContextCache>? {
+    private fun getHttpContextCacheBinder(): BeanBinder<HttpContextCache>? {
         if (httpContextCacheBinder == null) {
             httpContextCacheBinder = FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".http_content_cache"), HttpContextCache::class)
+                    .lazy()
         }
         return httpContextCacheBinder!!
     }
@@ -869,7 +870,6 @@ internal class ApiCallDialog : JDialog() {
             } catch (e: Exception) {
                 logger!!.error("error to save http context.")
             }
-
         }
         if (httpClient != null && httpClient is Closeable) {
             (httpClient!! as Closeable).close()
