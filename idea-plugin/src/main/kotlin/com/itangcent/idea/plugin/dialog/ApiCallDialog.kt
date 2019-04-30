@@ -45,6 +45,7 @@ import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicHeader
 import org.apache.http.message.BasicNameValuePair
+import org.jdesktop.swingx.prompt.PromptSupport
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.awt.event.*
@@ -769,6 +770,13 @@ internal class ApiCallDialog : JDialog() {
                         it?.isFormat == true -> "raw"
                         else -> "format"
                     }
+                }
+
+        autoComputer.listen(this::currRequest)
+                .action { request ->
+                    val response = request?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
+                            ?: ""
+                    PromptSupport.setPrompt(response, responseTextArea)
                 }
 
     }

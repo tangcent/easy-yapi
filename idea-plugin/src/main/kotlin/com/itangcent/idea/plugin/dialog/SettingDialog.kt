@@ -48,7 +48,7 @@ class SettingDialog : JDialog() {
 
         hostList!!.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
-                //已选项的下标
+                //select host
                 hostList?.selectedIndex?.let { selectHost(it) }
             }
         })
@@ -107,7 +107,7 @@ class SettingDialog : JDialog() {
             host = host.substring(0, host.length - 1)
         }
 
-        //TODO:host 进行正则检测
+        //TODO:check host with regex
 
         var token = tokenTextArea!!.text
         if (org.apache.commons.lang3.StringUtils.isBlank(token)) {
