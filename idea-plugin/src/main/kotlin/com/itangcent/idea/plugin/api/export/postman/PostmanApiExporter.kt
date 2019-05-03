@@ -4,12 +4,12 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiMethod
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.utils.FileSaveHelper
 import com.itangcent.idea.plugin.utils.ModuleHelper
@@ -18,10 +18,8 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.RandomUtils
-import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import kotlin.collections.ArrayList
@@ -53,6 +51,9 @@ class PostmanApiExporter {
 
     @Inject
     private val moduleHelper: ModuleHelper? = null
+
+    @Inject
+    private val resourceHelper: ResourceHelper? = null
 
     fun export() {
 
@@ -131,7 +132,7 @@ class PostmanApiExporter {
         //group by class into: {class:requests}
         val clsGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
         requests.forEach { request ->
-            val resource = request.resource?.let { findResourceClass(it) } ?: NULL_RESOURCE
+            val resource = request.resource?.let { resourceHelper!!.findResourceClass(it) } ?: NULL_RESOURCE
             clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
                     .add(request2Item(request))
         }
@@ -346,19 +347,11 @@ class PostmanApiExporter {
         return item
     }
 
-    private fun findResourceClass(resource: Any): PsiClass? {
-        return when (resource) {
-            is PsiMethod -> actionContext!!.callInReadUI { resource.containingClass }
-            is PsiClass -> resource
-            else -> null
-        }
-    }
-
     private fun findAttrOfClass(cls: PsiClass, parseHandle: ParseHandle): String? {
-        val docComment = actionContext!!.callInReadUI { cls.docComment }
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
+
+        val docText = resourceHelper!!.findAttrOfClass(cls)
         return when {
-            StringUtils.isBlank(docText) -> cls.name
+            docText.isNullOrBlank() -> cls.name
             else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle)
         }
     }

@@ -13,6 +13,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
 import com.itangcent.common.model.Response
 import com.itangcent.idea.constant.SpringAttrs
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiAnnotationUtils
@@ -41,23 +42,28 @@ class SpringClassExporter : ClassExporter {
     @Inject
     private val docParseHelper: DocParseHelper? = null
 
+    @Inject
+    var actionContext: ActionContext? = null
+
     override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
-        when {
-            cls !is PsiClass -> return
-            !isCtrl(cls) -> return
-            shouldIgnore(cls) -> {
-                logger!!.info("ignore class:" + cls.qualifiedName)
-                return
-            }
-            else -> {
-                logger!!.info("search api from:${cls.qualifiedName}")
-                val ctrlRequestMappingAnn = findRequestMapping(cls)
-                val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
+        if (cls !is PsiClass) return
+        actionContext!!.runInReadUI {
+            when {
+                !isCtrl(cls) -> return@runInReadUI
+                shouldIgnore(cls) -> {
+                    logger!!.info("ignore class:" + cls.qualifiedName)
+                    return@runInReadUI
+                }
+                else -> {
+                    logger!!.info("search api from:${cls.qualifiedName}")
+                    val ctrlRequestMappingAnn = findRequestMapping(cls)
+                    val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
 
-                val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
+                    val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
 
-                foreachMethod(cls) { method ->
-                    exportMethodApi(method, basePath, ctrlHttpMethod, parseHandle, requestHandle)
+                    foreachMethod(cls) { method ->
+                        exportMethodApi(method, basePath, ctrlHttpMethod, parseHandle, requestHandle)
+                    }
                 }
             }
         }
