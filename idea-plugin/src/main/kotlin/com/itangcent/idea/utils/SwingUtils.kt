@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.utils
+package com.itangcent.idea.utils
 
 import com.itangcent.intellij.context.ActionContext
 import java.awt.Dialog
