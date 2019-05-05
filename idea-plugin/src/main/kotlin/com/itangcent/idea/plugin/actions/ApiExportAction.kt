@@ -9,7 +9,7 @@ import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.CommonRules
 import com.itangcent.idea.plugin.api.export.IdeaParseHandle
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
-import com.itangcent.idea.plugin.utils.ModuleHelper
+import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
