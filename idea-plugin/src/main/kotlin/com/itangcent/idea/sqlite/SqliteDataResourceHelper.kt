@@ -19,7 +19,13 @@ class SqliteDataResourceHelper {
 
     fun getSD(fileName: String): SQLiteDataSource {
         return sdCache.computeIfAbsent(fileName) {
-            val sd = SQLiteConnectionPoolDataSource(SQLiteConfig())
+            val sqLiteConfig = SQLiteConfig()
+            sqLiteConfig.setSynchronous(SQLiteConfig.SynchronousMode.OFF)
+            sqLiteConfig.setCacheSize(1024 * 8)
+            sqLiteConfig.setTempStore(SQLiteConfig.TempStore.MEMORY)
+            sqLiteConfig.setPageSize(1024 * 8)
+            sqLiteConfig.setBusyTimeout("60000")
+            val sd = SQLiteConnectionPoolDataSource(sqLiteConfig)
             sd.url = "jdbc:sqlite:$fileName"
             return@computeIfAbsent sd
         }
