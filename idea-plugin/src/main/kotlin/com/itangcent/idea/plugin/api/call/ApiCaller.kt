@@ -7,7 +7,7 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.dialog.ApiCallDialog
-import com.itangcent.idea.plugin.utils.SwingUtils
+import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger

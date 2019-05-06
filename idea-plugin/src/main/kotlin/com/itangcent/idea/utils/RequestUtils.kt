@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.utils
+package com.itangcent.idea.utils
 
 import com.intellij.util.containers.stream
 import com.itangcent.common.constant.Attrs

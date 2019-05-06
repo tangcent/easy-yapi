@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.utils
+package com.itangcent.idea.utils
 
 import com.google.gson.JsonParser
 import com.itangcent.common.utils.GsonUtils
@@ -28,7 +28,6 @@ object GsonExUtils {
         //json
         var j: String? = null
     }
-
 
     fun prettyJson(json: String): String {
         val jsonParser = JsonParser()

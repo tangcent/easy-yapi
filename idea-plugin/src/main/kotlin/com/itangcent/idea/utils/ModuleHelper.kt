@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.utils
+package com.itangcent.idea.utils
 
 import com.google.inject.Inject
 import com.intellij.openapi.module.ModuleUtil
