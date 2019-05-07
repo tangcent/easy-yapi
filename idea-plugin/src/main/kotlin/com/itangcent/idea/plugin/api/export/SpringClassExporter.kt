@@ -13,6 +13,9 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
 import com.itangcent.common.model.Response
 import com.itangcent.idea.constant.SpringAttrs
+import com.itangcent.idea.plugin.StatusRecorder
+import com.itangcent.idea.plugin.Worker
+import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiAnnotationUtils
@@ -27,7 +30,21 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import java.util.regex.Pattern
 
-class SpringClassExporter : ClassExporter {
+class SpringClassExporter : ClassExporter, Worker {
+
+    var statusRecorder: StatusRecorder = StatusRecorder()
+
+    override fun status(): WorkerStatus {
+        return statusRecorder.status()
+    }
+
+    override fun waitCompleted() {
+        return statusRecorder.waitCompleted()
+    }
+
+    override fun cancel() {
+        return statusRecorder.cancel()
+    }
 
     @Inject
     private val logger: Logger? = null
@@ -42,24 +59,29 @@ class SpringClassExporter : ClassExporter {
     private val docParseHelper: DocParseHelper? = null
 
     override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
-        when {
-            cls !is PsiClass -> return
-            !isCtrl(cls) -> return
-            shouldIgnore(cls) -> {
-                logger!!.info("ignore class:" + cls.qualifiedName)
-                return
-            }
-            else -> {
-                logger!!.info("search api from:${cls.qualifiedName}")
-                val ctrlRequestMappingAnn = findRequestMapping(cls)
-                val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
+        if (cls !is PsiClass) return
+        statusRecorder.newWork()
+        try {
+            when {
+                !isCtrl(cls) -> return
+                shouldIgnore(cls) -> {
+                    logger!!.info("ignore class:" + cls.qualifiedName)
+                    return
+                }
+                else -> {
+                    logger!!.info("search api from:${cls.qualifiedName}")
+                    val ctrlRequestMappingAnn = findRequestMapping(cls)
+                    val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
 
-                val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
+                    val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
 
-                foreachMethod(cls) { method ->
-                    exportMethodApi(method, basePath, ctrlHttpMethod, parseHandle, requestHandle)
+                    foreachMethod(cls) { method ->
+                        exportMethodApi(method, basePath, ctrlHttpMethod, parseHandle, requestHandle)
+                    }
                 }
             }
+        } finally {
+            statusRecorder.endWork()
         }
     }
 
