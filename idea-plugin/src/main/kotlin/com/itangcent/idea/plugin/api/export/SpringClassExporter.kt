@@ -13,6 +13,9 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
 import com.itangcent.common.model.Response
 import com.itangcent.idea.constant.SpringAttrs
+import com.itangcent.idea.plugin.StatusRecorder
+import com.itangcent.idea.plugin.Worker
+import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.JsonOption
@@ -28,7 +31,21 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import java.util.regex.Pattern
 
-class SpringClassExporter : ClassExporter {
+class SpringClassExporter : ClassExporter, Worker {
+
+    var statusRecorder: StatusRecorder = StatusRecorder()
+
+    override fun status(): WorkerStatus {
+        return statusRecorder.status()
+    }
+
+    override fun waitCompleted() {
+        return statusRecorder.waitCompleted()
+    }
+
+    override fun cancel() {
+        return statusRecorder.cancel()
+    }
 
     @Inject
     private val logger: Logger? = null
@@ -47,12 +64,13 @@ class SpringClassExporter : ClassExporter {
 
     override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
         if (cls !is PsiClass) return
-        actionContext!!.runInReadUI {
+        statusRecorder.newWork()
+        try {
             when {
-                !isCtrl(cls) -> return@runInReadUI
+                !isCtrl(cls) -> return
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
-                    return@runInReadUI
+                    return
                 }
                 else -> {
                     logger!!.info("search api from:${cls.qualifiedName}")
@@ -66,6 +84,8 @@ class SpringClassExporter : ClassExporter {
                     }
                 }
             }
+        } finally {
+            statusRecorder.endWork()
         }
     }
 
@@ -326,8 +346,8 @@ class SpringClassExporter : ClassExporter {
                         }
                         continue
                     }
+                    methodParamComment[name!!] = value!!
                 }
-                methodParamComment?.set(name!!, value!!)
             }
         }
         return methodParamComment
