@@ -11,6 +11,7 @@ import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KitUtils
+import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
 import com.itangcent.idea.utils.FileSaveHelper
@@ -77,10 +78,14 @@ class MarkdownApiExporter {
                 }
                 .onCompleted {
                     try {
+                        if (classExporter is Worker) {
+                            classExporter.waitCompleted()
+                        }
                         if (requests.isEmpty()) {
                             logger.info("No api be found to export!")
                             return@onCompleted
                         }
+                        logger.info("Start parse apis")
                         val apiInfo = parseRequests(requests)
                         requests.clear()
                         actionContext!!.runAsync {

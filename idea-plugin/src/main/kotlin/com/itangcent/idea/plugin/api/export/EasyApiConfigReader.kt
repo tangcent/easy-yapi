@@ -1,10 +1,10 @@
-package com.itangcent.idea.plugin.api.export.postman
+package com.itangcent.idea.plugin.api.export
 
 import com.itangcent.intellij.config.AutoSearchConfigReader
 import com.itangcent.intellij.extend.guice.PostConstruct
 import java.util.*
 
-class PostmanConfigReader : AutoSearchConfigReader() {
+class EasyApiConfigReader : AutoSearchConfigReader() {
 
     @PostConstruct
     fun init() {
@@ -12,6 +12,6 @@ class PostmanConfigReader : AutoSearchConfigReader() {
     }
 
     override fun configFileNames(): List<String> {
-        return Arrays.asList(".postman.config", ".easy.api.config")
+        return Arrays.asList(".easy.api.config")
     }
 }
