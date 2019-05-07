@@ -3,9 +3,9 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.export.DocParseHelper
+import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownApiExporter
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
-import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
+import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -26,8 +26,8 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
         builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
         builder.bind(MarkdownApiExporter::class) { it.singleton() }
         builder.bind(DocParseHelper::class) { it.singleton() }
-        builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
+        builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
+        builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
 
         builder.bindInstance("file.save.default", "easy-api.md")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.markdown.export.path")

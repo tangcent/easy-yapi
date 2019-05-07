@@ -17,7 +17,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBody
 import com.itangcent.common.utils.appendlnIfNotEmpty
-import com.itangcent.idea.plugin.utils.*
+import com.itangcent.idea.utils.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.lazy
