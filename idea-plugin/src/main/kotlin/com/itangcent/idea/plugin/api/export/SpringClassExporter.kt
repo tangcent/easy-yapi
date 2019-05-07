@@ -342,8 +342,8 @@ class SpringClassExporter : ClassExporter, Worker {
                         }
                         continue
                     }
+                    methodParamComment[name!!] = value!!
                 }
-                methodParamComment?.set(name!!, value!!)
             }
         }
         return methodParamComment
