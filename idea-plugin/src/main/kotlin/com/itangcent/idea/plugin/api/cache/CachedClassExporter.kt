@@ -9,20 +9,48 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
+import com.itangcent.idea.plugin.StatusRecorder
+import com.itangcent.idea.plugin.Worker
+import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
+import org.apache.commons.lang3.exception.ExceptionUtils
 
-class CachedClassExporter : ClassExporter {
+class CachedClassExporter : ClassExporter, Worker {
+
+    var statusRecorder: StatusRecorder = StatusRecorder()
+
+    override fun status(): WorkerStatus {
+        return when (delegateClassExporter) {
+            is Worker -> statusRecorder.status().and(delegateClassExporter.status())
+            else -> statusRecorder.status()
+        }
+    }
+
+    override fun waitCompleted() {
+        when (delegateClassExporter) {
+            is Worker -> {
+                statusRecorder.waitCompleted()
+                delegateClassExporter.waitCompleted()
+            }
+            else -> {
+                statusRecorder.waitCompleted()
+            }
+        }
+    }
+
+    override fun cancel() {
+    }
 
     @Inject
     private val logger: Logger? = null
 
     @Inject
     @Named("delegate_classExporter")
-    private val classExporter: ClassExporter? = null
+    private val delegateClassExporter: ClassExporter? = null
 
     @Inject
     private val fileApiCacheRepository: FileApiCacheRepository? = null
@@ -35,59 +63,89 @@ class CachedClassExporter : ClassExporter {
     override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
 
         if (disabled || cls !is PsiClass) {
-            classExporter!!.export(cls, parseHandle, requestHandle)
+            delegateClassExporter!!.export(cls, parseHandle, requestHandle)
             return
         }
 
-        try {
-            val psiFile = cls.containingFile
-            val text = psiFile.text
-            val md5 = "${text.length}x${text.hashCode()}"//use length+hashcode
-            val path = ActionUtils.findCurrentPath(psiFile)!!
-                    .replace("/", "_")
-                    .replace("\\", "_")
-            var fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
-            if (fileApiCache != null
-                    && fileApiCache.lastModified!! > FileUtils.getLastModified(psiFile) ?: System.currentTimeMillis()
-                    && fileApiCache.md5 == md5) {
-                readApiFromCache(cls, fileApiCache, requestHandle)
-                return
-            }
+        val psiFile = cls.containingFile
+        val text = psiFile.text
+        val path = ActionUtils.findCurrentPath(psiFile)!!
+                .replace("/", "_")
+                .replace("\\", "_")
+        statusRecorder.newWork()
+        actionContext!!.runAsync {
+            try {
+                val md5 = "${text.length}x${text.hashCode()}"//use length+hashcode
+                var fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
+                if (fileApiCache != null
+                        && fileApiCache.lastModified!! > FileUtils.getLastModified(psiFile) ?: System.currentTimeMillis()
+                        && fileApiCache.md5 == md5) {
 
-            fileApiCache = FileApiCache()
-            fileApiCache.file = path
-            val requests = ArrayList<RequestWithKey>()
-            fileApiCache.requests = requests
+                    if (!fileApiCache.requests.isNullOrEmpty()) {
+                        statusRecorder.newWork()
+                        actionContext.runInReadUI {
+                            try {
+                                readApiFromCache(cls, fileApiCache!!, requestHandle)
+                            } finally {
+                                statusRecorder.endWork()
+                            }
+                        }
+                    }
+                    return@runAsync
+                }
 
-            classExporter!!.export(cls, parseHandle) { request ->
-                requestHandle(request)
-                val tinyRequest = Request()
-                tinyRequest.name = request.name
-                tinyRequest.path = request.path
-                tinyRequest.method = request.method
-                tinyRequest.desc = request.desc
-                tinyRequest.headers = request.headers
-                tinyRequest.paths = request.paths
-                tinyRequest.querys = request.querys
-                tinyRequest.formParams = request.formParams
-                tinyRequest.bodyType = request.bodyType
-                tinyRequest.body = request.body
-                tinyRequest.response = request.response
+                fileApiCache = FileApiCache()
+                fileApiCache.file = path
+                val requests = ArrayList<RequestWithKey>()
+                fileApiCache.requests = requests
 
-                requests.add(RequestWithKey(
-                        PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)
-                        , tinyRequest
-                ))
+                statusRecorder.newWork()
+                actionContext.runInReadUI {
+                    try {
+                        delegateClassExporter!!.export(cls, parseHandle) { request ->
+                            requestHandle(request)
+                            val tinyRequest = Request()
+                            tinyRequest.name = request.name
+                            tinyRequest.path = request.path
+                            tinyRequest.method = request.method
+                            tinyRequest.desc = request.desc
+                            tinyRequest.headers = request.headers
+                            tinyRequest.paths = request.paths
+                            tinyRequest.querys = request.querys
+                            tinyRequest.formParams = request.formParams
+                            tinyRequest.bodyType = request.bodyType
+                            tinyRequest.body = request.body
+                            tinyRequest.response = request.response
+
+                            requests.add(RequestWithKey(
+                                    PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)
+                                    , tinyRequest
+                            ))
+                        }
+                        actionContext.runAsync {
+                            fileApiCache.md5 = md5
+                            fileApiCache.lastModified = System.currentTimeMillis()
+                            fileApiCacheRepository.saveFileApiCache(path, fileApiCache)
+                        }
+                    } finally {
+                        statusRecorder.endWork()
+                    }
+                }
+            } catch (e: Exception) {
+                logger!!.error("error to cache api info," + ExceptionUtils.getStackTrace(e))
+                disabled = true
+
+                statusRecorder.newWork()
+                actionContext.runInReadUI {
+                    try {
+                        delegateClassExporter!!.export(cls, parseHandle, requestHandle)
+                    } finally {
+                        statusRecorder.endWork()
+                    }
+                }
+            } finally {
+                statusRecorder.endWork()
             }
-            fileApiCache.md5 = md5
-            fileApiCache.lastModified = System.currentTimeMillis()
-            actionContext!!.runAsync {
-                fileApiCacheRepository.saveFileApiCache(path, fileApiCache)
-            }
-        } catch (e: Exception) {
-            logger!!.error("error to cache api info," + e.message)
-            disabled = true
-            classExporter!!.export(cls, parseHandle, requestHandle)
         }
     }
 
@@ -99,5 +157,4 @@ class CachedClassExporter : ClassExporter {
         }
 
     }
-
 }

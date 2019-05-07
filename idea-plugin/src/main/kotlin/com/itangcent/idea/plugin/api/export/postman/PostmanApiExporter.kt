@@ -10,6 +10,7 @@ import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
@@ -84,6 +85,9 @@ class PostmanApiExporter {
                 }
                 .onCompleted {
                     try {
+                        if (classExporter is Worker) {
+                            classExporter.waitCompleted()
+                        }
                         if (requests.isEmpty()) {
                             logger.info("No api be found to export!")
                             return@onCompleted

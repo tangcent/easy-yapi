@@ -4,7 +4,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.call.ApiCaller
 import com.itangcent.idea.plugin.api.export.DocParseHelper
+import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
+import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -24,8 +26,8 @@ class ApiCallAction : ApiExportAction("Call Api") {
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
         builder.bind(DocParseHelper::class) { it.singleton() }
-        builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
+        builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
+        builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(ApiCaller::class) { it.singleton() }
 
     }
