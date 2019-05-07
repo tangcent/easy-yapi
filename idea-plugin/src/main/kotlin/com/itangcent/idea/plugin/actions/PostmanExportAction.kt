@@ -10,6 +10,7 @@ import com.itangcent.idea.plugin.api.export.SpringClassExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
+import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -31,7 +32,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(PostmanApiHelper::class) { it.singleton() }
         builder.bind(PostmanApiExporter::class) { it.singleton() }
         builder.bind(DocParseHelper::class) { it.singleton() }
-        builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
+        builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
 
         builder.bindInstance("file.save.default", "postman.json")
