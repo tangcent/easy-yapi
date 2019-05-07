@@ -15,8 +15,10 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
 
     private fun init() {
         if (dbBeanBinderFactory == null) {
-            dbBeanBinderFactory = DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.cache.db").path)
-            { FileApiCache() }
+            synchronized(this) {
+                dbBeanBinderFactory = DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.cache.db").path)
+                { FileApiCache() }
+            }
         }
     }
 
