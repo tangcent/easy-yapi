@@ -16,6 +16,7 @@ import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
+import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -277,14 +278,16 @@ class ApiDashboardDialog : JDialog() {
     private fun onCancel() {
         disposed = true
         try {
-            var apiLoadFuture = this.apiLoadFuture
+            val apiLoadFuture = this.apiLoadFuture
             if (apiLoadFuture != null && !apiLoadFuture.isDone) {
                 apiLoadFuture.cancel(true)
             }
         } catch (e: Throwable) {
+            logger!!.error("error to cancel api load:" +
+                    ExceptionUtils.getStackTrace(e))
         }
-        dispose()
         actionContext!!.unHold()
+        dispose()
     }
 
 }
