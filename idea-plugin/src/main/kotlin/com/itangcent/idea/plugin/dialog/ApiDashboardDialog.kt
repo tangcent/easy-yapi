@@ -6,9 +6,9 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.rootManager
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiClassOwner
-import com.intellij.psi.PsiManager
+import com.intellij.psi.*
+import com.itangcent.common.concurrent.AQSCountLatch
+import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
@@ -23,7 +23,9 @@ import java.awt.dnd.DnDConstants
 import java.awt.dnd.DragSource
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Future
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
@@ -78,6 +80,8 @@ class ApiDashboardDialog : JDialog() {
         initPostmanInfo()
     }
 
+    private var apiLoadFuture: Future<*>? = null
+
     private fun initProjectApiModule() {
         projectApiTree!!.dragEnabled = true
 
@@ -103,12 +107,15 @@ class ApiDashboardDialog : JDialog() {
             }
 
             actionContext!!.runInSwingUI {
-                projectApiTree!!.model = DefaultTreeModel(treeNode, true)
-                actionContext!!.runAsync {
+                val rootTreeModel = DefaultTreeModel(treeNode, true)
+                projectApiTree!!.model = rootTreeModel
+                apiLoadFuture = actionContext!!.runAsync {
                     for (it in moduleNodes) {
                         if (disposed) break
                         loadApiInModule(it)
+                        rootTreeModel.reload(it)
                     }
+                    apiLoadFuture = null
                 }
             }
         }
@@ -116,38 +123,85 @@ class ApiDashboardDialog : JDialog() {
 
     private fun loadApiInModule(moduleNode: DefaultMutableTreeNode) {
         val moduleData = moduleNode.userObject as ModuleNodeData
-        moduleData.status = ModuleStatus.loading
-        for (contentRoot in moduleData.module.rootManager.contentRoots) {
 
+        val sourceRoots = moduleData.module.rootManager.getSourceRoots(false)
+        if (sourceRoots.isNullOrEmpty()) {
+            moduleData.status = ModuleStatus.loaded
+            moduleNode.removeFromParent()
+            return
+        }
+
+        val countLatch: CountLatch = AQSCountLatch()
+        moduleData.status = ModuleStatus.loading
+        for (contentRoot in moduleData.module.rootManager.getSourceRoots(false)) {
             if (disposed) return
+            countLatch.down()
             val classNodeMap: ConcurrentHashMap<PsiClass, DefaultMutableTreeNode> = ConcurrentHashMap()
             actionContext!!.runInReadUI {
-                if (disposed) return@runInReadUI
-                val rootDirectory = PsiManager.getInstance(project!!).findDirectory(contentRoot)
-                com.itangcent.intellij.util.FileUtils.traversal(rootDirectory!!,
-                        { !disposed && !it.isDirectory && it.name.endsWith("java") && (it is PsiClassOwner) }) { psiFile ->
-                    if (disposed) return@traversal
-                    for (psiClass in (psiFile as PsiClassOwner).classes) {
-
+                try {
+                    if (disposed) return@runInReadUI
+                    val rootDirectory = PsiManager.getInstance(project!!).findDirectory(contentRoot)
+                    traversal(rootDirectory!!,
+                            { !disposed },
+                            { !disposed && it.name.endsWith("java") && (it is PsiClassOwner) }) { psiFile ->
                         if (disposed) return@traversal
-                        classExporter!!.export(psiClass, parseHandle!!) { request ->
-                            if (disposed) return@export
+                        for (psiClass in (psiFile as PsiClassOwner).classes) {
 
-                            val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
+                            if (disposed) return@traversal
+                            classExporter!!.export(psiClass, parseHandle!!) { request ->
+                                if (disposed) return@export
 
-                            val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
-                                val node = DefaultMutableTreeNode(ModuleClassNodeData(resourceClass, resourceHelper.findAttrOfClass(resourceClass)))
-                                moduleNode.add(node)
-                                return@computeIfAbsent node
+                                val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
+
+                                val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
+                                    val node = DefaultMutableTreeNode(ModuleClassNodeData(resourceClass, resourceHelper.findAttrOfClass(resourceClass)))
+                                    moduleNode.add(node)
+                                    return@computeIfAbsent node
+                                }
+                                val apiTreeNode = DefaultMutableTreeNode(ModuleApiNodeData(request))
+                                apiTreeNode.allowsChildren = false
+                                clsTreeNode.add(apiTreeNode)
                             }
-                            val apiTreeNode = DefaultMutableTreeNode(ModuleApiNodeData(request))
-                            apiTreeNode.allowsChildren = false
-                            clsTreeNode.add(apiTreeNode)
                         }
                     }
+                } finally {
+                    countLatch.up()
                 }
-                moduleData.status = ModuleStatus.loaded
             }
+        }
+        actionContext!!.runAsync {
+            countLatch.waitFor(60000)
+            moduleData.status = ModuleStatus.loaded
+        }
+    }
+
+
+    private fun traversal(
+            psiDirectory: PsiDirectory,
+            keepRunning: () -> Boolean,
+            fileFilter: (PsiFile) -> Boolean,
+            fileHandle: (PsiFile) -> Unit
+    ) {
+        val dirStack: Stack<PsiDirectory> = Stack()
+        var dir: PsiDirectory? = psiDirectory
+        while (dir != null && keepRunning()) {
+            for (file in dir.files) {
+                if (!keepRunning()) {
+                    return
+                }
+                if (fileFilter(file)) {
+                    fileHandle(file)
+                }
+            }
+
+            if (keepRunning()) {
+                for (subdirectory in dir.subdirectories) {
+                    dirStack.push(subdirectory)
+                }
+            }
+            if (dirStack.isEmpty()) break
+            dir = dirStack.pop()
+            Thread.yield()
         }
     }
 
@@ -222,6 +276,13 @@ class ApiDashboardDialog : JDialog() {
 
     private fun onCancel() {
         disposed = true
+        try {
+            var apiLoadFuture = this.apiLoadFuture
+            if (apiLoadFuture != null && !apiLoadFuture.isDone) {
+                apiLoadFuture.cancel(true)
+            }
+        } catch (e: Throwable) {
+        }
         dispose()
         actionContext!!.unHold()
     }
