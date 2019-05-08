@@ -49,9 +49,16 @@ class SqliteDataResourceHelper {
     inner class SimpleBeanDAO(private val sqlLiteDataSource: SQLiteDataSource, private var cacheName: String) {
         init {
             if (!checkTableExisted(sqlLiteDataSource, cacheName)) {
-                val sql = "CREATE TABLE $cacheName " +
-                        "(NAME TEXT PRIMARY KEY     NOT NULL," +
-                        " VALUE           TEXT    NOT NULL)"
+                val sql = "CREATE TABLE $cacheName\n" +
+                        "(" +
+                        "  ID INTEGER NOT NULL" +
+                        "    PRIMARY KEY AUTOINCREMENT," +
+                        "  HASH  INTEGER NOT NULL," +
+                        "  NAME  TEXT NOT NULL," +
+                        "  VALUE TEXT NOT NULL" +
+                        ");" +
+                        "\n" +
+                        "CREATE INDEX ${cacheName}_MD5_INDEX ON $cacheName(HASH);"
                 sqlLiteDataSource.execute(sql) {}
             }
         }
@@ -59,7 +66,8 @@ class SqliteDataResourceHelper {
         fun get(name: ByteArray): ByteArray? {
             return try {
                 return sqlLiteDataSource
-                        .execute<String?>("SELECT * FROM $cacheName WHERE NAME = '${name.encodeBase64()}'") { resultSet -> resultSet.getString("VALUE") }
+                        .execute<String?>("SELECT * FROM $cacheName WHERE HASH = '${name.contentHashCode()}'" +
+                                " AND NAME = '${name.encodeBase64()}' LIMIT 1") { resultSet -> resultSet.getString("VALUE") }
                         ?.decodeBase64()
             } catch (e: Exception) {
                 null
@@ -68,9 +76,10 @@ class SqliteDataResourceHelper {
 
         fun set(name: ByteArray, value: ByteArray) {
             val base64Name = name.encodeBase64()
+            val hash = name.contentHashCode()
             try {
-                sqlLiteDataSource.execute("DELETE FROM $cacheName WHERE NAME = '$base64Name'") {}
-                sqlLiteDataSource.execute("INSERT INTO $cacheName (NAME,VALUE) values ('$base64Name','${value.encodeBase64()}')") {}
+                sqlLiteDataSource.execute("DELETE FROM $cacheName WHERE HASH = $hash AND NAME = '$base64Name'") {}
+                sqlLiteDataSource.execute("INSERT INTO $cacheName (HASH,NAME,VALUE) values ('$hash','$base64Name','${value.encodeBase64()}')") {}
             } catch (e: Exception) {
                 logger!!.error(ExceptionUtils.getStackTrace(e))
             }
