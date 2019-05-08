@@ -63,7 +63,7 @@ restart **IDE**.
 ## Feature
 - [X] Support Spring
 - [X] Export api to Postman
-- [ ] Export api to Excel
+- [ ] Export api to Word
 - [X] Export api to Markdown
 - [X] Call api from code
 - [ ] Api DashBoard
