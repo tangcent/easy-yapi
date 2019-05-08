@@ -16,6 +16,7 @@ class DbBeanBinderFactory<T : kotlin.Any> {
     private var simpleBeanDAO: SqliteDataResourceHelper.SimpleBeanDAO? = null
 
     private var dbBeanBinderCache: Cache<String, BeanBinder<T>> = CacheBuilder.newBuilder()
+            .maximumSize(20)
             .build()
 
     constructor(file: String, init: () -> T) {
