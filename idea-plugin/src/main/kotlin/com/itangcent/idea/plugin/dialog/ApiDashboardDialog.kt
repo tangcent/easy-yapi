@@ -13,6 +13,7 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
@@ -30,6 +31,7 @@ import java.util.concurrent.Future
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import kotlin.collections.ArrayList
 
 class ApiDashboardDialog : JDialog() {
     private var contentPane: JPanel? = null
@@ -53,6 +55,9 @@ class ApiDashboardDialog : JDialog() {
     @Inject
     private val resourceHelper: ResourceHelper? = null
 
+    @Inject
+    private val postmanApiHelper: PostmanApiHelper? = null
+
     @Volatile
     private var disposed = false
 
@@ -61,7 +66,7 @@ class ApiDashboardDialog : JDialog() {
 
     init {
         setContentPane(contentPane)
-        isModal = true
+        isModal = false
 
         // call onCancel() when cross is clicked
         defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
@@ -82,6 +87,8 @@ class ApiDashboardDialog : JDialog() {
     }
 
     private var apiLoadFuture: Future<*>? = null
+
+    private var postmanLoadFuture: Future<*>? = null
 
     private fun initProjectApiModule() {
         projectApiTree!!.dragEnabled = true
@@ -113,7 +120,7 @@ class ApiDashboardDialog : JDialog() {
                 apiLoadFuture = actionContext!!.runAsync {
                     for (it in moduleNodes) {
                         if (disposed) break
-                        loadApiInModule(it)
+                        loadApiInModule(it, rootTreeModel)
                         rootTreeModel.reload(it)
                     }
                     apiLoadFuture = null
@@ -122,18 +129,19 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    private fun loadApiInModule(moduleNode: DefaultMutableTreeNode) {
+    private fun loadApiInModule(moduleNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel) {
         val moduleData = moduleNode.userObject as ModuleNodeData
 
         val sourceRoots = moduleData.module.rootManager.getSourceRoots(false)
         if (sourceRoots.isNullOrEmpty()) {
-            moduleData.status = ModuleStatus.loaded
+            moduleData.status = NodeStatus.loaded
             moduleNode.removeFromParent()
             return
         }
 
         val countLatch: CountLatch = AQSCountLatch()
-        moduleData.status = ModuleStatus.loading
+        moduleData.status = NodeStatus.loading
+        var anyFound = false
         for (contentRoot in moduleData.module.rootManager.getSourceRoots(false)) {
             if (disposed) return
             countLatch.down()
@@ -151,7 +159,8 @@ class ApiDashboardDialog : JDialog() {
                             if (disposed) return@traversal
                             classExporter!!.export(psiClass, parseHandle!!) { request ->
                                 if (disposed) return@export
-
+                                if (request.resource == null) return@export
+                                anyFound = true
                                 val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
 
                                 val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
@@ -172,10 +181,14 @@ class ApiDashboardDialog : JDialog() {
         }
         actionContext!!.runAsync {
             countLatch.waitFor(60000)
-            moduleData.status = ModuleStatus.loaded
+            if (anyFound) {
+                moduleData.status = NodeStatus.loaded
+            } else {
+                moduleNode.removeFromParent()
+            }
+            rootTreeModel.reload(moduleNode)
         }
     }
-
 
     private fun traversal(
             psiDirectory: PsiDirectory,
@@ -207,13 +220,103 @@ class ApiDashboardDialog : JDialog() {
     }
 
     private fun initPostmanInfo() {
-        postmanApiTree!!.dragEnabled = true
+
+        actionContext!!.runInSwingUI {
+            //            postmanApiTree!!.dragEnabled = true
+            val treeNode = DefaultMutableTreeNode()
+            val rootTreeModel = DefaultTreeModel(treeNode, true)
+
+            actionContext!!.runAsync {
+
+                val collections = postmanApiHelper!!.getAllCollection()
+                if (collections.isNullOrEmpty()) {
+                    logger!!.error("load postman info failed!")
+                    return@runAsync
+                }
+                val collectionNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
+
+                actionContext!!.runInSwingUI {
+                    for (collection in collections) {
+                        val collectionNode = DefaultMutableTreeNode(PostmanCollectionNodeData(collection))
+                        logger!!.info("load collection:$collectionNode")
+                        treeNode.add(collectionNode)
+                        collectionNodes.add(collectionNode)
+                        rootTreeModel.reload(collectionNode)
+                    }
+                    postmanApiTree!!.model = rootTreeModel
+
+                    postmanLoadFuture = actionContext!!.runAsync {
+                        Thread.sleep(1000)
+                        for (collectionNode in collectionNodes) {
+                            if (disposed) break
+                            Thread.sleep(200)
+                            actionContext!!.runInSwingUI {
+                                loadPostCollectionInfo(collectionNode, rootTreeModel)
+                                rootTreeModel.reload(collectionNode)
+                            }
+                        }
+                        postmanLoadFuture = null
+                    }
+                }
+
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel) {
+        val moduleData = collectionNode.userObject as PostmanCollectionNodeData
+        val collectionId = moduleData.info["id"]
+        if (collectionId == null) {
+            collectionNode.removeFromParent()
+            rootTreeModel.reload(collectionNode)
+            return
+        }
+
+        val collectionInfo = postmanApiHelper!!.getCollectionInfo(collectionId.toString())
+        if (collectionInfo == null) {
+            moduleData.status = NodeStatus.loaded
+            return
+        }
+        try {
+            val items = collectionInfo["item"] as ArrayList<HashMap<String, Any>>
+            for (item in items) {
+                loadPostmanNode(collectionInfo, item, collectionNode)
+            }
+        } finally {
+            moduleData.status = NodeStatus.loaded
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun loadPostmanNode(collectionInfo: HashMap<String, Any?>, item: HashMap<String, Any>, parentNode: DefaultMutableTreeNode) {
+        if (item.isNullOrEmpty()) return
+
+        Thread.yield()
+        if (item.containsKey("request")) {//is request
+            val apiTreeNode = DefaultMutableTreeNode(PostmanApiNodeData(item))
+            apiTreeNode.allowsChildren = false
+            parentNode.add(apiTreeNode)
+//            logger!!.info("load api:$apiTreeNode")
+
+        } else {//is sub collection
+            val subCollectionNode = DefaultMutableTreeNode(PostmanSubCollectionNodeData(collectionInfo, item))
+            parentNode.add(subCollectionNode)
+
+//            logger!!.info("load sub collection:$subCollectionNode")
+
+            val items = item["item"] as ArrayList<HashMap<String, Any>>?
+            if (items.isNullOrEmpty()) return
+            for (subItem in items) {
+                loadPostmanNode(collectionInfo, subItem, subCollectionNode)
+            }
+        }
     }
 
     class ModuleNodeData {
         var module: Module
 
-        var status = ModuleStatus.unload
+        var status = NodeStatus.unload
 
         constructor(module: Module) {
             this.module = module
@@ -245,7 +348,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    enum class ModuleStatus(var desc: String) {
+    enum class NodeStatus(var desc: String) {
         unload("(unload)"),
         loading("(loading)"),
         loaded("")
@@ -264,6 +367,47 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
+    class PostmanCollectionNodeData {
+        var info: Map<String, Any?>
+
+        var status = NodeStatus.unload
+
+        constructor(info: Map<String, Any?>) {
+            this.info = info
+        }
+
+        override fun toString(): String {
+            return status.desc + info.getOrDefault("name", "unknown")
+        }
+    }
+
+    class PostmanSubCollectionNodeData {
+        private var rootCollectionInfo: Map<String, Any?>
+
+        var info: Map<String, Any?>
+
+        constructor(rootCollectionInfo: Map<String, Any?>, info: Map<String, Any?>) {
+            this.info = info
+            this.rootCollectionInfo = rootCollectionInfo
+        }
+
+        override fun toString(): String {
+            return info.getOrDefault("name", "unknown").toString()
+        }
+    }
+
+    class PostmanApiNodeData {
+        var info: Map<String, Any?>
+
+        constructor(info: Map<String, Any?>) {
+            this.info = info
+        }
+
+        override fun toString(): String {
+            return info.getOrDefault("name", "unknown").toString()
+        }
+    }
+
     class ApiTreeTransferHandler : TransferHandler() {
 
         override fun canImport(comp: JComponent?, transferFlavors: Array<out DataFlavor>?): Boolean {
@@ -275,6 +419,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
+
     private fun onCancel() {
         disposed = true
         try {
@@ -284,6 +429,15 @@ class ApiDashboardDialog : JDialog() {
             }
         } catch (e: Throwable) {
             logger!!.error("error to cancel api load:" +
+                    ExceptionUtils.getStackTrace(e))
+        }
+        try {
+            val postmanLoadFuture = this.postmanLoadFuture
+            if (postmanLoadFuture != null && !postmanLoadFuture.isDone) {
+                postmanLoadFuture.cancel(true)
+            }
+        } catch (e: Throwable) {
+            logger!!.error("error to cancel postman load:" +
                     ExceptionUtils.getStackTrace(e))
         }
         actionContext!!.unHold()
