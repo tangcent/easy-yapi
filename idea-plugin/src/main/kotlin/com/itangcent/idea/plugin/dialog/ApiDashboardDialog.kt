@@ -6,6 +6,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.rootManager
+import com.intellij.openapi.ui.Messages
 import com.intellij.psi.*
 import com.itangcent.common.concurrent.AQSCountLatch
 import com.itangcent.common.concurrent.CountLatch
@@ -15,6 +16,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedHelper
 import com.itangcent.idea.swing.SafeHashHelper
+import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
@@ -41,6 +43,10 @@ class ApiDashboardDialog : JDialog() {
     private var postmanApiTree: JTree? = null
     private var projectApiPanel: JPanel? = null
     private var postmanPanel: JPanel? = null
+    private var projectCollapseButton: JButton? = null
+
+    private var postmanSyncButton: JButton? = null
+    private var postmanCollapseButton: JButton? = null
 
     @Inject
     private val logger: Logger? = null
@@ -110,6 +116,7 @@ class ApiDashboardDialog : JDialog() {
                 dge.startDrag(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR), SimpleTransferable(wrapData(projectNodeData), getWrapDataFlavor()))
             }
         }
+
         actionContext!!.runAsync {
             actionContext!!.runInReadUI {
 
@@ -138,6 +145,10 @@ class ApiDashboardDialog : JDialog() {
                     }
                 }
             }
+        }
+
+        this.projectCollapseButton!!.addActionListener {
+            SwingUtils.expandOrCollapseNode(this.projectApiTree!!, false)
         }
     }
 
@@ -233,46 +244,7 @@ class ApiDashboardDialog : JDialog() {
 
     private fun initPostmanInfo() {
 
-        actionContext!!.runInSwingUI {
-            //            postmanApiTree!!.dragEnabled = true
-            val treeNode = DefaultMutableTreeNode()
-            val rootTreeModel = DefaultTreeModel(treeNode, true)
-
-            actionContext!!.runAsync {
-
-                val collections = postmanCachedHelper!!.getAllCollection()
-                if (collections.isNullOrEmpty()) {
-                    logger!!.error("load postman info failed!")
-                    return@runAsync
-                }
-                val collectionNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
-
-                actionContext!!.runInSwingUI {
-                    for (collection in collections) {
-                        val collectionNode = DefaultMutableTreeNode(PostmanCollectionNodeData(collection))
-                        logger!!.info("load collection:$collectionNode")
-                        treeNode.add(collectionNode)
-                        collectionNodes.add(collectionNode)
-                        rootTreeModel.reload(collectionNode)
-                    }
-                    postmanApiTree!!.model = rootTreeModel
-
-                    postmanLoadFuture = actionContext!!.runAsync {
-                        Thread.sleep(1000)
-                        for (collectionNode in collectionNodes) {
-                            if (disposed) break
-                            Thread.sleep(1000)
-                            actionContext!!.runInSwingUI {
-                                loadPostCollectionInfo(collectionNode, rootTreeModel)
-                                rootTreeModel.reload(collectionNode)
-                            }
-                        }
-                        postmanLoadFuture = null
-                    }
-                }
-
-            }
-        }
+        loadPostmanInfo(true)
 
         //drop drag from api to postman
         DropTarget(this.postmanApiTree, DnDConstants.ACTION_COPY_OR_MOVE, object : DropTargetAdapter() {
@@ -303,10 +275,72 @@ class ApiDashboardDialog : JDialog() {
                 }
             }
         })
+
+        this.postmanCollapseButton!!.addActionListener {
+            SwingUtils.expandOrCollapseNode(this.postmanApiTree!!, false)
+        }
+
+        this.postmanSyncButton!!.addActionListener {
+            loadPostmanInfo(false)
+        }
+    }
+
+    private fun loadPostmanInfo(useCache: Boolean) {
+
+        if (!postmanCachedHelper!!.hasPrivateToken()) {
+            actionContext!!.runInSwingUI {
+                Messages.showErrorDialog(actionContext!!.instance(Project::class),
+                        "load postman info failed,no token be found", "Error")
+            }
+            return
+        }
+
+        actionContext!!.runInSwingUI {
+            //            postmanApiTree!!.dragEnabled = true
+            val treeNode = DefaultMutableTreeNode()
+            val rootTreeModel = DefaultTreeModel(treeNode, true)
+
+            actionContext!!.runAsync {
+
+                val collections = postmanCachedHelper.getAllCollection(useCache)
+                if (collections.isNullOrEmpty()) {
+                    actionContext!!.runInSwingUI {
+                        Messages.showErrorDialog(actionContext!!.instance(Project::class),
+                                "load postman info failed", "Error")
+                    }
+                    return@runAsync
+                }
+                val collectionNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
+
+                actionContext!!.runInSwingUI {
+                    for (collection in collections) {
+                        val collectionNode = DefaultMutableTreeNode(PostmanCollectionNodeData(collection))
+                        logger!!.info("load collection:$collectionNode")
+                        treeNode.add(collectionNode)
+                        collectionNodes.add(collectionNode)
+                        rootTreeModel.reload(collectionNode)
+                    }
+                    postmanApiTree!!.model = rootTreeModel
+
+                    postmanLoadFuture = actionContext!!.runAsync {
+                        Thread.sleep(1000)
+                        for (collectionNode in collectionNodes) {
+                            if (disposed) break
+                            Thread.sleep(1000)
+                            actionContext!!.runInSwingUI {
+                                loadPostCollectionInfo(collectionNode, rootTreeModel, useCache)
+                                rootTreeModel.reload(collectionNode)
+                            }
+                        }
+                        postmanLoadFuture = null
+                    }
+                }
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel) {
+    private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel, useCache: Boolean) {
         val moduleData = collectionNode.userObject as PostmanCollectionNodeData
         val collectionId = moduleData.collection["id"]
         if (collectionId == null) {
@@ -315,7 +349,7 @@ class ApiDashboardDialog : JDialog() {
             return
         }
 
-        val collectionInfo = postmanCachedHelper!!.getCollectionInfo(collectionId.toString())
+        val collectionInfo = postmanCachedHelper!!.getCollectionInfo(collectionId.toString(), useCache)
         if (collectionInfo == null) {
             moduleData.status = NodeStatus.loaded
             return
