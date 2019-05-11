@@ -26,6 +26,10 @@ class PostmanCachedHelper {
         return this.dbBeanBinderFactory!!
     }
 
+    fun hasPrivateToken(): Boolean {
+        return postmanApiHelper!!.hasPrivateToken()
+    }
+
     fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
         if (postmanApiHelper!!.updateCollection(collectionId, apiInfo)) {
             val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("collection:$collectionId")
@@ -37,31 +41,39 @@ class PostmanCachedHelper {
         return false
     }
 
-    fun getAllCollection(): ArrayList<Map<String, Any?>>? {
-        val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder("getAllCollection")
-        var cache = allCollectionBeanBinder.read()
-        if (cache != NULL_COLLECTION_INFO_CACHE) {
-            return cache.allCollection
+    fun getAllCollection(useCache: Boolean = true): ArrayList<Map<String, Any?>>? {
+        if (useCache) {
+            val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder("getAllCollection")
+            val cache = allCollectionBeanBinder.read()
+            if (cache != NULL_COLLECTION_INFO_CACHE) {
+                return cache.allCollection
+            }
         }
 
         val allCollection = postmanApiHelper!!.getAllCollection()
-        cache = CollectionInfoCache()
+        val cache = CollectionInfoCache()
         cache.allCollection = allCollection
-        allCollectionBeanBinder.save(cache)
+        getDbBeanBinderFactory()
+                .getBeanBinder("getAllCollection")
+                .save(cache)
         return allCollection
     }
 
-    fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
-        val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("collection:$collectionId")
-        var cache = collectionDetailBeanBinder.read()
-        if (cache != NULL_COLLECTION_INFO_CACHE) {
-            return cache.collectionDetail
+    fun getCollectionInfo(collectionId: String, useCache: Boolean = true): HashMap<String, Any?>? {
+        if (useCache) {
+            val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("collection:$collectionId")
+            val cache = collectionDetailBeanBinder.read()
+            if (cache != NULL_COLLECTION_INFO_CACHE) {
+                return cache.collectionDetail
+            }
         }
 
         val collectionDetail = postmanApiHelper!!.getCollectionInfo(collectionId)
-        cache = CollectionInfoCache()
+        val cache = CollectionInfoCache()
         cache.collectionDetail = collectionDetail
-        collectionDetailBeanBinder.save(cache)
+        getDbBeanBinderFactory()
+                .getBeanBinder("collection:$collectionId")
+                .save(cache)
         return collectionDetail
     }
 
