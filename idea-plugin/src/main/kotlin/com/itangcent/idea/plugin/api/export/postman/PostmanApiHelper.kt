@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.setting.SettingManager
@@ -31,8 +32,13 @@ class PostmanApiHelper {
 
     private val responseHandler = StringResponseHandler()
 
-    fun hasPrivateToken(): Boolean {
-        return getPrivateToken() != null
+    fun hasPrivateToken(missingNotification: (() -> Unit)? = MISSING_NOTIFICATION): Boolean {
+        return if (getPrivateToken() != null) {
+            true
+        } else {
+            missingNotification?.invoke()
+            false
+        }
     }
 
     private fun getPrivateToken(): String? {
@@ -184,5 +190,13 @@ class PostmanApiHelper {
         val POSTMANHOST = "https://api.getpostman.com"
         val IMPOREDAPI = "$POSTMANHOST/import/exported"
         val COLLECTION = "$POSTMANHOST/collections"
+        private val MISSING_NOTIFICATION: () -> Unit = {
+            val logger = ActionContext.getContext()!!.instance(Logger::class)
+            logger.info("PrivateToken of postman not be setting")
+            logger.info("To enable automatically import to postman you could set privateToken" +
+                    " of host [https://api.getpostman.com] in \"File -> Other Setting -> EasyApiSetting\"")
+            logger.info("If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
+                    " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api].")
+        }
     }
 }
