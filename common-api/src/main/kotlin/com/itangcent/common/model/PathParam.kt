@@ -1,6 +1,8 @@
 package com.itangcent.common.model
 
-class PathParam {
+import java.io.Serializable
+
+class PathParam : Serializable {
     var name: String? = null
 
     var value: String? = null

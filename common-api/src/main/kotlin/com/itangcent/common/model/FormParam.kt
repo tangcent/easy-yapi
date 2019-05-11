@@ -1,6 +1,8 @@
 package com.itangcent.common.model
 
-class FormParam {
+import java.io.Serializable
+
+class FormParam : Serializable {
 
     var name: String? = null
 

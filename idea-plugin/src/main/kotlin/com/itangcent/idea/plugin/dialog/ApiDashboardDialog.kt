@@ -14,6 +14,7 @@ import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
+import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
@@ -21,10 +22,10 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
-import java.awt.dnd.DnDConstants
-import java.awt.dnd.DragSource
+import java.awt.dnd.*
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import java.io.Serializable
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
@@ -32,6 +33,7 @@ import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import kotlin.collections.ArrayList
+
 
 class ApiDashboardDialog : JDialog() {
     private var contentPane: JPanel? = null
@@ -60,6 +62,8 @@ class ApiDashboardDialog : JDialog() {
 
     @Volatile
     private var disposed = false
+
+    private var safeHashHelper = SafeHashHelper()
 
     @Inject
     var project: Project? = null
@@ -93,37 +97,45 @@ class ApiDashboardDialog : JDialog() {
     private fun initProjectApiModule() {
         projectApiTree!!.dragEnabled = true
 
-        projectApiTree!!.transferHandler = ApiTreeTransferHandler()
+        projectApiTree!!.transferHandler = ApiTreeTransferHandler(this)
 
         val dragSource = DragSource.getDefaultDragSource()
 
         dragSource.createDefaultDragGestureRecognizer(projectApiTree, DnDConstants.ACTION_COPY_OR_MOVE
-        ) { it.startDrag(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR), SimpleTransferable(projectApiTree!!.lastSelectedPathComponent, DataFlavor.stringFlavor)) }
+        ) { dge ->
+            val lastSelectedPathComponent = projectApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
 
-        actionContext!!.runInReadUI {
-
-            val moduleManager = ModuleManager.getInstance(project!!)
-            val treeNode = DefaultMutableTreeNode()
-//            var moduleNodeMap: HashMap<Module, DefaultMutableTreeNode> = HashMap()
-            val modules = moduleManager.sortedModules.reversed()
-
-            val moduleNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
-            for (module in modules) {
-                val moduleApiNodeData = DefaultMutableTreeNode(ModuleNodeData(module))
-                treeNode.add(moduleApiNodeData)
-                moduleNodes.add(moduleApiNodeData)
+            if (lastSelectedPathComponent != null) {
+                val projectNodeData = lastSelectedPathComponent.userObject
+                dge.startDrag(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR), SimpleTransferable(wrapData(projectNodeData), getWrapDataFlavor()))
             }
+        }
+        actionContext!!.runAsync {
+            actionContext!!.runInReadUI {
 
-            actionContext!!.runInSwingUI {
-                val rootTreeModel = DefaultTreeModel(treeNode, true)
-                projectApiTree!!.model = rootTreeModel
-                apiLoadFuture = actionContext!!.runAsync {
-                    for (it in moduleNodes) {
-                        if (disposed) break
-                        loadApiInModule(it, rootTreeModel)
-                        rootTreeModel.reload(it)
+                val moduleManager = ModuleManager.getInstance(project!!)
+                val treeNode = DefaultMutableTreeNode()
+//            var moduleNodeMap: HashMap<Module, DefaultMutableTreeNode> = HashMap()
+                val modules = moduleManager.sortedModules.reversed()
+
+                val moduleNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
+                for (module in modules) {
+                    val moduleApiNodeData = DefaultMutableTreeNode(ModuleNodeData(module))
+                    treeNode.add(moduleApiNodeData)
+                    moduleNodes.add(moduleApiNodeData)
+                }
+
+                actionContext!!.runInSwingUI {
+                    val rootTreeModel = DefaultTreeModel(treeNode, true)
+                    projectApiTree!!.model = rootTreeModel
+                    apiLoadFuture = actionContext!!.runAsync {
+                        for (it in moduleNodes) {
+                            if (disposed) break
+                            loadApiInModule(it, rootTreeModel)
+                            rootTreeModel.reload(it)
+                        }
+                        apiLoadFuture = null
                     }
-                    apiLoadFuture = null
                 }
             }
         }
@@ -249,7 +261,7 @@ class ApiDashboardDialog : JDialog() {
                         Thread.sleep(1000)
                         for (collectionNode in collectionNodes) {
                             if (disposed) break
-                            Thread.sleep(200)
+                            Thread.sleep(1000)
                             actionContext!!.runInSwingUI {
                                 loadPostCollectionInfo(collectionNode, rootTreeModel)
                                 rootTreeModel.reload(collectionNode)
@@ -261,12 +273,42 @@ class ApiDashboardDialog : JDialog() {
 
             }
         }
+
+        //drop drag from api to postman
+        DropTarget(this.postmanApiTree, DnDConstants.ACTION_COPY_OR_MOVE, object : DropTargetAdapter() {
+
+            override fun drop(dtde: DropTargetDropEvent?) {
+                if (dtde == null) return
+
+
+                try {
+                    dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE)
+
+                    val tp = postmanApiTree!!.getPathForLocation(dtde.location.x, dtde.location.y)
+                    val targetComponent = tp.lastPathComponent
+                    logger!!.info("drop to:$targetComponent")
+
+                    val transferable = dtde.transferable
+                    val wrapDataFlavor = getWrapDataFlavor()
+
+                    val transferData = transferable.getTransferData(wrapDataFlavor)
+
+                    val unboxedData = (transferData as WrapData).wrapHash?.let { safeHashHelper.getBean(it) } ?: return
+                    logger.info("drop:$unboxedData")
+
+                } catch (e: java.lang.Exception) {
+                    logger!!.info("drop failed:" + ExceptionUtils.getStackTrace(e))
+                } finally {
+                    dtde.dropComplete(true)
+                }
+            }
+        })
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel) {
         val moduleData = collectionNode.userObject as PostmanCollectionNodeData
-        val collectionId = moduleData.info["id"]
+        val collectionId = moduleData.collection["id"]
         if (collectionId == null) {
             collectionNode.removeFromParent()
             rootTreeModel.reload(collectionNode)
@@ -281,7 +323,7 @@ class ApiDashboardDialog : JDialog() {
         try {
             val items = collectionInfo["item"] as ArrayList<HashMap<String, Any>>
             for (item in items) {
-                loadPostmanNode(collectionInfo, item, collectionNode)
+                loadPostmanNode(collectionNode, item)
             }
         } finally {
             moduleData.status = NodeStatus.loaded
@@ -289,26 +331,25 @@ class ApiDashboardDialog : JDialog() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun loadPostmanNode(collectionInfo: HashMap<String, Any?>, item: HashMap<String, Any>, parentNode: DefaultMutableTreeNode) {
+    private fun loadPostmanNode(parentNode: DefaultMutableTreeNode, item: HashMap<String, Any>) {
         if (item.isNullOrEmpty()) return
 
+        val parentNodeData = parentNode.userObject as PostmanNodeData
         Thread.yield()
         if (item.containsKey("request")) {//is request
-            val apiTreeNode = DefaultMutableTreeNode(PostmanApiNodeData(item))
+            val apiTreeNode = DefaultMutableTreeNode(PostmanApiNodeData(parentNodeData, item))
             apiTreeNode.allowsChildren = false
             parentNode.add(apiTreeNode)
-//            logger!!.info("load api:$apiTreeNode")
+
 
         } else {//is sub collection
-            val subCollectionNode = DefaultMutableTreeNode(PostmanSubCollectionNodeData(collectionInfo, item))
+            val subCollectionNode = DefaultMutableTreeNode(PostmanSubCollectionNodeData(parentNodeData, item))
             parentNode.add(subCollectionNode)
-
-//            logger!!.info("load sub collection:$subCollectionNode")
 
             val items = item["item"] as ArrayList<HashMap<String, Any>>?
             if (items.isNullOrEmpty()) return
             for (subItem in items) {
-                loadPostmanNode(collectionInfo, subItem, subCollectionNode)
+                loadPostmanNode(subCollectionNode, subItem)
             }
         }
     }
@@ -367,28 +408,113 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanCollectionNodeData {
-        var info: Map<String, Any?>
+    class WrapData : Serializable {
+
+        var wrapClass: String? = null
+
+        var wrapHash: Int? = null
+
+        var wrapString: String? = null
+
+        override fun toString(): String {
+            return wrapString ?: "null"
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as WrapData
+
+            if (wrapHash != other.wrapHash) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return wrapHash ?: 0
+        }
+    }
+
+    private fun wrapData(data: Any): WrapData {
+
+        val wrapData = WrapData()
+
+        wrapData.wrapClass = data::class.qualifiedName
+        wrapData.wrapHash = safeHashHelper.hash(data)
+        wrapData.wrapString = data.toString()
+
+        return wrapData
+    }
+
+    private var wrapDataFlavor: DataFlavor? = null
+
+    private fun getWrapDataFlavor(): DataFlavor {
+        if (wrapDataFlavor != null) {
+            return wrapDataFlavor!!
+        }
+        try {
+            wrapDataFlavor = DataFlavor(WrapData::class.java, WrapData::class.java.simpleName)
+        } catch (e: Exception) {
+            return DataFlavor.stringFlavor
+        }
+
+        return wrapDataFlavor!!
+    }
+
+    abstract class PostmanNodeData {
+        abstract fun currData(): Map<String, Any?>
+
+        fun getRootNodeData(): PostmanNodeData? {
+            val parentCollectionInfo = getParentNodeData()
+            return when (parentCollectionInfo) {
+                null -> this
+                else -> parentCollectionInfo.getRootNodeData()
+            }
+        }
+
+        abstract fun getParentNodeData(): PostmanNodeData?
+    }
+
+    class PostmanCollectionNodeData : PostmanNodeData {
+        override fun currData(): Map<String, Any?> {
+            return collection
+        }
+
+        override fun getParentNodeData(): PostmanNodeData? {
+            return null
+        }
+
+
+        var collection: Map<String, Any?>
 
         var status = NodeStatus.unload
 
         constructor(info: Map<String, Any?>) {
-            this.info = info
+            this.collection = info
         }
 
         override fun toString(): String {
-            return status.desc + info.getOrDefault("name", "unknown")
+            return status.desc + collection.getOrDefault("name", "unknown")
         }
     }
 
-    class PostmanSubCollectionNodeData {
-        private var rootCollectionInfo: Map<String, Any?>
+    class PostmanSubCollectionNodeData : PostmanNodeData {
+        override fun currData(): Map<String, Any?> {
+            return info
+        }
+
+        override fun getParentNodeData(): PostmanNodeData? {
+            return parentNode
+        }
+
+        private var parentNode: PostmanNodeData
 
         var info: Map<String, Any?>
 
-        constructor(rootCollectionInfo: Map<String, Any?>, info: Map<String, Any?>) {
+        constructor(parentNode: PostmanNodeData, info: Map<String, Any?>) {
             this.info = info
-            this.rootCollectionInfo = rootCollectionInfo
+            this.parentNode = parentNode
         }
 
         override fun toString(): String {
@@ -396,19 +522,31 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanApiNodeData {
+    class PostmanApiNodeData : PostmanNodeData {
+        override fun currData(): Map<String, Any?> {
+            return info
+        }
+
+        override fun getParentNodeData(): PostmanNodeData? {
+            return parentNode
+        }
+
+        private var parentNode: PostmanNodeData
+
         var info: Map<String, Any?>
 
-        constructor(info: Map<String, Any?>) {
+        constructor(parentNode: PostmanNodeData, info: Map<String, Any?>) {
             this.info = info
+            this.parentNode = parentNode
         }
 
         override fun toString(): String {
             return info.getOrDefault("name", "unknown").toString()
         }
+
     }
 
-    class ApiTreeTransferHandler : TransferHandler() {
+    class ApiTreeTransferHandler(private val apiDashboardDialog: ApiDashboardDialog) : TransferHandler() {
 
         override fun canImport(comp: JComponent?, transferFlavors: Array<out DataFlavor>?): Boolean {
             return super.canImport(comp, transferFlavors)
@@ -417,8 +555,12 @@ class ApiDashboardDialog : JDialog() {
         override fun importData(comp: JComponent?, t: Transferable?): Boolean {
             return super.importData(comp, t)
         }
-    }
 
+        override fun createTransferable(component: JComponent?): Transferable {
+            apiDashboardDialog.logger!!.info("createTransferable:$component")
+            return super.createTransferable(component)
+        }
+    }
 
     private fun onCancel() {
         disposed = true
