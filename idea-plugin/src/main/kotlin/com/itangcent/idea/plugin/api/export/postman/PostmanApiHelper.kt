@@ -124,7 +124,7 @@ class PostmanApiHelper {
         }
     }
 
-    fun getAllCollection(responseHandler: ResponseHandler<String> = this.responseHandler): ArrayList<Map<String, Any?>>? {
+    fun getAllCollection(responseHandler: ResponseHandler<String> = this.responseHandler): ArrayList<HashMap<String, Any?>>? {
         val httpGet = HttpGet(COLLECTION)
         httpGet.setHeader("x-api-key", getPrivateToken())
 
@@ -134,7 +134,7 @@ class PostmanApiHelper {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collections = returnObj?.asJsonObject?.get("collections")
                         ?.asJsonArray ?: return null
-                val collectionList: ArrayList<Map<String, Any?>> = ArrayList()
+                val collectionList: ArrayList<HashMap<String, Any?>> = ArrayList()
                 collections.forEach { collectionList.add(it.asMap()) }
                 return collectionList
             }

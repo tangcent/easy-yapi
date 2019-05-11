@@ -7,6 +7,7 @@ import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
+import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -32,6 +33,7 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ApiDashBoard::class) { it.singleton() }
         builder.bind(PostmanApiHelper::class) { it.singleton() }
+        builder.bind(PostmanFormatter::class) { it.singleton() }
         builder.bind(PostmanCachedHelper::class) { it.singleton() }
         builder.bindInstance(HttpClient::class, HttpClients.createDefault())
 
