@@ -9,6 +9,7 @@ import com.itangcent.intellij.setting.SettingManager
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.HttpClient
+import org.apache.http.client.ResponseHandler
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.methods.HttpPut
@@ -28,6 +29,8 @@ class PostmanApiHelper {
     @Inject
     private val httpClient: HttpClient? = null
 
+    private val responseHandler = StringResponseHandler()
+
     fun hasPrivateToken(): Boolean {
         return getPrivateToken() != null
     }
@@ -41,7 +44,7 @@ class PostmanApiHelper {
         }
     }
 
-    fun importApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
+    fun importApiInfo(apiInfo: HashMap<String, Any?>, responseHandler: ResponseHandler<String> = this.responseHandler): Boolean {
 
         val httpClient = HttpClients.createDefault()
 
@@ -54,7 +57,6 @@ class PostmanApiHelper {
 
         httpPost.setHeader("x-api-key", getPrivateToken())
         httpPost.entity = requestEntity
-        val responseHandler = StringResponseHandler()
 
         try {
             val returnValue = httpClient.execute(httpPost, responseHandler)
@@ -83,7 +85,7 @@ class PostmanApiHelper {
         }
     }
 
-    fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
+    fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>, responseHandler: ResponseHandler<String> = this.responseHandler): Boolean {
 
         val httpPost = HttpPut("$COLLECTION/$collectionId")
         val collection: HashMap<String, Any?> = HashMap()
@@ -94,7 +96,6 @@ class PostmanApiHelper {
 
         httpPost.setHeader("x-api-key", getPrivateToken())
         httpPost.entity = requestEntity
-        val responseHandler = StringResponseHandler()
 
         try {
             val returnValue = httpClient!!.execute(httpPost, responseHandler)
@@ -123,10 +124,9 @@ class PostmanApiHelper {
         }
     }
 
-    fun getAllCollection(): ArrayList<Map<String, Any?>>? {
+    fun getAllCollection(responseHandler: ResponseHandler<String> = this.responseHandler): ArrayList<Map<String, Any?>>? {
         val httpGet = HttpGet(COLLECTION)
         httpGet.setHeader("x-api-key", getPrivateToken())
-        val responseHandler = StringResponseHandler()
 
         try {
             val returnValue = httpClient!!.execute(httpGet, responseHandler)
@@ -154,11 +154,9 @@ class PostmanApiHelper {
         }
     }
 
-    fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+    fun getCollectionInfo(collectionId: String, responseHandler: ResponseHandler<String> = this.responseHandler): HashMap<String, Any?>? {
         val httpGet = HttpGet("$COLLECTION/$collectionId")
         httpGet.setHeader("x-api-key", getPrivateToken())
-        val responseHandler = StringResponseHandler()
-
         try {
             val returnValue = httpClient!!.execute(httpGet, responseHandler)
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
