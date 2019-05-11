@@ -41,7 +41,7 @@ class PostmanCachedHelper {
         return false
     }
 
-    fun getAllCollection(useCache: Boolean = true): ArrayList<Map<String, Any?>>? {
+    fun getAllCollection(useCache: Boolean = true): ArrayList<HashMap<String, Any?>>? {
         if (useCache) {
             val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder("getAllCollection")
             val cache = allCollectionBeanBinder.read()
@@ -78,7 +78,7 @@ class PostmanCachedHelper {
     }
 
     class CollectionInfoCache {
-        var allCollection: ArrayList<Map<String, Any?>>? = null
+        var allCollection: ArrayList<HashMap<String, Any?>>? = null
 
         var collectionDetail: HashMap<String, Any?>? = null
     }

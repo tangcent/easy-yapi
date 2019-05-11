@@ -13,7 +13,6 @@ import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.DocParseHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
@@ -122,7 +121,7 @@ class MarkdownApiExporter {
         //group by class into: {class:requests}
         val clsGroupedMap: HashMap<Any, ArrayList<Any?>> = HashMap()
         requests.forEach { request ->
-            val resource = request.resource?.let { findResourceClass(it) } ?: PostmanApiExporter.NULL_RESOURCE
+            val resource = request.resource?.let { findResourceClass(it) } ?: NULL_RESOURCE
             clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
                     .add(request)
         }
@@ -416,5 +415,6 @@ class MarkdownApiExporter {
         private const val NAME = "name"
         private const val DESC = "desc"
         private const val ITEMS = "items"
+        private val NULL_RESOURCE = Object()
     }
 }

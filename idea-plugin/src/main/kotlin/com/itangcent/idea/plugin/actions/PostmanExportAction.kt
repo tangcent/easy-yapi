@@ -6,6 +6,7 @@ import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
+import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -28,6 +29,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
         builder.bind(PostmanApiHelper::class) { it.singleton() }
         builder.bind(PostmanApiExporter::class) { it.singleton() }
+        builder.bind(PostmanFormatter::class) { it.singleton() }
         builder.bindInstance(HttpClient::class, HttpClients.createDefault())
         builder.bind(DocParseHelper::class) { it.singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
