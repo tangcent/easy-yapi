@@ -1,8 +1,10 @@
 package com.itangcent.idea.swing
 
-class ObjectHashHelper {
+import java.lang.ref.WeakReference
 
-    private var hashCache: HashMap<Int, Any> = HashMap()
+class SafeHashHelper {
+
+    private var hashCache: HashMap<Int, WeakReference<Any>> = HashMap()
 
     /**
      * get hash of bean and resolve the hash collisions
@@ -12,9 +14,9 @@ class ObjectHashHelper {
         var hashCodeCandidate = rehash(obj)
 
         while (true) {
-            val existed = hashCache[hashCodeCandidate]
+            val existed = hashCache[hashCodeCandidate]?.get()
             if (existed == null) {
-                hashCache[hashCodeCandidate] = obj
+                hashCache[hashCodeCandidate] = WeakReference(obj)
                 return hashCodeCandidate
             } else {
                 if (existed == obj) {
@@ -26,19 +28,17 @@ class ObjectHashHelper {
         }
     }
 
-
     /**
      * rehash,copy from HashMap
      */
-    internal fun rehash(key: Any?): Int {
+    private fun rehash(key: Any?): Int {
         if (key == null) return 0
         val h: Int = key.hashCode()
         return h xor h.ushr(16)
     }
 
-
     @Synchronized
     fun getBean(hash: Int): Any? {
-        return hashCache[hash]
+        return hashCache[hash]?.get()
     }
 }
