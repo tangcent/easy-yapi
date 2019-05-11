@@ -13,7 +13,7 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanCachedHelper
 import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -58,7 +58,7 @@ class ApiDashboardDialog : JDialog() {
     private val resourceHelper: ResourceHelper? = null
 
     @Inject
-    private val postmanApiHelper: PostmanApiHelper? = null
+    private val postmanCachedHelper: PostmanCachedHelper? = null
 
     @Volatile
     private var disposed = false
@@ -240,7 +240,7 @@ class ApiDashboardDialog : JDialog() {
 
             actionContext!!.runAsync {
 
-                val collections = postmanApiHelper!!.getAllCollection()
+                val collections = postmanCachedHelper!!.getAllCollection()
                 if (collections.isNullOrEmpty()) {
                     logger!!.error("load postman info failed!")
                     return@runAsync
@@ -315,7 +315,7 @@ class ApiDashboardDialog : JDialog() {
             return
         }
 
-        val collectionInfo = postmanApiHelper!!.getCollectionInfo(collectionId.toString())
+        val collectionInfo = postmanCachedHelper!!.getCollectionInfo(collectionId.toString())
         if (collectionInfo == null) {
             moduleData.status = NodeStatus.loaded
             return
