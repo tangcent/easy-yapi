@@ -175,7 +175,7 @@ class PostmanFormatter {
         val info: HashMap<String, Any?> = HashMap()
         postman["info"] = info
         parseNameAndDesc(resource, info)
-        info["schema"] = "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+        info["schema"] = POSTMAN_SCHEMA_V2_1_0
         postman["item"] = items
         return postman
     }
@@ -215,5 +215,9 @@ class PostmanFormatter {
             docText.isNullOrBlank() -> cls.name
             else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle!!)
         }
+    }
+    companion object {
+
+        const val POSTMAN_SCHEMA_V2_1_0 = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     }
 }
