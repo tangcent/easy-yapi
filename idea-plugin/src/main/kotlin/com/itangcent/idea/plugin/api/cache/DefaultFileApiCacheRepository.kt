@@ -17,7 +17,7 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
         if (dbBeanBinderFactory == null) {
             synchronized(this) {
                 dbBeanBinderFactory = DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.cache.v1.1.db").path)
-                { FileApiCache() }
+                { NULL_FILE_API_CACHE }
             }
         }
     }
@@ -27,6 +27,7 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
         return try {
             val fileApiCache = dbBeanBinderFactory!!.getBeanBinder(filePath).read()
             when {
+                fileApiCache === NULL_FILE_API_CACHE -> null
                 fileApiCache.file == null -> null
                 else -> fileApiCache
             }
@@ -38,5 +39,9 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
     override fun saveFileApiCache(filePath: String, fileApiCache: FileApiCache) {
         init()
         dbBeanBinderFactory!!.getBeanBinder(filePath).save(fileApiCache)
+    }
+
+    companion object {
+        val NULL_FILE_API_CACHE = com.itangcent.idea.plugin.api.cache.FileApiCache()
     }
 }

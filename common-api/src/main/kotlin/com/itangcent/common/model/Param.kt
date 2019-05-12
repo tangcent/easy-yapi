@@ -1,6 +1,8 @@
 package com.itangcent.common.model
 
-class Param {
+import java.io.Serializable
+
+class Param: Serializable {
     var name: String? = null
 
     var value: Any? = null

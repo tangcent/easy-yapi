@@ -1,6 +1,8 @@
 package com.itangcent.common.model
 
-class Header {
+import java.io.Serializable
+
+class Header: Serializable {
     var name: String? = null
 
     var value: String? = null

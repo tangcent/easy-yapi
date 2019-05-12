@@ -16,6 +16,7 @@ import com.itangcent.idea.constant.SpringAttrs
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiAnnotationUtils
@@ -57,6 +58,9 @@ class SpringClassExporter : ClassExporter, Worker {
 
     @Inject
     private val docParseHelper: DocParseHelper? = null
+
+    @Inject
+    var actionContext: ActionContext? = null
 
     override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
         if (cls !is PsiClass) return

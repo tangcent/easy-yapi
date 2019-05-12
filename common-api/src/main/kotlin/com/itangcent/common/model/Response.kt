@@ -1,6 +1,8 @@
 package com.itangcent.common.model
 
-class Response {
+import java.io.Serializable
+
+class Response: Serializable {
 
     var headers: ArrayList<Header>? = null
 
