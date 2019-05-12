@@ -1,6 +1,8 @@
 package com.itangcent.common.model
 
-class Request {
+import java.io.Serializable
+
+class Request : Serializable {
 
     var resource: Any? = null
 
