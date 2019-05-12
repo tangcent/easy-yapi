@@ -3,10 +3,7 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.export.DocParseHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
-import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.api.export.postman.*
 import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -27,7 +24,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
-        builder.bind(PostmanApiHelper::class) { it.singleton() }
+        builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedHelper::class).singleton() }
         builder.bind(PostmanApiExporter::class) { it.singleton() }
         builder.bind(PostmanFormatter::class) { it.singleton() }
         builder.bindInstance(HttpClient::class, HttpClients.createDefault())

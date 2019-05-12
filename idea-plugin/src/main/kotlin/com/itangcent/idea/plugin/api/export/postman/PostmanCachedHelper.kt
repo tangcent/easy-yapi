@@ -5,10 +5,7 @@ import com.google.inject.name.Named
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.intellij.file.LocalFileRepository
 
-class PostmanCachedHelper {
-
-    @Inject
-    private val postmanApiHelper: PostmanApiHelper? = null
+class PostmanCachedHelper : DefaultPostmanApiHelper() {
 
     @Inject
     @Named("projectCacheRepository")
@@ -26,12 +23,41 @@ class PostmanCachedHelper {
         return this.dbBeanBinderFactory!!
     }
 
-    fun hasPrivateToken(): Boolean {
-        return postmanApiHelper!!.hasPrivateToken()
+    override fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>? {
+        val createdCollection: HashMap<String, Any?> = super.createCollection(collection) ?: return null
+
+        val collectionId = createdCollection["id"]?.toString() ?: return null
+
+        collection["id"] = collectionId
+
+        //region update collection of AllCollection-----------------------------
+        val allCollectionBeanBinder = getDbBeanBinderFactory()
+                .getBeanBinder("getAllCollection")
+        val cacheOfAllCollection = allCollectionBeanBinder.read()
+        if (cacheOfAllCollection != NULL_COLLECTION_INFO_CACHE) {
+            if (cacheOfAllCollection.allCollection == null) {
+                cacheOfAllCollection.allCollection = ArrayList()
+            }
+            cacheOfAllCollection.allCollection!!.add(createdCollection)
+            allCollectionBeanBinder.save(cacheOfAllCollection)
+        }
+        //endregion update collection of AllCollection-----------------------------
+
+        //region add cache of created collection--------------------------------
+        val cacheOfCollection = CollectionInfoCache()
+        cacheOfCollection.collectionDetail = collection
+
+        getDbBeanBinderFactory()
+                .getBeanBinder("collection:$collectionId")
+                .save(cacheOfCollection)
+        //endregion add cache of created collection--------------------------------
+
+        return createdCollection
+
     }
 
-    fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
-        if (postmanApiHelper!!.updateCollection(collectionId, apiInfo)) {
+    override fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
+        if (super.updateCollection(collectionId, apiInfo)) {
             val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("collection:$collectionId")
             val cache = CollectionInfoCache()
             cache.collectionDetail = apiInfo
@@ -50,7 +76,7 @@ class PostmanCachedHelper {
             }
         }
 
-        val allCollection = postmanApiHelper!!.getAllCollection()
+        val allCollection = super.getAllCollection()
         val cache = CollectionInfoCache()
         cache.allCollection = allCollection
         getDbBeanBinderFactory()
@@ -68,7 +94,7 @@ class PostmanCachedHelper {
             }
         }
 
-        val collectionDetail = postmanApiHelper!!.getCollectionInfo(collectionId)
+        val collectionDetail = super.getCollectionInfo(collectionId)
         val cache = CollectionInfoCache()
         cache.collectionDetail = collectionDetail
         getDbBeanBinderFactory()
