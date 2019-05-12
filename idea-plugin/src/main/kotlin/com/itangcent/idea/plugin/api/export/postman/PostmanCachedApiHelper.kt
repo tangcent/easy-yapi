@@ -5,7 +5,7 @@ import com.google.inject.name.Named
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.intellij.file.LocalFileRepository
 
-class PostmanCachedHelper : DefaultPostmanApiHelper() {
+class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
     @Inject
     @Named("projectCacheRepository")

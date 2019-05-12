@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
+import com.google.inject.name.Named
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.ReservedResult
@@ -11,6 +12,7 @@ import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.setting.SettingManager
+import com.itangcent.intellij.setting.TokenSetting
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.HttpClient
@@ -40,6 +42,10 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     @Inject
     private val settingManager: SettingManager? = null
 
+    @Inject(optional = true)
+    @Named("editableSettingManager")
+    private val editableSettingManager: SettingManager? = null
+
     @Inject
     private val logger: Logger? = null
 
@@ -59,6 +65,13 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         } else {
             null
         }
+    }
+
+    override fun setPrivateToken(postmanPrivateToken: String) {
+        val tokenSetting = TokenSetting()
+        tokenSetting.host = POSTMANHOST
+        tokenSetting.privateToken = postmanPrivateToken
+        (editableSettingManager ?: settingManager)!!.saveSetting(tokenSetting)
     }
 
     private fun beforeRequest() {
@@ -147,20 +160,21 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
 
-        val httpPost = HttpPut("$COLLECTION/$collectionId")
+        val httpPut = HttpPut("$COLLECTION/$collectionId")
         val collection: HashMap<String, Any?> = HashMap()
         collection["collection"] = apiInfo
 
+        logger!!.info("updateCollection body:\n" + GsonUtils.toJson(collection))
         val requestEntity = StringEntity(GsonUtils.toJson(collection),
                 ContentType.APPLICATION_JSON)
 
-        httpPost.setHeader("x-api-key", getPrivateToken())
-        httpPost.entity = requestEntity
+        httpPut.setHeader("x-api-key", getPrivateToken())
+        httpPut.entity = requestEntity
 
         try {
             beforeRequest()
 
-            val result = httpClient!!.execute(httpPost, reservedResponseHandle())
+            val result = httpClient!!.execute(httpPut, reservedResponseHandle())
             val returnValue = result.result()
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)

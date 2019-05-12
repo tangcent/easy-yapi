@@ -15,11 +15,6 @@ import org.apache.commons.lang3.RandomUtils
 import java.util.Date
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
-import kotlin.collections.Map
-import kotlin.collections.forEach
-import kotlin.collections.forEachIndexed
-import kotlin.collections.isNotEmpty
-import kotlin.collections.isNullOrEmpty
 import kotlin.collections.set
 
 class PostmanFormatter {
