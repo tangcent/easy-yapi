@@ -4,7 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
 import com.itangcent.idea.plugin.api.export.DocParseHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanCachedHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.psi.RecommendClassRuleConfig
@@ -15,6 +15,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.ClassRuleConfig
+import com.itangcent.intellij.setting.DefaultSettingManager
 import com.itangcent.intellij.setting.ReadOnlySettingManager
 import com.itangcent.intellij.setting.SettingManager
 import org.apache.http.client.HttpClient
@@ -27,11 +28,12 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
+        builder.bind(SettingManager::class, "editableSettingManager") { it.with(DefaultSettingManager::class).singleton() }
         builder.bind(DocParseHelper::class) { it.singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ApiDashBoard::class) { it.singleton() }
-        builder.bind(PostmanCachedHelper::class) { it.singleton() }
+        builder.bind(PostmanCachedApiHelper::class) { it.singleton() }
         builder.bind(PostmanFormatter::class) { it.singleton() }
         builder.bindInstance(HttpClient::class, HttpClients.createDefault())
 

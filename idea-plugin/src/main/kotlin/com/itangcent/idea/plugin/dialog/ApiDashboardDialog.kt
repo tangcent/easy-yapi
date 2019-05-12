@@ -13,15 +13,20 @@ import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.DateUtils
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.ResourceHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanCachedHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.extend.rx.AutoComputer
+import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.fest.util.Lists
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -29,13 +34,15 @@ import java.awt.dnd.*
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.Serializable
-import java.util.Stack
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreePath
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 
 class ApiDashboardDialog : JDialog() {
@@ -45,6 +52,7 @@ class ApiDashboardDialog : JDialog() {
     private var projectApiPanel: JPanel? = null
     private var postmanPanel: JPanel? = null
     private var projectCollapseButton: JButton? = null
+    private var postmanNewCollectionButton: JButton? = null
 
     private var postmanSyncButton: JButton? = null
     private var postmanCollapseButton: JButton? = null
@@ -65,13 +73,15 @@ class ApiDashboardDialog : JDialog() {
     private val resourceHelper: ResourceHelper? = null
 
     @Inject
-    private val postmanCachedHelper: PostmanCachedHelper? = null
+    private val postmanCachedApiHelper: PostmanCachedApiHelper? = null
 
     @Inject
     private val postmanFormatter: PostmanFormatter? = null
 
     @Volatile
     private var disposed = false
+
+    private var autoComputer: AutoComputer = AutoComputer()
 
     private var safeHashHelper = SafeHashHelper()
 
@@ -156,7 +166,11 @@ class ApiDashboardDialog : JDialog() {
         }
 
         this.projectCollapseButton!!.addActionListener {
-            SwingUtils.expandOrCollapseNode(this.projectApiTree!!, false)
+            try {
+                SwingUtils.expandOrCollapseNode(this.projectApiTree!!, false)
+            } catch (e: Exception) {
+                logger!!.error("try collapse project apis failed!")
+            }
         }
     }
 
@@ -258,11 +272,27 @@ class ApiDashboardDialog : JDialog() {
     //endregion project module-----------------------------------------------------
 
     //region postman module-----------------------------------------------------
+
+    private var postmanAvailable: Boolean = true
+
     private fun initPostmanInfo() {
 
         postmanApiTree!!.model = null
 
-        loadPostmanInfo(true)
+        autoComputer.bindEnable(this.postmanCollapseButton!!)
+                .from(this::postmanAvailable)
+        autoComputer.bindEnable(this.postmanSyncButton!!)
+                .from(this::postmanAvailable)
+        autoComputer.bindEnable(this.postmanNewCollectionButton!!)
+                .from(this::postmanAvailable)
+
+        if (!postmanCachedApiHelper!!.hasPrivateToken()) {
+            autoComputer.value(this::postmanAvailable, false)
+
+            tryInputPostmanPrivateToken()
+        } else {
+            loadPostmanInfo(true)
+        }
 
         //drop drag from api to postman
         DropTarget(this.postmanApiTree, DnDConstants.ACTION_COPY_OR_MOVE, object : DropTargetAdapter() {
@@ -274,7 +304,7 @@ class ApiDashboardDialog : JDialog() {
                 try {
                     dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE)
 
-                    val tp = postmanApiTree!!.getPathForLocation(dtde.location.x, dtde.location.y)
+                    val tp: TreePath = postmanApiTree!!.getPathForLocation(dtde.location.x, dtde.location.y) ?: return
                     val targetComponent = tp.lastPathComponent
                     val postmanNodeData = (targetComponent as DefaultMutableTreeNode).userObject
 
@@ -297,17 +327,40 @@ class ApiDashboardDialog : JDialog() {
         })
 
         this.postmanCollapseButton!!.addActionListener {
-            SwingUtils.expandOrCollapseNode(this.postmanApiTree!!, false)
+            try {
+                SwingUtils.expandOrCollapseNode(this.postmanApiTree!!, false)
+            } catch (e: Exception) {
+                logger!!.error("try collapse postman apis failed!")
+            }
         }
 
         this.postmanSyncButton!!.addActionListener {
             loadPostmanInfo(false)
         }
+
+        this.postmanNewCollectionButton!!.addActionListener {
+            newPostmanCollection()
+        }
+
+    }
+
+    private fun tryInputPostmanPrivateToken() {
+        actionContext!!.runAsync {
+            Thread.sleep(500)
+            actionContext!!.runInSwingUI {
+                val postmanPrivateToken = Messages.showInputDialog(this, "Input Postman Private Token",
+                        "Postman Private Token", Messages.getInformationIcon())
+                if (postmanPrivateToken.isNullOrBlank()) return@runInSwingUI
+
+                postmanCachedApiHelper!!.setPrivateToken(postmanPrivateToken)
+                autoComputer.value(this::postmanAvailable, true)
+            }
+        }
     }
 
     private fun loadPostmanInfo(useCache: Boolean) {
 
-        if (!postmanCachedHelper!!.hasPrivateToken()) {
+        if (!postmanCachedApiHelper!!.hasPrivateToken()) {
             actionContext!!.runInSwingUI {
                 Messages.showErrorDialog(this,
                         "load postman info failed,no token be found", "Error")
@@ -324,19 +377,27 @@ class ApiDashboardDialog : JDialog() {
 
             actionContext!!.runAsync {
 
-                val collections = postmanCachedHelper.getAllCollection(useCache)
+                val collections = postmanCachedApiHelper.getAllCollection(useCache)
                 if (collections.isNullOrEmpty()) {
-                    actionContext!!.runInSwingUI {
-                        Messages.showErrorDialog(actionContext!!.instance(Project::class),
-                                "load postman info failed", "Error")
+                    if (collections == null) {
+                        actionContext!!.runInSwingUI {
+                            Messages.showErrorDialog(actionContext!!.instance(Project::class),
+                                    "load postman info failed", "Error")
+                        }
+                    } else {
+                        actionContext!!.runInSwingUI {
+                            Messages.showErrorDialog(actionContext!!.instance(Project::class),
+                                    "No collection be found", "Error")
+                        }
                     }
+
                     return@runAsync
                 }
                 val collectionNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
 
                 actionContext!!.runInSwingUI {
                     for (collection in collections) {
-                        val collectionNode = DefaultMutableTreeNode(CollectionPostmanNodeData(collection))
+                        val collectionNode = CollectionPostmanNodeData(collection).asTreeNode()
                         logger!!.info("load collection:$collectionNode")
                         treeNode.add(collectionNode)
                         collectionNodes.add(collectionNode)
@@ -371,13 +432,15 @@ class ApiDashboardDialog : JDialog() {
             return
         }
 
-        val collectionInfo = postmanCachedHelper!!.getCollectionInfo(collectionId.toString(), useCache)
+        val collectionInfo = postmanCachedApiHelper!!.getCollectionInfo(collectionId.toString(), useCache)
         if (collectionInfo == null) {
             moduleData.status = NodeStatus.loaded
             return
         }
         try {
-            val items = collectionInfo["item"] as ArrayList<HashMap<String, Any?>>
+            moduleData.status = NodeStatus.loading
+            moduleData.detail = collectionInfo
+            val items = makeSureItem(collectionInfo)
             for (item in items) {
                 loadPostmanNode(collectionNode, item)
             }
@@ -393,19 +456,38 @@ class ApiDashboardDialog : JDialog() {
         val parentNodeData = parentNode.userObject as PostmanNodeData
         Thread.yield()
         if (item.containsKey("request")) {//is request
-            val apiTreeNode = DefaultMutableTreeNode(PostmanApiNodeData(parentNodeData, item))
+            val apiTreeNode = PostmanApiNodeData(parentNodeData, item).asTreeNode()
             apiTreeNode.allowsChildren = false
             parentNode.add(apiTreeNode)
 
         } else {//is sub collection
-            val subCollectionNode = DefaultMutableTreeNode(PostmanSubCollectionNodeData(parentNodeData, item))
+            val subCollectionNode = PostmanSubCollectionNodeData(parentNodeData, item).asTreeNode()
             parentNode.add(subCollectionNode)
 
-            val items = item["item"] as ArrayList<HashMap<String, Any?>>?
+            val items = makeSureItem(item)
             if (items.isNullOrEmpty()) return
             for (subItem in items) {
                 loadPostmanNode(subCollectionNode, subItem)
             }
+        }
+    }
+
+    private fun newPostmanCollection() {
+        actionContext!!.runInSwingUI {
+            val newCollectionName = Messages.showInputDialog(this, "Input New Collection Name", "New Collection", Messages.getInformationIcon())
+            if (newCollectionName.isNullOrBlank()) return@runInSwingUI
+
+            val info: HashMap<String, Any?> = HashMap()
+            info["name"] = newCollectionName
+            info["description"] = "create by easyapi at ${DateUtils.formatYMD_HMS(Date())}"
+            info["schema"] = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+
+            val collection: HashMap<String, Any?> = HashMap()
+
+            collection["info"] = info
+            collection["item"] = Lists.emptyList<Any?>()
+
+            postmanCachedApiHelper!!.createCollection(collection)
         }
     }
     //endregion postman module-----------------------------------------------------
@@ -552,10 +634,28 @@ class ApiDashboardDialog : JDialog() {
         }
 
         abstract fun getParentNodeData(): PostmanNodeData?
+
+        var treeNode: DefaultMutableTreeNode? = null
+
+        fun asTreeNode(): DefaultMutableTreeNode {
+            if (treeNode != null) return treeNode!!
+            treeNode = DefaultMutableTreeNode(this)
+            return treeNode!!
+
+        }
     }
 
     class CollectionPostmanNodeData : PostmanNodeData {
         override fun currData(): HashMap<String, Any?> {
+            if (detail != null) {
+                return detail!!
+            }
+
+            val collection: HashMap<String, Any?> = HashMap()
+
+            collection["info"] = this.collection
+            collection["item"] = ArrayList<HashMap<String, Any?>>()
+
             return collection
         }
 
@@ -563,8 +663,9 @@ class ApiDashboardDialog : JDialog() {
             return null
         }
 
-
         var collection: HashMap<String, Any?>
+
+        var detail: HashMap<String, Any?>? = null
 
         var status = NodeStatus.unload
 
@@ -637,24 +738,81 @@ class ApiDashboardDialog : JDialog() {
             else -> toPostmanNodeData as PostmanNodeData
         }
 
-        logger!!.info("drop [$fromModuleData] to $targetCollectionNodeData")
+        logger!!.info("export [$fromModuleData] to $targetCollectionNodeData")
 
-        val formatToPostmanInfo = formatPostmanInfo(fromModuleData)
-        if (formatToPostmanInfo == null) {
-            logger.info("no api can be moved")
-            return
+        actionContext!!.runAsync {
+            try {
+                val formatToPostmanInfo = formatPostmanInfo(fromModuleData)
+                if (formatToPostmanInfo == null) {
+                    logger.info("no api can be moved")
+                    return@runAsync
+                }
+
+                val rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!!
+
+                val currData = targetCollectionNodeData.currData()
+                val items = makeSureItem(currData)
+                items.add(formatToPostmanInfo)
+
+                val collection = (rootPostmanNodeData as CollectionPostmanNodeData).collection
+                val collectionId = collection["id"].toString()
+
+                logger!!.info(collectionId)
+                logger!!.info(GsonUtils.toJson(rootPostmanNodeData.currData()))
+                if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
+                    logger.info("export success")
+
+                    actionContext!!.runInSwingUI {
+                        loadPostmanNode(targetCollectionNodeData.asTreeNode(), formatToPostmanInfo)
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error("export failed:" + ExceptionUtils.getStackTrace(e))
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun makeSureItem(data: HashMap<String, Any?>): ArrayList<HashMap<String, Any?>> {
+        var items = data["item"]
+        if (items != null) {
+            if (items is ArrayList<*>) {
+                val firstOrNull = items.firstOrNull()
+                if (firstOrNull != null && firstOrNull !is HashMap<*, *>) {
+                    val arrayListItems = ArrayList<HashMap<String, Any?>>()
+                    items.forEach { arrayListItems.add(castToHashMap(it)) }
+                    data["item"] = arrayListItems
+                    return arrayListItems
+                }
+                return items as ArrayList<HashMap<String, Any?>>
+            }
+
+            if (items is List<*>) {
+                val arrayListItems = ArrayList<HashMap<String, Any?>>()
+                items.forEach { arrayListItems.add(castToHashMap(it)) }
+                data["item"] = arrayListItems
+                return arrayListItems
+            }
+
         }
 
-        val rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!!
+        items = ArrayList<HashMap<String, Any?>>()
+        data["item"] = items
+        return items
+    }
 
-        val currData = targetCollectionNodeData.currData()
-        val items = currData.computeIfAbsent("item") { ArrayList<HashMap<String, Any?>>() } as ArrayList<HashMap<String, Any?>>
-        items.add(formatToPostmanInfo)
+    @Suppress("UNCHECKED_CAST")
+    private fun castToHashMap(obj: Any?): HashMap<String, Any?> {
+        if (obj is HashMap<*, *>) {
+            return obj as HashMap<String, Any?>
+        }
 
-        val collection = (rootPostmanNodeData as CollectionPostmanNodeData).collection
-        val collectionId = collection["id"].toString()
-
-        postmanCachedHelper!!.updateCollection(collectionId, collection)
+        if (obj is Map<*, *>) {
+            val map: HashMap<String, Any?> = HashMap()
+            obj.forEach { k, v -> map[k.toString()] = v }
+            return map
+        }
+        return HashMap()
     }
 
     private fun formatPostmanInfo(projectNodeData: Any): HashMap<String, Any?>? {
