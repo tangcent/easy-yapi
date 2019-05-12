@@ -16,6 +16,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import kotlin.collections.ArrayList
@@ -93,13 +94,20 @@ class PostmanApiExporter {
                             try {
                                 if (postmanApiHelper!!.hasPrivateToken()) {
                                     logger.info("PrivateToken of postman be found")
-                                    if (postmanApiHelper.createCollection(postman) != null) {
-                                        return@runAsync
-                                    } else {
-                                        logger.error("Export to postman failed,You could check below:" +
-                                                "1.the network " +
-                                                "2.the privateToken")
+                                    val createdCollection = postmanApiHelper.createCollection(postman)
+
+                                    if (!createdCollection.isNullOrEmpty()) {
+                                        val collectionName = createdCollection.get("name")?.toString()
+                                        if (StringUtils.isNotBlank(collectionName)) {
+                                            logger.info("Imported as collection:$collectionName")
+                                            return@runAsync
+                                        }
                                     }
+
+                                    logger.error("Export to postman failed,You could check below:" +
+                                            "1.the network " +
+                                            "2.the privateToken")
+
                                 } else {
                                     logger.info("PrivateToken of postman not be setting")
                                     logger.info("To enable automatically import to postman you could set privateToken" +
