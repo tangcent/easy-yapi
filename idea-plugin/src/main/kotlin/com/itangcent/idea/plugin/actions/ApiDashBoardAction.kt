@@ -4,7 +4,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
 import com.itangcent.idea.plugin.api.export.DocParseHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
@@ -32,9 +31,8 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ApiDashBoard::class) { it.singleton() }
-        builder.bind(PostmanApiHelper::class) { it.singleton() }
-        builder.bind(PostmanFormatter::class) { it.singleton() }
         builder.bind(PostmanCachedHelper::class) { it.singleton() }
+        builder.bind(PostmanFormatter::class) { it.singleton() }
         builder.bindInstance(HttpClient::class, HttpClients.createDefault())
 
 

@@ -309,9 +309,11 @@ class ApiDashboardDialog : JDialog() {
 
         if (!postmanCachedHelper!!.hasPrivateToken()) {
             actionContext!!.runInSwingUI {
-                Messages.showErrorDialog(actionContext!!.instance(Project::class),
+                Messages.showErrorDialog(this,
                         "load postman info failed,no token be found", "Error")
             }
+            logger!!.info("If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
+                    " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api].")
             return
         }
 
