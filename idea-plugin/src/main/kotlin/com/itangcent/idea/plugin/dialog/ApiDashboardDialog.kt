@@ -627,6 +627,7 @@ class ApiDashboardDialog : JDialog() {
 
     //region handle drop--------------------------------------------------------
 
+    @Suppress("UNCHECKED_CAST")
     fun handleDropEvent(fromModuleData: Any, toPostmanNodeData: Any) {
 
         val targetCollectionNodeData: PostmanNodeData = when (toPostmanNodeData) {
@@ -643,12 +644,6 @@ class ApiDashboardDialog : JDialog() {
         }
 
         val rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!!
-
-        val targetCollectionPostmanNodeData =
-                when (toPostmanNodeData) {
-                    is PostmanApiNodeData -> toPostmanNodeData.getParentNodeData()!!
-                    else -> toPostmanNodeData
-                }
 
         val currData = targetCollectionNodeData.currData()
         val items = currData.computeIfAbsent("item") { ArrayList<HashMap<String, Any?>>() } as ArrayList<HashMap<String, Any?>>

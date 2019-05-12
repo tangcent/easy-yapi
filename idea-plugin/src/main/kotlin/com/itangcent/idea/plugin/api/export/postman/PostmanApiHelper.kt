@@ -4,7 +4,10 @@ import com.google.inject.Inject
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.asMap
+import com.itangcent.intellij.extend.rx.Throttle
+import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.setting.SettingManager
 import org.apache.commons.lang3.StringUtils
@@ -17,8 +20,18 @@ import org.apache.http.client.methods.HttpPut
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.HttpClients
+import java.util.concurrent.TimeUnit
 
 
+/**
+ * Postman API: https://docs.api.getpostman.com
+ *The Postman API allows you to programmatically
+ * access data stored in Postman account with ease.
+ *
+ * Rate Limits:https://docs.api.getpostman.com/#rate-limits
+ * API access rate limits are applied at a per-key basis in unit time.
+ * Access to the API using a key is limited to 60 requests per minute
+ */
 class PostmanApiHelper {
 
     @Inject
@@ -30,7 +43,7 @@ class PostmanApiHelper {
     @Inject
     private val httpClient: HttpClient? = null
 
-    private val responseHandler = StringResponseHandler()
+    private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
     fun hasPrivateToken(missingNotification: (() -> Unit)? = MISSING_NOTIFICATION): Boolean {
         return if (getPrivateToken() != null) {
@@ -50,7 +63,11 @@ class PostmanApiHelper {
         }
     }
 
-    fun importApiInfo(apiInfo: HashMap<String, Any?>, responseHandler: ResponseHandler<String> = this.responseHandler): Boolean {
+    private fun beforeRequest() {
+        apiThrottle.acquireGreedy(LIMIT_PERIOD_PRE_REQUEST)
+    }
+
+    fun importApiInfo(apiInfo: HashMap<String, Any?>, responseHandler: ResponseHandler<String> = Companion.default_response_handler): Boolean {
 
         val httpClient = HttpClients.createDefault()
 
@@ -65,6 +82,7 @@ class PostmanApiHelper {
         httpPost.entity = requestEntity
 
         try {
+            beforeRequest()
             val returnValue = httpClient.execute(httpPost, responseHandler)
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
@@ -91,7 +109,7 @@ class PostmanApiHelper {
         }
     }
 
-    fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>, responseHandler: ResponseHandler<String> = this.responseHandler): Boolean {
+    fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>, responseHandler: ResponseHandler<String> = Companion.default_response_handler): Boolean {
 
         val httpPost = HttpPut("$COLLECTION/$collectionId")
         val collection: HashMap<String, Any?> = HashMap()
@@ -104,6 +122,7 @@ class PostmanApiHelper {
         httpPost.entity = requestEntity
 
         try {
+            beforeRequest()
             val returnValue = httpClient!!.execute(httpPost, responseHandler)
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
@@ -130,11 +149,12 @@ class PostmanApiHelper {
         }
     }
 
-    fun getAllCollection(responseHandler: ResponseHandler<String> = this.responseHandler): ArrayList<HashMap<String, Any?>>? {
+    fun getAllCollection(responseHandler: ResponseHandler<String> = Companion.default_response_handler): ArrayList<HashMap<String, Any?>>? {
         val httpGet = HttpGet(COLLECTION)
         httpGet.setHeader("x-api-key", getPrivateToken())
 
         try {
+            beforeRequest()
             val returnValue = httpClient!!.execute(httpGet, responseHandler)
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collections")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
@@ -160,10 +180,11 @@ class PostmanApiHelper {
         }
     }
 
-    fun getCollectionInfo(collectionId: String, responseHandler: ResponseHandler<String> = this.responseHandler): HashMap<String, Any?>? {
+    fun getCollectionInfo(collectionId: String, responseHandler: ResponseHandler<String> = Companion.default_response_handler): HashMap<String, Any?>? {
         val httpGet = HttpGet("$COLLECTION/$collectionId")
         httpGet.setHeader("x-api-key", getPrivateToken())
         try {
+            beforeRequest()
             val returnValue = httpClient!!.execute(httpGet, responseHandler)
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
@@ -198,5 +219,9 @@ class PostmanApiHelper {
             logger.info("If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
                     " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api].")
         }
+        private val default_response_handler = StringResponseHandler()
+        //the postman rate limit is 60 per/s
+        //Just to be on the safe side,limit to 30 per/s
+        private val LIMIT_PERIOD_PRE_REQUEST = TimeUnit.MINUTES.toMillis(1) / 30
     }
 }
