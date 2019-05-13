@@ -397,7 +397,6 @@ class ApiDashboardDialog : JDialog() {
                 actionContext!!.runInSwingUI {
                     for (collection in collections) {
                         val collectionNode = CollectionPostmanNodeData(collection).asTreeNode()
-                        logger!!.info("load collection:$collectionNode")
                         treeNode.add(collectionNode)
                         collectionNodes.add(collectionNode)
                         rootTreeModel.reload(collectionNode)
@@ -409,10 +408,8 @@ class ApiDashboardDialog : JDialog() {
                         for (collectionNode in collectionNodes) {
                             if (disposed) break
                             Thread.sleep(1000)
-                            actionContext!!.runInSwingUI {
-                                loadPostCollectionInfo(collectionNode, useCache)
-                                rootTreeModel.reload(collectionNode)
-                            }
+                            loadPostCollectionInfo(collectionNode, useCache)
+
                         }
                         postmanLoadFuture = null
                     }
@@ -425,26 +422,37 @@ class ApiDashboardDialog : JDialog() {
     private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, useCache: Boolean) {
         val moduleData = collectionNode.userObject as CollectionPostmanNodeData
         val collectionId = moduleData.collection["id"]
+        val postmanApiTreeModel = postmanApiTree!!.model as DefaultTreeModel
         if (collectionId == null) {
-            collectionNode.removeFromParent()
-            (postmanApiTree!!.model as DefaultTreeModel).reload(collectionNode)
+            actionContext!!.runInSwingUI {
+                collectionNode.removeFromParent()
+                postmanApiTreeModel.reload(collectionNode)
+            }
             return
         }
 
-        val collectionInfo = postmanCachedApiHelper!!.getCollectionInfo(collectionId.toString(), useCache)
-        if (collectionInfo == null) {
-            moduleData.status = NodeStatus.loaded
-            return
-        }
-        try {
-            moduleData.status = NodeStatus.loading
-            moduleData.detail = collectionInfo
-            val items = makeSureItem(collectionInfo)
-            for (item in items) {
-                loadPostmanNode(collectionNode, item)
+        actionContext!!.runAsync {
+            val collectionInfo = postmanCachedApiHelper!!.getCollectionInfo(collectionId.toString(), useCache)
+            if (collectionInfo == null) {
+                moduleData.status = NodeStatus.loaded
+                return@runAsync
             }
-        } finally {
-            moduleData.status = NodeStatus.loaded
+            try {
+                moduleData.status = NodeStatus.loading
+                moduleData.detail = collectionInfo
+                val items = makeSureItem(collectionInfo)
+
+                actionContext!!.runInSwingUI {
+                    for (item in items) {
+                        loadPostmanNode(collectionNode, item)
+                    }
+                }
+                actionContext!!.runInSwingUI {
+                    postmanApiTreeModel.reload(collectionNode)
+                }
+            } finally {
+                moduleData.status = NodeStatus.loaded
+            }
         }
     }
 
@@ -452,21 +460,23 @@ class ApiDashboardDialog : JDialog() {
     private fun loadPostmanNode(parentNode: DefaultMutableTreeNode, item: HashMap<String, Any?>) {
         if (item.isNullOrEmpty()) return
 
-        val parentNodeData = parentNode.userObject as PostmanNodeData
-        Thread.yield()
-        if (item.containsKey("request")) {//is request
-            val apiTreeNode = PostmanApiNodeData(parentNodeData, item).asTreeNode()
-            apiTreeNode.allowsChildren = false
-            parentNode.add(apiTreeNode)
+        actionContext!!.runInSwingUI {
+            val parentNodeData = parentNode.userObject as PostmanNodeData
+            Thread.yield()
+            if (item.containsKey("request")) {//is request
+                val apiTreeNode = PostmanApiNodeData(parentNodeData, item).asTreeNode()
+                apiTreeNode.allowsChildren = false
+                parentNode.add(apiTreeNode)
 
-        } else {//is sub collection
-            val subCollectionNode = PostmanSubCollectionNodeData(parentNodeData, item).asTreeNode()
-            parentNode.add(subCollectionNode)
+            } else {//is sub collection
+                val subCollectionNode = PostmanSubCollectionNodeData(parentNodeData, item).asTreeNode()
+                parentNode.add(subCollectionNode)
 
-            val items = makeSureItem(item)
-            if (items.isNullOrEmpty()) return
-            for (subItem in items) {
-                loadPostmanNode(subCollectionNode, subItem)
+                val items = makeSureItem(item)
+                if (items.isNullOrEmpty()) return@runInSwingUI
+                for (subItem in items) {
+                    loadPostmanNode(subCollectionNode, subItem)
+                }
             }
         }
     }
@@ -565,6 +575,7 @@ class ApiDashboardDialog : JDialog() {
     enum class NodeStatus(var desc: String) {
         unload("(unload)"),
         loading("(loading)"),
+        uploading("(uploading)"),
         loaded("")
     }
 
@@ -750,7 +761,6 @@ class ApiDashboardDialog : JDialog() {
 
     //endregion postman Node Data--------------------------------------------------
 
-
     //region handle drop--------------------------------------------------------
 
     @Suppress("UNCHECKED_CAST")
@@ -764,24 +774,30 @@ class ApiDashboardDialog : JDialog() {
         logger!!.info("export [$fromModuleData] to $targetCollectionNodeData")
 
         actionContext!!.runAsync {
+            var rootPostmanNodeData: CollectionPostmanNodeData? = null
             try {
+
+                logger.info("parse api...")
                 val formatToPostmanInfo = formatPostmanInfo(fromModuleData)
                 if (formatToPostmanInfo == null) {
                     logger.info("no api can be moved")
                     return@runAsync
                 }
 
-                val rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!!
+                rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as CollectionPostmanNodeData
+                rootPostmanNodeData.status = NodeStatus.uploading
 
                 val currData = targetCollectionNodeData.currData()
                 val items = makeSureItem(currData)
                 items.add(formatToPostmanInfo)
 
-                val collection = (rootPostmanNodeData as CollectionPostmanNodeData).collection
+                val collection = rootPostmanNodeData.collection
                 val collectionId = collection["id"].toString()
 
+                logger.info("upload api...")
                 if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
                     logger.info("export success")
+                    rootPostmanNodeData.status = NodeStatus.loaded
 
                     actionContext!!.runInSwingUI {
                         loadPostmanNode(targetCollectionNodeData.asTreeNode(), formatToPostmanInfo)
@@ -789,9 +805,11 @@ class ApiDashboardDialog : JDialog() {
                     }
                 } else {
                     logger.info("export failed")
+                    rootPostmanNodeData.status = NodeStatus.loaded
                 }
             } catch (e: Exception) {
                 logger.error("export failed:" + ExceptionUtils.getStackTrace(e))
+                rootPostmanNodeData!!.status = NodeStatus.loaded
             }
         }
     }
@@ -884,7 +902,6 @@ class ApiDashboardDialog : JDialog() {
         }
 
         override fun createTransferable(component: JComponent?): Transferable {
-            apiDashboardDialog.logger!!.info("createTransferable:$component")
             return super.createTransferable(component)
         }
     }

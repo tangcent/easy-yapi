@@ -1,22 +1,20 @@
 package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
-import com.google.inject.name.Named
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.intellij.file.LocalFileRepository
 
 class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
     @Inject
-    @Named("projectCacheRepository")
-    private val projectCacheRepository: LocalFileRepository? = null
+    private val localFileRepository: LocalFileRepository? = null
 
     private var dbBeanBinderFactory: DbBeanBinderFactory<CollectionInfoCache>? = null
 
     private fun getDbBeanBinderFactory(): DbBeanBinderFactory<CollectionInfoCache> {
         if (dbBeanBinderFactory == null) {
             synchronized(this) {
-                dbBeanBinderFactory = DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.postman.v1.1.db").path)
+                dbBeanBinderFactory = DbBeanBinderFactory(localFileRepository!!.getOrCreateFile(".api.postman.v1.1.db").path)
                 { NULL_COLLECTION_INFO_CACHE }
             }
         }
@@ -32,7 +30,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
         //region update collection of AllCollection-----------------------------
         val allCollectionBeanBinder = getDbBeanBinderFactory()
-                .getBeanBinder("getAllCollection")
+                .getBeanBinder("${getPrivateToken()}_getAllCollection")
         val cacheOfAllCollection = allCollectionBeanBinder.read()
         if (cacheOfAllCollection != NULL_COLLECTION_INFO_CACHE) {
             if (cacheOfAllCollection.allCollection == null) {
@@ -48,7 +46,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         cacheOfCollection.collectionDetail = collection
 
         getDbBeanBinderFactory()
-                .getBeanBinder("collection:$collectionId")
+                .getBeanBinder("${getPrivateToken()}_collection:$collectionId")
                 .save(cacheOfCollection)
         //endregion add cache of created collection--------------------------------
 
@@ -58,7 +56,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
     override fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
         if (super.updateCollection(collectionId, apiInfo)) {
-            val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("collection:$collectionId")
+            val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("${getPrivateToken()}_collection:$collectionId")
             val cache = CollectionInfoCache()
             cache.collectionDetail = apiInfo
             collectionDetailBeanBinder.save(cache)
@@ -69,7 +67,8 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
     fun getAllCollection(useCache: Boolean = true): ArrayList<HashMap<String, Any?>>? {
         if (useCache) {
-            val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder("getAllCollection")
+            val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder(
+                    "${getPrivateToken()}_getAllCollection")
             val cache = allCollectionBeanBinder.read()
             if (cache != NULL_COLLECTION_INFO_CACHE) {
                 return cache.allCollection
@@ -87,7 +86,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
     fun getCollectionInfo(collectionId: String, useCache: Boolean = true): HashMap<String, Any?>? {
         if (useCache) {
-            val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("collection:$collectionId")
+            val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("${getPrivateToken()}_collection:$collectionId")
             val cache = collectionDetailBeanBinder.read()
             if (cache != NULL_COLLECTION_INFO_CACHE) {
                 return cache.collectionDetail

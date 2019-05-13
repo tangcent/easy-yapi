@@ -223,7 +223,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             beforeRequest()
             val result = httpClient!!.execute(httpGet, reservedResponseHandle())
             val returnValue = result.result()
-            logger!!.info(returnValue)
+
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 return returnObj?.asJsonObject?.get("collection")
