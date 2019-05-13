@@ -884,7 +884,6 @@ class ApiDashboardDialog : JDialog() {
         }
 
         override fun createTransferable(component: JComponent?): Transferable {
-            apiDashboardDialog.logger!!.info("createTransferable:$component")
             return super.createTransferable(component)
         }
     }
