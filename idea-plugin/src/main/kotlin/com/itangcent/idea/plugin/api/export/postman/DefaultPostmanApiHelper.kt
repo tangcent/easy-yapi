@@ -142,9 +142,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collectionInfo = returnObj?.asJsonObject?.get("collection")?.asMap()
-                val collectionName = collectionInfo?.get("name")?.toString()
-                if (StringUtils.isNotBlank(collectionName)) {
-                    logger!!.info("Imported as collection:$collectionName")
+                if (!collectionInfo.isNullOrEmpty()) {
                     return collectionInfo
                 }
             }
@@ -164,7 +162,6 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         val collection: HashMap<String, Any?> = HashMap()
         collection["collection"] = apiInfo
 
-        logger!!.info("updateCollection body:\n" + GsonUtils.toJson(collection))
         val requestEntity = StringEntity(GsonUtils.toJson(collection),
                 ContentType.APPLICATION_JSON)
 
@@ -181,7 +178,6 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 val collectionName = returnObj?.asJsonObject?.get("collection")
                         ?.asJsonObject?.get("name")?.asString
                 if (StringUtils.isNotBlank(collectionName)) {
-                    logger!!.info("Imported as collection:$collectionName")
                     return true
                 }
             }
@@ -227,6 +223,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             beforeRequest()
             val result = httpClient!!.execute(httpGet, reservedResponseHandle())
             val returnValue = result.result()
+            logger!!.info(returnValue)
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 return returnObj?.asJsonObject?.get("collection")
