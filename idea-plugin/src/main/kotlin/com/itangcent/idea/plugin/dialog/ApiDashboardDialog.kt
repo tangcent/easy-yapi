@@ -14,7 +14,6 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
@@ -411,7 +410,7 @@ class ApiDashboardDialog : JDialog() {
                             if (disposed) break
                             Thread.sleep(1000)
                             actionContext!!.runInSwingUI {
-                                loadPostCollectionInfo(collectionNode, rootTreeModel, useCache)
+                                loadPostCollectionInfo(collectionNode, useCache)
                                 rootTreeModel.reload(collectionNode)
                             }
                         }
@@ -423,12 +422,12 @@ class ApiDashboardDialog : JDialog() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel, useCache: Boolean) {
+    private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, useCache: Boolean) {
         val moduleData = collectionNode.userObject as CollectionPostmanNodeData
         val collectionId = moduleData.collection["id"]
         if (collectionId == null) {
             collectionNode.removeFromParent()
-            rootTreeModel.reload(collectionNode)
+            (postmanApiTree!!.model as DefaultTreeModel).reload(collectionNode)
             return
         }
 
@@ -474,20 +473,38 @@ class ApiDashboardDialog : JDialog() {
 
     private fun newPostmanCollection() {
         actionContext!!.runInSwingUI {
-            val newCollectionName = Messages.showInputDialog(this, "Input New Collection Name", "New Collection", Messages.getInformationIcon())
+            val newCollectionName = Messages.showInputDialog(this,
+                    "Input New Collection Name",
+                    "New Collection",
+                    Messages.getInformationIcon())
             if (newCollectionName.isNullOrBlank()) return@runInSwingUI
 
-            val info: HashMap<String, Any?> = HashMap()
-            info["name"] = newCollectionName
-            info["description"] = "create by easyapi at ${DateUtils.formatYMD_HMS(Date())}"
-            info["schema"] = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+            actionContext!!.runAsync {
+                val info: HashMap<String, Any?> = HashMap()
+                info["name"] = newCollectionName
+                info["description"] = "create by easyapi at ${DateUtils.formatYMD_HMS(Date())}"
+                info["schema"] = PostmanFormatter.POSTMAN_SCHEMA_V2_1_0
 
-            val collection: HashMap<String, Any?> = HashMap()
+                val collection: HashMap<String, Any?> = HashMap()
 
-            collection["info"] = info
-            collection["item"] = Lists.emptyList<Any?>()
+                collection["info"] = info
+                collection["item"] = Lists.emptyList<Any?>()
 
-            postmanCachedApiHelper!!.createCollection(collection)
+                val createdCollection = postmanCachedApiHelper!!.createCollection(collection)
+                if (createdCollection == null) {
+                    logger!!.error("create collection failed")
+                } else {
+                    actionContext!!.runInSwingUI {
+                        val treeModel = postmanApiTree!!.model as DefaultTreeModel
+                        val collectionPostmanNodeData = CollectionPostmanNodeData(createdCollection)
+                        collectionPostmanNodeData.status = NodeStatus.loaded
+                        val collectionTreeNode = collectionPostmanNodeData.asTreeNode()
+                        val rootTreeNode = treeModel.root as DefaultMutableTreeNode
+                        rootTreeNode.add(collectionTreeNode)
+                        treeModel.reload(rootTreeNode)
+                    }
+                }
+            }
         }
     }
     //endregion postman module-----------------------------------------------------
@@ -653,9 +670,15 @@ class ApiDashboardDialog : JDialog() {
 
             val collection: HashMap<String, Any?> = HashMap()
 
-            collection["info"] = this.collection
+            val info = HashMap<String, Any?>()
+            info["name"] = this.collection["name"]
+            info["_postman_id"] = this.collection["id"]
+            info["schema"] = PostmanFormatter.POSTMAN_SCHEMA_V2_1_0
+
+            collection["info"] = info
             collection["item"] = ArrayList<HashMap<String, Any?>>()
 
+            detail = collection
             return collection
         }
 
@@ -757,14 +780,15 @@ class ApiDashboardDialog : JDialog() {
                 val collection = (rootPostmanNodeData as CollectionPostmanNodeData).collection
                 val collectionId = collection["id"].toString()
 
-                logger!!.info(collectionId)
-                logger!!.info(GsonUtils.toJson(rootPostmanNodeData.currData()))
                 if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
                     logger.info("export success")
 
                     actionContext!!.runInSwingUI {
                         loadPostmanNode(targetCollectionNodeData.asTreeNode(), formatToPostmanInfo)
+                        (postmanApiTree!!.model as DefaultTreeModel).reload(targetCollectionNodeData.asTreeNode())
                     }
+                } else {
+                    logger.info("export failed")
                 }
             } catch (e: Exception) {
                 logger.error("export failed:" + ExceptionUtils.getStackTrace(e))
