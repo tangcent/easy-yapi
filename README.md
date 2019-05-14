@@ -50,7 +50,15 @@ restart **IDE**.
     choose the action "Call"
 ```
 
-* ExportMarkdown
+
+
+* ApiDashBoard(Beta)
+```textCode
+    It is easily to export api in current project to postman by dragging
+    You can use by this : "Click [Code -> ApiDashBoard] in top"
+```
+
+* ExportMarkdown(Beta)
 ```textCode
     There are two ways to export api.
     1. Open existed Spring Controller File
@@ -66,4 +74,4 @@ restart **IDE**.
 - [ ] Export api to Word
 - [X] Export api to Markdown
 - [X] Call api from code
-- [ ] Api DashBoard
+- [X] Api DashBoard
