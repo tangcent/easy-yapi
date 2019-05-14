@@ -432,13 +432,13 @@ class ApiDashboardDialog : JDialog() {
         }
 
         actionContext!!.runAsync {
+            moduleData.status = NodeStatus.loading
             val collectionInfo = postmanCachedApiHelper!!.getCollectionInfo(collectionId.toString(), useCache)
             if (collectionInfo == null) {
                 moduleData.status = NodeStatus.loaded
                 return@runAsync
             }
             try {
-                moduleData.status = NodeStatus.loading
                 moduleData.detail = collectionInfo
                 val items = makeSureItem(collectionInfo)
 
