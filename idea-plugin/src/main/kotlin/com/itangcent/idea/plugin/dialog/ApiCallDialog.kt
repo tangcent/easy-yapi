@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -146,6 +147,9 @@ internal class ApiCallDialog : JDialog() {
         underLine(this.hostComboBox!!)
         underLine(this.pathTextField!!)
         underLine(this.paramsTextField!!)
+
+        this.callButton!!.icon = AllIcons.General.Run
+        this.callButton!!.text = ""
 
     }
 
