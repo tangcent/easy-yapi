@@ -18,6 +18,8 @@ import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.swing.EasyApiTreeCellRenderer
+import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
@@ -112,6 +114,29 @@ class ApiDashboardDialog : JDialog() {
 
         this.postmanSyncButton!!.icon = AllIcons.Actions.Refresh
         this.postmanSyncButton!!.text = ""
+
+
+        try {
+            val projectCellRenderer = EasyApiTreeCellRenderer()
+
+            this.projectApiTree!!.cellRenderer = projectCellRenderer
+
+            projectCellRenderer.setLeafIcon(AllIcons.Nodes.Method)
+            projectCellRenderer.setOpenIcon(AllIcons.Nodes.WebFolder)
+            projectCellRenderer.setClosedIcon(AllIcons.Nodes.WebFolder)
+
+            val postmanCellRenderer = EasyApiTreeCellRenderer()
+
+            this.postmanApiTree!!.cellRenderer = postmanCellRenderer
+
+            postmanCellRenderer.setLeafIcon(AllIcons.Ide.Link)
+            postmanCellRenderer.setOpenIcon(AllIcons.Nodes.WebFolder)
+            postmanCellRenderer.setClosedIcon(AllIcons.Nodes.WebFolder)
+
+        } catch (e: Exception) {
+
+        }
+
     }
 
     @PostConstruct
@@ -552,7 +577,11 @@ class ApiDashboardDialog : JDialog() {
 
     }
 
-    class ModuleProjectNodeData : ProjectNodeData<ClassProjectNodeData> {
+    class ModuleProjectNodeData : ProjectNodeData<ClassProjectNodeData>, IconCustomized {
+        override fun icon(): Icon {
+            return AllIcons.Nodes.WebFolder
+        }
+
         var module: Module
 
         var status = NodeStatus.unload
@@ -566,7 +595,10 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData> {
+    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized {
+        override fun icon(): Icon {
+            return AllIcons.Nodes.Class
+        }
 
         var cls: PsiClass
 
@@ -593,7 +625,10 @@ class ApiDashboardDialog : JDialog() {
         loaded("")
     }
 
-    class ApiProjectNodeData {
+    class ApiProjectNodeData : IconCustomized {
+        override fun icon(): Icon {
+            return AllIcons.Nodes.Method
+        }
 
         var request: Request
 
