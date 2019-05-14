@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.intellij.designer.clipboard.SimpleTransferable
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
@@ -98,6 +99,19 @@ class ApiDashboardDialog : JDialog() {
                 onCancel()
             }
         })
+
+
+        this.projectCollapseButton!!.icon = AllIcons.General.CollapseAll
+        this.projectCollapseButton!!.text = ""
+
+        this.postmanCollapseButton!!.icon = AllIcons.General.CollapseAll
+        this.postmanCollapseButton!!.text = ""
+
+        this.postmanNewCollectionButton!!.icon = AllIcons.General.Add
+        this.postmanNewCollectionButton!!.text = ""
+
+        this.postmanSyncButton!!.icon = AllIcons.Actions.Refresh
+        this.postmanSyncButton!!.text = ""
     }
 
     @PostConstruct
