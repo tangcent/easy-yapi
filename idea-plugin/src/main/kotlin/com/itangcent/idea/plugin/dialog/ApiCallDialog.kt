@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
@@ -18,6 +17,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBody
 import com.itangcent.common.utils.appendlnIfNotEmpty
+import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.utils.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -148,9 +148,10 @@ internal class ApiCallDialog : JDialog() {
         underLine(this.pathTextField!!)
         underLine(this.paramsTextField!!)
 
-        this.callButton!!.icon = AllIcons.General.Run
-        this.callButton!!.text = ""
-
+        if (EasyIcons.Run != null) {
+            this.callButton!!.icon = EasyIcons.Run
+            this.callButton!!.text = ""
+        }
     }
 
     private fun underLine(component: JComponent) {

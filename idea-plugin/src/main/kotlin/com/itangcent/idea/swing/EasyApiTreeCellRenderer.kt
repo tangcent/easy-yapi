@@ -170,8 +170,10 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
     /**
      * Sets the icon used to represent non-leaf nodes that are expanded.
      */
-    fun setOpenIcon(newIcon: Icon) {
-        _openIcon = newIcon
+    fun setOpenIcon(newIcon: Icon?) {
+        if (newIcon != null) {
+            _openIcon = newIcon
+        }
     }
 
     /**
@@ -184,8 +186,10 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
     /**
      * Sets the icon used to represent non-leaf nodes that are not expanded.
      */
-    fun setClosedIcon(newIcon: Icon) {
-        _closedIcon = newIcon
+    fun setClosedIcon(newIcon: Icon?) {
+        if (newIcon != null) {
+            _closedIcon = newIcon
+        }
     }
 
     /**
@@ -199,8 +203,10 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
     /**
      * Sets the icon used to represent leaf nodes.
      */
-    fun setLeafIcon(newIcon: Icon) {
-        _leafIcon = newIcon
+    fun setLeafIcon(newIcon: Icon?) {
+        if (newIcon != null) {
+            _leafIcon = newIcon
+        }
     }
 
     /**
@@ -381,14 +387,18 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
             }
         }
 
+        if (icon == null && value is IconCustomized) {
+            icon = value.icon()
+        }
+
         if (icon == null) {
             icon = when {
-                value is IconCustomized -> value.icon()
                 leaf -> getLeafIcon()
                 expanded -> getOpenIcon()
                 else -> getClosedIcon()
             }
         }
+
 
         if (!tree.isEnabled) {
             isEnabled = false
