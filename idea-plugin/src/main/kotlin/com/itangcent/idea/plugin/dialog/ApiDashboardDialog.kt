@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.intellij.designer.clipboard.SimpleTransferable
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
@@ -15,6 +14,7 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
+import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
@@ -28,7 +28,6 @@ import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.fest.util.Lists
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
@@ -102,18 +101,23 @@ class ApiDashboardDialog : JDialog() {
             }
         })
 
+        if (EasyIcons.CollapseAll != null) {
+            this.projectCollapseButton!!.icon = EasyIcons.CollapseAll
+            this.projectCollapseButton!!.text = ""
 
-        this.projectCollapseButton!!.icon = AllIcons.General.CollapseAll
-        this.projectCollapseButton!!.text = ""
+            this.postmanCollapseButton!!.icon = EasyIcons.CollapseAll
+            this.postmanCollapseButton!!.text = ""
+        }
 
-        this.postmanCollapseButton!!.icon = AllIcons.General.CollapseAll
-        this.postmanCollapseButton!!.text = ""
+        if (EasyIcons.Add != null) {
+            this.postmanNewCollectionButton!!.icon = EasyIcons.Add
+            this.postmanNewCollectionButton!!.text = ""
+        }
 
-        this.postmanNewCollectionButton!!.icon = AllIcons.General.Add
-        this.postmanNewCollectionButton!!.text = ""
-
-        this.postmanSyncButton!!.icon = AllIcons.Actions.Refresh
-        this.postmanSyncButton!!.text = ""
+        if (EasyIcons.Refresh != null) {
+            this.postmanSyncButton!!.icon = EasyIcons.Refresh
+            this.postmanSyncButton!!.text = ""
+        }
 
 
         try {
@@ -121,17 +125,17 @@ class ApiDashboardDialog : JDialog() {
 
             this.projectApiTree!!.cellRenderer = projectCellRenderer
 
-            projectCellRenderer.setLeafIcon(AllIcons.Nodes.Method)
-            projectCellRenderer.setOpenIcon(AllIcons.Nodes.WebFolder)
-            projectCellRenderer.setClosedIcon(AllIcons.Nodes.WebFolder)
+            projectCellRenderer.setLeafIcon(EasyIcons.Method)
+            projectCellRenderer.setOpenIcon(EasyIcons.WebFolder)
+            projectCellRenderer.setClosedIcon(EasyIcons.WebFolder)
 
             val postmanCellRenderer = EasyApiTreeCellRenderer()
 
             this.postmanApiTree!!.cellRenderer = postmanCellRenderer
 
-            postmanCellRenderer.setLeafIcon(AllIcons.Ide.Link)
-            postmanCellRenderer.setOpenIcon(AllIcons.Nodes.WebFolder)
-            postmanCellRenderer.setClosedIcon(AllIcons.Nodes.WebFolder)
+            postmanCellRenderer.setLeafIcon(EasyIcons.Link)
+            postmanCellRenderer.setOpenIcon(EasyIcons.WebFolder)
+            postmanCellRenderer.setClosedIcon(EasyIcons.WebFolder)
 
         } catch (e: Exception) {
 
@@ -537,7 +541,7 @@ class ApiDashboardDialog : JDialog() {
                 val collection: HashMap<String, Any?> = HashMap()
 
                 collection["info"] = info
-                collection["item"] = Lists.emptyList<Any?>()
+                collection["item"] = ArrayList<Any?>()
 
                 val createdCollection = postmanCachedApiHelper!!.createCollection(collection)
                 if (createdCollection == null) {
@@ -578,8 +582,8 @@ class ApiDashboardDialog : JDialog() {
     }
 
     class ModuleProjectNodeData : ProjectNodeData<ClassProjectNodeData>, IconCustomized {
-        override fun icon(): Icon {
-            return AllIcons.Nodes.WebFolder
+        override fun icon(): Icon? {
+            return EasyIcons.WebFolder
         }
 
         var module: Module
@@ -596,8 +600,8 @@ class ApiDashboardDialog : JDialog() {
     }
 
     class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized {
-        override fun icon(): Icon {
-            return AllIcons.Nodes.Class
+        override fun icon(): Icon? {
+            return EasyIcons.Class
         }
 
         var cls: PsiClass
@@ -626,8 +630,8 @@ class ApiDashboardDialog : JDialog() {
     }
 
     class ApiProjectNodeData : IconCustomized {
-        override fun icon(): Icon {
-            return AllIcons.Nodes.Method
+        override fun icon(): Icon? {
+            return EasyIcons.Method
         }
 
         var request: Request
