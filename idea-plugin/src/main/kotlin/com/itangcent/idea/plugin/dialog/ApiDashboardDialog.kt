@@ -119,7 +119,6 @@ class ApiDashboardDialog : JDialog() {
             this.postmanSyncButton!!.text = ""
         }
 
-
         try {
             val projectCellRenderer = EasyApiTreeCellRenderer()
 
@@ -583,7 +582,10 @@ class ApiDashboardDialog : JDialog() {
 
     class ModuleProjectNodeData : ProjectNodeData<ClassProjectNodeData>, IconCustomized {
         override fun icon(): Icon? {
-            return EasyIcons.WebFolder
+            return when (status) {
+                NodeStatus.loading -> EasyIcons.Refresh
+                else -> null
+            } ?: EasyIcons.WebFolder
         }
 
         var module: Module
@@ -726,7 +728,15 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class CollectionPostmanNodeData : PostmanNodeData {
+    class CollectionPostmanNodeData : PostmanNodeData, IconCustomized {
+        override fun icon(): Icon? {
+            return when (status) {
+                NodeStatus.loading -> EasyIcons.Refresh
+                NodeStatus.uploading -> EasyIcons.UpFolder
+                else -> null
+            } ?: EasyIcons.ModuleGroup
+        }
+
         override fun currData(): HashMap<String, Any?> {
             if (detail != null) {
                 return detail!!
@@ -765,7 +775,11 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanSubCollectionNodeData : PostmanNodeData {
+    class PostmanSubCollectionNodeData : PostmanNodeData, IconCustomized {
+        override fun icon(): Icon? {
+            return EasyIcons.Module
+        }
+
         override fun currData(): HashMap<String, Any?> {
             return info
         }
@@ -788,7 +802,11 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanApiNodeData : PostmanNodeData {
+    class PostmanApiNodeData : PostmanNodeData, IconCustomized {
+        override fun icon(): Icon? {
+            return EasyIcons.Link
+        }
+
         override fun currData(): HashMap<String, Any?> {
             return info
         }
