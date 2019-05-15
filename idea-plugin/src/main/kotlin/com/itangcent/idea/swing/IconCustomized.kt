@@ -4,5 +4,5 @@ import javax.swing.Icon
 
 interface IconCustomized {
 
-    fun icon(): Icon
+    fun icon(): Icon?
 }
