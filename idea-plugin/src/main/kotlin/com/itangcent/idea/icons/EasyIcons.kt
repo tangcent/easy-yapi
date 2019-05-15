@@ -19,6 +19,8 @@ object EasyIcons {
 
     val Link = tryLoad("/ide/link.png") // 12x12
 
+    val Run = tryLoad("/general/run.png") // 7x10
+
     private fun tryLoad(path: String): Icon? {
         return try {
             IconLoader.getIcon(path)
