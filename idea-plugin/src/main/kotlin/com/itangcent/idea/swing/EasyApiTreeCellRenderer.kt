@@ -353,7 +353,7 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
         this.hasFocus = hasFocus
         text = stringValue
 
-        var fg: Color?
+        val fg: Color?
         isDropCell = false
 
         val dropLocation = tree.dropLocation
@@ -377,8 +377,34 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
 
         foreground = fg
 
-        var icon: Icon? = null
+        var icon: Icon? = findIcon(value, expanded, leaf)
 
+        if (!tree.isEnabled) {
+            isEnabled = false
+            val laf = UIManager.getLookAndFeel()
+            val disabledIcon = laf.getDisabledIcon(tree, icon)
+            if (disabledIcon != null) icon = disabledIcon
+            setDisabledIcon(icon)
+        } else {
+            isEnabled = true
+            setIcon(icon)
+        }
+
+        findTooltips(value)?.let { toolTipText = it }
+
+        componentOrientation = tree.componentOrientation
+
+        selected = sel
+
+        return this
+    }
+
+
+    private fun findIcon(value: Any,
+                         expanded: Boolean,
+                         leaf: Boolean): Icon? {
+
+        var icon: Icon? = null
 
         if (value is DefaultMutableTreeNode) {
             val userObject = value.userObject
@@ -399,22 +425,24 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
             }
         }
 
+        return icon
+    }
 
-        if (!tree.isEnabled) {
-            isEnabled = false
-            val laf = UIManager.getLookAndFeel()
-            val disabledIcon = laf.getDisabledIcon(tree, icon)
-            if (disabledIcon != null) icon = disabledIcon
-            setDisabledIcon(icon)
-        } else {
-            isEnabled = true
-            setIcon(icon)
+    private fun findTooltips(value: Any): String? {
+        var tooltip: String? = null
+
+        if (value is DefaultMutableTreeNode) {
+            val userObject = value.userObject
+            if (userObject is Tooltipable) {
+                tooltip = userObject.toolTip()
+            }
         }
-        componentOrientation = tree.componentOrientation
 
-        selected = sel
+        if (tooltip == null && value is Tooltipable) {
+            tooltip = value.toolTip()
+        }
 
-        return this
+        return tooltip
     }
 
     /**

@@ -21,12 +21,14 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
+import com.itangcent.idea.swing.Tooltipable
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.PsiClassUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
@@ -52,11 +54,14 @@ class ApiDashboardDialog : JDialog() {
     private var postmanApiTree: JTree? = null
     private var projectApiPanel: JPanel? = null
     private var postmanPanel: JPanel? = null
+    private var projectApModeButton: JButton? = null
     private var projectCollapseButton: JButton? = null
-    private var postmanNewCollectionButton: JButton? = null
 
+    private var postmanNewCollectionButton: JButton? = null
     private var postmanSyncButton: JButton? = null
     private var postmanCollapseButton: JButton? = null
+
+    private var projectMode: ProjectMode = ProjectMode.Legible
 
     @Inject
     private val logger: Logger? = null
@@ -118,7 +123,6 @@ class ApiDashboardDialog : JDialog() {
             this.postmanSyncButton!!.icon = EasyIcons.Refresh
             this.postmanSyncButton!!.text = ""
         }
-
 
         try {
             val projectCellRenderer = EasyApiTreeCellRenderer()
@@ -214,6 +218,16 @@ class ApiDashboardDialog : JDialog() {
                 logger!!.error("try collapse project apis failed!")
             }
         }
+
+        autoComputer.bindText(this.projectApModeButton!!)
+                .with(this::projectMode)
+                .eval { it.next().desc }
+
+        autoComputer.value(this::projectMode, ProjectMode.Legible)
+        this.projectApModeButton!!.addActionListener {
+            autoComputer.value(this::projectMode, this.projectMode.next())
+            (this.projectApiTree!!.model as DefaultTreeModel).reload()
+        }
     }
 
     private fun loadApiInModule(moduleNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel) {
@@ -221,13 +235,13 @@ class ApiDashboardDialog : JDialog() {
 
         val sourceRoots = moduleData.module.rootManager.getSourceRoots(false)
         if (sourceRoots.isNullOrEmpty()) {
-            moduleData.status = NodeStatus.loaded
+            moduleData.status = NodeStatus.Loaded
             moduleNode.removeFromParent()
             return
         }
 
         val countLatch: CountLatch = AQSCountLatch()
-        moduleData.status = NodeStatus.loading
+        moduleData.status = NodeStatus.Loading
         var anyFound = false
         for (contentRoot in moduleData.module.rootManager.getSourceRoots(false)) {
             if (disposed) return
@@ -251,14 +265,14 @@ class ApiDashboardDialog : JDialog() {
                                 val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
 
                                 val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
-                                    val classProjectNodeData = ClassProjectNodeData(resourceClass, resourceHelper.findAttrOfClass(resourceClass))
+                                    val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper.findAttrOfClass(resourceClass))
                                     val node = DefaultMutableTreeNode(classProjectNodeData)
                                     moduleNode.add(node)
                                     (moduleNode.userObject as ModuleProjectNodeData).addSubProjectNodeData(classProjectNodeData)
                                     return@computeIfAbsent node
                                 }
 
-                                val apiProjectNodeData = ApiProjectNodeData(request)
+                                val apiProjectNodeData = ApiProjectNodeData(this, request)
 
                                 val apiTreeNode = DefaultMutableTreeNode(apiProjectNodeData)
                                 apiTreeNode.allowsChildren = false
@@ -275,7 +289,7 @@ class ApiDashboardDialog : JDialog() {
         actionContext!!.runAsync {
             countLatch.waitFor(60000)
             if (anyFound) {
-                moduleData.status = NodeStatus.loaded
+                moduleData.status = NodeStatus.Loaded
             } else {
                 moduleNode.removeFromParent()
             }
@@ -475,10 +489,10 @@ class ApiDashboardDialog : JDialog() {
         }
 
         actionContext!!.runAsync {
-            moduleData.status = NodeStatus.loading
+            moduleData.status = NodeStatus.Loading
             val collectionInfo = postmanCachedApiHelper!!.getCollectionInfo(collectionId.toString(), useCache)
             if (collectionInfo == null) {
-                moduleData.status = NodeStatus.loaded
+                moduleData.status = NodeStatus.Loaded
                 return@runAsync
             }
             try {
@@ -494,7 +508,7 @@ class ApiDashboardDialog : JDialog() {
                     postmanApiTreeModel.reload(collectionNode)
                 }
             } finally {
-                moduleData.status = NodeStatus.loaded
+                moduleData.status = NodeStatus.Loaded
             }
         }
     }
@@ -550,7 +564,7 @@ class ApiDashboardDialog : JDialog() {
                     actionContext!!.runInSwingUI {
                         val treeModel = postmanApiTree!!.model as DefaultTreeModel
                         val collectionPostmanNodeData = CollectionPostmanNodeData(createdCollection)
-                        collectionPostmanNodeData.status = NodeStatus.loaded
+                        collectionPostmanNodeData.status = NodeStatus.Loaded
                         val collectionTreeNode = collectionPostmanNodeData.asTreeNode()
                         val rootTreeNode = treeModel.root as DefaultMutableTreeNode
                         rootTreeNode.add(collectionTreeNode)
@@ -583,12 +597,15 @@ class ApiDashboardDialog : JDialog() {
 
     class ModuleProjectNodeData : ProjectNodeData<ClassProjectNodeData>, IconCustomized {
         override fun icon(): Icon? {
-            return EasyIcons.WebFolder
+            return when (status) {
+                NodeStatus.Loading -> EasyIcons.Refresh
+                else -> null
+            } ?: EasyIcons.WebFolder
         }
 
         var module: Module
 
-        var status = NodeStatus.unload
+        var status = NodeStatus.Unload
 
         constructor(module: Module) {
             this.module = module
@@ -599,7 +616,11 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized {
+    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized, Tooltipable {
+        override fun toolTip(): String? {
+            return cls.qualifiedName
+        }
+
         override fun icon(): Icon? {
             return EasyIcons.Class
         }
@@ -608,40 +629,80 @@ class ApiDashboardDialog : JDialog() {
 
         var attr: String? = null
 
-        constructor(cls: PsiClass) {
+        private val apiDashboardDialog: ApiDashboardDialog
+
+        constructor(apiDashboardDialog: ApiDashboardDialog, cls: PsiClass) {
             this.cls = cls
+            this.apiDashboardDialog = apiDashboardDialog
         }
 
-        constructor(cls: PsiClass, attr: String?) {
+        constructor(apiDashboardDialog: ApiDashboardDialog, cls: PsiClass, attr: String?) {
             this.cls = cls
             this.attr = attr
+            this.apiDashboardDialog = apiDashboardDialog
         }
 
         override fun toString(): String {
-            return attr ?: cls.name ?: "anonymous"
+            if (apiDashboardDialog.projectMode == ProjectMode.Legible) {
+                return attr ?: cls.name ?: "anonymous"
+            } else {
+                return cls.name ?: "anonymous"
+            }
         }
     }
 
     enum class NodeStatus(var desc: String) {
-        unload("(unload)"),
-        loading("(loading)"),
-        uploading("(uploading)"),
-        loaded("")
+        Unload("(unload)"),
+        Loading("(loading)"),
+        Uploading("(uploading)"),
+        Loaded("")
     }
 
-    class ApiProjectNodeData : IconCustomized {
+    enum class ProjectMode {
+        Original("original") {
+            override fun next(): ProjectMode {
+                return Legible
+            }
+        },
+        Legible("legible") {
+            override fun next(): ProjectMode {
+                return Original
+            }
+        };
+
+        var desc: String
+
+        constructor(desc: String) {
+            this.desc = desc
+        }
+
+        abstract fun next(): ProjectMode
+    }
+
+    class ApiProjectNodeData : IconCustomized, Tooltipable {
+        override fun toolTip(): String? {
+            return PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)
+        }
+
+        private val apiDashboardDialog: ApiDashboardDialog
+
         override fun icon(): Icon? {
             return EasyIcons.Method
         }
 
         var request: Request
 
-        constructor(request: Request) {
+        constructor(apiDashboardDialog: ApiDashboardDialog, request: Request) {
             this.request = request
+            this.apiDashboardDialog = apiDashboardDialog
         }
 
         override fun toString(): String {
+            if (this.apiDashboardDialog.projectMode == ProjectMode.Original) {
+                return (request.resource as PsiMethod).name
+            }
             return request.name ?: "anonymous"
+
         }
     }
 
@@ -726,7 +787,15 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class CollectionPostmanNodeData : PostmanNodeData {
+    class CollectionPostmanNodeData : PostmanNodeData, IconCustomized {
+        override fun icon(): Icon? {
+            return when (status) {
+                NodeStatus.Loading -> EasyIcons.Refresh
+                NodeStatus.Uploading -> EasyIcons.UpFolder
+                else -> null
+            } ?: EasyIcons.ModuleGroup
+        }
+
         override fun currData(): HashMap<String, Any?> {
             if (detail != null) {
                 return detail!!
@@ -754,7 +823,7 @@ class ApiDashboardDialog : JDialog() {
 
         var detail: HashMap<String, Any?>? = null
 
-        var status = NodeStatus.unload
+        var status = NodeStatus.Unload
 
         constructor(collection: HashMap<String, Any?>) {
             this.collection = collection
@@ -765,7 +834,11 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanSubCollectionNodeData : PostmanNodeData {
+    class PostmanSubCollectionNodeData : PostmanNodeData, IconCustomized {
+        override fun icon(): Icon? {
+            return EasyIcons.Module
+        }
+
         override fun currData(): HashMap<String, Any?> {
             return info
         }
@@ -788,7 +861,11 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanApiNodeData : PostmanNodeData {
+    class PostmanApiNodeData : PostmanNodeData, IconCustomized {
+        override fun icon(): Icon? {
+            return EasyIcons.Link
+        }
+
         override fun currData(): HashMap<String, Any?> {
             return info
         }
@@ -838,7 +915,7 @@ class ApiDashboardDialog : JDialog() {
                 }
 
                 rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as CollectionPostmanNodeData
-                rootPostmanNodeData.status = NodeStatus.uploading
+                rootPostmanNodeData.status = NodeStatus.Uploading
 
                 val currData = targetCollectionNodeData.currData()
                 val items = makeSureItem(currData)
@@ -850,7 +927,7 @@ class ApiDashboardDialog : JDialog() {
                 logger.info("upload api...")
                 if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
                     logger.info("export success")
-                    rootPostmanNodeData.status = NodeStatus.loaded
+                    rootPostmanNodeData.status = NodeStatus.Loaded
 
                     actionContext!!.runInSwingUI {
                         loadPostmanNode(targetCollectionNodeData.asTreeNode(), formatToPostmanInfo)
@@ -858,11 +935,11 @@ class ApiDashboardDialog : JDialog() {
                     }
                 } else {
                     logger.info("export failed")
-                    rootPostmanNodeData.status = NodeStatus.loaded
+                    rootPostmanNodeData.status = NodeStatus.Loaded
                 }
             } catch (e: Exception) {
                 logger.error("export failed:" + ExceptionUtils.getStackTrace(e))
-                rootPostmanNodeData!!.status = NodeStatus.loaded
+                rootPostmanNodeData!!.status = NodeStatus.Loaded
             }
         }
     }
