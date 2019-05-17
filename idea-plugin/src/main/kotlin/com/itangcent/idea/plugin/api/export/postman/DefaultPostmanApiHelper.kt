@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.export.postman
 
+import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.itangcent.common.utils.GsonUtils
@@ -7,6 +8,7 @@ import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.ReservedResult
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.intellij.extend.acquireGreedy
+import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
@@ -23,6 +25,7 @@ import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.HttpClients
 import java.util.concurrent.TimeUnit
+import kotlin.streams.toList
 
 /**
  * Postman API: https://docs.api.getpostman.com
@@ -157,6 +160,56 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
+        if (doUpdateCollection(collectionId, apiInfo)) {
+            return true
+        }
+        try {
+            logger!!.info("try fix collection.....")
+            tryFixCollection(apiInfo)
+            if (doUpdateCollection(collectionId, apiInfo)) {
+                return true
+            }
+        } catch (e: Exception) {
+            logger!!.info("fix collection failed:" + ExceptionUtils.getStackTrace(e))
+        }
+        return false
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun tryFixCollection(apiInfo: HashMap<String, Any?>) {
+        if (apiInfo.containsKey("item")) {
+            val items = apiInfo["item"] as List<*>? ?: return
+            apiInfo["item"] = items
+                    .stream()
+                    .map { it as Map<String, Any?> }
+                    .map { it.asHashMap() }
+                    .peek { item ->
+                        tryFixCollection(item)
+                    }
+                    .toList()
+        } else {
+            val responses = apiInfo["response"] as List<*>?
+            if (responses != null) {
+                apiInfo["response"] = responses
+                        .stream()
+                        .map { it as Map<String, Any?> }
+                        .map { it.asHashMap() }
+                        .peek { response ->
+                            val responseCode = response["code"]
+                            if (responseCode != null) {
+                                if (responseCode is Map<*, *>) {
+                                    (response as MutableMap<String, Any?>)["code"] = responseCode["value"] ?: 200
+                                } else if (responseCode is LazilyParsedNumber) {
+                                    (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
+                                }
+                            }
+                        }
+                        .toList()
+            }
+        }
+    }
+
+    fun doUpdateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
 
         val httpPut = HttpPut("$COLLECTION/$collectionId")
         val collection: HashMap<String, Any?> = HashMap()
