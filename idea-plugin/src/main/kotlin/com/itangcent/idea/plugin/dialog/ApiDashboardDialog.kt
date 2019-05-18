@@ -562,11 +562,11 @@ class ApiDashboardDialog : JDialog() {
                 if (createdCollection == null) {
                     logger!!.error("create collection failed")
                 } else {
+                    val collectionPostmanNodeData = CollectionPostmanNodeData(createdCollection)
+                    collectionPostmanNodeData.status = NodeStatus.Loaded
+                    val collectionTreeNode = collectionPostmanNodeData.asTreeNode()
                     actionContext!!.runInSwingUI {
                         val treeModel = postmanApiTree!!.model as DefaultTreeModel
-                        val collectionPostmanNodeData = CollectionPostmanNodeData(createdCollection)
-                        collectionPostmanNodeData.status = NodeStatus.Loaded
-                        val collectionTreeNode = collectionPostmanNodeData.asTreeNode()
                         val rootTreeNode = treeModel.root as DefaultMutableTreeNode
                         rootTreeNode.add(collectionTreeNode)
                         treeModel.reload(rootTreeNode)
@@ -917,6 +917,9 @@ class ApiDashboardDialog : JDialog() {
 
                 rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as CollectionPostmanNodeData
                 rootPostmanNodeData.status = NodeStatus.Uploading
+                actionContext!!.runInSwingUI {
+                    (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
+                }
 
                 val currData = targetCollectionNodeData.currData()
                 val items = makeSureItem(currData)

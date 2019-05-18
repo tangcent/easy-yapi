@@ -17,3 +17,11 @@ fun <E> List<E>.asArrayList(): ArrayList<E> {
     this.forEach { list.add(it) }
     return list
 }
+
+
+fun Any?.toInt(): Int? {
+    if (this == null) return null
+    if (this is Number) return this.toInt()
+    if (this is String) return this.toIntOrNull()
+    return null
+}

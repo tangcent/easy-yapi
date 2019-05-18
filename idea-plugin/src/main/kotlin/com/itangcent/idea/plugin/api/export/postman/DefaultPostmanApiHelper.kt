@@ -12,6 +12,7 @@ import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -185,10 +186,10 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                         .peek { response ->
                             val responseCode = response["code"]
                             if (responseCode != null) {
-                                if (responseCode is Map<*, *>) {
-                                    (response as MutableMap<String, Any?>)["code"] = responseCode["value"] ?: 200
-                                } else if (responseCode is LazilyParsedNumber) {
-                                    (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
+                                when (responseCode) {
+                                    is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] = responseCode["value"].toInt() ?: 200
+                                    is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
+                                    is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                 }
                             }
                         }
@@ -197,7 +198,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    fun doUpdateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
+    private fun doUpdateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
 
         val httpPut = HttpPut("$COLLECTION/$collectionId")
         val collection: HashMap<String, Any?> = HashMap()
