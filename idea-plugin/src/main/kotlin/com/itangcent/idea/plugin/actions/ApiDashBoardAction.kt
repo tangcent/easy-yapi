@@ -1,12 +1,14 @@
 package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -15,9 +17,6 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.ClassRuleConfig
-import com.itangcent.intellij.setting.DefaultSettingManager
-import com.itangcent.intellij.setting.ReadOnlySettingManager
-import com.itangcent.intellij.setting.SettingManager
 import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.HttpClients
 
@@ -27,8 +26,7 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         super.onBuildActionContext(builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
-        builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
-        builder.bind(SettingManager::class, "editableSettingManager") { it.with(DefaultSettingManager::class).singleton() }
+        builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
         builder.bind(DocParseHelper::class) { it.singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
