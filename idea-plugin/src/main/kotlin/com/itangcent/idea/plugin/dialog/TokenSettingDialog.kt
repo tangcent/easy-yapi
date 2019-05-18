@@ -11,7 +11,7 @@ import java.awt.event.*
 import javax.swing.*
 import kotlin.streams.toList
 
-class SettingDialog : JDialog() {
+class TokenSettingDialog : JDialog() {
     private var contentPane: JPanel? = null
 
     private var hostList: JList<*>? = null
