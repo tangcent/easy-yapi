@@ -2,19 +2,17 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
-import com.google.inject.name.Named
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.ReservedResult
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.setting.SettingManager
-import com.itangcent.intellij.setting.TokenSetting
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.HttpClient
@@ -43,11 +41,7 @@ import kotlin.streams.toList
 open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     @Inject
-    private val settingManager: SettingManager? = null
-
-    @Inject(optional = true)
-    @Named("editableSettingManager")
-    private val editableSettingManager: SettingManager? = null
+    private val settingBinder: SettingBinder? = null
 
     @Inject
     private val logger: Logger? = null
@@ -58,23 +52,17 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
     override fun hasPrivateToken(): Boolean {
-        return getPrivateToken() != null
+        return !getPrivateToken().isNullOrEmpty()
     }
 
     override fun getPrivateToken(): String? {
-        val setting = settingManager!!.getSetting(POSTMANHOST) ?: return null
-        return if (StringUtils.isNotBlank(setting.privateToken)) {
-            setting.privateToken
-        } else {
-            null
-        }
+        return settingBinder!!.read().postmanToken?.trim()
     }
 
     override fun setPrivateToken(postmanPrivateToken: String) {
-        val tokenSetting = TokenSetting()
-        tokenSetting.host = POSTMANHOST
-        tokenSetting.privateToken = postmanPrivateToken
-        (editableSettingManager ?: settingManager)!!.saveSetting(tokenSetting)
+        val settings = settingBinder!!.read()
+        settings.postmanToken = postmanPrivateToken
+        settingBinder.save(settings)
     }
 
     private fun beforeRequest() {
