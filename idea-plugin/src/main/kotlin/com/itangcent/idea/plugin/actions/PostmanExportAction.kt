@@ -1,9 +1,11 @@
 package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.postman.*
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -12,8 +14,6 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.ClassRuleConfig
-import com.itangcent.intellij.setting.ReadOnlySettingManager
-import com.itangcent.intellij.setting.SettingManager
 import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.HttpClients
 
@@ -23,7 +23,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         super.onBuildActionContext(builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
-        builder.bind(SettingManager::class) { it.with(ReadOnlySettingManager::class).singleton() }
+        builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
         builder.bind(PostmanApiExporter::class) { it.singleton() }
         builder.bind(PostmanFormatter::class) { it.singleton() }
