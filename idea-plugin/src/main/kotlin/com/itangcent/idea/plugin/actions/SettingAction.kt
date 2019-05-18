@@ -2,8 +2,7 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.idea.plugin.dialog.SettingDialog
-import com.itangcent.intellij.actions.KotlinAnAction
+import com.itangcent.idea.plugin.dialog.TokenSettingDialog
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -23,7 +22,7 @@ class SettingAction : BasicAnAction() {
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
-        val settingDialog = actionContext.instance { SettingDialog() }
+        val settingDialog = actionContext.instance { TokenSettingDialog() }
         UIUtils.show(settingDialog)
     }
 }
