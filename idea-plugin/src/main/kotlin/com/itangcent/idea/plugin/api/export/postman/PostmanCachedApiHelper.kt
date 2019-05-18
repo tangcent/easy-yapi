@@ -3,8 +3,12 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.logger.Logger
 
 class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
+
+    @Inject
+    private val logger: Logger? = null
 
     @Inject
     private val localFileRepository: LocalFileRepository? = null
@@ -79,7 +83,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         val cache = CollectionInfoCache()
         cache.allCollection = allCollection
         getDbBeanBinderFactory()
-                .getBeanBinder("getAllCollection")
+                .getBeanBinder("${getPrivateToken()}_getAllCollection")
                 .save(cache)
         return allCollection
     }
@@ -97,7 +101,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         val cache = CollectionInfoCache()
         cache.collectionDetail = collectionDetail
         getDbBeanBinderFactory()
-                .getBeanBinder("collection:$collectionId")
+                .getBeanBinder("${getPrivateToken()}_collection:$collectionId")
                 .save(cache)
         return collectionDetail
     }
