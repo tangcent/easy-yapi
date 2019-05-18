@@ -410,6 +410,7 @@ class ApiDashboardDialog : JDialog() {
 
                 postmanCachedApiHelper!!.setPrivateToken(postmanPrivateToken)
                 autoComputer.value(this::postmanAvailable, true)
+                loadPostmanInfo(true)
             }
         }
     }
