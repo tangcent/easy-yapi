@@ -36,10 +36,11 @@ restart **IDE**.
 * How to export to postman automatically?
  
 ```text
-    Click [File -> Other Setting -> EasyApiSetting]
-    add new setting
-    [host] https://api.getpostman.com
-    [token] Get from https://go.postman.co/integrations/services/pm_pro_api
+    Click [Preference -> Other Setting -> EasyApi]
+    set postman privatetoken
+    If you do not have a privateToken of postman,
+    you can easily generate one by heading over to the Postman Integrations Dashboard
+    [https://go.postman.co/integrations/services/pm_pro_api]
 ```
 
 * Quick API requests from code
