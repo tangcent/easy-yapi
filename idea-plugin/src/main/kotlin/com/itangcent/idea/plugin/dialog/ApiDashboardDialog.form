@@ -82,6 +82,7 @@
                   <autoscrolls value="true"/>
                   <doubleBuffered value="true"/>
                   <dragEnabled value="true"/>
+                  <dropMode value="ON_OR_INSERT"/>
                   <largeModel value="false"/>
                   <rootVisible value="false"/>
                 </properties>

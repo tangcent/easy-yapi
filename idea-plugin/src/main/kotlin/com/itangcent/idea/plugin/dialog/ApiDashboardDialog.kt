@@ -34,6 +34,8 @@ import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.dnd.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.Serializable
@@ -60,6 +62,8 @@ class ApiDashboardDialog : JDialog() {
     private var postmanNewCollectionButton: JButton? = null
     private var postmanSyncButton: JButton? = null
     private var postmanCollapseButton: JButton? = null
+
+    var postmanPopMenu: JPopupMenu? = null
 
     private var projectMode: ProjectMode = ProjectMode.Legible
 
@@ -142,9 +146,53 @@ class ApiDashboardDialog : JDialog() {
             postmanCellRenderer.setClosedIcon(EasyIcons.WebFolder)
 
         } catch (e: Exception) {
-
         }
 
+        postmanPopMenu = JPopupMenu()
+
+        val addItem = JMenuItem("Add Collection")
+
+        addItem.addActionListener {
+            newSubPostmanAction()
+        }
+
+        val renameItem = JMenuItem("Rename")
+
+        renameItem.addActionListener {
+            renamePostmanAction()
+        }
+        val syncItem = JMenuItem("Sync")
+
+        syncItem.addActionListener {
+            syncPostmanAction()
+        }
+
+        val deleteItem = JMenuItem("Delete")
+
+        deleteItem.addActionListener {
+            deletePostmanAction()
+        }
+
+        postmanPopMenu!!.add(addItem)
+        postmanPopMenu!!.add(renameItem)
+        postmanPopMenu!!.add(syncItem)
+        postmanPopMenu!!.add(deleteItem)
+
+        this.postmanApiTree!!.addMouseListener(object : MouseAdapter() {
+            override fun mousePressed(e: MouseEvent?) {
+                if (e == null) return
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    val path = postmanApiTree!!.getPathForLocation(e.x, e.y) ?: return
+
+                    val targetComponent = path.lastPathComponent
+                    val postmanNodeData = (targetComponent as DefaultMutableTreeNode).userObject
+
+                    addItem.isEnabled = postmanNodeData !is PostmanApiNodeData
+                    postmanPopMenu!!.show(postmanApiTree!!, e.x, e.y)
+                    postmanApiTree!!.selectionPath = path
+                }
+            }
+        })
     }
 
     @PostConstruct
@@ -287,7 +335,7 @@ class ApiDashboardDialog : JDialog() {
             }
         }
         actionContext!!.runAsync {
-            countLatch.waitFor(60000)
+            countLatch.waitFor(60000)//60s
             if (anyFound) {
                 moduleData.status = NodeStatus.Loaded
             } else {
@@ -498,7 +546,7 @@ class ApiDashboardDialog : JDialog() {
             }
             try {
                 moduleData.detail = collectionInfo
-                val items = makeSureItem(collectionInfo)
+                val items = findEditableItem(collectionInfo)
 
                 actionContext!!.runInSwingUI {
                     for (item in items) {
@@ -530,7 +578,7 @@ class ApiDashboardDialog : JDialog() {
                 val subCollectionNode = PostmanSubCollectionNodeData(parentNodeData, item).asTreeNode()
                 parentNode.add(subCollectionNode)
 
-                val items = makeSureItem(item)
+                val items = findEditableItem(item)
                 if (items.isNullOrEmpty()) return@runInSwingUI
                 for (subItem in items) {
                     loadPostmanNode(subCollectionNode, subItem)
@@ -550,7 +598,7 @@ class ApiDashboardDialog : JDialog() {
             actionContext!!.runAsync {
                 val info: HashMap<String, Any?> = HashMap()
                 info["name"] = newCollectionName
-                info["description"] = "create by easyapi at ${DateUtils.formatYMD_HMS(Date())}"
+                info["description"] = "create by easyApi at ${DateUtils.formatYMD_HMS(Date())}"
                 info["schema"] = PostmanFormatter.POSTMAN_SCHEMA_V2_1_0
 
                 val collection: HashMap<String, Any?> = HashMap()
@@ -575,6 +623,53 @@ class ApiDashboardDialog : JDialog() {
             }
         }
     }
+
+    //region pop action---------------------------------------------------------
+    private fun newSubPostmanAction() {
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject ?: return
+
+
+        }
+
+    }
+
+    private fun renamePostmanAction() {
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject
+//            postmanNodeData.
+
+        }
+
+    }
+
+    private fun syncPostmanAction() {
+
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject
+
+
+        }
+    }
+
+    private fun deletePostmanAction() {
+
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject
+//            postmanNodeData.
+
+        }
+    }
+    //endregion pop action---------------------------------------------------------
+
     //endregion postman module-----------------------------------------------------
 
     //region project Node Data--------------------------------------------------
@@ -895,21 +990,21 @@ class ApiDashboardDialog : JDialog() {
     //region handle drop--------------------------------------------------------
 
     @Suppress("UNCHECKED_CAST")
-    fun handleDropEvent(fromModuleData: Any, toPostmanNodeData: Any) {
+    fun handleDropEvent(fromProjectData: Any, toPostmanNodeData: Any) {
 
         val targetCollectionNodeData: PostmanNodeData = when (toPostmanNodeData) {
             is PostmanApiNodeData -> toPostmanNodeData.getParentNodeData()!!
             else -> toPostmanNodeData as PostmanNodeData
         }
 
-        logger!!.info("export [$fromModuleData] to $targetCollectionNodeData")
+        logger!!.info("export [$fromProjectData] to $targetCollectionNodeData")
 
         actionContext!!.runAsync {
             var rootPostmanNodeData: CollectionPostmanNodeData? = null
             try {
 
                 logger.info("parse api...")
-                val formatToPostmanInfo = formatPostmanInfo(fromModuleData)
+                val formatToPostmanInfo = formatPostmanInfo(fromProjectData)
                 if (formatToPostmanInfo == null) {
                     logger.info("no api can be moved")
                     return@runAsync
@@ -922,7 +1017,7 @@ class ApiDashboardDialog : JDialog() {
                 }
 
                 val currData = targetCollectionNodeData.currData()
-                val items = makeSureItem(currData)
+                val items = findEditableItem(currData)
                 items.add(formatToPostmanInfo)
 
                 val collection = rootPostmanNodeData.collection
@@ -949,7 +1044,7 @@ class ApiDashboardDialog : JDialog() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun makeSureItem(data: HashMap<String, Any?>): ArrayList<HashMap<String, Any?>> {
+    private fun findEditableItem(data: HashMap<String, Any?>): ArrayList<HashMap<String, Any?>> {
         var items = data["item"]
         if (items != null) {
             if (items is ArrayList<*>) {
