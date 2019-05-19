@@ -439,6 +439,7 @@ class ApiDashboardDialog : JDialog() {
         }
 
         this.postmanSyncButton!!.addActionListener {
+            ((this.postmanApiTree!!.model as DefaultTreeModel).root as DefaultMutableTreeNode).removeAllChildren()
             loadPostmanInfo(false)
         }
 
@@ -502,7 +503,7 @@ class ApiDashboardDialog : JDialog() {
 
                 actionContext!!.runInSwingUI {
                     for (collection in collections) {
-                        val collectionNode = CollectionPostmanNodeData(collection).asTreeNode()
+                        val collectionNode = PostmanCollectionNodeData(collection).asTreeNode()
                         treeNode.add(collectionNode)
                         collectionNodes.add(collectionNode)
                         rootTreeModel.reload(collectionNode)
@@ -526,7 +527,7 @@ class ApiDashboardDialog : JDialog() {
 
     @Suppress("UNCHECKED_CAST")
     private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, useCache: Boolean) {
-        val moduleData = collectionNode.userObject as CollectionPostmanNodeData
+        val moduleData = collectionNode.userObject as PostmanCollectionNodeData
         val collectionId = moduleData.collection["id"]
         val postmanApiTreeModel = postmanApiTree!!.model as DefaultTreeModel
         if (collectionId == null) {
@@ -610,7 +611,7 @@ class ApiDashboardDialog : JDialog() {
                 if (createdCollection == null) {
                     logger!!.error("create collection failed")
                 } else {
-                    val collectionPostmanNodeData = CollectionPostmanNodeData(createdCollection)
+                    val collectionPostmanNodeData = PostmanCollectionNodeData(createdCollection)
                     collectionPostmanNodeData.status = NodeStatus.Loaded
                     val collectionTreeNode = collectionPostmanNodeData.asTreeNode()
                     actionContext!!.runInSwingUI {
@@ -653,8 +654,12 @@ class ApiDashboardDialog : JDialog() {
 
         if (lastSelectedPathComponent != null) {
             val postmanNodeData = lastSelectedPathComponent.userObject
-
-
+            logger!!.info("reload:[$postmanNodeData]")
+            val collectionPostmanNodeData = (postmanNodeData as PostmanNodeData).getRootNodeData() ?: return
+            //clear
+            collectionPostmanNodeData.asTreeNode().removeAllChildren()
+            //reload
+            loadPostCollectionInfo(collectionPostmanNodeData.asTreeNode(), false)
         }
     }
 
@@ -883,7 +888,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class CollectionPostmanNodeData : PostmanNodeData, IconCustomized {
+    class PostmanCollectionNodeData : PostmanNodeData, IconCustomized {
         override fun icon(): Icon? {
             return when (status) {
                 NodeStatus.Loading -> EasyIcons.Refresh
@@ -1000,7 +1005,7 @@ class ApiDashboardDialog : JDialog() {
         logger!!.info("export [$fromProjectData] to $targetCollectionNodeData")
 
         actionContext!!.runAsync {
-            var rootPostmanNodeData: CollectionPostmanNodeData? = null
+            var rootPostmanNodeData: PostmanCollectionNodeData? = null
             try {
 
                 logger.info("parse api...")
@@ -1010,7 +1015,7 @@ class ApiDashboardDialog : JDialog() {
                     return@runAsync
                 }
 
-                rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as CollectionPostmanNodeData
+                rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as PostmanCollectionNodeData
                 rootPostmanNodeData.status = NodeStatus.Uploading
                 actionContext!!.runInSwingUI {
                     (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
