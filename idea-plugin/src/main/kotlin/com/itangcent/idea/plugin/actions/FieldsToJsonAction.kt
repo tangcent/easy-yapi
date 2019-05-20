@@ -34,13 +34,12 @@ class FieldsToJsonAction : BasicAnAction("To Json") {
             val editor = anActionEvent.getData(PlatformDataKeys.EDITOR)
             if (editor != null) {
                 val fieldJsonGenerator = FieldJsonGenerator()
-                //region 委托actionContext在UI线程执行---------------------------------
+
                 actionContext.runInWriteUI {
                     val generateFieldJson = fieldJsonGenerator.generateFieldJson()
                     ToolUtils.copy2Clipboard(generateFieldJson)
                     logger!!.log("\n$generateFieldJson\n")
                 }
-                //endregion 委托actionContext在UI线程执行---------------------------------
             }
         } catch (e: Exception) {
             logger!!.error("To json failed:" + ExceptionUtils.getStackTrace(e))
