@@ -38,6 +38,10 @@ class DbBeanBinderFactory<T : kotlin.Any> {
         return dbBeanBinderCache.get(beanBindName) { DbBeanBinder(beanBindName) }
     }
 
+    fun deleteBinder(beanBindName: String) {
+        getDAO().delete(beanBindName.toByteArray())
+    }
+
     inner class DbBeanBinder : com.itangcent.intellij.file.BeanBinder<T> {
 
         private val beanBindName: String
