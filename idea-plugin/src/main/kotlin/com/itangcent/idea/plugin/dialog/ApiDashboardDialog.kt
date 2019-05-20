@@ -45,6 +45,7 @@ import java.util.concurrent.Future
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -164,13 +165,21 @@ class ApiDashboardDialog : JDialog() {
         val syncItem = JMenuItem("Sync")
 
         syncItem.addActionListener {
-            syncPostmanAction()
+            try {
+                syncPostmanAction()
+            } catch (e: Exception) {
+                logger!!.error("sync failed:" + ExceptionUtils.getStackTrace(e))
+            }
         }
 
         val deleteItem = JMenuItem("Delete")
 
         deleteItem.addActionListener {
-            deletePostmanAction()
+            try {
+                deletePostmanAction()
+            } catch (e: Exception) {
+                logger!!.error("delete failed:" + ExceptionUtils.getStackTrace(e))
+            }
         }
 
         postmanPopMenu!!.add(addItem)
@@ -669,8 +678,48 @@ class ApiDashboardDialog : JDialog() {
 
         if (lastSelectedPathComponent != null) {
             val postmanNodeData = lastSelectedPathComponent.userObject
-//            postmanNodeData.
+            if (postmanNodeData is PostmanCollectionNodeData) {//delete collection
+                logger!!.info("delete from remote...")
+                actionContext!!.runAsync {
+                    val collection = postmanNodeData.collection
+                    val collectionId = collection["id"].toString()
+                    if (postmanCachedApiHelper!!.deleteCollectionInfo(collectionId) != null) {
+                        logger.info("delete success")
+                        postmanNodeData.asTreeNode().removeFromParent()
+                        (postmanApiTree!!.model as DefaultTreeModel).reload(postmanApiTree!!.model.root as TreeNode)
+                    } else {
+                        logger.info("delete failed")
+                    }
+                }
+            } else {//delete sub collection or api
+                if (findEditableItem((postmanNodeData as PostmanNodeData).getParentNodeData()!!.currData()).remove(postmanNodeData.currData())) {
 
+                    val rootPostmanNodeData = postmanNodeData.getRootNodeData()!! as PostmanCollectionNodeData
+                    rootPostmanNodeData.status = NodeStatus.Uploading
+
+                    val collection = rootPostmanNodeData.collection
+                    val collectionId = collection["id"].toString()
+
+                    logger!!.info("delete from remote...")
+                    actionContext!!.runAsync {
+
+                        if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
+                            logger.info("delete success")
+                            actionContext!!.runInSwingUI {
+                                postmanNodeData.asTreeNode().removeFromParent()
+                                rootPostmanNodeData.status = NodeStatus.Loaded
+                                (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
+                            }
+                        } else {
+                            logger.info("delete failed")
+                            rootPostmanNodeData.status = NodeStatus.Loaded
+                        }
+
+                    }
+                    return
+                }
+                logger!!.error("delete failed")
+            }
         }
     }
     //endregion pop action---------------------------------------------------------

@@ -17,6 +17,7 @@ import com.itangcent.intellij.logger.Logger
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.HttpClient
+import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.methods.HttpPut
@@ -277,6 +278,29 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             return null
         } catch (e: Throwable) {
             logger!!.error("Load collection info failed:" + ExceptionUtils.getStackTrace(e))
+            return null
+        }
+    }
+
+    override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+        val httpDelete = HttpDelete("$COLLECTION/$collectionId")
+        httpDelete.setHeader("x-api-key", getPrivateToken())
+        try {
+            beforeRequest()
+            val result = httpClient!!.execute(httpDelete, reservedResponseHandle())
+            val returnValue = result.result()
+
+            if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
+                val returnObj = GsonUtils.parseToJsonTree(returnValue)
+                return returnObj?.asJsonObject?.get("collection")
+                        ?.asMap()
+            }
+
+            onErrorResponse(result)
+
+            return null
+        } catch (e: Throwable) {
+            logger!!.error("delete collection failed:" + ExceptionUtils.getStackTrace(e))
             return null
         }
     }

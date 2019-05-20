@@ -69,6 +69,30 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         return false
     }
 
+    override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+        val deleteCollectionInfo = super.deleteCollectionInfo(collectionId)
+        if (deleteCollectionInfo != null) {
+
+            //region update collection of AllCollection-----------------------------
+            val allCollectionBeanBinder = getDbBeanBinderFactory()
+                    .getBeanBinder("${getPrivateToken()}_getAllCollection")
+            val cacheOfAllCollection = allCollectionBeanBinder.read()
+            if (cacheOfAllCollection != NULL_COLLECTION_INFO_CACHE) {
+                if (cacheOfAllCollection.allCollection != null) {
+                    if (cacheOfAllCollection.allCollection!!.removeIf {
+                                it["id"] == collectionId
+                            }) {
+                        allCollectionBeanBinder.save(cacheOfAllCollection)
+                    }
+                }
+            }
+            //endregion update collection of AllCollection-----------------------------
+
+            getDbBeanBinderFactory().deleteBinder("${getPrivateToken()}_collection:$collectionId")
+        }
+        return deleteCollectionInfo
+    }
+
     fun getAllCollection(useCache: Boolean = true): ArrayList<HashMap<String, Any?>>? {
         if (useCache) {
             val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder(

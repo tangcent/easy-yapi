@@ -84,6 +84,16 @@ class SqliteDataResourceHelper {
                 logger!!.error(ExceptionUtils.getStackTrace(e))
             }
         }
+
+        fun delete(name: ByteArray) {
+            val base64Name = name.encodeBase64()
+            val hash = name.contentHashCode()
+            try {
+                sqlLiteDataSource.execute("DELETE FROM $cacheName WHERE HASH = $hash AND NAME = '$base64Name'") {}
+            } catch (e: Exception) {
+                logger!!.error(ExceptionUtils.getStackTrace(e))
+            }
+        }
     }
 }
 
