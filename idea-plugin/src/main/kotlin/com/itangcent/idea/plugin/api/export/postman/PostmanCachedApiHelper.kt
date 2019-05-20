@@ -58,15 +58,61 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
     }
 
-    override fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
-        if (super.updateCollection(collectionId, apiInfo)) {
+    @Suppress("UNCHECKED_CAST")
+    override fun updateCollection(collectionId: String, collectionInfo: HashMap<String, Any?>): Boolean {
+        if (super.updateCollection(collectionId, collectionInfo)) {
+            //region try update collection of AllCollection-----------------------------
+            val allCollectionBeanBinder = getDbBeanBinderFactory()
+                    .getBeanBinder("${getPrivateToken()}_getAllCollection")
+            val cacheOfAllCollection = allCollectionBeanBinder.read()
+            if (cacheOfAllCollection != NULL_COLLECTION_INFO_CACHE) {
+                if (cacheOfAllCollection.allCollection != null) {
+                    val collectionInAllCollectionCache = cacheOfAllCollection.allCollection!!.filter { it["id"] == collectionId }.firstOrNull()
+                    if (collectionInAllCollectionCache != null) {
+                        val info = collectionInfo["info"] as MutableMap<String, Any?>
+                        //check collection name
+                        if (collectionInAllCollectionCache["name"] != info["name"]) {
+                            collectionInAllCollectionCache["name"] = info["name"]
+                            //update cache if collection name was updated
+                            allCollectionBeanBinder.save(cacheOfAllCollection)
+                        }
+                    }
+                }
+            }
+            //endregion try update collection of AllCollection-----------------------------
+
+
             val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("${getPrivateToken()}_collection:$collectionId")
             val cache = CollectionInfoCache()
-            cache.collectionDetail = apiInfo
+            cache.collectionDetail = collectionInfo
             collectionDetailBeanBinder.save(cache)
             return true
         }
         return false
+    }
+
+    override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+        val deleteCollectionInfo = super.deleteCollectionInfo(collectionId)
+        if (deleteCollectionInfo != null) {
+
+            //region update collection of AllCollection-----------------------------
+            val allCollectionBeanBinder = getDbBeanBinderFactory()
+                    .getBeanBinder("${getPrivateToken()}_getAllCollection")
+            val cacheOfAllCollection = allCollectionBeanBinder.read()
+            if (cacheOfAllCollection != NULL_COLLECTION_INFO_CACHE) {
+                if (cacheOfAllCollection.allCollection != null) {
+                    if (cacheOfAllCollection.allCollection!!.removeIf {
+                                it["id"] == collectionId
+                            }) {
+                        allCollectionBeanBinder.save(cacheOfAllCollection)
+                    }
+                }
+            }
+            //endregion update collection of AllCollection-----------------------------
+
+            getDbBeanBinderFactory().deleteBinder("${getPrivateToken()}_collection:$collectionId")
+        }
+        return deleteCollectionInfo
     }
 
     fun getAllCollection(useCache: Boolean = true): ArrayList<HashMap<String, Any?>>? {

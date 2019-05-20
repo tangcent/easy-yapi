@@ -34,6 +34,8 @@ import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.dnd.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.Serializable
@@ -43,6 +45,7 @@ import java.util.concurrent.Future
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -60,6 +63,8 @@ class ApiDashboardDialog : JDialog() {
     private var postmanNewCollectionButton: JButton? = null
     private var postmanSyncButton: JButton? = null
     private var postmanCollapseButton: JButton? = null
+
+    var postmanPopMenu: JPopupMenu? = null
 
     private var projectMode: ProjectMode = ProjectMode.Legible
 
@@ -142,9 +147,61 @@ class ApiDashboardDialog : JDialog() {
             postmanCellRenderer.setClosedIcon(EasyIcons.WebFolder)
 
         } catch (e: Exception) {
-
         }
 
+        postmanPopMenu = JPopupMenu()
+
+        val addItem = JMenuItem("Add Collection")
+
+        addItem.addActionListener {
+            newSubPostmanAction()
+        }
+
+        val renameItem = JMenuItem("Rename")
+
+        renameItem.addActionListener {
+            renamePostmanAction()
+        }
+        val syncItem = JMenuItem("Sync")
+
+        syncItem.addActionListener {
+            try {
+                syncPostmanAction()
+            } catch (e: Exception) {
+                logger!!.error("sync failed:" + ExceptionUtils.getStackTrace(e))
+            }
+        }
+
+        val deleteItem = JMenuItem("Delete")
+
+        deleteItem.addActionListener {
+            try {
+                deletePostmanAction()
+            } catch (e: Exception) {
+                logger!!.error("delete failed:" + ExceptionUtils.getStackTrace(e))
+            }
+        }
+
+        postmanPopMenu!!.add(addItem)
+        postmanPopMenu!!.add(renameItem)
+        postmanPopMenu!!.add(syncItem)
+        postmanPopMenu!!.add(deleteItem)
+
+        this.postmanApiTree!!.addMouseListener(object : MouseAdapter() {
+            override fun mousePressed(e: MouseEvent?) {
+                if (e == null) return
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    val path = postmanApiTree!!.getPathForLocation(e.x, e.y) ?: return
+
+                    val targetComponent = path.lastPathComponent
+                    val postmanNodeData = (targetComponent as DefaultMutableTreeNode).userObject
+
+                    addItem.isEnabled = postmanNodeData !is PostmanApiNodeData
+                    postmanPopMenu!!.show(postmanApiTree!!, e.x, e.y)
+                    postmanApiTree!!.selectionPath = path
+                }
+            }
+        })
     }
 
     @PostConstruct
@@ -287,7 +344,7 @@ class ApiDashboardDialog : JDialog() {
             }
         }
         actionContext!!.runAsync {
-            countLatch.waitFor(60000)
+            countLatch.waitFor(60000)//60s
             if (anyFound) {
                 moduleData.status = NodeStatus.Loaded
             } else {
@@ -391,6 +448,7 @@ class ApiDashboardDialog : JDialog() {
         }
 
         this.postmanSyncButton!!.addActionListener {
+            ((this.postmanApiTree!!.model as DefaultTreeModel).root as DefaultMutableTreeNode).removeAllChildren()
             loadPostmanInfo(false)
         }
 
@@ -402,7 +460,7 @@ class ApiDashboardDialog : JDialog() {
 
     private fun tryInputPostmanPrivateToken() {
         actionContext!!.runAsync {
-            Thread.sleep(500)
+            Thread.sleep(200)
             actionContext!!.runInSwingUI {
                 val postmanPrivateToken = Messages.showInputDialog(this, "Input Postman Private Token",
                         "Postman Private Token", Messages.getInformationIcon())
@@ -454,7 +512,7 @@ class ApiDashboardDialog : JDialog() {
 
                 actionContext!!.runInSwingUI {
                     for (collection in collections) {
-                        val collectionNode = CollectionPostmanNodeData(collection).asTreeNode()
+                        val collectionNode = PostmanCollectionNodeData(collection).asTreeNode()
                         treeNode.add(collectionNode)
                         collectionNodes.add(collectionNode)
                         rootTreeModel.reload(collectionNode)
@@ -478,7 +536,7 @@ class ApiDashboardDialog : JDialog() {
 
     @Suppress("UNCHECKED_CAST")
     private fun loadPostCollectionInfo(collectionNode: DefaultMutableTreeNode, useCache: Boolean) {
-        val moduleData = collectionNode.userObject as CollectionPostmanNodeData
+        val moduleData = collectionNode.userObject as PostmanCollectionNodeData
         val collectionId = moduleData.collection["id"]
         val postmanApiTreeModel = postmanApiTree!!.model as DefaultTreeModel
         if (collectionId == null) {
@@ -498,7 +556,7 @@ class ApiDashboardDialog : JDialog() {
             }
             try {
                 moduleData.detail = collectionInfo
-                val items = makeSureItem(collectionInfo)
+                val items = findEditableItem(collectionInfo)
 
                 actionContext!!.runInSwingUI {
                     for (item in items) {
@@ -530,7 +588,7 @@ class ApiDashboardDialog : JDialog() {
                 val subCollectionNode = PostmanSubCollectionNodeData(parentNodeData, item).asTreeNode()
                 parentNode.add(subCollectionNode)
 
-                val items = makeSureItem(item)
+                val items = findEditableItem(item)
                 if (items.isNullOrEmpty()) return@runInSwingUI
                 for (subItem in items) {
                     loadPostmanNode(subCollectionNode, subItem)
@@ -550,7 +608,7 @@ class ApiDashboardDialog : JDialog() {
             actionContext!!.runAsync {
                 val info: HashMap<String, Any?> = HashMap()
                 info["name"] = newCollectionName
-                info["description"] = "create by easyapi at ${DateUtils.formatYMD_HMS(Date())}"
+                info["description"] = "create by easyApi at ${DateUtils.formatYMD_HMS(Date())}"
                 info["schema"] = PostmanFormatter.POSTMAN_SCHEMA_V2_1_0
 
                 val collection: HashMap<String, Any?> = HashMap()
@@ -562,7 +620,7 @@ class ApiDashboardDialog : JDialog() {
                 if (createdCollection == null) {
                     logger!!.error("create collection failed")
                 } else {
-                    val collectionPostmanNodeData = CollectionPostmanNodeData(createdCollection)
+                    val collectionPostmanNodeData = PostmanCollectionNodeData(createdCollection)
                     collectionPostmanNodeData.status = NodeStatus.Loaded
                     val collectionTreeNode = collectionPostmanNodeData.asTreeNode()
                     actionContext!!.runInSwingUI {
@@ -575,7 +633,168 @@ class ApiDashboardDialog : JDialog() {
             }
         }
     }
+
     //endregion postman module-----------------------------------------------------
+
+    //region postman pop action---------------------------------------------------------
+    private fun newSubPostmanAction() {
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject ?: return
+            actionContext!!.runInSwingUI {
+                val newCollectionName = Messages.showInputDialog(this, "Input Sub Collection Name",
+                        "Collection Name", Messages.getInformationIcon())
+                if (newCollectionName.isNullOrBlank()) return@runInSwingUI
+
+                actionContext!!.runAsync {
+
+                    try {
+                        val newCollection: HashMap<String, Any?> = HashMap()
+                        newCollection["name"] = newCollectionName
+                        newCollection["description"] = "create by easyApi at ${DateUtils.formatYMD_HMS(Date())}"
+                        newCollection["item"] = ArrayList<Any?>()
+                        findEditableItem((postmanNodeData as PostmanNodeData).currData()).add(newCollection)
+
+                        val rootPostmanNodeData = postmanNodeData.getRootNodeData()!! as PostmanCollectionNodeData
+                        rootPostmanNodeData.status = NodeStatus.Uploading
+
+                        val collection = rootPostmanNodeData.collection
+                        val collectionId = collection["id"].toString()
+
+                        logger!!.info("upload info...")
+                        if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
+                            logger.info("create success")
+                            actionContext!!.runInSwingUI {
+                                rootPostmanNodeData.status = NodeStatus.Loaded
+                                loadPostmanNode(postmanNodeData.asTreeNode(), newCollection)
+                                (postmanApiTree!!.model as DefaultTreeModel).reload(postmanNodeData.asTreeNode())
+                            }
+                        } else {
+                            logger.info("create failed")
+                            rootPostmanNodeData.status = NodeStatus.Loaded
+                        }
+                    } catch (e: Exception) {
+                        logger!!.info("create failed:" + ExceptionUtils.getStackTrace(e))
+                    }
+                }
+            }
+
+        }
+    }
+
+    private fun renamePostmanAction() {
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject ?: return
+            val coreData = (postmanNodeData as PostmanNodeData).coreData()
+            val oldName = coreData["name"].toString()
+            actionContext!!.runInSwingUI {
+                val newName = Messages.showInputDialog(this, "New Name",
+                        "New Name", Messages.getInformationIcon(), oldName, null)
+                if (newName.isNullOrBlank() || newName == oldName) return@runInSwingUI
+
+                try {
+                    actionContext!!.runAsync {
+                        coreData["name"] = newName
+
+                        val rootPostmanNodeData = postmanNodeData.getRootNodeData()!! as PostmanCollectionNodeData
+                        rootPostmanNodeData.status = NodeStatus.Uploading
+
+                        val collection = rootPostmanNodeData.collection
+                        val collectionId = collection["id"].toString()
+
+                        logger!!.info("upload info...")
+                        if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
+                            logger.info("rename success")
+                            actionContext!!.runInSwingUI {
+                                rootPostmanNodeData.status = NodeStatus.Loaded
+                                (postmanApiTree!!.model as DefaultTreeModel).reload(postmanNodeData.asTreeNode())
+                            }
+                        } else {
+                            logger.info("rename failed")
+                            rootPostmanNodeData.status = NodeStatus.Loaded
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger!!.info("rename failed:" + ExceptionUtils.getStackTrace(e))
+                }
+            }
+        }
+    }
+
+    private fun syncPostmanAction() {
+
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject
+            logger!!.info("reload:[$postmanNodeData]")
+            val collectionPostmanNodeData = (postmanNodeData as PostmanNodeData).getRootNodeData() ?: return
+            //clear
+            collectionPostmanNodeData.asTreeNode().removeAllChildren()
+            //reload
+            loadPostCollectionInfo(collectionPostmanNodeData.asTreeNode(), false)
+        }
+    }
+
+    private fun deletePostmanAction() {
+
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val postmanNodeData = lastSelectedPathComponent.userObject
+            if (postmanNodeData is PostmanCollectionNodeData) {//delete collection
+                logger!!.info("delete from remote...")
+                actionContext!!.runAsync {
+                    val collection = postmanNodeData.collection
+                    val collectionId = collection["id"].toString()
+                    if (postmanCachedApiHelper!!.deleteCollectionInfo(collectionId) != null) {
+                        logger.info("delete success")
+                        postmanNodeData.asTreeNode().removeFromParent()
+                        (postmanApiTree!!.model as DefaultTreeModel).reload(postmanApiTree!!.model.root as TreeNode)
+                    } else {
+                        logger.info("delete failed")
+                    }
+                }
+            } else {//delete sub collection or api
+                if (findEditableItem((postmanNodeData as PostmanNodeData).getParentNodeData()!!.currData()).remove(postmanNodeData.currData())) {
+
+                    val rootPostmanNodeData = postmanNodeData.getRootNodeData()!! as PostmanCollectionNodeData
+                    rootPostmanNodeData.status = NodeStatus.Uploading
+
+                    val collection = rootPostmanNodeData.collection
+                    val collectionId = collection["id"].toString()
+
+                    logger!!.info("delete from remote...")
+                    actionContext!!.runAsync {
+
+                        try {
+                            if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
+                                logger.info("delete success")
+                                actionContext!!.runInSwingUI {
+                                    postmanNodeData.asTreeNode().removeFromParent()
+                                    rootPostmanNodeData.status = NodeStatus.Loaded
+                                    (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
+                                }
+                            } else {
+                                logger.info("delete failed")
+                                rootPostmanNodeData.status = NodeStatus.Loaded
+                            }
+                        } catch (e: Exception) {
+                            rootPostmanNodeData.status = NodeStatus.Loaded
+                            logger.error("delete failed")
+                        }
+
+                    }
+                    return
+                }
+                logger!!.error("delete failed")
+            }
+        }
+    }
+    //endregion postman pop action---------------------------------------------------------
 
     //region project Node Data--------------------------------------------------
 
@@ -766,7 +985,11 @@ class ApiDashboardDialog : JDialog() {
     //region postman Node Data--------------------------------------------------
 
     abstract class PostmanNodeData {
-        abstract fun currData(): HashMap<String, Any?>
+        open fun currData(): HashMap<String, Any?> {
+            return coreData()
+        }
+
+        abstract fun coreData(): HashMap<String, Any?>
 
         fun getRootNodeData(): PostmanNodeData? {
             val parentCollectionInfo = getParentNodeData()
@@ -788,7 +1011,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class CollectionPostmanNodeData : PostmanNodeData, IconCustomized {
+    class PostmanCollectionNodeData : PostmanNodeData, IconCustomized {
         override fun icon(): Icon? {
             return when (status) {
                 NodeStatus.Loading -> EasyIcons.Refresh
@@ -797,8 +1020,10 @@ class ApiDashboardDialog : JDialog() {
             } ?: EasyIcons.ModuleGroup
         }
 
+        @Suppress("UNCHECKED_CAST")
         override fun currData(): HashMap<String, Any?> {
             if (detail != null) {
+                (detail!!["info"] as MutableMap<String, Any?>)["name"] = this.collection["name"]
                 return detail!!
             }
 
@@ -813,6 +1038,10 @@ class ApiDashboardDialog : JDialog() {
             collection["item"] = ArrayList<HashMap<String, Any?>>()
 
             detail = collection
+            return collection
+        }
+
+        override fun coreData(): HashMap<String, Any?> {
             return collection
         }
 
@@ -840,7 +1069,7 @@ class ApiDashboardDialog : JDialog() {
             return EasyIcons.Module
         }
 
-        override fun currData(): HashMap<String, Any?> {
+        override fun coreData(): HashMap<String, Any?> {
             return info
         }
 
@@ -867,7 +1096,7 @@ class ApiDashboardDialog : JDialog() {
             return EasyIcons.Link
         }
 
-        override fun currData(): HashMap<String, Any?> {
+        override fun coreData(): HashMap<String, Any?> {
             return info
         }
 
@@ -895,34 +1124,34 @@ class ApiDashboardDialog : JDialog() {
     //region handle drop--------------------------------------------------------
 
     @Suppress("UNCHECKED_CAST")
-    fun handleDropEvent(fromModuleData: Any, toPostmanNodeData: Any) {
+    fun handleDropEvent(fromProjectData: Any, toPostmanNodeData: Any) {
 
         val targetCollectionNodeData: PostmanNodeData = when (toPostmanNodeData) {
             is PostmanApiNodeData -> toPostmanNodeData.getParentNodeData()!!
             else -> toPostmanNodeData as PostmanNodeData
         }
 
-        logger!!.info("export [$fromModuleData] to $targetCollectionNodeData")
+        logger!!.info("export [$fromProjectData] to $targetCollectionNodeData")
 
         actionContext!!.runAsync {
-            var rootPostmanNodeData: CollectionPostmanNodeData? = null
+            var rootPostmanNodeData: PostmanCollectionNodeData? = null
             try {
 
                 logger.info("parse api...")
-                val formatToPostmanInfo = formatPostmanInfo(fromModuleData)
+                val formatToPostmanInfo = formatPostmanInfo(fromProjectData)
                 if (formatToPostmanInfo == null) {
                     logger.info("no api can be moved")
                     return@runAsync
                 }
 
-                rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as CollectionPostmanNodeData
+                rootPostmanNodeData = (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as PostmanCollectionNodeData
                 rootPostmanNodeData.status = NodeStatus.Uploading
                 actionContext!!.runInSwingUI {
                     (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
                 }
 
                 val currData = targetCollectionNodeData.currData()
-                val items = makeSureItem(currData)
+                val items = findEditableItem(currData)
                 items.add(formatToPostmanInfo)
 
                 val collection = rootPostmanNodeData.collection
@@ -949,7 +1178,7 @@ class ApiDashboardDialog : JDialog() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun makeSureItem(data: HashMap<String, Any?>): ArrayList<HashMap<String, Any?>> {
+    private fun findEditableItem(data: HashMap<String, Any?>): ArrayList<HashMap<String, Any?>> {
         var items = data["item"]
         if (items != null) {
             if (items is ArrayList<*>) {
