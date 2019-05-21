@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
+import kotlin.streams.toList
 
 class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
@@ -81,7 +82,6 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
             }
             //endregion try update collection of AllCollection-----------------------------
 
-
             val collectionDetailBeanBinder = getDbBeanBinderFactory().getBeanBinder("${getPrivateToken()}_collection:$collectionId")
             val cache = CollectionInfoCache()
             cache.collectionDetail = collectionInfo
@@ -115,7 +115,15 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         return deleteCollectionInfo
     }
 
-    fun getAllCollection(useCache: Boolean = true): ArrayList<HashMap<String, Any?>>? {
+    override fun getAllCollection(): ArrayList<HashMap<String, Any?>>? {
+        return getAllCollection(true)
+    }
+
+    override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+        return getCollectionInfo(collectionId, true)
+    }
+
+    fun getAllCollection(useCache: Boolean): ArrayList<HashMap<String, Any?>>? {
         if (useCache) {
             val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder(
                     "${getPrivateToken()}_getAllCollection")
@@ -126,11 +134,41 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         }
 
         val allCollection = super.getAllCollection()
+        if (allCollection == null) return allCollection
         val cache = CollectionInfoCache()
         cache.allCollection = allCollection
-        getDbBeanBinderFactory()
+
+
+        val beanBinder = getDbBeanBinderFactory()
                 .getBeanBinder("${getPrivateToken()}_getAllCollection")
-                .save(cache)
+
+        if (!useCache) { //try clean cache
+            val oldCollectionCache = beanBinder.read()
+
+            if (oldCollectionCache != NULL_COLLECTION_INFO_CACHE
+                    && !oldCollectionCache.allCollection.isNullOrEmpty()) {
+                val survivedCollectionIds = allCollection.stream()
+                        .map { it["id"] }
+                        .filter { it != null }
+                        .toList()
+
+                val deletedCollections = oldCollectionCache
+                        .allCollection!!
+                        .stream()
+                        .map { it["id"] }
+                        .filter { it != null }
+                        .filter { !survivedCollectionIds.contains(it) }
+                        .map { it.toString() }
+                        .toList()
+
+                deletedCollections.forEach {
+                    getDbBeanBinderFactory().deleteBinder("${getPrivateToken()}_collection:$it")
+                }
+            }
+        }
+
+        beanBinder.save(cache)
+
         return allCollection
     }
 
