@@ -149,14 +149,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    override fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
-        if (doUpdateCollection(collectionId, apiInfo)) {
+    override fun updateCollection(collectionId: String, collectionInfo: HashMap<String, Any?>): Boolean {
+        if (doUpdateCollection(collectionId, collectionInfo)) {
             return true
         }
         try {
             logger!!.info("try fix collection.....")
-            tryFixCollection(apiInfo)
-            if (doUpdateCollection(collectionId, apiInfo)) {
+            tryFixCollection(collectionInfo)
+            if (doUpdateCollection(collectionId, collectionInfo)) {
                 return true
             }
         } catch (e: Exception) {
