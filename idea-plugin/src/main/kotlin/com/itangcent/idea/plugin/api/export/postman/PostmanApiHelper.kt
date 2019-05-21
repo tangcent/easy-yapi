@@ -12,7 +12,7 @@ interface PostmanApiHelper {
      */
     fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>?
 
-    fun updateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean
+    fun updateCollection(collectionId: String, collectionInfo: HashMap<String, Any?>): Boolean
 
     /**
      * On successful deletion of the collection, return the id and uid.
