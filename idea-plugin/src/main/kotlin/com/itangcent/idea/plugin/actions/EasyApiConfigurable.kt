@@ -31,7 +31,13 @@ class EasyApiConfigurable : SearchableConfigurable {
     override fun createComponent(): JComponent? {
         easyApiConfigurableGUI = EasyApiSettingGUI()
 
-        easyApiConfigurableGUI!!.onCreate(instance.read())
+        easyApiConfigurableGUI!!.onCreate()
+        easyApiConfigurableGUI!!.setSettings(instance.read().copy())
         return easyApiConfigurableGUI!!.getRootPanel()
+    }
+
+    override fun reset() {
+        easyApiConfigurableGUI!!.setSettings(instance.read().copy())
+        easyApiConfigurableGUI?.refresh()
     }
 }
