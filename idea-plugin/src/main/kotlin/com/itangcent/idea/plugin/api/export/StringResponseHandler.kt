@@ -19,14 +19,14 @@ class StringResponseHandler : ResponseHandler<String> {
         val statusLine = response.statusLine
         val entity = response.entity
 
-        try {
-            return if (entity == null) null else this.handleEntity(entity)
+        return try {
+            if (entity == null) null else this.handleEntity(entity)
         } catch (e: Exception) {
             if (statusLine.statusCode >= 300) {
                 EntityUtils.consume(entity)
                 throw HttpResponseException(statusLine.statusCode, statusLine.reasonPhrase)
             }
-            return "empty response"
+            "empty response"
         }
     }
 }

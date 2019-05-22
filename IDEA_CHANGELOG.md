@@ -18,5 +18,5 @@
     1.  enhance:Support ApiDashboard
     2.  enhance:optimized ui
     3.  enhance:Auto fix postman collection info
-    4.  Support PopupMenu for Postman Tree [42](https://github.com/tangcent/easy-api/issues/42)
-    5.  Support clear cache in Setting [46](https://github.com/tangcent/easy-api/issues/46)
+    4.  Support PopupMenu for Postman Tree [#42](https://github.com/tangcent/easy-api/issues/42)
+    5.  Support clear cache in Setting [#46](https://github.com/tangcent/easy-api/issues/46)
