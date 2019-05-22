@@ -29,31 +29,24 @@ object EntityUtils {
     @Throws(IOException::class)
     fun toByteArray(entity: HttpEntity): ByteArray? {
         Args.notNull(entity, "Entity")
-        val instream = entity.content
-        return if (instream == null) {
-            null
-        } else {
-            try {
-                Args.check(entity.contentLength <= 2147483647L, "HTTP entity too large to be buffered in memory")
-                var i = entity.contentLength.toInt()
-                if (i < 0) {
-                    i = 4096
-                }
-
-                val buffer = ByteArrayBuffer(i)
-                val tmp = ByteArray(4096)
-
-                var l: Int
-                while (true) {
-                    l = instream.read(tmp)
-                    if (l == -1) break
-                    buffer.append(tmp, 0, l)
-                }
-
-                buffer.toByteArray()
-            } finally {
-                instream.close()
+        return entity.content?.use { instream ->
+            Args.check(entity.contentLength <= 2147483647L, "HTTP entity too large to be buffered in memory")
+            var i = entity.contentLength.toInt()
+            if (i < 0) {
+                i = 4096
             }
+
+            val buffer = ByteArrayBuffer(i)
+            val tmp = ByteArray(4096)
+
+            var l: Int
+            while (true) {
+                l = instream.read(tmp)
+                if (l == -1) break
+                buffer.append(tmp, 0, l)
+            }
+
+            buffer.toByteArray()
         }
     }
 
@@ -94,53 +87,46 @@ object EntityUtils {
     @JvmOverloads
     fun toString(entity: HttpEntity, defaultCharset: Charset? = null): String? {
         Args.notNull(entity, "Entity")
-        val instream = entity.content
-        return if (instream == null) {
-            null
-        } else {
-            try {
-                Args.check(entity.contentLength <= 2147483647L, "HTTP entity too large to be buffered in memory")
-                var i = entity.contentLength.toInt()
-                if (i < 0) {
-                    i = 4096
-                }
-
-                var charset: Charset? = null
-
-                try {
-                    val contentType = ContentType.get(entity)
-                    if (contentType != null) {
-                        charset = contentType.charset
-                    }
-                } catch (var13: UnsupportedCharsetException) {
-                    if (defaultCharset == null) {
-                        throw UnsupportedEncodingException(var13.message)
-                    }
-                }
-
-                if (charset == null) {
-                    charset = defaultCharset
-                }
-
-                if (charset == null) {
-                    charset = HTTP.DEF_CONTENT_CHARSET
-                }
-
-                val reader = InputStreamReader(instream, charset!!)
-                val buffer = CharArrayBuffer(i)
-                val tmp = CharArray(1024)
-
-                var l: Int
-                while (true) {
-                    l = reader.read(tmp)
-                    if (l == -1) break
-                    buffer.append(tmp, 0, l)
-                }
-
-                buffer.toString()
-            } finally {
-                instream.close()
+        return entity.content?.use { instream ->
+            Args.check(entity.contentLength <= 2147483647L, "HTTP entity too large to be buffered in memory")
+            var i = entity.contentLength.toInt()
+            if (i < 0) {
+                i = 4096
             }
+
+            var charset: Charset? = null
+
+            try {
+                val contentType = ContentType.get(entity)
+                if (contentType != null) {
+                    charset = contentType.charset
+                }
+            } catch (var13: UnsupportedCharsetException) {
+                if (defaultCharset == null) {
+                    throw UnsupportedEncodingException(var13.message)
+                }
+            }
+
+            if (charset == null) {
+                charset = defaultCharset
+            }
+
+            if (charset == null) {
+                charset = HTTP.DEF_CONTENT_CHARSET
+            }
+
+            val reader = InputStreamReader(instream, charset!!)
+            val buffer = CharArrayBuffer(i)
+            val tmp = CharArray(1024)
+
+            var l: Int
+            while (true) {
+                l = reader.read(tmp)
+                if (l == -1) break
+                buffer.append(tmp, 0, l)
+            }
+
+            buffer.toString()
         }
     }
 
