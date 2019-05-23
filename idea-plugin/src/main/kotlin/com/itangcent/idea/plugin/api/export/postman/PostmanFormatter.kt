@@ -216,6 +216,7 @@ class PostmanFormatter {
             else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle!!)
         }
     }
+
     companion object {
 
         const val POSTMAN_SCHEMA_V2_1_0 = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"

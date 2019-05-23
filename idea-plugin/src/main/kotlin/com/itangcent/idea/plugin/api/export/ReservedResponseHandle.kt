@@ -14,8 +14,7 @@ class ReservedResponseHandle<T> : ResponseHandler<ReservedResult<T>> {
     }
 
     override fun handleResponse(httpResponse: HttpResponse?): ReservedResult<T> {
-        var result = delegate.handleResponse(httpResponse)
-
+        val result = delegate.handleResponse(httpResponse)
         return ReservedResult(result, httpResponse)
     }
 }
