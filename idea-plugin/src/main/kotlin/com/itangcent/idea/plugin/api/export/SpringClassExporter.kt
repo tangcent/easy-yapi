@@ -16,12 +16,11 @@ import com.itangcent.idea.constant.SpringAttrs
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
+import com.itangcent.idea.plugin.api.MethodReturnInferHelper
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.JsonOption
-import com.itangcent.intellij.psi.PsiAnnotationUtils
-import com.itangcent.intellij.psi.PsiClassHelper
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.psi.*
 import com.itangcent.intellij.spring.MultipartFile
 import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.DocCommentUtils
@@ -33,7 +32,7 @@ import java.util.regex.Pattern
 
 class SpringClassExporter : ClassExporter, Worker {
 
-    var statusRecorder: StatusRecorder = StatusRecorder()
+    private var statusRecorder: StatusRecorder = StatusRecorder()
 
     override fun status(): WorkerStatus {
         return statusRecorder.status()
@@ -58,6 +57,15 @@ class SpringClassExporter : ClassExporter, Worker {
 
     @Inject
     private val docParseHelper: DocParseHelper? = null
+
+    @Inject
+    private val settingBinder: SettingBinder? = null
+
+    @Inject
+    private val tmTypeHelper: TmTypeHelper? = null
+
+    @Inject
+    private val methodReturnInferHelper: MethodReturnInferHelper? = null
 
     @Inject
     var actionContext: ActionContext? = null
@@ -138,14 +146,16 @@ class SpringClassExporter : ClassExporter, Worker {
         requestHandle(request)
     }
 
-    protected fun processResponse(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
+    private fun processResponse(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
 
         val returnType = method.returnType
         if (returnType != null) {
             try {
                 val response = Response()
+
                 parseHandle.setResponseCode(response, 200)
-                val typedResponse = psiClassHelper!!.getTypeObject(returnType, method, JsonOption.READ_COMMENT)
+
+                val typedResponse = parseResponseBody(returnType, method)
 
                 parseHandle.setResponseBody(response, "raw", typedResponse)
 
@@ -160,7 +170,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     /**
-     * queryParam中的数组元素需要拆开
+     * unbox queryParam
      */
     private fun tinyQueryParam(paramVal: String?): String? {
         if (paramVal == null) return null
@@ -295,7 +305,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     /**
-     * 获得枚举值备注信息
+     * get description of options
      */
     private fun getOptionDesc(options: List<Map<String, Any?>>): String? {
         return options.stream()
@@ -532,6 +542,23 @@ class SpringClassExporter : ClassExporter, Worker {
         return psiClassHelper!!.getTypeObject(psiType, context, JsonOption.READ_COMMENT)
     }
 
+    private fun parseResponseBody(psiType: PsiType?, method: PsiMethod): Any? {
+
+        if (psiType == null) {
+            return null
+        }
+
+        return when {
+            needInfer() && !tmTypeHelper!!.isQualified(psiType, method) -> {
+                methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
+                logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
+                methodReturnInferHelper.inferReturn(method)
+            }
+            readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
+            else -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.READ_COMMENT)
+        }
+    }
+
     private fun deepComponent(obj: Any?): Any? {
         if (obj == null) {
             return null
@@ -545,6 +572,18 @@ class SpringClassExporter : ClassExporter, Worker {
             return deepComponent(obj.first())
         }
         return obj
+    }
+
+    private fun readGetter(): Boolean {
+        return settingBinder!!.read().readGetter ?: false
+    }
+
+    private fun needInfer(): Boolean {
+        return settingBinder!!.read().inferEnable ?: false
+    }
+
+    private fun inferMaxDeep(): Int {
+        return settingBinder!!.read().inferMaxDeep ?: 4
     }
 
     companion object {
