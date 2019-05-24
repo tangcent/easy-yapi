@@ -14,15 +14,16 @@ import org.apache.commons.io.FileUtils
 import java.io.File
 import javax.swing.*
 
+
 class EasyApiSettingGUI {
     private var pullNewestDataBeforeCheckBox: JCheckBox? = null
-
     private var postmanTokenTextArea: JTextArea? = null
 
     private var rootPanel: JPanel? = null
-    private var globalCacheSizeLable: JLabel? = null
 
-    private var projectCacheSizeLable: JLabel? = null
+    private var globalCacheSizeLabel: JLabel? = null
+
+    private var projectCacheSizeLabel: JLabel? = null
 
     private var globalCacheSize: String = "0M"
 
@@ -35,6 +36,12 @@ class EasyApiSettingGUI {
     private var projectCachePanel: JPanel? = null
 
     private var hasProject = false
+
+    private var inferEnableCheckBox: JCheckBox? = null
+
+    private var maxDeepTextField: JTextField? = null
+
+    private var readGetterCheckBox: JCheckBox? = null
 
     fun getRootPanel(): JPanel? {
         return rootPanel
@@ -51,7 +58,7 @@ class EasyApiSettingGUI {
         autoComputer.bind(postmanTokenTextArea!!)
                 .consistent(this, "settings.postmanToken")
 
-        autoComputer.bind(this.globalCacheSizeLable!!)
+        autoComputer.bind(this.globalCacheSizeLabel!!)
                 .with(this::globalCacheSize)
                 .eval { it }
 
@@ -59,7 +66,7 @@ class EasyApiSettingGUI {
             clearGlobalCache()
         }
 
-        autoComputer.bind(this.projectCacheSizeLable!!)
+        autoComputer.bind(this.projectCacheSizeLabel!!)
                 .with(this::projectCacheSize)
                 .eval { it }
 
@@ -70,6 +77,26 @@ class EasyApiSettingGUI {
         this.clearProjectCacheButton!!.addActionListener {
             clearProjectCache()
         }
+
+        autoComputer.bind(inferEnableCheckBox!!)
+                .consistent(this, "settings.inferEnable")
+
+        autoComputer.bind(readGetterCheckBox!!)
+                .consistent(this, "settings.readGetter")
+
+        autoComputer.bind(this.maxDeepTextField!!)
+                .with<Int?>(this, "settings.inferMaxDeep")
+                .eval { (it ?: 0).toString() }
+
+        autoComputer.bind<Int>(this, "settings.inferMaxDeep")
+                .with(this.maxDeepTextField!!)
+                .eval {
+                    try {
+                        it?.toInt() ?: 0
+                    } catch (e: Exception) {
+                        0
+                    }
+                }
 
         refresh()
     }
