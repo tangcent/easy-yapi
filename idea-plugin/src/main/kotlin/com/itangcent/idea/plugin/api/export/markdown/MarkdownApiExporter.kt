@@ -12,7 +12,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.DocParseHelper
+import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
@@ -39,7 +39,7 @@ class MarkdownApiExporter {
     private val parseHandle: ParseHandle? = null
 
     @Inject
-    private val docParseHelper: DocParseHelper? = null
+    private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
     private val fileSaveHelper: FileSaveHelper? = null

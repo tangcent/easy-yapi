@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
+import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
@@ -27,7 +28,7 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
-        builder.bind(DocParseHelper::class) { it.singleton() }
+        builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ApiDashBoard::class) { it.singleton() }
