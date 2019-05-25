@@ -16,4 +16,4 @@ cd ${basedir}/idea-plugin
 if [[ ! -d "$basedir/plugin" ]];then
 mkdir ${basedir}/plugin
 fi
-mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-api.jar
+mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-yapi.jar
