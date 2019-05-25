@@ -56,7 +56,7 @@ class SpringClassExporter : ClassExporter, Worker {
     private val commonRules: CommonRules? = null
 
     @Inject
-    private val docParseHelper: DocParseHelper? = null
+    private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
     private val settingBinder: SettingBinder? = null
@@ -134,6 +134,11 @@ class SpringClassExporter : ClassExporter, Worker {
         }
 
         parseHandle.appendDesc(request, attrOfMethod)
+
+        val deprecateInfo = findDeprecatedOfMethod(method, parseHandle)
+        if (deprecateInfo != null) {
+            parseHandle.appendDesc(request, "[deprecate]$deprecateInfo")
+        }
 
         parseHandle.setName(request, attr ?: method.name)
 
@@ -289,6 +294,14 @@ class SpringClassExporter : ClassExporter, Worker {
             StringUtils.isBlank(docText) -> method.name
             else -> docParseHelper!!.resolveLinkInAttr(docText, method, parseHandle)
         }
+    }
+
+    protected fun findDeprecatedOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
+        return DocCommentUtils.findDocsByTag(method.docComment, "deprecated")?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
+    }
+
+    protected fun findDeprecatedOfClass(psiClass: PsiClass, parseHandle: ParseHandle): String? {
+        return DocCommentUtils.findDocsByTag(psiClass.docComment, "deprecated")?.let { docParseHelper!!.resolveLinkInAttr(it, psiClass, parseHandle) }
     }
 
     @Suppress("UNCHECKED_CAST")

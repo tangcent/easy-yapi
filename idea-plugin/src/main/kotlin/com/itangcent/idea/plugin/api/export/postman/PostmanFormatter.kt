@@ -6,7 +6,7 @@ import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.plugin.api.ResourceHelper
-import com.itangcent.idea.plugin.api.export.DocParseHelper
+import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
@@ -29,7 +29,7 @@ class PostmanFormatter {
     private val actionContext: ActionContext? = null
 
     @Inject
-    private val docParseHelper: DocParseHelper? = null
+    private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
     private val parseHandle: ParseHandle? = null
