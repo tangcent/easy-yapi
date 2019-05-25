@@ -12,6 +12,10 @@ class Settings {
 
     var inferMaxDeep: Int? = null
 
+    var yapiServer: String? = null
+
+    var yapiTokens: String? = null
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -19,6 +23,8 @@ class Settings {
         newSetting.readGetter = this.readGetter
         newSetting.inferEnable = this.inferEnable
         newSetting.inferMaxDeep = this.inferMaxDeep
+        newSetting.yapiServer = this.yapiServer
+        newSetting.yapiTokens = this.yapiTokens
         return newSetting
     }
 
@@ -33,6 +39,8 @@ class Settings {
         if (readGetter != other.readGetter) return false
         if (inferEnable != other.inferEnable) return false
         if (inferMaxDeep != other.inferMaxDeep) return false
+        if (yapiServer != other.yapiServer) return false
+        if (yapiTokens != other.yapiTokens) return false
 
         return true
     }
@@ -43,8 +51,8 @@ class Settings {
         result = 31 * result + (readGetter?.hashCode() ?: 0)
         result = 31 * result + (inferEnable?.hashCode() ?: 0)
         result = 31 * result + (inferMaxDeep ?: 0)
+        result = 31 * result + (yapiServer?.hashCode() ?: 0)
+        result = 31 * result + (yapiTokens?.hashCode() ?: 0)
         return result
     }
-
-
 }

@@ -43,6 +43,10 @@ class EasyApiSettingGUI {
 
     private var readGetterCheckBox: JCheckBox? = null
 
+    private var yapiServerTextField: JTextField? = null
+
+    private var yapiTokenTextArea: JTextArea? = null
+
     fun getRootPanel(): JPanel? {
         return rootPanel
     }
@@ -97,6 +101,12 @@ class EasyApiSettingGUI {
                         0
                     }
                 }
+
+        autoComputer.bind(yapiServerTextField!!)
+                .consistent(this, "settings.yapiServer")
+
+        autoComputer.bind(yapiTokenTextArea!!)
+                .consistent(this, "settings.yapiTokens")
 
         refresh()
     }
