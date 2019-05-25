@@ -33,22 +33,18 @@ class ModuleHelper {
     }
 
     fun findModule(psiMethod: PsiMethod): String? {
-        var module = ModuleUtil.findModuleForPsiElement(psiMethod)
-        if (module != null) {
-            return module.name
-        }
         val containingClass = psiMethod.containingClass
         if (containingClass != null) {
             return findModule(containingClass)
+        }
+        val module = ModuleUtil.findModuleForPsiElement(psiMethod)
+        if (module != null) {
+            return module.name
         }
         return null
     }
 
     fun findModule(cls: PsiClass): String? {
-        val module = ModuleUtil.findModuleForPsiElement(cls)
-        if (module != null) {
-            return module.name
-        }
         val moduleRules = commonRules?.readModuleRules()
         if (!moduleRules.isNullOrEmpty()) {
             val moduleByRule = moduleRules
@@ -58,6 +54,12 @@ class ModuleHelper {
                 return moduleByRule
             }
         }
+
+        val module = ModuleUtil.findModuleForPsiElement(cls)
+        if (module != null) {
+            return module.name
+        }
+
         return findModule(cls.containingFile)
     }
 
