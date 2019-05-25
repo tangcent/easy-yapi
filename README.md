@@ -1,6 +1,7 @@
-# easy-api
-Simplifies API Development
+# easy-yapi
+- Customized [easyApi](https://github.com/tangcent/easy-api) for [yapi](https://github.com/YMFE/yapi)
 
+- [中文](https://github.com/tangcent/easy-yapi/blob/master/README_ZN.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
 Installation
 ----
@@ -11,10 +12,10 @@ Installation
 - IntelliJ IDEA Community Edition
 
 **using IDE plugin system**
-- <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Browse repositories...</kbd> > <kbd>find"EasyApi"</kbd> > <kbd>Install Plugin</kbd>
+- <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Browse repositories...</kbd> > <kbd>find"EasyYapi"</kbd> > <kbd>Install Plugin</kbd>
 
 **Manual:**
-- download from [Jetbrains](https://plugins.jetbrains.com/plugin/12211-easyapi/versions) or [Github](https://github.com/tangcent/easy-api-plugins/raw/master/idea/easy-api.jar) -> <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Install plugin from disk...</kbd>
+- download from [Jetbrains](https://plugins.jetbrains.com/plugin/12211-easyapi/versions) or [Github](https://github.com/tangcent/easy-yapi-plugins/raw/master/idea/easy-yapi.jar) -> <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Install plugin from disk...</kbd>
 
 restart **IDE**.
 
@@ -22,6 +23,16 @@ restart **IDE**.
 ## Guide
 
 * [custom config for project](https://github.com/tangcent/easy-api/wiki/Use-Config-Make-Plugin-More-Intelligent(Export-Spring-Api-To-Postman))
+
+* ExportYapi
+```textCode
+    There are two ways to export api.
+    1. Open existed Spring Controller File
+    You can use by this : "Right click in the file -> generate... " or use its shortcuts "Alt + Insert" , then
+    choose the action "ExportYapi"
+    2. Select files or directories from project navigation
+    You can use by this : "Click [Code -> ExportYapi] in top"
+```
 
 * ExportPostman
 ```textCode
