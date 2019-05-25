@@ -1,7 +1,7 @@
 <idea-plugin>
-    <id>com.itangcent.idea.plugin.easy-api</id>
-    <name>EasyApi</name>
-    <version>0.6.4</version>
+    <id>com.itangcent.idea.plugin.easy-yapi</id>
+    <name>EasyYapi</name>
+    <version>0.6.4.1</version>
     <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
 
     <description><![CDATA[ Description will be added by gradle build]]></description>
@@ -23,7 +23,7 @@
                     description="Export Postman"/>
 
             <action id="com.itangcent.idea.easy_api.actions.YapiExportAction"
-                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi"
+                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi(beta)"
                     description="Export Yapi"/>
 
             <action id="com.itangcent.idea.easy_api.actions.MarkdownExportAction"
@@ -41,7 +41,7 @@
                     description="Export Postman"/>
 
             <action id="com.itangcent.idea.easy_api.actions.YapiExportAction"
-                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi"
+                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi(beta)"
                     description="Export Yapi"/>
 
             <action id="com.itangcent.idea.easy_api.actions.MarkdownExportAction"
