@@ -16,11 +16,11 @@
 - IntelliJ IDEA
 - IntelliJ IDEA Community Edition
 
-**从IDEA中安装*
+**从IDEA中安装**
 - <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Browse repositories...</kbd> > <kbd>find"EasyYapi"</kbd> > <kbd>Install Plugin</kbd>
 
 **手动安装:**
-- download from [Jetbrains](https://plugins.jetbrains.com/plugin/12211-easyapi/versions) or [Github](https://github.com/tangcent/easy-yapi-plugins/raw/master/idea/easy-yapi.jar) -> <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Install plugin from disk...</kbd>
+- download from [Jetbrains](https://plugins.jetbrains.com/plugin/12458-easyyapi) or [Github](https://github.com/tangcent/easy-yapi-plugins/raw/master/idea/easy-yapi.jar) -> <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Install plugin from disk...</kbd>
 
 重启 **IDE**.
 
@@ -32,7 +32,7 @@
 ```textCode
     有两种方法.
     1. 打开spring项目中的Controller文件
-    右键文件内容选择generate...或者用"Alt + Insert"
+    右键文件内容选择Generate...或者用"Alt + Insert"
     然后选择"ExportYapi"
     2. 在IDEA的左边项目文件区域选择文件或者文件夹
     鼠标点击最上方[Code -> ExportYapi]
