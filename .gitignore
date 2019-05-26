@@ -37,3 +37,5 @@ common-api/build/
 /gradlew.bat
 /common-api/out/
 /idea-plugin/out/
+
+easy-yapi\.iml

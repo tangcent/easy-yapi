@@ -26,7 +26,10 @@ class DefaultDocParseHelper : DocParseHelper {
                 val linkClassAndMethod = matcher.group(1)
                 val linkClassName = linkClassAndMethod.substringBefore("#")
                 val linkMethodOrProperty = linkClassAndMethod.substringAfter("#", "").trim()
-                val linkClass = psiClassHelper!!.resolveClass(linkClassName, psiMember) ?: continue
+                var linkClass = psiClassHelper!!.resolveClass(linkClassName, psiMember)
+                if (linkClass == null) {
+                    linkClass = psiClassHelper.getContainingClass(psiMember) ?: continue
+                }
                 if (linkMethodOrProperty.isBlank()) {
                     sb.append(parseHandle.linkToClass(linkClass))
                 } else {
