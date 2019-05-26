@@ -3,6 +3,8 @@
 
 - [中文](https://github.com/tangcent/easy-yapi/blob/master/README_ZN.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
+- [demo](https://github.com/tangcent/spring-demo)
+
 - 在[easy-api](https://github.com/tangcent/easy-api)的基础上增加对yapi的支持
 
   如果你对easy-api有兴趣或者希望支持其他第三方API管理平台,那么这也是一个很好的例子，通过对比[easy-api](https://github.com/tangcent/easy-api)与[easy-yapi](https://github.com/tangcent/easy-aypi)的差异，可以了解到如何在
