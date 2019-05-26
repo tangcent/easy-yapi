@@ -3,9 +3,11 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
+import com.itangcent.idea.plugin.api.export.IdeaParseHandle
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownApiExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.RecommendClassRuleConfig
@@ -25,6 +27,7 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
         builder.bind(MarkdownApiExporter::class) { it.singleton() }
+        builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
         builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
