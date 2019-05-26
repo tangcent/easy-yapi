@@ -3,6 +3,8 @@
 
 - [中文](https://github.com/tangcent/easy-yapi/blob/master/README_ZN.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
+- [demo](https://github.com/tangcent/spring-demo)
+
 Installation
 ----
 
