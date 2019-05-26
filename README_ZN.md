@@ -5,8 +5,9 @@
 
 - 在[easy-api](https://github.com/tangcent/easy-api)的基础上增加对yapi的支持
 
-  这也是一个很好的例子，通过对比[easy-api](https://github.com/tangcent/easy-api)与[easy-yapi](https://github.com/tangcent/easy-aypi)的差异，可以了解到如何在
+  如果你对easy-api有兴趣或者希望支持其他第三方API管理平台,那么这也是一个很好的例子，通过对比[easy-api](https://github.com/tangcent/easy-api)与[easy-yapi](https://github.com/tangcent/easy-aypi)的差异，可以了解到如何在
   [easy-api](https://github.com/tangcent/easy-api)的基础上开发，使其得以支持第三方API管理平台
+
 
 安装方法
 ----
@@ -26,7 +27,7 @@
 
 ## 使用方法
 
-* [配置一些规则](https://github.com/tangcent/easy-api/wiki/Use-Config-Make-Plugin-More-Intelligent(Export-Spring-Api-To-Postman))
+- 详细信息参考:[wiki](https://github.com/tangcent/easy-yapi/wiki)
 
 * 导出API到Yapi
 ```textCode
