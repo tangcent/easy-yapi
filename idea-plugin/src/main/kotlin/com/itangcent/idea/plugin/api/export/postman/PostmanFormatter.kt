@@ -59,13 +59,14 @@ class PostmanFormatter {
         url["path"] = request.path!!.trim().trim('/').split("/")
         url["raw"] = RequestUtils.contractPath(host, request.path)
 
-
         val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
         requestInfo["header"] = headers
         request.headers?.forEach {
             headers.add(KV.create<String, Any?>()
                     .set("key", it.name)
                     .set("value", it.value)
+                    .set("type", "text")
+                    .set("description", it.desc ?: "")
             )
         }
 

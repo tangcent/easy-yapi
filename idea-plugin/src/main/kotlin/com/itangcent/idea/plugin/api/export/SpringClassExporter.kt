@@ -9,6 +9,7 @@ import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exporter.*
+import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
 import com.itangcent.common.model.Response
@@ -266,6 +267,10 @@ class SpringClassExporter : ClassExporter, Worker {
         return PsiAnnotationUtils.findAnn(parameter, SpringClassName.MODELATTRIBUTE_ANNOTATION)
     }
 
+    private fun findRequestHeader(parameter: PsiParameter): PsiAnnotation? {
+        return PsiAnnotationUtils.findAnn(parameter, REQUEST_HEADER)
+    }
+
     private fun findPathVariable(parameter: PsiParameter): PsiAnnotation? {
         return PsiAnnotationUtils.findAnn(parameter, SpringClassName.PATHVARIABLE_ANNOTATION)
     }
@@ -435,10 +440,44 @@ class SpringClassExporter : ClassExporter, Worker {
                     continue
                 }
 
+                val requestHeaderAnn = findRequestHeader(param)
+                if (requestHeaderAnn != null) {
+                    val attr = findAttrForParam(param.name, paramDocComment)
+
+                    var headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
+                            "value")
+                    if (headName.isNullOrBlank()) {
+                        headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
+                                "name")
+                    }
+                    if (headName.isNullOrBlank()) {
+                        headName = param.name
+                    }
+
+                    val required = findParamRequired(requestHeaderAnn) ?: true
+
+                    var defaultValue = PsiAnnotationUtils.findAttr(requestHeaderAnn,
+                            "defaultValue")
+
+                    if (defaultValue == null
+                            || defaultValue == ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+                            || defaultValue == REQUEST_HEADER_DEFAULT_NONE) {
+                        defaultValue = ""
+                    }
+
+                    val header = Header()
+                    header.name = headName
+                    header.value = defaultValue
+                    header.example = defaultValue
+                    header.desc = attr
+                    header.required = required
+                    parseHandle.addHeader(request, header)
+                    continue
+                }
+
                 val pathVariableAnn = findPathVariable(param)
                 if (pathVariableAnn != null) {
                     val attr = findAttrForParam(param.name, paramDocComment)
-                    if (attr.isNullOrBlank()) continue
 
                     var pathName = PsiAnnotationUtils.findAttr(pathVariableAnn,
                             "value")
@@ -446,7 +485,7 @@ class SpringClassExporter : ClassExporter, Worker {
                         pathName = param.name
                     }
 
-                    parseHandle.addPathParam(request, pathName!!, attr)
+                    parseHandle.addPathParam(request, pathName!!, attr ?: "")
                     continue
                 }
 
@@ -606,5 +645,11 @@ class SpringClassExporter : ClassExporter, Worker {
                 SpringClassName.PATCH_MAPPING,
                 SpringClassName.POST_MAPPING,
                 SpringClassName.PUT_MAPPING)
+
+        val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
+
+        val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
+
+        val ESCAPE_REQUEST_HEADER_DEFAULT_NONE = "\\n\\t\\t\\n\\t\\t\\n\\uE000\\uE001\\uE002\\n\\t\\t\\t\\t\\n"
     }
 }
