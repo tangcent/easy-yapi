@@ -54,7 +54,6 @@ open class AbstractYapiApiHelper {
         settingBinder.save(settings)
     }
 
-
     fun getProjectWeb(module: String): String? {
         val token = getPrivateToken(module)
         val projectId = getProjectIdByToken(token!!) ?: return null

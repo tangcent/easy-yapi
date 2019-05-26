@@ -65,37 +65,6 @@ class YapiApiHelper : AbstractYapiApiHelper() {
         return null
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun importApiInfo(module: String, apiInfo: HashMap<String, Any?>): Boolean {
-        val token: String = getPrivateToken(module) ?: return false
-        val projectId = getProjectIdByToken(token) ?: return false
-        val name = apiInfo["name"] as String
-        val desc = apiInfo["desc"] as String
-        var catId = findCat(token, name)
-        if (catId == null) {
-            cacheLock.writeLock().withLock {
-                catId = findCat(token, name)
-                if (catId == null) {
-                    if (!addCart(projectId, token, name, desc)) {
-                        return false
-                    }
-                    catId = findCat(token, name)
-                }
-            }
-
-        }
-        if (catId != null) {
-            val apis = apiInfo["list"] as List<HashMap<String, Any?>>
-            for (api in apis) {
-                api["token"] = token
-                api["catid"] = catId
-                saveApiInfo(api)
-            }
-            return true
-        }
-        return false
-    }
-
     fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
 
         val httpClient = HttpClients.createDefault()
