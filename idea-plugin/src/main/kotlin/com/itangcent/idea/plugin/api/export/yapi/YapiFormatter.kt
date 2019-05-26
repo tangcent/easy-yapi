@@ -57,6 +57,8 @@ class YapiFormatter {
             headers.add(KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
+                    .set("desc", it.desc)
+                    .set("example", it.example)
                     .set("required", 1)
             )
         }
@@ -67,8 +69,8 @@ class YapiFormatter {
             queryList.add(KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
-                    .set("required", it.required.toInt())
                     .set("desc", it.desc)
+                    .set("required", it.required.toInt())
             )
         }
 
@@ -88,8 +90,8 @@ class YapiFormatter {
         }
 
         if (request.paths != null) {
-            item["req_params"] = "pathParams"
             val pathParmas: ArrayList<HashMap<String, Any?>> = ArrayList()
+            item["req_params"] = pathParmas
             request.paths!!.forEach {
                 pathParmas.add(KV.create<String, Any?>()
                         .set("name", it.name)
