@@ -2,7 +2,9 @@ package com.itangcent.idea.utils
 
 import com.itangcent.intellij.context.ActionContext
 import java.awt.Dialog
+import javax.swing.JTable
 import javax.swing.JTree
+import javax.swing.table.TableColumn
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreePath
 
@@ -37,4 +39,9 @@ object SwingUtils {
         }
     }
 
+}
+
+
+fun JTable.findColumn(index: Int): TableColumn? {
+    return this.getColumn(this.getColumnName(index))
 }
