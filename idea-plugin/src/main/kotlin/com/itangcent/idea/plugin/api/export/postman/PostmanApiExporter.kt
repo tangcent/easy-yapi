@@ -76,6 +76,7 @@ class PostmanApiExporter {
                         }
                     }
                 }
+                .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
                     classExporter!!.export(it, parseHandle!!) { request -> requests.add(request) }
                 }
