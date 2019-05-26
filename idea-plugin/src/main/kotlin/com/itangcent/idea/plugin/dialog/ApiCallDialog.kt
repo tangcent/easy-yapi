@@ -5,6 +5,8 @@ import com.google.inject.name.Named
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.intellij.ui.BooleanTableCellEditor
+import com.intellij.ui.BooleanTableCellRenderer
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
@@ -395,7 +397,7 @@ internal class ApiCallDialog : JDialog() {
     private fun changeFormForContentType(contentType: String?) {
         val newFormTableBinder = findFormTableBinder(contentType)
         try {
-            val readForm = formTableBinder.readForm(this.formTable!!)
+            val readForm = formTableBinder.readForm(this.formTable!!, false)
             newFormTableBinder.refreshTable(this.formTable!!, readForm)
             changeFormTableBinder(newFormTableBinder)
         } catch (e: Throwable) {
@@ -411,7 +413,11 @@ internal class ApiCallDialog : JDialog() {
     interface FormTableBinder {
         fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?)
 
-        fun readForm(formTable: JBTable): ArrayList<FormParam>?
+        fun readForm(formTable: JBTable, onlyAvailable: Boolean): ArrayList<FormParam>?
+
+        fun readAvailableForm(formTable: JBTable): ArrayList<FormParam>? {
+            return readForm(formTable, true)
+        }
 
         fun cleanTable(formTable: JBTable) {}
 
@@ -425,12 +431,76 @@ internal class ApiCallDialog : JDialog() {
             formTable.repaint()
         }
 
-        override fun readForm(formTable: JBTable): ArrayList<FormParam>? {
+        override fun readForm(formTable: JBTable, onlyAvailable: Boolean): ArrayList<FormParam>? {
             return null
         }
     }
 
     abstract class AbstractFormTableBinder : FormTableBinder {
+
+        var apiCallDialog: ApiCallDialog? = null
+
+        override fun init(apiCallDialog: ApiCallDialog) {
+            this.apiCallDialog = apiCallDialog
+        }
+
+        protected fun optionTableColumn(): TableColumn {
+            val tableColumn = TableColumn()
+            setUpBooleanTableColumn(tableColumn)
+            return tableColumn
+        }
+
+        protected fun setUpBooleanTableColumn(tableColumn: TableColumn) {
+            tableColumn.headerRenderer = BooleanTableCellRenderer()
+            tableColumn.cellEditor = BooleanTableCellEditor(false)
+            tableColumn.cellRenderer = BooleanTableCellRenderer()
+            tableColumn.maxWidth = 50
+        }
+
+
+        private var headerAllSelectListener: MouseListener? = null
+
+        protected fun listenHeaderAllSelectAction(formTable: JBTable, columnIndex: Int) {
+
+            val tableHeader = formTable.tableHeader
+
+            if (headerAllSelectListener != null) {
+                tableHeader.removeMouseListener(headerAllSelectListener)
+            }
+
+            var allSelected = false
+            headerAllSelectListener = object : MouseListener {
+                override fun mouseReleased(e: MouseEvent?) {
+                }
+
+                override fun mouseEntered(e: MouseEvent?) {
+                }
+
+                override fun mouseClicked(e: MouseEvent?) {
+                    if (e == null || !apiCallDialog!!.throttleHelper.acquire("header_all_select_click", 100)) {
+                        return
+                    }
+
+                    val selectColumn = formTable.tableHeader.columnAtPoint(e.point);
+                    if (selectColumn == columnIndex) {
+                        allSelected = !allSelected
+
+                        formTable.columnModel.getColumn(columnIndex).headerValue = allSelected;
+                        for (rowIndex in 0 until formTable.rowCount) {
+                            formTable.setValueAt(allSelected, rowIndex, columnIndex)
+                        }
+                    }
+                }
+
+                override fun mouseExited(e: MouseEvent?) {
+                }
+
+                override fun mousePressed(e: MouseEvent?) {
+                }
+            }
+
+            tableHeader.addMouseListener(headerAllSelectListener)
+        }
 
         protected fun textTableColumn(): TableColumn {
             val tableColumn = TableColumn()
@@ -438,17 +508,17 @@ internal class ApiCallDialog : JDialog() {
             return tableColumn
         }
 
-        override fun readForm(formTable: JBTable): ArrayList<FormParam>? {
+        override fun readForm(formTable: JBTable, onlyAvailable: Boolean): ArrayList<FormParam>? {
 
             val model = formTable.model
             val formParams: ArrayList<FormParam> = ArrayList()
             for (row in 0 until model.rowCount) {
-                readParamFromRow(model, row)?.let { formParams.add(it) }
+                readParamFromRow(model, row, onlyAvailable)?.let { formParams.add(it) }
             }
             return formParams
         }
 
-        abstract fun readParamFromRow(tableModel: TableModel, row: Int): FormParam?
+        abstract fun readParamFromRow(tableModel: TableModel, row: Int, onlyAvailable: Boolean): FormParam?
     }
 
     class NoTypedFormTableBinder : AbstractFormTableBinder() {
@@ -459,37 +529,43 @@ internal class ApiCallDialog : JDialog() {
             (formTable.model as DefaultTableModel).columnCount = 0
             (formTable.model as DefaultTableModel).rowCount = 0
 
-            formTable.addColumn(textTableColumn())
+            formTable.addColumn(optionTableColumn())
 
             formTable.addColumn(textTableColumn())
 
-            val columns = arrayOf("name", "value")
-            val data: ArrayList<Array<String>> = ArrayList()
+            formTable.addColumn(textTableColumn())
+
+            val columns = arrayOf("", "name", "value")
+            val data: ArrayList<Array<Any>> = ArrayList()
 
             formParams?.forEach { param ->
-                data.add(arrayOf(param.name!!, param.value ?: ""))
+                data.add(arrayOf(param.required ?: true, param.name!!, param.value ?: ""))
             }
 
             val model = DefaultTableModel(data.toTypedArray(), columns)
             formTable.model = model
-            return
 
+            setUpBooleanTableColumn(formTable.findColumn(0)!!)
+
+            listenHeaderAllSelectAction(formTable, 0)
+
+            return
         }
 
-        override fun readParamFromRow(tableModel: TableModel, row: Int): FormParam? {
-            val param = FormParam()
-            param.name = tableModel.getValueAt(row, 0).toString()
-            param.value = tableModel.getValueAt(row, 1).toString()
-            return param
+        override fun readParamFromRow(tableModel: TableModel, row: Int, onlyAvailable: Boolean): FormParam? {
+            val required = tableModel.getValueAt(row, 0) as Boolean
+            if (required || !onlyAvailable) {
+                val param = FormParam()
+                param.required = required
+                param.name = tableModel.getValueAt(row, 1).toString()
+                param.value = tableModel.getValueAt(row, 2).toString()
+                return param
+            }
+            return null
         }
     }
 
     class TypedFormTableBinder : AbstractFormTableBinder() {
-        var apiCallDialog: ApiCallDialog? = null
-
-        override fun init(apiCallDialog: ApiCallDialog) {
-            this.apiCallDialog = apiCallDialog
-        }
 
         private fun typeTableColumn(): TableColumn {
             val tableColumn = TableColumn()
@@ -507,38 +583,50 @@ internal class ApiCallDialog : JDialog() {
             (formTable.model as DefaultTableModel).columnCount = 0
             (formTable.model as DefaultTableModel).rowCount = 0
 
+            formTable.addColumn(optionTableColumn())
+
             formTable.addColumn(textTableColumn())
 
             formTable.addColumn(typeTableColumn())
 
             formTable.addColumn(textTableColumn())
 
-            val columns = arrayOf("name", "type", "value")
-            val data: ArrayList<Array<String>> = ArrayList()
+            val columns = arrayOf("", "name", "type", "value")
+
+            val data: ArrayList<Array<Any>> = ArrayList()
 
             formParams?.forEach { param ->
-                data.add(arrayOf(param.name!!, param.type ?: "text", param.value ?: ""))
+                data.add(arrayOf(param.required ?: true, param.name!!, param.type ?: "text", param.value ?: ""))
             }
 
             val model = DefaultTableModel(data.toTypedArray(), columns)
 
             formTable.model = model
 
-            formTable.columnModel.getColumn(1).cellEditor = object : ComboBoxCellEditor() {
+            setUpBooleanTableColumn(formTable.findColumn(0)!!)
+
+            formTable.columnModel.getColumn(2).cellEditor = object : ComboBoxCellEditor() {
                 override fun getComboBoxItems(): MutableList<String> {
                     return arrayListOf("text", "file")
                 }
             }
 
-            formTable.addMouseListener(getFileSelectListener(formTable))
+            listenHeaderAllSelectAction(formTable, 0)
+
+            addFileSelectListener(formTable)
         }
 
-        override fun readParamFromRow(tableModel: TableModel, row: Int): FormParam? {
-            val param = FormParam()
-            param.name = tableModel.getValueAt(row, 0).toString()
-            param.type = tableModel.getValueAt(row, 1).toString()
-            param.value = tableModel.getValueAt(row, 2).toString()
-            return param
+        override fun readParamFromRow(tableModel: TableModel, row: Int, onlyAvailable: Boolean): FormParam? {
+            val required = tableModel.getValueAt(row, 0) as Boolean
+            if (required || !onlyAvailable) {
+                val param = FormParam()
+                param.required = required
+                param.name = tableModel.getValueAt(row, 1).toString()
+                param.type = tableModel.getValueAt(row, 2).toString()
+                param.value = tableModel.getValueAt(row, 3).toString()
+                return param
+            }
+            return null
         }
 
         override fun cleanTable(formTable: JBTable) {
@@ -550,52 +638,53 @@ internal class ApiCallDialog : JDialog() {
 
         private var fileSelectListener: MouseListener? = null
 
-        private fun getFileSelectListener(formTable: JBTable): MouseListener {
-            if (fileSelectListener == null) {
-                fileSelectListener = object : MouseListener {
-                    override fun mouseReleased(e: MouseEvent?) {
+        private fun addFileSelectListener(formTable: JBTable) {
+            if (fileSelectListener != null) {
+                formTable.removeMouseListener(fileSelectListener)
+            }
+            fileSelectListener = object : MouseListener {
+                override fun mouseReleased(e: MouseEvent?) {
+                }
+
+                override fun mouseEntered(e: MouseEvent?) {
+                }
+
+                override fun mouseClicked(e: MouseEvent?) {
+
+                    val column = formTable.selectedColumn
+                    if (column != 3) {//only third column can select file
+                        return
                     }
-
-                    override fun mouseEntered(e: MouseEvent?) {
+                    val row = formTable.selectedRow
+                    if (row == -1) {
+                        return
                     }
-
-                    override fun mouseClicked(e: MouseEvent?) {
-
-                        val column = formTable.selectedColumn
-                        if (column != 2) {//only third column can select file
+                    try {
+                        val type = formTable.getValueAt(row, 2).toString()
+                        if (type != "file") {//the type of param should be 'file'
                             return
                         }
-                        val row = formTable.selectedRow
-                        if (row == -1) {
-                            return
-                        }
-                        try {
-                            val type = formTable.getValueAt(row, 1).toString()
-                            if (type != "file") {//the type of param should be 'file'
-                                return
-                            }
-                        } catch (e: java.lang.ArrayIndexOutOfBoundsException) {//error to get type
-                            return
-                        }
-
-                        if (apiCallDialog!!.throttleHelper.acquire("select_file_for_form_param", 1000)) {
-                            FileSelectHelper(apiCallDialog!!.actionContext!!, FileChooserDescriptorFactory.createSingleFileDescriptor())
-                                    .lastSelectedLocation("file.form.param.select.last.location.key")
-                                    .selectFile {
-                                        formTable.setValueAt(it?.path, row, column)
-                                    }
-                        }
-                        formTable.selectionModel.clearSelection()
+                    } catch (e: java.lang.ArrayIndexOutOfBoundsException) {//error to get type
+                        return
                     }
 
-                    override fun mouseExited(e: MouseEvent?) {
+                    if (apiCallDialog!!.throttleHelper.acquire("select_file_for_form_param", 1000)) {
+                        FileSelectHelper(apiCallDialog!!.actionContext!!, FileChooserDescriptorFactory.createSingleFileDescriptor())
+                                .lastSelectedLocation("file.form.param.select.last.location.key")
+                                .selectFile {
+                                    formTable.setValueAt(it?.path, row, column)
+                                }
                     }
+                    formTable.selectionModel.clearSelection()
+                }
 
-                    override fun mousePressed(e: MouseEvent?) {
-                    }
+                override fun mouseExited(e: MouseEvent?) {
+                }
+
+                override fun mousePressed(e: MouseEvent?) {
                 }
             }
-            return fileSelectListener!!
+            formTable.addMouseListener(fileSelectListener)
         }
     }
 
@@ -678,7 +767,7 @@ internal class ApiCallDialog : JDialog() {
                     var requestEntity: HttpEntity? = null
                     if (!request.formParams.isNullOrEmpty()) {
 
-                        val formParams = formTableBinder.readForm(this.formTable!!)
+                        val formParams = formTableBinder.readAvailableForm(this.formTable!!)
                         if (formParams != null) {
                             if (contentType.startsWith("application/x-www-form-urlencoded")) {
                                 val nameValuePairs: ArrayList<NameValuePair> = ArrayList()

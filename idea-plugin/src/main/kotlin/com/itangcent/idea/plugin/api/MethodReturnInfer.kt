@@ -381,7 +381,7 @@ class MethodReturnInferHelper {
     private fun findNextEndOfLineComment(element: PsiElement?): String? {
         if (element == null) return null
         var nextSibling = element.nextSibling
-        if (nextSibling is PsiJavaToken && nextSibling.tokenType == JavaTokenType.SEMICOLON) {//后面是分号
+        if (nextSibling is PsiJavaToken && nextSibling.tokenType == JavaTokenType.SEMICOLON) {//next token is semicolon
             nextSibling = nextSibling.nextSibling
             if (isEndOfLineComment(nextSibling)) {
                 return getTextOfEndOfLineComment(nextSibling)
