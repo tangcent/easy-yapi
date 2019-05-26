@@ -103,6 +103,7 @@ class YapiApiExporter {
                         }
                     }
                 }
+                .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
                     classExporter!!.export(it, parseHandle!!) { request -> exportRequest(request) }
                 }
@@ -182,10 +183,10 @@ class YapiApiExporter {
             }
         }
 
-        var cartId = yapiApiHelper.findCat(privateToken!!, name!!)
+        var cartId = yapiApiHelper.findCat(privateToken, name!!)
         if (cartId == null) {
             if (yapiApiHelper.addCart(module, name, desc)) {
-                cartId = yapiApiHelper.findCat(privateToken!!, name)
+                cartId = yapiApiHelper.findCat(privateToken, name)
             } else {
                 //failed
                 return null
