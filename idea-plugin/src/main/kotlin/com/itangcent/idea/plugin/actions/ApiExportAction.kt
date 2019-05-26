@@ -25,7 +25,6 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
         builder.bind(CommonRules::class) { it.singleton() }
         builder.bind(PsiClassHelper::class) { it.singleton() }
         builder.bind(TmTypeHelper::class) { it.singleton() }
-        builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
         builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringClassExporter::class).singleton() }
         builder.bind(ClassExporter::class) { it.with(CachedClassExporter::class).singleton() }
         builder.bind(ModuleHelper::class) { it.singleton() }
