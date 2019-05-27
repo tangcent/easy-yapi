@@ -26,3 +26,4 @@
     9.  fix:deserialize int numbers correctly [(#49)](https://github.com/tangcent/easy-api/issues/49)
     10. fix:fix custom module rule in config [(#54)](https://github.com/tangcent/easy-api/issues/54)
     11. fix:support org.springframework.web.bind.annotation.RequestHeader [(#57)](https://github.com/tangcent/easy-api/issues/57)
+    12. fix:make sure the path prefix with '/' for yapi [(#9)](https://github.com/tangcent/easy-yapi/issues/9)
