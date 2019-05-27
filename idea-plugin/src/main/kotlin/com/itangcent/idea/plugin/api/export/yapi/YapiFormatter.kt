@@ -43,8 +43,8 @@ class YapiFormatter {
         item["query_path"] = queryPath
         queryPath["params"] = EMPTY_PARAMS
 
-        queryPath["path"] = request.path
-        item["path"] = request.path
+        queryPath["path"] = formatPath(request.path)
+        item["path"] = formatPath(request.path)
 
         addTimeAttr(item)
         item["__v"] = 0
@@ -126,6 +126,17 @@ class YapiFormatter {
         }
 
         return item
+    }
+
+    /**
+     * make sure the path prefix with "/"
+     */
+    private fun formatPath(path: String?): String {
+        return when {
+            path.isNullOrEmpty() -> "/"
+            path.startsWith("/") -> path
+            else -> "/$path"
+        }
     }
 
     protected fun findReturnOfMethod(method: PsiMethod): String? {
