@@ -10,8 +10,11 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.methods.HttpGet
 import java.io.ByteArrayOutputStream
+import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.util.*
 import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -45,9 +48,9 @@ open class AbstractYapiApiHelper {
 
     fun findServer(): String? {
         if (!server.isNullOrBlank()) return server
-        server = configReader!!.read("server")?.removeSuffix("/")
+        server = configReader!!.read("server")?.trim()?.removeSuffix("/")
         if (!server.isNullOrBlank()) return server
-        server = settingBinder!!.read().yapiServer?.removeSuffix("/")
+        server = settingBinder!!.read().yapiServer?.trim()?.removeSuffix("/")
         return server
     }
 
@@ -89,7 +92,6 @@ open class AbstractYapiApiHelper {
                     ?.asString
         } catch (e: IllegalStateException) {
             logger!!.error("invalid token:$token")
-
         }
         if (projectId != null) {
             cacheLock.writeLock().withLock {
@@ -110,7 +112,7 @@ open class AbstractYapiApiHelper {
             url = "$url&id=$projectId"
         }
 
-        val ret = getByApi(url) ?: return null
+        val ret = getByApi(url, false) ?: return null
         val projectInfo = GsonUtils.parseToJsonTree(ret)
         if (projectId != null && projectInfo != null) {
             cacheLock.writeLock().withLock { projectInfoCache[projectId] = projectInfo }
@@ -118,14 +120,30 @@ open class AbstractYapiApiHelper {
         return projectInfo
     }
 
-    fun getByApi(url: String): String? {
+    fun getByApi(url: String, dumb: Boolean = true): String? {
         return try {
             val httpClient = httpClientProvide!!.getHttpClient()
             val httpGet = HttpGet(url)
             val responseHandler = reservedResponseHandle()
 
             httpClient.execute(httpGet, responseHandler).result()
+        } catch (e: SocketTimeoutException) {
+            if (!dumb) {
+                throw e
+            }
+            logger!!.error("$url connect timeout")
+            null
+        } catch (e: SocketException) {
+            if (!dumb) {
+                throw e
+            }
+            logger!!.error("$url is unreachable (connect failed)")
+            null
         } catch (e: Exception) {
+            if (!dumb) {
+                throw e
+            }
+            logger!!.error("request $url failed:" + ExceptionUtils.getStackTrace(e))
             null
         }
     }

@@ -8,7 +8,6 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.utils.URLEncodedUtils
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.HttpClients
 import org.apache.http.message.BasicNameValuePair
 import java.nio.charset.Charset
 import java.util.HashMap
@@ -21,10 +20,14 @@ class YapiApiHelper : AbstractYapiApiHelper() {
     //$projectId$cartName -> $cartId
     private var cartIdCache: HashMap<String, String> = HashMap()
 
-    fun getCartWeb(module: String, cartName: String): String? {
+    fun findCartWeb(module: String, cartName: String): String? {
         val token = getPrivateToken(module)
         val projectId = getProjectIdByToken(token!!) ?: return null
         val catId = findCat(token, cartName) ?: return null
+        return getCartWeb(projectId, catId)
+    }
+
+    fun getCartWeb(projectId: String, catId: String): String? {
         return "$server/project/$projectId/interface/api/cat_$catId"
     }
 
