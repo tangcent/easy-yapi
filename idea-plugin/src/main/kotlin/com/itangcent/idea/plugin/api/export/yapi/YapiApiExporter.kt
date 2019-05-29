@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
+import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
@@ -183,7 +184,13 @@ class YapiApiExporter {
             }
         }
 
-        var cartId = yapiApiHelper.findCat(privateToken, name!!)
+        var cartId: String?
+        try {
+            cartId = yapiApiHelper.findCat(privateToken, name!!)
+        } catch (e: Exception) {
+            logger!!.error("error to find cart [$name]")
+            return null
+        }
         if (cartId == null) {
             if (yapiApiHelper.addCart(module, name, desc)) {
                 cartId = yapiApiHelper.findCat(privateToken, name)
@@ -202,6 +209,8 @@ class YapiApiExporter {
         return cartInfo
     }
 
+    var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
+
     private fun exportRequest(request: Request) {
         if (request.resource == null) return
         val findResourceClass = resourceHelper!!.findResourceClass(request.resource!!) ?: return
@@ -209,7 +218,11 @@ class YapiApiExporter {
         val request2Item = yapiFormatter!!.request2Item(request)
         request2Item["token"] = cartInfo.privateToken
         request2Item["catid"] = cartInfo.cartId
-        yapiApiHelper!!.saveApiInfo(request2Item)
+        if (yapiApiHelper!!.saveApiInfo(request2Item)) {
+            if (successExportedCarts.add(cartInfo.cartId!!)) {
+                logger!!.info("Export to ${yapiApiHelper.getCartWeb(yapiApiHelper.getProjectIdByToken(cartInfo.privateToken!!)!!, cartInfo.cartId!!)} success")
+            }
+        }
     }
 
     private fun findAttrOfClass(cls: PsiClass): String? {

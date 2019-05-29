@@ -47,7 +47,7 @@ class YapiIdeaParseHandle : IdeaParseHandle() {
                     apiDirName = StringUtils.left(attrOfCls, 30)
                 }
 
-                val cartWeb = yapiApiHelper!!.getCartWeb(module, apiDirName!!)
+                val cartWeb = yapiApiHelper!!.findCartWeb(module, apiDirName!!)
                 if (cartWeb != null) {
                     return "[<a href=\"$cartWeb\">$apiDirName</a>]"
                 }
