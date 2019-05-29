@@ -12,6 +12,9 @@ class Settings {
 
     var inferMaxDeep: Int? = null
 
+    //unit:s
+    var httpTimeOut: Int? = null
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -19,6 +22,7 @@ class Settings {
         newSetting.readGetter = this.readGetter
         newSetting.inferEnable = this.inferEnable
         newSetting.inferMaxDeep = this.inferMaxDeep
+        newSetting.httpTimeOut = this.httpTimeOut
         return newSetting
     }
 
@@ -33,6 +37,7 @@ class Settings {
         if (readGetter != other.readGetter) return false
         if (inferEnable != other.inferEnable) return false
         if (inferMaxDeep != other.inferMaxDeep) return false
+        if (httpTimeOut != other.httpTimeOut) return false
 
         return true
     }
@@ -43,6 +48,7 @@ class Settings {
         result = 31 * result + (readGetter?.hashCode() ?: 0)
         result = 31 * result + (inferEnable?.hashCode() ?: 0)
         result = 31 * result + (inferMaxDeep ?: 0)
+        result = 31 * result + (httpTimeOut ?: 0)
         return result
     }
 
