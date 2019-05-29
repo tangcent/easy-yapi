@@ -8,9 +8,9 @@ import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
 import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClients
 import java.io.ByteArrayOutputStream
 import java.util.*
 import java.util.concurrent.locks.ReadWriteLock
@@ -27,6 +27,9 @@ open class AbstractYapiApiHelper {
 
     @Inject
     private val configReader: ConfigReader? = null
+
+    @Inject
+    protected val httpClientProvide: HttpClientProvider? = null
 
     var server: String? = null
 
@@ -117,7 +120,7 @@ open class AbstractYapiApiHelper {
 
     fun getByApi(url: String): String? {
         return try {
-            val httpClient = HttpClients.createDefault()
+            val httpClient = httpClientProvide!!.getHttpClient()
             val httpGet = HttpGet(url)
             val responseHandler = reservedResponseHandle()
 

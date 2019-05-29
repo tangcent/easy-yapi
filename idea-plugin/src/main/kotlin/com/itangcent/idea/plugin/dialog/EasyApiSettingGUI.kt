@@ -47,6 +47,8 @@ class EasyApiSettingGUI {
 
     private var yapiTokenTextArea: JTextArea? = null
 
+    private var httpTimeOutTextField: JTextField? = null
+
     fun getRootPanel(): JPanel? {
         return rootPanel
     }
@@ -108,6 +110,19 @@ class EasyApiSettingGUI {
         autoComputer.bind(yapiTokenTextArea!!)
                 .consistent(this, "settings.yapiTokens")
 
+        autoComputer.bind(this.httpTimeOutTextField!!)
+                .with<Int?>(this, "settings.httpTimeOut")
+                .eval { (it ?: 40).toString() }
+
+        autoComputer.bind<Int>(this, "settings.httpTimeOut")
+                .with(this.httpTimeOutTextField!!)
+                .eval {
+                    try {
+                        it?.toInt() ?: 20
+                    } catch (e: Exception) {
+                        20
+                    }
+                }
         refresh()
     }
 
