@@ -20,8 +20,8 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.ClassRuleConfig
-import org.apache.http.client.HttpClient
-import org.apache.http.impl.client.HttpClients
+import com.itangcent.suv.http.ConfigurableHttpClientProvider
+import com.itangcent.suv.http.HttpClientProvider
 
 class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
 
@@ -37,7 +37,7 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         builder.bind(ApiDashBoard::class) { it.singleton() }
         builder.bind(PostmanCachedApiHelper::class) { it.singleton() }
         builder.bind(PostmanFormatter::class) { it.singleton() }
-        builder.bindInstance(HttpClient::class, HttpClients.createDefault())
+        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
 
     }

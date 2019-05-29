@@ -17,6 +17,8 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.ClassRuleConfig
+import com.itangcent.suv.http.ConfigurableHttpClientProvider
+import com.itangcent.suv.http.HttpClientProvider
 import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.HttpClients
 
@@ -30,7 +32,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
         builder.bind(PostmanApiExporter::class) { it.singleton() }
         builder.bind(PostmanFormatter::class) { it.singleton() }
-        builder.bindInstance(HttpClient::class, HttpClients.createDefault())
+        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
         builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
         builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }

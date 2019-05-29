@@ -32,6 +32,7 @@ import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.Header
 import org.apache.http.HttpEntity
@@ -209,6 +210,9 @@ internal class ApiCallDialog : JDialog() {
     @Volatile
     private var httpClient: HttpClient? = null
 
+    @Inject(optional = true)
+    private var httpClientProvider: HttpClientProvider? = null
+
     @Volatile
     private var httpContextCacheBinder: BeanBinder<HttpContextCache>? = null
 
@@ -230,7 +234,7 @@ internal class ApiCallDialog : JDialog() {
     @Synchronized
     private fun getHttpClient(): HttpClient {
         if (httpClient == null) {
-            httpClient = HttpClients.createDefault()
+            httpClient = httpClientProvider?.getHttpClient() ?: HttpClients.createDefault()
             httpClientContext = HttpClientContext.create()
             ultimateResponseHandler = UltimateResponseHandler()
             httpClientContext!!.cookieStore = BasicCookieStore()

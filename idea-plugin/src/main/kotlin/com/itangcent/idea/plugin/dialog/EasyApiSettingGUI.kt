@@ -43,6 +43,8 @@ class EasyApiSettingGUI {
 
     private var readGetterCheckBox: JCheckBox? = null
 
+    private var httpTimeOutTextField: JTextField? = null
+
     fun getRootPanel(): JPanel? {
         return rootPanel
     }
@@ -98,6 +100,19 @@ class EasyApiSettingGUI {
                     }
                 }
 
+        autoComputer.bind(this.httpTimeOutTextField!!)
+                .with<Int?>(this, "settings.httpTimeOut")
+                .eval { (it ?: 40).toString() }
+
+        autoComputer.bind<Int>(this, "settings.httpTimeOut")
+                .with(this.httpTimeOutTextField!!)
+                .eval {
+                    try {
+                        it?.toInt() ?: 40
+                    } catch (e: Exception) {
+                        40
+                    }
+                }
         refresh()
     }
 
