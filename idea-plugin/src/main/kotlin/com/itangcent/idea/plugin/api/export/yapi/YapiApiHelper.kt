@@ -67,7 +67,7 @@ class YapiApiHelper : AbstractYapiApiHelper() {
 
     fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
 
-        val httpClient = HttpClients.createDefault()
+        val httpClient = httpClientProvide!!.getHttpClient()
 
         val httpPost = HttpPost(server + SAVEAPI)
 
@@ -98,7 +98,9 @@ class YapiApiHelper : AbstractYapiApiHelper() {
     }
 
     fun addCart(projectId: String, token: String, name: String, desc: String): Boolean {
-        val httpClient = HttpClients.createDefault()
+
+        val httpClient = httpClientProvide!!.getHttpClient()
+
         val httpPost = HttpPost(server + ADDCART)
 
         val requestParams: ArrayList<NameValuePair> = ArrayList()

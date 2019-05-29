@@ -16,6 +16,9 @@ class Settings {
 
     var yapiTokens: String? = null
 
+    //unit:s
+    var httpTimeOut: Int? = null
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -25,6 +28,7 @@ class Settings {
         newSetting.inferMaxDeep = this.inferMaxDeep
         newSetting.yapiServer = this.yapiServer
         newSetting.yapiTokens = this.yapiTokens
+        newSetting.httpTimeOut = this.httpTimeOut
         return newSetting
     }
 
@@ -41,6 +45,7 @@ class Settings {
         if (inferMaxDeep != other.inferMaxDeep) return false
         if (yapiServer != other.yapiServer) return false
         if (yapiTokens != other.yapiTokens) return false
+        if (httpTimeOut != other.httpTimeOut) return false
 
         return true
     }
@@ -51,6 +56,7 @@ class Settings {
         result = 31 * result + (readGetter?.hashCode() ?: 0)
         result = 31 * result + (inferEnable?.hashCode() ?: 0)
         result = 31 * result + (inferMaxDeep ?: 0)
+        result = 31 * result + (httpTimeOut ?: 0)
         result = 31 * result + (yapiServer?.hashCode() ?: 0)
         result = 31 * result + (yapiTokens?.hashCode() ?: 0)
         return result

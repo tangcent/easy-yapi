@@ -14,9 +14,9 @@ import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
@@ -49,7 +49,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private val logger: Logger? = null
 
     @Inject
-    private val httpClient: HttpClient? = null
+    private val httpClientProvider: HttpClientProvider? = null
 
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
@@ -214,7 +214,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         try {
             beforeRequest()
 
-            val result = httpClient!!.execute(httpPut, reservedResponseHandle())
+            val result = httpClientProvider!!.getHttpClient().execute(httpPut, reservedResponseHandle())
             val returnValue = result.result()
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
@@ -239,7 +239,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
         try {
             beforeRequest()
-            val result = httpClient!!.execute(httpGet, reservedResponseHandle())
+            val result = httpClientProvider!!.getHttpClient().execute(httpGet, reservedResponseHandle())
             val returnValue = result.result()
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collections")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
@@ -264,7 +264,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         httpGet.setHeader("x-api-key", getPrivateToken())
         try {
             beforeRequest()
-            val result = httpClient!!.execute(httpGet, reservedResponseHandle())
+            val result = httpClientProvider!!.getHttpClient().execute(httpGet, reservedResponseHandle())
             val returnValue = result.result()
 
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
@@ -287,7 +287,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         httpDelete.setHeader("x-api-key", getPrivateToken())
         try {
             beforeRequest()
-            val result = httpClient!!.execute(httpDelete, reservedResponseHandle())
+            val result = httpClientProvider!!.getHttpClient().execute(httpDelete, reservedResponseHandle())
             val returnValue = result.result()
 
             if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
