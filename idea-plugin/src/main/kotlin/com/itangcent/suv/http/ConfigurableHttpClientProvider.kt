@@ -4,9 +4,9 @@ import com.google.inject.Inject
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import org.apache.http.client.HttpClient
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.config.SocketConfig
 import org.apache.http.impl.client.HttpClients
-import java.util.concurrent.TimeUnit
 
 class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
@@ -21,9 +21,15 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
         val config = readHttpConfig()
 
-        httpClientBuilder.setDefaultSocketConfig(SocketConfig.custom()
-                .setSoTimeout(TimeUnit.SECONDS.toMillis(config.timeOut.toLong()).toInt())
-                .build())
+        httpClientBuilder
+                .setDefaultSocketConfig(SocketConfig.custom()
+                        .setSoTimeout(config.timeOut * 1000)
+                        .build())
+                .setDefaultRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(config.timeOut * 1000)
+                        .setConnectionRequestTimeout(config.timeOut * 1000)
+                        .setSocketTimeout(config.timeOut * 1000)
+                        .build())
         return httpClientBuilder.build()
     }
 
@@ -49,6 +55,6 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
     class HttpConfig {
 
         //default 40s
-        var timeOut: Int = 40
+        var timeOut: Int = 20
     }
 }

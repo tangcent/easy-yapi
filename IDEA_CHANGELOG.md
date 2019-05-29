@@ -25,3 +25,6 @@
     8.  fix:deserialize int numbers correctly [(#49)](https://github.com/tangcent/easy-api/issues/49)
     9.  fix:fix custom module rule in config [(#54)](https://github.com/tangcent/easy-api/issues/54)
     10. fix:support org.springframework.web.bind.annotation.RequestHeader [(#57)](https://github.com/tangcent/easy-api/issues/57)
+    11. enhance:optimize the inference of the return type of the method [(#60)](https://github.com/tangcent/easy-api/issues/60)
+    12. enhance:provide http properties settings [(#61)](https://github.com/tangcent/easy-api/issues/61)
+    
