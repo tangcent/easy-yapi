@@ -10,10 +10,7 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
-import com.itangcent.idea.plugin.api.export.yapi.YapiApiExporter
-import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
-import com.itangcent.idea.plugin.api.export.yapi.YapiConfigReader
-import com.itangcent.idea.plugin.api.export.yapi.YapiIdeaParseHandle
+import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
@@ -25,8 +22,6 @@ import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.ClassRuleConfig
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
-import org.apache.http.client.HttpClient
-import org.apache.http.impl.client.HttpClients
 
 class YapiExportAction : ApiExportAction("Export Yapi") {
 
@@ -43,7 +38,7 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(YapiConfigReader::class).singleton() }
-        builder.bind(YapiApiHelper::class) { it.singleton() }
+        builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
 
         builder.bindInstance("file.save.default", "yapi.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.yapi.export.path")

@@ -81,7 +81,7 @@ open class AbstractYapiApiHelper {
         return null
     }
 
-    fun getProjectIdByToken(token: String): String? {
+    open fun getProjectIdByToken(token: String): String? {
         var projectId = cacheLock.readLock().withLock { projectIdCache[token] }
         if (projectId != null) return projectId
         try {
@@ -181,7 +181,6 @@ open class AbstractYapiApiHelper {
     }
 
     fun setToken(module: String, token: String) {
-
         cacheLock.writeLock().withLock {
             val settings = settingBinder!!.read()
             val properties = Properties()
@@ -198,6 +197,13 @@ open class AbstractYapiApiHelper {
             }
             properties.forEach { t, u -> tokenMap!![t.toString()] = u.toString() }
         }
+    }
+
+    fun readTokens(): HashMap<String, String> {
+        if (tokenMap == null) {
+            initToken()
+        }
+        return tokenMap!!
     }
 
     companion object {

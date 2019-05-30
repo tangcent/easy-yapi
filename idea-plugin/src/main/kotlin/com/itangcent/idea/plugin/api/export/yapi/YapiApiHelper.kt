@@ -15,7 +15,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.set
 import kotlin.concurrent.withLock
 
-class YapiApiHelper : AbstractYapiApiHelper() {
+open class YapiApiHelper : AbstractYapiApiHelper() {
 
     //$projectId$cartName -> $cartId
     private var cartIdCache: HashMap<String, String> = HashMap()
