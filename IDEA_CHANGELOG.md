@@ -29,3 +29,4 @@
     12. fix:make sure the path prefix with '/' for yapi [(#9)](https://github.com/tangcent/easy-yapi/issues/9)
     13. enhance:optimize the inference of the return type of the method [(#60)](https://github.com/tangcent/easy-api/issues/60)
     14. enhance:provide http properties settings [(#61)](https://github.com/tangcent/easy-api/issues/61)
+    15. enhance:provide more information tips during the export process [(#11)](https://github.com/tangcent/easy-yapi/pull/11)
