@@ -431,15 +431,18 @@ class EasyApiTreeCellRenderer : JLabel(), TreeCellRenderer {
     private fun findTooltips(value: Any): String? {
         var tooltip: String? = null
 
-        if (value is DefaultMutableTreeNode) {
-            val userObject = value.userObject
-            if (userObject is Tooltipable) {
-                tooltip = userObject.toolTip()
+        try {
+            if (value is DefaultMutableTreeNode) {
+                val userObject = value.userObject
+                if (userObject is Tooltipable) {
+                    tooltip = userObject.toolTip()
+                }
             }
-        }
 
-        if (tooltip == null && value is Tooltipable) {
-            tooltip = value.toolTip()
+            if (tooltip == null && value is Tooltipable) {
+                tooltip = value.toolTip()
+            }
+        } catch (ignore: Exception) {
         }
 
         return tooltip
