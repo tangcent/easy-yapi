@@ -10,6 +10,7 @@ import com.itangcent.common.utils.SystemUtils
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.consistent
+import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
 import javax.swing.*
@@ -102,15 +103,15 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(this.httpTimeOutTextField!!)
                 .with<Int?>(this, "settings.httpTimeOut")
-                .eval { (it ?: 40).toString() }
+                .eval { (it ?: ConfigurableHttpClientProvider.defaultHttpTimeOut).toString() }
 
         autoComputer.bind<Int>(this, "settings.httpTimeOut")
                 .with(this.httpTimeOutTextField!!)
                 .eval {
                     try {
-                        it?.toInt() ?: 40
+                        it?.toInt() ?: ConfigurableHttpClientProvider.defaultHttpTimeOut
                     } catch (e: Exception) {
-                        40
+                        ConfigurableHttpClientProvider.defaultHttpTimeOut
                     }
                 }
         refresh()

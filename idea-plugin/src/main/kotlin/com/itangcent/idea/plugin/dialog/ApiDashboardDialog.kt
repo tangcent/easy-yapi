@@ -1011,7 +1011,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanCollectionNodeData : PostmanNodeData, IconCustomized {
+    class PostmanCollectionNodeData : PostmanNodeData, IconCustomized, Tooltipable {
         override fun icon(): Icon? {
             return when (status) {
                 NodeStatus.Loading -> EasyIcons.Refresh
@@ -1062,9 +1062,16 @@ class ApiDashboardDialog : JDialog() {
         override fun toString(): String {
             return status.desc + collection.getOrDefault("name", "unknown")
         }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun toolTip(): String? {
+            if (detail == null) return null
+            val info = detail!!["info"] ?: return null
+            return (info as Map<*,*>)["description"]?.toString()
+        }
     }
 
-    class PostmanSubCollectionNodeData : PostmanNodeData, IconCustomized {
+    class PostmanSubCollectionNodeData : PostmanNodeData, IconCustomized, Tooltipable {
         override fun icon(): Icon? {
             return EasyIcons.Module
         }
@@ -1089,9 +1096,15 @@ class ApiDashboardDialog : JDialog() {
         override fun toString(): String {
             return info.getOrDefault("name", "unknown").toString()
         }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun toolTip(): String? {
+            return info["description"]?.toString()
+        }
     }
 
-    class PostmanApiNodeData : PostmanNodeData, IconCustomized {
+    class PostmanApiNodeData : PostmanNodeData, IconCustomized, Tooltipable {
+
         override fun icon(): Icon? {
             return EasyIcons.Link
         }
@@ -1117,6 +1130,28 @@ class ApiDashboardDialog : JDialog() {
             return info.getOrDefault("name", "unknown").toString()
         }
 
+        @Suppress("UNCHECKED_CAST")
+        override fun toolTip(): String? {
+            val request = (info["request"] as HashMap<String, Any?>?) ?: return null
+            val sb = StringBuilder()
+            val method = request["method"]
+            if (method != null) {
+                sb.append(method).append(":")
+            }
+            val url = request["url"]
+            if (url != null) {
+                if (url is Map<*, *>) {
+                    sb.append(url["raw"])
+                } else {
+                    sb.append(url)
+                }
+            }
+            val description = request["description"]
+            if (description != null) {
+                sb.append("\n").append(description)
+            }
+            return sb.toString()
+        }
     }
 
     //endregion postman Node Data--------------------------------------------------
