@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.intellij.extend.asList
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.NameValuePair
@@ -94,8 +95,7 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
         }
     }
 
-    fun addCart(module: String, name: String, desc: String): Boolean {
-        val privateToken = getPrivateToken(module) ?: return false
+    fun addCart(privateToken: String, name: String, desc: String): Boolean {
         val projectId = getProjectIdByToken(privateToken) ?: return false
         return addCart(projectId, privateToken, name, desc)
     }
@@ -159,6 +159,24 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
             api.asJsonObject.get("title")
                     .asString == apiName
         }?.asJsonObject?.get("_id")?.asString
+    }
+
+    fun findApis(token: String, catId: String): ArrayList<Any?>? {
+        val url = "$server$GETCAT?token=$token&catid=$catId&limit=1000"
+        return GsonUtils.parseToJsonTree(getByApi(url))
+                ?.asJsonObject
+                ?.get("data")
+                ?.asJsonObject
+                ?.get("list")
+                ?.asList()
+    }
+
+    fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
+        val url = "$server$GETCATMENU?project_id=$project_id&token=$token"
+        return GsonUtils.parseToJsonTree(getByApi(url))
+                ?.asJsonObject
+                ?.get("data")
+                ?.asList()
     }
 
     companion object {

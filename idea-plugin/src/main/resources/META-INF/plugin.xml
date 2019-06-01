@@ -18,6 +18,9 @@
             <action id="com.itangcent.idea.easy_api.actions.ApiDashBoardAction"
                     class="com.itangcent.idea.plugin.actions.ApiDashBoardAction" text="ApiDashBoard(beta)"
                     description="ApiDashBoard"/>
+            <action id="com.itangcent.idea.easy_api.actions.YApiDashBoardAction"
+                    class="com.itangcent.idea.plugin.actions.YapiDashBoardAction" text="YApiDashBoard(beta)"
+                    description="YApiDashBoard"/>
             <action id="com.itangcent.idea.easy_api.actions.PostmanExportAction"
                     class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportPostman"
                     description="Export Postman"/>
