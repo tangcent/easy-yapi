@@ -4,6 +4,8 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import java.util.*
+import kotlin.collections.ArrayList
 
 fun JsonObject.asMap(): HashMap<String, Any?> {
     val map: HashMap<String, Any?> = HashMap()
@@ -11,8 +13,12 @@ fun JsonObject.asMap(): HashMap<String, Any?> {
     return map
 }
 
-fun JsonElement.asMap(): HashMap<String, Any?> {
-    return this.asJsonObject.asMap()
+fun JsonElement.asMap(dumb: Boolean = true): HashMap<String, Any?> {
+    return when {
+        this.isJsonObject -> this.asJsonObject.asMap()
+        dumb -> HashMap()
+        else -> throw IllegalStateException("Not a JSON Object: " + this)
+    }
 }
 
 fun JsonArray.asList(): ArrayList<Any?> {
@@ -21,8 +27,12 @@ fun JsonArray.asList(): ArrayList<Any?> {
     return list
 }
 
-fun JsonElement.asList(): ArrayList<Any?> {
-    return this.asJsonArray.asList()
+fun JsonElement.asList(dumb: Boolean = true): ArrayList<Any?> {
+    return when {
+        this.isJsonArray -> this.asJsonArray.asList()
+        dumb -> ArrayList()
+        else -> throw IllegalStateException("Not a JSON Array: " + this)
+    }
 }
 
 fun JsonElement.unbox(): Any? {

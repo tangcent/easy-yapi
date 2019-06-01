@@ -54,7 +54,11 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
     class HttpConfig {
 
-        //default 40s
-        var timeOut: Int = 20
+        //default 10s
+        var timeOut: Int = defaultHttpTimeOut
+    }
+
+    companion object {
+        const val defaultHttpTimeOut:Int = 10
     }
 }
