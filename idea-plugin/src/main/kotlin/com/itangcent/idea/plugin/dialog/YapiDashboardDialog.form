@@ -54,7 +54,7 @@
                     <properties>
                       <borderPainted value="false"/>
                       <text value="collapse"/>
-                      <toolTipText value="Collapse All"/>
+                      <toolTipText value="collapse all"/>
                     </properties>
                   </component>
                 </children>
@@ -137,14 +137,14 @@
                     <properties>
                       <borderPainted value="false"/>
                       <text value="collapse"/>
-                      <toolTipText value="Collapse All"/>
+                      <toolTipText value="collapse all"/>
                     </properties>
                   </component>
                   <component id="50764" class="javax.swing.JButton" binding="yapiNewProjectButton">
                     <constraints/>
                     <properties>
                       <text value="new"/>
-                      <toolTipText value="create new collection"/>
+                      <toolTipText value="import new project"/>
                     </properties>
                   </component>
                   <component id="3da9a" class="javax.swing.JButton" binding="yapiSyncButton">

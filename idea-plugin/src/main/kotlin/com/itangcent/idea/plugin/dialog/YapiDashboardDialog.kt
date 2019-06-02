@@ -155,6 +155,12 @@ class YapiDashboardDialog : JDialog() {
             newYapiCart()
         }
 
+        val unloadItem = JMenuItem("Unload")
+
+        unloadItem.addActionListener {
+            unloadYapiProject()
+        }
+
         val syncItem = JMenuItem("Sync")
 
         syncItem.addActionListener {
@@ -166,6 +172,7 @@ class YapiDashboardDialog : JDialog() {
         }
 
         yapiPopMenu!!.add(addItem)
+        yapiPopMenu!!.add(unloadItem)
         yapiPopMenu!!.add(syncItem)
 
         this.yapiApiTree!!.addMouseListener(object : MouseAdapter() {
@@ -178,6 +185,7 @@ class YapiDashboardDialog : JDialog() {
                     val yapiNodeData = (targetComponent as DefaultMutableTreeNode).userObject
 
                     addItem.isEnabled = yapiNodeData is YapiProjectNodeData
+                    unloadItem.isEnabled = yapiNodeData is YapiProjectNodeData
                     yapiPopMenu!!.show(yapiApiTree!!, e.x, e.y)
                     yapiApiTree!!.selectionPath = path
                 }
@@ -676,6 +684,22 @@ class YapiDashboardDialog : JDialog() {
                 syncYapiNode(yapiNodeData.getRootNodeData()!!)
             }
         }
+    }
+
+    private fun unloadYapiProject() {
+        val lastSelectedPathComponent = yapiApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val yapiNodeData = lastSelectedPathComponent.userObject as YapiNodeData
+
+            yapiApiHelper!!.removeToken(yapiNodeData.getProjectToken()!!)
+
+            val treeModel = yapiApiTree!!.model as DefaultTreeModel
+            (treeModel.root as DefaultMutableTreeNode)
+                    .remove(yapiNodeData.getRootNodeData()!!.asTreeNode())
+            treeModel.reload()
+        }
+
     }
 
     private fun syncYapiProject() {
