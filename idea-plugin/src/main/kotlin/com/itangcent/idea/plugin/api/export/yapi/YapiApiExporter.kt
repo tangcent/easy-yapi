@@ -1,60 +1,16 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
-import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.util.containers.ContainerUtil
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.ResourceHelper
-import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
-import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.util.DocCommentUtils
-import org.apache.commons.lang3.StringUtils
 
 
-class YapiApiExporter {
-
-    @Inject
-    private val logger: Logger? = null
-
-    @Inject
-    private val yapiApiHelper: YapiApiHelper? = null
-
-    @Inject
-    private val actionContext: ActionContext? = null
-
-    @Inject
-    private val classExporter: ClassExporter? = null
-
-    @Inject
-    private val parseHandle: ParseHandle? = null
-
-    @Inject
-    private val moduleHelper: ModuleHelper? = null
-
-    @Inject
-    private val resourceHelper: ResourceHelper? = null
-
-    @Inject
-    private val yapiFormatter: YapiFormatter? = null
-
-    @Inject
-    private val docParseHelper: DefaultDocParseHelper? = null
-
-
-    //cls -> CartInfo
-    private val clsCartMap: HashMap<PsiClass, CartInfo> = HashMap()
-
-    @Inject
-    private val project: Project? = null
+class YapiApiExporter : AbstractYapiApiExporter() {
 
     fun export() {
         val serverFound = yapiApiHelper!!.findServer() != null
@@ -117,7 +73,10 @@ class YapiApiExporter {
                 .traversal()
     }
 
-    private fun getCartForCls(psiClass: PsiClass): CartInfo? {
+    //cls -> CartInfo
+    private val clsCartMap: HashMap<PsiClass, CartInfo> = HashMap()
+
+    override fun getCartForCls(psiClass: PsiClass): CartInfo? {
 
         var cartId = clsCartMap[psiClass]
         if (cartId != null) return cartId
@@ -126,121 +85,44 @@ class YapiApiExporter {
             cartId = clsCartMap[psiClass]
             if (cartId != null) return cartId
 
-            return buildCartForCls(psiClass)
+            return super.getCartForCls(psiClass)
         }
-
     }
 
     private var tryInputTokenOfModule: HashSet<String> = HashSet()
 
-    private fun buildCartForCls(psiClass: PsiClass): CartInfo? {
-
-        val module = moduleHelper!!.findModule(psiClass) ?: return null
-
-        if (!yapiApiHelper!!.hasPrivateToken(module)) {
-//            logger!!.info("no token be found for module:$module")
-            if (tryInputTokenOfModule.contains(module)) {
-                return null
-            } else {
-                tryInputTokenOfModule.add(module)
-                val modulePrivateToken = actionContext!!.callInSwingUI {
-                    return@callInSwingUI Messages.showInputDialog(project, "Input Private Token Of Module:$module",
-                            "Yapi Private Token", Messages.getInformationIcon())
-                }
-                if (!modulePrivateToken.isNullOrBlank()) {
-                    yapiApiHelper.setToken(module, modulePrivateToken)
-                } else {
-                    return null
-                }
-            }
+    override fun getTokenOfModule(module: String): String? {
+        val privateToken = super.getTokenOfModule(module)
+        if (!privateToken.isNullOrBlank()) {
+            return privateToken
         }
-        val privateToken = yapiApiHelper.getPrivateToken(module)
-        if (privateToken == null) {
-            logger!!.info("No token be found for $module")
+
+        if (tryInputTokenOfModule.contains(module)) {
             return null
-        }
-
-        var name: String? = null
-        val desc: String?
-        val attrOfCls = findAttrOfClass(psiClass)!!
-
-        when {
-            attrOfCls.contains("\n") -> {//multi line
-                val lines = attrOfCls.lines()
-                for (line in lines) {
-                    if (line.isNotBlank()) {
-                        name = line
-                        break
-                    }
-                }
-                desc = "[exported from:${psiClass.name}]\n$attrOfCls"
+        } else {
+            tryInputTokenOfModule.add(module)
+            val modulePrivateToken = actionContext!!.callInSwingUI {
+                return@callInSwingUI Messages.showInputDialog(project, "Input Private Token Of Module:$module",
+                        "Yapi Private Token", Messages.getInformationIcon())
             }
-            else -> {
-                name = StringUtils.left(attrOfCls, 30)
-                desc = when {
-                    attrOfCls.length > 30 -> "[exported from:${psiClass.name}]\n$attrOfCls"
-                    else -> "[exported from:${psiClass.name}]"
-                }
-            }
-        }
-
-        var cartId: String?
-        try {
-            cartId = yapiApiHelper.findCat(privateToken, name!!)
-        } catch (e: Exception) {
-            logger!!.error("error to find cart [$name]")
-            return null
-        }
-        if (cartId == null) {
-            if (yapiApiHelper.addCart(module, name, desc)) {
-                cartId = yapiApiHelper.findCat(privateToken, name)
+            return if (modulePrivateToken.isNullOrBlank()) {
+                null
             } else {
-                //failed
-                return null
-            }
-        }
-
-        val cartInfo = CartInfo()
-        cartInfo.cartId = cartId
-        cartInfo.cartName = name
-        cartInfo.privateToken = yapiApiHelper.getPrivateToken(module)
-
-        clsCartMap[psiClass] = cartInfo
-        return cartInfo
-    }
-
-    var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
-
-    private fun exportRequest(request: Request) {
-        if (request.resource == null) return
-        val findResourceClass = resourceHelper!!.findResourceClass(request.resource!!) ?: return
-        val cartInfo = getCartForCls(findResourceClass) ?: return
-        val request2Item = yapiFormatter!!.request2Item(request)
-        request2Item["token"] = cartInfo.privateToken
-        request2Item["catid"] = cartInfo.cartId
-        if (yapiApiHelper!!.saveApiInfo(request2Item)) {
-            if (successExportedCarts.add(cartInfo.cartId!!)) {
-                logger!!.info("Export to ${yapiApiHelper.getCartWeb(yapiApiHelper.getProjectIdByToken(cartInfo.privateToken!!)!!, cartInfo.cartId!!)} success")
+                yapiApiHelper!!.setToken(module, modulePrivateToken)
+                modulePrivateToken
             }
         }
     }
 
-    private fun findAttrOfClass(cls: PsiClass): String? {
-        val docComment = actionContext!!.callInReadUI { cls.docComment }
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
-        return when {
-            StringUtils.isBlank(docText) -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle!!)
+    private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
+
+    override fun exportRequest(request: Request, privateToken: String, cartId: String): Boolean {
+        if (super.exportRequest(request, privateToken, cartId)) {
+            if (successExportedCarts.add(cartId)) {
+                logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
+            }
+            return true
         }
-    }
-
-    class CartInfo {
-        var cartId: String? = null
-        var cartName: String? = null
-        var privateToken: String? = null
-    }
-
-    companion object {
-        val NULL_RESOURCE = Object()
+        return false
     }
 }

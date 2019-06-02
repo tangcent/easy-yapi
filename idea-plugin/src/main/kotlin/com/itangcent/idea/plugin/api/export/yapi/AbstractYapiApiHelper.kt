@@ -81,7 +81,7 @@ open class AbstractYapiApiHelper {
         return null
     }
 
-    fun getProjectIdByToken(token: String): String? {
+    open fun getProjectIdByToken(token: String): String? {
         var projectId = cacheLock.readLock().withLock { projectIdCache[token] }
         if (projectId != null) return projectId
         try {
@@ -180,7 +180,7 @@ open class AbstractYapiApiHelper {
         }
     }
 
-    fun setToken(module: String, token: String) {
+    private fun updateTokens(handle: (Properties) -> Unit) {
 
         cacheLock.writeLock().withLock {
             val settings = settingBinder!!.read()
@@ -188,16 +188,49 @@ open class AbstractYapiApiHelper {
             if (settings.yapiTokens != null) {
                 properties.load(settings.yapiTokens!!.byteInputStream())
             }
-            properties[module] = token
+            handle(properties)
+
             val byteOutputStream = ByteArrayOutputStream()
-            properties.store(byteOutputStream, "#")
+            properties.store(byteOutputStream, "")
             settings.yapiTokens = byteOutputStream.toString()
             settingBinder.save(settings)
             if (tokenMap == null) {
                 tokenMap = HashMap()
+            } else {
+                tokenMap!!.clear()
             }
             properties.forEach { t, u -> tokenMap!![t.toString()] = u.toString() }
         }
+    }
+
+    fun setToken(module: String, token: String) {
+        updateTokens { properties ->
+            properties[module] = token
+        }
+    }
+
+    fun removeTokenByModule(module: String) {
+        updateTokens { properties ->
+            properties.remove(module)
+        }
+    }
+
+    fun removeToken(token: String) {
+
+        updateTokens { properties ->
+            val removedKeys = properties.entries
+                    .filter { it.value == token }
+                    .map { it.key }
+                    .toList()
+            removedKeys.forEach { properties.remove(it) }
+        }
+    }
+
+    fun readTokens(): HashMap<String, String> {
+        if (tokenMap == null) {
+            initToken()
+        }
+        return tokenMap!!
     }
 
     companion object {
