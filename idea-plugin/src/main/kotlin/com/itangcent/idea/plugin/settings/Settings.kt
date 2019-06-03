@@ -19,6 +19,10 @@ class Settings {
     //unit:s
     var httpTimeOut: Int? = null
 
+    //enable to use recommend config:
+    //like jackson/gson
+    var useRecommendConfig: Boolean? = true
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -29,6 +33,7 @@ class Settings {
         newSetting.yapiServer = this.yapiServer
         newSetting.yapiTokens = this.yapiTokens
         newSetting.httpTimeOut = this.httpTimeOut
+        newSetting.useRecommendConfig = this.useRecommendConfig
         return newSetting
     }
 
@@ -46,6 +51,7 @@ class Settings {
         if (yapiServer != other.yapiServer) return false
         if (yapiTokens != other.yapiTokens) return false
         if (httpTimeOut != other.httpTimeOut) return false
+        if (useRecommendConfig != other.useRecommendConfig) return false
 
         return true
     }
@@ -59,6 +65,7 @@ class Settings {
         result = 31 * result + (httpTimeOut ?: 0)
         result = 31 * result + (yapiServer?.hashCode() ?: 0)
         result = 31 * result + (yapiTokens?.hashCode() ?: 0)
+        result = 31 * result + (useRecommendConfig?.hashCode() ?: 0)
         return result
     }
 }
