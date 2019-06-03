@@ -30,3 +30,6 @@
     13. enhance:optimize the inference of the return type of the method [(#60)](https://github.com/tangcent/easy-api/issues/60)
     14. enhance:provide http properties settings [(#61)](https://github.com/tangcent/easy-api/issues/61)
     15. enhance:provide more information tips during the export process [(#11)](https://github.com/tangcent/easy-yapi/pull/11)
+    16. enhance:set toolTip for postman tree node [(#64)](https://github.com/tangcent/easy-api/pull/64)
+    17. enhance:support recommend config [(#66)](https://github.com/tangcent/easy-api/pull/66)
+
