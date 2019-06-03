@@ -1,8 +1,6 @@
 package com.itangcent.intellij.config
 
-import com.intellij.psi.PsiDocCommentOwner
-import com.intellij.psi.PsiModifierListOwner
-import com.intellij.psi.PsiNameIdentifierOwner
+import com.itangcent.intellij.config.context.PsiElementContext
 
-typealias SimpleStringRule = (PsiNameIdentifierOwner, PsiDocCommentOwner, PsiModifierListOwner) -> String?
-typealias SimpleBooleanRule = (PsiNameIdentifierOwner, PsiDocCommentOwner, PsiModifierListOwner) -> Boolean
+typealias SimpleStringRule = (PsiElementContext) -> String?
+typealias SimpleBooleanRule = (PsiElementContext) -> Boolean

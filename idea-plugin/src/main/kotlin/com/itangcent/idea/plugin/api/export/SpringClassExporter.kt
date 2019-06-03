@@ -19,6 +19,8 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.intellij.config.context.PsiClassContext
+import com.itangcent.intellij.config.context.PsiMetodContext
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
@@ -106,7 +108,8 @@ class SpringClassExporter : ClassExporter, Worker {
 
     private fun shouldIgnore(psiClass: PsiClass): Boolean {
         val ignoreRules = commonRules!!.readIgnoreRules()
-        return ignoreRules.any { it(psiClass, psiClass, psiClass) }
+        val context = PsiClassContext(psiClass)
+        return ignoreRules.any { it(context) }
     }
 
     private fun exportMethodApi(method: PsiMethod, basePath: String, ctrlHttpMethod: String
@@ -392,8 +395,9 @@ class SpringClassExporter : ClassExporter, Worker {
 
     private fun shouldIgnore(psiMethod: PsiMethod): Boolean {
         val ignoreRules = commonRules!!.readIgnoreRules()
+        val context = PsiMetodContext(psiMethod)
         return when {
-            ignoreRules.any { it(psiMethod, psiMethod, psiMethod) } -> {
+            ignoreRules.any { it(context) } -> {
                 logger!!.info("ignore method:" + PsiClassUtils.fullNameOfMethod(psiMethod))
                 true
             }

@@ -48,7 +48,7 @@ open class AbstractYapiApiHelper {
 
     fun findServer(): String? {
         if (!server.isNullOrBlank()) return server
-        server = configReader!!.read("server")?.trim()?.removeSuffix("/")
+        server = configReader!!.first("server")?.trim()?.removeSuffix("/")
         if (!server.isNullOrBlank()) return server
         server = settingBinder!!.read().yapiServer?.trim()?.removeSuffix("/")
         return server

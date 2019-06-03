@@ -26,7 +26,7 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.lazy
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
-import com.itangcent.intellij.extend.rx.consistent
+import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
@@ -271,7 +271,7 @@ internal class ApiCallDialog : JDialog() {
                 .eval { formatQueryParams(it) }
 
         autoComputer.bind(this.requestHeadersTextArea!!)
-                .consistent(this::requestHeader)
+                .mutual(this::requestHeader)
 
         autoComputer.bind(this::requestHeader)
                 .with(this::currRequest)

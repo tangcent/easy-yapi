@@ -18,10 +18,23 @@ fun <E> List<E>.asArrayList(): ArrayList<E> {
     return list
 }
 
-
 fun Any?.toInt(): Int? {
     if (this == null) return null
     if (this is Number) return this.toInt()
     if (this is String) return this.toIntOrNull()
     return null
+}
+
+@Suppress("UNCHECKED_CAST")
+fun Any.asHashMap(obj: Any?): HashMap<String, Any?> {
+    if (obj is HashMap<*, *>) {
+        return obj as HashMap<String, Any?>
+    }
+
+    if (obj is Map<*, *>) {
+        val map: HashMap<String, Any?> = HashMap()
+        obj.forEach { k, v -> map[k.toString()] = v }
+        return map
+    }
+    return HashMap()
 }
