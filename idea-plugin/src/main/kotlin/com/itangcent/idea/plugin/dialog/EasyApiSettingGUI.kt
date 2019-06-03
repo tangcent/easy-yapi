@@ -7,9 +7,10 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.wm.WindowManager
 import com.itangcent.common.utils.SystemUtils
+import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.intellij.extend.rx.AutoComputer
-import com.itangcent.intellij.extend.rx.consistent
+import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
@@ -44,6 +45,8 @@ class EasyApiSettingGUI {
 
     private var readGetterCheckBox: JCheckBox? = null
 
+    private var recommendedCheckBox: JCheckBox? = null
+
     private var httpTimeOutTextField: JTextField? = null
 
     fun getRootPanel(): JPanel? {
@@ -55,11 +58,13 @@ class EasyApiSettingGUI {
     private var autoComputer: AutoComputer = AutoComputer()
 
     fun onCreate() {
+        recommendedCheckBox!!.toolTipText = RecommendConfigReader.RECOMMEND_CONFIG
+
         autoComputer.bind(pullNewestDataBeforeCheckBox!!)
-                .consistent(this, "settings.pullNewestDataBefore")
+                .mutual(this, "settings.pullNewestDataBefore")
 
         autoComputer.bind(postmanTokenTextArea!!)
-                .consistent(this, "settings.postmanToken")
+                .mutual(this, "settings.postmanToken")
 
         autoComputer.bind(this.globalCacheSizeLabel!!)
                 .with(this::globalCacheSize)
@@ -82,10 +87,13 @@ class EasyApiSettingGUI {
         }
 
         autoComputer.bind(inferEnableCheckBox!!)
-                .consistent(this, "settings.inferEnable")
+                .mutual(this, "settings.inferEnable")
 
         autoComputer.bind(readGetterCheckBox!!)
-                .consistent(this, "settings.readGetter")
+                .mutual(this, "settings.readGetter")
+
+        autoComputer.bind(recommendedCheckBox!!)
+                .mutual(this, "settings.useRecommendConfig")
 
         autoComputer.bind(this.maxDeepTextField!!)
                 .with<Int?>(this, "settings.inferMaxDeep")

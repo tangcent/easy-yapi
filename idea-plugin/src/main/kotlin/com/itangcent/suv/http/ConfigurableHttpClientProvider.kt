@@ -43,7 +43,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
         if (configReader != null) {
             try {
-                configReader.read("http.timeOut")?.toInt()
+                configReader.first("http.timeOut")?.toInt()
                         ?.let { httpConfig.timeOut = it }
             } catch (e: NumberFormatException) {
             }

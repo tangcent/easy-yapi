@@ -15,6 +15,10 @@ class Settings {
     //unit:s
     var httpTimeOut: Int? = null
 
+    //enable to use recommend config:
+    //like jackson/gson
+    var useRecommendConfig: Boolean? = true
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -23,6 +27,7 @@ class Settings {
         newSetting.inferEnable = this.inferEnable
         newSetting.inferMaxDeep = this.inferMaxDeep
         newSetting.httpTimeOut = this.httpTimeOut
+        newSetting.useRecommendConfig = this.useRecommendConfig
         return newSetting
     }
 
@@ -38,6 +43,7 @@ class Settings {
         if (inferEnable != other.inferEnable) return false
         if (inferMaxDeep != other.inferMaxDeep) return false
         if (httpTimeOut != other.httpTimeOut) return false
+        if (useRecommendConfig != other.useRecommendConfig) return false
 
         return true
     }
@@ -49,8 +55,7 @@ class Settings {
         result = 31 * result + (inferEnable?.hashCode() ?: 0)
         result = 31 * result + (inferMaxDeep ?: 0)
         result = 31 * result + (httpTimeOut ?: 0)
+        result = 31 * result + (useRecommendConfig?.hashCode() ?: 0)
         return result
     }
-
-
 }

@@ -8,7 +8,7 @@ import kotlin.reflect.KProperty0
 
 
 //region Enhance AutoBind0------------------------------------------------------------
-// [consistent]: One-to-one direct binding of two identical type values
+// [mutual]: One-to-one direct binding of two identical type values
 // [from]:Take a value from the same type property directly
 // [option]: Automatic convert source value to Optional
 // [eval]:Simplify operation [eval]
@@ -41,23 +41,23 @@ fun <T, X : T> AutoComputer.AutoBind1<T, X>.eval() {
     AutoComputerUtils.eval(this)
 }
 
-fun <T> AutoComputer.AutoBind0<T>.consistent(param: KProperty0<T>) {
-    AutoComputerUtils.consistent(this, param)
+fun <T> AutoComputer.AutoBind0<T>.mutual(param: KProperty0<T>) {
+    AutoComputerUtils.mutual(this, param)
 }
 
-fun <T> AutoComputer.AutoBind0<T>.consistent(target: Any, property: String) {
-    AutoComputerUtils.consistent(this, target, property)
+fun <T> AutoComputer.AutoBind0<T>.mutual(target: Any, property: String) {
+    AutoComputerUtils.mutual(this, target, property)
 }
 
-fun AutoComputer.AutoBind0<String?>.consistent(param: JTextComponent) {
-    AutoComputerUtils.consistent(this, param)
+fun AutoComputer.AutoBind0<String?>.mutual(param: JTextComponent) {
+    AutoComputerUtils.mutual(this, param)
 }
 
-fun AutoComputer.AutoBind0<String?>.consistent(param: JLabel) {
-    AutoComputerUtils.consistent(this, param)
+fun AutoComputer.AutoBind0<String?>.mutual(param: JLabel) {
+    AutoComputerUtils.mutual(this, param)
 }
 
-fun AutoComputer.AutoBind0<Int?>.consistent(param: JList<*>) {
-    AutoComputerUtils.consistent(this, param)
+fun AutoComputer.AutoBind0<Int?>.mutual(param: JList<*>) {
+    AutoComputerUtils.mutual(this, param)
 }
 //endregion Enhance AutoBind0------------------------------------------------------------
