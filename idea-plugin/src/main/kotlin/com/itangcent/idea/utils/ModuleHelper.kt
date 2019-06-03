@@ -7,6 +7,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.itangcent.idea.plugin.api.export.CommonRules
+import com.itangcent.intellij.config.context.PsiClassContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
 import org.apache.commons.lang3.StringUtils
@@ -47,8 +48,9 @@ class ModuleHelper {
     fun findModule(cls: PsiClass): String? {
         val moduleRules = commonRules?.readModuleRules()
         if (!moduleRules.isNullOrEmpty()) {
+            val context = PsiClassContext(cls)
             val moduleByRule = moduleRules
-                    .map { it(cls, cls, cls) }
+                    .map { it(context) }
                     .firstOrNull { it != null }
             if (!moduleByRule.isNullOrBlank()) {
                 return moduleByRule

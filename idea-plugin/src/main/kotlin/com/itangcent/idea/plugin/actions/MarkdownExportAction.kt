@@ -9,8 +9,8 @@ import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.IdeaParseHandle
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownApiExporter
+import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.psi.RecommendClassRuleConfig
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -18,6 +18,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.ClassRuleConfig
+import com.itangcent.intellij.psi.DefaultClassRuleConfig
 
 class MarkdownExportAction : ApiExportAction("Export Markdown") {
 
@@ -29,8 +30,10 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
         builder.bind(MarkdownApiExporter::class) { it.singleton() }
         builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
         builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
-        builder.bind(ClassRuleConfig::class) { it.with(RecommendClassRuleConfig::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
+        builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
+
+        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
+        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bindInstance("file.save.default", "easy-api.md")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.markdown.export.path")
