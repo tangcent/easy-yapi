@@ -58,4 +58,8 @@ class Settings {
         result = 31 * result + (useRecommendConfig?.hashCode() ?: 0)
         return result
     }
+
+    companion object {
+        const val DEFAULT_INFER_MAX_DEEP  = 3
+    }
 }
