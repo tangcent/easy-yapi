@@ -1,15 +1,4 @@
 <idea-plugin>
-    <id>com.itangcent.idea.plugin.easy-api</id>
-    <name>EasyApi</name>
-    <version>0.6.7</version>
-    <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
-
-    <description><![CDATA[ Description will be added by gradle build]]></description>
-
-    <category>Web</category>
-
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="173.0"/>
 
     <actions>
 
@@ -61,6 +50,4 @@
                             serviceImplementation="com.itangcent.idea.plugin.settings.XmlSettingBinder"/>
     </extensions>
 
-    <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
-    </change-notes>
 </idea-plugin>

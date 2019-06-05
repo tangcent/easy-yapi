@@ -58,8 +58,10 @@ class RecommendConfigReader : ConfigReader {
                 "#Additional json parsing rules\n" +
                 "#Support for Jackson annotations\n" +
                 "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +
+                "json.rule.field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value\n" +
                 "#Support for Gson annotations\n" +
                 "json.rule.field.name=@com.google.gson.annotations.SerializedName#value\n" +
+                "json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize\n" +
                 "#The ObjectId and Date are parsed as strings\n" +
                 "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
                 "json.rule.convert[java.util.Date]=java.lang.String"
