@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.intellij.ide.DataManager
-import com.intellij.openapi.actionSystem.DataKeys
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.text.StringUtil
@@ -97,15 +97,15 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(this.maxDeepTextField!!)
                 .with<Int?>(this, "settings.inferMaxDeep")
-                .eval { (it ?: 0).toString() }
+                .eval { (it ?: Settings.DEFAULT_INFER_MAX_DEEP).toString() }
 
         autoComputer.bind<Int>(this, "settings.inferMaxDeep")
                 .with(this.maxDeepTextField!!)
                 .eval {
                     try {
-                        it?.toInt() ?: 0
+                        it?.toInt() ?: Settings.DEFAULT_INFER_MAX_DEEP
                     } catch (e: Exception) {
-                        0
+                        Settings.DEFAULT_INFER_MAX_DEEP
                     }
                 }
 
@@ -122,6 +122,7 @@ class EasyApiSettingGUI {
                         ConfigurableHttpClientProvider.defaultHttpTimeOut
                     }
                 }
+
         refresh()
     }
 
@@ -217,9 +218,8 @@ class EasyApiSettingGUI {
         }
 
         try {
-            val dataContext = DataManager.getInstance()?.dataContextFromFocus
-                    ?.getResultSync(1000)
-            val project = dataContext?.getData(DataKeys.PROJECT)
+            val dataContext = DataManager.getInstance()?.getDataContext(rootPanel)
+            val project = dataContext?.getData(CommonDataKeys.PROJECT)
             if (project != null) {
                 return project
             }
