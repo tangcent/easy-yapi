@@ -7,11 +7,15 @@ import com.intellij.openapi.components.Storage
 @State(name = "EasyApiSetting",
         storages = [Storage("EasyApiSetting.xml")])
 class XmlSettingBinder : PersistentStateComponent<Settings>, SettingBinder {
+    override fun tryRead(): Settings? {
+        return state
+    }
+
     override fun read(): Settings {
         return state ?: Settings()
     }
 
-    override fun save(t: Settings) {
+    override fun save(t: Settings?) {
         loadState(t)
     }
 

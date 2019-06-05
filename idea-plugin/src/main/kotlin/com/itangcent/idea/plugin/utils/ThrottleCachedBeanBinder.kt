@@ -6,7 +6,6 @@ import com.itangcent.intellij.file.BeanBinder
 
 
 class ThrottleCachedBeanBinder<T : Any> : BeanBinder<T> {
-
     private var delegate: BeanBinder<T>
 
     private var throttle = ThrottleHelper().build(this)
@@ -18,6 +17,13 @@ class ThrottleCachedBeanBinder<T : Any> : BeanBinder<T> {
         this.delegate = delegate
     }
 
+    override fun tryRead(): T? {
+        if (cache == null) {
+            cache = delegate.tryRead()
+        }
+        return cache
+    }
+
     override fun read(): T {
         if (cache == null) {
             cache = delegate.read()
@@ -25,7 +31,7 @@ class ThrottleCachedBeanBinder<T : Any> : BeanBinder<T> {
         return cache as T
     }
 
-    override fun save(t: T) {
+    override fun save(t: T?) {
         cache = t
         val context = ActionContext.getContext()
         if (context == null) {
