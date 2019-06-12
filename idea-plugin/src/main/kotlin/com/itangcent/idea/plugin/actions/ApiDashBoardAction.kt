@@ -30,7 +30,7 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         super.onBuildActionContext(builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
-        builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
+
         builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
         builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }

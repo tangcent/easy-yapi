@@ -9,8 +9,11 @@ import com.intellij.openapi.wm.WindowManager
 import com.itangcent.common.utils.SystemUtils
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.extend.rx.AutoComputer
+import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
+import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
@@ -22,6 +25,8 @@ class EasyApiSettingGUI {
     private var postmanTokenTextArea: JTextArea? = null
 
     private var rootPanel: JPanel? = null
+
+    private var logLevelComboBox: JComboBox<Logger.Level>? = null
 
     private var globalCacheSizeLabel: JLabel? = null
 
@@ -48,6 +53,8 @@ class EasyApiSettingGUI {
     private var recommendedCheckBox: JCheckBox? = null
 
     private var httpTimeOutTextField: JTextField? = null
+
+    private val throttleHelper = ThrottleHelper()
 
     fun getRootPanel(): JPanel? {
         return rootPanel
@@ -123,11 +130,24 @@ class EasyApiSettingGUI {
                     }
                 }
 
+        logLevelComboBox!!.model = DefaultComboBoxModel(ConfigurableLogger.CoarseLogLevel.values())
+
+        autoComputer.bind<Int?>(this, "settings.logLevel")
+                .with(this.logLevelComboBox!!)
+                .filter { throttleHelper.acquire("settings.logLevel", 300) }
+                .eval { (it ?: ConfigurableLogger.CoarseLogLevel.LOW).getLevel() }
+
         refresh()
     }
 
     fun setSettings(settings: Settings) {
+        throttleHelper.refresh("throttleHelper")
+
         autoComputer.value(this::settings, settings)
+
+        this.logLevelComboBox!!.selectedItem =
+                settings.logLevel?.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
+                ?: ConfigurableLogger.CoarseLogLevel.LOW
     }
 
     fun refresh() {
