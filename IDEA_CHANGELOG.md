@@ -29,4 +29,7 @@
     12. enhance:provide http properties settings [(#61)](https://github.com/tangcent/easy-api/issues/61)
     13. enhance:set toolTip for postman tree node [(#64)](https://github.com/tangcent/easy-api/pull/64)
     14. enhance:support recommend config [(#66)](https://github.com/tangcent/easy-api/pull/66)
+    15. enhance:support class rule:ignoreField\[json.rule.field.ignore] [(#67)](https://github.com/tangcent/easy-api/pull/67)
+*   0.7.0 ~
+    1. enhance:provide logging level Settings  [(#68)](https://github.com/tangcent/easy-api/issues/68)
     
