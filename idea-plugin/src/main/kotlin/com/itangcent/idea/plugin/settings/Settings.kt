@@ -19,6 +19,8 @@ class Settings {
     //like jackson/gson
     var useRecommendConfig: Boolean? = true
 
+    var logLevel: Int? = null
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -28,6 +30,7 @@ class Settings {
         newSetting.inferMaxDeep = this.inferMaxDeep
         newSetting.httpTimeOut = this.httpTimeOut
         newSetting.useRecommendConfig = this.useRecommendConfig
+        newSetting.logLevel = this.logLevel
         return newSetting
     }
 
@@ -44,6 +47,7 @@ class Settings {
         if (inferMaxDeep != other.inferMaxDeep) return false
         if (httpTimeOut != other.httpTimeOut) return false
         if (useRecommendConfig != other.useRecommendConfig) return false
+        if (logLevel != other.logLevel) return false
 
         return true
     }
@@ -56,10 +60,11 @@ class Settings {
         result = 31 * result + (inferMaxDeep ?: 0)
         result = 31 * result + (httpTimeOut ?: 0)
         result = 31 * result + (useRecommendConfig?.hashCode() ?: 0)
+        result = 31 * result + (logLevel ?: 0)
         return result
     }
 
     companion object {
-        const val DEFAULT_INFER_MAX_DEEP  = 3
+        const val DEFAULT_INFER_MAX_DEEP = 3
     }
 }
