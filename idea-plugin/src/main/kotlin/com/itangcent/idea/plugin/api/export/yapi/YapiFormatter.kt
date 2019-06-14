@@ -5,7 +5,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.intellij.config.ConfigReader
-import com.itangcent.intellij.config.SimpleRuleParse
+import com.itangcent.intellij.config.SimpleRuleParser
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
@@ -17,7 +17,7 @@ class YapiFormatter {
     private val logger: Logger? = null
 
     @Inject
-    private val simpleRuleParse: SimpleRuleParse? = null
+    private val simpleRuleParser: SimpleRuleParser? = null
 
     @Inject
     private val configReader: ConfigReader? = null
@@ -318,8 +318,8 @@ class YapiFormatter {
                 .removeSuffix("]")
         val pathStr = tinyKey.substringBefore("|")
         val typeStr = tinyKey.substringAfter("|", "*")
-        return MockRule(simpleRuleParse!!.parseRegexOrConstant(pathStr),
-                simpleRuleParse.parseRegexOrConstant(typeStr), value)
+        return MockRule(simpleRuleParser!!.parseRegexOrConstant(pathStr),
+                simpleRuleParser.parseRegexOrConstant(typeStr), value)
 
     }
 

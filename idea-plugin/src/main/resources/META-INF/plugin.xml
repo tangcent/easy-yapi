@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.itangcent.idea.plugin.easy-yapi</id>
     <name>EasyYapi</name>
-    <version>0.6.6.2</version>
+    <version>0.7.0.1</version>
     <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
 
     <description><![CDATA[ Description will be added by gradle build]]></description>
@@ -11,70 +11,11 @@
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
     <idea-version since-build="173.0"/>
 
-    <actions>
-
-        <group id="EasyApiMenu" text="EasyApi" description="EasyApiMenu">
-            <add-to-group group-id="CodeMenu" anchor="last"/>
-            <action id="com.itangcent.idea.easy_api.actions.ApiDashBoardAction"
-                    class="com.itangcent.idea.plugin.actions.ApiDashBoardAction" text="ApiDashBoard(beta)"
-                    description="ApiDashBoard"/>
-            <action id="com.itangcent.idea.easy_api.actions.YApiDashBoardAction"
-                    class="com.itangcent.idea.plugin.actions.YapiDashBoardAction" text="YApiDashBoard(beta)"
-                    description="YApiDashBoard"/>
-            <action id="com.itangcent.idea.easy_api.actions.PostmanExportAction"
-                    class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportPostman"
-                    description="Export Postman"/>
-
-            <action id="com.itangcent.idea.easy_api.actions.YapiExportAction"
-                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi(beta)"
-                    description="Export Yapi"/>
-
-            <action id="com.itangcent.idea.easy_api.actions.MarkdownExportAction"
-                    class="com.itangcent.idea.plugin.actions.MarkdownExportAction" text="ExportMarkdown(beta)"
-                    description="Export Markdown"/>
-            <action id="com.itangcent.idea.easy_api.actions.FieldsJsonAction"
-                    class="com.itangcent.idea.plugin.actions.FieldsToJsonAction" text="ToJson" description="ToJson"/>
-        </group>
-
-        <group id="EasyApiGenerateExt" text="EasyApiGenerateExt" description="EasyApiGenerateMenu">
-            <add-to-group group-id="GenerateGroup" anchor="last"/>
-
-            <action id="com.itangcent.idea.easy_api.actions.PostmanExportAction"
-                    class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportPostman"
-                    description="Export Postman"/>
-
-            <action id="com.itangcent.idea.easy_api.actions.YapiExportAction"
-                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi(beta)"
-                    description="Export Yapi"/>
-
-            <action id="com.itangcent.idea.easy_api.actions.MarkdownExportAction"
-                    class="com.itangcent.idea.plugin.actions.MarkdownExportAction" text="ExportMarkdown(beta)"
-                    description="Export Markdown"/>
-
-            <action id="com.itangcent.idea.easy_api.actions.ApiCallAction"
-                    class="com.itangcent.idea.plugin.actions.ApiCallAction" text="Call"
-                    description="Call"/>
-
-            <action id="com.itangcent.idea.easy_api.actions.FieldsToJsonAction"
-                    class="com.itangcent.idea.plugin.actions.FieldsToJsonAction"
-                    text="_ToJson" description="ToJson">
-            </action>
-        </group>
-    </actions>
-
-    <extensions defaultExtensionNs="com.intellij">
-        <applicationConfigurable groupId="null"
-                                 displayName="EasyApi"
-                                 id="preferences.EasyApiConfigurable"
-                                 instance="com.itangcent.idea.plugin.actions.EasyApiConfigurable"/>
-
-        <applicationService id="easyapi.setting.binder"
-                            serviceInterface="com.itangcent.idea.plugin.settings.SettingBinder"
-                            serviceImplementation="com.itangcent.idea.plugin.settings.XmlSettingBinder"/>
-    </extensions>
-
     <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
     </change-notes>
+
     <!--This plugin will support IntelliJ IDEA Community and Ultimate Only before v2.0.0-->
-    <depends optional="true">com.intellij.modules.idea</depends>
+
+    <depends optional="true" config-file="easy-yapi-java.xml">com.intellij.modules.java</depends>
+    <!--<depends optional="true" config-file="easy-api-java.xml">com.intellij.modules.idea</depends>-->
 </idea-plugin>

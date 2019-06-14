@@ -65,7 +65,7 @@ class SpringClassExporter : ClassExporter, Worker {
     private val settingBinder: SettingBinder? = null
 
     @Inject
-    private val tmTypeHelper: TmTypeHelper? = null
+    private val duckTypeHelper: DuckTypeHelper? = null
 
     @Inject
     private val methodReturnInferHelper: MethodReturnInferHelper? = null
@@ -605,7 +605,7 @@ class SpringClassExporter : ClassExporter, Worker {
         }
 
         return when {
-            needInfer() && !tmTypeHelper!!.isQualified(psiType, method) -> {
+            needInfer() && !duckTypeHelper!!.isQualified(psiType, method) -> {
                 methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
                 methodReturnInferHelper.inferReturn(method)

@@ -449,16 +449,23 @@ class YapiDashboardDialog : JDialog() {
 
     private fun tryInputYapiServer() {
 
-        val yapiServer = Messages.showInputDialog(project, "Input server of yapi",
-                "server of yapi", Messages.getInformationIcon())
-        if (yapiServer.isNullOrBlank()) {
-            logger!!.info("No yapi server")
-            return
+        actionContext!!.runAsync {
+
+            Thread.sleep(200)
+            actionContext!!.runInSwingUI {
+                val yapiServer = Messages.showInputDialog(this, "Input server of yapi",
+                        "server of yapi", Messages.getInformationIcon())
+                if (yapiServer.isNullOrBlank()) {
+                    logger!!.info("No yapi server")
+                    return@runInSwingUI
+                }
+
+                yapiApiHelper!!.setYapiServer(yapiServer)
+
+                autoComputer.value(this::yapiAvailable, true)
+                loadYapiInfo()
+            }
         }
-
-        yapiApiHelper!!.setYapiServer(yapiServer)
-
-        loadYapiInfo()
     }
 
     private fun loadYapiInfo() {
@@ -648,7 +655,14 @@ class YapiDashboardDialog : JDialog() {
                         yapiApiHelper.setToken(moduleName, projectToken)
                         actionContext!!.runInSwingUI {
                             val projectTreeNode = YapiProjectNodeData(projectToken, projectInfo).asTreeNode()
-                            val yapiTreeModel = yapiApiTree!!.model as DefaultTreeModel
+                            var model = yapiApiTree!!.model
+                            if(model==null){
+                                val treeNode = DefaultMutableTreeNode()
+                                model = DefaultTreeModel(treeNode,true)
+                                yapiApiTree!!.model = model
+                            }
+
+                            val yapiTreeModel =model as DefaultTreeModel
 
                             (yapiTreeModel.root as DefaultMutableTreeNode).add(projectTreeNode)
                             yapiTreeModel.reload()

@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.intellij.ide.DataManager
-import com.intellij.openapi.actionSystem.DataKeys
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.text.StringUtil
@@ -9,8 +9,11 @@ import com.intellij.openapi.wm.WindowManager
 import com.itangcent.common.utils.SystemUtils
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.extend.rx.AutoComputer
+import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
+import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
@@ -22,6 +25,8 @@ class EasyApiSettingGUI {
     private var postmanTokenTextArea: JTextArea? = null
 
     private var rootPanel: JPanel? = null
+
+    private var logLevelComboBox: JComboBox<Logger.Level>? = null
 
     private var globalCacheSizeLabel: JLabel? = null
 
@@ -52,6 +57,8 @@ class EasyApiSettingGUI {
     private var recommendedCheckBox: JCheckBox? = null
 
     private var httpTimeOutTextField: JTextField? = null
+
+    private val throttleHelper = ThrottleHelper()
 
     fun getRootPanel(): JPanel? {
         return rootPanel
@@ -101,15 +108,15 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(this.maxDeepTextField!!)
                 .with<Int?>(this, "settings.inferMaxDeep")
-                .eval { (it ?: 0).toString() }
+                .eval { (it ?: Settings.DEFAULT_INFER_MAX_DEEP).toString() }
 
         autoComputer.bind<Int>(this, "settings.inferMaxDeep")
                 .with(this.maxDeepTextField!!)
                 .eval {
                     try {
-                        it?.toInt() ?: 0
+                        it?.toInt() ?: Settings.DEFAULT_INFER_MAX_DEEP
                     } catch (e: Exception) {
-                        0
+                        Settings.DEFAULT_INFER_MAX_DEEP
                     }
                 }
 
@@ -132,11 +139,25 @@ class EasyApiSettingGUI {
                         ConfigurableHttpClientProvider.defaultHttpTimeOut
                     }
                 }
+
+        logLevelComboBox!!.model = DefaultComboBoxModel(ConfigurableLogger.CoarseLogLevel.values())
+
+        autoComputer.bind<Int?>(this, "settings.logLevel")
+                .with(this.logLevelComboBox!!)
+                .filter { throttleHelper.acquire("settings.logLevel", 300) }
+                .eval { (it ?: ConfigurableLogger.CoarseLogLevel.LOW).getLevel() }
+
         refresh()
     }
 
     fun setSettings(settings: Settings) {
+        throttleHelper.refresh("throttleHelper")
+
         autoComputer.value(this::settings, settings)
+
+        this.logLevelComboBox!!.selectedItem =
+                settings.logLevel?.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
+                ?: ConfigurableLogger.CoarseLogLevel.LOW
     }
 
     fun refresh() {
@@ -227,9 +248,8 @@ class EasyApiSettingGUI {
         }
 
         try {
-            val dataContext = DataManager.getInstance()?.dataContextFromFocus
-                    ?.getResultSync(1000)
-            val project = dataContext?.getData(DataKeys.PROJECT)
+            val dataContext = DataManager.getInstance()?.getDataContext(rootPanel)
+            val project = dataContext?.getData(CommonDataKeys.PROJECT)
             if (project != null) {
                 return project
             }

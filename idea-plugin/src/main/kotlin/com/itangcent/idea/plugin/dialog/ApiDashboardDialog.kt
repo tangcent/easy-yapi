@@ -23,6 +23,7 @@ import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.idea.swing.Tooltipable
 import com.itangcent.idea.utils.SwingUtils
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
@@ -671,11 +672,12 @@ class ApiDashboardDialog : JDialog() {
                                 (postmanApiTree!!.model as DefaultTreeModel).reload(postmanNodeData.asTreeNode())
                             }
                         } else {
-                            logger.info("create failed")
+                            logger.error("create failed")
                             rootPostmanNodeData.status = NodeStatus.Loaded
                         }
                     } catch (e: Exception) {
-                        logger!!.info("create failed:" + ExceptionUtils.getStackTrace(e))
+                        logger!!.error("create failed")
+                        logger.traceError(e)
                     }
                 }
             }
@@ -713,12 +715,13 @@ class ApiDashboardDialog : JDialog() {
                                 (postmanApiTree!!.model as DefaultTreeModel).reload(postmanNodeData.asTreeNode())
                             }
                         } else {
-                            logger.info("rename failed")
+                            logger.error("rename failed")
                             rootPostmanNodeData.status = NodeStatus.Loaded
                         }
                     }
                 } catch (e: Exception) {
-                    logger!!.info("rename failed:" + ExceptionUtils.getStackTrace(e))
+                    logger!!.error("rename failed")
+                    logger.traceError(e)
                 }
             }
         }
@@ -755,7 +758,7 @@ class ApiDashboardDialog : JDialog() {
                         postmanNodeData.asTreeNode().removeFromParent()
                         (postmanApiTree!!.model as DefaultTreeModel).reload(postmanApiTree!!.model.root as TreeNode)
                     } else {
-                        logger.info("delete failed")
+                        logger.error("delete failed")
                     }
                 }
             } else {//delete sub collection or api
@@ -769,7 +772,6 @@ class ApiDashboardDialog : JDialog() {
 
                     logger!!.info("delete from remote...")
                     actionContext!!.runAsync {
-
                         try {
                             if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
                                 logger.info("delete success")
@@ -779,7 +781,7 @@ class ApiDashboardDialog : JDialog() {
                                     (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
                                 }
                             } else {
-                                logger.info("delete failed")
+                                logger.error("delete failed")
                                 rootPostmanNodeData.status = NodeStatus.Loaded
                             }
                         } catch (e: Exception) {
@@ -1067,7 +1069,7 @@ class ApiDashboardDialog : JDialog() {
         override fun toolTip(): String? {
             if (detail == null) return null
             val info = detail!!["info"] ?: return null
-            return (info as Map<*,*>)["description"]?.toString()
+            return (info as Map<*, *>)["description"]?.toString()
         }
     }
 
@@ -1166,7 +1168,7 @@ class ApiDashboardDialog : JDialog() {
             else -> toPostmanNodeData as PostmanNodeData
         }
 
-        logger!!.info("export [$fromProjectData] to $targetCollectionNodeData")
+        logger!!.debug("export [$fromProjectData] to $targetCollectionNodeData")
 
         actionContext!!.runAsync {
             var rootPostmanNodeData: PostmanCollectionNodeData? = null
@@ -1202,11 +1204,12 @@ class ApiDashboardDialog : JDialog() {
                         (postmanApiTree!!.model as DefaultTreeModel).reload(targetCollectionNodeData.asTreeNode())
                     }
                 } else {
-                    logger.info("export failed")
+                    logger.error("export failed")
                     rootPostmanNodeData.status = NodeStatus.Loaded
                 }
             } catch (e: Exception) {
-                logger.error("export failed:" + ExceptionUtils.getStackTrace(e))
+                logger.error("export failed")
+                logger.traceError(e)
                 rootPostmanNodeData!!.status = NodeStatus.Loaded
             }
         }

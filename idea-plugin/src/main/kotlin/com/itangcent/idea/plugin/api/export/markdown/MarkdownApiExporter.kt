@@ -15,6 +15,7 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
@@ -64,7 +65,7 @@ class MarkdownApiExporter {
                             if (yes == Messages.YES) {
                                 callBack(true)
                             } else {
-                                logger.info("Cancel the operation export api from [${ActionUtils.findCurrentPath(dir)}]!")
+                                logger.debug("Cancel the operation export api from [${ActionUtils.findCurrentPath(dir)}]!")
                                 callBack(false)
                             }
                         } catch (e: Exception) {
@@ -98,11 +99,13 @@ class MarkdownApiExporter {
                                     logger.info("Apis save failed")
                                 }
                             } catch (e: Exception) {
-                                logger.info("Apis save failed" + ExceptionUtils.getStackTrace(e))
+                                logger.error("Apis save failed")
+                                logger.traceError(e)
                             }
                         }
                     } catch (e: Exception) {
-                        logger.info("Apis save failed" + ExceptionUtils.getStackTrace(e))
+                        logger.error("Apis save failed")
+                        logger.traceError(e)
                     }
                 }
                 .traversal()

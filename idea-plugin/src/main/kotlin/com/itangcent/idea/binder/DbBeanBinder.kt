@@ -43,11 +43,15 @@ class DbBeanBinderFactory<T : kotlin.Any> {
     }
 
     inner class DbBeanBinder : com.itangcent.intellij.file.BeanBinder<T> {
-
         private val beanBindName: String
 
         constructor(beanBindName: String) {
             this.beanBindName = beanBindName
+        }
+
+        override fun tryRead(): T? {
+            return getDAO().get(beanBindName.toByteArray())
+                    ?.let { GsonExUtils.fromJson<T>(String(it)) }
         }
 
         override fun read(): T {
@@ -56,8 +60,12 @@ class DbBeanBinderFactory<T : kotlin.Any> {
                     ?: return init()
         }
 
-        override fun save(t: T) {
-            getDAO().set(beanBindName.toByteArray(), GsonExUtils.toJson(t).toByteArray())
+        override fun save(t: T?) {
+            if (t == null) {
+                getDAO().delete(beanBindName.toByteArray())
+            } else {
+                getDAO().set(beanBindName.toByteArray(), GsonExUtils.toJson(t).toByteArray())
+            }
         }
     }
 }

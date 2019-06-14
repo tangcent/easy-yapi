@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.SimpleBooleanRule
-import com.itangcent.intellij.config.SimpleRuleParse
+import com.itangcent.intellij.config.SimpleRuleParser
 import com.itangcent.intellij.config.SimpleStringRule
 import com.itangcent.intellij.logger.Logger
 import java.util.*
@@ -17,7 +17,7 @@ class CommonRules {
     protected val configReader: ConfigReader? = null
 
     @Inject
-    protected val simpleRuleParse: SimpleRuleParse? = null
+    protected val simpleRuleParser: SimpleRuleParser? = null
 
     //region moduleRules--------------------------------------------------------
     var moduleRules: ArrayList<SimpleStringRule>? = null
@@ -30,7 +30,7 @@ class CommonRules {
             key.startsWith("module")
         }, { key, value ->
             try {
-                moduleRules!!.addAll(simpleRuleParse!!.parseStringRule(value))
+                moduleRules!!.addAll(simpleRuleParser!!.parseStringRule(value))
             } catch (e: Exception) {
                 logger!!.error("error to parse module rule:$key=$value")
             }
@@ -52,7 +52,7 @@ class CommonRules {
             key.startsWith("ignore")
         }, { key, value ->
             try {
-                ignoreRules!!.addAll(simpleRuleParse!!.parseBooleanRule(value))
+                ignoreRules!!.addAll(simpleRuleParser!!.parseBooleanRule(value))
             } catch (e: Exception) {
                 logger!!.error("error to parse module rule:$key=$value")
             }

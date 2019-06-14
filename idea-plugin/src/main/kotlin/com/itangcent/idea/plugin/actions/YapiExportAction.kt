@@ -28,7 +28,6 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         super.onBuildActionContext(builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
-        builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
         builder.bind(PostmanApiExporter::class) { it.singleton() }
         builder.bind(PostmanFormatter::class) { it.singleton() }
