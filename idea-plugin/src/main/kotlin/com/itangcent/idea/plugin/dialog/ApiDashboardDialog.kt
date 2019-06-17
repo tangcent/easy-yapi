@@ -169,7 +169,8 @@ class ApiDashboardDialog : JDialog() {
             try {
                 syncPostmanAction()
             } catch (e: Exception) {
-                logger!!.error("sync failed:" + ExceptionUtils.getStackTrace(e))
+                logger!!.error("sync failed")
+                logger.traceError(e)
             }
         }
 
@@ -179,7 +180,8 @@ class ApiDashboardDialog : JDialog() {
             try {
                 deletePostmanAction()
             } catch (e: Exception) {
-                logger!!.error("delete failed:" + ExceptionUtils.getStackTrace(e))
+                logger!!.error("delete failed")
+                logger.traceError(e)
             }
         }
 
@@ -433,7 +435,8 @@ class ApiDashboardDialog : JDialog() {
                     handleDropEvent(projectNodeData, postmanNodeData)
 
                 } catch (e: java.lang.Exception) {
-                    logger!!.info("drop failed:" + ExceptionUtils.getStackTrace(e))
+                    logger!!.error("drop failed")
+                    logger.traceError(e)
                 } finally {
                     dtde.dropComplete(true)
                 }
@@ -1328,6 +1331,7 @@ class ApiDashboardDialog : JDialog() {
                     ExceptionUtils.getStackTrace(e))
         }
         actionContext!!.unHold()
+        actionContext!!.stop(false)
         dispose()
     }
 
