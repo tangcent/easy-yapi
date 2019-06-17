@@ -4,6 +4,8 @@ import com.intellij.openapi.components.ServiceManager
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.actions.KotlinAnAction
+import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
