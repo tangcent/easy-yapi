@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.fields.FieldJsonGenerator
+import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.SimpleRuleParser
@@ -12,11 +13,9 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.DefaultPsiClassHelper
 import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.util.ToolUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 
 /**
  * @author tangcent
@@ -30,7 +29,7 @@ class FieldsToJsonAction : BasicAnAction("To Json") {
         super.onBuildActionContext(builder)
 
         builder.bind(RuleParser::class) { it.with(SimpleRuleParser::class) }
-        builder.bind(PsiClassHelper::class) { it.with(DefaultPsiClassHelper::class).singleton() }
+        builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
         builder.bind(DuckTypeHelper::class) { it.singleton() }
     }
 

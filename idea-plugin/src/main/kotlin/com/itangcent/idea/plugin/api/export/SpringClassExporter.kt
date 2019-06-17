@@ -265,7 +265,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
-        return SPRING_REQUESTMAPPING_ANNOTATIONS
+        return SPRING_REQUEST_MAPPING_ANNOTATIONS
                 .map { PsiAnnotationUtils.findAnn(ele, it) }
                 .firstOrNull { it != null }
     }
@@ -652,7 +652,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     companion object {
-        val SPRING_REQUESTMAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
+        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
                 SpringClassName.GET_MAPPING,
                 SpringClassName.DELETE_MAPPING,
                 SpringClassName.PATCH_MAPPING,
