@@ -32,4 +32,6 @@
     15. enhance:support class rule:ignoreField\[json.rule.field.ignore] [(#67)](https://github.com/tangcent/easy-api/pull/67)
 *   0.7.0 ~
     1. enhance:provide logging level Settings  [(#68)](https://github.com/tangcent/easy-api/issues/68)
+    1. enhance:optimized action interrupt  [(#72)](https://github.com/tangcent/easy-api/pull/72)
+    1. fix:support org.springframework.http.HttpEntity/org.springframework.http.ResponseEntity  [(#71)](https://github.com/tangcent/easy-api/issues/71)
     
