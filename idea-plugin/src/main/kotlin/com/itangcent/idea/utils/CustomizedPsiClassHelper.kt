@@ -9,7 +9,9 @@ class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
     override fun getTypeObject(clsWithParam: SingleDuckType?, context: PsiElement, option: Int): Any? {
         if (clsWithParam != null) {
             val psiClassName = clsWithParam.psiClass().qualifiedName
-            if (psiClassName == HTTP_ENTITY || psiClassName == RESPONSE_ENTITY) {
+            if (psiClassName == HTTP_ENTITY
+                    || psiClassName == RESPONSE_ENTITY
+                    || psiClassName == REQUEST_ENTITY) {
                 if (clsWithParam.genericInfo == null) {
                     return Object()
                 }
@@ -29,6 +31,8 @@ class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
 
     companion object {
         const val HTTP_ENTITY = "org.springframework.http.HttpEntity"
+
+        const val REQUEST_ENTITY = "org.springframework.http.RequestEntity"
 
         const val RESPONSE_ENTITY = "org.springframework.http.ResponseEntity"
     }
