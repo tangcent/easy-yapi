@@ -5,6 +5,7 @@ import com.google.inject.name.Named
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
+import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
@@ -12,12 +13,12 @@ import com.itangcent.common.model.RequestHandle
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 
 class CachedClassExporter : ClassExporter, Worker {
 
@@ -131,8 +132,11 @@ class CachedClassExporter : ClassExporter, Worker {
                         statusRecorder.endWork()
                     }
                 }
+            } catch (e: ProcessCanceledException) {
+                //ignore cancel
             } catch (e: Exception) {
-                logger!!.error("error to cache api info," + ExceptionUtils.getStackTrace(e))
+                logger!!.error("error to cache api info")
+                logger.traceError(e)
                 disabled = true
 
                 statusRecorder.newWork()

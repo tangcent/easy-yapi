@@ -1,6 +1,7 @@
 package com.itangcent.idea.sqlite
 
 import com.google.inject.Inject
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.logger.Logger
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.sqlite.SQLiteConfig
@@ -81,7 +82,7 @@ class SqliteDataResourceHelper {
                 sqlLiteDataSource.execute("DELETE FROM $cacheName WHERE HASH = $hash AND NAME = '$base64Name'") {}
                 sqlLiteDataSource.execute("INSERT INTO $cacheName (HASH,NAME,VALUE) values ('$hash','$base64Name','${value.encodeBase64()}')") {}
             } catch (e: Exception) {
-                logger!!.error(ExceptionUtils.getStackTrace(e))
+                logger!!.traceError(e)
             }
         }
 
@@ -91,7 +92,7 @@ class SqliteDataResourceHelper {
             try {
                 sqlLiteDataSource.execute("DELETE FROM $cacheName WHERE HASH = $hash AND NAME = '$base64Name'") {}
             } catch (e: Exception) {
-                logger!!.error(ExceptionUtils.getStackTrace(e))
+                logger!!.traceError(e)
             }
         }
     }

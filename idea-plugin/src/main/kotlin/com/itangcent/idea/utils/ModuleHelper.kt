@@ -7,7 +7,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.itangcent.idea.plugin.api.export.CommonRules
-import com.itangcent.intellij.config.context.PsiClassContext
+import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
 import org.apache.commons.lang3.StringUtils
@@ -22,6 +22,9 @@ class ModuleHelper {
 
     @Inject
     private val commonRules: CommonRules? = null
+
+    @Inject
+    private val ruleParser: RuleParser? = null
 
     //region find module
     fun findModule(resource: Any): String? {
@@ -48,9 +51,9 @@ class ModuleHelper {
     fun findModule(cls: PsiClass): String? {
         val moduleRules = commonRules?.readModuleRules()
         if (!moduleRules.isNullOrEmpty()) {
-            val context = PsiClassContext(cls)
+            val context = ruleParser!!.contextOf(cls)
             val moduleByRule = moduleRules
-                    .map { it(context) }
+                    .map { it.compute(context) }
                     .firstOrNull { it != null }
             if (!moduleByRule.isNullOrBlank()) {
                 return moduleByRule

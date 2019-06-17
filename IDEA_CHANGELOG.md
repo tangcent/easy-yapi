@@ -34,6 +34,8 @@
     17. enhance:support recommend config [(#66)](https://github.com/tangcent/easy-api/pull/66)
     18. enhance:support YapiDashBoard [(#66)](https://github.com/tangcent/easy-yapi/issues/5)
     19. enhance:support class rule:ignoreField\[json.rule.field.ignore] [(#67)](https://github.com/tangcent/easy-api/pull/67)
-*   0.7.0.1 ~
+*   0.7.0 ~
     1. enhance:provide logging level Settings  [(#68)](https://github.com/tangcent/easy-api/issues/68)
-
+    2. enhance:optimized action interrupt  [(#72)](https://github.com/tangcent/easy-api/pull/72)
+    3. fix:support org.springframework.http.HttpEntity/org.springframework.http.ResponseEntity  [(#71)](https://github.com/tangcent/easy-api/issues/71)
+   

@@ -5,11 +5,13 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.intellij.config.ConfigReader
-import com.itangcent.intellij.config.SimpleRuleParser
+import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
 import java.util.*
+import java.util.regex.Pattern
 import java.util.stream.Collectors
 
 class YapiFormatter {
@@ -17,7 +19,7 @@ class YapiFormatter {
     private val logger: Logger? = null
 
     @Inject
-    private val simpleRuleParser: SimpleRuleParser? = null
+    private val ruleParser: RuleParser? = null
 
     @Inject
     private val configReader: ConfigReader? = null
@@ -318,9 +320,45 @@ class YapiFormatter {
                 .removeSuffix("]")
         val pathStr = tinyKey.substringBefore("|")
         val typeStr = tinyKey.substringAfter("|", "*")
-        return MockRule(simpleRuleParser!!.parseRegexOrConstant(pathStr),
-                simpleRuleParser.parseRegexOrConstant(typeStr), value)
+        return MockRule(parseRegexOrConstant(pathStr),
+                parseRegexOrConstant(typeStr), value)
 
+    }
+
+    private val regexParseCache: HashMap<String, (String?) -> Boolean> = HashMap()
+
+    private fun parseRegexOrConstant(str: String): (String?) -> Boolean {
+        return regexParseCache.computeIfAbsent(str) {
+            if (str.isBlank()) {
+                return@computeIfAbsent { true }
+            }
+            val tinyStr = str.trim()
+            if (tinyStr == "*") {
+                return@computeIfAbsent { true }
+            }
+
+            if (tinyStr.contains("*")) {
+                val pattern = Pattern.compile(
+                        "^${
+                        tinyStr.replace("*.", SimpleRuleParser.STAR_DOT)
+                                .replace("*", SimpleRuleParser.STAR)
+                                .replace(SimpleRuleParser.STAR_DOT, ".*?(?<=^|\\.)")
+                                .replace(SimpleRuleParser.STAR, ".*?")
+                                .replace("[", "\\[")
+                                .replace("]", "\\]")
+
+                        }$"
+                )
+
+                return@computeIfAbsent {
+                    pattern.matcher(it).matches()
+                }
+            }
+
+            return@computeIfAbsent {
+                str == it
+            }
+        }
     }
 
     class MockRule(val pathPredict: (String?) -> Boolean,

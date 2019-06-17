@@ -7,6 +7,7 @@ import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.ReservedResult
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.asMap
@@ -16,7 +17,6 @@ import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.methods.HttpDelete
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPost
@@ -144,7 +144,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("Post failed:" + ExceptionUtils.getStackTrace(e))
+            logger!!.error("Post failed")
+            logger.traceError(e)
             return null
         }
     }
@@ -160,7 +161,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return true
             }
         } catch (e: Exception) {
-            logger!!.info("fix collection failed:" + ExceptionUtils.getStackTrace(e))
+            logger!!.error("fix collection failed")
+            logger.traceError(e)
         }
         return false
     }
@@ -228,7 +230,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             onErrorResponse(result)
             return false
         } catch (e: Throwable) {
-            logger!!.error("Post failed:" + ExceptionUtils.getStackTrace(e))
+            logger!!.error("Post failed")
+            logger.traceError(e)
             return false
         }
     }
@@ -254,7 +257,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("Load collections failed:" + ExceptionUtils.getStackTrace(e))
+            logger!!.error("Load collections failed")
+            logger.traceError(e)
             return null
         }
     }
@@ -277,7 +281,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("Load collection info failed:" + ExceptionUtils.getStackTrace(e))
+            logger!!.error("Load collection info  failed")
+            logger.traceError(e)
             return null
         }
     }
@@ -300,7 +305,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("delete collection failed:" + ExceptionUtils.getStackTrace(e))
+            logger!!.error("delete collection failed")
+            logger.traceError(e)
             return null
         }
     }

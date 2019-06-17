@@ -8,6 +8,7 @@ import com.intellij.psi.util.PsiUtil
 import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.exporter.*
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
@@ -19,8 +20,8 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.intellij.config.context.PsiClassContext
-import com.itangcent.intellij.config.context.PsiMetodContext
+import com.itangcent.idea.utils.traceError
+import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
@@ -29,7 +30,6 @@ import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import java.util.regex.Pattern
 
@@ -71,10 +71,14 @@ class SpringClassExporter : ClassExporter, Worker {
     private val methodReturnInferHelper: MethodReturnInferHelper? = null
 
     @Inject
-    var actionContext: ActionContext? = null
+    private val ruleParser: RuleParser? = null
+
+    @Inject
+    private var actionContext: ActionContext? = null
 
     override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
         if (cls !is PsiClass) return
+        actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
             when {
@@ -108,13 +112,14 @@ class SpringClassExporter : ClassExporter, Worker {
 
     private fun shouldIgnore(psiClass: PsiClass): Boolean {
         val ignoreRules = commonRules!!.readIgnoreRules()
-        val context = PsiClassContext(psiClass)
-        return ignoreRules.any { it(context) }
+        val context = ruleParser!!.contextOf(psiClass)
+        return ignoreRules.any { it.compute(context) == true }
     }
 
     private fun exportMethodApi(method: PsiMethod, basePath: String, ctrlHttpMethod: String
                                 , parseHandle: ParseHandle, requestHandle: RequestHandle) {
 
+        actionContext!!.checkStatus()
         val requestMappingAnn = findRequestMapping(method) ?: return
         val request = Request()
         request.resource = method
@@ -172,8 +177,11 @@ class SpringClassExporter : ClassExporter, Worker {
 
                 parseHandle.addResponse(request, response)
 
+            } catch (e: ProcessCanceledException) {
+                //ignore cancel
             } catch (e: Throwable) {
-                logger!!.error("error to parse body:" + ExceptionUtils.getStackTrace(e))
+                logger!!.error("error to parse body")
+                logger.traceError(e)
             }
         }
     }
@@ -257,7 +265,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
-        return SPRING_REQUESTMAPPING_ANNOTATIONS
+        return SPRING_REQUEST_MAPPING_ANNOTATIONS
                 .map { PsiAnnotationUtils.findAnn(ele, it) }
                 .firstOrNull { it != null }
     }
@@ -395,9 +403,9 @@ class SpringClassExporter : ClassExporter, Worker {
 
     private fun shouldIgnore(psiMethod: PsiMethod): Boolean {
         val ignoreRules = commonRules!!.readIgnoreRules()
-        val context = PsiMetodContext(psiMethod)
+        val context = ruleParser!!.contextOf(psiMethod)
         return when {
-            ignoreRules.any { it(context) } -> {
+            ignoreRules.any { it.compute(context) == true } -> {
                 logger!!.info("ignore method:" + PsiClassUtils.fullNameOfMethod(psiMethod))
                 true
             }
@@ -609,6 +617,7 @@ class SpringClassExporter : ClassExporter, Worker {
                 methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
                 methodReturnInferHelper.inferReturn(method)
+//                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
             else -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.READ_COMMENT)
@@ -643,7 +652,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     companion object {
-        val SPRING_REQUESTMAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
+        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
                 SpringClassName.GET_MAPPING,
                 SpringClassName.DELETE_MAPPING,
                 SpringClassName.PATCH_MAPPING,
