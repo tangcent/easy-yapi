@@ -6,15 +6,15 @@ import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.Visional
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassHelper
-import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.KV
 import com.siyeh.ig.psiutils.ClassUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.*
@@ -31,6 +31,9 @@ class MethodReturnInferHelper {
 
     @Inject
     val duckTypeHelper: DuckTypeHelper? = null
+
+    @Inject
+    val actionContext: ActionContext? = null
 
     private val staticMethodCache: HashMap<Pair<PsiMethod, Array<Any?>?>, Any?> = HashMap()
 
@@ -57,7 +60,7 @@ class MethodReturnInferHelper {
     }
 
     fun inferReturn(context: PsiElement?, psiMethod: PsiMethod, caller: Any? = null, args: Array<Any?>?, option: Int = DEFAULT_OPTION): Any? {
-
+        actionContext!!.checkStatus()
         if (methodStack.size < maxDeep) {
             try {
                 var inferRet: Any?
@@ -80,7 +83,8 @@ class MethodReturnInferHelper {
                     return findComplexResult(GsonUtils.resolveCycle(inferRet), byType)
                 }
             } catch (e: Exception) {
-                logger!!.error("infer error:" + ExceptionUtils.getStackTrace(e))
+                logger!!.error("infer error")
+                logger!!.traceError(e)
                 //infer failed
             }
         }
@@ -160,6 +164,7 @@ class MethodReturnInferHelper {
      * method of collection(Set/List/Map...)
      */
     private fun callSimpleMethod(context: PsiElement?, psiMethod: PsiMethod, caller: Any? = null, args: Array<Any?>?): Any? {
+        actionContext!!.checkStatus()
         try {
             if (psiMethod.hasModifier(JvmModifier.STATIC)) {
                 val unboxedArgs = unboxArgs(args)
@@ -171,7 +176,7 @@ class MethodReturnInferHelper {
                 if (tryCallRet != CALL_FAILED) {
                     return tryCallRet
                 }
-                val inferRet = tryInfe(MethodReturnInfer(psiMethod, caller, unboxedArgs, this))
+                val inferRet = tryInfer(MethodReturnInfer(psiMethod, caller, unboxedArgs, this))
                 staticMethodCache[key] = inferRet
                 return inferRet
             }
@@ -245,17 +250,18 @@ class MethodReturnInferHelper {
     }
 
     private fun inferReturnUnsafely(psiMethod: PsiMethod, caller: Any? = null, args: Array<Any?>?, option: Int): Any? {
+        actionContext!!.checkStatus()
         val realCaller = valueOf(caller)
 
         //try quickly infer
         if (allowQuickCall(option)) {
             try {
-                return tryInfe(QuicklyMethodReturnInfer(psiMethod, this))
+                return tryInfer(QuicklyMethodReturnInfer(psiMethod, this))
             } catch (e: Exception) {
             }
         }
 
-        return tryInfe(MethodReturnInfer(psiMethod, realCaller, args, this))
+        return tryInfer(MethodReturnInfer(psiMethod, realCaller, args, this))
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -268,7 +274,8 @@ class MethodReturnInferHelper {
         (comment as HashMap<Any?, Any?>)[field] = attr
     }
 
-    fun tryInfe(infer: Infer): Any? {
+    fun tryInfer(infer: Infer): Any? {
+        actionContext!!.checkStatus()
         //find recursive call
         methodStack.filter { it.callMethod() == infer.callMethod() }
                 .forEach { return it.possible() }
@@ -281,6 +288,7 @@ class MethodReturnInferHelper {
     }
 
     fun tayCallStaticMethod(psiMethod: PsiMethod, args: Array<Any?>?): Any? {
+        actionContext!!.checkStatus()
         try {
             val psiCls = psiMethod.containingClass ?: return null
             val cls = Class.forName(psiCls.qualifiedName)
@@ -337,6 +345,7 @@ class MethodReturnInferHelper {
 
     @Suppress("UNCHECKED_CAST")
     private fun callMethod(caller: Any?, method: Method, args: Array<Any?>?): Any? {
+        actionContext!!.checkStatus()
 
         val argCount = args?.size ?: 0
         when {
@@ -430,8 +439,6 @@ class MethodReturnInferHelper {
         fun allowQuickCall(option: Int): Boolean {
             return (option and ALLOW_QUICK_CALL) != 0
         }
-
-        private val loggerUnmatched: Boolean = false
 
         val CALL_FAILED = Object()
         val collection_methods = HashSet(Arrays.asList("put", "set", "add", "addAll", "putAll"))
@@ -589,6 +596,7 @@ class MethodReturnInferHelper {
         if (deep >= maxObjectDeep) {
             return null
         }
+        actionContext!!.checkStatus()
         val kv = KV.create<String, Any?>()
         for (field in psiClass.allFields) {
             val type = field.type
@@ -610,6 +618,7 @@ class MethodReturnInferHelper {
     }
 
     private fun getSimpleFields(psiType: PsiType?, context: PsiElement): Any? {
+        actionContext!!.checkStatus()
         when {
             psiType == null || psiType == PsiType.NULL -> return null
             psiType is PsiPrimitiveType -> return PsiTypesUtil.getDefaultValue(psiType)
@@ -642,6 +651,7 @@ class MethodReturnInferHelper {
         if (deep >= maxObjectDeep) {
             return null
         }
+        actionContext!!.checkStatus()
         when {
             psiType == null || psiType == PsiType.NULL -> return null
             psiType is PsiPrimitiveType -> return PsiTypesUtil.getDefaultValue(psiType)
@@ -744,7 +754,9 @@ class MethodReturnInferHelper {
         }
 
         override fun setValue(value: Any?) {
-            this.holderValue = value
+            if (value != this) {
+                this.holderValue = value
+            }
         }
 
         override fun getComputedValue(): Any? {
@@ -823,8 +835,8 @@ class MethodReturnInferHelper {
                         returnVal = findComplexResult(returnVal, processExpression(returnValue))
                     }
                 }
-                else -> if (loggerUnmatched) {
-                    methodReturnInferHelper.logger!!.info("no matched statement:${statement::class} - ${statement.text}")
+                else -> {
+                    methodReturnInferHelper.logger!!.debug("no matched statement:${statement::class} - ${statement.text}")
                 }
             }
 
@@ -849,11 +861,10 @@ class MethodReturnInferHelper {
                             }
                         } else {
                             variable.addLazyAction {
-                                var processValue: Any?
-                                if (psiElement.initializer != null) {
-                                    processValue = processExpression(psiElement.initializer!!)
+                                val processValue: Any? = if (psiElement.initializer != null) {
+                                    processExpression(psiElement.initializer!!)
                                 } else {
-                                    processValue = methodReturnInferHelper.getSimpleFields(psiElement.type,
+                                    methodReturnInferHelper.getSimpleFields(psiElement.type,
                                             psiElement)
                                 }
                                 variable.setValue(processValue)
@@ -883,8 +894,46 @@ class MethodReturnInferHelper {
                 is PsiClassInitializer -> {
                     processBlock(psiElement.body)
                 }
-                else -> if (loggerUnmatched) {
-                    methodReturnInferHelper.logger!!.info("no matched ele ${psiElement::class.qualifiedName}:${psiElement.text}")
+                is PsiKeyword -> {
+                    //todo:any keyword return null??
+                    return null
+                }
+                is PsiReferenceParameterList -> {
+                    //todo:what does PsiReferenceParameterList mean
+                    return null
+                }
+                is PsiWhiteSpace -> {
+                    //ignore white space
+                    return null
+                }
+                is PsiJavaCodeReferenceElement -> {
+                    //todo:what does PsiJavaCodeReferenceElement mean
+                    return null
+                }
+                is PsiExpressionList -> {
+                    val list = ArrayList<Any?>()
+                    for (expression in psiElement.expressions) {
+                        list.add(processExpression(expression))
+                    }
+                    return list
+                }
+                is PsiArrayAccessExpression -> {
+                    val array = processExpression(psiElement.arrayExpression) ?: return null
+                    if (array is Array<*> && array.size > 0) {
+                        var index = psiElement.indexExpression?.let { processExpression(it) } ?: 0
+                        if (index !is Int) {
+                            index = 0
+                        }
+                        return array[index]
+                    }
+
+                }
+                is PsiLambdaExpression -> {
+                    return psiElement.body?.let { processElement(it) }
+                }
+                else -> {
+                    //ignore
+//                    methodReturnInferHelper.logger!!.debug("no matched ele ${psiElement::class.qualifiedName}:${psiElement.text}")
                 }
             }
             return null
@@ -942,10 +991,10 @@ class MethodReturnInferHelper {
                 is PsiLiteralExpression -> return psiExpression.value
                 is PsiBinaryExpression -> return processBinaryExpression(psiExpression)
                 is PsiUnaryExpression -> return processUnaryExpression(psiExpression)
+                is PsiLambdaExpression -> return psiExpression.body?.let { processElement(it) }
                 else -> {
-                    if (loggerUnmatched) {
-                        methodReturnInferHelper.logger!!.info("no matched exp ${psiExpression::class.qualifiedName}:${psiExpression.text}")
-                    }
+                    //ignore
+//                    methodReturnInferHelper.logger!!.debug("no matched exp ${psiExpression::class.qualifiedName}:${psiExpression.text}")
                     return null
                 }
             }
@@ -1181,8 +1230,8 @@ class MethodReturnInferHelper {
             return MappedVariable(targetMap, finalName)
         }
 
-        fun processBlock(psicodeBlock: PsiCodeBlock) {
-            psicodeBlock.statements.forEach {
+        fun processBlock(psiCodeBlock: PsiCodeBlock) {
+            psiCodeBlock.statements.forEach {
                 try {
                     processStatement(it)
                 } catch (e: Exception) {

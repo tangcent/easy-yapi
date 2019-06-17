@@ -2,9 +2,9 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
 import com.itangcent.intellij.config.ConfigReader
-import com.itangcent.intellij.config.SimpleBooleanRule
-import com.itangcent.intellij.config.SimpleRuleParser
-import com.itangcent.intellij.config.SimpleStringRule
+import com.itangcent.intellij.config.rule.BooleanRule
+import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.logger.Logger
 import java.util.*
 
@@ -17,12 +17,12 @@ class CommonRules {
     protected val configReader: ConfigReader? = null
 
     @Inject
-    protected val simpleRuleParser: SimpleRuleParser? = null
+    protected val ruleParser: RuleParser? = null
 
     //region moduleRules--------------------------------------------------------
-    var moduleRules: ArrayList<SimpleStringRule>? = null
+    var moduleRules: ArrayList<StringRule>? = null
 
-    fun readModuleRules(): List<SimpleStringRule> {
+    fun readModuleRules(): List<StringRule> {
         if (moduleRules != null) return moduleRules!!
         moduleRules = ArrayList()
 
@@ -30,7 +30,7 @@ class CommonRules {
             key.startsWith("module")
         }, { key, value ->
             try {
-                moduleRules!!.addAll(simpleRuleParser!!.parseStringRule(value))
+                moduleRules!!.addAll(ruleParser!!.parseStringRule(value))
             } catch (e: Exception) {
                 logger!!.error("error to parse module rule:$key=$value")
             }
@@ -42,9 +42,9 @@ class CommonRules {
     //endregion moduleRules--------------------------------------------------------
 
     //region ignoreRules--------------------------------------------------------
-    var ignoreRules: ArrayList<SimpleBooleanRule>? = null
+    var ignoreRules: ArrayList<BooleanRule>? = null
 
-    fun readIgnoreRules(): List<SimpleBooleanRule> {
+    fun readIgnoreRules(): List<BooleanRule> {
         if (ignoreRules != null) return ignoreRules!!
         ignoreRules = ArrayList()
 
@@ -52,7 +52,7 @@ class CommonRules {
             key.startsWith("ignore")
         }, { key, value ->
             try {
-                ignoreRules!!.addAll(simpleRuleParser!!.parseBooleanRule(value))
+                ignoreRules!!.addAll(ruleParser!!.parseBooleanRule(value))
             } catch (e: Exception) {
                 logger!!.error("error to parse module rule:$key=$value")
             }

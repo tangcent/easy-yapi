@@ -75,6 +75,7 @@ class MarkdownApiExporter {
                 }
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
+                    actionContext!!.checkStatus()
                     classExporter!!.export(it, parseHandle!!) { request -> requests.add(request) }
                 }
                 .onCompleted {
