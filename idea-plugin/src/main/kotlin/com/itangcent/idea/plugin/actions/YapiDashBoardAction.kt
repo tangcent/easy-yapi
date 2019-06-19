@@ -23,6 +23,8 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.psi.ClassRuleConfig
+import com.itangcent.intellij.psi.DefaultClassRuleConfig
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 
@@ -34,10 +36,9 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
         builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
-
+        builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
-
         builder.bind(ApiDashBoard::class) { it.singleton() }
         builder.bind(PostmanCachedApiHelper::class) { it.singleton() }
         builder.bind(PostmanFormatter::class) { it.singleton() }
