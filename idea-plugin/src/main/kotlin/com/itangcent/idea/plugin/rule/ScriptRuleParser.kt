@@ -16,6 +16,8 @@ abstract class ScriptRuleParser : RuleParser {
 
     @Inject
     private val duckTypeHelper: DuckTypeHelper? = null
+    @Inject
+    private val psiClassHelper: PsiClassHelper? = null
 
     override fun parseBooleanRule(rule: String): List<BooleanRule> {
         return listOf(BooleanRule.of { context ->
@@ -30,7 +32,7 @@ abstract class ScriptRuleParser : RuleParser {
 
     override fun parseStringRule(rule: String): List<StringRule> {
         return listOf(StringRule.of { context ->
-            return@of eval(rule, context).toString()
+            return@of eval(rule, context)?.toString()
         })
     }
 
@@ -96,30 +98,23 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         /**
+         * it.hasAnn("annotation_name"):Boolean
+         */
+        fun hasAnn(name: String): Boolean {
+            return PsiAnnotationUtils.findAnn(asPsiDocCommentOwner(), name) != null
+        }
+
+        /**
          * it.ann("annotation_name"):String?
          */
         fun ann(name: String): String? {
-            return annotation(name)
+            return ann(name, "value")
         }
 
         /**
-         * it.ann("annotation_name","value"):String?
+         * it.ann("annotation_name","attr"):String?
          */
         fun ann(name: String, attr: String): String? {
-            return annotation(name, attr)
-        }
-
-        /**
-         * it.annotation("annotation_name"):String?
-         */
-        fun annotation(name: String): String? {
-            return annotation(name, "value")
-        }
-
-        /**
-         * it.annotation("annotation_name","attr"):String?
-         */
-        fun annotation(name: String, attr: String): String? {
             return PsiAnnotationUtils.findAttr(asPsiDocCommentOwner(), name, attr)
         }
 
@@ -138,7 +133,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         /**
-         * it.doc("param","param"):String?
+         * it.doc("tag","subTag"):String?
          */
         fun doc(tag: String, subTag: String): String? {
             return DocCommentUtils.findDocsByTagAndName(asPsiDocCommentOwner().docComment,
@@ -163,10 +158,18 @@ abstract class ScriptRuleParser : RuleParser {
                     .toTypedArray()
         }
 
+        fun methodCnt(): Int {
+            return psiClass.allMethods.size
+        }
+
         fun fields(): Array<JsPsiFieldContext> {
             return psiClass.allFields
                     .map { JsPsiFieldContext(it) }
                     .toTypedArray()
+        }
+
+        fun fieldCnt(): Int {
+            return psiClass.allFields.size
         }
 
         fun isExtend(superClass: String): Boolean {
@@ -197,6 +200,12 @@ abstract class ScriptRuleParser : RuleParser {
         }
     }
 
+    /**
+     * it.type:class
+     * it.name:String
+     * it.containingClass:class
+     * it.jsonName:String
+     */
     inner class JsPsiFieldContext(private val psiField: PsiField) : AbstractJsPsiElementContext(psiField) {
 
         fun type(): JsPsiTypeContext {
@@ -206,21 +215,109 @@ abstract class ScriptRuleParser : RuleParser {
         override fun getName(): String? {
             return psiField.name
         }
+
+        /**
+         * Returns the class containing the member.
+         *
+         * @return the containing class.
+         */
+        fun containingClass(): JsPsiClassContext {
+            return JsPsiClassContext(psiField.containingClass!!)
+        }
+
+        /**
+         * attention:it should not be used in [json.rule.field.name]
+         */
+        fun jsonName(): String? {
+            return psiClassHelper!!.getJsonFieldName(psiField)
+        }
     }
 
     /**
      * it.name:String
      * it.return:class
+     * it.isVarArgs:Boolean
      * it.args:arg[]
      */
-    inner class JsPsiMethodContext(val psiMethod: PsiMethod) : AbstractJsPsiElementContext(psiMethod) {
+    inner class JsPsiMethodContext(private val psiMethod: PsiMethod) : AbstractJsPsiElementContext(psiMethod) {
 
-        fun `return`(): JsPsiTypeContext {
-            return JsPsiTypeContext((psiElement as PsiMethod).returnType!!)
+        /**
+         * Returns the return type of the method.
+         *
+         * @return the method return type, or null if the method is a constructor.
+         */
+        fun `return`(): JsPsiTypeContext? {
+            return (psiElement as PsiMethod).returnType?.let { JsPsiTypeContext(it) }
+        }
+
+        /**
+         * Checks if the method accepts a variable number of arguments.
+         *
+         * @return true if the method is varargs, false otherwise.
+         */
+        fun isVarArgs(): Boolean {
+            return psiMethod.isVarArgs
+        }
+
+        /**
+         * Returns the array of method parameters
+         */
+        fun args(): Array<JsPsiParameterContext> {
+            return psiMethod.parameterList.parameters.map { JsPsiParameterContext(it) }
+                    .toTypedArray()
+        }
+
+        /**
+         * Returns the array of method parameters type
+         */
+        fun argTypes(): Array<JsPsiTypeContext> {
+            return psiMethod.parameterList.parameters.map { JsPsiTypeContext(it.type) }
+                    .toTypedArray()
+        }
+
+        /**
+         * Returns the number of method parameters
+         */
+        fun argCnt(): Int {
+            return psiMethod.parameterList.parametersCount
+        }
+
+        /**
+         * Returns the class containing the member.
+         *
+         * @return the containing class.
+         */
+        fun containingClass(): JsPsiClassContext {
+            return JsPsiClassContext(psiMethod.containingClass!!)
         }
 
         override fun getName(): String? {
             return psiMethod.name
+        }
+    }
+
+    /**
+     * it.name:String
+     * it.type:class
+     * it.isVarArgs:Boolean
+     */
+    inner class JsPsiParameterContext(private val psiParameter: PsiParameter) : AbstractJsPsiElementContext(psiParameter) {
+
+        fun type(): JsPsiTypeContext {
+            return JsPsiTypeContext(psiParameter.type)
+        }
+
+        /**
+         * Checks if the parameter accepts a variable number of arguments.
+         *
+         * @return true if the parameter is a vararg, false otherwise
+         */
+        fun isVarArgs(): Boolean {
+            return psiParameter.isVarArgs
+        }
+
+        override fun getName(): String? {
+            return psiParameter.name
         }
     }
 
@@ -296,6 +393,5 @@ abstract class ScriptRuleParser : RuleParser {
             }
         }
     }
-
 }
 
