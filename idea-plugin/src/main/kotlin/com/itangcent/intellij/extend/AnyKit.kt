@@ -25,6 +25,14 @@ fun Any?.toInt(): Int? {
     return null
 }
 
+fun Any?.toBoolean(): Boolean? {
+    if (this == null) return null
+    if (this is Boolean) return this
+    if (this is Number) return this.toInt() == 1
+    if (this is String) return this == "true"
+    return null
+}
+
 @Suppress("UNCHECKED_CAST")
 fun Any.asHashMap(obj: Any?): HashMap<String, Any?> {
     if (obj is HashMap<*, *>) {
