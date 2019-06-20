@@ -29,6 +29,7 @@ import com.itangcent.intellij.spring.MultipartFile
 import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
+import com.itangcent.intellij.util.reduceSafely
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.regex.Pattern
@@ -146,7 +147,11 @@ class SpringClassExporter : ClassExporter, Worker {
 
         val deprecateInfo = findDeprecatedOfMethod(method, parseHandle)
         if (deprecateInfo != null) {
-            parseHandle.appendDesc(request, "[deprecate]$deprecateInfo")
+            parseHandle.appendDesc(request, "\n[deprecate]$deprecateInfo")
+        }
+
+        tryReadMethodDocByRule(method)?.let {
+            parseHandle.appendDesc(request, "\n${docParseHelper!!.resolveLinkInAttr(it, method, parseHandle)}")
         }
 
         parseHandle.setName(request, attr ?: method.name)
@@ -158,6 +163,14 @@ class SpringClassExporter : ClassExporter, Worker {
         processResponse(method, request, parseHandle)
 
         requestHandle(request)
+    }
+
+    private fun tryReadMethodDocByRule(method: PsiMethod): String? {
+        val methodDocRules = commonRules!!.readMethodReadRules()
+        val context = ruleParser!!.contextOf(method)
+        return methodDocRules.map { it.compute(context) }
+                .filter { !it.isNullOrBlank() }
+                .reduceSafely { s1, s2 -> "$s1\n$s2" }
     }
 
     private fun processResponse(method: PsiMethod, request: Request, parseHandle: ParseHandle) {

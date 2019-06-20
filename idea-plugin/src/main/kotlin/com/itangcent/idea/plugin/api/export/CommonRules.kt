@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.BooleanRule
 import com.itangcent.intellij.config.rule.RuleParser
@@ -28,13 +29,14 @@ class CommonRules {
 
         configReader!!.foreach({ key ->
             key.startsWith("module")
-        }, { key, value ->
+        }) { key, value ->
             try {
                 moduleRules!!.addAll(ruleParser!!.parseStringRule(value))
             } catch (e: Exception) {
                 logger!!.error("error to parse module rule:$key=$value")
+                logger.traceError(e)
             }
-        })
+        }
 
         return moduleRules!!
     }
@@ -50,16 +52,42 @@ class CommonRules {
 
         configReader!!.foreach({ key ->
             key.startsWith("ignore")
-        }, { key, value ->
+        }) { key, value ->
             try {
                 ignoreRules!!.addAll(ruleParser!!.parseBooleanRule(value))
             } catch (e: Exception) {
                 logger!!.error("error to parse module rule:$key=$value")
+                logger.traceError(e)
             }
-        })
+        }
 
         return ignoreRules!!
     }
 
     //endregion ignoreRules--------------------------------------------------------
+
+
+    //region moduleRules--------------------------------------------------------
+    var methodDocRules: ArrayList<StringRule>? = null
+
+    fun readMethodReadRules(): List<StringRule> {
+        if (methodDocRules != null) return methodDocRules!!
+        methodDocRules = ArrayList()
+
+        configReader!!.foreach({ key ->
+            key.startsWith("doc.method")
+        }) { key, value ->
+            try {
+                methodDocRules!!.addAll(ruleParser!!.parseStringRule(value))
+            } catch (e: Exception) {
+                logger!!.error("error to parse doc.method rule:$key=$value")
+                logger.traceError(e)
+            }
+        }
+
+        return methodDocRules!!
+    }
+
+    //endregion moduleRules--------------------------------------------------------
+
 }

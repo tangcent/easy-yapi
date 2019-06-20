@@ -43,7 +43,11 @@ abstract class ScriptRuleParser : RuleParser {
 
     private fun eval(ruleScript: String, context: PsiElementContext): Any? {
         val simpleScriptContext = SimpleScriptContext()
-        simpleScriptContext.setAttribute("it", context, ScriptContext.ENGINE_SCOPE)
+        var contextForScript: PsiElementContext? = when (context) {
+            is AbstractJsPsiElementContext -> context
+            else -> contextOf(context.getResource()!!)
+        }
+        simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
         return getScriptEngine().eval(ruleScript, simpleScriptContext)
     }
 

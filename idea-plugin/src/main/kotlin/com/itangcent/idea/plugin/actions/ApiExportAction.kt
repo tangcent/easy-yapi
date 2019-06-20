@@ -7,7 +7,7 @@ import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.CommonRules
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
-import com.itangcent.idea.plugin.rule.JsRuleParser
+import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.config.rule.RuleParser
@@ -23,7 +23,7 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
     override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
         super.onBuildActionContext(builder)
 
-        builder.bind(RuleParser::class) { it.with(JsRuleParser::class) }
+        builder.bind(RuleParser::class) { it.with(SuvRuleParser::class) }
         builder.bind(CommonRules::class) { it.singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
         builder.bind(DuckTypeHelper::class) { it.singleton() }

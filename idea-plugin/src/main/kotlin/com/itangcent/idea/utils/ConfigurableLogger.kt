@@ -25,6 +25,10 @@ class ConfigurableLogger : AbstractLogger() {
         currentLogLevel = logLevel?.let { CoarseLogLevel.toLevel(it, CoarseLogLevel.LOW) } ?: CoarseLogLevel.LOW
     }
 
+    override fun log(msg: String) {
+        super.log(CoarseLogLevel.EMPTY, msg)
+    }
+
     override fun currentLogLevel(): Level {
         return currentLogLevel!!
     }
@@ -39,6 +43,11 @@ class ConfigurableLogger : AbstractLogger() {
     }
 
     enum class CoarseLogLevel : Level {
+        EMPTY(1000) {
+            override fun getLevelStr(): String {
+                return ""
+            }
+        },
         LOW(50),
         MEDIUM(250),
         HIGH(450)
