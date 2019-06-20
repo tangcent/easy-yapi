@@ -64,13 +64,14 @@ abstract class ScriptRuleParser : RuleParser {
 
     /**
      * support is js:
+     * it.name():String
+     * it.hasAnn("annotation_name"):Boolean
      * it.ann("annotation_name"):String?
-     * it.ann("annotation_name#value"):String?
-     * it.annotation("annotation_name"):String?
-     * it.annotation("annotation_name#value"):String?
+     * it.ann("annotation_name","attr"):String?
      * it.doc():String
      * it.doc("tag"):String?
-     * it.doc("param","param"):String?
+     * it.doc("tag","subTag"):String?
+     * it.hasDoc("tag"):Boolean
      */
     abstract class AbstractJsPsiElementContext : PsiElementContext {
 
@@ -137,6 +138,13 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         /**
+         * it.hasDoc("tag"):Boolean
+         */
+        fun hasDoc(tag: String): Boolean {
+            return DocCommentUtils.hasTag(asPsiDocCommentOwner().docComment, tag)
+        }
+
+        /**
          * it.doc("tag","subTag"):String?
          */
         fun doc(tag: String, subTag: String): String? {
@@ -148,8 +156,10 @@ abstract class ScriptRuleParser : RuleParser {
 
     /**
      * it.methods():method[]
-     * it.isExtend(""):Boolean
-     * it.isSuper(""):Boolean
+     * it.methodCnt():int
+     * it.field():field[]
+     * it.fieldCnt():int
+     * it.isExtend("cls"):Boolean
      * it.isMap():Boolean
      * it.isCollection():Boolean
      * it.isArray():Boolean
@@ -206,7 +216,6 @@ abstract class ScriptRuleParser : RuleParser {
 
     /**
      * it.type:class
-     * it.name:String
      * it.containingClass:class
      * it.jsonName:String
      */
@@ -238,10 +247,12 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     /**
-     * it.name:String
-     * it.return:class
+     * it.returnType:class
      * it.isVarArgs:Boolean
      * it.args:arg[]
+     * it.argTypes:class[]
+     * it.argCnt:int
+     * it.containingClass:class
      */
     inner class JsPsiMethodContext(private val psiMethod: PsiMethod) : AbstractJsPsiElementContext(psiMethod) {
 
@@ -250,7 +261,7 @@ abstract class ScriptRuleParser : RuleParser {
          *
          * @return the method return type, or null if the method is a constructor.
          */
-        fun `return`(): JsPsiTypeContext? {
+        fun returnType(): JsPsiTypeContext? {
             return (psiElement as PsiMethod).returnType?.let { JsPsiTypeContext(it) }
         }
 
