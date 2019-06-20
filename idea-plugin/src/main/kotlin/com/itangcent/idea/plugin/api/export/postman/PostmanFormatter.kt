@@ -36,7 +36,9 @@ class PostmanFormatter {
 
     fun request2Item(request: Request): HashMap<String, Any?> {
 
-        val module = request.resource?.let { moduleHelper!!.findModule(it) }
+        val module = request.resource?.let { resource ->
+            actionContext!!.callInReadUI { moduleHelper!!.findModule(resource) }
+        }
         var host = "{{host}}"
         if (module != null) {
             host = "{{$module}}"
