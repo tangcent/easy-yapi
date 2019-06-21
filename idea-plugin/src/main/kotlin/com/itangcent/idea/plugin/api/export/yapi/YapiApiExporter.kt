@@ -13,7 +13,7 @@ import com.itangcent.intellij.util.ActionUtils
 class YapiApiExporter : AbstractYapiApiExporter() {
 
     fun export() {
-        val serverFound = yapiApiHelper!!.findServer() != null
+        val serverFound = !yapiApiHelper!!.findServer().isNullOrBlank()
         if (serverFound) {
             doExport()
         } else {

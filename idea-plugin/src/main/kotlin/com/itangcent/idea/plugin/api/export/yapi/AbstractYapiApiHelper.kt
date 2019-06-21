@@ -34,6 +34,7 @@ open class AbstractYapiApiHelper {
     @Inject
     protected val httpClientProvide: HttpClientProvider? = null
 
+    @Volatile
     var server: String? = null
 
     private var projectIdCache: HashMap<String, String> = HashMap()//token->id
