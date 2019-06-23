@@ -22,7 +22,7 @@ import com.itangcent.intellij.util.FileUtils
 
 class CachedClassExporter : ClassExporter, Worker {
 
-    var statusRecorder: StatusRecorder = StatusRecorder()
+    private var statusRecorder: StatusRecorder = StatusRecorder()
 
     override fun status(): WorkerStatus {
         return when (delegateClassExporter) {

@@ -547,6 +547,7 @@ class SpringClassExporter : ClassExporter, Worker {
                     parseHandle.addFormFileParam(request, paramName!!, required, findAttrForParam(param.name, paramDocComment))
                     continue
                 } else if (SpringAttrs.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
+                    //ignore @HttpServletRequest and @HttpServletResponse
                     continue
                 }
 
@@ -672,10 +673,10 @@ class SpringClassExporter : ClassExporter, Worker {
                 SpringClassName.POST_MAPPING,
                 SpringClassName.PUT_MAPPING)
 
-        val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
+        const val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
 
-        val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
+        const val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
 
-        val ESCAPE_REQUEST_HEADER_DEFAULT_NONE = "\\n\\t\\t\\n\\t\\t\\n\\uE000\\uE001\\uE002\\n\\t\\t\\t\\t\\n"
+        const val ESCAPE_REQUEST_HEADER_DEFAULT_NONE = "\\n\\t\\t\\n\\t\\t\\n\\uE000\\uE001\\uE002\\n\\t\\t\\t\\t\\n"
     }
 }

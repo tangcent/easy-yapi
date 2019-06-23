@@ -86,16 +86,16 @@ class PostmanFormatter {
         val body: HashMap<String, Any?> = HashMap()
         if (request.formParams != null) {
             body["mode"] = "urlencoded"
-            val urlencodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
+            val urlEncodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
             request.formParams!!.forEach {
-                urlencodeds.add(KV.create<String, Any?>()
+                urlEncodeds.add(KV.create<String, Any?>()
                         .set("key", it.name)
                         .set("value", it.value)
                         .set("type", it.type)
                         .set("description", it.desc)
                 )
             }
-            body["urlencoded"] = urlencodeds
+            body["urlencoded"] = urlEncodeds
         }
 
         if (request.body != null) {

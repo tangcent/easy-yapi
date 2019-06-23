@@ -1200,6 +1200,7 @@ class MethodReturnInferHelper {
             }
         }
 
+        @Suppress("UNCHECKED_CAST")
         protected fun findVariableIn(name: String, from: Any?): Variable? {
             var target: Any? = from
             val finalName: String
@@ -1208,7 +1209,11 @@ class MethodReturnInferHelper {
                 val paths = name.substringBeforeLast(".").split(".")
                 try {
                     for (path in paths) {
-                        target = (target as Map<*, *>)[path]
+                        if (target is Map<*, *>) {
+                            target = (target as Map<Any?, Any?>)[path]
+                        } else {
+                            return null
+                        }
                     }
                 } catch (e: Exception) {
                     return null

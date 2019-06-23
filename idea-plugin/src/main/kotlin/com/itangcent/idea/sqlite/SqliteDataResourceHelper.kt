@@ -18,7 +18,7 @@ class SqliteDataResourceHelper {
     @Inject
     private val logger: Logger? = null
 
-    fun getSD(fileName: String): SQLiteDataSource {
+    private fun getSD(fileName: String): SQLiteDataSource {
         return sdCache.computeIfAbsent(fileName) {
             val sqLiteConfig = SQLiteConfig()
             sqLiteConfig.setSynchronous(SQLiteConfig.SynchronousMode.OFF)
