@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
@@ -17,6 +18,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.set
 
+@Singleton
 class PostmanFormatter {
 
     @Inject

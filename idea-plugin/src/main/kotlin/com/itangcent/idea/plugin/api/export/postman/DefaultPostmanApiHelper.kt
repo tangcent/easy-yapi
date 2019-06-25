@@ -7,7 +7,6 @@ import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.ReservedResult
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.asMap
@@ -15,6 +14,7 @@ import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.util.traceError
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
 import org.apache.http.client.methods.HttpDelete

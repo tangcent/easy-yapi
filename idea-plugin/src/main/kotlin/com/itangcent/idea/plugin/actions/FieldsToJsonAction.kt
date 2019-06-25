@@ -4,18 +4,19 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.Project
+import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.fields.FieldJsonGenerator
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
-import com.itangcent.idea.utils.traceError
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.util.ToolUtils
+import com.itangcent.intellij.util.traceError
 
 /**
  * @author tangcent
@@ -28,9 +29,9 @@ class FieldsToJsonAction : BasicAnAction("To Json") {
     override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
         super.onBuildActionContext(builder)
 
-        builder.bind(RuleParser::class) { it.with(SuvRuleParser::class) }
+        builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
+        builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
-        builder.bind(DuckTypeHelper::class) { it.singleton() }
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

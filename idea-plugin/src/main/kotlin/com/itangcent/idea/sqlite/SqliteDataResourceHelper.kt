@@ -1,9 +1,8 @@
 package com.itangcent.idea.sqlite
 
 import com.google.inject.Inject
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.logger.Logger
-import org.apache.commons.lang3.exception.ExceptionUtils
+import com.itangcent.intellij.util.traceError
 import org.sqlite.SQLiteConfig
 import org.sqlite.SQLiteDataSource
 import org.sqlite.javax.SQLiteConnectionPoolDataSource

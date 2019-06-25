@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.markdown
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
@@ -15,16 +16,16 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.DocCommentUtils
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 
+@Singleton
 class MarkdownApiExporter {
 
     @Inject

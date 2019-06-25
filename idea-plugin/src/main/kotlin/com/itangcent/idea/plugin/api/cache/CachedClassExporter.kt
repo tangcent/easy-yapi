@@ -13,12 +13,12 @@ import com.itangcent.common.model.RequestHandle
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
+import com.itangcent.intellij.util.traceError
 
 class CachedClassExporter : ClassExporter, Worker {
 
