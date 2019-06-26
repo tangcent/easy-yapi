@@ -21,7 +21,6 @@ import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.rule.RuleComputer
-import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
@@ -494,6 +493,9 @@ class SpringClassExporter : ClassExporter, Worker {
                 if (requestParamAnn != null) {
                     paramName = findParamName(requestParamAnn)
                     required = findParamRequired(requestParamAnn) ?: true
+                }
+                if (!required) {
+                    required = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) ?: false
                 }
                 if (StringUtils.isBlank(paramName)) {
                     paramName = param.name!!
