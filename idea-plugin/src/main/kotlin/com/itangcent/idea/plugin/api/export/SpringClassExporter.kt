@@ -20,8 +20,7 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.utils.traceError
-import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
@@ -29,7 +28,8 @@ import com.itangcent.intellij.spring.MultipartFile
 import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
-import com.itangcent.intellij.util.reduceSafely
+import com.itangcent.intellij.util.forEachValid
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.regex.Pattern
@@ -57,9 +57,6 @@ class SpringClassExporter : ClassExporter, Worker {
     private val psiClassHelper: PsiClassHelper? = null
 
     @Inject
-    private val commonRules: CommonRules? = null
-
-    @Inject
     private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
@@ -72,7 +69,7 @@ class SpringClassExporter : ClassExporter, Worker {
     private val methodReturnInferHelper: MethodReturnInferHelper? = null
 
     @Inject
-    private val ruleParser: RuleParser? = null
+    private val ruleComputer: RuleComputer? = null
 
     @Inject
     private var actionContext: ActionContext? = null
@@ -111,10 +108,8 @@ class SpringClassExporter : ClassExporter, Worker {
         }
     }
 
-    private fun shouldIgnore(psiClass: PsiClass): Boolean {
-        val ignoreRules = commonRules!!.readIgnoreRules()
-        val context = ruleParser!!.contextOf(psiClass)
-        return ignoreRules.any { it.compute(context) == true }
+    private fun shouldIgnore(psiElement: PsiElement): Boolean {
+        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
     private fun exportMethodApi(method: PsiMethod, basePath: String, ctrlHttpMethod: String
@@ -145,13 +140,12 @@ class SpringClassExporter : ClassExporter, Worker {
 
         parseHandle.appendDesc(request, attrOfMethod)
 
-        val deprecateInfo = findDeprecatedOfMethod(method, parseHandle)
-        if (deprecateInfo != null) {
-            parseHandle.appendDesc(request, "\n[deprecate]$deprecateInfo")
+        findDeprecatedOfMethod(method, parseHandle)?.let {
+            parseHandle.appendDesc(request, it)
         }
 
-        tryReadMethodDocByRule(method)?.let {
-            parseHandle.appendDesc(request, "\n${docParseHelper!!.resolveLinkInAttr(it, method, parseHandle)}")
+        readMethodDoc(method, parseHandle)?.let {
+            parseHandle.appendDesc(request, it)
         }
 
         parseHandle.setName(request, attr ?: method.name)
@@ -165,12 +159,8 @@ class SpringClassExporter : ClassExporter, Worker {
         requestHandle(request)
     }
 
-    private fun tryReadMethodDocByRule(method: PsiMethod): String? {
-        val methodDocRules = commonRules!!.readMethodReadRules()
-        val context = ruleParser!!.contextOf(method)
-        return methodDocRules.map { it.compute(context) }
-                .filter { !it.isNullOrBlank() }
-                .reduceSafely { s1, s2 -> "$s1\n$s2" }
+    private fun readMethodDoc(method: PsiMethod, parseHandle: ParseHandle): String? {
+        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
     }
 
     private fun processResponse(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
@@ -326,11 +316,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     protected fun findDeprecatedOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
-        return DocCommentUtils.findDocsByTag(method.docComment, "deprecated")?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
-    }
-
-    protected fun findDeprecatedOfClass(psiClass: PsiClass, parseHandle: ParseHandle): String? {
-        return DocCommentUtils.findDocsByTag(psiClass.docComment, "deprecated")?.let { docParseHelper!!.resolveLinkInAttr(it, psiClass, parseHandle) }
+        return ruleComputer!!.computer(ClassExportRuleKeys.DEPRECATE, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -406,24 +392,11 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        val ignoreRules = commonRules!!.readIgnoreRules()
         cls.allMethods
                 .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
-                .filter { ignoreRules.isEmpty() || !shouldIgnore(it) }
+                .filter { !shouldIgnore(it) }
                 .forEach(handle)
-    }
-
-    private fun shouldIgnore(psiMethod: PsiMethod): Boolean {
-        val ignoreRules = commonRules!!.readIgnoreRules()
-        val context = ruleParser!!.contextOf(psiMethod)
-        return when {
-            ignoreRules.any { it.compute(context) == true } -> {
-                logger!!.info("ignore method:" + PsiClassUtils.fullNameOfMethod(psiMethod))
-                true
-            }
-            else -> false
-        }
     }
 
     private fun processMethodParameters(method: PsiMethod, request: Request,
@@ -522,6 +495,9 @@ class SpringClassExporter : ClassExporter, Worker {
                     paramName = findParamName(requestParamAnn)
                     required = findParamRequired(requestParamAnn) ?: true
                 }
+                if (!required) {
+                    required = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) ?: false
+                }
                 if (StringUtils.isBlank(paramName)) {
                     paramName = param.name!!
                 }
@@ -547,6 +523,7 @@ class SpringClassExporter : ClassExporter, Worker {
                     parseHandle.addFormFileParam(request, paramName!!, required, findAttrForParam(param.name, paramDocComment))
                     continue
                 } else if (SpringAttrs.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
+                    //ignore @HttpServletRequest and @HttpServletResponse
                     continue
                 }
 
@@ -581,10 +558,11 @@ class SpringClassExporter : ClassExporter, Worker {
             val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiClassHelper!!.unboxArrayOrList(paramType))
             val fields = psiClassHelper.getFields(paramCls, JsonOption.READ_COMMENT)
             val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-            fields.forEach { filedName, fieldVal ->
-                if (filedName != Attrs.COMMENT_ATTR) {
-                    parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal?.toString()), false, comment?.get("filedName") as String?)
-                }
+            val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+            fields.forEachValid { filedName, fieldVal ->
+                parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal?.toString()),
+                        required?.getAs(filedName) ?: false,
+                        comment?.get(filedName) as String?)
             }
         } catch (e: Exception) {
             logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
@@ -598,16 +576,19 @@ class SpringClassExporter : ClassExporter, Worker {
             val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiClassHelper!!.unboxArrayOrList(paramType))
             val fields = psiClassHelper.getFields(paramCls, JsonOption.READ_COMMENT)
             val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
+            val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
             parseHandle.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
-            fields.forEach { filedName, fieldVal ->
-                if (filedName != Attrs.COMMENT_ATTR) {
-                    val fv = deepComponent(fieldVal)
-                    if (fv is MultipartFile) {
-                        parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
-                        parseHandle.addFormFileParam(request, filedName, false, comment?.getAs(filedName))
-                    } else {
-                        parseHandle.addFormParam(request, filedName, null, comment?.getAs(filedName))
-                    }
+            fields.forEachValid { filedName, fieldVal ->
+                val fv = deepComponent(fieldVal)
+                if (fv is MultipartFile) {
+                    parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
+                    parseHandle.addFormFileParam(request, filedName,
+                            required?.getAs(filedName) ?: false,
+                            comment?.getAs(filedName))
+                } else {
+                    parseHandle.addFormParam(request, filedName, null,
+                            required?.getAs(filedName) ?: false,
+                            comment?.getAs(filedName))
                 }
             }
         } catch (e: Exception) {
@@ -672,10 +653,10 @@ class SpringClassExporter : ClassExporter, Worker {
                 SpringClassName.POST_MAPPING,
                 SpringClassName.PUT_MAPPING)
 
-        val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
+        const val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
 
-        val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
+        const val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
 
-        val ESCAPE_REQUEST_HEADER_DEFAULT_NONE = "\\n\\t\\t\\n\\t\\t\\n\\uE000\\uE001\\uE002\\n\\t\\t\\t\\t\\n"
+        const val ESCAPE_REQUEST_HEADER_DEFAULT_NONE = "\\n\\t\\t\\n\\t\\t\\n\\uE000\\uE001\\uE002\\n\\t\\t\\t\\t\\n"
     }
 }

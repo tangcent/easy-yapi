@@ -1,17 +1,20 @@
 package com.itangcent.idea.utils
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
-import com.itangcent.idea.plugin.api.export.CommonRules
-import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 
+@Singleton
 class ModuleHelper {
 
     @Inject
@@ -21,10 +24,7 @@ class ModuleHelper {
     private val project: Project? = null
 
     @Inject
-    private val commonRules: CommonRules? = null
-
-    @Inject
-    private val ruleParser: RuleParser? = null
+    private val ruleComputer: RuleComputer? = null
 
     //region find module
     fun findModule(resource: Any): String? {
@@ -49,15 +49,11 @@ class ModuleHelper {
     }
 
     fun findModule(cls: PsiClass): String? {
-        val moduleRules = commonRules?.readModuleRules()
-        if (!moduleRules.isNullOrEmpty()) {
-            val context = ruleParser!!.contextOf(cls)
-            val moduleByRule = moduleRules
-                    .map { it.compute(context) }
-                    .firstOrNull { it != null }
-            if (!moduleByRule.isNullOrBlank()) {
-                return moduleByRule
-            }
+
+        val moduleByRule = ruleComputer!!.computer(ClassExportRuleKeys.MODULE, cls)
+
+        if (!moduleByRule.isNullOrBlank()) {
+            return moduleByRule
         }
 
         val module = ModuleUtil.findModuleForPsiElement(cls)
@@ -94,7 +90,8 @@ class ModuleHelper {
             }
             module = StringUtils.substringAfterLast(currentPath, "/")
         } catch (e: Exception) {
-            logger!!.error("error in findCurrentPath:" + e.toString())
+            logger!!.error("error in findCurrentPath")
+            logger.traceError(e)
         }
         return module
 

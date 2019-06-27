@@ -1,4 +1,4 @@
-package com.itangcent.idea.utils
+package com.itangcent.intellij.util
 
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.intellij.logger.Logger

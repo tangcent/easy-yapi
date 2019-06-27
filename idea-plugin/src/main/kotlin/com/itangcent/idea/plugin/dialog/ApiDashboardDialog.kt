@@ -23,13 +23,13 @@ import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.idea.swing.Tooltipable
 import com.itangcent.idea.utils.SwingUtils
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor

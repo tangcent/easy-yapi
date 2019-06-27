@@ -1,11 +1,13 @@
 package com.itangcent.idea.plugin.api
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.DocCommentUtils
 
+@Singleton
 class ResourceHelper {
 
     @Inject

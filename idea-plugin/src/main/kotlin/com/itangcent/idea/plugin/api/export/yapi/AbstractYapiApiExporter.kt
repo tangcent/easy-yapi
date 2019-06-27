@@ -9,10 +9,10 @@ import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.DocCommentUtils
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 
 
