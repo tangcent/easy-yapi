@@ -9,6 +9,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.DocCommentUtils
@@ -94,6 +95,7 @@ open class AbstractYapiApiExporter {
             cartId = yapiApiHelper!!.findCat(privateToken, name!!)
         } catch (e: Exception) {
             logger!!.error("error to find cart [$name]")
+            logger.traceError(e)
             return null
         }
         if (cartId == null) {

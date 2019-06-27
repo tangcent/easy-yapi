@@ -18,7 +18,6 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -175,7 +174,7 @@ class PostmanApiExporter {
 
         val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
         moduleGroupedMap.entries
-                .map { postmanFormatter!!.wrapInfo(it.key, arrayListOf(postmanFormatter.wrapRootInfo(it.key, it.value))) }
+                .map { postmanFormatter!!.wrapInfo(it.key, it.value) }
                 .forEach { modules.add(it) }
 
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
