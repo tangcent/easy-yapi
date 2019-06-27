@@ -22,6 +22,9 @@ object RequestUtils {
             if (mutableBody.containsKey(Attrs.COMMENT_ATTR)) {
                 mutableBody.remove(Attrs.COMMENT_ATTR)
             }
+            if (mutableBody.containsKey(Attrs.REQUIRED_ATTR)) {
+                mutableBody.remove(Attrs.REQUIRED_ATTR)
+            }
             for (mutableEntry in mutableBody) {
                 mutableEntry.value?.let { mutableEntry.setValue(toRawBody(it)) }
             }

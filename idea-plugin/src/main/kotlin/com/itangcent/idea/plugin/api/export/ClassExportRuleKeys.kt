@@ -19,4 +19,7 @@ object ClassExportRuleKeys {
     val PARAM_REQUIRED: RuleKey<Boolean> = SimpleRuleKey("param.required", BooleanRule::class,
             BooleanRuleMode.ANY)
 
+    val FIELD_REQUIRED: RuleKey<Boolean> = SimpleRuleKey("field.required", BooleanRule::class,
+            BooleanRuleMode.ANY)
+
 }

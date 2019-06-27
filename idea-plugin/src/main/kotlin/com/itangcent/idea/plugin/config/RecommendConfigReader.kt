@@ -71,6 +71,14 @@ class RecommendConfigReader : ConfigReader {
                 "\n" +
                 "#The ObjectId and Date are parsed as strings\n" +
                 "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
-                "json.rule.convert[java.util.Date]=java.lang.String"
+                "json.rule.convert[java.util.Date]=java.lang.String" +
+                "\n" +
+                "#Support for javax.validation annotations\n" +
+                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
+                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
+                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
+                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
+                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
+                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")"
     }
 }

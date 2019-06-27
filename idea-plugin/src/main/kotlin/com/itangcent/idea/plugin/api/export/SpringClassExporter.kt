@@ -28,6 +28,7 @@ import com.itangcent.intellij.spring.MultipartFile
 import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
+import com.itangcent.intellij.util.forEachValid
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
@@ -557,10 +558,11 @@ class SpringClassExporter : ClassExporter, Worker {
             val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiClassHelper!!.unboxArrayOrList(paramType))
             val fields = psiClassHelper.getFields(paramCls, JsonOption.READ_COMMENT)
             val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-            fields.forEach { filedName, fieldVal ->
-                if (filedName != Attrs.COMMENT_ATTR) {
-                    parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal?.toString()), false, comment?.get("filedName") as String?)
-                }
+            val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+            fields.forEachValid { filedName, fieldVal ->
+                parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal?.toString()),
+                        required?.getAs(filedName) ?: false,
+                        comment?.get(filedName) as String?)
             }
         } catch (e: Exception) {
             logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
@@ -574,16 +576,19 @@ class SpringClassExporter : ClassExporter, Worker {
             val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiClassHelper!!.unboxArrayOrList(paramType))
             val fields = psiClassHelper.getFields(paramCls, JsonOption.READ_COMMENT)
             val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
+            val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
             parseHandle.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
-            fields.forEach { filedName, fieldVal ->
-                if (filedName != Attrs.COMMENT_ATTR) {
-                    val fv = deepComponent(fieldVal)
-                    if (fv is MultipartFile) {
-                        parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
-                        parseHandle.addFormFileParam(request, filedName, false, comment?.getAs(filedName))
-                    } else {
-                        parseHandle.addFormParam(request, filedName, null, comment?.getAs(filedName))
-                    }
+            fields.forEachValid { filedName, fieldVal ->
+                val fv = deepComponent(fieldVal)
+                if (fv is MultipartFile) {
+                    parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
+                    parseHandle.addFormFileParam(request, filedName,
+                            required?.getAs(filedName) ?: false,
+                            comment?.getAs(filedName))
+                } else {
+                    parseHandle.addFormParam(request, filedName, null,
+                            required?.getAs(filedName) ?: false,
+                            comment?.getAs(filedName))
                 }
             }
         } catch (e: Exception) {
