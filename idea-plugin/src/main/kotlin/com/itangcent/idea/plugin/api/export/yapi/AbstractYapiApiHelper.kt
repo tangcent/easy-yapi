@@ -8,9 +8,9 @@ import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.util.traceError
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.methods.HttpGet
 import java.io.ByteArrayOutputStream
 import java.net.SocketException
@@ -59,6 +59,8 @@ open class AbstractYapiApiHelper {
         val settings = settingBinder!!.read()
         settings.yapiServer = yapiServer
         settingBinder.save(settings)
+        Thread.sleep(200)
+        server = yapiServer.removeSuffix("/")
     }
 
     fun getProjectWeb(module: String): String? {
@@ -130,21 +132,26 @@ open class AbstractYapiApiHelper {
             httpClient.execute(httpGet, responseHandler).result()
         } catch (e: SocketTimeoutException) {
             if (!dumb) {
+                logger!!.trace("$url connect timeout")
                 throw e
             }
             logger!!.error("$url connect timeout")
             null
         } catch (e: SocketException) {
             if (!dumb) {
+                logger!!.trace("$url is unreachable (connect failed)")
                 throw e
             }
             logger!!.error("$url is unreachable (connect failed)")
             null
         } catch (e: Exception) {
             if (!dumb) {
+                logger!!.trace("request $url failed")
+                logger.traceError(e)
                 throw e
             }
-            logger!!.error("request $url failed:" + ExceptionUtils.getStackTrace(e))
+            logger!!.trace("request $url failed")
+            logger.traceError(e)
             null
         }
     }
