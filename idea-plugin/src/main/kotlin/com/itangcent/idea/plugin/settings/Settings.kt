@@ -15,8 +15,7 @@ class Settings {
     //unit:s
     var httpTimeOut: Int? = null
 
-    //enable to use recommend config:
-    //like jackson/gson
+    //enable to use recommend config
     var useRecommendConfig: Boolean? = true
 
     var logLevel: Int? = null

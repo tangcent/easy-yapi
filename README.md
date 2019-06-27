@@ -53,7 +53,7 @@ restart **IDE**.
 
 
 
-* ApiDashBoard(Beta)
+* ApiDashBoard
 ```textCode
     It is easily to export api in current project to postman by dragging
     You can use by this : "Click [Code -> ApiDashBoard] in top"

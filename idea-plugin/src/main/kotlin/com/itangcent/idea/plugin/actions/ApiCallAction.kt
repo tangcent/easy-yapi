@@ -28,8 +28,6 @@ class ApiCallAction : ApiExportAction("Call Api") {
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
         builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
-        builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
-        builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }

@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.exporter.ClassExporter
@@ -12,17 +13,18 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 
+@Singleton
 class PostmanApiExporter {
 
     @Inject

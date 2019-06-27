@@ -61,8 +61,8 @@ fun ParseHandle.addParam(request: Request, paramName: String, defaultVal: String
     this.addParam(request, param)
 }
 
-fun ParseHandle.addFormParam(request: Request, paramName: String, defaultVal: String?, attr: String?) {
-    addFormParam(request, paramName, defaultVal, false, attr)
+fun ParseHandle.addFormParam(request: Request, paramName: String, defaultVal: String?, desc: String?) {
+    addFormParam(request, paramName, defaultVal, false, desc)
 }
 
 fun ParseHandle.addFormParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {

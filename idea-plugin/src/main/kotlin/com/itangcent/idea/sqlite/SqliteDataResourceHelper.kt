@@ -1,9 +1,8 @@
 package com.itangcent.idea.sqlite
 
 import com.google.inject.Inject
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.logger.Logger
-import org.apache.commons.lang3.exception.ExceptionUtils
+import com.itangcent.intellij.util.traceError
 import org.sqlite.SQLiteConfig
 import org.sqlite.SQLiteDataSource
 import org.sqlite.javax.SQLiteConnectionPoolDataSource
@@ -18,7 +17,7 @@ class SqliteDataResourceHelper {
     @Inject
     private val logger: Logger? = null
 
-    fun getSD(fileName: String): SQLiteDataSource {
+    private fun getSD(fileName: String): SQLiteDataSource {
         return sdCache.computeIfAbsent(fileName) {
             val sqLiteConfig = SQLiteConfig()
             sqLiteConfig.setSynchronous(SQLiteConfig.SynchronousMode.OFF)

@@ -55,6 +55,12 @@ class RecommendConfigReader : ConfigReader {
                 "#Ignore class/api\n" +
                 "ignore=#ignore\n" +
                 "\n" +
+                "#deprecated info\n" +
+                "doc.method=js:it.hasDoc(\"deprecated\")?(\"[deprecated]:\"+it.doc(\"deprecated\")):null\n" +
+                "doc.method=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
+                "doc.field=js:it.hasDoc(\"deprecated\")?(\"[deprecated]:\"+it.doc(\"deprecated\")):null\n" +
+                "doc.field=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
+                "\n" +
                 "#Additional json parsing rules\n" +
                 "#Support for Jackson annotations\n" +
                 "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +
@@ -62,8 +68,17 @@ class RecommendConfigReader : ConfigReader {
                 "#Support for Gson annotations\n" +
                 "json.rule.field.name=@com.google.gson.annotations.SerializedName#value\n" +
                 "json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize\n" +
+                "\n" +
                 "#The ObjectId and Date are parsed as strings\n" +
                 "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
-                "json.rule.convert[java.util.Date]=java.lang.String"
+                "json.rule.convert[java.util.Date]=java.lang.String" +
+                "\n" +
+                "#Support for javax.validation annotations\n" +
+                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
+                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
+                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
+                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
+                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
+                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")"
     }
 }

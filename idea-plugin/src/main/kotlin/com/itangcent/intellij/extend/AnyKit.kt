@@ -41,7 +41,7 @@ fun Any.asHashMap(obj: Any?): HashMap<String, Any?> {
 
     if (obj is Map<*, *>) {
         val map: HashMap<String, Any?> = HashMap()
-        obj.forEach { k, v -> map[k.toString()] = v }
+        obj.forEach { (k, v) -> map[k.toString()] = v }
         return map
     }
     return HashMap()

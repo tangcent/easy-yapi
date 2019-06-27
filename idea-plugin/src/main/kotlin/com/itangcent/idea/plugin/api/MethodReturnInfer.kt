@@ -6,7 +6,6 @@ import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.Visional
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.DuckTypeHelper
@@ -14,6 +13,7 @@ import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.KV
+import com.itangcent.intellij.util.traceError
 import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -1200,6 +1200,7 @@ class MethodReturnInferHelper {
             }
         }
 
+        @Suppress("UNCHECKED_CAST")
         protected fun findVariableIn(name: String, from: Any?): Variable? {
             var target: Any? = from
             val finalName: String
@@ -1208,7 +1209,11 @@ class MethodReturnInferHelper {
                 val paths = name.substringBeforeLast(".").split(".")
                 try {
                     for (path in paths) {
-                        target = (target as Map<*, *>)[path]
+                        if (target is Map<*, *>) {
+                            target = (target as Map<Any?, Any?>)[path]
+                        } else {
+                            return null
+                        }
                     }
                 } catch (e: Exception) {
                     return null
