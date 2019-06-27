@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiMethod
+import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.intellij.config.ConfigReader
@@ -10,9 +11,11 @@ import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
+import com.itangcent.intellij.util.forEachValid
 import java.util.*
 import java.util.regex.Pattern
 import java.util.stream.Collectors
+import kotlin.collections.ArrayList
 
 class YapiFormatter {
     @Inject
@@ -188,38 +191,51 @@ class YapiFormatter {
             val properties: HashMap<String, Any?> = HashMap()
             var comment: HashMap<String, Any?>? = null
             try {
-                comment = typedObject[COMMENT_ATTR] as HashMap<String, Any?>?
+                comment = typedObject[Attrs.COMMENT_ATTR] as HashMap<String, Any?>?
             } catch (e: Throwable) {
             }
-            typedObject.forEach { k, v ->
-                if (k != COMMENT_ATTR) {
-                    val propertyInfo = parseObject(contactPath(path, k.toString()), v)
-                    if (comment != null) {
-                        val desc = comment[k]
-                        if (desc != null) {
-                            propertyInfo["description"] = desc.toString()
-                        }
-                        val options = comment["$k@options"]
-                        if (options != null) {
-                            val optionList = options as List<Map<String, Any?>>
-
-                            val optionVals = optionList.stream()
-                                    .map { it["value"] }
-                                    .collect(Collectors.toList())
-
-                            val optionDesc = getOptionDesc(optionList)
-                            propertyInfo["enum"] = optionVals
-                            if (optionDesc != null) {
-                                propertyInfo["enumDesc"] = optionDesc
-                            }
-
-                            addMock(propertyInfo, "@pick(${GsonUtils.toJson(optionVals)})")
-                        }
+            var required: HashMap<String, Any?>? = null
+            try {
+                required = typedObject[Attrs.REQUIRED_ATTR] as HashMap<String, Any?>?
+            } catch (e: Throwable) {
+            }
+            var requireds: LinkedList<String>? = null
+            if (!required.isNullOrEmpty()) {
+                requireds = LinkedList()
+            }
+            typedObject.forEachValid { k, v ->
+                val propertyInfo = parseObject(contactPath(path, k.toString()), v)
+                if (comment != null) {
+                    val desc = comment[k]
+                    if (desc != null) {
+                        propertyInfo["description"] = desc.toString()
                     }
-                    properties[k.toString()] = propertyInfo
+                    val options = comment["$k@options"]
+                    if (options != null) {
+                        val optionList = options as List<Map<String, Any?>>
+
+                        val optionVals = optionList.stream()
+                                .map { it["value"] }
+                                .collect(Collectors.toList())
+
+                        val optionDesc = getOptionDesc(optionList)
+                        propertyInfo["enum"] = optionVals
+                        if (optionDesc != null) {
+                            propertyInfo["enumDesc"] = optionDesc
+                        }
+
+                        addMock(propertyInfo, "@pick(${GsonUtils.toJson(optionVals)})")
+                    }
                 }
+                if (required?.get(k) == true) {
+                    requireds?.add(k.toString())
+                }
+                properties[k.toString()] = propertyInfo
             }
             item["properties"] = properties
+            if (!requireds.isNullOrEmpty()) {
+                item["required"] = requireds.toTypedArray()
+            }
         }
 
         //try read mock rules
@@ -369,7 +385,6 @@ class YapiFormatter {
 
     companion object {
         val NO_METHOD = "ALL"
-        val COMMENT_ATTR = "@comment"
         val SPRING_REQUEST_RESPONSE: Array<String> = arrayOf("HttpServletRequest", "HttpServletResponse")
 
         val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!

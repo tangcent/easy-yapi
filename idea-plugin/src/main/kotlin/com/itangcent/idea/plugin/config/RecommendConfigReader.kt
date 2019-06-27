@@ -56,10 +56,10 @@ class RecommendConfigReader : ConfigReader {
                 "ignore=#ignore\n" +
                 "\n" +
                 "#deprecated info\n" +
-                "doc.method=js:it.hasDoc(\"deprecated\")?(\"[deprecated]:\"+it.doc(\"deprecated\")):null\n" +
-                "doc.method=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
-                "doc.field=js:it.hasDoc(\"deprecated\")?(\"[deprecated]:\"+it.doc(\"deprecated\")):null\n" +
-                "doc.field=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
+                "doc.method=js:it.hasDoc(\"deprecated\")?(\"[已废弃]:\"+it.doc(\"deprecated\")):null\n" +
+                "doc.method=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
+                "doc.field=js:it.hasDoc(\"deprecated\")?(\"[已废弃]:\"+it.doc(\"deprecated\")):null\n" +
+                "doc.field=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
                 "\n" +
                 "#Additional json parsing rules\n" +
                 "#Support for Jackson annotations\n" +
