@@ -12,6 +12,6 @@ class PostmanConfigReader : AutoSearchConfigReader() {
     }
 
     override fun configFileNames(): List<String> {
-        return Arrays.asList(".postman.config", ".easy.api.config")
+        return listOf(".postman.config", ".easy.api.config")
     }
 }

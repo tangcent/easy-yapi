@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.markdown
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
@@ -15,16 +16,17 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.idea.utils.traceError
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.DocCommentUtils
+import com.itangcent.intellij.util.forEachValid
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 
+@Singleton
 class MarkdownApiExporter {
 
     @Inject
@@ -216,7 +218,7 @@ class MarkdownApiExporter {
             handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
             request.headers!!.forEach {
                 handle("| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                        " ${it.example ?: ""} | ${it.desc ?: ""} |\n")
+                        " ${it.example ?: ""} | ${escape(it.desc)} |\n")
             }
         }
 
@@ -227,7 +229,7 @@ class MarkdownApiExporter {
             handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.querys!!.forEach {
                 handle("| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                        " ${it.desc ?: ""} |\n")
+                        " ${escape(it.desc)} |\n")
             }
         }
 
@@ -246,7 +248,7 @@ class MarkdownApiExporter {
                 handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
                 request.formParams!!.forEach {
                     handle("| ${it.name} | ${it.value} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                            " ${it.type} | ${it.desc} |\n")
+                            " ${it.type} | ${escape(it.desc)} |\n")
                 }
             }
 
@@ -264,7 +266,7 @@ class MarkdownApiExporter {
                 response.headers!!.forEach {
                     handle("| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required
                             ?: false, "YES", "NO")} |" +
-                            " ${it.example ?: ""} | ${it.desc ?: ""} |\n")
+                            " ${it.example ?: ""} | ${escape(it.desc)} |\n")
                 }
 
                 handle("\n**Body：**\n\n")
@@ -319,30 +321,28 @@ class MarkdownApiExporter {
                 comment = obj[Attrs.COMMENT_ATTR] as HashMap<String, Any?>?
             } catch (e: Throwable) {
             }
-            obj.forEach { k, v ->
-                if (k != Attrs.COMMENT_ATTR) {
-                    var propertyDesc: String? = null
-                    if (comment != null) {
-                        val descInComment = comment[k]
-                        if (descInComment != null) {
-                            propertyDesc = descInComment.toString()
-                        }
-                        val options = comment["$k@options"]
-                        if (options != null) {
-                            val optionList = options as List<Map<String, Any?>>
+            obj.forEachValid { k, v ->
+                var propertyDesc: String? = null
+                if (comment != null) {
+                    val descInComment = comment[k]
+                    if (descInComment != null) {
+                        propertyDesc = descInComment.toString()
+                    }
+                    val options = comment["$k@options"]
+                    if (options != null) {
+                        val optionList = options as List<Map<String, Any?>>
 
-                            val optionDesc = getOptionDesc(optionList)
-                            if (optionDesc != null) {
-                                if (propertyDesc == null) {
-                                    propertyDesc = optionDesc
-                                } else {
-                                    propertyDesc = "$propertyDesc\n$optionDesc"
-                                }
+                        val optionDesc = getOptionDesc(optionList)
+                        if (optionDesc != null) {
+                            if (propertyDesc == null) {
+                                propertyDesc = optionDesc
+                            } else {
+                                propertyDesc = "$propertyDesc\n$optionDesc"
                             }
                         }
                     }
-                    parseBody(deep + 1, k.toString(), propertyDesc ?: "", v, handle)
                 }
+                parseBody(deep + 1, k.toString(), propertyDesc ?: "", v, handle)
             }
         } else {
             addBodyProperty(deep, name, "object", desc, handle)
@@ -363,7 +363,7 @@ class MarkdownApiExporter {
             handle("&ensp;&ensp;".repeat(deep - 1))
             handle("&#124;─")
         }
-        handle("$name | $type | $desc |\n")
+        handle("$name | $type | ${escape(desc)} |\n")
     }
 
     private fun hN(n: Int): String {
@@ -414,6 +414,12 @@ class MarkdownApiExporter {
             StringUtils.isBlank(docText) -> cls.name
             else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle)
         }
+    }
+
+
+    private fun escape(str: String?): String {
+        if (str.isNullOrBlank()) return ""
+        return str.replace("\n", "<br>")
     }
 
     companion object {

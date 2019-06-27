@@ -21,7 +21,7 @@ class StatusRecorder : Worker {
 
     override fun waitCompleted() {
         while (status() == WorkerStatus.BUSY) {
-            aqsCountLatch.waitFor(5000)
+            aqsCountLatch.waitFor(3000)
         }
     }
 

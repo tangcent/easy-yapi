@@ -12,6 +12,6 @@ class EasyApiConfigReader : AutoSearchConfigReader() {
     }
 
     override fun configFileNames(): List<String> {
-        return Arrays.asList(".easy.api.config")
+        return listOf(".easy.api.config")
     }
 }

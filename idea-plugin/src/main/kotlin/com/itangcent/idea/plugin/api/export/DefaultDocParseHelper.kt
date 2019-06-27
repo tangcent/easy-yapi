@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
@@ -8,6 +9,7 @@ import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.intellij.psi.PsiClassHelper
 import java.util.regex.Pattern
 
+@Singleton
 class DefaultDocParseHelper : DocParseHelper {
 
     @Inject

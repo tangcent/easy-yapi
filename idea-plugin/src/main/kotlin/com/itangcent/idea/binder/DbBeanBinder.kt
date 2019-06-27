@@ -42,7 +42,7 @@ class DbBeanBinderFactory<T : kotlin.Any> {
         getDAO().delete(beanBindName.toByteArray())
     }
 
-    inner class DbBeanBinder : com.itangcent.intellij.file.BeanBinder<T> {
+    inner class DbBeanBinder : BeanBinder<T> {
         private val beanBindName: String
 
         constructor(beanBindName: String) {
