@@ -6,13 +6,15 @@ import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.Visional
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassHelper
-import com.itangcent.intellij.spring.SpringClassName
 import com.itangcent.intellij.util.KV
+import com.itangcent.intellij.util.Magics
 import com.itangcent.intellij.util.traceError
 import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
@@ -28,6 +30,9 @@ class MethodReturnInferHelper {
 
     @Inject
     val psiClassHelper: PsiClassHelper? = null
+
+    @Inject
+    val ruleComputer: RuleComputer? = null
 
     @Inject
     val duckTypeHelper: DuckTypeHelper? = null
@@ -626,9 +631,6 @@ class MethodReturnInferHelper {
             psiType is PsiArrayType -> {
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
-            psiType.canonicalText == SpringClassName.MULTIPARTFILE -> {
-                return psiClassHelper.getTypeObject(psiType, context, jsonOption)
-            }
             PsiClassHelper.isCollection(psiType) -> {   //list type
                 return psiClassHelper.getTypeObject(psiType, context, jsonOption)
             }
@@ -637,11 +639,14 @@ class MethodReturnInferHelper {
             }
             else -> {
                 val typeCanonicalText = psiType.canonicalText
-                return if (typeCanonicalText.contains('<') && typeCanonicalText.endsWith('>')) {
+                if (typeCanonicalText.contains('<') && typeCanonicalText.endsWith('>')) {
                     return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
                 } else {
                     val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiType)
-                    paramCls?.let { getSimpleFields(it, 1) }
+                    if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
+                        return Magics.FILE_STR
+                    }
+                    return paramCls?.let { getSimpleFields(it, 1) }
                 }
             }
         }
@@ -659,9 +664,6 @@ class MethodReturnInferHelper {
             psiType is PsiArrayType -> {
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
-            psiType.canonicalText == SpringClassName.MULTIPARTFILE -> {
-                return psiClassHelper.getTypeObject(psiType, context, jsonOption)
-            }
             PsiClassHelper.isCollection(psiType) -> {   //list type
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
@@ -670,6 +672,9 @@ class MethodReturnInferHelper {
             }
             else -> {
                 val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiType) ?: return null
+                if (ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
+                    return Magics.FILE_STR
+                }
                 return getSimpleFields(paramCls, deep + 1)
             }
         }

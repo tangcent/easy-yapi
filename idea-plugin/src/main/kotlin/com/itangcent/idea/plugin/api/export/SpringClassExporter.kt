@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
-import com.intellij.psi.util.PsiUtil
 import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
@@ -20,16 +19,12 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
-import com.itangcent.intellij.spring.MultipartFile
-import com.itangcent.intellij.spring.SpringClassName
-import com.itangcent.intellij.util.DocCommentUtils
-import com.itangcent.intellij.util.KV
-import com.itangcent.intellij.util.forEachValid
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.util.*
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.regex.Pattern
@@ -252,22 +247,18 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findRequestMapping(psiClass: PsiClass): PsiAnnotation? {
-        val requestMappingAnn = findRequestMappingInAnn(psiClass)
+        val requestMappingAnn = findRequestMapping(psiClass)
         if (requestMappingAnn != null) return requestMappingAnn
         var superCls = psiClass.superClass
         while (superCls != null) {
-            val requestMappingAnnInSuper = findRequestMappingInAnn(superCls)
+            val requestMappingAnnInSuper = findRequestMapping(superCls)
             if (requestMappingAnnInSuper != null) return requestMappingAnnInSuper
             superCls = superCls.superClass
         }
         return null
     }
 
-    private fun findRequestMapping(method: PsiMethod): PsiAnnotation? {
-        return findRequestMappingInAnn(method)
-    }
-
-    private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
+    private fun findRequestMapping(ele: PsiModifierListOwner): PsiAnnotation? {
         return SPRING_REQUEST_MAPPING_ANNOTATIONS
                 .map { PsiAnnotationUtils.findAnn(ele, it) }
                 .firstOrNull { it != null }
@@ -503,13 +494,14 @@ class SpringClassExporter : ClassExporter, Worker {
                 }
 
                 val paramType = param.type
+                val paramCls = PsiTypesUtil.getPsiClass(paramType)
                 val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
                 var defaultVal: Any? = null
                 if (unboxType is PsiPrimitiveType) { //primitive Type
                     defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
                 } else if (psiClassHelper.isNormalType(unboxType.canonicalText)) {//normal type
                     defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
-                } else if (paramType.canonicalText.contains(SpringClassName.MULTIPARTFILE)) {
+                } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
                     if (httpMethod == HttpMethod.GET) {
                         //can not upload file in a GET method
                         logger!!.error("Couldn't upload file in 'GET':[$httpMethod:${request.path}],param:${param.name} type:{${paramType.canonicalText}}")
@@ -520,6 +512,7 @@ class SpringClassExporter : ClassExporter, Worker {
                         httpMethod = HttpMethod.POST
                     }
 
+                    parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
                     parseHandle.addFormFileParam(request, paramName!!, required, findAttrForParam(param.name, paramDocComment))
                     continue
                 } else if (SpringAttrs.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
@@ -552,15 +545,16 @@ class SpringClassExporter : ClassExporter, Worker {
         parseHandle.setMethod(request, httpMethod)
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun addModelAttrAsQuery(parameter: PsiParameter, request: Request, parseHandle: ParseHandle) {
         val paramType = parameter.type
         try {
-            val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiClassHelper!!.unboxArrayOrList(paramType))
-            val fields = psiClassHelper.getFields(paramCls, JsonOption.READ_COMMENT)
+            val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
+            val fields = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT) as KV<String, Any>
             val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
             val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
             fields.forEachValid { filedName, fieldVal ->
-                parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal?.toString()),
+                parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
                         required?.getAs(filedName) ?: false,
                         comment?.get(filedName) as String?)
             }
@@ -569,18 +563,19 @@ class SpringClassExporter : ClassExporter, Worker {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun addModelAttr(parameter: PsiParameter, request: Request, parseHandle: ParseHandle) {
 
         val paramType = parameter.type
         try {
-            val paramCls = PsiUtil.resolveClassInClassTypeOnly(psiClassHelper!!.unboxArrayOrList(paramType))
-            val fields = psiClassHelper.getFields(paramCls, JsonOption.READ_COMMENT)
+            val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
+            val fields = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT) as KV<String, Any>
             val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
             val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
             parseHandle.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
             fields.forEachValid { filedName, fieldVal ->
                 val fv = deepComponent(fieldVal)
-                if (fv is MultipartFile) {
+                if (fv == Magics.FILE_STR) {
                     parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
                     parseHandle.addFormFileParam(request, filedName,
                             required?.getAs(filedName) ?: false,

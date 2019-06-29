@@ -79,6 +79,8 @@ class RecommendConfigReader : ConfigReader {
                 "param.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
                 "field.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
                 "param.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
-                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")"
+                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
+                "#Support spring file\n" +
+                "type.is_file=js:it.isExtend(\"org.springframework.web.multipart.MultipartFile\")"
     }
 }
