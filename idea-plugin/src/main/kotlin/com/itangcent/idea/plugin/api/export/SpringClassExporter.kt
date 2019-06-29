@@ -92,6 +92,8 @@ class SpringClassExporter : ClassExporter, Worker {
                     }
                 }
             }
+        } catch (e: Exception) {
+            logger!!.traceError(e)
         } finally {
             statusRecorder.endWork()
         }
@@ -111,7 +113,7 @@ class SpringClassExporter : ClassExporter, Worker {
                                 , parseHandle: ParseHandle, requestHandle: RequestHandle) {
 
         actionContext!!.checkStatus()
-        val requestMappingAnn = findRequestMapping(method) ?: return
+        val requestMappingAnn = findRequestMappingInAnn(method) ?: return
         val request = Request()
         request.resource = method
 
@@ -247,18 +249,18 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findRequestMapping(psiClass: PsiClass): PsiAnnotation? {
-        val requestMappingAnn = findRequestMapping(psiClass)
+        val requestMappingAnn = findRequestMappingInAnn(psiClass)
         if (requestMappingAnn != null) return requestMappingAnn
         var superCls = psiClass.superClass
         while (superCls != null) {
-            val requestMappingAnnInSuper = findRequestMapping(superCls)
+            val requestMappingAnnInSuper = findRequestMappingInAnn(superCls)
             if (requestMappingAnnInSuper != null) return requestMappingAnnInSuper
             superCls = superCls.superClass
         }
         return null
     }
 
-    private fun findRequestMapping(ele: PsiModifierListOwner): PsiAnnotation? {
+    private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
         return SPRING_REQUEST_MAPPING_ANNOTATIONS
                 .map { PsiAnnotationUtils.findAnn(ele, it) }
                 .firstOrNull { it != null }
