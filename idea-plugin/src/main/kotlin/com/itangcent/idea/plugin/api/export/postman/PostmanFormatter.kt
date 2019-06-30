@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
+import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
@@ -87,17 +88,33 @@ class PostmanFormatter {
 
         val body: HashMap<String, Any?> = HashMap()
         if (request.formParams != null) {
-            body["mode"] = "urlencoded"
-            val urlEncodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
-            request.formParams!!.forEach {
-                urlEncodeds.add(KV.create<String, Any?>()
-                        .set("key", it.name)
-                        .set("value", it.value)
-                        .set("type", it.type)
-                        .set("description", it.desc)
-                )
+            val contentType = request.getContentType()
+            if (contentType?.contains("form-data") == true) {
+                body["mode"] = "formdata"
+                val formdatas: ArrayList<HashMap<String, Any?>> = ArrayList()
+                request.formParams!!.forEach {
+                    formdatas.add(KV.create<String, Any?>()
+                            .set("key", it.name)
+                            .set("value", it.value)
+                            .set("type", it.type)
+                            .set("description", it.desc)
+                    )
+                }
+                body["formdata"] = formdatas
+
+            } else {
+                body["mode"] = "urlencoded"
+                val urlEncodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
+                request.formParams!!.forEach {
+                    urlEncodeds.add(KV.create<String, Any?>()
+                            .set("key", it.name)
+                            .set("value", it.value)
+                            .set("type", it.type)
+                            .set("description", it.desc)
+                    )
+                }
+                body["urlencoded"] = urlEncodeds
             }
-            body["urlencoded"] = urlEncodeds
         }
 
         if (request.body != null) {
@@ -128,30 +145,44 @@ class PostmanFormatter {
                 responseInfo["_postman_previewtype"] = "text"
                 val responseHeader = ArrayList<Map<String, Any?>>()
                 responseInfo["header"] = responseHeader
-                responseHeader.add(KV.create<String, Any?>()
-                        .set("name", "content-type")
-                        .set("key", "content-type")
-                        .set("value", "application/json;charset=UTF-8")
-                        .set("description", "The mime type of this content")
-                )
-                responseHeader.add(KV.create<String, Any?>()
-                        .set("name", "date")
-                        .set("key", "date")
-                        .set("value", DateUtils.format(Date(), "EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
-                        .set("description", "The date and time that the message was sent")
-                )
-                responseHeader.add(KV.create<String, Any?>()
-                        .set("name", "server")
-                        .set("key", "server")
-                        .set("value", "Apache-Coyote/1.1")
-                        .set("description", "A name for the server")
-                )
-                responseHeader.add(KV.create<String, Any?>()
-                        .set("name", "transfer-encoding")
-                        .set("key", "transfer-encoding")
-                        .set("value", "chunked")
-                        .set("description", "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.")
-                )
+
+                if (response.headers?.any { it.name.equals("content-type", true) } == false) {
+                    responseHeader.add(KV.create<String, Any?>()
+                            .set("name", "content-type")
+                            .set("key", "content-type")
+                            .set("value", "application/json;charset=UTF-8")
+                            .set("description", "The mime type of this content")
+                    )
+                }
+
+                if (response.headers?.any { it.name.equals("date", true) } == false) {
+
+                    responseHeader.add(KV.create<String, Any?>()
+                            .set("name", "date")
+                            .set("key", "date")
+                            .set("value", DateUtils.format(Date(), "EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
+                            .set("description", "The date and time that the message was sent")
+                    )
+                }
+
+                if (response.headers?.any { it.name.equals("server", true) } == false) {
+                    responseHeader.add(KV.create<String, Any?>()
+                            .set("name", "server")
+                            .set("key", "server")
+                            .set("value", "Apache-Coyote/1.1")
+                            .set("description", "A name for the server")
+                    )
+                }
+
+                if (response.headers?.any { it.name.equals("transfer-encoding", true) } == false) {
+
+                    responseHeader.add(KV.create<String, Any?>()
+                            .set("name", "transfer-encoding")
+                            .set("key", "transfer-encoding")
+                            .set("value", "chunked")
+                            .set("description", "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.")
+                    )
+                }
 
                 response.headers?.forEach {
                     responseHeader.add(KV.create<String, Any?>()
@@ -161,6 +192,7 @@ class PostmanFormatter {
                             .set("description", it.desc)
                     )
                 }
+
 
                 responseInfo["responseTime"] = RandomUtils.nextInt(10, 100)
 
