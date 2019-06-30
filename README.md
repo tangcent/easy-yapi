@@ -24,7 +24,7 @@ restart **IDE**.
 
 ## Guide
 
-* [custom config for project](https://github.com/tangcent/easy-api/wiki/Use-Config-Make-Plugin-More-Intelligent(Export-Spring-Api-To-Postman))
+* [custom config for project](https://github.com/tangcent/easy-yapi/wiki/%E6%94%AF%E6%8C%81%E9%A2%9D%E5%A4%96%E9%85%8D%E7%BD%AE)
 
 * ExportYapi
 ```textCode
