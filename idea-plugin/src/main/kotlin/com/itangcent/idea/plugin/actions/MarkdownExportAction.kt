@@ -26,6 +26,9 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
+        //always not read api from cache
+        builder.bindInstance("class.exporter.read.cache", false)
+
         builder.bindInstance("file.save.default", "easy-api.md")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.markdown.export.path")
     }
