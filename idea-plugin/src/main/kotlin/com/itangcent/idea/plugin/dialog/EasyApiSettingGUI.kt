@@ -140,7 +140,7 @@ class EasyApiSettingGUI {
                     }
                 }
 
-        logLevelComboBox!!.model = DefaultComboBoxModel(ConfigurableLogger.CoarseLogLevel.values())
+        logLevelComboBox!!.model = DefaultComboBoxModel(ConfigurableLogger.CoarseLogLevel.editableValues())
 
         autoComputer.bind<Int?>(this, "settings.logLevel")
                 .with(this.logLevelComboBox!!)

@@ -85,6 +85,10 @@ class ConfigurableLogger : AbstractLogger() {
                     else -> Logger.BasicLevel.toLevel(level, defaultLevel)
                 }
             }
+
+            fun editableValues(): Array<CoarseLogLevel> {
+                return values().filter { it != EMPTY }.toTypedArray()
+            }
         }
     }
 }
