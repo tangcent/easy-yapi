@@ -53,12 +53,17 @@ class CachedClassExporter : ClassExporter, Worker {
     @Named("delegate_classExporter")
     private val delegateClassExporter: ClassExporter? = null
 
+    @Inject(optional = true)
+    @Named("class.exporter.read.cache")
+    private val readCache: Boolean = true
+
     @Inject
     private val fileApiCacheRepository: FileApiCacheRepository? = null
 
     @Inject
     private val actionContext: ActionContext? = null
 
+    //no use cache,no read,no write
     private var disabled: Boolean = false
 
     override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
@@ -77,22 +82,25 @@ class CachedClassExporter : ClassExporter, Worker {
         actionContext!!.runAsync {
             try {
                 val md5 = "${text.length}x${text.hashCode()}"//use length+hashcode
-                var fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
-                if (fileApiCache != null
-                        && fileApiCache.lastModified!! > FileUtils.getLastModified(psiFile) ?: System.currentTimeMillis()
-                        && fileApiCache.md5 == md5) {
+                var fileApiCache: FileApiCache? = null
+                if (readCache) {
+                    fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
+                    if (fileApiCache != null
+                            && fileApiCache.lastModified!! > FileUtils.getLastModified(psiFile) ?: System.currentTimeMillis()
+                            && fileApiCache.md5 == md5) {
 
-                    if (!fileApiCache.requests.isNullOrEmpty()) {
-                        statusRecorder.newWork()
-                        actionContext.runInReadUI {
-                            try {
-                                readApiFromCache(cls, fileApiCache!!, requestHandle)
-                            } finally {
-                                statusRecorder.endWork()
+                        if (!fileApiCache.requests.isNullOrEmpty()) {
+                            statusRecorder.newWork()
+                            actionContext.runInReadUI {
+                                try {
+                                    readApiFromCache(cls, fileApiCache!!, requestHandle)
+                                } finally {
+                                    statusRecorder.endWork()
+                                }
                             }
                         }
+                        return@runAsync
                     }
-                    return@runAsync
                 }
 
                 fileApiCache = FileApiCache()
@@ -126,7 +134,7 @@ class CachedClassExporter : ClassExporter, Worker {
                         actionContext.runAsync {
                             fileApiCache.md5 = md5
                             fileApiCache.lastModified = System.currentTimeMillis()
-                            fileApiCacheRepository.saveFileApiCache(path, fileApiCache)
+                            fileApiCacheRepository!!.saveFileApiCache(path, fileApiCache)
                         }
                     } finally {
                         statusRecorder.endWork()
