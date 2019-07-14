@@ -29,7 +29,7 @@ import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.regex.Pattern
 
-class SpringClassExporter : ClassExporter, Worker {
+open class SpringClassExporter : ClassExporter, Worker {
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
 
@@ -64,7 +64,7 @@ class SpringClassExporter : ClassExporter, Worker {
     private val methodReturnInferHelper: MethodReturnInferHelper? = null
 
     @Inject
-    private val ruleComputer: RuleComputer? = null
+    protected val ruleComputer: RuleComputer? = null
 
     @Inject
     private var actionContext: ActionContext? = null
@@ -109,12 +109,16 @@ class SpringClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
+    protected open fun newRequest(): Request {
+        return Request()
+    }
+
     private fun exportMethodApi(method: PsiMethod, basePath: String, ctrlHttpMethod: String
                                 , parseHandle: ParseHandle, requestHandle: RequestHandle) {
 
         actionContext!!.checkStatus()
         val requestMappingAnn = findRequestMappingInAnn(method) ?: return
-        val request = Request()
+        val request = newRequest()
         request.resource = method
 
         var httpMethod = findHttpMethod(requestMappingAnn)
@@ -153,11 +157,17 @@ class SpringClassExporter : ClassExporter, Worker {
 
         processResponse(method, request, parseHandle)
 
+        processCompleted(method, request, parseHandle)
+
         requestHandle(request)
     }
 
     private fun readMethodDoc(method: PsiMethod, parseHandle: ParseHandle): String? {
         return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
+    }
+
+    protected open fun processCompleted(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
+        //call after process
     }
 
     private fun processResponse(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
@@ -308,12 +318,12 @@ class SpringClassExporter : ClassExporter, Worker {
         }
     }
 
-    protected fun findDeprecatedOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
+    protected open fun findDeprecatedOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
         return ruleComputer!!.computer(ClassExportRuleKeys.DEPRECATE, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun findAttrForParam(paramName: String?, docComment: KV<String, Any>?): String? {
+    protected open fun findAttrForParam(paramName: String?, docComment: KV<String, Any>?): String? {
         return when {
             paramName == null -> null
             docComment == null -> null
