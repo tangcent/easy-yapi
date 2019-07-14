@@ -38,7 +38,11 @@ class YapiFormatter {
         item["res_body_is_json_schema"] = true
         item["api_opened"] = false
         item["index"] = 0
-        item["tag"] = EMPTY_TAGS
+        if (request is YapiRequest) {
+            item["tag"] = request.tags ?: EMPTY_TAGS
+        } else {
+            item["tag"] = EMPTY_TAGS
+        }
 
         item["title"] = request.name
 
@@ -384,9 +388,6 @@ class YapiFormatter {
     //endregion mock rules---------------------------------------------------------
 
     companion object {
-        val NO_METHOD = "ALL"
-        val SPRING_REQUEST_RESPONSE: Array<String> = arrayOf("HttpServletRequest", "HttpServletResponse")
-
         val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!
         val EMPTY_PARAMS: List<String> = Collections.emptyList<String>()
         val EMPTY_TAGS: List<String> = Collections.emptyList<String>()

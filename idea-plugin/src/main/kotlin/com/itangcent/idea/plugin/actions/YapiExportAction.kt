@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.plugin.api.export.DocParseHelper
@@ -38,6 +39,11 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
+
+        builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(YapiSpringClassExporter::class).singleton() }
+
+        //always not read api from cache
+        builder.bindInstance("class.exporter.read.cache", false)
 
         builder.bindInstance("file.save.default", "yapi.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.yapi.export.path")
