@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
@@ -11,10 +12,7 @@ import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.IdeaParseHandle
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
-import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
-import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
-import com.itangcent.idea.plugin.api.export.yapi.YapiCachedApiHelper
-import com.itangcent.idea.plugin.api.export.yapi.YapiConfigReader
+import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
@@ -45,6 +43,8 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(YapiApiDashBoardExporter::class) { it.singleton() }
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
+
+        builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(YapiSpringClassExporter::class).singleton() }
 
 
     }
