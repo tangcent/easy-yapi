@@ -82,7 +82,7 @@ class CachedClassExporter : ClassExporter, Worker {
         actionContext!!.runAsync {
             try {
                 val md5 = "${text.length}x${text.hashCode()}"//use length+hashcode
-                var fileApiCache: FileApiCache? = null
+                var fileApiCache: FileApiCache?
                 if (readCache) {
                     fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
                     if (fileApiCache != null
