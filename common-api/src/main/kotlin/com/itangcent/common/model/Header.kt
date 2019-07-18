@@ -2,7 +2,7 @@ package com.itangcent.common.model
 
 import java.io.Serializable
 
-class Header: Serializable {
+class Header : Extensible(), Serializable {
     var name: String? = null
 
     var value: String? = null

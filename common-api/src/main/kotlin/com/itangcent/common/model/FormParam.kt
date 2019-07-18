@@ -2,7 +2,7 @@ package com.itangcent.common.model
 
 import java.io.Serializable
 
-class FormParam : Serializable {
+class FormParam : Extensible(), Serializable {
 
     var name: String? = null
 
