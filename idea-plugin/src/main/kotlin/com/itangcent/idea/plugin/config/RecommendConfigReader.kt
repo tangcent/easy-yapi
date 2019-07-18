@@ -58,7 +58,9 @@ class RecommendConfigReader : ConfigReader {
                 "#deprecated info\n" +
                 "doc.method=js:it.hasDoc(\"deprecated\")?(\"[deprecated]:\"+it.doc(\"deprecated\")):null\n" +
                 "doc.method=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
-                "doc.field=js:it.hasDoc(\"deprecated\")?(\"[deprecated]:\"+it.doc(\"deprecated\")):null\n" +
+                "doc.method=js:it.containingClass().hasDoc(\"deprecated\")?(\"[deprecated] \"+it.containingClass().doc(\"deprecated\")):null\n" +
+                "doc.method=js:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
+                "doc.field=js:it.hasDoc(\"deprecated\")?(\"[deprecated] \"+it.doc(\"deprecated\")):null\n" +
                 "doc.field=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
                 "\n" +
                 "#Additional json parsing rules\n" +
