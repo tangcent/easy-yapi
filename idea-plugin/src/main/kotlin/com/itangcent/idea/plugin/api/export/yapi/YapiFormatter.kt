@@ -5,6 +5,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.KVUtils
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.SimpleRuleParser
@@ -38,11 +39,7 @@ class YapiFormatter {
         item["res_body_is_json_schema"] = true
         item["api_opened"] = false
         item["index"] = 0
-        if (request is YapiRequest) {
-            item["tag"] = request.tags ?: EMPTY_TAGS
-        } else {
-            item["tag"] = EMPTY_TAGS
-        }
+        item["tag"] = request.getExt("tags") ?: EMPTY_TAGS
 
         item["title"] = request.name
 
@@ -222,7 +219,7 @@ class YapiFormatter {
                                 .map { it["value"] }
                                 .collect(Collectors.toList())
 
-                        val optionDesc = getOptionDesc(optionList)
+                        val optionDesc = KVUtils.getOptionDesc(optionList)
                         propertyInfo["enum"] = optionVals
                         if (optionDesc != null) {
                             propertyInfo["enumDesc"] = optionDesc
@@ -263,17 +260,6 @@ class YapiFormatter {
             subPath == "[]" -> "$path$subPath"
             else -> "$path.$subPath"
         }
-    }
-
-    /**
-     * get description of options
-     */
-    private fun getOptionDesc(options: List<Map<String, Any?>>): String? {
-        return options.stream()
-                .map { it["value"].toString() + " :" + it["desc"] }
-                .filter { it != null }
-                .reduce { s1, s2 -> s1 + "\n" + s2 }
-                .orElse(null)
     }
 
     private fun nullObject(): HashMap<String, Any?> {
