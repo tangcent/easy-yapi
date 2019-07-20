@@ -2,7 +2,7 @@ package com.itangcent.common.model
 
 import java.io.Serializable
 
-open class Request : Serializable {
+open class Request : Extensible(), Serializable {
 
     var resource: Any? = null
 

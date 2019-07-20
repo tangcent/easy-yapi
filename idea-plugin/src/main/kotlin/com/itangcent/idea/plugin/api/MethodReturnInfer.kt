@@ -24,21 +24,26 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
+/**
+ *
+ *Try infer the return type of method
+ *It should be called from the UI thread
+ */
 class MethodReturnInferHelper {
     @Inject
-    var logger: Logger? = null
+    private var logger: Logger? = null
 
     @Inject
-    val psiClassHelper: PsiClassHelper? = null
+    private val psiClassHelper: PsiClassHelper? = null
 
     @Inject
-    val ruleComputer: RuleComputer? = null
+    private val ruleComputer: RuleComputer? = null
 
     @Inject
-    val duckTypeHelper: DuckTypeHelper? = null
+    private val duckTypeHelper: DuckTypeHelper? = null
 
     @Inject
-    val actionContext: ActionContext? = null
+    private val actionContext: ActionContext? = null
 
     private val staticMethodCache: HashMap<Pair<PsiMethod, Array<Any?>?>, Any?> = HashMap()
 
@@ -177,7 +182,7 @@ class MethodReturnInferHelper {
                 if (staticMethodCache.containsKey(key)) {
                     return staticMethodCache[key]
                 }
-                val tryCallRet = tayCallStaticMethod(psiMethod, unboxedArgs)
+                val tryCallRet = tryCallStaticMethod(psiMethod, unboxedArgs)
                 if (tryCallRet != CALL_FAILED) {
                     return tryCallRet
                 }
@@ -249,6 +254,8 @@ class MethodReturnInferHelper {
                 }
             }
         } catch (e: Exception) {
+            logger!!.error("error to infer method return type:" + e.message)
+            logger!!.traceError(e)
         }
 
         return CALL_FAILED
@@ -292,11 +299,16 @@ class MethodReturnInferHelper {
         }
     }
 
-    fun tayCallStaticMethod(psiMethod: PsiMethod, args: Array<Any?>?): Any? {
+    fun tryCallStaticMethod(psiMethod: PsiMethod, args: Array<Any?>?): Any? {
         actionContext!!.checkStatus()
         try {
             val psiCls = psiMethod.containingClass ?: return null
-            val cls = Class.forName(psiCls.qualifiedName)
+            val cls: Class<*>?
+            try {
+                cls = Class.forName(psiCls.qualifiedName)
+            } catch (e: ClassNotFoundException) {
+                return CALL_FAILED
+            }
             val methodName = psiMethod.name
             val argCount = args?.size ?: 0
 
@@ -331,9 +343,10 @@ class MethodReturnInferHelper {
 
 
         } catch (e: Exception) {
-            //find class failed or call method failed
-            return CALL_FAILED
+            logger!!.warn("error in infer method return type")
+            logger!!.traceError(e)
         }
+        return CALL_FAILED
     }
 
     private fun unboxArgs(args: Array<Any?>?): Array<Any?>? {
@@ -439,7 +452,7 @@ class MethodReturnInferHelper {
 
         const val ALLOW_QUICK_CALL: Int = 0b0001
 
-        val DEFAULT_OPTION = ALLOW_QUICK_CALL
+        const val DEFAULT_OPTION = ALLOW_QUICK_CALL
 
         fun allowQuickCall(option: Int): Boolean {
             return (option and ALLOW_QUICK_CALL) != 0
@@ -787,7 +800,7 @@ class MethodReturnInferHelper {
 
         private var inits: HashSet<String> = HashSet()
 
-        val psiClassHelper = ActionContext.getContext()!!.instance(PsiClassHelper::class)
+//        val psiClassHelper = ActionContext.getContext()!!.instance(PsiClassHelper::class)
 
         protected open fun processStatement(statement: PsiStatement): Any? {
 
@@ -1322,7 +1335,7 @@ class MethodReturnInferHelper {
      * Try to get the constant return without any arguments (include parameter and local variable)
      * Throws an exception if it finds that the return value is related to a parameter or a local variable
      */
-    open inner class QuicklyMethodReturnInfer(val psiMethod: PsiMethod, methodReturnInferHelper: MethodReturnInferHelper)
+    open inner class QuicklyMethodReturnInfer(private val psiMethod: PsiMethod, methodReturnInferHelper: MethodReturnInferHelper)
         : AbstractMethodReturnInfer(null, null, methodReturnInferHelper) {
 
         override fun infer(): Any? {
@@ -1433,7 +1446,7 @@ class MethodReturnInferHelper {
         }
     }
 
-    inner class NewExpressionInfer(val psiNewExpression: PsiNewExpression, args: Array<Any?>?, methodReturnInferHelper: MethodReturnInferHelper)
+    inner class NewExpressionInfer(private val psiNewExpression: PsiNewExpression, args: Array<Any?>?, methodReturnInferHelper: MethodReturnInferHelper)
         : AbstractMethodReturnInfer(null, args, methodReturnInferHelper) {
 
         override fun infer(): Any? {
