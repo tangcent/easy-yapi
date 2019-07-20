@@ -13,6 +13,7 @@ import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
 import com.itangcent.common.model.Response
+import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.constant.SpringAttrs
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
@@ -319,21 +320,10 @@ class SpringClassExporter : ClassExporter, Worker {
             docComment == null -> null
             docComment.containsKey("$paramName@options") -> {
                 val options = docComment["$paramName@options"] as List<Map<String, Any?>>
-                "${docComment[paramName]}${getOptionDesc(options)}"
+                "${docComment[paramName]}${KVUtils.getOptionDesc(options)}"
             }
             else -> docComment[paramName] as String?
         }
-    }
-
-    /**
-     * get description of options
-     */
-    private fun getOptionDesc(options: List<Map<String, Any?>>): String? {
-        return options.stream()
-                .map { it["value"].toString() + " :" + it["desc"] }
-                .filter { it != null }
-                .reduce { s1, s2 -> s1 + "\n" + s2 }
-                .orElse(null)
     }
 
     private fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
@@ -558,7 +548,7 @@ class SpringClassExporter : ClassExporter, Worker {
             fields.forEachValid { filedName, fieldVal ->
                 parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
                         required?.getAs(filedName) ?: false,
-                        comment?.get(filedName) as String?)
+                        KVUtils.getUltimateComment(comment, filedName))
             }
         } catch (e: Exception) {
             logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
@@ -581,11 +571,11 @@ class SpringClassExporter : ClassExporter, Worker {
                     parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
                     parseHandle.addFormFileParam(request, filedName,
                             required?.getAs(filedName) ?: false,
-                            comment?.getAs(filedName))
+                            KVUtils.getUltimateComment(comment, filedName))
                 } else {
                     parseHandle.addFormParam(request, filedName, null,
                             required?.getAs(filedName) ?: false,
-                            comment?.getAs(filedName))
+                            KVUtils.getUltimateComment(comment, filedName))
                 }
             }
         } catch (e: Exception) {
