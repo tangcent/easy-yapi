@@ -10,7 +10,7 @@ object KitUtils {
     }
 }
 
-public fun StringBuilder.appendlnIfNotEmpty(): StringBuilder {
+fun StringBuilder.appendlnIfNotEmpty(): StringBuilder {
     if (this.isNotEmpty()) {
         this.appendln()
     }

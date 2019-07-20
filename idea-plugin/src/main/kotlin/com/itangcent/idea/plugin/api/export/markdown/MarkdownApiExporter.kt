@@ -11,6 +11,7 @@ import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
+import com.itangcent.common.utils.KVUtils
 import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
@@ -322,39 +323,12 @@ class MarkdownApiExporter {
             } catch (e: Throwable) {
             }
             obj.forEachValid { k, v ->
-                var propertyDesc: String? = null
-                if (comment != null) {
-                    val descInComment = comment[k]
-                    if (descInComment != null) {
-                        propertyDesc = descInComment.toString()
-                    }
-                    val options = comment["$k@options"]
-                    if (options != null) {
-                        val optionList = options as List<Map<String, Any?>>
-
-                        val optionDesc = getOptionDesc(optionList)
-                        if (optionDesc != null) {
-                            if (propertyDesc == null) {
-                                propertyDesc = optionDesc
-                            } else {
-                                propertyDesc = "$propertyDesc\n$optionDesc"
-                            }
-                        }
-                    }
-                }
+                val propertyDesc: String? = KVUtils.getUltimateComment(comment, k)
                 parseBody(deep + 1, k.toString(), propertyDesc ?: "", v, handle)
             }
         } else {
             addBodyProperty(deep, name, "object", desc, handle)
         }
-    }
-
-    private fun getOptionDesc(options: List<Map<String, Any?>>): String? {
-        return options.stream()
-                .map { it["value"].toString() + " :" + it["desc"] }
-                .filter { it != null }
-                .reduce { s1, s2 -> s1 + "\n" + s2 }
-                .orElse(null)
     }
 
     private fun addBodyProperty(deep: Int, name: String, type: String, desc: String, handle: (String) -> Unit) {

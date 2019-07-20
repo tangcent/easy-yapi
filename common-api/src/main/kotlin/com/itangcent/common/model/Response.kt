@@ -2,7 +2,7 @@ package com.itangcent.common.model
 
 import java.io.Serializable
 
-class Response: Serializable {
+open class Response : Extensible(), Serializable {
 
     var headers: ArrayList<Header>? = null
 

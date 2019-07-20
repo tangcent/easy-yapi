@@ -6,18 +6,15 @@ import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
 
 class YapiSpringClassExporter : SpringClassExporter() {
-    override fun newRequest(): Request {
-        return YapiRequest()
-    }
 
     override fun processCompleted(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
         super.processCompleted(method, request, parseHandle)
 
         val tags = ruleComputer!!.computer(YapiClassExportRuleKeys.TAG, method)
         if (!tags.isNullOrBlank()) {
-            (request as YapiRequest).tags = tags.split("\n")
+            request.setExt("tags", tags.split("\n")
                     .map { it.trim() }
-                    .filter { it.isNotBlank() }
+                    .filter { it.isNotBlank() })
         }
     }
 }
