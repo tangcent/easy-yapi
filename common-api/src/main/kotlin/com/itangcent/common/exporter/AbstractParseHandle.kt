@@ -2,6 +2,7 @@ package com.itangcent.common.exporter
 
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.*
+import com.itangcent.common.utils.KVUtils
 
 abstract class AbstractParseHandle : ParseHandle {
     override fun setName(request: Request, name: String) {
@@ -25,7 +26,7 @@ abstract class AbstractParseHandle : ParseHandle {
             val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
             model.forEach { k, v ->
                 addFormParam(request, k.toString(), v.toString(),
-                        comment?.get(k)?.toString())
+                        KVUtils.getUltimateComment(comment, k))
             }
         }
     }
