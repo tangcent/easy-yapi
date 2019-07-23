@@ -9,6 +9,7 @@ import com.itangcent.common.utils.KVUtils
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.SimpleRuleParser
+import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
@@ -33,7 +34,7 @@ class YapiFormatter {
         val item: HashMap<String, Any?> = HashMap()
 
         item["edit_uid"] = 0
-        item["status"] = "done"
+        item["status"] = checkStatus(request.getExt("status"))
         item["type"] = "static"
         item["req_body_is_json_schema"] = false
         item["res_body_is_json_schema"] = true
@@ -372,6 +373,33 @@ class YapiFormatter {
                    val mockStr: String)
 
     //endregion mock rules---------------------------------------------------------
+
+    private fun checkStatus(status: Any?): String {
+
+        if (status == null) return "done"
+
+        if (status is Boolean) {
+            return when {
+                status -> "done"
+                else -> "undone"
+            }
+        }
+        if (status is Number) {
+            return when (status) {
+                1 -> "done"
+                else -> "undone"
+            }
+        }
+
+        if (status is String) {
+            return when (status) {
+                "undone" -> "undone"
+                else -> "done"
+            }
+        }
+
+        return "done"
+    }
 
     companion object {
         val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!

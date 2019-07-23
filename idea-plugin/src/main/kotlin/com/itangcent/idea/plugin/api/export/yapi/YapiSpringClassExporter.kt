@@ -16,5 +16,10 @@ class YapiSpringClassExporter : SpringClassExporter() {
                     .map { it.trim() }
                     .filter { it.isNotBlank() })
         }
+
+        val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, method)
+        if (!status.isNullOrBlank()) {
+            request.setExt("status", status)
+        }
     }
 }
