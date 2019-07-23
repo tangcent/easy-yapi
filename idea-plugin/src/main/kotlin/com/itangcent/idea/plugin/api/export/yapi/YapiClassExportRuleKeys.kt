@@ -10,4 +10,7 @@ object YapiClassExportRuleKeys {
     val TAG: RuleKey<String> = SimpleRuleKey("api.tag", StringRule::class,
             StringRuleMode.MERGE_DISTINCT)
 
+    val STATUS: RuleKey<String> = SimpleRuleKey("api.status", StringRule::class,
+            StringRuleMode.SINGLE)
+
 }
