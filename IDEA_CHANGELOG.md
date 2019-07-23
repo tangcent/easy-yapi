@@ -38,4 +38,8 @@
     1. enhance:provide logging level Settings  [(#68)](https://github.com/tangcent/easy-api/issues/68)
     2. enhance:optimized action interrupt  [(#72)](https://github.com/tangcent/easy-api/pull/72)
     3. fix:support org.springframework.http.HttpEntity/org.springframework.http.ResponseEntity  [(#71)](https://github.com/tangcent/easy-api/issues/71)
-   
+*   0.8.0 ~
+    1. enhance:process key 'Tab' in request params  [(#85)](https://github.com/tangcent/easy-api/pull/85)
+    2. enhance:process Deprecated info on class in RecommendConfig  [(#86)](https://github.com/tangcent/easy-api/pull/86)
+    3. enhance:try parse linked option info for form params  [(#87)](https://github.com/tangcent/easy-api/pull/87)
+    
