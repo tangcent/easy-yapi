@@ -33,10 +33,12 @@
 
 * 导出API到Yapi
 ```textCode
-    有两种方法.
+    有三种方法.
     1. 打开spring项目中的Controller文件
     右键文件内容选择Generate...或者用"Alt + Insert"
     然后选择"ExportYapi"
     2. 在IDEA的左边项目文件区域选择文件或者文件夹
     鼠标点击最上方[Code -> ExportYapi]
+    3. 鼠标点击最上方[Code -> YapiDashBoard]
+    然后就可以用鼠标将左边的API拖动到右边yapi目录中
 ```
