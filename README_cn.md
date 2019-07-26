@@ -35,7 +35,7 @@
 ```textCode
     有三种方法.
     1. 打开spring项目中的Controller文件
-    右键文件内容选择Generate...或者用"Alt + Insert"
+    右键文件内容选择Generate...或者用"[Alt + Insert]/[Ctrl+Enter](快捷键可能不一样)"
     然后选择"ExportYapi"
     2. 在IDEA的左边项目文件区域选择文件或者文件夹
     鼠标点击最上方[Code -> ExportYapi]

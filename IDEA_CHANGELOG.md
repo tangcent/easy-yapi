@@ -3,7 +3,7 @@
 *   0.3.0
     1.  enhance:cache api export result
 *   0.4.0 ~
-    1.  enhance:quick API requests from code[Alt + Insert -> Call]
+    1.  enhance:quick API requests from code[[Alt + Insert]/[Ctrl+Enter] -> Call]
     2.  enhance:support request&response header
     3.  enhance:support download response
     4.  enhance:support host history

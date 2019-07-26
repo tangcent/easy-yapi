@@ -30,7 +30,7 @@ restart **IDE**.
 ```textCode
     There are two ways to export api.
     1. Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "Alt + Insert" , then
+    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
     choose the action "ExportYapi"
     2. Select files or directories from project navigation
     You can use by this : "Click [Code -> ExportYapi] in top"
@@ -40,7 +40,7 @@ restart **IDE**.
 ```textCode
     There are two ways to export api.
     1. Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "Alt + Insert" , then
+    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
     choose the action "ExportPostman"
     2. Select files or directories from project navigation
     You can use by this : "Click [Code -> ExportPostman] in top"
@@ -60,7 +60,7 @@ restart **IDE**.
 
 ```textCode
     Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "Alt + Insert" , then
+    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
     choose the action "Call"
 ```
 
@@ -76,7 +76,7 @@ restart **IDE**.
 ```textCode
     There are two ways to export api.
     1. Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "Alt + Insert" , then
+    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
     choose the action "ExportMarkdown"
     2. Select files or directories from project navigation
     You can use by this : "Click [Code -> ExportMarkdown] in top"
