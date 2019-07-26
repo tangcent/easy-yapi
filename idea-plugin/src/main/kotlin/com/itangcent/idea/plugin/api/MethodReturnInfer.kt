@@ -286,7 +286,7 @@ class MethodReturnInferHelper {
         (comment as HashMap<Any?, Any?>)[field] = attr
     }
 
-    fun tryInfer(infer: Infer): Any? {
+    private fun tryInfer(infer: Infer): Any? {
         actionContext!!.checkStatus()
         //find recursive call
         methodStack.filter { it.callMethod() == infer.callMethod() }
@@ -299,7 +299,7 @@ class MethodReturnInferHelper {
         }
     }
 
-    fun tryCallStaticMethod(psiMethod: PsiMethod, args: Array<Any?>?): Any? {
+    private fun tryCallStaticMethod(psiMethod: PsiMethod, args: Array<Any?>?): Any? {
         actionContext!!.checkStatus()
         try {
             val psiCls = psiMethod.containingClass ?: return null
@@ -318,7 +318,10 @@ class MethodReturnInferHelper {
             if (candidateMethod.size == 0) return null//no found
 
             if (candidateMethod.size == 1) {
-                return callMethod(null, candidateMethod[0], args)
+                try {
+                    return callMethod(null, candidateMethod[0], args)
+                } catch (e: Exception) {
+                }
             }
 
             if (candidateMethod.size > 1) {

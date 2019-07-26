@@ -12,14 +12,12 @@ class YapiSpringClassExporter : SpringClassExporter() {
 
         val tags = ruleComputer!!.computer(YapiClassExportRuleKeys.TAG, method)
         if (!tags.isNullOrBlank()) {
-            request.setExt("tags", tags.split("\n")
+            request.setTags(tags.split("\n")
                     .map { it.trim() }
                     .filter { it.isNotBlank() })
         }
 
         val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, method)
-        if (!status.isNullOrBlank()) {
-            request.setExt("status", status)
-        }
+        request.setStatus(status)
     }
 }

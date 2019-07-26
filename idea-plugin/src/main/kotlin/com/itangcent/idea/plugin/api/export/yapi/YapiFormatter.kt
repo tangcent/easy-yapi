@@ -34,13 +34,13 @@ class YapiFormatter {
         val item: HashMap<String, Any?> = HashMap()
 
         item["edit_uid"] = 0
-        item["status"] = checkStatus(request.getExt("status"))
+        item["status"] = request.getStatus()
         item["type"] = "static"
         item["req_body_is_json_schema"] = false
         item["res_body_is_json_schema"] = true
         item["api_opened"] = false
         item["index"] = 0
-        item["tag"] = request.getExt("tags") ?: EMPTY_TAGS
+        item["tag"] = request.getTags()
 
         item["title"] = request.name
 
@@ -374,37 +374,9 @@ class YapiFormatter {
 
     //endregion mock rules---------------------------------------------------------
 
-    private fun checkStatus(status: Any?): String {
-
-        if (status == null) return "done"
-
-        if (status is Boolean) {
-            return when {
-                status -> "done"
-                else -> "undone"
-            }
-        }
-        if (status is Number) {
-            return when (status) {
-                1 -> "done"
-                else -> "undone"
-            }
-        }
-
-        if (status is String) {
-            return when (status) {
-                "undone" -> "undone"
-                else -> "done"
-            }
-        }
-
-        return "done"
-    }
-
     companion object {
         val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!
         val EMPTY_PARAMS: List<String> = Collections.emptyList<String>()
-        val EMPTY_TAGS: List<String> = Collections.emptyList<String>()
     }
 
 }
