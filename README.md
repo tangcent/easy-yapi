@@ -64,12 +64,16 @@ restart **IDE**.
     choose the action "Call"
 ```
 
-
-
 * ApiDashBoard
 ```textCode
     It is easily to export api in current project to postman by dragging
     You can use by this : "Click [Code -> ApiDashBoard] in top"
+```
+
+* YApiDashBoard
+```textCode
+    It is easily to export api in current project to yapi by dragging
+    You can use by this : "Click [Code -> YApiDashBoard] in top"
 ```
 
 * ExportMarkdown(Beta)
