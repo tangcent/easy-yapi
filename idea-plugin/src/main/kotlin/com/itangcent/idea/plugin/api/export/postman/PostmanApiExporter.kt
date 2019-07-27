@@ -64,7 +64,7 @@ class PostmanApiExporter {
                         try {
                             val project = actionContext.instance(Project::class)
                             val yes = Messages.showYesNoDialog(project,
-                                    "Export the model in directory [${ActionUtils.findCurrentPath(dir)}]?",
+                                    "Export the api in directory [${ActionUtils.findCurrentPath(dir)}]?",
                                     "Are you sure",
                                     Messages.getQuestionIcon())
                             if (yes == Messages.YES) {
