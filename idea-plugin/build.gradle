@@ -29,6 +29,7 @@ intellij {
     updateSinceUntilBuild false
     downloadSources true
     sandboxDirectory "idea-sandbox"
+    instrumentCode = true
     updateSinceUntilBuild false
     sameSinceUntilBuild false
 }
@@ -49,6 +50,7 @@ patchPluginXml {
 }
 
 jar {
+//    excludes = ["com/google/common/**", "kotlin/**"]
     excludes = ["com/google/common/**"]
 //    excludes = ["com/google/common/**", "org/apache/http/util/**"]
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
@@ -61,7 +63,13 @@ artifacts {
 }
 
 repositories {
+
+    flatDir {
+        dirs 'libs'
+    }
+
     mavenCentral()
+
 }
 
 dependencies {
@@ -69,9 +77,12 @@ dependencies {
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     }
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+//    compile fileTree(dir: 'libs', include: ['*.jar'])
+
+    compile name: 'intellij-kotlin'
+
 
     compile("com.google.inject:guice:4.2.2") {
         exclude group: 'org.checkerframework', module: 'checker-compat-qual'

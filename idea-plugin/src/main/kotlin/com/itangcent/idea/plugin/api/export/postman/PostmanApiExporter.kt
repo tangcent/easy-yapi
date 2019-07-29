@@ -7,12 +7,9 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.utils.FileSaveHelper
-import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
@@ -21,7 +18,6 @@ import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 
 @Singleton
@@ -44,12 +40,6 @@ class PostmanApiExporter {
 
     @Inject
     private val fileSaveHelper: FileSaveHelper? = null
-
-    @Inject
-    private val moduleHelper: ModuleHelper? = null
-
-    @Inject
-    private val resourceHelper: ResourceHelper? = null
 
     @Inject
     private val postmanFormatter: PostmanFormatter? = null
@@ -91,7 +81,7 @@ class PostmanApiExporter {
                             logger.info("No api be found to export!")
                             return@onCompleted
                         }
-                        val postman = parseRequests(requests)
+                        val postman = postmanFormatter!!.parseRequests(requests)
                         requests.clear()
                         actionContext!!.runAsync {
                             try {
@@ -138,53 +128,4 @@ class PostmanApiExporter {
                 .traversal()
     }
 
-    private fun parseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
-
-        //group by class into: {class:requests}
-        val clsGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
-        requests.forEach { request ->
-            val resource = request.resource?.let { resourceHelper!!.findResourceClass(it) } ?: NULL_RESOURCE
-            clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
-                    .add(postmanFormatter!!.request2Item(request))
-        }
-
-        //only one class
-        if (clsGroupedMap.size == 1) {
-            clsGroupedMap.entries.first()
-                    .let {
-                        val module = moduleHelper!!.findModule(it.key) ?: "easy-api"
-                        return postmanFormatter!!.wrapRootInfo(module, arrayListOf(postmanFormatter.wrapInfo(it.key, it.value)))
-                    }
-        }
-
-        //group by module
-        val moduleGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
-        clsGroupedMap.forEach { cls, items ->
-            val module = moduleHelper!!.findModule(cls) ?: "easy-api"
-            moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
-                    .add(postmanFormatter!!.wrapInfo(cls, items))
-        }
-
-
-        //only one module
-        if (moduleGroupedMap.size == 1) {
-            moduleGroupedMap.entries.first()
-                    .let {
-                        return postmanFormatter!!.wrapRootInfo(it.key, arrayListOf(postmanFormatter.wrapInfo(it.key, it.value)))
-                    }
-        }
-
-        val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
-        moduleGroupedMap.entries
-                .map { postmanFormatter!!.wrapInfo(it.key, it.value) }
-                .forEach { modules.add(it) }
-
-        val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
-        return postmanFormatter!!.wrapRootInfo("$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}", modules)
-    }
-
-
-    companion object {
-        val NULL_RESOURCE = Object()
-    }
 }

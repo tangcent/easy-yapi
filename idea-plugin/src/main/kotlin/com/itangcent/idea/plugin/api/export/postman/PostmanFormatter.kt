@@ -12,6 +12,7 @@ import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.RandomUtils
 import java.util.Date
@@ -254,7 +255,53 @@ class PostmanFormatter {
         }
     }
 
+    fun parseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
+
+        //group by class into: {class:requests}
+        val clsGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
+        requests.forEach { request ->
+            val resource = request.resource?.let { resourceHelper!!.findResourceClass(it) } ?: NULL_RESOURCE
+            clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
+                    .add(request2Item(request))
+        }
+
+        //only one class
+        if (clsGroupedMap.size == 1) {
+            clsGroupedMap.entries.first()
+                    .let {
+                        val module = moduleHelper!!.findModule(it.key) ?: "easy-api"
+                        return wrapRootInfo(module, arrayListOf(wrapInfo(it.key, it.value)))
+                    }
+        }
+
+        //group by module
+        val moduleGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
+        clsGroupedMap.forEach { cls, items ->
+            val module = moduleHelper!!.findModule(cls) ?: "easy-api"
+            moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
+                    .add(wrapInfo(cls, items))
+        }
+
+
+        //only one module
+        if (moduleGroupedMap.size == 1) {
+            moduleGroupedMap.entries.first()
+                    .let {
+                        return wrapRootInfo(it.key, arrayListOf(wrapInfo(it.key, it.value)))
+                    }
+        }
+
+        val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
+        moduleGroupedMap.entries
+                .map { wrapInfo(it.key, it.value) }
+                .forEach { modules.add(it) }
+
+        val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
+        return wrapRootInfo("$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}", modules)
+    }
+
     companion object {
+        val NULL_RESOURCE = Object()
 
         const val POSTMAN_SCHEMA_V2_1_0 = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     }

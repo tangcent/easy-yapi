@@ -173,20 +173,14 @@ internal class ApiCallDialog : JDialog() {
         formatOrRawButton!!.isFocusPainted = false
         saveButton!!.isFocusPainted = false
 
-        underLine(this.hostComboBox!!)
-        underLine(this.pathTextField!!)
-        underLine(this.paramsTextField!!)
+        SwingUtils.underLine(this.hostComboBox!!)
+        SwingUtils.underLine(this.pathTextField!!)
+        SwingUtils.underLine(this.paramsTextField!!)
 
         if (EasyIcons.Run != null) {
             this.callButton!!.icon = EasyIcons.Run
             this.callButton!!.text = ""
         }
-    }
-
-    private fun underLine(component: JComponent) {
-//        component.isOpaque = true
-        component.border = BorderFactory.createMatteBorder(0, 0, 1, 0, component.foreground)
-        component.background = component.parent.background
     }
 
     @PostConstruct

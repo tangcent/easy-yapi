@@ -10,7 +10,7 @@ import com.itangcent.intellij.logger.Logger.Level
 
 class ConfigurableLogger : AbstractLogger() {
 
-    @Inject
+    @Inject(optional = true)
     @Named("delegate.logger")
     private var delegateLogger: Logger? = null
 
