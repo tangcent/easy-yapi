@@ -4,8 +4,11 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
+import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.ParseHandle
 import com.itangcent.common.model.Request
@@ -23,6 +26,7 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
@@ -161,12 +165,14 @@ class SuvApiExporter {
                     newActionContext.runAsync {
                         try {
                             newActionContext.init(this)
-                            newActionContext.runInReadUI {
-                                try {
-                                    doExportApisFromMethod(requests)
-                                } catch (e: Exception) {
-                                    logger!!.error("error to export apis:" + e.message)
-                                    logger!!.traceError(e)
+                            beforeExport {
+                                newActionContext.runInReadUI {
+                                    try {
+                                        doExportApisFromMethod(requests)
+                                    } catch (e: Exception) {
+                                        logger!!.error("error to export apis:" + e.message)
+                                        logger!!.traceError(e)
+                                    }
                                 }
                             }
                         } catch (e: Throwable) {
@@ -246,6 +252,10 @@ class SuvApiExporter {
 
                 doExportRequests(requests)
             }
+        }
+
+        protected open fun beforeExport(next: () -> Unit) {
+            next()
         }
 
         abstract fun doExportRequests(requests: MutableList<Request>)
@@ -337,6 +347,128 @@ class SuvApiExporter {
         }
     }
 
+    class YapiApiExporterAdapter : ApiExporterAdapter() {
+
+        @Inject
+        private val yapiApiHelper: YapiApiHelper? = null
+
+        @Inject
+        private val project: Project? = null
+
+        override fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+            super.onBuildActionContext(actionContext, builder)
+
+            builder.inheritFrom(actionContext, Project::class)
+
+            builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
+
+            builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
+
+            builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
+            builder.bind(ParseHandle::class) { it.with(YapiIdeaParseHandle::class).singleton() }
+            builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
+            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
+
+            //always not read api from cache
+            builder.bindInstance("class.exporter.read.cache", false)
+
+            builder.bindInstance("file.save.default", "postman.json")
+            builder.bindInstance("file.save.last.location.key", "com.itangcent.postman.export.path")
+
+        }
+
+        override fun beforeExport(next: () -> Unit) {
+            val serverFound = !yapiApiHelper!!.findServer().isNullOrBlank()
+            if (serverFound) {
+                next()
+            } else {
+                actionContext!!.runAsync {
+                    Thread.sleep(200)
+                    actionContext.runInSwingUI {
+                        val yapiServer = Messages.showInputDialog(project, "Input server of yapi",
+                                "server of yapi", Messages.getInformationIcon())
+                        if (yapiServer.isNullOrBlank()) {
+                            logger!!.info("No yapi server")
+                            return@runInSwingUI
+                        }
+
+                        yapiApiHelper.setYapiServer(yapiServer)
+
+                        next()
+                    }
+                }
+            }
+        }
+
+        override fun doExportRequests(requests: MutableList<Request>) {
+
+            val suvYapiApiExporter = actionContext!!.init(SuvYapiApiExporter())
+
+            try {
+                requests.forEach { suvYapiApiExporter.exportRequest(it) }
+            } catch (e: Exception) {
+                logger!!.error("Apis export failed")
+                logger!!.traceError(e)
+            }
+        }
+
+        class SuvYapiApiExporter : AbstractYapiApiExporter() {
+
+            //cls -> CartInfo
+            private val clsCartMap: HashMap<PsiClass, CartInfo> = HashMap()
+
+            override fun getCartForCls(psiClass: PsiClass): CartInfo? {
+
+                var cartId = clsCartMap[psiClass]
+                if (cartId != null) return cartId
+                synchronized(clsCartMap)
+                {
+                    cartId = clsCartMap[psiClass]
+                    if (cartId != null) return cartId
+
+                    return super.getCartForCls(psiClass)
+                }
+            }
+
+            private var tryInputTokenOfModule: HashSet<String> = HashSet()
+
+            override fun getTokenOfModule(module: String): String? {
+                val privateToken = super.getTokenOfModule(module)
+                if (!privateToken.isNullOrBlank()) {
+                    return privateToken
+                }
+
+                if (tryInputTokenOfModule.contains(module)) {
+                    return null
+                } else {
+                    tryInputTokenOfModule.add(module)
+                    val modulePrivateToken = actionContext!!.callInSwingUI {
+                        return@callInSwingUI Messages.showInputDialog(project, "Input Private Token Of Module:$module",
+                                "Yapi Private Token", Messages.getInformationIcon())
+                    }
+                    return if (modulePrivateToken.isNullOrBlank()) {
+                        null
+                    } else {
+                        yapiApiHelper!!.setToken(module, modulePrivateToken)
+                        modulePrivateToken
+                    }
+                }
+            }
+
+            private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
+
+            override fun exportRequest(request: Request, privateToken: String, cartId: String): Boolean {
+                if (super.exportRequest(request, privateToken, cartId)) {
+                    if (successExportedCarts.add(cartId)) {
+                        logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
+                    }
+                    return true
+                }
+                return false
+            }
+        }
+    }
+
     class MarkdownApiExporterAdapter : ApiExporterAdapter() {
 
         @Inject
@@ -404,6 +536,7 @@ class SuvApiExporter {
     companion object {
 
         private val exporterChannels: List<*> = listOf(
+                ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi"),
                 ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman"),
                 ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown")
         )
