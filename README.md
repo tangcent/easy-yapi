@@ -23,6 +23,14 @@ restart **IDE**.
 
 * [custom config for project](https://github.com/tangcent/easy-api/wiki/Use-Config-Make-Plugin-More-Intelligent(Export-Spring-Api-To-Postman))
 
+* ExportApi
+```textCode
+    1. Open existed Spring Controller File Or Select files or directories from project navigation
+    You can use by this : "win E(windows)/ctrl E(mac)"
+    2.select apis and channel
+    3.click [✔️] button or press enter key
+```
+
 * ExportPostman
 ```textCode
     There are two ways to export api.

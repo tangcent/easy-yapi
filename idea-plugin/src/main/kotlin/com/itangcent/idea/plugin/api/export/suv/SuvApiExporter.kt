@@ -24,7 +24,7 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
-import com.itangcent.idea.plugin.dialog.MultipleApiExportDialog
+import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
@@ -88,7 +88,7 @@ class SuvApiExporter {
                             return@onCompleted
                         }
 
-                        val multipleApiExportDialog = actionContext!!.instance { MultipleApiExportDialog() }
+                        val multipleApiExportDialog = actionContext!!.instance { SuvApiExportDialog() }
 
                         UIUtils.show(multipleApiExportDialog)
                         actionContext.runInSwingUI {

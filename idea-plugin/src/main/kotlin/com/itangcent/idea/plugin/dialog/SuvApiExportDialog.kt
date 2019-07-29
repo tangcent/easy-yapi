@@ -15,7 +15,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import javax.swing.*
 
-class MultipleApiExportDialog : JDialog() {
+class SuvApiExportDialog : JDialog() {
     private var contentPane: JPanel? = null
     private var buttonOK: JButton? = null
     private var buttonCancel: JButton? = null
