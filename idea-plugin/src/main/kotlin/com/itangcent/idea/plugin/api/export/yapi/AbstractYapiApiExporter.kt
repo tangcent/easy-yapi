@@ -138,9 +138,4 @@ open class AbstractYapiApiExporter {
         }
     }
 
-    class CartInfo {
-        var cartId: String? = null
-        var cartName: String? = null
-        var privateToken: String? = null
-    }
 }
