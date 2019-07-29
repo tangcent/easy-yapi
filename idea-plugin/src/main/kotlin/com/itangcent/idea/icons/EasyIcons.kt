@@ -1,6 +1,8 @@
 package com.itangcent.idea.icons
 
 import com.intellij.openapi.util.IconLoader
+import com.intellij.util.ReflectionUtil
+import org.jetbrains.annotations.NonNls
 import javax.swing.Icon
 
 /**
@@ -27,12 +29,25 @@ object EasyIcons {
 
     val UpFolder = tryLoad("/nodes/upFolder.png") // 16x16
 
+    val Close = tryLoad("/notification/close.png",
+            "/actions/close.png") // 16x16
 
-    private fun tryLoad(path: String): Icon? {
-        return try {
-            IconLoader.getIcon(path)
-        } catch (e: Exception) {
-            null
+    val OK = tryLoad("/general/inspectionsOK.png",
+            "process/state/GreenOK.png") // 16x16
+
+    private fun tryLoad(vararg paths: String): Icon? {
+        for (path in paths) {
+            try {
+                getIcon(path)?.let { return it }
+            } catch (e: Exception) {
+            }
         }
+        return null
+    }
+
+    private fun getIcon(@NonNls path: String): Icon? {
+        val callerClass = ReflectionUtil.getGrandCallerClass() ?: error(path)
+
+        return IconLoader.findIcon(path, callerClass)
     }
 }

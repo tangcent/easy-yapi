@@ -49,7 +49,9 @@ class ApiCaller {
         SelectedHelper.Builder()
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, parseHandle!!) { request -> requests.add(request) }
+                    classExporter!!.export(it, parseHandle!!) { request ->
+                        requests.add(request)
+                    }
                 }
                 .onCompleted {
                     try {

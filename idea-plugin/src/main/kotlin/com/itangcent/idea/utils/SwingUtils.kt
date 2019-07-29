@@ -1,7 +1,11 @@
 package com.itangcent.idea.utils
 
 import com.itangcent.intellij.context.ActionContext
+import java.awt.Component
 import java.awt.Dialog
+import java.awt.Toolkit
+import javax.swing.BorderFactory
+import javax.swing.JComponent
 import javax.swing.JTable
 import javax.swing.JTree
 import javax.swing.table.TableColumn
@@ -37,6 +41,28 @@ object SwingUtils {
         } else {
             tree.collapsePath(path)
         }
+    }
+
+    fun underLine(component: JComponent) {
+//        component.isOpaque = true
+        component.border = BorderFactory.createMatteBorder(0, 0, 1, 0, component.foreground)
+        component.background = component.parent.background
+    }
+
+    fun immersed(component: JComponent) {
+//        component.isOpaque = true
+        component.border = BorderFactory.createMatteBorder(0, 0, 0, 0, component.foreground)
+        component.background = component.parent.background
+    }
+
+    fun centerWindow(component: Component) {
+        val toolkit = Toolkit.getDefaultToolkit()
+        val scmSize = toolkit.screenSize
+        val width = component.width
+        val height = component.height
+
+        component.setLocation(scmSize.width / 2 - width / 2,
+                scmSize.height / 2 - height / 2)
     }
 
 }
