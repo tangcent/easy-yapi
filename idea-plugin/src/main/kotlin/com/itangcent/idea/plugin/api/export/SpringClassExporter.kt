@@ -67,6 +67,9 @@ open class SpringClassExporter : ClassExporter, Worker {
     @Inject
     protected val ruleComputer: RuleComputer? = null
 
+    @Inject(optional = true)
+    private val methodFilter: MethodFilter? = null
+
     @Inject
     private var actionContext: ActionContext? = null
 
@@ -89,7 +92,9 @@ open class SpringClassExporter : ClassExporter, Worker {
                     val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
 
                     foreachMethod(cls) { method ->
-                        exportMethodApi(method, basePath, ctrlHttpMethod, parseHandle, requestHandle)
+                        if (methodFilter?.checkMethod(method) != false) {
+                            exportMethodApi(method, basePath, ctrlHttpMethod, parseHandle, requestHandle)
+                        }
                     }
                 }
             }

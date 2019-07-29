@@ -26,6 +26,14 @@ restart **IDE**.
 
 * [custom config for project](https://github.com/tangcent/easy-yapi/wiki/%E6%94%AF%E6%8C%81%E9%A2%9D%E5%A4%96%E9%85%8D%E7%BD%AE)
 
+* ExportApi
+```textCode
+    1. Open existed Spring Controller File Or Select files or directories from project navigation
+    You can use by this : "win E(windows)/ctrl E(mac)"
+    2.select apis and channel
+    3.click [✔️] button or press enter key
+```
+
 * ExportYapi
 ```textCode
     There are two ways to export api.
