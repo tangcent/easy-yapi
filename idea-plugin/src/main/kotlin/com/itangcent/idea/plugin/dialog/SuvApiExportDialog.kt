@@ -13,6 +13,7 @@ import com.itangcent.intellij.util.traceError
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import java.awt.event.WindowFocusListener
 import javax.swing.*
 
 class SuvApiExportDialog : JDialog() {
@@ -44,7 +45,7 @@ class SuvApiExportDialog : JDialog() {
         this.isUndecorated = false
         this.isResizable = false
         setContentPane(contentPane)
-        isModal = true
+        isModal = false
         getRootPane().defaultButton = buttonOK
         SwingUtils.centerWindow(this)
 
@@ -111,6 +112,26 @@ class SuvApiExportDialog : JDialog() {
     @PostConstruct
     fun postConstruct() {
         actionContext!!.hold()
+
+        actionContext!!.runAsync {
+            Thread.sleep(500)
+
+            if (!disposed) {
+
+                this.addWindowFocusListener(object : WindowFocusListener {
+                    override fun windowLostFocus(e: WindowEvent?) {
+                        onCancel()
+                    }
+
+                    override fun windowGainedFocus(e: WindowEvent?) {
+                    }
+                })
+
+                this.apiList!!.requestFocus()
+                
+            }
+        }
+
     }
 
 
@@ -132,12 +153,14 @@ class SuvApiExportDialog : JDialog() {
     }
 
     private fun onCancel(stop: Boolean = true) {
-        disposed = true
-        if (stop) {
-            actionContext!!.unHold()
-            actionContext!!.stop(false)
+        if (!disposed) {
+            disposed = true
+            if (stop) {
+                actionContext!!.unHold()
+                actionContext!!.stop(false)
+            }
+            dispose()
         }
-        dispose()
     }
 
     companion object {

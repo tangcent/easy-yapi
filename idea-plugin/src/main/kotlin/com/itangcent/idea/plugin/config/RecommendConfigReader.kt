@@ -56,12 +56,12 @@ class RecommendConfigReader : ConfigReader {
                 "ignore=#ignore\n" +
                 "\n" +
                 "#deprecated info\n" +
-                "doc.method=js:it.hasDoc(\"deprecated\")?(\"[已废弃] \"+it.doc(\"deprecated\")):null\n" +
-                "doc.method=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
-                "doc.method=js:it.containingClass().hasDoc(\"deprecated\")?(\"[已废弃] \"+it.containingClass().doc(\"deprecated\")):null\n" +
-                "doc.method=js:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
-                "doc.field=js:it.hasDoc(\"deprecated\")?(\"[已废弃] \"+it.doc(\"deprecated\")):null\n" +
-                "doc.field=js:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
+                "doc.method=groovy:it.hasDoc(\"deprecated\")?(\"[已废弃] \"+it.doc(\"deprecated\")):null\n" +
+                "doc.method=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
+                "doc.method=groovy:it.containingClass().hasDoc(\"deprecated\")?(\"[已废弃] \"+it.containingClass().doc(\"deprecated\")):null\n" +
+                "doc.method=groovy:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
+                "doc.field=groovy:it.hasDoc(\"deprecated\")?(\"[已废弃] \"+it.doc(\"deprecated\")):null\n" +
+                "doc.field=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
                 "\n" +
                 "#Additional json parsing rules\n" +
                 "#Support for Jackson annotations\n" +
@@ -76,13 +76,13 @@ class RecommendConfigReader : ConfigReader {
                 "json.rule.convert[java.util.Date]=java.lang.String" +
                 "\n" +
                 "#Support for javax.validation annotations\n" +
-                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
-                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
-                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
-                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
-                "param.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
-                "field.required=js:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
+                "param.required=groovy:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
+                "field.required=groovy:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
+                "param.required=groovy:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
+                "field.required=groovy:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
+                "param.required=groovy:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
+                "field.required=groovy:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
                 "#Support spring file\n" +
-                "type.is_file=js:it.isExtend(\"org.springframework.web.multipart.MultipartFile\")"
+                "type.is_file=groovy:it.isExtend(\"org.springframework.web.multipart.MultipartFile\")"
     }
 }

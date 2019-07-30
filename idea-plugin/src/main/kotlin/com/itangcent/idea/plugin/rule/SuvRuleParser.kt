@@ -8,11 +8,14 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 
 /**
  * [js:] -> jsRule
+ * [groovy:] -> groovyRule
  * [@]|[#] ->  simpleRule
  */
 class SuvRuleParser : RuleParser {
 
     private val jsRuleParser: RuleParser = JsRuleParser()
+
+    private val groovyRuleParser: RuleParser = GroovyRuleParser()
 
     private val simpleRuleParser: RuleParser = SimpleRuleParser()
 
@@ -22,6 +25,7 @@ class SuvRuleParser : RuleParser {
     @PostConstruct
     fun init() {
         actionContext!!.init(jsRuleParser)
+        actionContext.init(groovyRuleParser)
         actionContext.init(simpleRuleParser)
     }
 
@@ -33,6 +37,7 @@ class SuvRuleParser : RuleParser {
         return when {
             rule.isBlank() -> emptyList()
             rule.startsWith(JS_PREFIX) -> jsRuleParser.parseBooleanRule(rule.removePrefix(JS_PREFIX))
+            rule.startsWith(GROOVY_PREFIX) -> groovyRuleParser.parseBooleanRule(rule.removePrefix(GROOVY_PREFIX))
             else -> simpleRuleParser.parseBooleanRule(rule)
         }
     }
@@ -45,6 +50,7 @@ class SuvRuleParser : RuleParser {
         return when {
             rule.isBlank() -> emptyList()
             rule.startsWith(JS_PREFIX) -> jsRuleParser.parseStringRule(rule.removePrefix(JS_PREFIX))
+            rule.startsWith(GROOVY_PREFIX) -> groovyRuleParser.parseStringRule(rule.removePrefix(GROOVY_PREFIX))
             else -> simpleRuleParser.parseStringRule(rule)
         }
     }
@@ -55,5 +61,6 @@ class SuvRuleParser : RuleParser {
 
     companion object {
         private const val JS_PREFIX = "js:"
+        private const val GROOVY_PREFIX = "groovy:"
     }
 }

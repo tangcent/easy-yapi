@@ -88,7 +88,7 @@ class SuvApiExporter {
                             classExporter.waitCompleted()
                         }
                         if (requests.isEmpty()) {
-                            logger.info("No api be found to call!")
+                            logger.info("No api be found!")
                             return@onCompleted
                         }
 
@@ -107,7 +107,7 @@ class SuvApiExporter {
                             doExport(channel as ApiExporterWrapper, requests as List<RequestWrapper>)
                         }
                     } catch (e: Exception) {
-                        logger.info("Apis find failed" + ExceptionUtils.getStackTrace(e))
+                        logger.error("Apis find failed" + ExceptionUtils.getStackTrace(e))
                     }
                 }
                 .traversal()
@@ -195,6 +195,10 @@ class SuvApiExporter {
             }
 
             newActionContext.waitCompleteAsync()
+        }
+
+        protected open fun beforeExport(next: () -> Unit) {
+            next()
         }
 
         protected open fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
