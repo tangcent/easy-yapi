@@ -9,6 +9,7 @@ import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toBoolean
+import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
 import com.itangcent.intellij.util.DocCommentUtils
 import javax.script.ScriptContext
@@ -21,6 +22,8 @@ abstract class ScriptRuleParser : RuleParser {
     private val duckTypeHelper: DuckTypeHelper? = null
     @Inject
     private val psiClassHelper: PsiClassHelper? = null
+    @Inject
+    private val logger: Logger? = null
 
     override fun parseBooleanRule(rule: String): List<BooleanRule> {
         return listOf(BooleanRule.of { context ->
@@ -45,25 +48,30 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     private fun eval(ruleScript: String, context: PsiElementContext): Any? {
-        val simpleScriptContext = SimpleScriptContext()
-        val contextForScript: PsiElementContext? = when (context) {
-            is BaseJsPsiElementContext -> context
-            else -> contextOf(context.getResource()!!)
+        try {
+            val simpleScriptContext = SimpleScriptContext()
+            val contextForScript: PsiElementContext? = when (context) {
+                is BaseScriptPsiElementContext -> context
+                else -> contextOf(context.getResource()!!)
+            }
+            simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
+            return getScriptEngine().eval(ruleScript, simpleScriptContext)
+        } catch (e: UnsupportedScriptException) {
+            logger?.error("unsupported script type:${e.getType()},script:$ruleScript")
+            return null
         }
-        simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
-        return getScriptEngine().eval(ruleScript, simpleScriptContext)
     }
 
     protected abstract fun getScriptEngine(): ScriptEngine
 
     override fun contextOf(psiElement: PsiElement): PsiElementContext {
         return when (psiElement) {
-            is PsiClass -> JsPsiClassContext(psiElement)
-            is PsiField -> JsPsiFieldContext(psiElement)
-            is PsiMethod -> JsPsiMethodContext(psiElement)
-            is PsiParameter -> JsPsiParameterContext(psiElement)
-            is PsiType -> JsPsiTypeContext(psiElement)
-            else -> BaseJsPsiElementContext(psiElement)
+            is PsiClass -> ScriptPsiClassContext(psiElement)
+            is PsiField -> ScriptPsiFieldContext(psiElement)
+            is PsiMethod -> ScriptPsiMethodContext(psiElement)
+            is PsiParameter -> ScriptPsiParameterContext(psiElement)
+            is PsiType -> ScriptPsiTypeContext(psiElement)
+            else -> BaseScriptPsiElementContext(psiElement)
         }
     }
 
@@ -78,7 +86,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.doc("tag","subTag"):String?
      * it.hasDoc("tag"):Boolean
      */
-    open class BaseJsPsiElementContext : PsiElementContext {
+    open class BaseScriptPsiElementContext : PsiElementContext {
 
         protected var psiElement: PsiElement? = null
 
@@ -175,12 +183,12 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isMap():Boolean
      * it.isCollection():Boolean
      * it.isArray():Boolean
-     * @see JsPsiTypeContext
+     * @see ScriptPsiTypeContext
      */
-    inner class JsPsiClassContext(private val psiClass: PsiClass) : BaseJsPsiElementContext(psiClass) {
+    inner class ScriptPsiClassContext(private val psiClass: PsiClass) : BaseScriptPsiElementContext(psiClass) {
 
-        fun methods(): Array<JsPsiMethodContext> {
-            return psiClass.allMethods.map { JsPsiMethodContext(it) }
+        fun methods(): Array<ScriptPsiMethodContext> {
+            return psiClass.allMethods.map { ScriptPsiMethodContext(it) }
                     .toTypedArray()
         }
 
@@ -188,9 +196,9 @@ abstract class ScriptRuleParser : RuleParser {
             return psiClass.allMethods.size
         }
 
-        fun fields(): Array<JsPsiFieldContext> {
+        fun fields(): Array<ScriptPsiFieldContext> {
             return psiClass.allFields
-                    .map { JsPsiFieldContext(it) }
+                    .map { ScriptPsiFieldContext(it) }
                     .toTypedArray()
         }
 
@@ -231,10 +239,10 @@ abstract class ScriptRuleParser : RuleParser {
      * it.containingClass:class
      * it.jsonName:String
      */
-    inner class JsPsiFieldContext(private val psiField: PsiField) : BaseJsPsiElementContext(psiField) {
+    inner class ScriptPsiFieldContext(private val psiField: PsiField) : BaseScriptPsiElementContext(psiField) {
 
-        fun type(): JsPsiTypeContext {
-            return JsPsiTypeContext(psiField.type)
+        fun type(): ScriptPsiTypeContext {
+            return ScriptPsiTypeContext(psiField.type)
         }
 
         override fun getName(): String? {
@@ -246,8 +254,8 @@ abstract class ScriptRuleParser : RuleParser {
          *
          * @return the containing class.
          */
-        fun containingClass(): JsPsiClassContext {
-            return JsPsiClassContext(psiField.containingClass!!)
+        fun containingClass(): ScriptPsiClassContext {
+            return ScriptPsiClassContext(psiField.containingClass!!)
         }
 
         /**
@@ -266,15 +274,15 @@ abstract class ScriptRuleParser : RuleParser {
      * it.argCnt:int
      * it.containingClass:class
      */
-    inner class JsPsiMethodContext(private val psiMethod: PsiMethod) : BaseJsPsiElementContext(psiMethod) {
+    inner class ScriptPsiMethodContext(private val psiMethod: PsiMethod) : BaseScriptPsiElementContext(psiMethod) {
 
         /**
          * Returns the return type of the method.
          *
          * @return the method return type, or null if the method is a constructor.
          */
-        fun returnType(): JsPsiTypeContext? {
-            return (psiElement as PsiMethod).returnType?.let { JsPsiTypeContext(it) }
+        fun returnType(): ScriptPsiTypeContext? {
+            return (psiElement as PsiMethod).returnType?.let { ScriptPsiTypeContext(it) }
         }
 
         /**
@@ -289,16 +297,16 @@ abstract class ScriptRuleParser : RuleParser {
         /**
          * Returns the array of method parameters
          */
-        fun args(): Array<JsPsiParameterContext> {
-            return psiMethod.parameterList.parameters.map { JsPsiParameterContext(it) }
+        fun args(): Array<ScriptPsiParameterContext> {
+            return psiMethod.parameterList.parameters.map { ScriptPsiParameterContext(it) }
                     .toTypedArray()
         }
 
         /**
          * Returns the array of method parameters type
          */
-        fun argTypes(): Array<JsPsiTypeContext> {
-            return psiMethod.parameterList.parameters.map { JsPsiTypeContext(it.type) }
+        fun argTypes(): Array<ScriptPsiTypeContext> {
+            return psiMethod.parameterList.parameters.map { ScriptPsiTypeContext(it.type) }
                     .toTypedArray()
         }
 
@@ -314,8 +322,8 @@ abstract class ScriptRuleParser : RuleParser {
          *
          * @return the containing class.
          */
-        fun containingClass(): JsPsiClassContext {
-            return JsPsiClassContext(psiMethod.containingClass!!)
+        fun containingClass(): ScriptPsiClassContext {
+            return ScriptPsiClassContext(psiMethod.containingClass!!)
         }
 
         override fun getName(): String? {
@@ -328,10 +336,10 @@ abstract class ScriptRuleParser : RuleParser {
      * it.type:class
      * it.isVarArgs:Boolean
      */
-    inner class JsPsiParameterContext(private val psiParameter: PsiParameter) : BaseJsPsiElementContext(psiParameter) {
+    inner class ScriptPsiParameterContext(private val psiParameter: PsiParameter) : BaseScriptPsiElementContext(psiParameter) {
 
-        fun type(): JsPsiTypeContext {
-            return JsPsiTypeContext(psiParameter.type)
+        fun type(): ScriptPsiTypeContext {
+            return ScriptPsiTypeContext(psiParameter.type)
         }
 
         /**
@@ -355,9 +363,9 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isMap():Boolean
      * it.isCollection():Boolean
      * it.isArray():Boolean
-     * @see JsPsiClassContext
+     * @see ScriptPsiClassContext
      */
-    inner class JsPsiTypeContext(private val psiType: PsiType) : BaseJsPsiElementContext() {
+    inner class ScriptPsiTypeContext(private val psiType: PsiType) : BaseScriptPsiElementContext() {
 
         private var duckType: DuckType? = null
 
@@ -373,17 +381,17 @@ abstract class ScriptRuleParser : RuleParser {
             }
         }
 
-        fun methods(): Array<JsPsiMethodContext> {
+        fun methods(): Array<ScriptPsiMethodContext> {
             return getResource()?.let { psiElement ->
-                return@let (psiElement as PsiClass).allMethods.map { JsPsiMethodContext(it) }
+                return@let (psiElement as PsiClass).allMethods.map { ScriptPsiMethodContext(it) }
                         .toTypedArray()
             } ?: emptyArray()
         }
 
-        fun fields(): Array<JsPsiFieldContext> {
+        fun fields(): Array<ScriptPsiFieldContext> {
             return getResource()?.let { psiElement ->
                 return@let (psiElement as PsiClass).allFields
-                        .map { JsPsiFieldContext(it) }
+                        .map { ScriptPsiFieldContext(it) }
                         .toTypedArray()
             } ?: emptyArray()
         }
