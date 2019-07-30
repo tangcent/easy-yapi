@@ -258,10 +258,6 @@ class SuvApiExporter {
             }
         }
 
-        protected open fun beforeExport(next: () -> Unit) {
-            next()
-        }
-
         abstract fun doExportRequests(requests: MutableList<Request>)
     }
 
