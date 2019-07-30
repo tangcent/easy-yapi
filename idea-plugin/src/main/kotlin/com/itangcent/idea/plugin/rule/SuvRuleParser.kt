@@ -8,6 +8,7 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 
 /**
  * [js:] -> jsRule
+ * [groovy:] -> groovyRule
  * [@]|[#] ->  simpleRule
  */
 class SuvRuleParser : RuleParser {

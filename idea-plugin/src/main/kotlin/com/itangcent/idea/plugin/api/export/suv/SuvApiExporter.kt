@@ -161,12 +161,14 @@ class SuvApiExporter {
                     newActionContext.runAsync {
                         try {
                             newActionContext.init(this)
-                            newActionContext.runInReadUI {
-                                try {
-                                    doExportApisFromMethod(requests)
-                                } catch (e: Exception) {
-                                    logger!!.error("error to export apis:" + e.message)
-                                    logger!!.traceError(e)
+                            beforeExport {
+                                newActionContext.runInReadUI {
+                                    try {
+                                        doExportApisFromMethod(requests)
+                                    } catch (e: Exception) {
+                                        logger!!.error("error to export apis:" + e.message)
+                                        logger!!.traceError(e)
+                                    }
                                 }
                             }
                         } catch (e: Throwable) {
@@ -189,6 +191,10 @@ class SuvApiExporter {
             }
 
             newActionContext.waitCompleteAsync()
+        }
+
+        protected open fun beforeExport(next: () -> Unit) {
+            next()
         }
 
         protected open fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
