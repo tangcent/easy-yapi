@@ -54,7 +54,7 @@ open class AbstractYapiApiExporter {
 
     protected open fun getCartForCls(psiClass: PsiClass): CartInfo? {
 
-        val module = moduleHelper!!.findModule(psiClass) ?: return null
+        val module = actionContext!!.callInReadUI { moduleHelper!!.findModule(psiClass) } ?: return null
 
         val privateToken = getTokenOfModule(module)
         if (privateToken == null) {
