@@ -539,6 +539,7 @@ class SuvApiExporter {
     companion object {
 
         private val EXPORTER_CHANNELS: List<*> = listOf(
+                ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi"),
                 ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman"),
                 ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown")
         )

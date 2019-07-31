@@ -34,7 +34,7 @@
 * 导出API到Yapi
 ```textCode
     有四种方法.
-    1. 打开spring项目中的Controller文件或者在IDEA的左边项目文件区域选择文件或者文件夹
+    1. (0.8.2.1+)打开spring项目中的Controller文件或者在IDEA的左边项目文件区域选择文件或者文件夹
     使用快捷键"win E(windows)/ctrl E(mac)"
     然后选择要导出的API,选择导出渠道为yapi
     点击[✔]按钮或者按回车键完成导出
