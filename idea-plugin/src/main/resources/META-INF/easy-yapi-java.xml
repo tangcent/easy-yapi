@@ -45,9 +45,16 @@
             <action id="com.itangcent.idea.easy_api.actions.MultipleExportAction"
                     class="com.itangcent.idea.plugin.actions.SuvExportAction" text="Export"
                     description="Export">
-                <keyboard-shortcut keymap="$default" first-keystroke="win E"/>
-                <keyboard-shortcut first-keystroke="control E" keymap="Mac OS X" replace-all="true"/>
-                <keyboard-shortcut first-keystroke="control E" keymap="Mac OS X 10.5+" replace-all="true"/>
+                <keyboard-shortcut
+                        first-keystroke="alt shift E"
+                        keymap="$default"
+                />
+                <keyboard-shortcut
+                        first-keystroke="control E"
+                        keymap="Mac OS X" replace-all="true"/>
+                <keyboard-shortcut
+                        first-keystroke="control E"
+                        keymap="Mac OS X 10.5+" replace-all="true"/>
             </action>
 
             <action id="com.itangcent.idea.easy_api.actions.FieldsToJsonAction"

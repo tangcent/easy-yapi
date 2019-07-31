@@ -99,9 +99,8 @@ class SuvApiExportDialog : JDialog() {
 
         val lastUsedChannel = PropertiesComponent.getInstance().getValue(LAST_USED_CHANNEL)
         if (!lastUsedChannel.isNullOrEmpty()) {
-            channels.first { it.toString() == lastUsedChannel }?.let {
-                this.channelComboBox!!.model.selectedItem = it
-            }
+            channels.firstOrNull { it.toString() == lastUsedChannel }
+                    ?.let { this.channelComboBox!!.model.selectedItem = it }
         }
     }
 
@@ -128,7 +127,7 @@ class SuvApiExportDialog : JDialog() {
                 })
 
                 this.apiList!!.requestFocus()
-                
+
             }
         }
 
