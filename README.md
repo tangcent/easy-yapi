@@ -26,7 +26,7 @@ restart **IDE**.
 * ExportApi(0.8.2+)
 ```textCode
     1. Open existed Spring Controller File Or Select files or directories from project navigation
-    You can use by this : "win E(windows)/ctrl E(mac)"
+    You can use by this : "alt shift E(windows)/ctrl E(mac)"
     2.select apis and channel
     3.click [✔️] button or press enter key
 ```
