@@ -26,7 +26,7 @@ restart **IDE**.
 
 * [custom config for project](https://github.com/tangcent/easy-yapi/wiki/%E6%94%AF%E6%8C%81%E9%A2%9D%E5%A4%96%E9%85%8D%E7%BD%AE)
 
-* ExportApi
+* ExportApi(0.8.2+)
 ```textCode
     1. Open existed Spring Controller File Or Select files or directories from project navigation
     You can use by this : "win E(windows)/ctrl E(mac)"
