@@ -369,11 +369,14 @@ class SuvApiExporter {
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
+            builder.bind(ClassExporter::class) { it.with(YapiSpringClassExporter::class).singleton() }
+
             //always not read api from cache
             builder.bindInstance("class.exporter.read.cache", false)
 
-            builder.bindInstance("file.save.default", "postman.json")
-            builder.bindInstance("file.save.last.location.key", "com.itangcent.postman.export.path")
+            builder.bindInstance("file.save.default", "api.json")
+            builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
+
 
         }
 
