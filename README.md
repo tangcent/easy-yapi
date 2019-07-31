@@ -23,7 +23,7 @@ restart **IDE**.
 
 * [custom config for project](https://github.com/tangcent/easy-api/wiki/Use-Config-Make-Plugin-More-Intelligent(Export-Spring-Api-To-Postman))
 
-* ExportApi
+* ExportApi(0.8.2+)
 ```textCode
     1. Open existed Spring Controller File Or Select files or directories from project navigation
     You can use by this : "win E(windows)/ctrl E(mac)"
