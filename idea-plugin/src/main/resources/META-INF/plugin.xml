@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.itangcent.idea.plugin.easy-yapi</id>
     <name>EasyYapi</name>
-    <version>0.8.4.1</version>
+    <version>0.8.4.1x</version>
     <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
 
     <description><![CDATA[ Description will be added by gradle build]]></description>
@@ -9,10 +9,10 @@
     <category>Web</category>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="181.0"/>
+    <!--<idea-version since-build="181.0"/>-->
 
     <!--for compatible-->
-    <!--<idea-version since-build="171.0" until-build="181.0"/>-->
+    <idea-version since-build="171.0" until-build="181.0"/>
 
 
     <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
