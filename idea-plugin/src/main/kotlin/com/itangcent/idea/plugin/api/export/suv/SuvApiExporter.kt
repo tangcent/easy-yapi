@@ -92,7 +92,7 @@ class SuvApiExporter {
 
                         UIUtils.show(multipleApiExportDialog)
                         actionContext.runInSwingUI {
-                            multipleApiExportDialog.setChannels(exporterChannels)
+                            multipleApiExportDialog.setChannels(EXPORTER_CHANNELS)
 
                             multipleApiExportDialog.updateRequestList(requests
                                     .stream()
@@ -409,7 +409,7 @@ class SuvApiExporter {
 
     companion object {
 
-        private val exporterChannels: List<*> = listOf(
+        private val EXPORTER_CHANNELS: List<*> = listOf(
                 ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman"),
                 ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown")
         )
