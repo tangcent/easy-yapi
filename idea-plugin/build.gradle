@@ -51,9 +51,7 @@ patchPluginXml {
 
 jar {
     excludes = ["com/google/common/**"
-//                , "kotlin/**"
-//                ,"kotlin/*"
-//                , "kotlin/collections/**"
+                , "kotlin/**"
     ]
 //    excludes = ["com/google/common/**"]
 //    excludes = ["com/google/common/**", "org/apache/http/util/**"]
