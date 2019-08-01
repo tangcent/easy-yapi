@@ -9,6 +9,7 @@ import com.itangcent.common.utils.KVUtils
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.SimpleRuleParser
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.DocCommentUtils
@@ -28,6 +29,9 @@ class YapiFormatter {
 
     @Inject
     private val configReader: ConfigReader? = null
+
+    @Inject
+    private val actionContext: ActionContext? = null
 
     fun request2Item(request: Request): HashMap<String, Any?> {
 
@@ -147,7 +151,7 @@ class YapiFormatter {
     }
 
     protected fun findReturnOfMethod(method: PsiMethod): String? {
-        return DocCommentUtils.findDocsByTag(method.docComment, "return")
+        return actionContext!!.callInReadUI { DocCommentUtils.findDocsByTag(method.docComment, "return") }
     }
 
     private fun parseBySchema(typedObject: Any?, rootDesc: String?): String? {
