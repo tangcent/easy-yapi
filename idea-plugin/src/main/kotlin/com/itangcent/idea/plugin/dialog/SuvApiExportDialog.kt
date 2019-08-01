@@ -80,17 +80,25 @@ class SuvApiExportDialog : JDialog() {
         contentPane!!.registerKeyboardAction({ onOK() }, KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
 
         selectAllCheckBox!!.addChangeListener {
-            if (selectAllCheckBox!!.isSelected) {
-                apiList!!.selectionModel!!.addSelectionInterval(0, requestList!!.size)
-            } else {
-                apiList!!.selectionModel!!.clearSelection()
-            }
+            onSelectedAll()
+        }
+    }
+
+    private fun onSelectedAll() {
+        if (selectAllCheckBox!!.isSelected) {
+            apiList!!.selectionModel!!.addSelectionInterval(0, requestList!!.size)
+        } else {
+            apiList!!.selectionModel!!.clearSelection()
         }
     }
 
     fun updateRequestList(requestList: List<*>) {
         this.requestList = requestList
         this.apiList!!.model = DefaultComboBoxModel(requestList.toTypedArray())
+
+        this.selectAllCheckBox!!.isSelected = true
+
+        onSelectedAll()
     }
 
     fun setChannels(channels: List<*>) {
@@ -113,21 +121,44 @@ class SuvApiExportDialog : JDialog() {
         actionContext!!.hold()
 
         actionContext!!.runAsync {
-            Thread.sleep(500)
 
-            if (!disposed) {
+            for (i in 0..10) {
+                Thread.sleep(500)
+                if (disposed) {
+                    return@runAsync
+                }
 
-                this.addWindowFocusListener(object : WindowFocusListener {
-                    override fun windowLostFocus(e: WindowEvent?) {
-                        onCancel()
-                    }
+                if (actionContext!!.callInSwingUI {
+                            if (!disposed && !this.isFocused) {
+                                this.apiList!!.requestFocus()
+                                return@callInSwingUI false
+                            } else {
+                                return@callInSwingUI true
+                            }
+                        } == true) {
+                    break
+                }
+            }
 
-                    override fun windowGainedFocus(e: WindowEvent?) {
-                    }
-                })
+            Thread.sleep(200)
 
-                this.apiList!!.requestFocus()
+            if (disposed) {
+                return@runAsync
+            }
 
+            actionContext!!.runInSwingUI {
+
+                if (!disposed && this.isFocused) {
+
+                    this.addWindowFocusListener(object : WindowFocusListener {
+                        override fun windowLostFocus(e: WindowEvent?) {
+                            onCancel()
+                        }
+
+                        override fun windowGainedFocus(e: WindowEvent?) {
+                        }
+                    })
+                }
             }
         }
 
