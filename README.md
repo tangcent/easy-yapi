@@ -5,7 +5,7 @@ Simplifies API Development
 Installation
 ----
 
-**support following product build version > 173**
+**support following product build version > 171(2017.1)**
 
 - IntelliJ IDEA
 - IntelliJ IDEA Community Edition
