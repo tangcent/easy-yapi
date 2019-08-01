@@ -491,8 +491,8 @@ class SpringClassExporter : ClassExporter, Worker {
                 }
 
                 val paramType = param.type
-                val paramCls = PsiTypesUtil.getPsiClass(paramType)
                 val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
+                val paramCls = PsiTypesUtil.getPsiClass(unboxType)
                 var defaultVal: Any? = null
                 if (unboxType is PsiPrimitiveType) { //primitive Type
                     defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
@@ -525,12 +525,12 @@ class SpringClassExporter : ClassExporter, Worker {
                             , findAttrForParam(param.name, paramDocComment))
                 } else {
                     if (httpMethod == HttpMethod.GET) {
-                        addModelAttrAsQuery(param, request, parseHandle)
+                        addModelAttrAsQuery(param, request, parseHandle, findAttrForParam(param.name, paramDocComment))
                     } else {
                         if (httpMethod == HttpMethod.NO_METHOD) {
                             httpMethod = HttpMethod.POST
                         }
-                        addModelAttr(param, request, parseHandle)
+                        addModelAttr(param, request, parseHandle, findAttrForParam(param.name, paramDocComment))
                     }
                 }
             }
@@ -543,48 +543,70 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun addModelAttrAsQuery(parameter: PsiParameter, request: Request, parseHandle: ParseHandle) {
+    fun addModelAttrAsQuery(parameter: PsiParameter, request: Request, parseHandle: ParseHandle, attrFromParam: String? = null) {
         val paramType = parameter.type
         try {
             val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-            val fields = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT) as KV<String, Any>
-            val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-            val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
-            fields.forEachValid { filedName, fieldVal ->
-                parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
-                        required?.getAs(filedName) ?: false,
-                        KVUtils.getUltimateComment(comment, filedName))
+            val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
+            if (typeObject != null && typeObject is KV<*, *>) {
+                val fields = typeObject as KV<String, Any>
+                val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
+                val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+                fields.forEachValid { filedName, fieldVal ->
+                    parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
+                            required?.getAs(filedName) ?: false,
+                            KVUtils.getUltimateComment(comment, filedName))
+                }
+            } else if (typeObject == Magics.FILE_STR) {
+                parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
+                parseHandle.addFormFileParam(request, parameter.name!!,
+                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
+            } else {
+                parseHandle.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
             }
         } catch (e: Exception) {
             logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
+            logger.traceError(e)
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun addModelAttr(parameter: PsiParameter, request: Request, parseHandle: ParseHandle) {
+    fun addModelAttr(parameter: PsiParameter, request: Request, parseHandle: ParseHandle, attrFromParam: String? = null) {
 
         val paramType = parameter.type
         try {
             val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-            val fields = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT) as KV<String, Any>
-            val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-            val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
-            parseHandle.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
-            fields.forEachValid { filedName, fieldVal ->
-                val fv = deepComponent(fieldVal)
-                if (fv == Magics.FILE_STR) {
-                    parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
-                    parseHandle.addFormFileParam(request, filedName,
-                            required?.getAs(filedName) ?: false,
-                            KVUtils.getUltimateComment(comment, filedName))
-                } else {
-                    parseHandle.addFormParam(request, filedName, null,
-                            required?.getAs(filedName) ?: false,
-                            KVUtils.getUltimateComment(comment, filedName))
+            val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
+            if (typeObject != null && typeObject is KV<*, *>) {
+                val fields = typeObject as KV<String, Any>
+                val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
+                val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+                parseHandle.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
+                fields.forEachValid { filedName, fieldVal ->
+                    val fv = deepComponent(fieldVal)
+                    if (fv == Magics.FILE_STR) {
+                        parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
+                        parseHandle.addFormFileParam(request, filedName,
+                                required?.getAs(filedName) ?: false,
+                                KVUtils.getUltimateComment(comment, filedName))
+                    } else {
+                        parseHandle.addFormParam(request, filedName, null,
+                                required?.getAs(filedName) ?: false,
+                                KVUtils.getUltimateComment(comment, filedName))
+                    }
                 }
+            } else if (typeObject == Magics.FILE_STR) {
+                parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
+                parseHandle.addFormFileParam(request, parameter.name!!,
+                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
+            } else {
+                parseHandle.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
             }
         } catch (e: Exception) {
             logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
+            logger.traceError(e)
         }
     }
 
