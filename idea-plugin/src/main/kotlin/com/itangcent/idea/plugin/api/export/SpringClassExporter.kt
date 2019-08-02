@@ -307,7 +307,7 @@ open class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findParamRequired(requestParamAnn: PsiAnnotation?): Boolean? {
-        val required = PsiAnnotationUtils.findAttr(requestParamAnn, "name", "required") ?: return null
+        val required = PsiAnnotationUtils.findAttr(requestParamAnn, "required") ?: return null
         return when {
             required.contains("false") -> false
             else -> null
@@ -450,7 +450,10 @@ open class SpringClassExporter : ClassExporter, Worker {
                         headName = param.name
                     }
 
-                    val required = findParamRequired(requestHeaderAnn) ?: true
+                    var required = findParamRequired(requestHeaderAnn) ?: true
+                    if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                        required = true
+                    }
 
                     var defaultValue = PsiAnnotationUtils.findAttr(requestHeaderAnn,
                             "defaultValue")
@@ -487,15 +490,28 @@ open class SpringClassExporter : ClassExporter, Worker {
 
                 var paramName: String? = null
                 var required: Boolean = false
+                var defaultVal: Any? = null
 
                 val requestParamAnn = findRequestParam(param)
+
                 if (requestParamAnn != null) {
                     paramName = findParamName(requestParamAnn)
                     required = findParamRequired(requestParamAnn) ?: true
+
+                    defaultVal = PsiAnnotationUtils.findAttr(requestParamAnn,
+                            "defaultValue")
+
+                    if (defaultVal == null
+                            || defaultVal == ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+                            || defaultVal == REQUEST_HEADER_DEFAULT_NONE) {
+                        defaultVal = ""
+                    }
                 }
-                if (!required) {
-                    required = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) ?: false
+
+                if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                    required = true
                 }
+
                 if (StringUtils.isBlank(paramName)) {
                     paramName = param.name!!
                 }
@@ -503,11 +519,18 @@ open class SpringClassExporter : ClassExporter, Worker {
                 val paramType = param.type
                 val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
                 val paramCls = PsiTypesUtil.getPsiClass(unboxType)
-                var defaultVal: Any? = null
                 if (unboxType is PsiPrimitiveType) { //primitive Type
-                    defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
+                    if (defaultVal == null || defaultVal == "") {
+                        defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
+                        //Primitive type parameter is required
+                        //Optional primitive type parameter is present but cannot be translated into a null value due to being declared as a primitive type.
+                        //Consider declaring it as object wrapper for the corresponding primitive type.
+                        required = true
+                    }
                 } else if (psiClassHelper.isNormalType(unboxType.canonicalText)) {//normal type
-                    defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
+                    if (defaultVal == null || defaultVal == "") {
+                        defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
+                    }
                 } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
                     if (httpMethod == HttpMethod.GET) {
                         //can not upload file in a GET method
