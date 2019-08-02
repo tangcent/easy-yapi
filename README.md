@@ -1,6 +1,12 @@
 # easy-api
 Simplifies API Development
 
+## Tips
+Before the 1.0.0 release, easy-api will be quick iteration.
+If you encounter a failure
+1. Please commit a issue.
+2. Try roll back to the previous version.
+3. You can email [me](mailto:pentatangcent@gmail.com) at any time.I will provide support as far as I can.
 
 Installation
 ----
