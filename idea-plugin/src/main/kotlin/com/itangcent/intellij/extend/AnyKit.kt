@@ -20,6 +20,12 @@ fun <E> List<E>.asArrayList(): ArrayList<E> {
 
 fun Any?.toInt(): Int? {
     if (this == null) return null
+    if (this is Boolean) {
+        return when {
+            this -> 1
+            else -> 0
+        }
+    }
     if (this is Number) return this.toInt()
     if (this is String) return this.toIntOrNull()
     return null
