@@ -30,7 +30,7 @@ import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.regex.Pattern
 
-class SpringClassExporter : ClassExporter, Worker {
+open class SpringClassExporter : ClassExporter, Worker {
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
 
@@ -65,7 +65,7 @@ class SpringClassExporter : ClassExporter, Worker {
     private val methodReturnInferHelper: MethodReturnInferHelper? = null
 
     @Inject
-    private val ruleComputer: RuleComputer? = null
+    protected val ruleComputer: RuleComputer? = null
 
     @Inject(optional = true)
     private val methodFilter: MethodFilter? = null
@@ -159,11 +159,17 @@ class SpringClassExporter : ClassExporter, Worker {
 
         processResponse(method, request, parseHandle)
 
+        processCompleted(method, request, parseHandle)
+
         requestHandle(request)
     }
 
     private fun readMethodDoc(method: PsiMethod, parseHandle: ParseHandle): String? {
         return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
+    }
+
+    protected open fun processCompleted(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
+        //call after process
     }
 
     private fun processResponse(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
@@ -297,7 +303,7 @@ class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findParamRequired(requestParamAnn: PsiAnnotation?): Boolean? {
-        val required = PsiAnnotationUtils.findAttr(requestParamAnn, "name", "required") ?: return null
+        val required = PsiAnnotationUtils.findAttr(requestParamAnn, "required") ?: return null
         return when {
             required.contains("false") -> false
             else -> null
@@ -314,12 +320,12 @@ class SpringClassExporter : ClassExporter, Worker {
         }
     }
 
-    protected fun findDeprecatedOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
+    protected open fun findDeprecatedOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
         return ruleComputer!!.computer(ClassExportRuleKeys.DEPRECATE, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun findAttrForParam(paramName: String?, docComment: KV<String, Any>?): String? {
+    protected open fun findAttrForParam(paramName: String?, docComment: KV<String, Any>?): String? {
         return when {
             paramName == null -> null
             docComment == null -> null
@@ -440,7 +446,10 @@ class SpringClassExporter : ClassExporter, Worker {
                         headName = param.name
                     }
 
-                    val required = findParamRequired(requestHeaderAnn) ?: true
+                    var required = findParamRequired(requestHeaderAnn) ?: true
+                    if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                        required = true
+                    }
 
                     var defaultValue = PsiAnnotationUtils.findAttr(requestHeaderAnn,
                             "defaultValue")
@@ -477,15 +486,28 @@ class SpringClassExporter : ClassExporter, Worker {
 
                 var paramName: String? = null
                 var required: Boolean = false
+                var defaultVal: Any? = null
 
                 val requestParamAnn = findRequestParam(param)
+
                 if (requestParamAnn != null) {
                     paramName = findParamName(requestParamAnn)
                     required = findParamRequired(requestParamAnn) ?: true
+
+                    defaultVal = PsiAnnotationUtils.findAttr(requestParamAnn,
+                            "defaultValue")
+
+                    if (defaultVal == null
+                            || defaultVal == ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+                            || defaultVal == REQUEST_HEADER_DEFAULT_NONE) {
+                        defaultVal = ""
+                    }
                 }
-                if (!required) {
-                    required = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) ?: false
+
+                if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                    required = true
                 }
+
                 if (StringUtils.isBlank(paramName)) {
                     paramName = param.name!!
                 }
@@ -493,11 +515,18 @@ class SpringClassExporter : ClassExporter, Worker {
                 val paramType = param.type
                 val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
                 val paramCls = PsiTypesUtil.getPsiClass(unboxType)
-                var defaultVal: Any? = null
                 if (unboxType is PsiPrimitiveType) { //primitive Type
-                    defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
+                    if (defaultVal == null || defaultVal == "") {
+                        defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
+                        //Primitive type parameter is required
+                        //Optional primitive type parameter is present but cannot be translated into a null value due to being declared as a primitive type.
+                        //Consider declaring it as object wrapper for the corresponding primitive type.
+                        required = true
+                    }
                 } else if (psiClassHelper.isNormalType(unboxType.canonicalText)) {//normal type
-                    defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
+                    if (defaultVal == null || defaultVal == "") {
+                        defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
+                    }
                 } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
                     if (httpMethod == HttpMethod.GET) {
                         //can not upload file in a GET method
