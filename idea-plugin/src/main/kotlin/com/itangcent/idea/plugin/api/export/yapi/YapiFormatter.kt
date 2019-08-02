@@ -70,7 +70,7 @@ class YapiFormatter {
                     .set("value", it.value)
                     .set("desc", it.desc)
                     .set("example", it.example)
-                    .set("required", 1)
+                    .set("required", it.required.toInt())
             )
         }
 
