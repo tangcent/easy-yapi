@@ -287,7 +287,7 @@ open class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findRequestHeader(parameter: PsiParameter): PsiAnnotation? {
-        return PsiAnnotationUtils.findAnn(parameter, REQUEST_HEADER)
+        return PsiAnnotationUtils.findAnn(parameter, SpringClassName.REQUEST_HEADER)
     }
 
     private fun findPathVariable(parameter: PsiParameter): PsiAnnotation? {
@@ -695,8 +695,6 @@ open class SpringClassExporter : ClassExporter, Worker {
                 SpringClassName.PATCH_MAPPING,
                 SpringClassName.POST_MAPPING,
                 SpringClassName.PUT_MAPPING)
-
-        const val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
 
         const val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
 
