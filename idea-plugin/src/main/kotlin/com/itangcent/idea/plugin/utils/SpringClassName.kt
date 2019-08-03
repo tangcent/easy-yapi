@@ -13,6 +13,8 @@ object SpringClassName {
     const val MODELATTRIBUTE_ANNOTATION = "org.springframework.web.bind.annotation.ModelAttribute"
     const val PATHVARIABLE_ANNOTATION = "org.springframework.web.bind.annotation.PathVariable"
 
+    const val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
+
     const val GET_MAPPING = "org.springframework.web.bind.annotation.GetMapping"
     const val POST_MAPPING = "org.springframework.web.bind.annotation.PostMapping"
     const val PUT_MAPPING = "org.springframework.web.bind.annotation.PutMapping"
