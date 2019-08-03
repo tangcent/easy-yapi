@@ -15,7 +15,7 @@ If you encounter a failure
 Installation
 ----
 
-**support following product build version > 171(2017.1)**
+**support following product build version > 173(2017.3)**
 
 - IntelliJ IDEA
 - IntelliJ IDEA Community Edition
