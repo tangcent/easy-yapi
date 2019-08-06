@@ -5,7 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KVUtils
@@ -30,7 +30,7 @@ class MarkdownFormatter {
     private val actionContext: ActionContext? = null
 
     @Inject
-    private val parseHandle: ParseHandle? = null
+    private val requestHelper: RequestHelper? = null
 
     @Inject
     private val docParseHelper: DefaultDocParseHelper? = null
@@ -276,7 +276,7 @@ class MarkdownFormatter {
 
     private fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
-            val attr = findAttrOfClass(resource, parseHandle!!)
+            val attr = findAttrOfClass(resource, requestHelper!!)
             if (attr.isNullOrBlank()) {
                 info[NAME] = resource.name!!
                 info[DESC] = "exported from module:${resource.qualifiedName}"
@@ -304,12 +304,12 @@ class MarkdownFormatter {
         }
     }
 
-    private fun findAttrOfClass(cls: PsiClass, parseHandle: ParseHandle): String? {
+    private fun findAttrOfClass(cls: PsiClass, requestHelper: RequestHelper): String? {
         val docComment = actionContext!!.callInReadUI { cls.docComment }
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, requestHelper)
         }
     }
 

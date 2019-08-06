@@ -2,7 +2,7 @@ package com.itangcent.common.exporter
 
 import com.itangcent.common.model.*
 
-interface ParseHandle {
+interface RequestHelper {
 
     fun setName(request: Request, name: String)
 
@@ -48,11 +48,11 @@ interface ParseHandle {
 }
 
 //region utils------------------------------------------------------------------
-fun ParseHandle.addParam(request: Request, paramName: String, defaultVal: String?, attr: String?) {
+fun RequestHelper.addParam(request: Request, paramName: String, defaultVal: String?, attr: String?) {
     addParam(request, paramName, defaultVal, false, attr)
 }
 
-fun ParseHandle.addParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {
+fun RequestHelper.addParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {
     val param = Param()
     param.name = paramName
     param.value = defaultVal
@@ -61,11 +61,11 @@ fun ParseHandle.addParam(request: Request, paramName: String, defaultVal: String
     this.addParam(request, param)
 }
 
-fun ParseHandle.addFormParam(request: Request, paramName: String, defaultVal: String?, desc: String?) {
+fun RequestHelper.addFormParam(request: Request, paramName: String, defaultVal: String?, desc: String?) {
     addFormParam(request, paramName, defaultVal, false, desc)
 }
 
-fun ParseHandle.addFormParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {
+fun RequestHelper.addFormParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {
     val param = FormParam()
     param.name = paramName
     param.value = defaultVal
@@ -75,7 +75,7 @@ fun ParseHandle.addFormParam(request: Request, paramName: String, defaultVal: St
     this.addFormParam(request, param)
 }
 
-fun ParseHandle.addFormFileParam(request: Request, paramName: String, required: Boolean, desc: String?) {
+fun RequestHelper.addFormFileParam(request: Request, paramName: String, required: Boolean, desc: String?) {
     val param = FormParam()
     param.name = paramName
     param.required = required
@@ -84,7 +84,7 @@ fun ParseHandle.addFormFileParam(request: Request, paramName: String, required: 
     this.addFormParam(request, param)
 }
 
-fun ParseHandle.addHeader(request: Request, name: String, value: String) {
+fun RequestHelper.addHeader(request: Request, name: String, value: String) {
     val header = Header()
     header.name = name
     header.value = value
@@ -92,14 +92,14 @@ fun ParseHandle.addHeader(request: Request, name: String, value: String) {
     addHeader(request, header)
 }
 
-fun ParseHandle.addPathParam(request: Request, name: String, desc: String) {
+fun RequestHelper.addPathParam(request: Request, name: String, desc: String) {
     val pathParam = PathParam()
     pathParam.name = name
     pathParam.desc = desc
     this.addPathParam(request, pathParam)
 }
 
-fun ParseHandle.addResponseHeader(response: Response, name: String, value: String) {
+fun RequestHelper.addResponseHeader(response: Response, name: String, value: String) {
     val header = Header()
     header.name = name
     header.value = value

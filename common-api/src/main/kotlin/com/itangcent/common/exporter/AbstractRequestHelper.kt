@@ -4,7 +4,7 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.KVUtils
 
-abstract class AbstractParseHandle : ParseHandle {
+abstract class AbstractRequestHelper : RequestHelper {
     override fun setName(request: Request, name: String) {
         request.name = name
     }

@@ -26,8 +26,12 @@ class FieldsToJsonAction : BasicAnAction("To Json") {
     @Inject
     private val logger: Logger? = null
 
-    override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
-        super.onBuildActionContext(builder)
+    override fun actionName(): String {
+        return "FieldsToJsonAction"
+    }
+
+    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+        super.afterBuildActionContext(event, builder)
 
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
@@ -35,6 +39,7 @@ class FieldsToJsonAction : BasicAnAction("To Json") {
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
+        super.actionPerformed(actionContext, project, anActionEvent)
 
         try {
             val editor = anActionEvent.getData(PlatformDataKeys.EDITOR)

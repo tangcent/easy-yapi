@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.dialog.ApiCallDialog
@@ -33,7 +33,7 @@ class ApiCaller {
     private val classExporter: ClassExporter? = null
 
     @Inject
-    private val parseHandle: ParseHandle? = null
+    private val requestHelper: RequestHelper? = null
 
     fun showCallWindow() {
 
@@ -49,7 +49,7 @@ class ApiCaller {
         SelectedHelper.Builder()
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, parseHandle!!) { request ->
+                    classExporter!!.export(it, requestHelper!!) { request ->
                         requests.add(request)
                     }
                 }
