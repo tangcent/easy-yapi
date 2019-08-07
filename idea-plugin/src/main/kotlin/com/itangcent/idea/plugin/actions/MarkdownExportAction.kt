@@ -16,10 +16,6 @@ import com.itangcent.intellij.file.LocalFileRepository
 
 class MarkdownExportAction : ApiExportAction("Export Markdown") {
 
-    override fun actionName(): String {
-        return "MarkdownExportAction"
-    }
-
     override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
         super.afterBuildActionContext(event, builder)
 

@@ -14,8 +14,8 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
-import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
+import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
@@ -26,6 +26,8 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
+import com.itangcent.idea.plugin.script.GroovyActionExtLoader
+import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
@@ -170,7 +172,11 @@ class SuvApiExporter {
             actionContextBuilder.bindInstance(MethodFilter::class, ExplicitMethodFilter(resources))
 
             onBuildActionContext(actionContext, actionContextBuilder)
+
             val newActionContext = actionContextBuilder.build()
+
+            actionPerformed(newActionContext)
+
             newActionContext.hold()
             Thread {
                 try {
@@ -207,6 +213,17 @@ class SuvApiExporter {
             }
 
             newActionContext.waitCompleteAsync()
+        }
+
+        protected open fun actionPerformed(actionContext: ActionContext) {
+            val loggerBuffer: LoggerBuffer? = actionContext.getCache<LoggerBuffer>("LOGGER_BUF")
+            loggerBuffer?.drainTo(actionContext.instance(Logger::class))
+            val actionExtLoader: GroovyActionExtLoader? = actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
+            actionExtLoader?.let { actionExtLoader ->
+                actionContext.on("EventKey.ONCOMPLETED") {
+                    actionExtLoader.close()
+                }
+            }
         }
 
         protected open fun beforeExport(next: () -> Unit) {

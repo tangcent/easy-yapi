@@ -20,10 +20,6 @@ import com.itangcent.suv.http.HttpClientProvider
 
 class PostmanExportAction : ApiExportAction("Export Postman") {
 
-    override fun actionName(): String {
-        return "PostmanExportAction"
-    }
-
     override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
         super.afterBuildActionContext(event, builder)
 
