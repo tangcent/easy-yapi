@@ -1,224 +1,219 @@
 package com.itangcent.idea.plugin.api.export
 
-import com.google.inject.Inject
-import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
-import com.intellij.util.containers.isNullOrEmpty
-import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.exporter.*
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
-import com.itangcent.common.model.RequestHandle
-import com.itangcent.common.model.Response
-import com.itangcent.common.utils.KVUtils
-import com.itangcent.idea.constant.SpringAttrs
-import com.itangcent.idea.plugin.StatusRecorder
-import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.MethodReturnInferHelper
-import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.utils.SpringClassName
-import com.itangcent.intellij.config.rule.RuleComputer
-import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.*
-import com.itangcent.intellij.util.*
+import com.itangcent.intellij.psi.ClassRuleKeys
+import com.itangcent.intellij.psi.PsiAnnotationUtils
+import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.StringUtils
-import java.util.*
-import java.util.regex.Pattern
 
-open class SpringClassExporter : ClassExporter, Worker {
+open class SpringClassExporter : AbstractClassExporter() {
 
-    private var statusRecorder: StatusRecorder = StatusRecorder()
+    override fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
 
-    override fun status(): WorkerStatus {
-        return statusRecorder.status()
+        val ctrlRequestMappingAnn = findRequestMapping(cls)
+        val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
+
+        val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
+
+        kv["basePath"] = basePath
+        kv["ctrlHttpMethod"] = ctrlHttpMethod
     }
 
-    override fun waitCompleted() {
-        return statusRecorder.waitCompleted()
-    }
-
-    override fun cancel() {
-        return statusRecorder.cancel()
-    }
-
-    @Inject
-    private val logger: Logger? = null
-
-    @Inject
-    private val psiClassHelper: PsiClassHelper? = null
-
-    @Inject
-    private val docParseHelper: DefaultDocParseHelper? = null
-
-    @Inject
-    private val settingBinder: SettingBinder? = null
-
-    @Inject
-    private val duckTypeHelper: DuckTypeHelper? = null
-
-    @Inject
-    private val methodReturnInferHelper: MethodReturnInferHelper? = null
-
-    @Inject
-    protected val ruleComputer: RuleComputer? = null
-
-    @Inject(optional = true)
-    private val methodFilter: MethodFilter? = null
-
-    @Inject
-    private var actionContext: ActionContext? = null
-
-    override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
-        if (cls !is PsiClass) return
-        actionContext!!.checkStatus()
-        statusRecorder.newWork()
-        try {
-            when {
-                !isCtrl(cls) -> return
-                shouldIgnore(cls) -> {
-                    logger!!.info("ignore class:" + cls.qualifiedName)
-                    return
-                }
-                else -> {
-                    logger!!.info("search api from:${cls.qualifiedName}")
-                    val ctrlRequestMappingAnn = findRequestMapping(cls)
-                    val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
-
-                    val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
-
-                    foreachMethod(cls) { method ->
-                        if (methodFilter?.checkMethod(method) != false) {
-                            exportMethodApi(method, basePath, ctrlHttpMethod, parseHandle, requestHandle)
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            logger!!.traceError(e)
-        } finally {
-            statusRecorder.endWork()
-        }
-    }
-
-    private fun isCtrl(psiClass: PsiClass): Boolean {
+    override fun hasApi(psiClass: PsiClass): Boolean {
         return psiClass.annotations.any {
-            SpringAttrs.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
+            SpringClassName.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
         }
     }
 
-    private fun shouldIgnore(psiElement: PsiElement): Boolean {
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
+    override fun isApi(psiMethod: PsiMethod): Boolean {
+        return findRequestMappingInAnn(psiMethod) != null
     }
 
-    private fun exportMethodApi(method: PsiMethod, basePath: String, ctrlHttpMethod: String
-                                , parseHandle: ParseHandle, requestHandle: RequestHandle) {
+    override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?, requestHelper: RequestHelper) {
 
-        actionContext!!.checkStatus()
-        val requestMappingAnn = findRequestMappingInAnn(method) ?: return
-        val request = Request()
-        request.resource = method
 
-        var httpMethod = findHttpMethod(requestMappingAnn)
-        if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
-            httpMethod = ctrlHttpMethod
+        val requestBodyAnn = findRequestBody(param)
+        if (requestBodyAnn != null) {
+            if (request.method == HttpMethod.NO_METHOD) {
+                requestHelper.setMethod(request, HttpMethod.POST)
+            }
+            requestHelper.addHeader(request, "Content-Type", "application/json")
+            requestHelper.setJsonBody(
+                    request,
+                    parseRequestBody(param.type, method),
+                    paramDesc
+            )
+            return
         }
 
-        parseHandle.setMethod(request, httpMethod)
-        val httpPath = contractPath(basePath, findHttpPath(requestMappingAnn))!!
-        parseHandle.setPath(request, httpPath)
+        val modelAttrAnn = findModelAttr(param)
+        if (modelAttrAnn != null) {
+            if (request.method == HttpMethod.GET) {
+                addParamAsQuery(param, request, requestHelper)
+            } else {
+                if (request.method == HttpMethod.NO_METHOD) {
+                    requestHelper.setMethod(request, HttpMethod.POST)
+                }
 
-        val attr: String?
-        val attrOfMethod = findAttrOfMethod(method, parseHandle)!!
-        val lines = attrOfMethod.lines()
-        attr = if (lines.size > 1) {//multi line
-            lines.firstOrNull { it.isNotBlank() }
+                addParamAsForm(param, request, requestHelper)
+            }
+            return
+        }
+
+        val requestHeaderAnn = findRequestHeader(param)
+        if (requestHeaderAnn != null) {
+
+            var headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
+                    "value")
+            if (headName.isNullOrBlank()) {
+                headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
+                        "name")
+            }
+            if (headName.isNullOrBlank()) {
+                headName = param.name
+            }
+
+            var required = findParamRequired(requestHeaderAnn) ?: true
+            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                required = true
+            }
+
+            var defaultValue = PsiAnnotationUtils.findAttr(requestHeaderAnn,
+                    "defaultValue")
+
+            if (defaultValue == null
+                    || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+                    || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
+                defaultValue = ""
+            }
+
+            val header = Header()
+            header.name = headName
+            header.value = defaultValue
+            header.example = defaultValue
+            header.desc = paramDesc
+            header.required = required
+            requestHelper.addHeader(request, header)
+            return
+        }
+
+        val pathVariableAnn = findPathVariable(param)
+        if (pathVariableAnn != null) {
+
+            var pathName = PsiAnnotationUtils.findAttr(pathVariableAnn,
+                    "value")
+            if (pathName == null) {
+                pathName = param.name
+            }
+
+            requestHelper.addPathParam(request, pathName!!, paramDesc ?: "")
+            return
+        }
+
+        var paramName: String? = null
+        var required: Boolean = false
+        var defaultVal: Any? = null
+
+        val requestParamAnn = findRequestParam(param)
+
+        if (requestParamAnn != null) {
+            paramName = findParamName(requestParamAnn)
+            required = findParamRequired(requestParamAnn) ?: true
+
+            defaultVal = PsiAnnotationUtils.findAttr(requestParamAnn,
+                    "defaultValue")
+
+            if (defaultVal == null
+                    || defaultVal == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+                    || defaultVal == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
+                defaultVal = ""
+            }
+        }
+
+        if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+            required = true
+        }
+
+        if (StringUtils.isBlank(paramName)) {
+            paramName = param.name!!
+        }
+
+        val paramType = param.type
+        val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
+        val paramCls = PsiTypesUtil.getPsiClass(unboxType)
+        if (unboxType is PsiPrimitiveType) { //primitive Type
+            if (defaultVal == null || defaultVal == "") {
+                defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
+                //Primitive type parameter is required
+                //Optional primitive type parameter is present but cannot be translated into a null value due to being declared as a primitive type.
+                //Consider declaring it as object wrapper for the corresponding primitive type.
+                required = true
+            }
+        } else if (psiClassHelper.isNormalType(unboxType.canonicalText)) {//normal type
+            if (defaultVal == null || defaultVal == "") {
+                defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
+            }
+        } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
+            if (request.method == HttpMethod.GET) {
+                //can not upload file in a GET method
+                logger!!.error("Couldn't upload file in 'GET':[$request.method:${request.path}],param:${param.name} type:{${paramType.canonicalText}}")
+                return
+            }
+
+            if (request.method == HttpMethod.NO_METHOD) {
+                request.method = HttpMethod.POST
+            }
+
+            requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
+            requestHelper.addFormFileParam(request, paramName!!, required, paramDesc)
+            return
+        } else if (SpringClassName.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
+            //ignore @HttpServletRequest and @HttpServletResponse
+            return
+        }
+
+        if (defaultVal != null) {
+            requestHelper.addParam(request,
+                    paramName!!
+                    , defaultVal.toString()
+                    , required
+                    , paramDesc)
         } else {
-            attrOfMethod
-        }
-
-        parseHandle.appendDesc(request, attrOfMethod)
-
-        findDeprecatedOfMethod(method, parseHandle)?.let {
-            parseHandle.appendDesc(request, it)
-        }
-
-        readMethodDoc(method, parseHandle)?.let {
-            parseHandle.appendDesc(request, it)
-        }
-
-        parseHandle.setName(request, attr ?: method.name)
-
-        parseHandle.setMethod(request, httpMethod)
-
-        processMethodParameters(method, request, parseHandle)
-
-        processResponse(method, request, parseHandle)
-
-        processCompleted(method, request, parseHandle)
-
-        requestHandle(request)
-    }
-
-    private fun readMethodDoc(method: PsiMethod, parseHandle: ParseHandle): String? {
-        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
-    }
-
-    protected open fun processCompleted(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
-        //call after process
-    }
-
-    private fun processResponse(method: PsiMethod, request: Request, parseHandle: ParseHandle) {
-
-        val returnType = method.returnType
-        if (returnType != null) {
-            try {
-                val response = Response()
-
-                parseHandle.setResponseCode(response, 200)
-
-                val typedResponse = parseResponseBody(returnType, method)
-
-                parseHandle.setResponseBody(response, "raw", typedResponse)
-
-                parseHandle.addResponseHeader(response, "content-type", "application/json;charset=UTF-8")
-
-                parseHandle.addResponse(request, response)
-
-            } catch (e: ProcessCanceledException) {
-                //ignore cancel
-            } catch (e: Throwable) {
-                logger!!.error("error to parse body")
-                logger.traceError(e)
+            if (request.method == HttpMethod.GET) {
+                addParamAsQuery(param, request, requestHelper, paramDesc)
+            } else {
+                if (request.method == HttpMethod.NO_METHOD) {
+                    request.method = HttpMethod.POST
+                }
+                addParamAsForm(param, request, requestHelper, paramDesc)
             }
         }
+
     }
 
-    /**
-     * unbox queryParam
-     */
-    private fun tinyQueryParam(paramVal: String?): String? {
-        if (paramVal == null) return null
-        var pv = paramVal.trim()
-        while (true) {
-            if (pv.startsWith("[")) {
-                pv = pv.trim('[', ']')
-                continue
-            }
-            break
+    override fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request, requestHelper: RequestHelper) {
+        super.processMethod(method, kv, request, requestHelper)
+
+        var basePath: String? = kv.getAs("basePath")
+        var ctrlHttpMethod: String? = kv.getAs("ctrlHttpMethod")
+        var requestMapping = findRequestMappingInAnn(method)
+        var httpMethod = findHttpMethod(requestMapping)
+        if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
+            httpMethod = ctrlHttpMethod!!
         }
-        return pv
+        request.method = httpMethod
+
+        val httpPath = contractPath(basePath, findHttpPath(requestMapping))!!
+        requestHelper.setPath(request, httpPath)
     }
 
-    private fun contractPath(pathPre: String?, pathAfter: String?): String? {
-        if (pathPre == null) return pathAfter
-        if (pathAfter == null) return pathPre
-        return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")
-    }
+    //region process spring annotation-------------------------------------------------------------------
 
     private fun findHttpPath(requestMappingAnn: PsiAnnotation?): String? {
         val path = PsiAnnotationUtils.findAttr(requestMappingAnn, "path", "value") ?: return null
@@ -273,7 +268,7 @@ open class SpringClassExporter : ClassExporter, Worker {
     }
 
     private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
-        return SPRING_REQUEST_MAPPING_ANNOTATIONS
+        return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
                 .map { PsiAnnotationUtils.findAnn(ele, it) }
                 .firstOrNull { it != null }
     }
@@ -310,394 +305,6 @@ open class SpringClassExporter : ClassExporter, Worker {
         }
     }
 
-    private fun findAttrOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
-        val docComment = method.docComment
+    //endregion process spring annotation-------------------------------------------------------------------
 
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
-        return when {
-            StringUtils.isBlank(docText) -> method.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, method, parseHandle)
-        }
-    }
-
-    protected open fun findDeprecatedOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
-        return ruleComputer!!.computer(ClassExportRuleKeys.DEPRECATE, method)?.let { docParseHelper!!.resolveLinkInAttr(it, method, parseHandle) }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    protected open fun findAttrForParam(paramName: String?, docComment: KV<String, Any>?): String? {
-        return when {
-            paramName == null -> null
-            docComment == null -> null
-            docComment.containsKey("$paramName@options") -> {
-                val options = docComment["$paramName@options"] as List<Map<String, Any?>>
-                "${docComment[paramName]}${KVUtils.getOptionDesc(options)}"
-            }
-            else -> docComment[paramName] as String?
-        }
-    }
-
-    private fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
-        val docComment = psiMethod.docComment
-        var methodParamComment: KV<String, Any>? = null
-        if (docComment != null) {
-            for (paramDocTag in docComment.findTagsByName("param")) {
-                var name: String? = null
-                var value: String? = null
-                paramDocTag.dataElements
-                        .asSequence()
-                        .map { it?.text }
-                        .filterNot { StringUtils.isBlank(it) }
-                        .forEach {
-                            when {
-                                name == null -> name = it
-                                value == null -> value = it
-                                else -> value += it
-                            }
-                        }
-                if (StringUtils.isNoneBlank(name, value)) {
-                    if (methodParamComment == null) methodParamComment = KV.create()
-
-                    if (value!!.contains("@link")) {
-                        val pattern = Pattern.compile("\\{@link (.*?)\\}")
-                        val matcher = pattern.matcher(value)
-
-                        val options: ArrayList<HashMap<String, Any?>> = ArrayList()
-
-                        val sb = StringBuffer()
-                        while (matcher.find()) {
-                            matcher.appendReplacement(sb, "")
-                            val linkClassOrProperty = matcher.group(1)
-                            psiClassHelper!!.resolveEnumOrStatic(linkClassOrProperty, psiMethod, name!!)
-                                    ?.let { options.addAll(it) }
-                        }
-                        matcher.appendTail(sb)
-                        methodParamComment[name!!] = sb.toString()
-                        if (!options.isNullOrEmpty()) {
-                            methodParamComment["$name@options"] = options
-                        }
-                        continue
-                    }
-                    methodParamComment[name!!] = value!!
-                }
-            }
-        }
-        return methodParamComment
-    }
-
-    private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        cls.allMethods
-                .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
-                .filter { !it.hasModifier(JvmModifier.STATIC) }
-                .filter { !shouldIgnore(it) }
-                .forEach(handle)
-    }
-
-    private fun processMethodParameters(method: PsiMethod, request: Request,
-                                        parseHandle: ParseHandle) {
-
-        val params = method.parameterList.parameters
-        var httpMethod = request.method ?: HttpMethod.NO_METHOD
-        if (params.isNotEmpty()) {
-
-            val paramDocComment = extractParamComment(method)
-
-            for (param in params) {
-
-                val requestBodyAnn = findRequestBody(param)
-                if (requestBodyAnn != null) {
-                    if (httpMethod == HttpMethod.NO_METHOD) {
-                        httpMethod = HttpMethod.POST
-                    }
-                    parseHandle.addHeader(request, "Content-Type", "application/json")
-                    parseHandle.setJsonBody(
-                            request,
-                            parseRequestBody(param.type, method),
-                            findAttrForParam(param.name, paramDocComment)
-                    )
-                    continue
-                }
-
-                val modelAttrAnn = findModelAttr(param)
-                if (modelAttrAnn != null) {
-                    if (httpMethod == HttpMethod.GET) {
-                        addModelAttrAsQuery(param, request, parseHandle)
-                    } else {
-                        if (httpMethod == HttpMethod.NO_METHOD) {
-                            httpMethod = HttpMethod.POST
-                        }
-
-                        addModelAttr(param, request, parseHandle)
-                    }
-                    continue
-                }
-
-                val requestHeaderAnn = findRequestHeader(param)
-                if (requestHeaderAnn != null) {
-                    val attr = findAttrForParam(param.name, paramDocComment)
-
-                    var headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
-                            "value")
-                    if (headName.isNullOrBlank()) {
-                        headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
-                                "name")
-                    }
-                    if (headName.isNullOrBlank()) {
-                        headName = param.name
-                    }
-
-                    var required = findParamRequired(requestHeaderAnn) ?: true
-                    if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
-                        required = true
-                    }
-
-                    var defaultValue = PsiAnnotationUtils.findAttr(requestHeaderAnn,
-                            "defaultValue")
-
-                    if (defaultValue == null
-                            || defaultValue == ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                            || defaultValue == REQUEST_HEADER_DEFAULT_NONE) {
-                        defaultValue = ""
-                    }
-
-                    val header = Header()
-                    header.name = headName
-                    header.value = defaultValue
-                    header.example = defaultValue
-                    header.desc = attr
-                    header.required = required
-                    parseHandle.addHeader(request, header)
-                    continue
-                }
-
-                val pathVariableAnn = findPathVariable(param)
-                if (pathVariableAnn != null) {
-                    val attr = findAttrForParam(param.name, paramDocComment)
-
-                    var pathName = PsiAnnotationUtils.findAttr(pathVariableAnn,
-                            "value")
-                    if (pathName == null) {
-                        pathName = param.name
-                    }
-
-                    parseHandle.addPathParam(request, pathName!!, attr ?: "")
-                    continue
-                }
-
-                var paramName: String? = null
-                var required: Boolean = false
-                var defaultVal: Any? = null
-
-                val requestParamAnn = findRequestParam(param)
-
-                if (requestParamAnn != null) {
-                    paramName = findParamName(requestParamAnn)
-                    required = findParamRequired(requestParamAnn) ?: true
-
-                    defaultVal = PsiAnnotationUtils.findAttr(requestParamAnn,
-                            "defaultValue")
-
-                    if (defaultVal == null
-                            || defaultVal == ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                            || defaultVal == REQUEST_HEADER_DEFAULT_NONE) {
-                        defaultVal = ""
-                    }
-                }
-
-                if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
-                    required = true
-                }
-
-                if (StringUtils.isBlank(paramName)) {
-                    paramName = param.name!!
-                }
-
-                val paramType = param.type
-                val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-                val paramCls = PsiTypesUtil.getPsiClass(unboxType)
-                if (unboxType is PsiPrimitiveType) { //primitive Type
-                    if (defaultVal == null || defaultVal == "") {
-                        defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
-                        //Primitive type parameter is required
-                        //Optional primitive type parameter is present but cannot be translated into a null value due to being declared as a primitive type.
-                        //Consider declaring it as object wrapper for the corresponding primitive type.
-                        required = true
-                    }
-                } else if (psiClassHelper.isNormalType(unboxType.canonicalText)) {//normal type
-                    if (defaultVal == null || defaultVal == "") {
-                        defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
-                    }
-                } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
-                    if (httpMethod == HttpMethod.GET) {
-                        //can not upload file in a GET method
-                        logger!!.error("Couldn't upload file in 'GET':[$httpMethod:${request.path}],param:${param.name} type:{${paramType.canonicalText}}")
-                        continue
-                    }
-
-                    if (httpMethod == HttpMethod.NO_METHOD) {
-                        httpMethod = HttpMethod.POST
-                    }
-
-                    parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
-                    parseHandle.addFormFileParam(request, paramName!!, required, findAttrForParam(param.name, paramDocComment))
-                    continue
-                } else if (SpringAttrs.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
-                    //ignore @HttpServletRequest and @HttpServletResponse
-                    continue
-                }
-
-                if (defaultVal != null) {
-                    parseHandle.addParam(request,
-                            paramName!!
-                            , defaultVal.toString()
-                            , required
-                            , findAttrForParam(param.name, paramDocComment))
-                } else {
-                    if (httpMethod == HttpMethod.GET) {
-                        addModelAttrAsQuery(param, request, parseHandle, findAttrForParam(param.name, paramDocComment))
-                    } else {
-                        if (httpMethod == HttpMethod.NO_METHOD) {
-                            httpMethod = HttpMethod.POST
-                        }
-                        addModelAttr(param, request, parseHandle, findAttrForParam(param.name, paramDocComment))
-                    }
-                }
-            }
-
-        }
-        if (httpMethod == HttpMethod.NO_METHOD) {
-            httpMethod = HttpMethod.GET
-        }
-        parseHandle.setMethod(request, httpMethod)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun addModelAttrAsQuery(parameter: PsiParameter, request: Request, parseHandle: ParseHandle, attrFromParam: String? = null) {
-        val paramType = parameter.type
-        try {
-            val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-            val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
-            if (typeObject != null && typeObject is KV<*, *>) {
-                val fields = typeObject as KV<String, Any>
-                val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-                val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
-                fields.forEachValid { filedName, fieldVal ->
-                    parseHandle.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
-                            required?.getAs(filedName) ?: false,
-                            KVUtils.getUltimateComment(comment, filedName))
-                }
-            } else if (typeObject == Magics.FILE_STR) {
-                parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
-                parseHandle.addFormFileParam(request, parameter.name!!,
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
-            } else {
-                parseHandle.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
-            }
-        } catch (e: Exception) {
-            logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
-            logger.traceError(e)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun addModelAttr(parameter: PsiParameter, request: Request, parseHandle: ParseHandle, attrFromParam: String? = null) {
-
-        val paramType = parameter.type
-        try {
-            val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-            val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
-            if (typeObject != null && typeObject is KV<*, *>) {
-                val fields = typeObject as KV<String, Any>
-                val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-                val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
-                parseHandle.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
-                fields.forEachValid { filedName, fieldVal ->
-                    val fv = deepComponent(fieldVal)
-                    if (fv == Magics.FILE_STR) {
-                        parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
-                        parseHandle.addFormFileParam(request, filedName,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName))
-                    } else {
-                        parseHandle.addFormParam(request, filedName, null,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName))
-                    }
-                }
-            } else if (typeObject == Magics.FILE_STR) {
-                parseHandle.addHeader(request, "Content-Type", "multipart/form-data")
-                parseHandle.addFormFileParam(request, parameter.name!!,
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
-            } else {
-                parseHandle.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, attrFromParam)
-            }
-        } catch (e: Exception) {
-            logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
-            logger.traceError(e)
-        }
-    }
-
-    private fun parseRequestBody(psiType: PsiType?, context: PsiElement): Any? {
-        return psiClassHelper!!.getTypeObject(psiType, context, JsonOption.READ_COMMENT)
-    }
-
-    private fun parseResponseBody(psiType: PsiType?, method: PsiMethod): Any? {
-
-        if (psiType == null) {
-            return null
-        }
-
-        return when {
-            needInfer() && !duckTypeHelper!!.isQualified(psiType, method) -> {
-                methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
-                logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
-                methodReturnInferHelper.inferReturn(method)
-//                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
-            }
-            readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
-            else -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.READ_COMMENT)
-        }
-    }
-
-    private fun deepComponent(obj: Any?): Any? {
-        if (obj == null) {
-            return null
-        }
-        if (obj is Array<*>) {
-            if (obj.isEmpty()) return obj
-            return deepComponent(obj[0])
-        }
-        if (obj is Collection<*>) {
-            if (obj.isEmpty()) return obj
-            return deepComponent(obj.first())
-        }
-        return obj
-    }
-
-    private fun readGetter(): Boolean {
-        return settingBinder!!.read().readGetter ?: false
-    }
-
-    private fun needInfer(): Boolean {
-        return settingBinder!!.read().inferEnable ?: false
-    }
-
-    private fun inferMaxDeep(): Int {
-        return settingBinder!!.read().inferMaxDeep ?: 4
-    }
-
-    companion object {
-        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
-                SpringClassName.GET_MAPPING,
-                SpringClassName.DELETE_MAPPING,
-                SpringClassName.PATCH_MAPPING,
-                SpringClassName.POST_MAPPING,
-                SpringClassName.PUT_MAPPING)
-
-        const val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
-
-        const val ESCAPE_REQUEST_HEADER_DEFAULT_NONE = "\\n\\t\\t\\n\\t\\t\\n\\uE000\\uE001\\uE002\\n\\t\\t\\t\\t\\n"
-    }
 }

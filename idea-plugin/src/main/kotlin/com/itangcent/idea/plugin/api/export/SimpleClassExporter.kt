@@ -4,10 +4,9 @@ import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
-import com.itangcent.idea.constant.SpringAttrs
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
@@ -52,7 +51,7 @@ class SimpleClassExporter : ClassExporter, Worker {
     @Inject
     private var actionContext: ActionContext? = null
 
-    override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
+    override fun export(cls: Any, requestHelper: RequestHelper, requestHandle: RequestHandle) {
         if (cls !is PsiClass) return
         actionContext!!.checkStatus()
         statusRecorder.newWork()
@@ -67,7 +66,7 @@ class SimpleClassExporter : ClassExporter, Worker {
                     logger!!.info("search api from:${cls.qualifiedName}")
 
                     foreachMethod(cls) { method ->
-                        exportMethodApi(method, parseHandle, requestHandle)
+                        exportMethodApi(method, requestHelper, requestHandle)
                     }
                 }
             }
@@ -80,7 +79,7 @@ class SimpleClassExporter : ClassExporter, Worker {
 
     private fun isCtrl(psiClass: PsiClass): Boolean {
         return psiClass.annotations.any {
-            SpringAttrs.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
+            SpringClassName.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
         }
     }
 
@@ -88,7 +87,7 @@ class SimpleClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
-    private fun exportMethodApi(method: PsiMethod, parseHandle: ParseHandle, requestHandle: RequestHandle) {
+    private fun exportMethodApi(method: PsiMethod, requestHelper: RequestHelper, requestHandle: RequestHandle) {
 
         actionContext!!.checkStatus()
         //todo:support other web annotation
@@ -97,7 +96,7 @@ class SimpleClassExporter : ClassExporter, Worker {
         request.resource = method
 
         val attr: String?
-        val attrOfMethod = findAttrOfMethod(method, parseHandle)!!
+        val attrOfMethod = findAttrOfMethod(method, requestHelper)!!
         val lines = attrOfMethod.lines()
         attr = if (lines.size > 1) {//multi line
             lines.firstOrNull { it.isNotBlank() }
@@ -105,7 +104,7 @@ class SimpleClassExporter : ClassExporter, Worker {
             attrOfMethod
         }
 
-        parseHandle.setName(request, attr ?: method.name)
+        requestHelper.setName(request, attr ?: method.name)
         requestHandle(request)
     }
 
@@ -115,13 +114,13 @@ class SimpleClassExporter : ClassExporter, Worker {
                 .firstOrNull { it != null }
     }
 
-    private fun findAttrOfMethod(method: PsiMethod, parseHandle: ParseHandle): String? {
+    private fun findAttrOfMethod(method: PsiMethod, requestHelper: RequestHelper): String? {
         val docComment = method.docComment
 
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> method.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, method, parseHandle)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, method, requestHelper)
         }
     }
 

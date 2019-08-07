@@ -3,11 +3,11 @@ package com.itangcent.idea.plugin.api.export
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.exporter.AbstractParseHandle
+import com.itangcent.common.exporter.AbstractRequestHelper
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.DocCommentUtils
 
-open class IdeaParseHandle : AbstractParseHandle() {
+open class DefaultRequestHelper : AbstractRequestHelper() {
     override fun linkToClass(linkClass: Any): String? {
         if (linkClass !is PsiClass) {
             return "[$linkClass]"

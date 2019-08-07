@@ -5,7 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.intellij.psi.PsiClassHelper
 import java.util.regex.Pattern
 
@@ -15,7 +15,7 @@ class DefaultDocParseHelper : DocParseHelper {
     @Inject
     private val psiClassHelper: PsiClassHelper? = null
 
-    override fun resolveLinkInAttr(attr: String?, psiMember: PsiMember, parseHandle: ParseHandle): String? {
+    override fun resolveLinkInAttr(attr: String?, psiMember: PsiMember, requestHelper: RequestHelper): String? {
         if (attr.isNullOrBlank()) return attr
 
         if (attr.contains("@link")) {
@@ -30,13 +30,13 @@ class DefaultDocParseHelper : DocParseHelper {
                 val linkMethodOrProperty = linkClassAndMethod.substringAfter("#", "").trim()
                 val linkClass = psiClassHelper!!.resolveClass(linkClassName, psiMember) ?: continue
                 if (linkMethodOrProperty.isBlank()) {
-                    sb.append(parseHandle.linkToClass(linkClass))
+                    sb.append(requestHelper.linkToClass(linkClass))
                 } else {
                     val methodOrProperty = psiClassHelper.resolvePropertyOrMethodOfClass(linkClass, linkMethodOrProperty)
                             ?: continue
                     when (methodOrProperty) {
-                        is PsiMethod -> sb.append(parseHandle.linkToMethod(methodOrProperty))
-                        is PsiField -> sb.append(parseHandle.linkToProperty(methodOrProperty))
+                        is PsiMethod -> sb.append(requestHelper.linkToMethod(methodOrProperty))
+                        is PsiField -> sb.append(requestHelper.linkToProperty(methodOrProperty))
                         else -> sb.append("[$linkClassAndMethod]")
                     }
                 }

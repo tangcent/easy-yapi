@@ -20,7 +20,6 @@ class DataEventCollector : DataContext {
         this.anActionEvent = anActionEvent
     }
 
-
     override fun getData(dataId: String?): Any? {
         if (dataId == null) {
             return null
