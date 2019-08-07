@@ -7,7 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.RequestHandle
 import com.itangcent.idea.plugin.StatusRecorder
@@ -66,10 +66,10 @@ class CachedClassExporter : ClassExporter, Worker {
     //no use cache,no read,no write
     private var disabled: Boolean = false
 
-    override fun export(cls: Any, parseHandle: ParseHandle, requestHandle: RequestHandle) {
+    override fun export(cls: Any, requestHelper: RequestHelper, requestHandle: RequestHandle) {
 
         if (disabled || cls !is PsiClass) {
-            delegateClassExporter!!.export(cls, parseHandle, requestHandle)
+            delegateClassExporter!!.export(cls, requestHelper, requestHandle)
             return
         }
 
@@ -111,7 +111,7 @@ class CachedClassExporter : ClassExporter, Worker {
                 statusRecorder.newWork()
                 actionContext.runInReadUI {
                     try {
-                        delegateClassExporter!!.export(cls, parseHandle) { request ->
+                        delegateClassExporter!!.export(cls, requestHelper) { request ->
                             requestHandle(request)
                             val tinyRequest = Request()
                             tinyRequest.name = request.name
@@ -150,7 +150,7 @@ class CachedClassExporter : ClassExporter, Worker {
                 statusRecorder.newWork()
                 actionContext.runInReadUI {
                     try {
-                        delegateClassExporter!!.export(cls, parseHandle, requestHandle)
+                        delegateClassExporter!!.export(cls, requestHelper, requestHandle)
                     } finally {
                         statusRecorder.endWork()
                     }

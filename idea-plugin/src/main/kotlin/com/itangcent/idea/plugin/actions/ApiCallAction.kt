@@ -1,33 +1,27 @@
 package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.idea.plugin.api.call.ApiCaller
-import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
-import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
-import com.itangcent.idea.plugin.api.export.IdeaParseHandle
+import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
 import com.itangcent.idea.plugin.config.RecommendConfigReader
-import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.psi.ClassRuleConfig
-import com.itangcent.intellij.psi.DefaultClassRuleConfig
 
 class ApiCallAction : ApiExportAction("Call Api") {
 
-    override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
-        super.onBuildActionContext(builder)
+    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+        super.afterBuildActionContext(event, builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-        builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
+        builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
@@ -36,7 +30,13 @@ class ApiCallAction : ApiExportAction("Call Api") {
 
     }
 
+    override fun actionName(): String {
+        return "ApiCallAction"
+    }
+
+
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
+        super.actionPerformed(actionContext, project, anActionEvent)
         val apiCaller = actionContext.instance(ApiCaller::class)
         apiCaller.showCallWindow()
     }

@@ -5,10 +5,9 @@ import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -30,7 +29,7 @@ class MarkdownApiExporter {
     private val classExporter: ClassExporter? = null
 
     @Inject
-    private val parseHandle: ParseHandle? = null
+    private val requestHelper: RequestHelper? = null
 
     @Inject
     private val fileSaveHelper: FileSaveHelper? = null
@@ -66,7 +65,7 @@ class MarkdownApiExporter {
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, parseHandle!!) { request -> requests.add(request) }
+                    classExporter!!.export(it, requestHelper!!) { request -> requests.add(request) }
                 }
                 .onCompleted {
                     try {

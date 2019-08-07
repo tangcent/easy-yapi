@@ -10,7 +10,7 @@ import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.Worker
@@ -18,7 +18,7 @@ import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
-import com.itangcent.idea.plugin.api.export.IdeaParseHandle
+import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
@@ -67,7 +67,7 @@ class SuvApiExporter {
     private val classExporter: ClassExporter? = null
 
     @Inject
-    private val parseHandle: ParseHandle? = null
+    private val requestHelper: RequestHelper? = null
 
     @Suppress("UNCHECKED_CAST")
     fun showExportWindow() {
@@ -78,7 +78,7 @@ class SuvApiExporter {
         SelectedHelper.Builder()
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, parseHandle!!) { request ->
+                    classExporter!!.export(it, requestHelper!!) { request ->
                         requests.add(request)
                     }
                 }
@@ -113,6 +113,16 @@ class SuvApiExporter {
                 .traversal()
     }
 
+    private var customActionExtLoader: ((String, ActionContext.ActionContextBuilder) -> Unit)? = null
+
+    fun setCustomActionExtLoader(customActionExtLoader: (String, ActionContext.ActionContextBuilder) -> Unit) {
+        this.customActionExtLoader = customActionExtLoader
+    }
+
+    protected fun loadCustomActionExt(actionName: String, builder: ActionContext.ActionContextBuilder) {
+        customActionExtLoader?.let { it(actionName, builder) }
+    }
+
     class RequestWrapper(var resource: Any?, var name: String?) {
 
         override fun toString(): String {
@@ -135,7 +145,13 @@ class SuvApiExporter {
         protected val actionContext: ActionContext? = null
 
         @Inject
-        protected val parseHandle: ParseHandle? = null
+        protected val requestHelper: RequestHelper? = null
+
+        private var suvApiExporter: SuvApiExporter? = null
+
+        fun setSuvApiExporter(suvApiExporter: SuvApiExporter) {
+            this.suvApiExporter = suvApiExporter
+        }
 
         fun exportApisFromMethod(actionContext: ActionContext, requests: List<RequestWrapper>) {
 
@@ -223,6 +239,18 @@ class SuvApiExporter {
             builder.bind(LocalFileRepository::class, "projectCacheRepository") {
                 it.with(ProjectCacheRepository::class).singleton()
             }
+
+            afterBuildActionContext(actionContext, builder)
+
+            suvApiExporter?.loadCustomActionExt(actionName(), builder)
+        }
+
+        protected open fun actionName(): String {
+            return "Basic"
+        }
+
+        protected open fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+
         }
 
         private fun doExportApisFromMethod(requestWrappers: List<RequestWrapper>) {
@@ -238,7 +266,7 @@ class SuvApiExporter {
 
             val requests: MutableList<Request> = ArrayList()
             for (cls in classes) {
-                classExporter!!.export(cls!!, parseHandle!!) { request ->
+                classExporter!!.export(cls!!, requestHelper!!) { request ->
                     requests.add(request)
                 }
             }
@@ -285,14 +313,18 @@ class SuvApiExporter {
         @Inject
         private val postmanFormatter: PostmanFormatter? = null
 
-        override fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
-            super.onBuildActionContext(actionContext, builder)
+        override fun actionName(): String {
+            return "PostmanExportAction"
+        }
+
+        override fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+            super.afterBuildActionContext(actionContext, builder)
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
             builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-            builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
+            builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
@@ -480,12 +512,16 @@ class SuvApiExporter {
         @Inject
         private val markdownFormatter: MarkdownFormatter? = null
 
-        override fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
-            super.onBuildActionContext(actionContext, builder)
+        override fun actionName(): String {
+            return "MarkdownExportAction"
+        }
+
+        override fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+            super.afterBuildActionContext(actionContext, builder)
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-            builder.bind(ParseHandle::class) { it.with(IdeaParseHandle::class).singleton() }
+            builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
 
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
@@ -533,6 +569,7 @@ class SuvApiExporter {
             return
         }
         val adapter = channel.adapter.createInstance() as ApiExporterAdapter
+        adapter.setSuvApiExporter(this)
         adapter.exportApisFromMethod(actionContext!!, requests)
     }
 

@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.DateUtils
@@ -36,7 +36,7 @@ class PostmanFormatter {
     private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
-    private val parseHandle: ParseHandle? = null
+    private val requestHelper: RequestHelper? = null
 
     fun request2Item(request: Request): HashMap<String, Any?> {
 
@@ -251,7 +251,7 @@ class PostmanFormatter {
         val docText = resourceHelper!!.findAttrOfClass(cls)
         return when {
             docText.isNullOrBlank() -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle!!)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, requestHelper!!)
         }
     }
 
