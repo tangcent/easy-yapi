@@ -56,6 +56,7 @@ class SuvExportAction : ApiExportAction("Export Api") {
     }
 
     private fun load(dataContext: DataContext) {
+        dataContext.getData(CommonDataKeys.PROJECT)
         dataContext.getData(CommonDataKeys.PSI_FILE)
         dataContext.getData(CommonDataKeys.NAVIGATABLE_ARRAY)
         dataContext.getData(CommonDataKeys.NAVIGATABLE)

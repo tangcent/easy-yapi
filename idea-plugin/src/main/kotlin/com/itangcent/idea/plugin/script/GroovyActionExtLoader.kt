@@ -36,7 +36,7 @@ class GroovyActionExtLoader : ActionExtLoader {
         }
 
         if (ActionExt::class.java.isAssignableFrom(parseClass)) {
-            logger.trace("find ext::${parseClass.name}")
+            logger.trace("find ext:${parseClass.name}")
             return parseClass!!.newInstance() as ActionExt?
         }
 
