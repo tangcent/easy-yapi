@@ -24,7 +24,7 @@ abstract class BasicAnAction : KotlinAnAction {
     constructor(text: String?, description: String?, icon: Icon?) : super(text, description, icon)
 
     protected open fun actionName(): String {
-        return "Basic"
+        return this::class.simpleName!!
     }
 
     override fun onBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
