@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
@@ -31,7 +31,7 @@ open class AbstractYapiApiExporter {
     protected val classExporter: ClassExporter? = null
 
     @Inject
-    protected val parseHandle: ParseHandle? = null
+    protected val parseHandle: RequestHelper? = null
 
     @Inject
     protected val moduleHelper: ModuleHelper? = null

@@ -397,7 +397,7 @@ class SuvApiExporter {
             builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
 
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-            builder.bind(ParseHandle::class) { it.with(YapiIdeaParseHandle::class).singleton() }
+            builder.bind(RequestHelper::class) { it.with(YapiDefaultRequestHelper::class).singleton() }
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 

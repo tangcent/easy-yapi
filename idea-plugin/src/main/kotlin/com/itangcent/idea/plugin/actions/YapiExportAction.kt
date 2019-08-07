@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
@@ -17,13 +17,13 @@ import com.itangcent.suv.http.HttpClientProvider
 
 class YapiExportAction : ApiExportAction("Export Yapi") {
 
-    override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
-        super.onBuildActionContext(builder)
+    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+        super.afterBuildActionContext(event, builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-        builder.bind(ParseHandle::class) { it.with(YapiIdeaParseHandle::class).singleton() }
+        builder.bind(RequestHelper::class) { it.with(YapiDefaultRequestHelper::class).singleton() }
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
