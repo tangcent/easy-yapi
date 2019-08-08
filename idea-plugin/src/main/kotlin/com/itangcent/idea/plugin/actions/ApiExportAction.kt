@@ -23,8 +23,8 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
 
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
-        builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringClassExporter::class).singleton() }
-        builder.bind(ClassExporter::class) { it.with(CachedClassExporter::class).singleton() }
+
+        builder.bind(ClassExporter::class) { it.with(SpringClassExporter::class).singleton() }
 
         builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {
