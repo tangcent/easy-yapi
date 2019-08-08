@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.itangcent.idea.plugin.easy-yapi</id>
     <name>EasyYapi</name>
-    <version>0.9.1.183.0.2</version>
+    <version>0.9.1.183.0.3</version>
     <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
 
     <description><![CDATA[ Description will be added by gradle build]]></description>
@@ -23,7 +23,7 @@
 
     <!--This plugin will support IntelliJ IDEA Community and Ultimate Only before v2.0.0-->
 
-    <depends optional="true" config-file="easy-api-java.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="easy-yapi-java.xml">com.intellij.modules.java</depends>
     <!--it will cause 【Optional dependency declaration on 'com.intellij.modules.idea' should specify "config-file"】-->
     <!--<depends optional="true">com.intellij.modules.idea</depends>-->
 </idea-plugin>
