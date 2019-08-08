@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.itangcent.idea.plugin.easy-yapi</id>
     <name>EasyYapi</name>
-    <version>0.9.0.1</version>
+    <version>0.9.1.183.0.2</version>
     <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
 
     <description><![CDATA[ Description will be added by gradle build]]></description>
@@ -9,13 +9,13 @@
     <category>Web</category>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <!--<idea-version since-build="183.0"/>-->
+    <idea-version since-build="183.0"/>
 
     <!--for compatible-->
     <!--<idea-version since-build="173.0" until-build="183.0"/>-->
 
     <!--for dev-->
-    <idea-version since-build="173.0"/>
+    <!--<idea-version since-build="173.0"/>-->
 
 
     <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
@@ -23,6 +23,7 @@
 
     <!--This plugin will support IntelliJ IDEA Community and Ultimate Only before v2.0.0-->
 
-    <depends optional="true" config-file="easy-yapi-java.xml">com.intellij.modules.java</depends>
-    <depends optional="true">com.intellij.modules.idea</depends>
+    <depends optional="true" config-file="easy-api-java.xml">com.intellij.modules.java</depends>
+    <!--it will cause 【Optional dependency declaration on 'com.intellij.modules.idea' should specify "config-file"】-->
+    <!--<depends optional="true">com.intellij.modules.idea</depends>-->
 </idea-plugin>

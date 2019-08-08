@@ -9,6 +9,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.intellij.config.rule.RuleComputer
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.traceError
@@ -26,13 +27,18 @@ class ModuleHelper {
     @Inject
     private val ruleComputer: RuleComputer? = null
 
+    @Inject
+    private val actionContext: ActionContext? = null
+
     //region find module
     fun findModule(resource: Any): String? {
-        return when (resource) {
-            is PsiMethod -> findModule(resource)
-            is PsiClass -> findModule(resource)
-            is PsiFile -> findModule(resource)
-            else -> null
+        return actionContext!!.callInReadUI {
+            when (resource) {
+                is PsiMethod -> findModule(resource)
+                is PsiClass -> findModule(resource)
+                is PsiFile -> findModule(resource)
+                else -> null
+            }
         }
     }
 

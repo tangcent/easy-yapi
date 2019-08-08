@@ -12,6 +12,10 @@ If you encounter a failure
 2. Try roll back to the previous version.
 3. You can email [me](mailto:pentatangcent@gmail.com) at any time.I will provide support as far as I can.
 
+## Version
+
+`$major.$minor.$min_support.$max_support.$fix`
+
 Installation
 ----
 
