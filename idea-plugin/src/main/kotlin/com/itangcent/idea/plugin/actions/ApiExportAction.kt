@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.actions
 
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.idea.plugin.api.cache.CachedClassExporter
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
@@ -17,13 +18,13 @@ import com.itangcent.intellij.psi.PsiClassHelper
 
 abstract class ApiExportAction(text: String) : BasicAnAction(text) {
 
-    override fun onBuildActionContext(builder: ActionContext.ActionContextBuilder) {
-        super.onBuildActionContext(builder)
+    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+        super.afterBuildActionContext(event, builder)
 
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
-        builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringClassExporter::class).singleton() }
-        builder.bind(ClassExporter::class) { it.with(CachedClassExporter::class).singleton() }
+
+        builder.bind(ClassExporter::class) { it.with(SpringClassExporter::class).singleton() }
 
         builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {

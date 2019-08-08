@@ -11,7 +11,7 @@ import com.intellij.psi.*
 import com.itangcent.common.concurrent.AQSCountLatch
 import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.icons.EasyIcons
@@ -79,7 +79,7 @@ class ApiDashboardDialog : JDialog() {
     private val classExporter: ClassExporter? = null
 
     @Inject
-    private val parseHandle: ParseHandle? = null
+    private val requestHelper: RequestHelper? = null
 
     @Inject
     private val resourceHelper: ResourceHelper? = null
@@ -318,7 +318,7 @@ class ApiDashboardDialog : JDialog() {
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
 
                             if (disposed) return@traversal
-                            classExporter!!.export(psiClass, parseHandle!!) { request ->
+                            classExporter!!.export(psiClass, requestHelper!!) { request ->
                                 if (disposed) return@export
                                 if (request.resource == null) return@export
                                 anyFound = true

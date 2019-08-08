@@ -11,7 +11,7 @@ import com.intellij.psi.*
 import com.itangcent.common.concurrent.AQSCountLatch
 import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.ParseHandle
+import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.ResourceHelper
@@ -76,7 +76,7 @@ class YapiDashboardDialog : JDialog() {
     private val classExporter: ClassExporter? = null
 
     @Inject
-    private val parseHandle: ParseHandle? = null
+    private val parseHandle: RequestHelper? = null
 
     @Inject
     private val resourceHelper: ResourceHelper? = null
