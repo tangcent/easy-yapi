@@ -5,14 +5,14 @@ import java.util.function.Function
 
 object KtHelper {
 
-    @Suppress("UNCHECKED_CAST")
-    public open fun <T : kotlin.Any> ktFunction(callBack: Any): (T) -> kotlin.Unit {
+    @Suppress("UNCHECKED_CAST", "UNUSED")
+    public fun <T : kotlin.Any> ktFunction(callBack: Any): (T) -> kotlin.Unit {
 
         try {
             (callBack as (T) -> kotlin.Unit)
             return callBack
         } catch (e: Exception) {
-            if (callBack is kotlin.jvm.functions.Function1<*, *>) {
+            if (callBack is Function1<*, *>) {
                 return {
                     (callBack as Function1<Any?, Any?>).invoke(it)
                 }
