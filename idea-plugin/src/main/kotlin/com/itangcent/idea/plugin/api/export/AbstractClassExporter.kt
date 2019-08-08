@@ -52,7 +52,7 @@ abstract class AbstractClassExporter : ClassExporter, Worker {
     protected val psiClassHelper: PsiClassHelper? = null
 
     @Inject
-    protected val docParseHelper: DefaultDocParseHelper? = null
+    protected val docParseHelper: DocParseHelper? = null
 
     @Inject
     protected val settingBinder: SettingBinder? = null
@@ -139,16 +139,21 @@ abstract class AbstractClassExporter : ClassExporter, Worker {
 
         val attr: String?
         var attrOfMethod = findAttrOfMethod(method, requestHelper)
-        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method, requestHelper)!!
-        val lines = attrOfMethod.lines()
-        attr = if (lines.size > 1) {//multi line
-            lines.firstOrNull { it.isNotBlank() }
-        } else {
-            attrOfMethod
-        }
+        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method, requestHelper)
 
-        requestHelper.appendDesc(request, attrOfMethod)
-        requestHelper.setName(request, attr ?: method.name)
+        if (attrOfMethod.isNullOrBlank()) {
+            requestHelper.setName(request, method.name)
+        } else {
+            val lines = attrOfMethod.lines()
+            attr = if (lines.size > 1) {//multi line
+                lines.firstOrNull { it.isNotBlank() }
+            } else {
+                attrOfMethod
+            }
+
+            requestHelper.appendDesc(request, attrOfMethod)
+            requestHelper.setName(request, attr ?: method.name)
+        }
 
         readMethodDoc(method)?.let {
             requestHelper.appendDesc(request, docParseHelper.resolveLinkInAttr(it, method, requestHelper))
