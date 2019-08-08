@@ -408,8 +408,8 @@ class SuvApiExporter {
             return "YapiExportAction"
         }
 
-        override fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
-            super.onBuildActionContext(actionContext, builder)
+        override fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+            super.afterBuildActionContext(actionContext, builder)
 
             builder.inheritFrom(actionContext, Project::class)
 

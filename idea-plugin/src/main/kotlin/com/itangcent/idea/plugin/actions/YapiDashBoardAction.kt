@@ -48,6 +48,7 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
+        super.actionPerformed(actionContext, project, anActionEvent)
         val apiDashBoard = actionContext.instance(YapiDashBoard::class)
         apiDashBoard.showDashBoardWindow()
     }
