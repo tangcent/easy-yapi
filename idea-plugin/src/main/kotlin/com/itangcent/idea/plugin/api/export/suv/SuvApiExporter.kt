@@ -404,6 +404,10 @@ class SuvApiExporter {
         @Inject
         private val project: Project? = null
 
+        override fun actionName(): String {
+            return "YapiExportAction"
+        }
+
         override fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
             super.onBuildActionContext(actionContext, builder)
 
