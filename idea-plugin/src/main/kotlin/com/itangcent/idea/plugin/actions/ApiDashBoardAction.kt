@@ -18,10 +18,6 @@ import com.itangcent.suv.http.HttpClientProvider
 
 class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
 
-    override fun actionName(): String {
-        return "ApiDashBoardAction"
-    }
-
     override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
         super.afterBuildActionContext(event, builder)
 

@@ -30,11 +30,6 @@ class ApiCallAction : ApiExportAction("Call Api") {
 
     }
 
-    override fun actionName(): String {
-        return "ApiCallAction"
-    }
-
-
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
         super.actionPerformed(actionContext, project, anActionEvent)
         val apiCaller = actionContext.instance(ApiCaller::class)

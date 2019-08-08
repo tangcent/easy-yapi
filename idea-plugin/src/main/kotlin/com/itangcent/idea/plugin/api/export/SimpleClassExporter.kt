@@ -43,7 +43,7 @@ class SimpleClassExporter : ClassExporter, Worker {
     private val logger: Logger? = null
 
     @Inject
-    private val docParseHelper: DefaultDocParseHelper? = null
+    private val docParseHelper: DocParseHelper? = null
 
     @Inject
     private val ruleComputer: RuleComputer? = null
