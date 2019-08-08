@@ -27,7 +27,7 @@ import com.itangcent.suv.http.HttpClientProvider
 class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
 
     override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
-        super.onBuildActionContext(event, builder)
+        super.afterBuildActionContext(event, builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
