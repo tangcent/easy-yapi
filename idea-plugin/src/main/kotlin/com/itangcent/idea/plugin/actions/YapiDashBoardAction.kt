@@ -4,11 +4,13 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.RequestHelper
+import com.itangcent.idea.plugin.api.cache.CachedClassExporter
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
 import com.itangcent.idea.plugin.api.export.DocParseHelper
+import com.itangcent.idea.plugin.api.export.SpringClassExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.api.export.yapi.*
@@ -35,16 +37,15 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
-        builder.bind(ApiDashBoard::class) { it.singleton() }
-        builder.bind(PostmanCachedApiHelper::class) { it.singleton() }
-        builder.bind(PostmanFormatter::class) { it.singleton() }
+        builder.bind(YapiDashBoard::class) { it.singleton() }
+
         builder.bind(YapiApiDashBoardExporter::class) { it.singleton() }
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
+        //allow cache api
+        builder.bind(ClassExporter::class) { it.with(CachedClassExporter::class).singleton() }
         builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(YapiSpringClassExporter::class).singleton() }
-
-
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

@@ -132,17 +132,17 @@ class YapiDashboardDialog : JDialog() {
 
             this.projectApiTree!!.cellRenderer = projectCellRenderer
 
-            projectCellRenderer.setLeafIcon(EasyIcons.Method)
-            projectCellRenderer.setOpenIcon(EasyIcons.WebFolder)
-            projectCellRenderer.setClosedIcon(EasyIcons.WebFolder)
+            projectCellRenderer.leafIcon = EasyIcons.Method
+            projectCellRenderer.openIcon = EasyIcons.WebFolder
+            projectCellRenderer.closedIcon = EasyIcons.WebFolder
 
             val yapiCellRenderer = EasyApiTreeCellRenderer()
 
             this.yapiApiTree!!.cellRenderer = yapiCellRenderer
 
-            yapiCellRenderer.setLeafIcon(EasyIcons.Link)
-            yapiCellRenderer.setOpenIcon(EasyIcons.WebFolder)
-            yapiCellRenderer.setClosedIcon(EasyIcons.WebFolder)
+            yapiCellRenderer.leafIcon = EasyIcons.Link
+            yapiCellRenderer.openIcon = EasyIcons.WebFolder
+            yapiCellRenderer.closedIcon = EasyIcons.WebFolder
 
         } catch (e: Exception) {
         }
@@ -656,13 +656,13 @@ class YapiDashboardDialog : JDialog() {
                         actionContext!!.runInSwingUI {
                             val projectTreeNode = YapiProjectNodeData(projectToken, projectInfo).asTreeNode()
                             var model = yapiApiTree!!.model
-                            if(model==null){
+                            if (model == null) {
                                 val treeNode = DefaultMutableTreeNode()
-                                model = DefaultTreeModel(treeNode,true)
+                                model = DefaultTreeModel(treeNode, true)
                                 yapiApiTree!!.model = model
                             }
 
-                            val yapiTreeModel =model as DefaultTreeModel
+                            val yapiTreeModel = model as DefaultTreeModel
 
                             (yapiTreeModel.root as DefaultMutableTreeNode).add(projectTreeNode)
                             yapiTreeModel.reload()
@@ -855,7 +855,7 @@ class YapiDashboardDialog : JDialog() {
 
     class ApiProjectNodeData : IconCustomized, Tooltipable {
         override fun toolTip(): String? {
-            return PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)
+            return "${PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)}\n${request.method}:${request.path}"
         }
 
         private val apiDashboardDialog: YapiDashboardDialog
