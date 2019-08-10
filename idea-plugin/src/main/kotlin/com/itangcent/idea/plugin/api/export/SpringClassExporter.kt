@@ -117,7 +117,7 @@ open class SpringClassExporter : AbstractClassExporter() {
         }
 
         var paramName: String? = null
-        var required: Boolean = false
+        var required = false
         var defaultVal: Any? = null
 
         val requestParamAnn = findRequestParam(param)
