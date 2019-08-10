@@ -135,17 +135,17 @@ class ApiDashboardDialog : JDialog() {
 
             this.projectApiTree!!.cellRenderer = projectCellRenderer
 
-            projectCellRenderer.setLeafIcon(EasyIcons.Method)
-            projectCellRenderer.setOpenIcon(EasyIcons.WebFolder)
-            projectCellRenderer.setClosedIcon(EasyIcons.WebFolder)
+            projectCellRenderer.leafIcon = EasyIcons.Method
+            projectCellRenderer.openIcon = EasyIcons.WebFolder
+            projectCellRenderer.closedIcon = EasyIcons.WebFolder
 
             val postmanCellRenderer = EasyApiTreeCellRenderer()
 
             this.postmanApiTree!!.cellRenderer = postmanCellRenderer
 
-            postmanCellRenderer.setLeafIcon(EasyIcons.Link)
-            postmanCellRenderer.setOpenIcon(EasyIcons.WebFolder)
-            postmanCellRenderer.setClosedIcon(EasyIcons.WebFolder)
+            postmanCellRenderer.leafIcon = EasyIcons.Link
+            postmanCellRenderer.openIcon = EasyIcons.WebFolder
+            postmanCellRenderer.closedIcon = EasyIcons.WebFolder
 
         } catch (e: Exception) {
         }
@@ -868,10 +868,10 @@ class ApiDashboardDialog : JDialog() {
         }
 
         override fun toString(): String {
-            if (apiDashboardDialog.projectMode == ProjectMode.Legible) {
-                return attr ?: cls.name ?: "anonymous"
+            return if (apiDashboardDialog.projectMode == ProjectMode.Legible) {
+                attr ?: cls.name ?: "anonymous"
             } else {
-                return cls.name ?: "anonymous"
+                cls.name ?: "anonymous"
             }
         }
     }
@@ -906,7 +906,7 @@ class ApiDashboardDialog : JDialog() {
 
     class ApiProjectNodeData : IconCustomized, Tooltipable {
         override fun toolTip(): String? {
-            return PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)
+            return "${PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)}\n${request.method}:${request.path}"
         }
 
         private val apiDashboardDialog: ApiDashboardDialog
