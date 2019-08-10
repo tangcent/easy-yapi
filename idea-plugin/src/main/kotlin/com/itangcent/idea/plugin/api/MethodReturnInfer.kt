@@ -15,6 +15,7 @@ import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.util.KV
 import com.itangcent.intellij.util.Magics
+import com.itangcent.intellij.util.PsiHelper
 import com.itangcent.intellij.util.traceError
 import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
@@ -78,7 +79,8 @@ class MethodReturnInferHelper {
                 if (inferRet == CALL_FAILED) {
                     if (allowQuickCall(option)) {
                         val returnType = psiMethod.returnType
-                        if (returnType != null && duckTypeHelper!!.isQualified(returnType, psiMethod)) {
+                        if (returnType != null && !PsiHelper.isInterface(returnType)
+                                && duckTypeHelper!!.isQualified(returnType, psiMethod)) {
                             return psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption)
                         }
                     }
@@ -90,7 +92,7 @@ class MethodReturnInferHelper {
 
                     val byType = psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption)
 
-                    return findComplexResult(GsonUtils.resolveCycle(inferRet), byType)
+                    return findComplexResult(GsonUtils.resolveCycle(valueOf(inferRet)), byType)
                 }
             } catch (e: Exception) {
                 logger!!.error("infer error")
@@ -121,6 +123,7 @@ class MethodReturnInferHelper {
                 if (copy.isEmpty()) {
                     copy.addAll(obj)
                 }
+                copy.sortByDescending { pointOf(it) }
                 return copy
             }
             is Map<*, *> -> {
@@ -141,6 +144,22 @@ class MethodReturnInferHelper {
             is Variable -> return cleanInvalidKeys(obj.getValue())
         }
         return obj
+
+    }
+
+    private fun pointOf(obj: Any?): Int {
+        when (obj) {
+            null -> return 0
+            is Collection<*> -> {
+                return 2 + obj.map { pointOf(it) }.sum()
+            }
+            is Map<*, *> -> {
+                return 3 + obj.entries.map { pointOf(it.key) + pointOf(it.value) }.sum()
+            }
+            is Variable -> return pointOf(obj.getValue())
+            is String -> return if (obj.isEmpty()) 1 else 2
+        }
+        return 2
 
     }
 
@@ -504,16 +523,49 @@ class MethodReturnInferHelper {
                 return false
             }
 
-            return true
+            return PsiHelper.hasImplement(method.containingClass, superMethod.containingClass)
 
         }
 
         fun valueOf(obj: Any?): Any? {
-            return when (obj) {
-                null -> null
-                is Variable -> valueOf(obj.getValue())
+            return when {
+                !needCompute(obj) -> obj
+                obj is Variable -> valueOf(obj.getValue())
+                obj is MutableMap<*, *> -> {
+                    val copy = KV.create<Any?, Any?>()
+                    obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }
+                    return copy
+                }
+                obj is Array<*> -> {
+                    val copy = LinkedList<Any?>()
+                    obj.any { copy.add(valueOf(it)) }
+                    return copy.toArray()
+                }
+                obj is Collection<*> -> {
+                    val copy = LinkedList<Any?>()
+                    obj.any { copy.add(valueOf(it)) }
+                    return copy
+                }
                 else -> obj
             }
+        }
+
+        fun needCompute(obj: Any?): Boolean {
+            return when (obj) {
+                null -> false
+                is Variable -> true
+                is MutableMap<*, *> -> {
+                    obj.entries.any { needCompute(it.key) || needCompute(it.value) }
+                }
+                is Array<*> -> {
+                    obj.any { needCompute(it) }
+                }
+                is Collection<*> -> {
+                    obj.any { needCompute(it) }
+                }
+                else -> false
+            }
+
         }
 
         fun assignment(target: Any?, value: Any?) {
@@ -581,20 +633,38 @@ class MethodReturnInferHelper {
                 return valueOf(a)
             }
 
+            if (a == b) {
+                return a
+            }
+
+            if (a is Map<*, *> && b is Map<*, *>) {
+                when {
+                    a.size < b.size -> return b
+                    a.size > b.size -> return a
+                }
+            }
+
+            if (a is Collection<*> && b is Collection<*>) {
+                when {
+                    a.size < b.size -> return b
+                    a.size > b.size -> return a
+                }
+            }
+
             val ua = valueOf(a)
             val ub = valueOf(b)
 
             if (ua is Map<*, *> && ub is Map<*, *>) {
                 when {
                     ua.size < ub.size -> return ub
-                    ub.size > ua.size -> return ua
+                    ua.size > ub.size -> return ua
                 }
             }
 
             if (ua is Collection<*> && ub is Collection<*>) {
                 when {
                     ua.size < ub.size -> return ub
-                    ub.size > ua.size -> return ua
+                    ua.size > ub.size -> return ua
                 }
             }
 
@@ -876,7 +946,7 @@ class MethodReturnInferHelper {
                     if (inits.add(variableName)) {
                         val variableType = psiElement.type
 
-                        if (methodReturnInferHelper.duckTypeHelper!!.isQualified(variableType, psiElement)) {
+                        if (!PsiHelper.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(variableType, psiElement)) {
                             variable.addLazyAction {
                                 variable.setValue(methodReturnInferHelper.psiClassHelper!!.getTypeObject(variableType, psiElement))
                             }

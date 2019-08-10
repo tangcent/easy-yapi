@@ -391,7 +391,8 @@ abstract class AbstractClassExporter : ClassExporter, Worker {
         }
 
         return when {
-            needInfer() && !duckTypeHelper!!.isQualified(psiType, method) -> {
+            needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
+                    PsiHelper.isInterface(psiType)) -> {
                 methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
                 methodReturnInferHelper.inferReturn(method)
