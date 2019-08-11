@@ -38,4 +38,8 @@
     1. enhance:process key 'Tab' in request params  [(#85)](https://github.com/tangcent/easy-api/pull/85)
     2. enhance:process Deprecated info on class in RecommendConfig  [(#86)](https://github.com/tangcent/easy-api/pull/86)
     3. enhance:try parse linked option info for form params  [(#87)](https://github.com/tangcent/easy-api/pull/87)
+*   0.9.0 ~
+    1. enhance:support groovy extension  [(#98)](https://github.com/tangcent/easy-api/pull/98)
+    2. enhance:update toolTip of ApiProjectNode in ApiDashBoard  [(#102)](https://github.com/tangcent/easy-api/pull/102)
+    3. fix:opti method Infer  [(#103)](https://github.com/tangcent/easy-api/pull/103)
     
