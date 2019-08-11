@@ -480,7 +480,7 @@ class MethodReturnInferHelper {
             return (option and ALLOW_QUICK_CALL) != 0
         }
 
-        val CALL_FAILED = Object()
+        val CALL_FAILED = Any()
         val collection_methods = HashSet(Arrays.asList("put", "set", "add", "addAll", "putAll"))
         fun init(content: PsiElement) {
             if (map_put_method != null) return

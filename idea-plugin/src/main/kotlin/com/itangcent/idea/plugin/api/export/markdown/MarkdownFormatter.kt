@@ -322,6 +322,6 @@ class MarkdownFormatter {
         private const val NAME = "name"
         private const val DESC = "desc"
         private const val ITEMS = "items"
-        private val NULL_RESOURCE = Object()
+        private val NULL_RESOURCE = Any()
     }
 }

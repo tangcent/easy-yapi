@@ -23,14 +23,14 @@ class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
                     || psiClassName == RESPONSE_ENTITY
                     || psiClassName == REQUEST_ENTITY) {
                 if (clsWithParam.genericInfo == null) {
-                    return Object()
+                    return Any()
                 }
                 var entityType = clsWithParam.genericInfo!!["T"]
                 if (entityType == null && clsWithParam.genericInfo!!.size == 1) {
                     entityType = clsWithParam.genericInfo!!.values.first()
                 }
                 if (entityType == null) {
-                    return Object()
+                    return Any()
                 }
                 return super.getTypeObject(entityType, context, option)
             }
