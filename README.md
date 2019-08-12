@@ -3,7 +3,7 @@
 
 - [中文](https://github.com/tangcent/easy-yapi/blob/master/README_cn.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
-- [demo](https://github.com/tangcent/spring-demo
+- [demo](https://github.com/tangcent/spring-demo)
 
 ## Tips
 Before the 1.0.0 release, easy-yapi will be quick iteration.
