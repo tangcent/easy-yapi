@@ -945,7 +945,7 @@ class MethodReturnInferHelper {
 
                         if (!PsiHelper.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(variableType, psiElement)) {
                             variable.addLazyAction {
-                                variable.setValue(methodReturnInferHelper.psiClassHelper!!.getTypeObject(variableType, psiElement))
+                                variable.setValue(methodReturnInferHelper.psiClassHelper!!.getTypeObject(variableType, psiElement, methodReturnInferHelper.jsonOption))
                             }
                         } else {
                             variable.addLazyAction {
