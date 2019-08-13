@@ -10,6 +10,12 @@
   如果你对easy-api有兴趣或者希望支持其他第三方API管理平台,那么这也是一个很好的例子，通过对比[easy-api](https://github.com/tangcent/easy-api)与[easy-yapi](https://github.com/tangcent/easy-aypi)的差异，可以了解到如何在
   [easy-api](https://github.com/tangcent/easy-api)的基础上开发，使其得以支持第三方API管理平台
 
+## Javadoc
+
+- [wiki](https://en.wikipedia.org/wiki/Javadoc)
+- [oracle](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)
+- [baike](https://baike.baidu.com/item/javadoc)
+
 
 安装方法
 ----
