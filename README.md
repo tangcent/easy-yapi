@@ -9,6 +9,7 @@
 
 - [wiki](https://en.wikipedia.org/wiki/Javadoc)
 - [oracle](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)
+- [baike](https://baike.baidu.com/item/javadoc)
 
 ## Tips
 Before the 1.0.0 release, easy-yapi will be quick iteration.
