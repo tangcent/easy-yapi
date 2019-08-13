@@ -1,18 +1,10 @@
 package com.itangcent.common.model
 
-import java.io.Serializable
-
-open class Request : Extensible(), Serializable {
-
-    var resource: Any? = null
-
-    var name: String? = null
+open class Request : Doc() {
 
     var path: String? = null
 
     var method: String? = null
-
-    var desc: String? = null
 
     var headers: ArrayList<Header>? = null
 
