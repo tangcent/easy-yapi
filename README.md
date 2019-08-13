@@ -1,5 +1,11 @@
 # easy-api
-Simplifies API Development
+- Simplifies API Development
+- Parsing based on javadoc
+
+## Javadoc
+
+- [wiki](https://en.wikipedia.org/wiki/Javadoc)
+- [oracle](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)
 
 ## Tips
 Before the 1.0.0 release, easy-api will be quick iteration.
