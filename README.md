@@ -5,6 +5,11 @@
 
 - [demo](https://github.com/tangcent/spring-demo)
 
+## Javadoc
+
+- [wiki](https://en.wikipedia.org/wiki/Javadoc)
+- [oracle](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)
+
 ## Tips
 Before the 1.0.0 release, easy-yapi will be quick iteration.
 If you encounter a failure
