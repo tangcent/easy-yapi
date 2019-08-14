@@ -1,4 +1,8 @@
 # easy-api
+
+[![](https://img.shields.io/jetbrains/plugin/v/12211?color=blue&label=version)](https://plugins.jetbrains.com/plugin/12211-easyapi)
+[![](https://img.shields.io/jetbrains/plugin/d/12211)](https://plugins.jetbrains.com/plugin/12211-easyapi)
+
 - Simplifies API Development
 - Parsing based on javadoc
 
