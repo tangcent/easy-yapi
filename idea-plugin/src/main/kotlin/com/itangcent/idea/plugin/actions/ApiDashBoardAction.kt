@@ -2,10 +2,10 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.idea.plugin.api.cache.CachedClassExporter
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
+import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader

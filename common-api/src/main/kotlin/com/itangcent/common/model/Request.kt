@@ -36,5 +36,3 @@ fun Request.getContentType(): String? {
 fun Request.hasBody(): Boolean {
     return this.method != null && this.method != "GET"
 }
-
-typealias RequestHandle = (Request) -> Unit

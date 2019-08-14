@@ -1,11 +1,10 @@
 package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.idea.plugin.api.cache.CachedClassExporter
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
+import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.SpringClassExporter
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper

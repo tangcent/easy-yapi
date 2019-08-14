@@ -9,7 +9,6 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.exporter.*
 import com.itangcent.common.model.Request
-import com.itangcent.common.model.RequestHandle
 import com.itangcent.common.model.Response
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.StatusRecorder

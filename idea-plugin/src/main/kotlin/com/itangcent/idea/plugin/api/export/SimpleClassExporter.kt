@@ -3,10 +3,8 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
-import com.itangcent.common.exporter.ClassExporter
 import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
-import com.itangcent.common.model.RequestHandle
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
