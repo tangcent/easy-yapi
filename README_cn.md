@@ -4,7 +4,7 @@
 
 - [yapi](https://github.com/YMFE/yapi)定制版[easy-api](https://github.com/tangcent/easy-api)
 
-- [中文](https://github.com/tangcent/easy-yapi/blob/master/README_ZN.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
+- [中文](https://github.com/tangcent/easy-yapi/blob/master/README_cn.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
 - [demo](https://github.com/tangcent/spring-demo)
 
