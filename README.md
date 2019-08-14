@@ -1,4 +1,8 @@
 # easy-yapi
+
+[![](https://img.shields.io/jetbrains/plugin/v/12458?color=blue&label=version)](https://plugins.jetbrains.com/plugin/12458-easyyapi)
+[![](https://img.shields.io/jetbrains/plugin/d/12458)](https://plugins.jetbrains.com/plugin/12458-easyyapi)
+
 - Customized [easyApi](https://github.com/tangcent/easy-api) for [yapi](https://github.com/YMFE/yapi)
 
 - [中文](https://github.com/tangcent/easy-yapi/blob/master/README_cn.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
