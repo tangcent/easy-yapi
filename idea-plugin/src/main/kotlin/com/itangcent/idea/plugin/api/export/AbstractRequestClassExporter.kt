@@ -27,12 +27,12 @@ import com.itangcent.intellij.util.*
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.regex.Pattern
+import kotlin.reflect.KClass
 
-/**
- * @deprecated
- */
-@Deprecated("just for compatibility, will be removed at 1.0.0")
-abstract class AbstractClassExporter : ClassExporter, Worker {
+abstract class AbstractRequestClassExporter : ClassExporter, Worker {
+    override fun docType(): KClass<*> {
+        return Request::class
+    }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
 

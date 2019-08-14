@@ -9,7 +9,7 @@ import com.itangcent.idea.plugin.DataEventCollector
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
-import com.itangcent.idea.plugin.api.export.SimpleClassExporter
+import com.itangcent.idea.plugin.api.export.SimpleRequestClassExporter
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -39,7 +39,7 @@ class SuvExportAction : ApiExportAction("Export Api") {
         val copyDataEventCollector = dataEventCollector
         builder.bind(DataContext::class) { it.toInstance(copyDataEventCollector) }
 
-        builder.bind(ClassExporter::class) { it.with(SimpleClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(SimpleRequestClassExporter::class).singleton() }
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 

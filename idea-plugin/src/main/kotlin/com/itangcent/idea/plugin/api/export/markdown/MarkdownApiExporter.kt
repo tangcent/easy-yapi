@@ -8,6 +8,7 @@ import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -65,7 +66,7 @@ class MarkdownApiExporter {
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestHelper!!) { request -> requests.add(request) }
+                    classExporter!!.export(it, requestHelper!!, requestOnly { request -> requests.add(request) })
                 }
                 .onCompleted {
                     try {

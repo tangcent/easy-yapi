@@ -12,7 +12,7 @@ import com.itangcent.intellij.psi.PsiAnnotationUtils
 import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.StringUtils
 
-open class SpringClassExporter : AbstractClassExporter() {
+open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     override fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
 

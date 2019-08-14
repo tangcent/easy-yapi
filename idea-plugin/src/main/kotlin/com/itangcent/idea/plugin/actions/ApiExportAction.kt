@@ -5,7 +5,7 @@ import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.SpringClassExporter
+import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.intellij.config.rule.RuleParser
@@ -23,7 +23,7 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
 
-        builder.bind(ClassExporter::class) { it.with(SpringClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
 
         builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {

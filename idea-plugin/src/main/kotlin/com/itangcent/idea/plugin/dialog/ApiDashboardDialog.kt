@@ -18,6 +18,7 @@ import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
@@ -318,9 +319,9 @@ class ApiDashboardDialog : JDialog() {
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
 
                             if (disposed) return@traversal
-                            classExporter!!.export(psiClass, requestHelper!!) { request ->
-                                if (disposed) return@export
-                                if (request.resource == null) return@export
+                            classExporter!!.export(psiClass, requestHelper!!, requestOnly { request ->
+                                if (disposed) return@requestOnly
+                                if (request.resource == null) return@requestOnly
                                 anyFound = true
                                 val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
 
@@ -338,7 +339,7 @@ class ApiDashboardDialog : JDialog() {
                                 apiTreeNode.allowsChildren = false
                                 clsTreeNode.add(apiTreeNode)
                                 (clsTreeNode.userObject as ClassProjectNodeData).addSubProjectNodeData(apiProjectNodeData)
-                            }
+                            })
                         }
                     }
                 } finally {

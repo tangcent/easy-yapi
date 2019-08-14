@@ -12,15 +12,20 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.RequestHandle
+import com.itangcent.idea.plugin.api.export.DocHandle
+import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
 import com.itangcent.intellij.util.traceError
+import kotlin.reflect.KClass
 
-class CachedClassExporter : ClassExporter, Worker {
+class CachedRequestClassExporter : ClassExporter, Worker {
+    override fun docType(): KClass<*> {
+        return delegateClassExporter!!.docType()
+    }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
 
@@ -66,10 +71,10 @@ class CachedClassExporter : ClassExporter, Worker {
     //no use cache,no read,no write
     private var disabled: Boolean = false
 
-    override fun export(cls: Any, requestHelper: RequestHelper, requestHandle: RequestHandle) {
+    override fun export(cls: Any, requestHelper: RequestHelper, docHandle: DocHandle) {
 
         if (disabled || cls !is PsiClass) {
-            delegateClassExporter!!.export(cls, requestHelper, requestHandle)
+            delegateClassExporter!!.export(cls, requestHelper, docHandle)
             return
         }
 
@@ -93,7 +98,7 @@ class CachedClassExporter : ClassExporter, Worker {
                             statusRecorder.newWork()
                             actionContext.runInReadUI {
                                 try {
-                                    readApiFromCache(cls, fileApiCache!!, requestHandle)
+                                    readApiFromCache(cls, fileApiCache!!, docHandle)
                                 } finally {
                                     statusRecorder.endWork()
                                 }
@@ -111,8 +116,8 @@ class CachedClassExporter : ClassExporter, Worker {
                 statusRecorder.newWork()
                 actionContext.runInReadUI {
                     try {
-                        delegateClassExporter!!.export(cls, requestHelper) { request ->
-                            requestHandle(request)
+                        delegateClassExporter!!.export(cls, requestHelper, requestOnly { request ->
+                            docHandle(request)
                             val tinyRequest = Request()
                             tinyRequest.name = request.name
                             tinyRequest.path = request.path
@@ -130,7 +135,7 @@ class CachedClassExporter : ClassExporter, Worker {
                                     PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)
                                     , tinyRequest
                             ))
-                        }
+                        })
                         actionContext.runAsync {
                             fileApiCache.md5 = md5
                             fileApiCache.lastModified = System.currentTimeMillis()
@@ -150,7 +155,7 @@ class CachedClassExporter : ClassExporter, Worker {
                 statusRecorder.newWork()
                 actionContext.runInReadUI {
                     try {
-                        delegateClassExporter!!.export(cls, requestHelper, requestHandle)
+                        delegateClassExporter!!.export(cls, requestHelper, docHandle)
                     } finally {
                         statusRecorder.endWork()
                     }
@@ -161,7 +166,7 @@ class CachedClassExporter : ClassExporter, Worker {
         }
     }
 
-    private fun readApiFromCache(cls: Any, fileApiCache: FileApiCache, requestHandle: RequestHandle) {
+    private fun readApiFromCache(cls: Any, fileApiCache: FileApiCache, requestHandle: DocHandle) {
         fileApiCache.requests?.forEach { request ->
             val method = request.key?.let { PsiClassUtils.findMethodFromFullName(it, cls as PsiElement) }
             request.request!!.resource = method

@@ -9,6 +9,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -70,7 +71,7 @@ class PostmanApiExporter {
                 }
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
-                    classExporter!!.export(it, requestHelper!!) { request -> requests.add(request) }
+                    classExporter!!.export(it, requestHelper!!, requestOnly { request -> requests.add(request) })
                 }
                 .onCompleted {
                     try {

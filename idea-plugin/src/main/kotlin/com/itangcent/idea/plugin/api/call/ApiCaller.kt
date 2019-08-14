@@ -7,6 +7,7 @@ import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.plugin.dialog.ApiCallDialog
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.constant.EventKey
@@ -49,9 +50,9 @@ class ApiCaller {
         SelectedHelper.Builder()
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestHelper!!) { request ->
+                    classExporter!!.export(it, requestHelper!!, requestOnly { request ->
                         requests.add(request)
-                    }
+                    })
                 }
                 .onCompleted {
                     try {

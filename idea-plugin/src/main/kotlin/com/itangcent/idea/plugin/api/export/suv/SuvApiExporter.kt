@@ -72,9 +72,9 @@ class SuvApiExporter {
         SelectedHelper.Builder()
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestHelper!!) { request ->
+                    classExporter!!.export(it, requestHelper!!, requestOnly { request ->
                         requests.add(request)
-                    }
+                    })
                 }
                 .onCompleted {
                     try {
@@ -215,9 +215,9 @@ class SuvApiExporter {
             val loggerBuffer: LoggerBuffer? = actionContext.getCache<LoggerBuffer>("LOGGER_BUF")
             loggerBuffer?.drainTo(actionContext.instance(Logger::class))
             val actionExtLoader: GroovyActionExtLoader? = actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
-            actionExtLoader?.let { actionExtLoader ->
-                actionContext.on("EventKey.ONCOMPLETED") {
-                    actionExtLoader.close()
+            actionExtLoader?.let { extLoader ->
+                actionContext.on(EventKey.ONCOMPLETED) {
+                    extLoader.close()
                 }
             }
         }
@@ -242,7 +242,7 @@ class SuvApiExporter {
             builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
             builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
 
-            builder.bind(ClassExporter::class) { it.with(SpringClassExporter::class).singleton() }
+            builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
 
             builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
             builder.bind(LocalFileRepository::class, "projectCacheRepository") {
@@ -275,9 +275,9 @@ class SuvApiExporter {
 
             val requests: MutableList<Request> = ArrayList()
             for (cls in classes) {
-                classExporter!!.export(cls!!, requestHelper!!) { request ->
+                classExporter!!.export(cls!!, requestHelper!!, requestOnly { request ->
                     requests.add(request)
-                }
+                })
             }
 
 

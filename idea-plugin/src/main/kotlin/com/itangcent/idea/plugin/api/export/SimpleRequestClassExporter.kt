@@ -17,13 +17,19 @@ import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
+import kotlin.reflect.KClass
 
 /**
  * only parse name
  */
-class SimpleClassExporter : ClassExporter, Worker {
+class SimpleRequestClassExporter : ClassExporter, Worker {
+    override fun docType(): KClass<*> {
+        return Request::class
+    }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
+
+    constructor()
 
     override fun status(): WorkerStatus {
         return statusRecorder.status()
@@ -49,7 +55,7 @@ class SimpleClassExporter : ClassExporter, Worker {
     @Inject
     private var actionContext: ActionContext? = null
 
-    override fun export(cls: Any, requestHelper: RequestHelper, requestHandle: RequestHandle) {
+    override fun export(cls: Any, requestHelper: RequestHelper, docHandle: DocHandle) {
         if (cls !is PsiClass) return
         actionContext!!.checkStatus()
         statusRecorder.newWork()
@@ -64,7 +70,7 @@ class SimpleClassExporter : ClassExporter, Worker {
                     logger!!.info("search api from:${cls.qualifiedName}")
 
                     foreachMethod(cls) { method ->
-                        exportMethodApi(method, requestHelper, requestHandle)
+                        exportMethodApi(method, requestHelper, docHandle)
                     }
                 }
             }
@@ -85,7 +91,7 @@ class SimpleClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
-    private fun exportMethodApi(method: PsiMethod, requestHelper: RequestHelper, requestHandle: RequestHandle) {
+    private fun exportMethodApi(method: PsiMethod, requestHelper: RequestHelper, requestHandle: DocHandle) {
 
         actionContext!!.checkStatus()
         //todo:support other web annotation
