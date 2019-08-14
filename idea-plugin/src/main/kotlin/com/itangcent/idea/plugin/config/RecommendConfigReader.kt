@@ -74,6 +74,7 @@ class RecommendConfigReader : ConfigReader {
                 "#The ObjectId and Date are parsed as strings\n" +
                 "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
                 "json.rule.convert[java.util.Date]=java.lang.String" +
+                "json.rule.convert[java.sql.Timestamp]=java.lang.String" +
                 "\n" +
                 "#Support for javax.validation annotations\n" +
                 "param.required=groovy:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
