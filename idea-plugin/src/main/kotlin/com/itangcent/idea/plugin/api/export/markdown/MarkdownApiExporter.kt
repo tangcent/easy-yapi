@@ -4,10 +4,10 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
@@ -66,7 +66,7 @@ class MarkdownApiExporter {
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestHelper!!, requestOnly { request -> requests.add(request) })
+                    classExporter!!.export(it, requestOnly { request -> requests.add(request) })
                 }
                 .onCompleted {
                     try {

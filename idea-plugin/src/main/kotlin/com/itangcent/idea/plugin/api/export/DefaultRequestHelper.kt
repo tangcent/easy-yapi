@@ -1,44 +1,101 @@
 package com.itangcent.idea.plugin.api.export
 
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiField
-import com.intellij.psi.PsiMethod
-import com.itangcent.common.exporter.AbstractRequestHelper
-import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.DocCommentUtils
+import com.google.inject.Singleton
+import com.itangcent.common.constant.Attrs
+import com.itangcent.common.model.*
+import com.itangcent.common.utils.KVUtils
+import java.util.*
 
-open class DefaultRequestHelper : AbstractRequestHelper() {
-    override fun linkToClass(linkClass: Any): String? {
-        if (linkClass !is PsiClass) {
-            return "[$linkClass]"
-        }
-        val attrOfClass = DocCommentUtils.getAttrOfDocComment(linkClass.docComment)
-        return when {
-            attrOfClass.isNullOrBlank() -> "[${linkClass.name}]"
-            else -> "[$attrOfClass]"
+@Singleton
+open class DefaultRequestHelper : RequestHelper {
+    override fun setName(request: Request, name: String) {
+        request.name = name
+    }
+
+    override fun setMethod(request: Request, method: String) {
+        request.method = method
+    }
+
+    override fun setPath(request: Request, path: String) {
+        request.path = path
+    }
+
+    override fun setModelAsBody(request: Request, model: Any) {
+        request.body = model
+    }
+
+    override fun addModelAsParam(request: Request, model: Any) {
+        if (model is Map<*, *>) {
+            val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
+            model.forEach { k, v ->
+                addFormParam(request, k.toString(), v.toString(),
+                        KVUtils.getUltimateComment(comment, k))
+            }
         }
     }
 
-    override fun linkToMethod(linkMethod: Any): String? {
-        if (linkMethod !is PsiMethod) {
-            return "[$linkMethod]"
+    override fun addFormParam(request: Request, formParam: FormParam) {
+        if (request.formParams == null) {
+            request.formParams = LinkedList()
         }
-        val attrOfMethod = DocCommentUtils.getAttrOfDocComment(linkMethod.docComment)
-        return when {
-            attrOfMethod.isNullOrBlank() -> "[${PsiClassUtils.fullNameOfMethod(linkMethod)}]"
-            else -> "[$attrOfMethod]"
+        request.formParams!!.add(formParam)
+    }
+
+    override fun addParam(request: Request, param: Param) {
+        if (request.querys == null) {
+            request.querys = LinkedList()
+        }
+        request.querys!!.add(param)
+    }
+
+    override fun addPathParam(request: Request, pathParam: PathParam) {
+        if (request.paths == null) {
+            request.paths = LinkedList()
+        }
+        request.paths!!.add(pathParam)
+    }
+
+    override fun setJsonBody(request: Request, body: Any?, bodyAttr: String?) {
+        request.body = body
+    }
+
+    override fun appendDesc(request: Request, desc: String?) {
+        if (request.desc == null) {
+            request.desc = desc
+        } else {
+            request.desc = "${request.desc}$desc"
         }
     }
 
-    override fun linkToProperty(linkField: Any): String? {
-        if (linkField !is PsiField) {
-            return "[$linkField]"
+    override fun addHeader(request: Request, header: Header) {
+        if (request.headers == null) {
+            request.headers = LinkedList()
         }
-        val attrOfProperty = DocCommentUtils.getAttrOfDocComment(linkField.docComment)
-        return when {
-            attrOfProperty.isNullOrBlank() -> "[${PsiClassUtils.fullNameOfField(linkField)}]"
-            else -> "[$attrOfProperty]"
-        }
+        request.headers!!.removeIf { it.name == header.name }
+        request.headers!!.add(header)
     }
 
+    override fun addResponse(request: Request, response: Response) {
+        if (request.response == null) {
+            request.response = LinkedList()
+        }
+        request.response!!.add(response)
+    }
+
+    override fun addResponseHeader(response: Response, header: Header) {
+
+        if (response.headers == null) {
+            response.headers = LinkedList()
+        }
+        response.headers!!.add(header)
+    }
+
+    override fun setResponseBody(response: Response, bodyType: String, body: Any?) {
+        response.bodyType = bodyType
+        response.body = body
+    }
+
+    override fun setResponseCode(response: Response, code: Int) {
+        response.code = code
+    }
 }

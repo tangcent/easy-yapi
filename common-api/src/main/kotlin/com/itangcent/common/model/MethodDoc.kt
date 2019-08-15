@@ -1,9 +1,11 @@
 package com.itangcent.common.model
 
+import java.util.*
+
 
 class MethodDoc : Doc() {
 
-    var params: List<Param>? = null
+    var params: MutableList<Param>? = null
 
     var ret: Any? = null
 }

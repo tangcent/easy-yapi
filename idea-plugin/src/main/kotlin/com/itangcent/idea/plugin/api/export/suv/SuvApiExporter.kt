@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.Worker
@@ -72,7 +71,7 @@ class SuvApiExporter {
         SelectedHelper.Builder()
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestHelper!!, requestOnly { request ->
+                    classExporter!!.export(it, requestOnly { request ->
                         requests.add(request)
                     })
                 }
@@ -275,7 +274,7 @@ class SuvApiExporter {
 
             val requests: MutableList<Request> = ArrayList()
             for (cls in classes) {
-                classExporter!!.export(cls!!, requestHelper!!, requestOnly { request ->
+                classExporter!!.export(cls!!, requestOnly { request ->
                     requests.add(request)
                 })
             }
@@ -333,7 +332,7 @@ class SuvApiExporter {
 
             builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-            builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
+
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
@@ -405,7 +404,7 @@ class SuvApiExporter {
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-            builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
+
 
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }

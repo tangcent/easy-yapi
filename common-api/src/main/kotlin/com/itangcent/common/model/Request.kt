@@ -6,13 +6,13 @@ open class Request : Doc() {
 
     var method: String? = null
 
-    var headers: ArrayList<Header>? = null
+    var headers: MutableList<Header>? = null
 
-    var paths: ArrayList<PathParam>? = null
+    var paths: MutableList<PathParam>? = null
 
-    var querys: ArrayList<Param>? = null
+    var querys: MutableList<Param>? = null
 
-    var formParams: ArrayList<FormParam>? = null
+    var formParams: MutableList<FormParam>? = null
 
     /**
      * raw/json/xml
@@ -21,7 +21,7 @@ open class Request : Doc() {
 
     var body: Any? = null
 
-    var response: ArrayList<Response>? = null
+    var response: MutableList<Response>? = null
 }
 
 fun Request.getContentType(): String? {

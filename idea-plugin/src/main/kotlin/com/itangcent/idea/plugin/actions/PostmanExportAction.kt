@@ -2,8 +2,8 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.common.exporter.RequestHelper
-import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
+import com.itangcent.idea.plugin.api.export.RequestHelper
+import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
@@ -27,7 +27,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
 
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-        builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
+
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 

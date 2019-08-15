@@ -3,10 +3,10 @@ package com.itangcent.idea.plugin.api.call
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.plugin.dialog.ApiCallDialog
 import com.itangcent.idea.utils.SwingUtils
@@ -50,7 +50,7 @@ class ApiCaller {
         SelectedHelper.Builder()
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestHelper!!, requestOnly { request ->
+                    classExporter!!.export(it, requestOnly { request ->
                         requests.add(request)
                     })
                 }

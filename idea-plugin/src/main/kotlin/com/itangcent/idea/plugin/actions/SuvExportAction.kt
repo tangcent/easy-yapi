@@ -4,10 +4,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.itangcent.common.exporter.RequestHelper
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.DataEventCollector
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
+import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.SimpleRequestClassExporter
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
@@ -43,7 +43,7 @@ class SuvExportAction : ApiExportAction("Export Api") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-        builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
+
 
         builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
 

@@ -5,7 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.exporter.RequestHelper
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KVUtils
@@ -309,7 +309,7 @@ class MarkdownFormatter {
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, requestHelper)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, cls)
         }
     }
 

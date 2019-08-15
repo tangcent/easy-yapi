@@ -7,7 +7,6 @@ import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
-import com.itangcent.common.exporter.*
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.Response
 import com.itangcent.common.utils.KVUtils
@@ -58,6 +57,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected val docParseHelper: DocParseHelper? = null
 
     @Inject
+    protected val requestHelper: RequestHelper? = null
+
+    @Inject
     protected val settingBinder: SettingBinder? = null
 
     @Inject
@@ -75,7 +77,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     @Inject
     protected var actionContext: ActionContext? = null
 
-    override fun export(cls: Any, requestHelper: RequestHelper, docHandle: DocHandle) {
+    override fun export(cls: Any, docHandle: DocHandle) {
         if (cls !is PsiClass) return
         actionContext!!.checkStatus()
         statusRecorder.newWork()
@@ -95,7 +97,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                     foreachMethod(cls) { method ->
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
-                            exportMethodApi(method, kv, requestHelper, docHandle)
+                            exportMethodApi(method, kv, docHandle)
                         }
                     }
                 }
@@ -117,9 +119,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
-    private fun exportMethodApi(method: PsiMethod, kv: KV<String, Any?>
-                                , requestHelper: RequestHelper,
-                                requestHandle: DocHandle) {
+    private fun exportMethodApi(method: PsiMethod, kv: KV<String, Any?>,
+                                docHandle: DocHandle) {
 
         actionContext!!.checkStatus()
 
@@ -127,25 +128,25 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         request.resource = method
 
-        processMethod(method, kv, request, requestHelper)
+        processMethod(method, kv, request)
 
-        processMethodParameters(method, request, requestHelper)
+        processMethodParameters(method, request)
 
-        processResponse(method, request, requestHelper)
+        processResponse(method, request)
 
-        processCompleted(method, request, requestHelper)
+        processCompleted(method, request)
 
-        requestHandle(request)
+        docHandle(request)
     }
 
-    protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request, requestHelper: RequestHelper) {
+    protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request) {
 
         val attr: String?
-        var attrOfMethod = findAttrOfMethod(method, requestHelper)
-        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method, requestHelper)
+        var attrOfMethod = findAttrOfMethod(method)
+        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method)
 
         if (attrOfMethod.isNullOrBlank()) {
-            requestHelper.setName(request, method.name)
+            requestHelper!!.setName(request, method.name)
         } else {
             val lines = attrOfMethod.lines()
             attr = if (lines.size > 1) {//multi line
@@ -154,12 +155,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 attrOfMethod
             }
 
-            requestHelper.appendDesc(request, attrOfMethod)
+            requestHelper!!.appendDesc(request, attrOfMethod)
             requestHelper.setName(request, attr ?: method.name)
         }
 
         readMethodDoc(method)?.let {
-            requestHelper.appendDesc(request, docParseHelper.resolveLinkInAttr(it, method, requestHelper))
+            requestHelper!!.appendDesc(request, docParseHelper.resolveLinkInAttr(it, method))
         }
 
     }
@@ -168,18 +169,18 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
     }
 
-    protected open fun processCompleted(method: PsiMethod, request: Request, requestHelper: RequestHelper) {
+    protected open fun processCompleted(method: PsiMethod, request: Request) {
         //call after process
     }
 
-    protected open fun processResponse(method: PsiMethod, request: Request, requestHelper: RequestHelper) {
+    protected open fun processResponse(method: PsiMethod, request: Request) {
 
         val returnType = method.returnType
         if (returnType != null) {
             try {
                 val response = Response()
 
-                requestHelper.setResponseCode(response, 200)
+                requestHelper!!.setResponseCode(response, 200)
 
                 val typedResponse = parseResponseBody(returnType, method)
 
@@ -220,7 +221,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")
     }
 
-    open protected fun findAttrOfMethod(method: PsiMethod, requestHelper: RequestHelper): String? {
+    open protected fun findAttrOfMethod(method: PsiMethod): String? {
         return DocCommentUtils.getAttrOfDocComment(method.docComment)
     }
 
@@ -293,8 +294,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 .forEach(handle)
     }
 
-    private fun processMethodParameters(method: PsiMethod, request: Request,
-                                        requestHelper: RequestHelper) {
+    private fun processMethodParameters(method: PsiMethod, request: Request) {
 
         val params = method.parameterList.parameters
 
@@ -303,20 +303,20 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val paramDocComment = extractParamComment(method)
 
             for (param in params) {
-                processMethodParameter(method, request, param, paramDocComment?.get(param.name!!)?.toString(), requestHelper)
+                processMethodParameter(method, request, param, paramDocComment?.get(param.name!!)?.toString())
             }
         }
 
         //default to GET
         if (request.method == null || request.method == HttpMethod.NO_METHOD) {
-            requestHelper.setMethod(request, HttpMethod.GET)
+            requestHelper!!.setMethod(request, HttpMethod.GET)
         }
     }
 
-    abstract fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?, requestHelper: RequestHelper)
+    abstract fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?)
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsQuery(parameter: PsiParameter, request: Request, requestHelper: RequestHelper, paramDesc: String? = null) {
+    protected fun addParamAsQuery(parameter: PsiParameter, request: Request, paramDesc: String? = null) {
         val paramType = parameter.type
         try {
             val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
@@ -326,16 +326,16 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
                 val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
                 fields.forEachValid { filedName, fieldVal ->
-                    requestHelper.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
+                    requestHelper!!.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
                             required?.getAs(filedName) ?: false,
                             KVUtils.getUltimateComment(comment, filedName))
                 }
             } else if (typeObject == Magics.FILE_STR) {
-                requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
+                requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
                 requestHelper.addFormFileParam(request, parameter.name!!,
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
             } else {
-                requestHelper.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                requestHelper!!.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
             }
         } catch (e: Exception) {
@@ -345,7 +345,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsForm(parameter: PsiParameter, request: Request, requestHelper: RequestHelper, paramDesc: String? = null) {
+    protected fun addParamAsForm(parameter: PsiParameter, request: Request, paramDesc: String? = null) {
 
         val paramType = parameter.type
         try {
@@ -355,7 +355,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val fields = typeObject as KV<String, Any>
                 val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
                 val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
-                requestHelper.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
+                requestHelper!!.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
                 fields.forEachValid { filedName, fieldVal ->
                     val fv = deepComponent(fieldVal)
                     if (fv == Magics.FILE_STR) {
@@ -370,11 +370,11 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                     }
                 }
             } else if (typeObject == Magics.FILE_STR) {
-                requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
+                requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
                 requestHelper.addFormFileParam(request, parameter.name!!,
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
             } else {
-                requestHelper.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                requestHelper!!.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
             }
         } catch (e: Exception) {
@@ -432,5 +432,4 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     private fun inferMaxDeep(): Int {
         return settingBinder!!.read().inferMaxDeep ?: 4
     }
-
 }

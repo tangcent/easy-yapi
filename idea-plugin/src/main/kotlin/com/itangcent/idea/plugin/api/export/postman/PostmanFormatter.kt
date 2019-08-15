@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
-import com.itangcent.common.exporter.RequestHelper
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.DateUtils
@@ -251,7 +251,7 @@ class PostmanFormatter {
         val docText = resourceHelper!!.findAttrOfClass(cls)
         return when {
             docText.isNullOrBlank() -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, requestHelper!!)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, cls)
         }
     }
 

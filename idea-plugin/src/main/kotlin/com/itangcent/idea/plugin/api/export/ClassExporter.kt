@@ -1,13 +1,12 @@
 package com.itangcent.idea.plugin.api.export
 
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import kotlin.reflect.KClass
 
 interface ClassExporter {
-    fun export(cls: Any, requestHelper: RequestHelper, docHandle: DocHandle)
+    fun export(cls: Any, docHandle: DocHandle)
 
     /**
      * the document type which be generate

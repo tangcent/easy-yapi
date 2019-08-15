@@ -2,11 +2,11 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.common.exporter.RequestHelper
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.call.ApiCaller
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
+import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
@@ -24,7 +24,7 @@ class ApiCallAction : ApiExportAction("Call Api") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-        builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
+
 
         //allow cache api
         builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringRequestClassExporter::class).singleton() }

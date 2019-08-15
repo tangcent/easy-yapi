@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
@@ -50,12 +49,15 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
     private val docParseHelper: DocParseHelper? = null
 
     @Inject
+    protected val requestHelper: RequestHelper? = null
+
+    @Inject
     private val ruleComputer: RuleComputer? = null
 
     @Inject
     private var actionContext: ActionContext? = null
 
-    override fun export(cls: Any, requestHelper: RequestHelper, docHandle: DocHandle) {
+    override fun export(cls: Any, docHandle: DocHandle) {
         if (cls !is PsiClass) return
         actionContext!!.checkStatus()
         statusRecorder.newWork()
@@ -70,7 +72,7 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
                     logger!!.info("search api from:${cls.qualifiedName}")
 
                     foreachMethod(cls) { method ->
-                        exportMethodApi(method, requestHelper, docHandle)
+                        exportMethodApi(method, docHandle)
                     }
                 }
             }
@@ -91,7 +93,7 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
-    private fun exportMethodApi(method: PsiMethod, requestHelper: RequestHelper, requestHandle: DocHandle) {
+    private fun exportMethodApi(method: PsiMethod, docHandle: DocHandle) {
 
         actionContext!!.checkStatus()
         //todo:support other web annotation
@@ -100,7 +102,7 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
         request.resource = method
 
         val attr: String?
-        val attrOfMethod = findAttrOfMethod(method, requestHelper)!!
+        val attrOfMethod = findAttrOfMethod(method)!!
         val lines = attrOfMethod.lines()
         attr = if (lines.size > 1) {//multi line
             lines.firstOrNull { it.isNotBlank() }
@@ -108,8 +110,8 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
             attrOfMethod
         }
 
-        requestHelper.setName(request, attr ?: method.name)
-        requestHandle(request)
+        requestHelper!!.setName(request, attr ?: method.name)
+        docHandle(request)
     }
 
     private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
@@ -118,13 +120,13 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
                 .firstOrNull { it != null }
     }
 
-    private fun findAttrOfMethod(method: PsiMethod, requestHelper: RequestHelper): String? {
+    private fun findAttrOfMethod(method: PsiMethod): String? {
         val docComment = method.docComment
 
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> method.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, method, requestHelper)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, method)
         }
     }
 

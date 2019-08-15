@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.export
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.exporter.*
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.utils.SpringClassName
@@ -35,15 +34,15 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         return findRequestMappingInAnn(psiMethod) != null
     }
 
-    override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?, requestHelper: RequestHelper) {
+    override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?) {
 
 
         val requestBodyAnn = findRequestBody(param)
         if (requestBodyAnn != null) {
             if (request.method == HttpMethod.NO_METHOD) {
-                requestHelper.setMethod(request, HttpMethod.POST)
+                requestHelper!!.setMethod(request, HttpMethod.POST)
             }
-            requestHelper.addHeader(request, "Content-Type", "application/json")
+            requestHelper!!.addHeader(request, "Content-Type", "application/json")
             requestHelper.setJsonBody(
                     request,
                     parseRequestBody(param.type, method),
@@ -55,13 +54,13 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         val modelAttrAnn = findModelAttr(param)
         if (modelAttrAnn != null) {
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request, requestHelper)
+                addParamAsQuery(param, request)
             } else {
                 if (request.method == HttpMethod.NO_METHOD) {
-                    requestHelper.setMethod(request, HttpMethod.POST)
+                    requestHelper!!.setMethod(request, HttpMethod.POST)
                 }
 
-                addParamAsForm(param, request, requestHelper)
+                addParamAsForm(param, request)
             }
             return
         }
@@ -99,7 +98,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             header.example = defaultValue
             header.desc = paramDesc
             header.required = required
-            requestHelper.addHeader(request, header)
+            requestHelper!!.addHeader(request, header)
             return
         }
 
@@ -112,7 +111,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 pathName = param.name
             }
 
-            requestHelper.addPathParam(request, pathName!!, paramDesc ?: "")
+            requestHelper!!.addPathParam(request, pathName!!, paramDesc ?: "")
             return
         }
 
@@ -170,7 +169,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 request.method = HttpMethod.POST
             }
 
-            requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
+            requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
             requestHelper.addFormFileParam(request, paramName!!, required, paramDesc)
             return
         } else if (SpringClassName.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
@@ -179,30 +178,30 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (defaultVal != null) {
-            requestHelper.addParam(request,
+            requestHelper!!.addParam(request,
                     paramName!!
                     , defaultVal.toString()
                     , required
                     , paramDesc)
         } else {
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request, requestHelper, paramDesc)
+                addParamAsQuery(param, request, paramDesc)
             } else {
                 if (request.method == HttpMethod.NO_METHOD) {
                     request.method = HttpMethod.POST
                 }
-                addParamAsForm(param, request, requestHelper, paramDesc)
+                addParamAsForm(param, request, paramDesc)
             }
         }
 
     }
 
-    override fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request, requestHelper: RequestHelper) {
-        super.processMethod(method, kv, request, requestHelper)
+    override fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request) {
+        super.processMethod(method, kv, request)
 
-        var basePath: String? = kv.getAs("basePath")
-        var ctrlHttpMethod: String? = kv.getAs("ctrlHttpMethod")
-        var requestMapping = findRequestMappingInAnn(method)
+        val basePath: String? = kv.getAs("basePath")
+        val ctrlHttpMethod: String? = kv.getAs("ctrlHttpMethod")
+        val requestMapping = findRequestMappingInAnn(method)
         var httpMethod = findHttpMethod(requestMapping)
         if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
             httpMethod = ctrlHttpMethod!!
@@ -210,7 +209,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         request.method = httpMethod
 
         val httpPath = contractPath(basePath, findHttpPath(requestMapping))!!
-        requestHelper.setPath(request, httpPath)
+        requestHelper!!.setPath(request, httpPath)
     }
 
     //region process spring annotation-------------------------------------------------------------------
