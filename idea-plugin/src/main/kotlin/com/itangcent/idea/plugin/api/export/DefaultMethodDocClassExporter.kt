@@ -4,12 +4,8 @@ import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.util.containers.isNullOrEmpty
-import com.itangcent.common.constant.Attrs
-import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
-import com.itangcent.common.model.Request
-import com.itangcent.common.model.Response
-import com.itangcent.common.utils.KVUtils
+import com.itangcent.common.model.MethodDoc
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
@@ -22,15 +18,18 @@ import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.*
+import com.itangcent.intellij.util.DocCommentUtils
+import com.itangcent.intellij.util.KV
+import com.itangcent.intellij.util.PsiHelper
+import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
-abstract class AbstractRequestClassExporter : ClassExporter, Worker {
+class DefaultMethodDocClassExporter : ClassExporter, Worker {
     override fun docType(): KClass<*> {
-        return Request::class
+        return MethodDoc::class
     }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
@@ -57,7 +56,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected val docParseHelper: DocParseHelper? = null
 
     @Inject
-    protected val requestHelper: RequestHelper? = null
+    protected val methodDocHelper: MethodDocHelper? = null
 
     @Inject
     protected val settingBinder: SettingBinder? = null
@@ -109,11 +108,15 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
     }
 
-    protected abstract fun processClass(cls: PsiClass, kv: KV<String, Any?>)
+    protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {}
 
-    protected abstract fun hasApi(psiClass: PsiClass): Boolean
+    protected fun hasApi(psiClass: PsiClass): Boolean {
+        return true
+    }
 
-    protected abstract fun isApi(psiMethod: PsiMethod): Boolean
+    protected fun isApi(psiMethod: PsiMethod): Boolean {
+        return true
+    }
 
     open protected fun shouldIgnore(psiElement: PsiElement): Boolean {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
@@ -124,29 +127,29 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         actionContext!!.checkStatus()
 
-        val request = Request()
+        val methodDoc = MethodDoc()
 
-        request.resource = method
+        methodDoc.resource = method
 
-        processMethod(method, kv, request)
+        processMethod(method, kv, methodDoc)
 
-        processMethodParameters(method, request)
+        processMethodParameters(method, methodDoc)
 
-        processResponse(method, request)
+        processRet(method, methodDoc)
 
-        processCompleted(method, request)
+        processCompleted(method, methodDoc)
 
-        docHandle(request)
+        docHandle(methodDoc)
     }
 
-    protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request) {
+    protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, methodDoc: MethodDoc) {
 
         val attr: String?
         var attrOfMethod = findAttrOfMethod(method)
         attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method)
 
         if (attrOfMethod.isNullOrBlank()) {
-            requestHelper!!.setName(request, method.name)
+            methodDocHelper!!.setName(methodDoc, method.name)
         } else {
             val lines = attrOfMethod.lines()
             attr = if (lines.size > 1) {//multi line
@@ -155,12 +158,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 attrOfMethod
             }
 
-            requestHelper!!.appendDesc(request, attrOfMethod)
-            requestHelper.setName(request, attr ?: method.name)
+            methodDocHelper!!.appendDesc(methodDoc, attrOfMethod)
+            methodDocHelper.setName(methodDoc, attr ?: method.name)
         }
 
         readMethodDoc(method)?.let {
-            requestHelper!!.appendDesc(request, docParseHelper.resolveLinkInAttr(it, method))
+            methodDocHelper!!.appendDesc(methodDoc, docParseHelper.resolveLinkInAttr(it, method))
         }
 
     }
@@ -169,26 +172,18 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
     }
 
-    protected open fun processCompleted(method: PsiMethod, request: Request) {
+    protected open fun processCompleted(method: PsiMethod, methodDoc: MethodDoc) {
         //call after process
     }
 
-    protected open fun processResponse(method: PsiMethod, request: Request) {
+    protected open fun processRet(method: PsiMethod, methodDoc: MethodDoc) {
 
         val returnType = method.returnType
         if (returnType != null) {
             try {
-                val response = Response()
-
-                requestHelper!!.setResponseCode(response, 200)
-
                 val typedResponse = parseResponseBody(returnType, method)
 
-                requestHelper.setResponseBody(response, "raw", typedResponse)
-
-                requestHelper.addResponseHeader(response, "content-type", "application/json;charset=UTF-8")
-
-                requestHelper.addResponse(request, response)
+                methodDocHelper!!.setRet(methodDoc, typedResponse)
 
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
@@ -197,28 +192,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 logger.traceError(e)
             }
         }
-    }
-
-    /**
-     * unbox queryParam
-     */
-    protected fun tinyQueryParam(paramVal: String?): String? {
-        if (paramVal == null) return null
-        var pv = paramVal.trim()
-        while (true) {
-            if (pv.startsWith("[")) {
-                pv = pv.trim('[', ']')
-                continue
-            }
-            break
-        }
-        return pv
-    }
-
-    protected fun contractPath(pathPre: String?, pathAfter: String?): String? {
-        if (pathPre == null) return pathAfter
-        if (pathAfter == null) return pathPre
-        return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")
     }
 
     open protected fun findAttrOfMethod(method: PsiMethod): String? {
@@ -281,7 +254,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 .forEach(handle)
     }
 
-    private fun processMethodParameters(method: PsiMethod, request: Request) {
+    private fun processMethodParameters(method: PsiMethod, methodDoc: MethodDoc) {
 
         val params = method.parameterList.parameters
 
@@ -290,88 +263,15 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val paramDocComment = extractParamComment(method)
 
             for (param in params) {
-                processMethodParameter(method, request, param, paramDocComment?.get(param.name!!)?.toString())
+                processMethodParameter(method, methodDoc, param, paramDocComment?.get(param.name!!)?.toString())
             }
         }
 
-        //default to GET
-        if (request.method == null || request.method == HttpMethod.NO_METHOD) {
-            requestHelper!!.setMethod(request, HttpMethod.GET)
-        }
     }
 
-    abstract fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?)
-
-    @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsQuery(parameter: PsiParameter, request: Request, paramDesc: String? = null) {
-        val paramType = parameter.type
-        try {
-            val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-            val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
-            if (typeObject != null && typeObject is KV<*, *>) {
-                val fields = typeObject as KV<String, Any>
-                val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-                val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
-                fields.forEachValid { filedName, fieldVal ->
-                    requestHelper!!.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
-                            required?.getAs(filedName) ?: false,
-                            KVUtils.getUltimateComment(comment, filedName))
-                }
-            } else if (typeObject == Magics.FILE_STR) {
-                requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-                requestHelper.addFormFileParam(request, parameter.name!!,
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
-            } else {
-                requestHelper!!.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
-            }
-        } catch (e: Exception) {
-            logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
-            logger.traceError(e)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsForm(parameter: PsiParameter, request: Request, paramDesc: String? = null) {
-
-        val paramType = parameter.type
-        try {
-            val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-            val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
-            if (typeObject != null && typeObject is KV<*, *>) {
-                val fields = typeObject as KV<String, Any>
-                val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-                val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
-                requestHelper!!.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
-                fields.forEachValid { filedName, fieldVal ->
-                    val fv = deepComponent(fieldVal)
-                    if (fv == Magics.FILE_STR) {
-                        requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
-                        requestHelper.addFormFileParam(request, filedName,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName))
-                    } else {
-                        requestHelper.addFormParam(request, filedName, null,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName))
-                    }
-                }
-            } else if (typeObject == Magics.FILE_STR) {
-                requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-                requestHelper.addFormFileParam(request, parameter.name!!,
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
-            } else {
-                requestHelper!!.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
-            }
-        } catch (e: Exception) {
-            logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
-            logger.traceError(e)
-        }
-    }
-
-    protected fun parseRequestBody(psiType: PsiType?, context: PsiElement): Any? {
-        return psiClassHelper!!.getTypeObject(psiType, context, JsonOption.READ_COMMENT)
+    protected fun processMethodParameter(method: PsiMethod, methodDoc: MethodDoc, param: PsiParameter, paramDesc: String?) {
+        val typeObject = psiClassHelper!!.getTypeObject(param.type, method, JsonOption.READ_COMMENT)
+        methodDocHelper!!.addParam(methodDoc, param.name!!, typeObject, paramDesc)
     }
 
     protected fun parseResponseBody(psiType: PsiType?, method: PsiMethod): Any? {
@@ -393,21 +293,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
     }
 
-    private fun deepComponent(obj: Any?): Any? {
-        if (obj == null) {
-            return null
-        }
-        if (obj is Array<*>) {
-            if (obj.isEmpty()) return obj
-            return deepComponent(obj[0])
-        }
-        if (obj is Collection<*>) {
-            if (obj.isEmpty()) return obj
-            return deepComponent(obj.first())
-        }
-        return obj
-    }
-
     private fun readGetter(): Boolean {
         return settingBinder!!.read().readGetter ?: false
     }
@@ -419,4 +304,5 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     private fun inferMaxDeep(): Int {
         return settingBinder!!.read().inferMaxDeep ?: 4
     }
+
 }

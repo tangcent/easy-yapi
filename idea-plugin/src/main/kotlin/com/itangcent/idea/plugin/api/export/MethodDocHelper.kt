@@ -17,14 +17,14 @@ interface MethodDocHelper {
 }
 
 //region utils------------------------------------------------------------------
-fun MethodDocHelper.addParam(methodDoc: MethodDoc, paramName: String, defaultVal: String?, attr: String?) {
-    addParam(methodDoc, paramName, defaultVal, false, attr)
+fun MethodDocHelper.addParam(methodDoc: MethodDoc, paramName: String, value: Any?, desc: String?) {
+    addParam(methodDoc, paramName, value, false, desc)
 }
 
-fun MethodDocHelper.addParam(methodDoc: MethodDoc, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {
+fun MethodDocHelper.addParam(methodDoc: MethodDoc, paramName: String, value: Any?, required: Boolean, desc: String?) {
     val param = Param()
     param.name = paramName
-    param.value = defaultVal
+    param.value = value
     param.required = required
     param.desc = desc
     this.addParam(methodDoc, param)
