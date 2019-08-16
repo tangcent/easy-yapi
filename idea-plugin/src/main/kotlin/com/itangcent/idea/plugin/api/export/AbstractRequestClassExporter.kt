@@ -29,8 +29,9 @@ import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
 abstract class AbstractRequestClassExporter : ClassExporter, Worker {
-    override fun docType(): KClass<*> {
-        return Request::class
+
+    override fun support(docType: KClass<*>): Boolean {
+        return docType == Request::class
     }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
@@ -77,16 +78,16 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     @Inject
     protected var actionContext: ActionContext? = null
 
-    override fun export(cls: Any, docHandle: DocHandle) {
-        if (cls !is PsiClass) return
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
+        if (cls !is PsiClass) return false
         actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
             when {
-                !hasApi(cls) -> return
+                !hasApi(cls) -> return false
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
-                    return
+                    return true
                 }
                 else -> {
                     logger!!.info("search api from:${cls.qualifiedName}")
@@ -107,6 +108,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         } finally {
             statusRecorder.endWork()
         }
+        return true
     }
 
     protected abstract fun processClass(cls: PsiClass, kv: KV<String, Any?>)

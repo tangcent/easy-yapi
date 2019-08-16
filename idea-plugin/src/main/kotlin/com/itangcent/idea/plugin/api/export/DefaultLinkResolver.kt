@@ -1,11 +1,13 @@
 package com.itangcent.idea.plugin.api.export
 
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.DocCommentUtils
 
+@Singleton
 open class DefaultLinkResolver : LinkResolver {
     override fun linkToClass(linkClass: Any): String? {
         if (linkClass !is PsiClass) {

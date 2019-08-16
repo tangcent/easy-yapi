@@ -5,12 +5,14 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
-import com.itangcent.idea.plugin.api.export.RequestHelper
+import com.itangcent.common.model.Doc
+import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -39,7 +41,7 @@ class MarkdownFormatter {
     private val moduleHelper: ModuleHelper? = null
 
 
-    fun parseRequests(requests: MutableList<Request>): String {
+    fun parseRequests(requests: MutableList<Doc>): String {
         val sb = StringBuilder()
         val groupedRequest = groupRequests(requests)
         parseApi(groupedRequest, 1) { sb.append(it) }
@@ -47,11 +49,11 @@ class MarkdownFormatter {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun groupRequests(requests: MutableList<Request>): Any {
+    private fun groupRequests(docs: MutableList<Doc>): Any {
 
         //group by class into: {class:requests}
         val clsGroupedMap: HashMap<Any, ArrayList<Any?>> = HashMap()
-        requests.forEach { request ->
+        docs.forEach { request ->
             val resource = request.resource?.let { findResourceClass(it) } ?: NULL_RESOURCE
             clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
                     .add(request)
@@ -74,7 +76,6 @@ class MarkdownFormatter {
                     .add(wrapInfo(cls, items))
         }
 
-
         //only one module
         if (moduleGroupedMap.size == 1) {
             moduleGroupedMap.entries.first()
@@ -93,10 +94,10 @@ class MarkdownFormatter {
     }
 
     private fun parseApi(info: Any, deep: Int, handle: (String) -> Unit) {
-        if (info is Request) {
-            parseRequest(info, deep, handle)
-        } else if (info is Map<*, *>) {
-            parseInfo(info, deep, handle)
+        when (info) {
+            is Request -> parseRequest(info, deep, handle)
+            is MethodDoc -> parseMethodDoc(info, deep, handle)
+            is Map<*, *> -> parseInfo(info, deep, handle)
         }
     }
 
@@ -115,6 +116,29 @@ class MarkdownFormatter {
                     parseApi(it, deep + 1, handle)
                     handle("\n\n")
                 }
+    }
+
+    private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, handle: (String) -> Unit) {
+
+        handle("---\n")
+        handle("${hN(deep)} ${methodDoc.name}\n\n")
+        handle("<a id=${methodDoc.name}> </a>\n\n")
+
+        if (!methodDoc.desc.isNullOrBlank()) {
+            handle("**Desc：**\n\n")
+            handle("<p>${methodDoc.desc}</p>\n\n")
+        }
+
+        handle("\n**Params：**\n\n")
+        handle("| name  |  type  |  desc  |\n")
+        handle("| ------------ | ------------ | ------------ |\n")
+        methodDoc.params?.forEach { parseBody(0, it.name ?: "", it.desc ?: "", it.value, handle) }
+
+        handle("\n**Return：**\n\n")
+        handle("| name  |  type  |  desc  |\n")
+        handle("| ------------ | ------------ | ------------ |\n")
+        methodDoc.ret?.let { parseBody(0, "", "", it, handle) }
+
     }
 
     private fun parseRequest(request: Request, deep: Int, handle: (String) -> Unit) {
@@ -276,7 +300,7 @@ class MarkdownFormatter {
 
     private fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
-            val attr = findAttrOfClass(resource, requestHelper!!)
+            val attr = findAttrOfClass(resource)
             if (attr.isNullOrBlank()) {
                 info[NAME] = resource.name!!
                 info[DESC] = "exported from module:${resource.qualifiedName}"
@@ -304,7 +328,7 @@ class MarkdownFormatter {
         }
     }
 
-    private fun findAttrOfClass(cls: PsiClass, requestHelper: RequestHelper): String? {
+    private fun findAttrOfClass(cls: PsiClass): String? {
         val docComment = actionContext!!.callInReadUI { cls.docComment }
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {

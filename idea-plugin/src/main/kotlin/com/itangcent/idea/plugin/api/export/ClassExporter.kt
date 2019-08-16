@@ -6,12 +6,12 @@ import com.itangcent.common.model.Request
 import kotlin.reflect.KClass
 
 interface ClassExporter {
-    fun export(cls: Any, docHandle: DocHandle)
+    fun export(cls: Any, docHandle: DocHandle): Boolean
 
     /**
      * the document type which be generate
      */
-    fun docType(): KClass<*>
+    fun support(docType: KClass<*>): Boolean
 }
 
 typealias DocHandle = (Doc) -> Unit

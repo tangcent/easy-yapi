@@ -4,6 +4,7 @@ abstract class Extensible {
 
     private var ext: LinkedHashMap<String, Any?>? = null
 
+    @Suppress("UNCHECKED_CAST")
     fun <T> getExt(attr: String): T? {
         return ext?.get(attr) as T?
     }

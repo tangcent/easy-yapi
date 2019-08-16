@@ -22,8 +22,9 @@ import kotlin.reflect.KClass
  * only parse name
  */
 class SimpleRequestClassExporter : ClassExporter, Worker {
-    override fun docType(): KClass<*> {
-        return Request::class
+
+    override fun support(docType: KClass<*>): Boolean {
+        return docType == Request::class
     }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
@@ -57,16 +58,16 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
     @Inject
     private var actionContext: ActionContext? = null
 
-    override fun export(cls: Any, docHandle: DocHandle) {
-        if (cls !is PsiClass) return
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
+        if (cls !is PsiClass) return false
         actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
             when {
-                !isCtrl(cls) -> return
+                !isCtrl(cls) -> return false
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
-                    return
+                    return true
                 }
                 else -> {
                     logger!!.info("search api from:${cls.qualifiedName}")
@@ -81,6 +82,7 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
         } finally {
             statusRecorder.endWork()
         }
+        return true
     }
 
     private fun isCtrl(psiClass: PsiClass): Boolean {

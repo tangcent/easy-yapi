@@ -22,8 +22,9 @@ import com.itangcent.intellij.util.traceError
 import kotlin.reflect.KClass
 
 class CachedRequestClassExporter : ClassExporter, Worker {
-    override fun docType(): KClass<*> {
-        return delegateClassExporter!!.docType()
+
+    override fun support(docType: KClass<*>): Boolean {
+        return delegateClassExporter?.support(docType) ?: false
     }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
@@ -70,11 +71,10 @@ class CachedRequestClassExporter : ClassExporter, Worker {
     //no use cache,no read,no write
     private var disabled: Boolean = false
 
-    override fun export(cls: Any, docHandle: DocHandle) {
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
 
         if (disabled || cls !is PsiClass) {
-            delegateClassExporter!!.export(cls, docHandle)
-            return
+            return delegateClassExporter!!.export(cls, docHandle)
         }
 
         val psiFile = cls.containingFile
@@ -163,6 +163,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                 statusRecorder.endWork()
             }
         }
+        return true
     }
 
     private fun readApiFromCache(cls: Any, fileApiCache: FileApiCache, requestHandle: DocHandle) {
