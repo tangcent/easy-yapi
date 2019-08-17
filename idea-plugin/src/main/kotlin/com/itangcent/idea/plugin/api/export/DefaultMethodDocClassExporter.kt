@@ -168,7 +168,7 @@ class DefaultMethodDocClassExporter : ClassExporter, Worker {
         }
 
         readMethodDoc(method)?.let {
-            methodDocHelper!!.appendDesc(methodDoc, docParseHelper.resolveLinkInAttr(it, method))
+            methodDocHelper.appendDesc(methodDoc, docParseHelper.resolveLinkInAttr(it, method))
         }
 
     }

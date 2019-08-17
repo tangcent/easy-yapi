@@ -23,11 +23,13 @@ class SuvApiExportDialog : JDialog() {
     private var channelComboBox: JComboBox<*>? = null
 
     private var apiList: JList<*>? = null
-    private var requestList: List<*>? = null
+    private var docList: List<*>? = null
 
     private var selectAllCheckBox: JBCheckBox? = null
 
     private var apisHandle: ((Any?, List<*>) -> Unit)? = null
+
+    private var onChannelChanged: ((Any?) -> Unit)? = null
 
     @Inject
     private val logger: Logger? = null
@@ -82,18 +84,22 @@ class SuvApiExportDialog : JDialog() {
         selectAllCheckBox!!.addChangeListener {
             onSelectedAll()
         }
+
+        channelComboBox!!.addActionListener {
+            onChannelChanged?.invoke(channelComboBox?.selectedItem)
+        }
     }
 
     private fun onSelectedAll() {
         if (selectAllCheckBox!!.isSelected) {
-            apiList!!.selectionModel!!.addSelectionInterval(0, requestList!!.size)
+            apiList!!.selectionModel!!.addSelectionInterval(0, docList!!.size)
         } else {
             apiList!!.selectionModel!!.clearSelection()
         }
     }
 
     fun updateRequestList(requestList: List<*>) {
-        this.requestList = requestList
+        this.docList = requestList
         this.apiList!!.model = DefaultComboBoxModel(requestList.toTypedArray())
 
         this.selectAllCheckBox!!.isSelected = true
@@ -110,10 +116,16 @@ class SuvApiExportDialog : JDialog() {
             channels.firstOrNull { it.toString() == lastUsedChannel }
                     ?.let { this.channelComboBox!!.model.selectedItem = it }
         }
+
+        onChannelChanged?.let { it(this.channelComboBox?.selectedItem) }
     }
 
     fun setApisHandle(apisHandle: (Any?, List<*>) -> Unit) {
         this.apisHandle = apisHandle
+    }
+
+    fun setOnChannelChanged(onChannelChanged: ((Any?) -> Unit)) {
+        this.onChannelChanged = onChannelChanged
     }
 
     @PostConstruct

@@ -29,8 +29,6 @@ class SimpleRequestClassExporter : ClassExporter, Worker {
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
 
-    constructor()
-
     override fun status(): WorkerStatus {
         return statusRecorder.status()
     }

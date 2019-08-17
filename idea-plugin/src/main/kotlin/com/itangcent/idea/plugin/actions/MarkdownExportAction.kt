@@ -25,7 +25,6 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-//        builder.bind(Array<Any>::class, "AVAILABLE_CLASS_EXPORTER") {}
         builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
 
         //always not read api from cache
