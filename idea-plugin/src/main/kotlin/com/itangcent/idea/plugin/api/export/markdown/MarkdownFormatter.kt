@@ -32,14 +32,10 @@ class MarkdownFormatter {
     private val actionContext: ActionContext? = null
 
     @Inject
-    private val requestHelper: RequestHelper? = null
-
-    @Inject
     private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
     private val moduleHelper: ModuleHelper? = null
-
 
     fun parseRequests(requests: MutableList<Doc>): String {
         val sb = StringBuilder()
@@ -130,14 +126,22 @@ class MarkdownFormatter {
         }
 
         handle("\n**Params：**\n\n")
-        handle("| name  |  type  |  desc  |\n")
-        handle("| ------------ | ------------ | ------------ |\n")
-        methodDoc.params?.forEach { parseBody(0, it.name ?: "", it.desc ?: "", it.value, handle) }
+        if (methodDoc.params.isNullOrEmpty()) {
+            handle("Non-Parameter\n")
+        } else {
+            handle("| name  |  type  |  desc  |\n")
+            handle("| ------------ | ------------ | ------------ |\n")
+            methodDoc.params?.forEach { parseBody(1, it.name ?: "", it.desc ?: "", it.value, handle) }
+        }
 
         handle("\n**Return：**\n\n")
-        handle("| name  |  type  |  desc  |\n")
-        handle("| ------------ | ------------ | ------------ |\n")
-        methodDoc.ret?.let { parseBody(0, "", "", it, handle) }
+        if (methodDoc.ret == null) {
+            handle("Non-Return\n")
+        } else {
+            handle("| name  |  type  |  desc  |\n")
+            handle("| ------------ | ------------ | ------------ |\n")
+            methodDoc.ret?.let { parseBody(0, "", "", it, handle) }
+        }
 
     }
 

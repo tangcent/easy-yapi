@@ -252,6 +252,7 @@ class DefaultMethodDocClassExporter : ClassExporter, Worker {
         cls.allMethods
                 .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
+                .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
     }
