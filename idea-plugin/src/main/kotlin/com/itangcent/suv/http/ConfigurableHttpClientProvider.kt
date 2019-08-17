@@ -37,7 +37,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
         val httpConfig = HttpConfig()
 
         settingBinder?.read()?.let { setting ->
-            setting.httpTimeOut?.let { httpConfig.timeOut = it }
+            httpConfig.timeOut = setting.httpTimeOut
         }
 
 
@@ -59,6 +59,6 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
     }
 
     companion object {
-        const val defaultHttpTimeOut:Int = 10
+        const val defaultHttpTimeOut: Int = 10
     }
 }

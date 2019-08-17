@@ -30,7 +30,7 @@ import kotlin.reflect.KClass
 class DefaultMethodDocClassExporter : ClassExporter, Worker {
 
     override fun support(docType: KClass<*>): Boolean {
-        return docType == MethodDoc::class
+        return docType == MethodDoc::class && methodDocEnable()
     }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
@@ -78,6 +78,9 @@ class DefaultMethodDocClassExporter : ClassExporter, Worker {
     protected var actionContext: ActionContext? = null
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
+        if (!methodDocEnable()) {
+            return false
+        }
         if (cls !is PsiClass) return false
         actionContext!!.checkStatus()
         statusRecorder.newWork()
@@ -296,16 +299,20 @@ class DefaultMethodDocClassExporter : ClassExporter, Worker {
         }
     }
 
+    private fun methodDocEnable(): Boolean {
+        return settingBinder!!.read().methodDocEnable
+    }
+
     private fun readGetter(): Boolean {
-        return settingBinder!!.read().readGetter ?: false
+        return settingBinder!!.read().readGetter
     }
 
     private fun needInfer(): Boolean {
-        return settingBinder!!.read().inferEnable ?: false
+        return settingBinder!!.read().inferEnable
     }
 
     private fun inferMaxDeep(): Int {
-        return settingBinder!!.read().inferMaxDeep ?: 4
+        return settingBinder!!.read().inferMaxDeep
     }
 
 }

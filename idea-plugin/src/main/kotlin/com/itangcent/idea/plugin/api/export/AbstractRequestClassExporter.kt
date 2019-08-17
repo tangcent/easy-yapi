@@ -162,7 +162,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
 
         readMethodDoc(method)?.let {
-            requestHelper!!.appendDesc(request, docParseHelper.resolveLinkInAttr(it, method))
+            requestHelper.appendDesc(request, docParseHelper.resolveLinkInAttr(it, method))
         }
 
     }
@@ -412,14 +412,14 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     private fun readGetter(): Boolean {
-        return settingBinder!!.read().readGetter ?: false
+        return settingBinder!!.read().readGetter
     }
 
     private fun needInfer(): Boolean {
-        return settingBinder!!.read().inferEnable ?: false
+        return settingBinder!!.read().inferEnable
     }
 
     private fun inferMaxDeep(): Int {
-        return settingBinder!!.read().inferMaxDeep ?: 4
+        return settingBinder!!.read().inferMaxDeep
     }
 }
