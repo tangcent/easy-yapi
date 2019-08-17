@@ -4,10 +4,10 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.RequestHelper
-import com.itangcent.common.model.Request
+import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.Worker
+import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -40,7 +40,7 @@ class MarkdownApiExporter {
     fun export() {
 
         logger!!.info("Start find apis...")
-        val requests: MutableList<Request> = Collections.synchronizedList(ArrayList<Request>())
+        val docs: MutableList<Doc> = Collections.synchronizedList(ArrayList<Doc>())
 
         SelectedHelper.Builder()
                 .dirFilter { dir, callBack ->
@@ -65,20 +65,20 @@ class MarkdownApiExporter {
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
                     actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestHelper!!) { request -> requests.add(request) }
+                    classExporter!!.export(it) { doc -> docs.add(doc) }
                 }
                 .onCompleted {
                     try {
                         if (classExporter is Worker) {
                             classExporter.waitCompleted()
                         }
-                        if (requests.isEmpty()) {
+                        if (docs.isEmpty()) {
                             logger.info("No api be found to export!")
                             return@onCompleted
                         }
                         logger.info("Start parse apis")
-                        val apiInfo = markdownFormatter!!.parseRequests(requests)
-                        requests.clear()
+                        val apiInfo = markdownFormatter!!.parseRequests(docs)
+                        docs.clear()
                         actionContext!!.runAsync {
                             try {
                                 fileSaveHelper!!.saveOrCopy(apiInfo, {

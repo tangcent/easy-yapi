@@ -1,26 +1,18 @@
 package com.itangcent.common.model
 
-import java.io.Serializable
-
-open class Request : Extensible(), Serializable {
-
-    var resource: Any? = null
-
-    var name: String? = null
+open class Request : Doc() {
 
     var path: String? = null
 
     var method: String? = null
 
-    var desc: String? = null
+    var headers: MutableList<Header>? = null
 
-    var headers: ArrayList<Header>? = null
+    var paths: MutableList<PathParam>? = null
 
-    var paths: ArrayList<PathParam>? = null
+    var querys: MutableList<Param>? = null
 
-    var querys: ArrayList<Param>? = null
-
-    var formParams: ArrayList<FormParam>? = null
+    var formParams: MutableList<FormParam>? = null
 
     /**
      * raw/json/xml
@@ -29,7 +21,7 @@ open class Request : Extensible(), Serializable {
 
     var body: Any? = null
 
-    var response: ArrayList<Response>? = null
+    var response: MutableList<Response>? = null
 }
 
 fun Request.getContentType(): String? {
@@ -44,5 +36,3 @@ fun Request.getContentType(): String? {
 fun Request.hasBody(): Boolean {
     return this.method != null && this.method != "GET"
 }
-
-typealias RequestHandle = (Request) -> Unit
