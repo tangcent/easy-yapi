@@ -5,13 +5,15 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.util.PsiTypesUtil
 
 //Everything contained here will be moved to `intellij-kotlin` in the future
+@Deprecated("use PsiClassUtils", ReplaceWith("com.itangcent.intellij.psi.PsiClassUtils"))
 object PsiHelper {
 
+    @Deprecated("use PsiClassUtils", ReplaceWith("com.itangcent.intellij.psi.PsiClassUtils.isInterface"))
     fun isInterface(psiType: PsiType): Boolean {
-
         return PsiTypesUtil.getPsiClass(psiType)?.isInterface ?: false
     }
 
+    @Deprecated("use PsiClassUtils", ReplaceWith("com.itangcent.intellij.psi.PsiClassUtils.hasImplement"))
     fun hasImplement(psiClass: PsiClass?, interCls: PsiClass?): Boolean {
         if (psiClass == null || interCls == null) {
             return false
