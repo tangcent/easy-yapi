@@ -20,7 +20,6 @@ import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
-import com.itangcent.intellij.util.PsiHelper
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
@@ -124,7 +123,21 @@ class DefaultMethodDocClassExporter : ClassExporter, Worker {
     }
 
     open protected fun shouldIgnore(psiElement: PsiElement): Boolean {
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
+        if (ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) == true) {
+            return true
+        }
+
+        if (psiElement is PsiClass) {
+            if (ruleComputer.computer(ClassExportRuleKeys.CLASS_FILTER, psiElement) == false) {
+                return true
+            }
+        } else {
+            if (ruleComputer.computer(ClassExportRuleKeys.METHOD_FILTER, psiElement) == false) {
+                return true
+            }
+        }
+
+        return false
     }
 
     private fun exportMethodApi(method: PsiMethod, kv: KV<String, Any?>,
@@ -288,7 +301,7 @@ class DefaultMethodDocClassExporter : ClassExporter, Worker {
 
         return when {
             needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
-                    PsiHelper.isInterface(psiType)) -> {
+                    PsiClassUtils.isInterface(psiType)) -> {
                 methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
                 methodReturnInferHelper.inferReturn(method)

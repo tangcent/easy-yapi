@@ -1,7 +1,5 @@
 package com.itangcent.common.model
 
-import java.util.*
-
 
 class MethodDoc : Doc() {
 

@@ -10,6 +10,14 @@ object ClassExportRuleKeys {
     val IGNORE: RuleKey<Boolean> = SimpleRuleKey("ignore", BooleanRule::class,
             BooleanRuleMode.ANY)
 
+    //filter class for methodDoc(rpc)
+    val CLASS_FILTER: RuleKey<Boolean> = SimpleRuleKey("mdoc.class.filter", BooleanRule::class,
+            BooleanRuleMode.ANY)
+
+    //filter method for methodDoc(rpc)
+    val METHOD_FILTER: RuleKey<Boolean> = SimpleRuleKey("mdoc.method.filter", BooleanRule::class,
+            BooleanRuleMode.ANY)
+
     val METHOD_DOC: RuleKey<String> = SimpleRuleKey("doc.method", StringRule::class,
             StringRuleMode.MERGE_DISTINCT)
 

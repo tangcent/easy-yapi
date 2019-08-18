@@ -111,7 +111,22 @@ class SimpleMethodDocClassExporter : ClassExporter, Worker {
     }
 
     open protected fun shouldIgnore(psiElement: PsiElement): Boolean {
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
+
+        if (ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) == true) {
+            return true
+        }
+
+        if (psiElement is PsiClass) {
+            if (ruleComputer.computer(ClassExportRuleKeys.CLASS_FILTER, psiElement) == false) {
+                return true
+            }
+        } else {
+            if (ruleComputer.computer(ClassExportRuleKeys.METHOD_FILTER, psiElement) == false) {
+                return true
+            }
+        }
+
+        return false
     }
 
     private fun exportMethodApi(method: PsiMethod, kv: KV<String, Any?>,
