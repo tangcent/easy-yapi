@@ -10,11 +10,11 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.*
 import com.itangcent.common.concurrent.AQSCountLatch
 import com.itangcent.common.concurrent.CountLatch
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.ResourceHelper
+import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
@@ -74,9 +74,6 @@ class YapiDashboardDialog : JDialog() {
 
     @Inject
     private val classExporter: ClassExporter? = null
-
-    @Inject
-    private val parseHandle: RequestHelper? = null
 
     @Inject
     private val resourceHelper: ResourceHelper? = null
@@ -304,9 +301,9 @@ class YapiDashboardDialog : JDialog() {
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
 
                             if (disposed) return@traversal
-                            classExporter!!.export(psiClass, parseHandle!!) { request ->
-                                if (disposed) return@export
-                                if (request.resource == null) return@export
+                            classExporter!!.export(psiClass, requestOnly { request ->
+                                if (disposed) return@requestOnly
+                                if (request.resource == null) return@requestOnly
                                 anyFound = true
                                 val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
 
@@ -324,7 +321,7 @@ class YapiDashboardDialog : JDialog() {
                                 apiTreeNode.allowsChildren = false
                                 clsTreeNode.add(apiTreeNode)
                                 (clsTreeNode.userObject as ClassProjectNodeData).addSubProjectNodeData(apiProjectNodeData)
-                            }
+                            })
                         }
                     }
                 } finally {

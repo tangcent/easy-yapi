@@ -4,7 +4,7 @@ import java.io.Serializable
 
 open class Response : Extensible(), Serializable {
 
-    var headers: ArrayList<Header>? = null
+    var headers: MutableList<Header>? = null
 
     /**
      * raw/json/xml

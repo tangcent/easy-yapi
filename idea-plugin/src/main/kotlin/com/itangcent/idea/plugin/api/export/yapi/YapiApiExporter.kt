@@ -6,6 +6,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
+import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 
@@ -62,7 +63,7 @@ class YapiApiExporter : AbstractYapiApiExporter() {
                 }
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
-                    classExporter!!.export(it, parseHandle!!) { request -> exportRequest(request) }
+                    classExporter!!.export(it, requestOnly { request -> exportRequest(request) })
                 }
                 .onCompleted {
                     if (classExporter is Worker) {

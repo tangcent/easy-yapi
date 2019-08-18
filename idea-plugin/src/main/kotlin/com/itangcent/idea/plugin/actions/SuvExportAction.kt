@@ -4,22 +4,15 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.idea.plugin.DataEventCollector
-import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
-import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
-import com.itangcent.idea.plugin.api.export.SimpleClassExporter
+import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
-import com.itangcent.idea.plugin.script.GroovyActionExtLoader
-import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.logger.Logger
 
 class SuvExportAction : ApiExportAction("Export Api") {
 
@@ -42,11 +35,13 @@ class SuvExportAction : ApiExportAction("Export Api") {
         val copyDataEventCollector = dataEventCollector
         builder.bind(DataContext::class) { it.toInstance(copyDataEventCollector) }
 
-        builder.bind(ClassExporter::class) { it.with(SimpleClassExporter::class).singleton() }
+//        builder.bind(ClassExporter::class) { it.with(SimpleRequestClassExporter::class).singleton() }
+
+        builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
+        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SimpleRequestClassExporter::class, SimpleMethodDocClassExporter::class))
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-        builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
 
         builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
 

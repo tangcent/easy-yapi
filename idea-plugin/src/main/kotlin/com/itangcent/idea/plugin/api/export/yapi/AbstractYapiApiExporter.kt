@@ -3,10 +3,9 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.ResourceHelper
+import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
@@ -29,9 +28,6 @@ open class AbstractYapiApiExporter {
 
     @Inject
     protected val classExporter: ClassExporter? = null
-
-    @Inject
-    protected val parseHandle: RequestHelper? = null
 
     @Inject
     protected val moduleHelper: ModuleHelper? = null
@@ -134,7 +130,7 @@ open class AbstractYapiApiExporter {
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle!!)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, cls)
         }
     }
 

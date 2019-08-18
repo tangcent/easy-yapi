@@ -435,7 +435,7 @@ internal class ApiCallDialog : JDialog() {
     }
 
     interface FormTableBinder {
-        fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?)
+        fun refreshTable(formTable: JBTable, formParams: MutableList<FormParam>?)
 
         fun readForm(formTable: JBTable, onlyAvailable: Boolean): ArrayList<FormParam>?
 
@@ -449,7 +449,7 @@ internal class ApiCallDialog : JDialog() {
     }
 
     class DisabledFormTableBinder : FormTableBinder {
-        override fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?) {
+        override fun refreshTable(formTable: JBTable, formParams: MutableList<FormParam>?) {
             formTable.removeAll()
             (formTable.model as DefaultTableModel).dataVector.clear()
             formTable.repaint()
@@ -547,7 +547,7 @@ internal class ApiCallDialog : JDialog() {
 
     class NoTypedFormTableBinder : AbstractFormTableBinder() {
 
-        override fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?) {
+        override fun refreshTable(formTable: JBTable, formParams: MutableList<FormParam>?) {
             formTable.removeAll()
 
             (formTable.model as DefaultTableModel).columnCount = 0
@@ -601,7 +601,7 @@ internal class ApiCallDialog : JDialog() {
             return tableColumn
         }
 
-        override fun refreshTable(formTable: JBTable, formParams: ArrayList<FormParam>?) {
+        override fun refreshTable(formTable: JBTable, formParams: MutableList<FormParam>?) {
             formTable.removeAll()
 
             (formTable.model as DefaultTableModel).columnCount = 0

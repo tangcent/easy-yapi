@@ -8,6 +8,7 @@ object KVUtils {
      * 2.options
      * 3....
      */
+    @Suppress("UNCHECKED_CAST")
     fun getUltimateComment(comment: Map<*, *>?, field: Any?): String {
         if (comment == null || field == null) return ""
         var desc = comment[field] as String?
