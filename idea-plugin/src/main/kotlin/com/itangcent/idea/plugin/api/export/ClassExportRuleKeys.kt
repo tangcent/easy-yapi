@@ -18,6 +18,12 @@ object ClassExportRuleKeys {
     val METHOD_FILTER: RuleKey<Boolean> = SimpleRuleKey("mdoc.method.filter", BooleanRule::class,
             BooleanRuleMode.ANY)
 
+    val METHOD_DOC_PATH: RuleKey<String> = SimpleRuleKey("mdoc.method.path", StringRule::class,
+            StringRuleMode.SINGLE)
+
+    val METHOD_DOC_METHOD: RuleKey<String> = SimpleRuleKey("mdoc.method.http.method", StringRule::class,
+            StringRuleMode.SINGLE)
+
     val METHOD_DOC: RuleKey<String> = SimpleRuleKey("doc.method", StringRule::class,
             StringRuleMode.MERGE_DISTINCT)
 

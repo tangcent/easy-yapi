@@ -3,10 +3,7 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
-import com.itangcent.idea.plugin.api.export.DocParseHelper
-import com.itangcent.idea.plugin.api.export.LinkResolver
+import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
@@ -37,7 +34,9 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
-        builder.bind(ClassExporter::class) { it.with(YapiSpringClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
+        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
+
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

@@ -10,11 +10,12 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.*
 import com.itangcent.common.concurrent.AQSCountLatch
 import com.itangcent.common.concurrent.CountLatch
+import com.itangcent.common.model.Doc
+import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
@@ -301,11 +302,11 @@ class YapiDashboardDialog : JDialog() {
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
 
                             if (disposed) return@traversal
-                            classExporter!!.export(psiClass, requestOnly { request ->
-                                if (disposed) return@requestOnly
-                                if (request.resource == null) return@requestOnly
+                            classExporter!!.export(psiClass) { doc ->
+                                if (disposed) return@export
+                                if (doc.resource == null) return@export
                                 anyFound = true
-                                val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
+                                val resourceClass = resourceHelper!!.findResourceClass(doc.resource!!)
 
                                 val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
                                     val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper.findAttrOfClass(resourceClass))
@@ -315,13 +316,13 @@ class YapiDashboardDialog : JDialog() {
                                     return@computeIfAbsent node
                                 }
 
-                                val apiProjectNodeData = ApiProjectNodeData(this, request)
+                                val apiProjectNodeData = ApiProjectNodeData(this, doc)
 
                                 val apiTreeNode = DefaultMutableTreeNode(apiProjectNodeData)
                                 apiTreeNode.allowsChildren = false
                                 clsTreeNode.add(apiTreeNode)
                                 (clsTreeNode.userObject as ClassProjectNodeData).addSubProjectNodeData(apiProjectNodeData)
-                            })
+                            }
                         }
                     }
                 } finally {
@@ -852,7 +853,10 @@ class YapiDashboardDialog : JDialog() {
 
     class ApiProjectNodeData : IconCustomized, Tooltipable {
         override fun toolTip(): String? {
-            return "${PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)}\n${request.method}:${request.path}"
+            return when (doc) {
+                is Request -> "${PsiClassUtils.fullNameOfMethod(doc.resource as PsiMethod)}\n${(doc as Request).method}:${(doc as Request).path}"
+                else -> "${PsiClassUtils.fullNameOfMethod(doc.resource as PsiMethod)}\n${(doc as MethodDoc).name}"
+            }
         }
 
         private val apiDashboardDialog: YapiDashboardDialog
@@ -861,18 +865,18 @@ class YapiDashboardDialog : JDialog() {
             return EasyIcons.Method
         }
 
-        var request: Request
+        var doc: Doc
 
-        constructor(apiDashboardDialog: YapiDashboardDialog, request: Request) {
-            this.request = request
+        constructor(apiDashboardDialog: YapiDashboardDialog, doc: Doc) {
+            this.doc = doc
             this.apiDashboardDialog = apiDashboardDialog
         }
 
         override fun toString(): String {
             if (this.apiDashboardDialog.projectMode == ProjectMode.Original) {
-                return (request.resource as PsiMethod).name
+                return (doc.resource as PsiMethod).name
             }
-            return request.name ?: "anonymous"
+            return doc.name ?: "anonymous"
 
         }
     }
@@ -1169,24 +1173,24 @@ class YapiDashboardDialog : JDialog() {
             return
         }
 
-        val requestHandle: (Request) -> Unit
-        requestHandle = if (cartId.isNullOrBlank()) {
-            { request -> yapiApiDashBoardExporter!!.exportRequest(request, privateToken) }
+        val docHandle: (Doc) -> Unit
+        docHandle = if (cartId.isNullOrBlank()) {
+            { doc -> yapiApiDashBoardExporter!!.exportDoc(doc, privateToken) }
         } else {
-            { request -> yapiApiDashBoardExporter!!.exportRequest(request, privateToken, cartId) }
+            { doc -> yapiApiDashBoardExporter!!.exportDoc(doc, privateToken, cartId) }
         }
 
-        export(fromProjectData, requestHandle)
+        export(fromProjectData, docHandle)
         logger!!.info("exported success")
     }
 
-    private fun export(fromProjectData: Any, requestHandle: (Request) -> Unit) {
+    private fun export(fromProjectData: Any, docHandle: (Doc) -> Unit) {
         if (fromProjectData is ApiProjectNodeData) {
-            requestHandle(fromProjectData.request)
+            docHandle(fromProjectData.doc)
         } else if (fromProjectData is ProjectNodeData<*>) {
             fromProjectData.getSubProjectNodeData()
                     ?.filter { it != null }
-                    ?.forEach { export(it!!, requestHandle) }
+                    ?.forEach { export(it!!, docHandle) }
         }
     }
 

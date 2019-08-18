@@ -1,17 +1,23 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.model.Doc
+import com.itangcent.common.model.MethodDoc
+import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KVUtils
+import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.intellij.config.ConfigReader
-import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
 import com.itangcent.intellij.util.forEachValid
@@ -25,13 +31,146 @@ class YapiFormatter {
     private val logger: Logger? = null
 
     @Inject
-    private val ruleParser: RuleParser? = null
+    private val ruleComputer: RuleComputer? = null
 
     @Inject
     private val configReader: ConfigReader? = null
 
     @Inject
     private val actionContext: ActionContext? = null
+
+    fun doc2Item(doc: Doc): HashMap<String, Any?> {
+        if (doc is Request) {
+            return request2Item(doc)
+        } else if (doc is MethodDoc) {
+            return methodDoc2Item(doc)
+        }
+        throw IllegalArgumentException("unknown doc")
+    }
+
+    //region methodDoc----------------------------------------------------------
+
+    fun methodDoc2Item(methodDoc: MethodDoc): HashMap<String, Any?> {
+
+        val item: HashMap<String, Any?> = HashMap()
+
+        item["edit_uid"] = 0
+        item["status"] = methodDoc.getStatus()
+        item["type"] = "static"
+        item["req_body_is_json_schema"] = false
+        item["res_body_is_json_schema"] = true
+        item["api_opened"] = false
+        item["index"] = 0
+        item["tag"] = methodDoc.getTags()
+
+        item["title"] = methodDoc.name
+
+        appendDescToApiItem(item, methodDoc.desc)
+
+        val queryPath: HashMap<String, Any?> = HashMap()
+        item["query_path"] = queryPath
+        queryPath["params"] = EMPTY_PARAMS
+
+        val path = actionContext!!.callInReadUI { formatPath(getPathOfMethodDoc(methodDoc)) }
+        queryPath["path"] = path
+        item["path"] = path
+
+        addTimeAttr(item)
+        item["__v"] = 0
+
+        item["method"] = actionContext.callInReadUI { getHttpMethodOfMethodDoc(methodDoc) }
+
+        val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
+        item["req_headers"] = headers
+
+
+        item["req_query"] = emptyArray<Any>()
+
+        if (!methodDoc.params.isNullOrEmpty()) {
+            item["req_body_is_json_schema"] = true
+            item["req_body_type"] = "json"
+            item["req_body_form"] = EMPTY_ARR
+
+            //todo:need desc of body
+            item["req_body_other"] = parseParamsBySchema(methodDoc.params, "")
+        }
+
+        if (methodDoc.ret != null) {
+
+            item["res_body_type"] = "json"
+
+            if (methodDoc.resource is PsiMethod) {
+                item["res_body"] = parseBySchema(methodDoc.ret, findReturnOfMethod(methodDoc.resource as PsiMethod))
+            } else {
+                item["res_body"] = parseBySchema(methodDoc.ret, null)
+            }
+        } else {
+            item["res_body_type"] = "json"
+
+            item["res_body"] = ""
+        }
+
+        return item
+    }
+
+    private fun getPathOfMethodDoc(methodDoc: MethodDoc): String {
+        val path = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_PATH, methodDoc.resource as PsiElement)
+
+        if (!path.isNullOrEmpty()) {
+            return path
+        }
+
+        return PsiClassUtils.fullNameOfMethod(methodDoc.resource as PsiMethod).let {
+            Regex("[^a-zA-Z0-9-/_:.!]").replace(it, "/")
+        }
+    }
+
+    private fun getHttpMethodOfMethodDoc(methodDoc: MethodDoc): String {
+        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_METHOD, methodDoc.resource as PsiElement)
+                ?: "POST"
+    }
+
+    private fun parseParamsBySchema(params: MutableList<Param>?, rootDesc: String?): String? {
+        if (params == null) return null
+
+        val result: HashMap<String, Any?> = HashMap()
+
+        result["type"] = "object"
+        val properties: HashMap<String, Any?> = HashMap()
+        var requireds: LinkedList<String>? = null
+        for (param in params) {
+
+            val propertyInfo = parseObject(param.name, param.value)
+
+            if (param.desc != null) {
+                propertyInfo["description"] = param.desc
+            }
+            if (param.required == true) {
+                if (requireds == null) {
+                    requireds = LinkedList()
+                }
+                requireds.add(param.name!!)
+            }
+            properties[param.name!!] = propertyInfo
+        }
+
+        result["properties"] = properties
+        if (!requireds.isNullOrEmpty()) {
+            result["required"] = requireds.toTypedArray()
+        }
+
+        return toJson(result, rootDesc)
+    }
+    //endregion methodDoc----------------------------------------------------------
+
+
+    private fun toJson(result: HashMap<String, Any?>, rootDesc: String?): String {
+        result["\$schema"] = "http://json-schema.org/draft-04/schema#"
+        if (rootDesc != null) {
+            result["description"] = rootDesc
+        }
+        return GsonUtils.toJson(result)
+    }
 
     fun request2Item(request: Request): HashMap<String, Any?> {
 
@@ -62,7 +201,7 @@ class YapiFormatter {
 
         item["method"] = request.method
 
-        val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
+        val headers: MutableList<HashMap<String, Any?>> = LinkedList()
         item["req_headers"] = headers
         request.headers?.forEach {
             headers.add(KV.create<String, Any?>()
@@ -74,7 +213,7 @@ class YapiFormatter {
             )
         }
 
-        val queryList: ArrayList<HashMap<String, Any?>> = ArrayList()
+        val queryList: MutableList<HashMap<String, Any?>> = LinkedList()
         item["req_query"] = queryList
         request.querys?.forEach {
             queryList.add(KV.create<String, Any?>()
@@ -157,11 +296,7 @@ class YapiFormatter {
     private fun parseBySchema(typedObject: Any?, rootDesc: String?): String? {
         if (typedObject == null) return null
         val result = parseObject("", typedObject)
-        result["\$schema"] = "http://json-schema.org/draft-04/schema#"
-        if (rootDesc != null) {
-            result["description"] = rootDesc
-        }
-        return GsonUtils.toJson(result)
+        return toJson(result, rootDesc)
     }
 
     @Suppress("UNCHECKED_CAST")

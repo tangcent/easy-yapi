@@ -1,10 +1,11 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.itangcent.common.model.Doc
 import com.itangcent.common.model.Request
 import java.util.*
 
 
-fun Request.getStatus(): String {
+fun Doc.getStatus(): String {
     val status = this.getExt<String?>("status") ?: return "done"
 
     return when (status) {
@@ -13,17 +14,17 @@ fun Request.getStatus(): String {
     }
 }
 
-fun Request.setStatus(status: String?) {
+fun Doc.setStatus(status: String?) {
     if (!status.isNullOrBlank()) {
         this.setExt("status", status)
     }
 }
 
-fun Request.getTags(): List<String>? {
+fun Doc.getTags(): List<String>? {
     return this.getExt("tags") ?: EMPTY_TAGS
 }
 
-fun Request.setTags(tags: List<String>?) {
+fun Doc.setTags(tags: List<String>?) {
     if (!tags.isNullOrEmpty()) {
         this.setExt("tags", tags)
     }

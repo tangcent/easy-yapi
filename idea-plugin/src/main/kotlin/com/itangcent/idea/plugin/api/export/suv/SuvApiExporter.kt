@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
+import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
@@ -453,14 +454,12 @@ class SuvApiExporter {
             builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
 
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-            builder.bind(RequestHelper::class) { it.with(YapiDefaultRequestHelper::class).singleton() }
+            builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
-            builder.bind(ClassExporter::class) { it.with(YapiSpringClassExporter::class).singleton() }
-
-            //always not read api from cache
-            builder.bindInstance("class.exporter.read.cache", false)
+            builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
+            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
 
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
@@ -491,12 +490,11 @@ class SuvApiExporter {
             }
         }
 
-        override fun doExportRequests(requests: MutableList<Request>) {
-
+        override fun doExportDocs(docs: MutableList<Doc>) {
             val suvYapiApiExporter = actionContext!!.init(SuvYapiApiExporter())
 
             try {
-                requests.forEach { suvYapiApiExporter.exportRequest(it) }
+                docs.forEach { suvYapiApiExporter.exportDoc(it) }
             } catch (e: Exception) {
                 logger!!.error("Apis export failed")
                 logger!!.traceError(e)
@@ -548,8 +546,8 @@ class SuvApiExporter {
 
             private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
 
-            override fun exportRequest(request: Request, privateToken: String, cartId: String): Boolean {
-                if (super.exportRequest(request, privateToken, cartId)) {
+            override fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
+                if (super.exportDoc(doc, privateToken, cartId)) {
                     if (successExportedCarts.add(cartId)) {
                         logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
                     }
@@ -579,7 +577,6 @@ class SuvApiExporter {
 
             builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
             builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
-
 
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
@@ -634,7 +631,7 @@ class SuvApiExporter {
     companion object {
 
         private val EXPORTER_CHANNELS: List<*> = listOf(
-                ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi", Request::class),
+                ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi", Request::class, MethodDoc::class),
                 ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
                 ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class)
         )
