@@ -9,13 +9,9 @@ import com.itangcent.common.utils.Visional
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.ClassRuleKeys
-import com.itangcent.intellij.psi.DuckTypeHelper
-import com.itangcent.intellij.psi.JsonOption
-import com.itangcent.intellij.psi.PsiClassHelper
+import com.itangcent.intellij.psi.*
 import com.itangcent.intellij.util.KV
 import com.itangcent.intellij.util.Magics
-import com.itangcent.intellij.util.PsiHelper
 import com.itangcent.intellij.util.traceError
 import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
@@ -79,7 +75,7 @@ class MethodReturnInferHelper {
                 if (inferRet == CALL_FAILED) {
                     if (allowQuickCall(option)) {
                         val returnType = psiMethod.returnType
-                        if (returnType != null && !PsiHelper.isInterface(returnType)
+                        if (returnType != null && !PsiClassUtils.isInterface(returnType)
                                 && duckTypeHelper!!.isQualified(returnType, psiMethod)) {
                             return psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption)
                         }
@@ -523,7 +519,7 @@ class MethodReturnInferHelper {
                 return false
             }
 
-            return PsiHelper.hasImplement(method.containingClass, superMethod.containingClass)
+            return PsiClassUtils.hasImplement(method.containingClass, superMethod.containingClass)
 
         }
 
@@ -946,7 +942,7 @@ class MethodReturnInferHelper {
                     if (inits.add(variableName)) {
                         val variableType = psiElement.type
 
-                        if (!PsiHelper.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(variableType, psiElement)) {
+                        if (!PsiClassUtils.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(variableType, psiElement)) {
                             variable.addLazyAction {
                                 variable.setValue(methodReturnInferHelper.psiClassHelper!!.getTypeObject(variableType, psiElement, methodReturnInferHelper.jsonOption))
                             }

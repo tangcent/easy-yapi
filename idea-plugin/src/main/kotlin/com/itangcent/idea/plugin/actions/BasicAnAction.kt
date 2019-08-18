@@ -10,6 +10,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.actions.ActionEventDataContextAdaptor
 import com.itangcent.intellij.actions.KotlinAnAction
+import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -44,9 +45,9 @@ abstract class BasicAnAction : KotlinAnAction {
         val loggerBuffer: LoggerBuffer? = actionContext.getCache<LoggerBuffer>("LOGGER_BUF")
         loggerBuffer?.drainTo(actionContext.instance(Logger::class))
         val actionExtLoader: GroovyActionExtLoader? = actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
-        actionExtLoader?.let { actionExtLoader ->
-            actionContext.on("EventKey.ONCOMPLETED") {
-                actionExtLoader.close()
+        actionExtLoader?.let { extLoader ->
+            actionContext.on(EventKey.ONCOMPLETED) {
+                extLoader.close()
             }
         }
     }

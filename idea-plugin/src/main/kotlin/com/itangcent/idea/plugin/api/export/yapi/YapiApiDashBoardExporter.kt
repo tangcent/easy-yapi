@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.util.containers.ContainerUtil
-import com.itangcent.common.model.Request
+import com.itangcent.common.model.Doc
 
 
 class YapiApiDashBoardExporter : AbstractYapiApiExporter() {
@@ -63,14 +63,14 @@ class YapiApiDashBoardExporter : AbstractYapiApiExporter() {
         }
     }
 
-    fun exportRequest(request: Request, privateToken: String): Boolean {
-        val findResourceClass = resourceHelper!!.findResourceClass(request.resource!!) ?: return false
+    fun exportDoc(doc: Doc, privateToken: String): Boolean {
+        val findResourceClass = resourceHelper!!.findResourceClass(doc.resource!!) ?: return false
         val cartInfo = getCartForCls(findResourceClass, privateToken) ?: return false
-        return exportRequest(request, privateToken, cartInfo.cartId!!)
+        return exportDoc(doc, privateToken, cartInfo.cartId!!)
     }
 
-    override fun exportRequest(request: Request, privateToken: String, cartId: String): Boolean {
-        if (super.exportRequest(request, privateToken, cartId)) {
+    override fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
+        if (super.exportDoc(doc, privateToken, cartId)) {
             if (successExportedCarts.add(cartId)) {
                 logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
             }

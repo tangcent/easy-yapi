@@ -3,7 +3,9 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
 import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
+import com.itangcent.idea.plugin.api.export.LinkResolver
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -11,8 +13,7 @@ import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.DocCommentUtils
 import org.apache.commons.lang3.StringUtils
 
-class YapiDefaultRequestHelper : DefaultRequestHelper() {
-
+class YapiLinkResolver : DefaultLinkResolver() {
     @Inject
     private val yapiApiHelper: YapiApiHelper? = null
 

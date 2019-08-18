@@ -3,10 +3,7 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
-import com.itangcent.common.model.RequestHandle
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
@@ -19,11 +16,16 @@ import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
+import kotlin.reflect.KClass
 
 /**
  * only parse name
  */
-class SimpleClassExporter : ClassExporter, Worker {
+class SimpleRequestClassExporter : ClassExporter, Worker {
+
+    override fun support(docType: KClass<*>): Boolean {
+        return docType == Request::class
+    }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
 
@@ -46,27 +48,30 @@ class SimpleClassExporter : ClassExporter, Worker {
     private val docParseHelper: DocParseHelper? = null
 
     @Inject
+    protected val requestHelper: RequestHelper? = null
+
+    @Inject
     private val ruleComputer: RuleComputer? = null
 
     @Inject
     private var actionContext: ActionContext? = null
 
-    override fun export(cls: Any, requestHelper: RequestHelper, requestHandle: RequestHandle) {
-        if (cls !is PsiClass) return
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
+        if (cls !is PsiClass) return false
         actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
             when {
-                !isCtrl(cls) -> return
+                !isCtrl(cls) -> return false
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
-                    return
+                    return true
                 }
                 else -> {
                     logger!!.info("search api from:${cls.qualifiedName}")
 
                     foreachMethod(cls) { method ->
-                        exportMethodApi(method, requestHelper, requestHandle)
+                        exportMethodApi(method, docHandle)
                     }
                 }
             }
@@ -75,6 +80,7 @@ class SimpleClassExporter : ClassExporter, Worker {
         } finally {
             statusRecorder.endWork()
         }
+        return true
     }
 
     private fun isCtrl(psiClass: PsiClass): Boolean {
@@ -87,7 +93,7 @@ class SimpleClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
-    private fun exportMethodApi(method: PsiMethod, requestHelper: RequestHelper, requestHandle: RequestHandle) {
+    private fun exportMethodApi(method: PsiMethod, docHandle: DocHandle) {
 
         actionContext!!.checkStatus()
         //todo:support other web annotation
@@ -96,7 +102,7 @@ class SimpleClassExporter : ClassExporter, Worker {
         request.resource = method
 
         val attr: String?
-        val attrOfMethod = findAttrOfMethod(method, requestHelper)!!
+        val attrOfMethod = findAttrOfMethod(method)!!
         val lines = attrOfMethod.lines()
         attr = if (lines.size > 1) {//multi line
             lines.firstOrNull { it.isNotBlank() }
@@ -104,8 +110,8 @@ class SimpleClassExporter : ClassExporter, Worker {
             attrOfMethod
         }
 
-        requestHelper.setName(request, attr ?: method.name)
-        requestHandle(request)
+        requestHelper!!.setName(request, attr ?: method.name)
+        docHandle(request)
     }
 
     private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
@@ -114,13 +120,13 @@ class SimpleClassExporter : ClassExporter, Worker {
                 .firstOrNull { it != null }
     }
 
-    private fun findAttrOfMethod(method: PsiMethod, requestHelper: RequestHelper): String? {
+    private fun findAttrOfMethod(method: PsiMethod): String? {
         val docComment = method.docComment
 
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> method.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, method, requestHelper)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, method)
         }
     }
 
@@ -128,6 +134,7 @@ class SimpleClassExporter : ClassExporter, Worker {
         cls.allMethods
                 .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
+                .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
     }

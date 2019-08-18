@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.util.containers.ContainerUtil
-import com.itangcent.common.model.Request
+import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
@@ -62,7 +62,7 @@ class YapiApiExporter : AbstractYapiApiExporter() {
                 }
                 .fileFilter { file -> file.name.endsWith(".java") }
                 .classHandle {
-                    classExporter!!.export(it, parseHandle!!) { request -> exportRequest(request) }
+                    classExporter!!.export(it) { doc -> exportDoc(doc) }
                 }
                 .onCompleted {
                     if (classExporter is Worker) {
@@ -116,8 +116,8 @@ class YapiApiExporter : AbstractYapiApiExporter() {
 
     private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
 
-    override fun exportRequest(request: Request, privateToken: String, cartId: String): Boolean {
-        if (super.exportRequest(request, privateToken, cartId)) {
+    override fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
+        if (super.exportDoc(doc, privateToken, cartId)) {
             if (successExportedCarts.add(cartId)) {
                 logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
             }

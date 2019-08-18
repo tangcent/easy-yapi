@@ -1,7 +1,9 @@
-package com.itangcent.common.exporter
+package com.itangcent.idea.plugin.api.export
 
+import com.google.inject.ImplementedBy
 import com.itangcent.common.model.*
 
+@ImplementedBy(DefaultRequestHelper::class)
 interface RequestHelper {
 
     fun setName(request: Request, name: String)
@@ -39,12 +41,6 @@ interface RequestHelper {
 
     fun setResponseCode(response: Response, code: Int)
     //endregion
-
-    fun linkToClass(linkClass: Any): String?
-
-    fun linkToMethod(linkMethod: Any): String?
-
-    fun linkToProperty(linkField: Any): String?
 }
 
 //region utils------------------------------------------------------------------

@@ -1,14 +1,12 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.exporter.RequestHelper
 import com.itangcent.common.model.Request
-import com.itangcent.idea.plugin.api.export.SpringClassExporter
+import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
 
-class YapiSpringClassExporter : SpringClassExporter() {
-
-    override fun processCompleted(method: PsiMethod, request: Request, requestHelper: RequestHelper) {
-        super.processCompleted(method, request, requestHelper)
+class YapiSpringClassExporter : SpringRequestClassExporter() {
+    override fun processCompleted(method: PsiMethod, request: Request) {
+        super.processCompleted(method, request)
 
         val tags = ruleComputer!!.computer(YapiClassExportRuleKeys.TAG, method)
         if (!tags.isNullOrBlank()) {

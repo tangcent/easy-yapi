@@ -28,6 +28,8 @@ class EasyApiSettingGUI {
 
     private var logLevelComboBox: JComboBox<Logger.Level>? = null
 
+    private var methodDocEnableCheckBox: JCheckBox? = null
+
     private var globalCacheSizeLabel: JLabel? = null
 
     private var projectCacheSizeLabel: JLabel? = null
@@ -97,6 +99,9 @@ class EasyApiSettingGUI {
             clearProjectCache()
         }
 
+        autoComputer.bind(methodDocEnableCheckBox!!)
+                .mutual(this, "settings.methodDocEnable")
+
         autoComputer.bind(inferEnableCheckBox!!)
                 .mutual(this, "settings.inferEnable")
 
@@ -156,8 +161,7 @@ class EasyApiSettingGUI {
         autoComputer.value(this::settings, settings)
 
         this.logLevelComboBox!!.selectedItem =
-                settings.logLevel?.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
-                ?: ConfigurableLogger.CoarseLogLevel.LOW
+                settings.logLevel.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
     }
 
     fun refresh() {

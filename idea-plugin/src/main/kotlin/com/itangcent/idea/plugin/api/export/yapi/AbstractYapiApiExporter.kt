@@ -3,10 +3,9 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.RequestHelper
-import com.itangcent.common.model.Request
+import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.api.ResourceHelper
+import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
@@ -29,9 +28,6 @@ open class AbstractYapiApiExporter {
 
     @Inject
     protected val classExporter: ClassExporter? = null
-
-    @Inject
-    protected val parseHandle: RequestHelper? = null
 
     @Inject
     protected val moduleHelper: ModuleHelper? = null
@@ -115,18 +111,18 @@ open class AbstractYapiApiExporter {
         return cartInfo
     }
 
-    fun exportRequest(request: Request): Boolean {
-        if (request.resource == null) return false
-        val findResourceClass = resourceHelper!!.findResourceClass(request.resource!!) ?: return false
+    fun exportDoc(doc: Doc): Boolean {
+        if (doc.resource == null) return false
+        val findResourceClass = resourceHelper!!.findResourceClass(doc.resource!!) ?: return false
         val cartInfo = getCartForCls(findResourceClass) ?: return false
-        return exportRequest(request, cartInfo.privateToken!!, cartInfo.cartId!!)
+        return exportDoc(doc, cartInfo.privateToken!!, cartInfo.cartId!!)
     }
 
-    open fun exportRequest(request: Request, privateToken: String, cartId: String): Boolean {
-        val request2Item = yapiFormatter!!.request2Item(request)
-        request2Item["token"] = privateToken
-        request2Item["catid"] = cartId
-        return yapiApiHelper!!.saveApiInfo(request2Item)
+    open fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
+        val apiInfo = yapiFormatter!!.doc2Item(doc)
+        apiInfo["token"] = privateToken
+        apiInfo["catid"] = cartId
+        return yapiApiHelper!!.saveApiInfo(apiInfo)
     }
 
     protected fun findAttrOfClass(cls: PsiClass): String? {
@@ -134,7 +130,7 @@ open class AbstractYapiApiExporter {
         val docText = DocCommentUtils.getAttrOfDocComment(docComment)
         return when {
             StringUtils.isBlank(docText) -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls, parseHandle!!)
+            else -> docParseHelper!!.resolveLinkInAttr(docText, cls)
         }
     }
 

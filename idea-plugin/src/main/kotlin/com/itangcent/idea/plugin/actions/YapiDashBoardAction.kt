@@ -2,17 +2,8 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.common.exporter.ClassExporter
-import com.itangcent.common.exporter.RequestHelper
-import com.itangcent.idea.plugin.api.cache.CachedClassExporter
-import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
-import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
-import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
-import com.itangcent.idea.plugin.api.export.DocParseHelper
-import com.itangcent.idea.plugin.api.export.SpringClassExporter
-import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
@@ -32,7 +23,7 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         super.afterBuildActionContext(event, builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
-        builder.bind(RequestHelper::class) { it.with(DefaultRequestHelper::class).singleton() }
+        builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
         builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
         builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
@@ -43,9 +34,9 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
-        //allow cache api
-        builder.bind(ClassExporter::class) { it.with(CachedClassExporter::class).singleton() }
-        builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(YapiSpringClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
+        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
+
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
