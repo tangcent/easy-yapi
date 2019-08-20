@@ -47,4 +47,5 @@
     2. enhance:update toolTip of ApiProjectNode in ApiDashBoard  [(#102)](https://github.com/tangcent/easy-api/pull/102)
     3. fix:opti method Infer  [(#103)](https://github.com/tangcent/easy-api/pull/103)
     4. enhance:support export method doc(rpc)  [(#107)](https://github.com/tangcent/easy-api/pull/107)
+    5. fix:use json instead of form for add cart of yapi [(#44)](https://github.com/tangcent/easy-yapi/pull/44)
     
