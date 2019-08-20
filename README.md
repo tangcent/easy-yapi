@@ -102,5 +102,11 @@ restart **IDE**.
 - [X] Export api to Postman
 - [ ] Export api to Word
 - [X] Export api to Markdown
+- [X] Export method doc(rpc) to Markdown
 - [X] Call api from code
 - [X] Api DashBoard
+
+| doc type  |  Postman  |  Markdown  |
+| ------------ | ------------ | ------------ |
+| spring api | ✔️ | ✔️ |
+| method doc(rpc) | ×️ | ✔️ |
