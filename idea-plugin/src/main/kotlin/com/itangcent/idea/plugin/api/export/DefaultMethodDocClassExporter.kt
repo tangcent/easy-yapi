@@ -26,7 +26,7 @@ import java.util.*
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
-class DefaultMethodDocClassExporter : ClassExporter, Worker {
+open class DefaultMethodDocClassExporter : ClassExporter, Worker {
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class && methodDocEnable()

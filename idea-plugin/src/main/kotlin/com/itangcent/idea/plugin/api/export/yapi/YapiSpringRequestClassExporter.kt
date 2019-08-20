@@ -4,7 +4,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
 
-class YapiSpringClassExporter : SpringRequestClassExporter() {
+class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
     override fun processCompleted(method: PsiMethod, request: Request) {
         super.processCompleted(method, request)
 

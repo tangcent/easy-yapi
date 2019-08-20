@@ -459,7 +459,7 @@ class SuvApiExporter {
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
+            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(YapiSpringRequestClassExporter::class, YapiMethodDocClassExporter::class))
 
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
