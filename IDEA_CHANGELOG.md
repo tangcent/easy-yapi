@@ -46,4 +46,5 @@
     1. enhance:support groovy extension  [(#98)](https://github.com/tangcent/easy-api/pull/98)
     2. enhance:update toolTip of ApiProjectNode in ApiDashBoard  [(#102)](https://github.com/tangcent/easy-api/pull/102)
     3. fix:opti method Infer  [(#103)](https://github.com/tangcent/easy-api/pull/103)
+    4. enhance:support export method doc(rpc)  [(#107)](https://github.com/tangcent/easy-api/pull/107)
     

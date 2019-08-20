@@ -23,7 +23,7 @@ import kotlin.reflect.KClass
 /**
  * only parse name
  */
-class SimpleMethodDocClassExporter : ClassExporter, Worker {
+open class SimpleMethodDocClassExporter : ClassExporter, Worker {
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class && methodDocEnable()

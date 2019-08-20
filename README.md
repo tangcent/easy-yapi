@@ -121,6 +121,13 @@ restart **IDE**.
 - [X] Export api to Yapi
 - [ ] Export api to Word
 - [X] Export api to Markdown
+- [X] Export method doc(rpc) to Markdown
+- [X] Export method doc(rpc) to Yapi
 - [X] Call api from code
 - [X] Api DashBoard
 - [X] YApi DashBoard
+
+| doc type  |  Postman  |  Markdown  |  Yapi  |
+| ------------ | ------------ | ------------ |------------ |
+| spring api | ✔️ | ✔️ | ✔️ |
+| method doc(rpc) | ×️ | ✔️ | ✔️ |
