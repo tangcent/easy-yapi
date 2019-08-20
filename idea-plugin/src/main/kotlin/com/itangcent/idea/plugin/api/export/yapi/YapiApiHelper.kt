@@ -2,17 +2,13 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.intellij.extend.asList
+import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.http.NameValuePair
 import org.apache.http.client.methods.HttpPost
-import org.apache.http.client.utils.URLEncodedUtils
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
-import org.apache.http.message.BasicNameValuePair
-import java.nio.charset.Charset
-import java.util.HashMap
-import kotlin.collections.ArrayList
+import java.util.*
 import kotlin.collections.set
 import kotlin.concurrent.withLock
 
@@ -106,17 +102,16 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
 
         val httpPost = HttpPost(server + ADDCART)
 
-        val requestParams: ArrayList<NameValuePair> = ArrayList()
+        val requestEntity = StringEntity(GsonUtils.toJson(KV.create<Any?, Any?>()
+                .set("desc", desc)
+                .set("project_id", projectId)
+                .set("name", name)
+                .set("token", token)
+        ),
+                ContentType.APPLICATION_JSON)
 
-        requestParams.add(BasicNameValuePair("desc", desc))
-        requestParams.add(BasicNameValuePair("project_id", projectId))
-        requestParams.add(BasicNameValuePair("name", name))
-        requestParams.add(BasicNameValuePair("token", token))
-
-        val requestEntity = StringEntity(URLEncodedUtils.format(requestParams,
-                Charset.defaultCharset()),
-                ContentType.APPLICATION_FORM_URLENCODED)
         httpPost.entity = requestEntity
+
         val responseHandler = reservedResponseHandle()
 
         try {
