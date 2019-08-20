@@ -9,7 +9,7 @@ import com.itangcent.intellij.psi.PsiClassHelper
 import java.util.regex.Pattern
 
 @Singleton
-class DefaultDocParseHelper : DocParseHelper {
+open class DefaultDocParseHelper : DocParseHelper {
 
     @Inject
     private val psiClassHelper: PsiClassHelper? = null

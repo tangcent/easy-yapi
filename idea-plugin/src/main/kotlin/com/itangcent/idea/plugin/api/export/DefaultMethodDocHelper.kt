@@ -5,7 +5,7 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Param
 
 @Singleton
-class DefaultMethodDocHelper : MethodDocHelper {
+open class DefaultMethodDocHelper : MethodDocHelper {
     override fun setName(methodDoc: MethodDoc, name: String) {
         methodDoc.name = name
     }

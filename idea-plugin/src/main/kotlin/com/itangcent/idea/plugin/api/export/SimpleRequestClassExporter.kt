@@ -21,7 +21,7 @@ import kotlin.reflect.KClass
 /**
  * only parse name
  */
-class SimpleRequestClassExporter : ClassExporter, Worker {
+open class SimpleRequestClassExporter : ClassExporter, Worker {
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
