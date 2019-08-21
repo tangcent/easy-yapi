@@ -109,4 +109,4 @@ restart **IDE**.
 | doc type  |  Postman  |  Markdown  |
 | ------------ | ------------ | ------------ |
 | spring api | ✔️ | ✔️ |
-| method doc(rpc) | ×️ | ✔️ |
+| method doc(rpc) | ⭕️️ | ✔️ |
