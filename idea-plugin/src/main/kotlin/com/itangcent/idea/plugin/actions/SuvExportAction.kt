@@ -35,13 +35,10 @@ class SuvExportAction : ApiExportAction("Export Api") {
         val copyDataEventCollector = dataEventCollector
         builder.bind(DataContext::class) { it.toInstance(copyDataEventCollector) }
 
-//        builder.bind(ClassExporter::class) { it.with(SimpleRequestClassExporter::class).singleton() }
-
         builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
         builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SimpleRequestClassExporter::class, SimpleMethodDocClassExporter::class))
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
-
 
         builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
 
