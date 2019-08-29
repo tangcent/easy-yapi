@@ -24,8 +24,6 @@ class ApiCallAction : ApiExportAction("Call Api") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-
-
         //allow cache api
         builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringRequestClassExporter::class).singleton() }
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
