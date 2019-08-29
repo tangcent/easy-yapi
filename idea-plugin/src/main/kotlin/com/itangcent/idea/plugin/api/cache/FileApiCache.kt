@@ -6,22 +6,22 @@ class FileApiCache {
     /**
      * path of file
      */
-    public var file: String? = null
+    var file: String? = null
 
     /**
      * the lastModified time of file
      */
-    public var lastModified: Long? = null
+    var lastModified: Long? = null
 
     /**
      * md5 of file
      */
-    public var md5: String? = null
+    var md5: String? = null
 
     /**
      * request in file
      */
-    public var requests: List<RequestWithKey>? = null
+    var requests: List<RequestWithKey>? = null
 }
 
 class RequestWithKey {
@@ -38,10 +38,10 @@ class RequestWithKey {
      *
      * @see com.itangcent.intellij.psi.PsiClassUtils.fullNameOfMethod
      */
-    public var key: String? = null
+    var key: String? = null
 
     /**
      * resource of request was excluded
      */
-    public var request: Request? = null
+    var request: Request? = null
 }

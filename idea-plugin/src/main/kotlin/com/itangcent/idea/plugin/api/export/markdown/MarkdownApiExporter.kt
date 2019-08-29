@@ -29,9 +29,6 @@ class MarkdownApiExporter {
     private val classExporter: ClassExporter? = null
 
     @Inject
-    private val requestHelper: RequestHelper? = null
-
-    @Inject
     private val fileSaveHelper: FileSaveHelper? = null
 
     @Inject

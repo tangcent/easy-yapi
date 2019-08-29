@@ -8,7 +8,6 @@ import javax.swing.tree.DefaultTreeCellRenderer
 
 class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
 
-
     /**
      * Configures the renderer based on the passed in components.
      * The value is set from messaging the tree with

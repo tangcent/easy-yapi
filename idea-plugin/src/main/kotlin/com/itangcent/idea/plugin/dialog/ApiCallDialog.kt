@@ -62,7 +62,7 @@ import javax.swing.table.TableColumn
 import javax.swing.table.TableModel
 
 
-internal class ApiCallDialog : JDialog() {
+class ApiCallDialog : JDialog() {
     private var contentPane: JPanel? = null
     private var apis: JList<*>? = null
 

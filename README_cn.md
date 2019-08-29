@@ -38,7 +38,9 @@
 
 ## 使用方法
 
-- 详细信息参考:[wiki](https://github.com/tangcent/easy-yapi/wiki)
+- 详细信息参考: [docs](https://github.com/tangcent/easy-yapi/blob/master/docs/cn/Home.md)
+
+- [rpc导出](https://github.com/tangcent/easy-yapi/blob/master/docs/cn/6.%20%E6%94%AF%E6%8C%81rpc%E6%8E%A5%E5%8F%A3%E5%AF%BC%E5%87%BA.md)
 
 * 导出API到Yapi
 ```textCode

@@ -17,7 +17,6 @@ import java.nio.charset.Charset
 
 class FileSaveHelper {
 
-
     @Inject(optional = true)
     @Named("file.save.default")
     private val defaultExportedFile: String? = null

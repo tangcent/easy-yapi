@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.intellij.util.containers.stream
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.intellij.context.ActionContext
@@ -30,11 +31,11 @@ class ComboClassExporter : ClassExporter, Worker {
     }
 
     override fun support(docType: KClass<*>): Boolean {
-        return this.subClassExporters?.map { it.support(docType) }?.any { it } ?: false
+        return this.subClassExporters?.stream()?.map { it.support(docType) }?.anyMatch { it } ?: false
     }
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
-        return this.subClassExporters?.map { it.export(cls, docHandle) }?.any { it } ?: false
+        return this.subClassExporters?.stream()?.map { it.export(cls, docHandle) }?.anyMatch { it } ?: false
     }
 
     override fun status(): WorkerStatus {

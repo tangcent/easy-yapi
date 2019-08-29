@@ -45,7 +45,7 @@ restart **IDE**.
 
 ## Guide
 
-* [custom config for project](https://github.com/tangcent/easy-yapi/wiki/1.-%E6%94%AF%E6%8C%81%E9%A2%9D%E5%A4%96%E9%85%8D%E7%BD%AE)
+* [docs](https://github.com/tangcent/easy-yapi/blob/master/docs/cn/Home.md)
 
 * ExportApi(0.8.2.1+)
 ```textCode
@@ -130,4 +130,4 @@ restart **IDE**.
 | doc type  |  Postman  |  Markdown  |  Yapi  |
 | ------------ | ------------ | ------------ |------------ |
 | spring api | ✔️ | ✔️ | ✔️ |
-| method doc(rpc) | ×️ | ✔️ | ✔️ |
+| method doc(rpc) | ⭕️️ | ✔️ | ✔️ |
