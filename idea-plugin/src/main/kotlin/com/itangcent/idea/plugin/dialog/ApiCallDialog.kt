@@ -932,12 +932,13 @@ class ApiCallDialog : JDialog() {
             var fileName = response.getHeaderFileName()
             if (fileName == null && url != null) {
                 val dotIndex = url.lastIndexOf(".")
-                if (dotIndex != -1) {
-                    val name = url.substring(0, dotIndex).substringAfterLast("\\//?&")
-                    val suffix = url.substring(dotIndex).substringBefore("\\//?&")
-                    fileName = "$name.$suffix"
-                } else {
-                    fileName = url.substringAfterLast("/").substringBefore("?")
+                fileName = when {
+                    dotIndex != -1 -> {
+                        val name = url.substring(0, dotIndex).substringAfterLast("\\//?&")
+                        val suffix = url.substring(dotIndex).substringBefore("\\//?&")
+                        "$name.$suffix"
+                    }
+                    else -> url.substringAfterLast("/").substringBefore("?")
                 }
             }
             return@save fileName
