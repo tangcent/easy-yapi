@@ -112,16 +112,21 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
         return true
     }
 
-    protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {}
+    @Suppress("UNUSED")
+    protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
+    }
 
+    @Suppress("UNUSED")
     protected fun hasApi(psiClass: PsiClass): Boolean {
         return true
     }
 
+    @Suppress("UNUSED")
     protected fun isApi(psiMethod: PsiMethod): Boolean {
         return true
     }
 
+    @Suppress("UNUSED")
     open protected fun shouldIgnore(psiElement: PsiElement): Boolean {
         if (ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) == true) {
             return true

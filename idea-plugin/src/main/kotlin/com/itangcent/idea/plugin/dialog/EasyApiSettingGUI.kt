@@ -176,7 +176,7 @@ class EasyApiSettingGUI {
             return
         }
         val projectBasePath = currentProject.basePath
-        val cachePath = "$projectBasePath/.idea/.cache/$basePath"
+        val cachePath = "$projectBasePath${File.separator}.idea${File.separator}.cache${File.separator}$basePath"
         val cacheSize = computeFolderSize(cachePath)
         val readableCacheSize = StringUtil.formatFileSize(cacheSize)
         autoComputer.value(this::projectCacheSize, readableCacheSize)
@@ -189,20 +189,20 @@ class EasyApiSettingGUI {
             return
         }
         val projectBasePath = currentProject.basePath
-        val cachePath = "$projectBasePath/.idea/.cache/$basePath"
+        val cachePath = "$projectBasePath${File.separator}.idea${File.separator}.cache${File.separator}$basePath"
         deleteFolder(cachePath)
         computeProjectCacheSize()
     }
 
     private fun computeGlobalCacheSize() {
-        val cachePath = "${globalBasePath()}/$basePath"
+        val cachePath = "${globalBasePath()}${File.separator}$basePath"
         val cacheSize = computeFolderSize(cachePath)
         val readableCacheSize = StringUtil.formatFileSize(cacheSize)
         autoComputer.value(this::globalCacheSize, readableCacheSize)
     }
 
     private fun clearGlobalCache() {
-        val cachePath = "${globalBasePath()}/$basePath"
+        val cachePath = "${globalBasePath()}${File.separator}$basePath"
         deleteFolder(cachePath)
         computeGlobalCacheSize()
     }
@@ -268,7 +268,7 @@ class EasyApiSettingGUI {
     private fun globalBasePath(): String {
 
         var home = SystemUtils.userHome
-        if (home.endsWith("/")) {
+        if (home.endsWith(File.separator)) {
             home = home.substring(0, home.length - 1)
         }
         return home

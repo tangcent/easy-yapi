@@ -100,12 +100,15 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
         return true
     }
 
+    @Suppress("UNUSED")
     protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {}
 
+    @Suppress("UNUSED")
     protected fun hasApi(psiClass: PsiClass): Boolean {
         return true
     }
 
+    @Suppress("UNUSED")
     protected fun isApi(psiMethod: PsiMethod): Boolean {
         return true
     }
