@@ -19,6 +19,7 @@ import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
 import com.itangcent.intellij.util.traceError
+import java.io.File
 import kotlin.reflect.KClass
 
 class CachedRequestClassExporter : ClassExporter, Worker {
@@ -80,8 +81,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
         val psiFile = cls.containingFile
         val text = psiFile.text
         val path = ActionUtils.findCurrentPath(psiFile)!!
-                .replace("/", "_")
-                .replace("\\", "_")
+                .replace(File.separator, "_")
         statusRecorder.newWork()
         actionContext!!.runAsync {
             try {
