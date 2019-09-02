@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.file.AbstractLocalFileRepository
+import java.io.File
 
 class ProjectCacheRepository : AbstractLocalFileRepository() {
 
@@ -15,6 +16,6 @@ class ProjectCacheRepository : AbstractLocalFileRepository() {
 
     override fun basePath(): String {
         val basePath = actionContext!!.cacheOrCompute("project_path") { project!!.basePath }
-        return basePath!! + "/.idea/.cache"
+        return basePath!! + "${File.separator}.idea${File.separator}.cache"
     }
 }

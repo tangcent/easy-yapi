@@ -14,6 +14,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
+import java.io.File
 
 @Singleton
 class ModuleHelper {
@@ -89,12 +90,12 @@ class ModuleHelper {
         try {
             var currentPath = path
             when {
-                currentPath.contains("/src/") -> currentPath = StringUtils.substringBefore(currentPath, "/src/")
-                currentPath.contains("/main/") -> currentPath = StringUtils.substringBefore(currentPath, "/main/")
-                currentPath.contains("/java/") -> currentPath = StringUtils.substringBefore(currentPath, "/java/")
-                currentPath.contains("/kotlin/") -> currentPath = StringUtils.substringBefore(currentPath, "/kotlin/")
+                currentPath.contains(src) -> currentPath = StringUtils.substringBefore(currentPath, src)
+                currentPath.contains(main) -> currentPath = StringUtils.substringBefore(currentPath, main)
+                currentPath.contains(java) -> currentPath = StringUtils.substringBefore(currentPath, java)
+                currentPath.contains(kotlin) -> currentPath = StringUtils.substringBefore(currentPath, kotlin)
             }
-            module = StringUtils.substringAfterLast(currentPath, "/")
+            module = StringUtils.substringAfterLast(currentPath, File.separator)
         } catch (e: Exception) {
             logger!!.error("error in findCurrentPath")
             logger.traceError(e)
@@ -103,4 +104,12 @@ class ModuleHelper {
 
     }
     //endregion
+
+    companion object {
+        private val src = "${File.separator}src${File.separator}"
+        private val main = "${File.separator}main${File.separator}"
+        private val java = "${File.separator}java${File.separator}"
+        private val kotlin = "${File.separator}kotlin${File.separator}"
+
+    }
 }

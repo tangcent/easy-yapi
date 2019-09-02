@@ -33,7 +33,7 @@ object EasyIcons {
             "/actions/close.png") // 16x16
 
     val OK = tryLoad("/general/inspectionsOK.png",
-            "process/state/GreenOK.png") // 16x16
+            "/process/state/GreenOK.png") // 16x16
 
     private fun tryLoad(vararg paths: String): Icon? {
         for (path in paths) {
