@@ -15,7 +15,7 @@ class GroovyActionExtLoader : ActionExtLoader {
     override fun loadActionExt(dataContext: DataContext, action: String, logger: Logger): ActionExt? {
 
         val basePath = dataContext.getData(CommonDataKeys.PROJECT)!!.basePath
-        val localFile = File("$basePath/.easyapi/ext/${action}Ext.groovy")
+        val localFile = File("$basePath${File.separator}.easyapi${File.separator}ext${File.separator}${action}Ext.groovy")
         if (!localFile.exists()) {
             return null
         }

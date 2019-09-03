@@ -13,6 +13,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.FileUtils
 import com.itangcent.intellij.util.ToolUtils
+import java.io.File
 import java.nio.charset.Charset
 
 class FileSaveHelper {
@@ -58,7 +59,7 @@ class FileSaveHelper {
                     if (file.isDirectory) {
                         try {
                             val defaultFile = getDefaultExportedFile()
-                            FileUtils.forceSave("${file.path}/$defaultFile", info.toByteArray(Charset.defaultCharset()))
+                            FileUtils.forceSave("${file.path}${File.separator}$defaultFile", info.toByteArray(Charset.defaultCharset()))
                             onSaveSuccess()
                         } catch (e: Exception) {
                             onSaveFailed()
@@ -129,7 +130,7 @@ class FileSaveHelper {
                     if (file.isDirectory) {
                         try {
                             val defaultFile = defaultFileName() ?: "Untitled"
-                            var path = "${file.path}/$defaultFile"
+                            var path = "${file.path}${File.separator}$defaultFile"
                             try {
                                 if (FileUtil.exists(path)) {
                                     var index = 1

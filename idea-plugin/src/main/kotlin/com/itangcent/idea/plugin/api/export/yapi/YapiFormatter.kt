@@ -122,6 +122,8 @@ class YapiFormatter {
 
         return PsiClassUtils.fullNameOfMethod(methodDoc.resource as PsiMethod).let {
             Regex("[^a-zA-Z0-9-/_:.!]").replace(it, "/")
+        }.let {
+            Regex("//+").replace(it, "/")
         }
     }
 
