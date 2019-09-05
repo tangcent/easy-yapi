@@ -32,6 +32,9 @@ intellij {
     instrumentCode = true
     updateSinceUntilBuild false
     sameSinceUntilBuild false
+
+    plugins 'org.jetbrains.kotlin:1.3.11-release-IJ2017.3-1'
+//    plugins 'org.jetbrains.kotlin:1.3.21-release-IJ2018.2-1' //dependency kotlin
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -51,7 +54,7 @@ patchPluginXml {
 
 jar {
     excludes = ["com/google/common/**"
-                , "kotlin/**"
+//                , "kotlin/**"
     ]
 //    excludes = ["com/google/common/**"]
 //    excludes = ["com/google/common/**", "org/apache/http/util/**"]
