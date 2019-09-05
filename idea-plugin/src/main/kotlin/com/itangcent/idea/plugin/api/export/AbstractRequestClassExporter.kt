@@ -293,7 +293,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val paramDocComment = extractParamComment(method)
 
             for (param in params) {
-                processMethodParameter(method, request, param, paramDocComment?.get(param.name!!)?.toString())
+                processMethodParameter(method, request, param, KVUtils.getUltimateComment(paramDocComment, param.name))
             }
         }
 
