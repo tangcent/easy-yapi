@@ -49,4 +49,6 @@
     4. enhance:support export method doc(rpc)  [(#107)](https://github.com/tangcent/easy-api/pull/107)
     5. fix:use json instead of form for add cart of yapi [(#44)](https://github.com/tangcent/easy-yapi/pull/44)
     6. fix config search[(#113)](https://github.com/tangcent/easy-api/pull/113)
+    7. resolve {@link ...} in param desc doc[(#117)](https://github.com/tangcent/easy-api/pull/117)
+    8. Output path params in 'Export Markdown'[(#118)](https://github.com/tangcent/easy-api/pull/118)
     
