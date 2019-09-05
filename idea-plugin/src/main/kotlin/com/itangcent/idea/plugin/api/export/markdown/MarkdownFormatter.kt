@@ -12,7 +12,6 @@ import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
-import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -162,6 +161,17 @@ class MarkdownFormatter {
         //endregion
 
         handle("${hN(deep + 1)} REQUEST\n\n")
+
+        //path
+        if (!request.paths.isNullOrEmpty()) {
+            handle("\n**Path：**\n\n")
+            handle("| name  |  value   | desc  |\n")
+            handle("| ------------ | ------------ | ------------ |\n")
+            request.paths!!.forEach {
+                handle("| ${it.name} | ${it.value ?: ""} |" +
+                        " ${escape(it.desc)} |\n")
+            }
+        }
 
         //header
         if (!request.headers.isNullOrEmpty()) {
