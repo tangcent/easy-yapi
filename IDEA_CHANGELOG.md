@@ -44,4 +44,6 @@
     3. fix:opti method Infer  [(#103)](https://github.com/tangcent/easy-api/pull/103)
     4. enhance:support export method doc(rpc)  [(#107)](https://github.com/tangcent/easy-api/pull/107)
     5. fix config search[(#113)](https://github.com/tangcent/easy-api/pull/113)
+    6. resolve {@link ...} in param desc doc[(#117)](https://github.com/tangcent/easy-api/pull/117)
+    7. Output path params in 'Export Markdown'[(#118)](https://github.com/tangcent/easy-api/pull/118)
     
