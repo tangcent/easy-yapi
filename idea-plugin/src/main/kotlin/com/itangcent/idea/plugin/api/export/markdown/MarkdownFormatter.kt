@@ -164,7 +164,7 @@ class MarkdownFormatter {
 
         //path
         if (!request.paths.isNullOrEmpty()) {
-            handle("\n**Path：**\n\n")
+            handle("\n**Path Params：**\n\n")
             handle("| name  |  value   | desc  |\n")
             handle("| ------------ | ------------ | ------------ |\n")
             request.paths!!.forEach {
