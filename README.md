@@ -127,7 +127,10 @@ restart **IDE**.
 - [X] Api DashBoard
 - [X] YApi DashBoard
 
-| doc type  |  Postman  |  Markdown  |  Yapi  |
+
+### Support: ✅️=yes,❌️️=no 
+
+| Doc Type  |  Postman  |  Markdown  |  Yapi  |
 | ------------ | ------------ | ------------ |------------ |
-| spring api | ✔️ | ✔️ | ✔️ |
-| method doc(rpc) | ⭕️️ | ✔️ | ✔️ |
+| spring api | ✅️ | ✅️ | ✅️ |
+| method doc(rpc) | ❌️️ | ✅ | ✅ |
