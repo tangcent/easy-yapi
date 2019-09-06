@@ -106,7 +106,10 @@ restart **IDE**.
 - [X] Call api from code
 - [X] Api DashBoard
 
+
+### Support: ✅️=yes,❌️️=no 
+
 | doc type  |  Postman  |  Markdown  |
 | ------------ | ------------ | ------------ |
-| spring api | ✔️ | ✔️ |
-| method doc(rpc) | ⭕️️ | ✔️ |
+| spring api | ✅ | ✅ |
+| method doc(rpc) | ❌ | ✅ |
