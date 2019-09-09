@@ -13,6 +13,7 @@ import com.itangcent.common.utils.KVUtils
 import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
@@ -204,6 +205,10 @@ class MarkdownFormatter {
                 handle("| ------------ | ------------ | ------------ |\n")
                 parseBody(0, "", "", request.body, handle)
 
+                handle("\n**Request Demo：**\n\n")
+                parseToJson(handle, request.body)
+
+
             } else if (!request.formParams.isNullOrEmpty()) {
                 handle("\n**Form：**\n\n")
                 handle("| name  |  value  | required |  type  |  desc  |\n")
@@ -221,6 +226,7 @@ class MarkdownFormatter {
             val response = request.response!!.firstOrNull { it.body != null }
             //todo:support multiple response
             if (response != null) {
+                handle("\n\n")
                 handle("${hN(deep + 1)} RESPONSE\n\n")
                 handle("**Header：**\n\n")
                 handle("| name  |  value  |  required | example  | desc  |\n")
@@ -235,9 +241,23 @@ class MarkdownFormatter {
                 handle("| name  |  type  |  desc  |\n")
                 handle("| ------------ | ------------ | ------------ |\n")
                 response.body?.let { parseBody(0, "", "", it, handle) }
+
+                // handler json example
+                handle("\n**Response Demo：**\n\n")
+                parseToJson(handle, response.body)
             }
 
         }
+    }
+
+    private fun parseToJson(handle: (String) -> Unit, body: Any?) {
+        handle("```json\n")
+        body?.let {
+            if (it != 0) {
+                handle(RequestUtils.parseRawBody(it))
+            }
+        }
+        handle("\n```\n")
     }
 
     @Suppress("UNCHECKED_CAST")
