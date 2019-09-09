@@ -62,7 +62,7 @@ restart **IDE**.
 ```
 
 * How to export to postman automatically?
- 
+
 ```text
     Click [Preference -> Other Setting -> EasyApi]
     set postman privatetoken
@@ -107,9 +107,9 @@ restart **IDE**.
 - [X] Api DashBoard
 
 
-### Support: ✅️=yes,❌️️=no 
+### Support: 
 
 | doc type  |  Postman  |  Markdown  |
 | ------------ | ------------ | ------------ |
-| spring api | ✅ | ✅ |
-| method doc(rpc) | ❌ | ✅ |
+| spring api | ![yes](assets/yes.png) | ![yes](assets/yes.png) |
+| method doc(rpc) | ![yes](assets/no.png) | ![yes](assets/yes.png) |
