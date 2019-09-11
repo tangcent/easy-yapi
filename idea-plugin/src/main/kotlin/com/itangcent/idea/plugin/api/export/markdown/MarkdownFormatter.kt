@@ -14,9 +14,9 @@ import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.forEachValid
 import org.apache.commons.lang3.StringUtils
 import java.util.*
@@ -35,6 +35,9 @@ class MarkdownFormatter {
 
     @Inject
     private val moduleHelper: ModuleHelper? = null
+
+    @Inject
+    private val docHelper: DocHelper? = null
 
     fun parseRequests(requests: MutableList<Doc>): String {
         val sb = StringBuilder()
@@ -343,8 +346,7 @@ class MarkdownFormatter {
     }
 
     private fun findAttrOfClass(cls: PsiClass): String? {
-        val docComment = actionContext!!.callInReadUI { cls.docComment }
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
+        val docText = docHelper!!.getAttrOfDocComment(cls)
         return when {
             StringUtils.isBlank(docText) -> cls.name
             else -> docParseHelper!!.resolveLinkInAttr(docText, cls)

@@ -26,4 +26,6 @@
     <depends optional="true" config-file="easy-api-java.xml">com.intellij.modules.java</depends>
     <!--it will cause 【Optional dependency declaration on 'com.intellij.modules.idea' should specify "config-file"】-->
     <!--<depends optional="true">com.intellij.modules.idea</depends>-->
+
+    <depends optional="true" config-file="easy-api-kotlin.xml">org.jetbrains.kotlin</depends>
 </idea-plugin>

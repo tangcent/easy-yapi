@@ -13,12 +13,13 @@ import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.DocHelper
+import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
@@ -27,6 +28,12 @@ import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
 open class DefaultMethodDocClassExporter : ClassExporter, Worker {
+
+    @Inject
+    private val docHelper: DocHelper? = null
+
+    @Inject
+    protected val jvmClassHelper: JvmClassHelper? = null
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class && methodDocEnable()
@@ -218,7 +225,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     }
 
     open protected fun findAttrOfMethod(method: PsiMethod): String? {
-        return DocCommentUtils.getAttrOfDocComment(method.docComment)
+        return docHelper!!.getAttrOfDocComment(method)
     }
 
     private fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
@@ -271,7 +278,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         cls.allMethods
-                .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
+                .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
