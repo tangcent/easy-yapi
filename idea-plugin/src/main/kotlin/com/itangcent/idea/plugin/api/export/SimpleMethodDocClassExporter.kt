@@ -10,12 +10,11 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.DocHelper
+import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassHelper
-import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.KV
 import com.itangcent.intellij.util.traceError
 import kotlin.reflect.KClass
@@ -24,6 +23,12 @@ import kotlin.reflect.KClass
  * only parse name
  */
 open class SimpleMethodDocClassExporter : ClassExporter, Worker {
+
+    @Inject
+    private val docHelper: DocHelper? = null
+
+    @Inject
+    protected val jvmClassHelper: JvmClassHelper? = null
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class && methodDocEnable()
@@ -101,7 +106,8 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNUSED")
-    protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {}
+    protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
+    }
 
     @Suppress("UNUSED")
     protected fun hasApi(psiClass: PsiClass): Boolean {
@@ -174,7 +180,7 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         cls.allMethods
-                .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
+                .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
@@ -182,7 +188,7 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
     }
 
     open protected fun findAttrOfMethod(method: PsiMethod): String? {
-        return DocCommentUtils.getAttrOfDocComment(method.docComment)
+        return docHelper!!.getAttrOfDocComment(method)
     }
 
     protected open fun readMethodDoc(method: PsiMethod): String? {
@@ -191,14 +197,5 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
 
     private fun methodDocEnable(): Boolean {
         return settingBinder!!.read().methodDocEnable
-    }
-
-    companion object {
-        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
-                SpringClassName.GET_MAPPING,
-                SpringClassName.DELETE_MAPPING,
-                SpringClassName.PATCH_MAPPING,
-                SpringClassName.POST_MAPPING,
-                SpringClassName.PUT_MAPPING)
     }
 }

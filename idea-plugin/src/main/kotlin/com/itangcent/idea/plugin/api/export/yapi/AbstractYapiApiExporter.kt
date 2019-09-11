@@ -9,8 +9,8 @@ import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 
@@ -40,6 +40,9 @@ open class AbstractYapiApiExporter {
 
     @Inject
     protected val docParseHelper: DefaultDocParseHelper? = null
+
+    @Inject
+    protected val docHelper: DocHelper? = null
 
     @Inject
     protected val project: Project? = null
@@ -126,8 +129,7 @@ open class AbstractYapiApiExporter {
     }
 
     protected fun findAttrOfClass(cls: PsiClass): String? {
-        val docComment = actionContext!!.callInReadUI { cls.docComment }
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
+        val docText = docHelper!!.getAttrOfDocComment(cls)
         return when {
             StringUtils.isBlank(docText) -> cls.name
             else -> docParseHelper!!.resolveLinkInAttr(docText, cls)

@@ -9,9 +9,11 @@ import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toBoolean
+import com.itangcent.intellij.jvm.AnnotationHelper
+import com.itangcent.intellij.jvm.DocHelper
+import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
-import com.itangcent.intellij.util.DocCommentUtils
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
@@ -22,6 +24,12 @@ abstract class ScriptRuleParser : RuleParser {
     private val duckTypeHelper: DuckTypeHelper? = null
     @Inject
     private val psiClassHelper: PsiClassHelper? = null
+    @Inject
+    private val docHelper: DocHelper? = null
+    @Inject
+    private val annotationHelper: AnnotationHelper? = null
+    @Inject
+    protected val jvmClassHelper: JvmClassHelper? = null
     @Inject
     private val logger: Logger? = null
 
@@ -86,7 +94,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.doc("tag","subTag"):String?
      * it.hasDoc("tag"):Boolean
      */
-    open class BaseScriptPsiElementContext : PsiElementContext {
+    open inner class BaseScriptPsiElementContext : PsiElementContext {
 
         protected var psiElement: PsiElement? = null
 
@@ -126,7 +134,7 @@ abstract class ScriptRuleParser : RuleParser {
          * it.hasAnn("annotation_name"):Boolean
          */
         fun hasAnn(name: String): Boolean {
-            return PsiAnnotationUtils.findAnn(asPsiModifierListOwner(), name) != null
+            return annotationHelper!!.hasAnn(getResource(), name)
         }
 
         /**
@@ -140,35 +148,35 @@ abstract class ScriptRuleParser : RuleParser {
          * it.ann("annotation_name","attr"):String?
          */
         fun ann(name: String, attr: String): String? {
-            return PsiAnnotationUtils.findAttr(asPsiModifierListOwner(), name, attr)
+            return annotationHelper!!.findAttrAsString(getResource(), name, attr)
         }
 
         /**
          * it.doc():String
          */
         fun doc(): String? {
-            return DocCommentUtils.getAttrOfDocComment(asPsiDocCommentOwner().docComment)
+            return docHelper!!.getAttrOfDocComment(getResource())
         }
 
         /**
          * it.doc("tag"):String?
          */
         fun doc(tag: String): String? {
-            return DocCommentUtils.findDocsByTag(asPsiDocCommentOwner().docComment, tag)
+            return docHelper!!.findDocByTag(getResource(), tag)
         }
 
         /**
          * it.hasDoc("tag"):Boolean
          */
         fun hasDoc(tag: String): Boolean {
-            return DocCommentUtils.hasTag(asPsiDocCommentOwner().docComment, tag)
+            return docHelper!!.hasTag(getResource(), tag)
         }
 
         /**
          * it.doc("tag","subTag"):String?
          */
         fun doc(tag: String, subTag: String): String? {
-            return DocCommentUtils.findDocsByTagAndName(asPsiDocCommentOwner().docComment,
+            return docHelper!!.findDocsByTagAndName(getResource(),
                     tag, subTag)
         }
 
@@ -218,11 +226,11 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun isMap(): Boolean {
-            return PsiClassHelper.isMap(PsiTypesUtil.getClassType(psiClass))
+            return jvmClassHelper!!.isMap(PsiTypesUtil.getClassType(psiClass))
         }
 
         fun isCollection(): Boolean {
-            return PsiClassHelper.isCollection(PsiTypesUtil.getClassType(psiClass))
+            return jvmClassHelper!!.isCollection(PsiTypesUtil.getClassType(psiClass))
         }
 
         fun isArray(): Boolean {
@@ -410,11 +418,11 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun isMap(): Boolean {
-            return PsiClassHelper.isMap(psiType)
+            return jvmClassHelper!!.isMap(psiType)
         }
 
         fun isCollection(): Boolean {
-            return PsiClassHelper.isCollection(psiType)
+            return jvmClassHelper!!.isCollection(psiType)
         }
 
         fun isArray(): Boolean {
