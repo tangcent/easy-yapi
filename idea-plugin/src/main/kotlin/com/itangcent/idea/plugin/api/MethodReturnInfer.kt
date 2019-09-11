@@ -8,6 +8,7 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.Visional
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.*
 import com.itangcent.intellij.util.KV
@@ -41,6 +42,9 @@ class MethodReturnInferHelper {
 
     @Inject
     private val actionContext: ActionContext? = null
+
+    @Inject
+    private val jvmClassHelper: JvmClassHelper? = null
 
     private val staticMethodCache: HashMap<Pair<PsiMethod, Array<Any?>?>, Any?> = HashMap()
 
@@ -710,10 +714,10 @@ class MethodReturnInferHelper {
             psiType is PsiArrayType -> {
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
-            PsiClassHelper.isCollection(psiType) -> {   //list type
+            jvmClassHelper!!.isCollection(psiType) -> {   //list type
                 return psiClassHelper.getTypeObject(psiType, context, jsonOption)
             }
-            PsiClassHelper.isMap(psiType) -> {   //map type
+            jvmClassHelper.isMap(psiType) -> {   //map type
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
             else -> {
@@ -743,10 +747,10 @@ class MethodReturnInferHelper {
             psiType is PsiArrayType -> {
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
-            PsiClassHelper.isCollection(psiType) -> {   //list type
+            jvmClassHelper!!.isCollection(psiType) -> {   //list type
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
-            PsiClassHelper.isMap(psiType) -> {   //map type
+            jvmClassHelper.isMap(psiType) -> {   //map type
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
             else -> {
@@ -958,7 +962,7 @@ class MethodReturnInferHelper {
                     return variable
                 }
                 is PsiField -> {
-                    if (PsiClassHelper.hasAnyModify(psiElement, PsiClassHelper.staticFinalFieldModifiers)) {
+                    if (methodReturnInferHelper.jvmClassHelper!!.isStaticFinal(psiElement)) {
                         return processStaticField(psiElement)
                     }
                     val fieldName = methodReturnInferHelper.psiClassHelper!!.getJsonFieldName(psiElement)
@@ -1460,7 +1464,7 @@ class MethodReturnInferHelper {
                 is PsiExpression -> return processExpression(psiElement)
                 is PsiStatement -> return processStatement(psiElement)
                 is PsiField -> {
-                    if (PsiClassHelper.hasAnyModify(psiElement, PsiClassHelper.staticFinalFieldModifiers)) {
+                    if (methodReturnInferHelper.jvmClassHelper!!.isStaticFinal(psiElement)) {
                         return processStaticField(psiElement)
                     }
                     throw IllegalArgumentException("Quickly Infer Failed")

@@ -1,17 +1,24 @@
 package com.itangcent.idea.plugin.api.export
 
+import com.google.inject.Inject
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.any
+import com.itangcent.common.utils.isNullOrEmpty
+import com.itangcent.common.utils.tinyString
 import com.itangcent.idea.plugin.utils.SpringClassName
+import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.psi.ClassRuleKeys
-import com.itangcent.intellij.psi.PsiAnnotationUtils
 import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
+
+    @Inject
+    private val annotationHelper: AnnotationHelper? = null
 
     override fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
 
@@ -36,9 +43,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?) {
 
-
-        val requestBodyAnn = findRequestBody(param)
-        if (requestBodyAnn != null) {
+        if (isRequestBody(param)) {
             if (request.method == HttpMethod.NO_METHOD) {
                 requestHelper!!.setMethod(request, HttpMethod.POST)
             }
@@ -51,8 +56,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
-        val modelAttrAnn = findModelAttr(param)
-        if (modelAttrAnn != null) {
+        if (isModelAttr(param)) {
             if (request.method == HttpMethod.GET) {
                 addParamAsQuery(param, request)
             } else {
@@ -68,23 +72,17 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         val requestHeaderAnn = findRequestHeader(param)
         if (requestHeaderAnn != null) {
 
-            var headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
-                    "value")
-            if (headName.isNullOrBlank()) {
-                headName = PsiAnnotationUtils.findAttr(requestHeaderAnn,
-                        "name")
-            }
-            if (headName.isNullOrBlank()) {
+            var headName = requestHeaderAnn.any("value", "name")
+            if (headName.isNullOrEmpty()) {
                 headName = param.name
             }
 
-            var required = findParamRequired(requestHeaderAnn) ?: true
+            var required = findParamRequired(requestHeaderAnn)
             if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
                 required = true
             }
 
-            var defaultValue = PsiAnnotationUtils.findAttr(requestHeaderAnn,
-                    "defaultValue")
+            var defaultValue = requestHeaderAnn["defaultValue"]
 
             if (defaultValue == null
                     || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
@@ -93,9 +91,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             }
 
             val header = Header()
-            header.name = headName
-            header.value = defaultValue
-            header.example = defaultValue
+            header.name = headName?.toString()
+            header.value = defaultValue.toString()
+            header.example = defaultValue.toString()
             header.desc = paramDesc
             header.required = required
             requestHelper!!.addHeader(request, header)
@@ -105,8 +103,8 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         val pathVariableAnn = findPathVariable(param)
         if (pathVariableAnn != null) {
 
-            var pathName = PsiAnnotationUtils.findAttr(pathVariableAnn,
-                    "value")
+            var pathName = pathVariableAnn["value"]?.toString()
+
             if (pathName == null) {
                 pathName = param.name
             }
@@ -123,10 +121,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         if (requestParamAnn != null) {
             paramName = findParamName(requestParamAnn)
-            required = findParamRequired(requestParamAnn) ?: true
+            required = findParamRequired(requestParamAnn)
 
-            defaultVal = PsiAnnotationUtils.findAttr(requestParamAnn,
-                    "defaultValue")
+            defaultVal = requestParamAnn["defaultValue"]
 
             if (defaultVal == null
                     || defaultVal == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
@@ -214,20 +211,20 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     //region process spring annotation-------------------------------------------------------------------
 
-    private fun findHttpPath(requestMappingAnn: PsiAnnotation?): String? {
-        val path = PsiAnnotationUtils.findAttr(requestMappingAnn, "path", "value") ?: return null
+    private fun findHttpPath(requestMappingAnn: Pair<Map<String, Any?>, String>?): String? {
+        val path = requestMappingAnn?.first.any("path", "value")?.tinyString() ?: return null
 
         return when {
-            path.contains(",") -> PsiAnnotationUtils.tinyAnnStr(path.substringBefore(','))
+            path.contains(",") -> path.substringBefore(',')
             else -> path
         }
     }
 
-    private fun findHttpMethod(requestMappingAnn: PsiAnnotation?): String {
+    private fun findHttpMethod(requestMappingAnn: Pair<Map<String, Any?>, String>?): String {
         if (requestMappingAnn != null) {
             when {
-                requestMappingAnn.qualifiedName == SpringClassName.REQUESTMAPPING_ANNOTATION -> {
-                    var method = PsiAnnotationUtils.findAttr(requestMappingAnn, "method") ?: return HttpMethod.NO_METHOD
+                requestMappingAnn.second == SpringClassName.REQUESTMAPPING_ANNOTATION -> {
+                    var method = requestMappingAnn.first["method"].tinyString() ?: return HttpMethod.NO_METHOD
                     if (method.contains(",")) {
                         method = method.substringBefore(",")
                     }
@@ -244,17 +241,17 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                         else -> method
                     }
                 }
-                requestMappingAnn.qualifiedName == SpringClassName.GET_MAPPING -> return HttpMethod.GET
-                requestMappingAnn.qualifiedName == SpringClassName.POST_MAPPING -> return HttpMethod.POST
-                requestMappingAnn.qualifiedName == SpringClassName.DELETE_MAPPING -> return HttpMethod.DELETE
-                requestMappingAnn.qualifiedName == SpringClassName.PATCH_MAPPING -> return HttpMethod.PATCH
-                requestMappingAnn.qualifiedName == SpringClassName.PUT_MAPPING -> return HttpMethod.PUT
+                requestMappingAnn.second == SpringClassName.GET_MAPPING -> return HttpMethod.GET
+                requestMappingAnn.second == SpringClassName.POST_MAPPING -> return HttpMethod.POST
+                requestMappingAnn.second == SpringClassName.DELETE_MAPPING -> return HttpMethod.DELETE
+                requestMappingAnn.second == SpringClassName.PATCH_MAPPING -> return HttpMethod.PATCH
+                requestMappingAnn.second == SpringClassName.PUT_MAPPING -> return HttpMethod.PUT
             }
         }
         return HttpMethod.NO_METHOD
     }
 
-    private fun findRequestMapping(psiClass: PsiClass): PsiAnnotation? {
+    private fun findRequestMapping(psiClass: PsiClass): Pair<Map<String, Any?>, String>? {
         val requestMappingAnn = findRequestMappingInAnn(psiClass)
         if (requestMappingAnn != null) return requestMappingAnn
         var superCls = psiClass.superClass
@@ -266,41 +263,41 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         return null
     }
 
-    private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
+    private fun findRequestMappingInAnn(ele: PsiElement): Pair<Map<String, Any?>, String>? {
         return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
-                .map { PsiAnnotationUtils.findAnn(ele, it) }
+                .map { annotationHelper!!.findAnnMap(ele, it)?.to(it) }
                 .firstOrNull { it != null }
     }
 
-    private fun findRequestBody(parameter: PsiParameter): PsiAnnotation? {
-        return PsiAnnotationUtils.findAnn(parameter, SpringClassName.REQUESTBOODY_ANNOTATION)
+    private fun isRequestBody(parameter: PsiParameter): Boolean {
+        return annotationHelper!!.hasAnn(parameter, SpringClassName.REQUESTBOODY_ANNOTATION)
     }
 
-    private fun findModelAttr(parameter: PsiParameter): PsiAnnotation? {
-        return PsiAnnotationUtils.findAnn(parameter, SpringClassName.MODELATTRIBUTE_ANNOTATION)
+    private fun isModelAttr(parameter: PsiParameter): Boolean {
+        return annotationHelper!!.hasAnn(parameter, SpringClassName.MODELATTRIBUTE_ANNOTATION)
     }
 
-    private fun findRequestHeader(parameter: PsiParameter): PsiAnnotation? {
-        return PsiAnnotationUtils.findAnn(parameter, SpringClassName.REQUEST_HEADER)
+    private fun findRequestHeader(parameter: PsiParameter): Map<String, Any?>? {
+        return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_HEADER)
     }
 
-    private fun findPathVariable(parameter: PsiParameter): PsiAnnotation? {
-        return PsiAnnotationUtils.findAnn(parameter, SpringClassName.PATHVARIABLE_ANNOTATION)
+    private fun findPathVariable(parameter: PsiParameter): Map<String, Any?>? {
+        return annotationHelper!!.findAnnMap(parameter, SpringClassName.PATHVARIABLE_ANNOTATION)
     }
 
-    private fun findRequestParam(parameter: PsiParameter): PsiAnnotation? {
-        return PsiAnnotationUtils.findAnn(parameter, SpringClassName.REQUESTPARAM_ANNOTATION)
+    private fun findRequestParam(parameter: PsiParameter): Map<String, Any?>? {
+        return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUESTPARAM_ANNOTATION)
     }
 
-    private fun findParamName(requestParamAnn: PsiAnnotation?): String? {
-        return PsiAnnotationUtils.findAttr(requestParamAnn, "name", "value")
+    private fun findParamName(requestParamAnn: Map<String, Any?>?): String? {
+        return requestParamAnn.any("name", "value")?.toString()
     }
 
-    private fun findParamRequired(requestParamAnn: PsiAnnotation?): Boolean? {
-        val required = PsiAnnotationUtils.findAttr(requestParamAnn, "required") ?: return null
+    private fun findParamRequired(requestParamAnn: Map<String, Any?>): Boolean {
+        val required = requestParamAnn["required"]?.toString()
         return when {
-            required.contains("false") -> false
-            else -> null
+            required?.contains("false") == true -> false
+            else -> true
         }
     }
 

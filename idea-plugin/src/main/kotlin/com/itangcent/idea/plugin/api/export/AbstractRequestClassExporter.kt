@@ -17,13 +17,17 @@ import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.DocHelper
+import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.*
-import org.apache.commons.lang3.StringUtils
+import com.itangcent.intellij.util.KV
+import com.itangcent.intellij.util.Magics
+import com.itangcent.intellij.util.forEachValid
+import com.itangcent.intellij.util.traceError
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
@@ -52,6 +56,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected val logger: Logger? = null
 
     @Inject
+    private val docHelper: DocHelper? = null
+
+    @Inject
     protected val psiClassHelper: PsiClassHelper? = null
 
     @Inject
@@ -71,6 +78,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     @Inject
     protected val ruleComputer: RuleComputer? = null
+
+    @Inject
+    protected val jvmClassHelper: JvmClassHelper? = null
 
     @Inject(optional = true)
     protected val methodFilter: MethodFilter? = null
@@ -224,60 +234,48 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     open protected fun findAttrOfMethod(method: PsiMethod): String? {
-        return DocCommentUtils.getAttrOfDocComment(method.docComment)
+        return docHelper!!.getAttrOfDocComment(method)
     }
 
     private fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
-        val docComment = psiMethod.docComment
+        val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
+
         var methodParamComment: KV<String, Any>? = null
-        if (docComment != null) {
-            for (paramDocTag in docComment.findTagsByName("param")) {
-                var name: String? = null
-                var value: String? = null
-                paramDocTag.dataElements
-                        .asSequence()
-                        .map { it?.text }
-                        .filterNot { StringUtils.isBlank(it) }
-                        .forEach {
-                            when {
-                                name == null -> name = it
-                                value == null -> value = it
-                                else -> value += it
-                            }
-                        }
-                if (StringUtils.isNoneBlank(name, value)) {
-                    if (methodParamComment == null) methodParamComment = KV.create()
+        subTagMap.entries.forEach { entry ->
+            val name: String = entry.key
+            val value: String? = entry.value
+            if (methodParamComment == null) methodParamComment = KV.create()
+            if (!value.isNullOrBlank()) {
+                if (value.contains("@link")) {
+                    val pattern = Pattern.compile("\\{@link (.*?)\\}")
+                    val matcher = pattern.matcher(value)
 
-                    if (value!!.contains("@link")) {
-                        val pattern = Pattern.compile("\\{@link (.*?)\\}")
-                        val matcher = pattern.matcher(value)
+                    val options: ArrayList<HashMap<String, Any?>> = ArrayList()
 
-                        val options: ArrayList<HashMap<String, Any?>> = ArrayList()
-
-                        val sb = StringBuffer()
-                        while (matcher.find()) {
-                            matcher.appendReplacement(sb, "")
-                            val linkClassOrProperty = matcher.group(1)
-                            psiClassHelper!!.resolveEnumOrStatic(linkClassOrProperty, psiMethod, name!!)
-                                    ?.let { options.addAll(it) }
-                        }
-                        matcher.appendTail(sb)
-                        methodParamComment[name!!] = sb.toString()
-                        if (!options.isNullOrEmpty()) {
-                            methodParamComment["$name@options"] = options
-                        }
-                        continue
+                    val sb = StringBuffer()
+                    while (matcher.find()) {
+                        matcher.appendReplacement(sb, "")
+                        val linkClassOrProperty = matcher.group(1)
+                        psiClassHelper!!.resolveEnumOrStatic(linkClassOrProperty, psiMethod, name!!)
+                                ?.let { options.addAll(it) }
                     }
-                    methodParamComment[name!!] = value!!
+                    matcher.appendTail(sb)
+                    methodParamComment!![name] = sb.toString()
+                    if (!options.isNullOrEmpty()) {
+                        methodParamComment!!["$name@options"] = options
+                    }
+                } else {
+                    methodParamComment!![name] = value
                 }
             }
+
         }
         return methodParamComment
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         cls.allMethods
-                .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
+                .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
