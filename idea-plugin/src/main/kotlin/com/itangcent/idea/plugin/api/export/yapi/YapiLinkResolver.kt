@@ -4,13 +4,11 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
-import com.itangcent.idea.plugin.api.export.DefaultRequestHelper
-import com.itangcent.idea.plugin.api.export.LinkResolver
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.DocCommentUtils
 import org.apache.commons.lang3.StringUtils
 
 class YapiLinkResolver : DefaultLinkResolver() {
@@ -22,6 +20,9 @@ class YapiLinkResolver : DefaultLinkResolver() {
 
     @Inject
     private val actionContext: ActionContext? = null
+
+    @Inject
+    protected val docHelper: DocHelper? = null
 
     @Inject
     private val logger: Logger? = null
@@ -111,8 +112,7 @@ class YapiLinkResolver : DefaultLinkResolver() {
     }
 
     private fun findAttrOfClass(cls: PsiClass): String? {
-        val docComment = actionContext!!.callInReadUI { cls.docComment }
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
+        val docText = docHelper!!.getAttrOfDocComment(cls)
         return when {
             StringUtils.isBlank(docText) -> cls.name
             else -> docText
@@ -120,9 +120,7 @@ class YapiLinkResolver : DefaultLinkResolver() {
     }
 
     private fun findAttrOfMethod(method: PsiMethod): String? {
-        val docComment = method.docComment
-
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
+        val docText = docHelper!!.getAttrOfDocComment(method)
         return when {
             StringUtils.isBlank(docText) -> method.name
             else -> docText
