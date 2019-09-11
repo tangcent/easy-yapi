@@ -2,7 +2,9 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
-import com.intellij.psi.*
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
@@ -10,10 +12,11 @@ import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.AnnotationHelper
+import com.itangcent.intellij.jvm.DocHelper
+import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiAnnotationUtils
 import com.itangcent.intellij.psi.PsiClassHelper
-import com.itangcent.intellij.util.DocCommentUtils
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import kotlin.reflect.KClass
@@ -22,6 +25,15 @@ import kotlin.reflect.KClass
  * only parse name
  */
 open class SimpleRequestClassExporter : ClassExporter, Worker {
+
+    @Inject
+    private val docHelper: DocHelper? = null
+
+    @Inject
+    private val annotationHelper: AnnotationHelper? = null
+
+    @Inject
+    protected val jvmClassHelper: JvmClassHelper? = null
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
@@ -98,6 +110,7 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
         actionContext!!.checkStatus()
         //todo:support other web annotation
         findRequestMappingInAnn(method) ?: return
+
         val request = Request()
         request.resource = method
 
@@ -114,16 +127,15 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
         docHandle(request)
     }
 
-    private fun findRequestMappingInAnn(ele: PsiModifierListOwner): PsiAnnotation? {
+    private fun findRequestMappingInAnn(ele: PsiElement): Map<String, Any?>? {
         return SPRING_REQUEST_MAPPING_ANNOTATIONS
-                .map { PsiAnnotationUtils.findAnn(ele, it) }
+                .map { annotationHelper!!.findAnnMap(ele, it) }
                 .firstOrNull { it != null }
     }
 
     private fun findAttrOfMethod(method: PsiMethod): String? {
-        val docComment = method.docComment
 
-        val docText = DocCommentUtils.getAttrOfDocComment(docComment)
+        val docText = docHelper!!.getAttrOfDocComment(method)
         return when {
             StringUtils.isBlank(docText) -> method.name
             else -> docParseHelper!!.resolveLinkInAttr(docText, method)
@@ -132,7 +144,7 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         cls.allMethods
-                .filter { !PsiClassHelper.JAVA_OBJECT_METHODS.contains(it.name) }
+                .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }

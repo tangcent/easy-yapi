@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import com.itangcent.common.Setup
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -14,6 +15,7 @@ import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
 import com.itangcent.intellij.logger.Logger
 import javax.swing.Icon
@@ -29,6 +31,7 @@ abstract class BasicAnAction : KotlinAnAction {
     }
 
     override fun onBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+
         super.onBuildActionContext(event, builder)
         builder.bindInstance("plugin.name", "easy_api")
 
@@ -65,5 +68,11 @@ abstract class BasicAnAction : KotlinAnAction {
         val loadActionExt = actionExtLoader.loadActionExt(event, actionName, logger)
                 ?: return
         loadActionExt.init(builder)
+    }
+
+    companion object {
+        init {
+            Setup.setup(KotlinAutoInject::class)
+        }
     }
 }
