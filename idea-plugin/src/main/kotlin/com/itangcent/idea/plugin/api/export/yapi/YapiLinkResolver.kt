@@ -5,7 +5,6 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -17,9 +16,6 @@ class YapiLinkResolver : DefaultLinkResolver() {
 
     @Inject
     private val moduleHelper: ModuleHelper? = null
-
-    @Inject
-    private val actionContext: ActionContext? = null
 
     @Inject
     protected val docHelper: DocHelper? = null
