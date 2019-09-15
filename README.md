@@ -4,6 +4,7 @@
 [![](https://img.shields.io/jetbrains/plugin/d/12458)](https://plugins.jetbrains.com/plugin/12458-easyyapi)
 
 - Customized [easyApi](https://github.com/tangcent/easy-api) for [yapi](https://github.com/YMFE/yapi)
+- Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
 - [中文](https://github.com/tangcent/easy-yapi/blob/master/README_cn.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
@@ -14,6 +15,10 @@
 - [wiki](https://en.wikipedia.org/wiki/Javadoc)
 - [oracle](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)
 - [baike](https://baike.baidu.com/item/javadoc)
+
+## KDoc
+
+- [kotlinlang](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
 ## Tips
 Before the 1.0.0 release, easy-yapi will be quick iteration.
@@ -116,6 +121,7 @@ restart **IDE**.
 ```
 
 ## Feature
+- [X] Support Java&Kotlin
 - [X] Support Spring
 - [X] Export api to Postman
 - [X] Export api to Yapi
