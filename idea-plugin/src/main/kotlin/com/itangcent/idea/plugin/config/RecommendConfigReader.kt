@@ -49,44 +49,46 @@ class RecommendConfigReader : ConfigReader {
     }
 
     companion object {
-        const val RECOMMEND_CONFIG = "#Get the module from the annotation,group the apis\n" +
-                "module=#module\n" +
-                "\n" +
-                "#Ignore class/api\n" +
-                "ignore=#ignore\n" +
-                "\n" +
-                "#deprecated info\n" +
-                "doc.method=groovy:it.hasDoc(\"deprecated\")?(\"「已废弃」 \"+it.doc(\"deprecated\")):null\n" +
-                "doc.method=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n「已废弃」\":null\n" +
-                "doc.method=groovy:it.hasAnn(\"kotlin.Deprecated\")?(\"\\n「已废弃」 \" + it.ann(\"kotlin.Deprecated\",\"message\")):null\n" +
-                "doc.method=groovy:it.containingClass().hasDoc(\"deprecated\")?(\"「已废弃」 \"+it.containingClass().doc(\"deprecated\")):null\n" +
-                "doc.method=groovy:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n「已废弃」\":null\n" +
-                "doc.method=groovy:it.containingClass().hasAnn(\"kotlin.Deprecated\")?(\"\\n「已废弃」 \" + it.containingClass().ann(\"kotlin.Deprecated\",\"message\")):null\n" +
-                "doc.field=groovy:it.hasDoc(\"deprecated\")?(\"「已废弃」 \"+it.doc(\"deprecated\")):null\n" +
-                "doc.field=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n「已废弃」\":null\n" +
-                "doc.field=groovy:it.hasAnn(\"kotlin.Deprecated\")?(\"\\n「已废弃」 \" + it.ann(\"kotlin.Deprecated\",\"message\")):null\n" +
-                "\n" +
-                "#Additional json parsing rules\n" +
-                "#Support for Jackson annotations\n" +
-                "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +
-                "json.rule.field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value\n" +
-                "#Support for Gson annotations\n" +
-                "json.rule.field.name=@com.google.gson.annotations.SerializedName#value\n" +
-                "json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize\n" +
-                "\n" +
-                "#The ObjectId and Date are parsed as strings\n" +
-                "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
-                "json.rule.convert[java.util.Date]=java.lang.String\n" +
-                "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
-                "\n" +
-                "#Support for javax.validation annotations\n" +
-                "param.required=groovy:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
-                "field.required=groovy:it.hasAnn(\"javax.validation.constraints.NotBlank\")\n" +
-                "param.required=groovy:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
-                "field.required=groovy:it.hasAnn(\"javax.validation.constraints.NotNull\")\n" +
-                "param.required=groovy:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
-                "field.required=groovy:it.hasAnn(\"javax.validation.constraints.NotEmpty\")\n" +
-                "#Support spring file\n" +
-                "type.is_file=groovy:it.isExtend(\"org.springframework.web.multipart.MultipartFile\")"
+        const val RECOMMEND_CONFIG = """
+            #Get the module from the annotation,group the apis
+            module=#module
+
+            #Ignore class/api
+            ignore=#ignore
+
+            #deprecated info
+            doc.method=groovy:it.hasDoc("deprecated")?("「已废弃」 "+it.doc("deprecated")):null
+            doc.method=groovy:it.hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
+            doc.method=groovy:it.hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.ann("kotlin.Deprecated","message")):null
+            doc.method=groovy:it.containingClass().hasDoc("deprecated")?("「已废弃」 "+it.containingClass().doc("deprecated")):null
+            doc.method=groovy:it.containingClass().hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
+            doc.method=groovy:it.containingClass().hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.containingClass().ann("kotlin.Deprecated","message")):null
+            doc.field=groovy:it.hasDoc("deprecated")?("「已废弃」 "+it.doc("deprecated")):null
+            doc.field=groovy:it.hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
+            doc.field=groovy:it.hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.ann("kotlin.Deprecated","message")):null
+
+            #Additional json parsing rules
+            #Support for Jackson annotations
+            json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
+            json.rule.field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
+            #Support for Gson annotations
+            json.rule.field.name=@com.google.gson.annotations.SerializedName#value
+            json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize
+
+            #The ObjectId and Date are parsed as strings
+            json.rule.convert[org.bson.types.ObjectId]=java.lang.String
+            json.rule.convert[java.util.Date]=java.lang.String
+            json.rule.convert[java.sql.Timestamp]=java.lang.String
+
+            #Support for javax.validation annotations
+            param.required=groovy:it.hasAnn("javax.validation.constraints.NotBlank")
+            field.required=groovy:it.hasAnn("javax.validation.constraints.NotBlank")
+            param.required=groovy:it.hasAnn("javax.validation.constraints.NotNull")
+            field.required=groovy:it.hasAnn("javax.validation.constraints.NotNull")
+            param.required=groovy:it.hasAnn("javax.validation.constraints.NotEmpty")
+            field.required=groovy:it.hasAnn("javax.validation.constraints.NotEmpty")
+            #Support spring file
+            type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
+"""
     }
 }
