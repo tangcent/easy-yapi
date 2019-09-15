@@ -2,8 +2,8 @@ package com.itangcent.idea.plugin.fields
 
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.util.ActionUtils
 import java.io.IOException
 

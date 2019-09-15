@@ -3,7 +3,7 @@ package com.itangcent.idea.utils
 import com.intellij.util.containers.stream
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.intellij.util.KV
+import com.itangcent.common.utils.KV
 import java.net.URL
 import kotlin.streams.toList
 

@@ -56,12 +56,15 @@ class RecommendConfigReader : ConfigReader {
                 "ignore=#ignore\n" +
                 "\n" +
                 "#deprecated info\n" +
-                "doc.method=groovy:it.hasDoc(\"deprecated\")?(\"[deprecated]:\"+it.doc(\"deprecated\")):null\n" +
-                "doc.method=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
-                "doc.method=groovy:it.containingClass().hasDoc(\"deprecated\")?(\"[deprecated] \"+it.containingClass().doc(\"deprecated\")):null\n" +
-                "doc.method=groovy:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
-                "doc.field=groovy:it.hasDoc(\"deprecated\")?(\"[deprecated] \"+it.doc(\"deprecated\")):null\n" +
-                "doc.field=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[deprecated]\":null\n" +
+                "doc.method=groovy:it.hasDoc(\"deprecated\")?(\"「deprecated」:\"+it.doc(\"deprecated\")):null\n" +
+                "doc.method=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n「deprecated」\":null\n" +
+                "doc.method=groovy:it.hasAnn(\"kotlin.Deprecated\")?(\"\\n「deprecated」 \" + it.ann(\"kotlin.Deprecated\",\"message\")):null\n" +
+                "doc.method=groovy:it.containingClass().hasDoc(\"deprecated\")?(\"「deprecated」 \"+it.containingClass().doc(\"deprecated\")):null\n" +
+                "doc.method=groovy:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n「deprecated」\":null\n" +
+                "doc.method=groovy:it.containingClass().hasAnn(\"kotlin.Deprecated\")?(\"\\n「deprecated」 \" + it.containingClass().ann(\"kotlin.Deprecated\",\"message\")):null\n" +
+                "doc.field=groovy:it.hasDoc(\"deprecated\")?(\"「deprecated」 \"+it.doc(\"deprecated\")):null\n" +
+                "doc.field=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n「deprecated」\":null\n" +
+                "doc.field=groovy:it.hasAnn(\"kotlin.Deprecated\")?(\"\\n「deprecated」 \" + it.ann(\"kotlin.Deprecated\",\"message\")):null\n" +
                 "\n" +
                 "#Additional json parsing rules\n" +
                 "#Support for Jackson annotations\n" +

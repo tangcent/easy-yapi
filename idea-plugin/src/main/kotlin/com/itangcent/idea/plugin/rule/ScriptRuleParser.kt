@@ -12,8 +12,12 @@ import com.itangcent.intellij.extend.toBoolean
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
+import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.*
+import com.itangcent.intellij.jvm.ArrayDuckType
+import com.itangcent.intellij.jvm.DuckType
+import com.itangcent.intellij.jvm.DuckTypeHelper
+import com.itangcent.intellij.jvm.SingleDuckType
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
