@@ -4,12 +4,16 @@
 [![](https://img.shields.io/jetbrains/plugin/d/12211)](https://plugins.jetbrains.com/plugin/12211-easyapi)
 
 - Simplifies API Development
-- Parsing based on javadoc
+- Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
 ## Javadoc
 
 - [wiki](https://en.wikipedia.org/wiki/Javadoc)
 - [oracle](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)
+
+## KDoc
+
+- [kotlinlang](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
 ## Tips
 Before the 1.0.0 release, easy-api will be quick iteration.
@@ -98,6 +102,7 @@ restart **IDE**.
 ```
 
 ## Feature
+- [X] Support Java&Kotlin
 - [X] Support Spring
 - [X] Export api to Postman
 - [ ] Export api to Word

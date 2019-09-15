@@ -46,4 +46,6 @@
     5. fix config search[(#113)](https://github.com/tangcent/easy-api/pull/113)
     6. resolve {@link ...} in param desc doc[(#117)](https://github.com/tangcent/easy-api/pull/117)
     7. Output path params in 'Export Markdown'[(#118)](https://github.com/tangcent/easy-api/pull/118)
-    
+*   1.0.0 ~
+    1. enhance:support kotlin  [(#125)](https://github.com/tangcent/easy-api/pull/125)
+       
