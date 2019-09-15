@@ -69,6 +69,7 @@ open class AbstractYapiApiExporter {
         val desc: String?
         val attrOfCls = findAttrOfClass(psiClass)!!
 
+        val clsName = actionContext!!.callInReadUI { psiClass.name }
         when {
             attrOfCls.contains("\n") -> {//multi line
                 val lines = attrOfCls.lines()
@@ -78,13 +79,13 @@ open class AbstractYapiApiExporter {
                         break
                     }
                 }
-                desc = "[exported from:${psiClass.name}]\n$attrOfCls"
+                desc = "[exported from:$clsName]\n$attrOfCls"
             }
             else -> {
                 name = StringUtils.left(attrOfCls, 30)
                 desc = when {
-                    attrOfCls.length > 30 -> "[exported from:${psiClass.name}]\n$attrOfCls"
-                    else -> "[exported from:${psiClass.name}]"
+                    attrOfCls.length > 30 -> "[exported from:$clsName]\n$attrOfCls"
+                    else -> "[exported from:$clsName]"
                 }
             }
         }
