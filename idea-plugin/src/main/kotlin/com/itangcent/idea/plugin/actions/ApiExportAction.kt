@@ -13,7 +13,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.psi.PsiClassHelper
+import com.itangcent.intellij.jvm.PsiClassHelper
 
 abstract class ApiExportAction(text: String) : BasicAnAction(text) {
 

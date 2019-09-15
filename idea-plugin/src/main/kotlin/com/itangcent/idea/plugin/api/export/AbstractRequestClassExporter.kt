@@ -9,6 +9,7 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.Response
+import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
@@ -17,19 +18,15 @@ import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.jvm.DocHelper
-import com.itangcent.intellij.jvm.JvmClassHelper
+import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.DuckTypeHelper
+import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
-import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.KV
 import com.itangcent.intellij.util.Magics
 import com.itangcent.intellij.util.forEachValid
 import com.itangcent.intellij.util.traceError
 import java.util.*
-import java.util.regex.Pattern
 import kotlin.reflect.KClass
 
 abstract class AbstractRequestClassExporter : ClassExporter, Worker {
@@ -87,6 +84,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     @Inject
     protected var actionContext: ActionContext? = null
+
+    @Inject
+    private val linkExtractor: LinkExtractor? = null
+
+    @Inject
+    private val linkResolver: LinkResolver? = null
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) return false
@@ -246,26 +249,38 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val value: String? = entry.value
             if (methodParamComment == null) methodParamComment = KV.create()
             if (!value.isNullOrBlank()) {
-                if (value.contains("@link")) {
-                    val pattern = Pattern.compile("\\{@link (.*?)\\}")
-                    val matcher = pattern.matcher(value)
 
-                    val options: ArrayList<HashMap<String, Any?>> = ArrayList()
+                val options: ArrayList<HashMap<String, Any?>> = ArrayList()
+                val comment = linkExtractor!!.extract(value, psiMethod, object : AbstractLinkResolve() {
 
-                    val sb = StringBuffer()
-                    while (matcher.find()) {
-                        matcher.appendReplacement(sb, "")
-                        val linkClassOrProperty = matcher.group(1)
-                        psiClassHelper!!.resolveEnumOrStatic(linkClassOrProperty, psiMethod, name!!)
+                    override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+
+                        psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name!!)
                                 ?.let { options.addAll(it) }
+
+                        return super.linkToPsiElement(plainText, linkTo)
                     }
-                    matcher.appendTail(sb)
-                    methodParamComment!![name] = sb.toString()
-                    if (!options.isNullOrEmpty()) {
-                        methodParamComment!!["$name@options"] = options
+
+                    override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
+                        return linkResolver!!.linkToClass(linkClass)
                     }
-                } else {
-                    methodParamComment!![name] = value
+
+                    override fun linkToField(plainText: String, linkField: PsiField): String? {
+                        return linkResolver!!.linkToProperty(linkField)
+                    }
+
+                    override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
+                        return linkResolver!!.linkToMethod(linkMethod)
+                    }
+
+                    override fun linkToUnresolved(plainText: String): String? {
+                        return plainText
+                    }
+                })
+
+                methodParamComment!![name] = comment ?: ""
+                if (!options.isNullOrEmpty()) {
+                    methodParamComment!!["$name@options"] = options
                 }
             }
 

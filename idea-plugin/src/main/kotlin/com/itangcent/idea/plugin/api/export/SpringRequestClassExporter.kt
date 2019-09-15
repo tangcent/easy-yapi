@@ -12,7 +12,7 @@ import com.itangcent.common.utils.tinyString
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.psi.ClassRuleKeys
-import com.itangcent.intellij.util.KV
+import com.itangcent.common.utils.KV
 import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {

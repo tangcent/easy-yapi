@@ -30,6 +30,7 @@ open class DefaultLinkResolver : LinkResolver {
             return "[$linkMethod]"
         }
         val attrOfMethod = docHelper!!.getAttrOfDocComment(linkMethod)
+                ?.lines()?.first { !it.isBlank() }
         return when {
             attrOfMethod.isNullOrBlank() -> "[${PsiClassUtils.fullNameOfMethod(linkMethod)}]"
             else -> "[$attrOfMethod]"

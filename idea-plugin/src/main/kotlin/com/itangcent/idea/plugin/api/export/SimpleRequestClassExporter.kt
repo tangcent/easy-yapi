@@ -16,7 +16,7 @@ import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassHelper
+import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import kotlin.reflect.KClass

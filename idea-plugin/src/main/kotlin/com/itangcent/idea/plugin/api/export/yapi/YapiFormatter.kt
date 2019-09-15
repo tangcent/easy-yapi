@@ -9,6 +9,7 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.intellij.config.ConfigReader
@@ -19,7 +20,6 @@ import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.KV
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
 import java.util.regex.Pattern

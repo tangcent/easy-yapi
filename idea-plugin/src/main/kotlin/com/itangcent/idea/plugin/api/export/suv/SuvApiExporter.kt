@@ -40,8 +40,9 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.intellij.util.traceError
@@ -64,6 +65,7 @@ class SuvApiExporter {
 
     @Inject
     private val classExporter: ClassExporter? = null
+
 
     @Suppress("UNCHECKED_CAST")
     fun showExportWindow() {
@@ -164,10 +166,10 @@ class SuvApiExporter {
         protected val classExporter: ClassExporter? = null
 
         @Inject
-        protected val psiClassHelper: PsiClassHelper? = null
+        protected val actionContext: ActionContext? = null
 
         @Inject
-        protected val actionContext: ActionContext? = null
+        private val psiResolver: PsiResolver? = null
 
         private var suvApiExporter: SuvApiExporter? = null
 
@@ -295,7 +297,7 @@ class SuvApiExporter {
                     .filter { it != null }
                     .map { it.resource }
                     .filter { it != null }
-                    .map { psiClassHelper!!.getContainingClass(it as PsiMember) }
+                    .map { psiResolver!!.getContainingClass(it as PsiMember) }
                     .distinct()
                     .toList()
 
