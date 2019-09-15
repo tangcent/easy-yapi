@@ -2,51 +2,41 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
-import com.itangcent.intellij.psi.PsiClassHelper
-import java.util.regex.Pattern
+import com.itangcent.intellij.jvm.AbstractLinkResolve
+import com.itangcent.intellij.jvm.LinkExtractor
 
 @Singleton
 open class DefaultDocParseHelper : DocParseHelper {
 
     @Inject
-    private val psiClassHelper: PsiClassHelper? = null
+    private val linkResolver: LinkResolver? = null
 
     @Inject
-    private val linkResolver: LinkResolver? = null
+    private val linkExtractor: LinkExtractor? = null
 
     override fun resolveLinkInAttr(attr: String?, psiMember: PsiMember): String? {
         if (attr.isNullOrBlank()) return attr
 
-        if (attr.contains("@link")) {
-            val pattern = Pattern.compile("\\{@link (.*?)\\}")
-            val matcher = pattern.matcher(attr)
-
-            val sb = StringBuffer()
-            while (matcher.find()) {
-                matcher.appendReplacement(sb, "")
-                val linkClassAndMethod = matcher.group(1)
-                val linkClassName = linkClassAndMethod.substringBefore("#")
-                val linkMethodOrProperty = linkClassAndMethod.substringAfter("#", "").trim()
-                val linkClass = psiClassHelper!!.resolveClass(linkClassName, psiMember) ?: continue
-                if (linkMethodOrProperty.isBlank()) {
-                    sb.append(linkResolver!!.linkToClass(linkClass))
-                } else {
-                    val methodOrProperty = psiClassHelper.resolvePropertyOrMethodOfClass(linkClass, linkMethodOrProperty)
-                            ?: continue
-                    when (methodOrProperty) {
-                        is PsiMethod -> sb.append(linkResolver!!.linkToMethod(methodOrProperty))
-                        is PsiField -> sb.append(linkResolver!!.linkToProperty(methodOrProperty))
-                        else -> sb.append("[$linkClassAndMethod]")
-                    }
-                }
+        return linkExtractor!!.extract(attr, psiMember, object : AbstractLinkResolve() {
+            override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
+                return linkResolver!!.linkToClass(linkClass)
             }
-            matcher.appendTail(sb)
-            return sb.toString()
-        }
 
-        return attr
+            override fun linkToField(plainText: String, linkField: PsiField): String? {
+                return linkResolver!!.linkToProperty(linkField)
+            }
+
+            override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
+                return linkResolver!!.linkToMethod(linkMethod)
+            }
+
+            override fun linkToUnresolved(plainText: String): String? {
+                return plainText
+            }
+        })
     }
 }

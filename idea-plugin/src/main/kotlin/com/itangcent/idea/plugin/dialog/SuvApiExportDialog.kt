@@ -7,8 +7,8 @@ import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassHelper
 import com.itangcent.intellij.util.traceError
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter

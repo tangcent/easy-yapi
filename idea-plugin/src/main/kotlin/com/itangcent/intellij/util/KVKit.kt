@@ -1,5 +1,6 @@
 package com.itangcent.intellij.util
 
+import com.itangcent.common.utils.KV
 import java.util.function.BiConsumer
 
 fun <V> KV<String, V>.forEachValid(action: (Map.Entry<String, V>) -> Unit) {

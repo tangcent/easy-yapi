@@ -4,10 +4,10 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiType
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.utils.KV
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.intellij.jvm.SingleDuckType
 import com.itangcent.intellij.psi.DefaultPsiClassHelper
-import com.itangcent.intellij.psi.SingleDuckType
-import com.itangcent.intellij.util.KV
 
 /**
  *
