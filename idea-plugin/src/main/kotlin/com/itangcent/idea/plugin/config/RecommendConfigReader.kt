@@ -56,12 +56,15 @@ class RecommendConfigReader : ConfigReader {
                 "ignore=#ignore\n" +
                 "\n" +
                 "#deprecated info\n" +
-                "doc.method=groovy:it.hasDoc(\"deprecated\")?(\"[已废弃] \"+it.doc(\"deprecated\")):null\n" +
-                "doc.method=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
-                "doc.method=groovy:it.containingClass().hasDoc(\"deprecated\")?(\"[已废弃] \"+it.containingClass().doc(\"deprecated\")):null\n" +
-                "doc.method=groovy:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
-                "doc.field=groovy:it.hasDoc(\"deprecated\")?(\"[已废弃] \"+it.doc(\"deprecated\")):null\n" +
-                "doc.field=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n[已废弃]\":null\n" +
+                "doc.method=groovy:it.hasDoc(\"deprecated\")?(\"「已废弃」 \"+it.doc(\"deprecated\")):null\n" +
+                "doc.method=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n「已废弃」\":null\n" +
+                "doc.method=groovy:it.hasAnn(\"kotlin.Deprecated\")?(\"\\n「已废弃」 \" + it.ann(\"kotlin.Deprecated\",\"message\")):null\n" +
+                "doc.method=groovy:it.containingClass().hasDoc(\"deprecated\")?(\"「已废弃」 \"+it.containingClass().doc(\"deprecated\")):null\n" +
+                "doc.method=groovy:it.containingClass().hasAnn(\"java.lang.Deprecated\")?\"\\n「已废弃」\":null\n" +
+                "doc.method=groovy:it.containingClass().hasAnn(\"kotlin.Deprecated\")?(\"\\n「已废弃」 \" + it.containingClass().ann(\"kotlin.Deprecated\",\"message\")):null\n" +
+                "doc.field=groovy:it.hasDoc(\"deprecated\")?(\"「已废弃」 \"+it.doc(\"deprecated\")):null\n" +
+                "doc.field=groovy:it.hasAnn(\"java.lang.Deprecated\")?\"\\n「已废弃」\":null\n" +
+                "doc.field=groovy:it.hasAnn(\"kotlin.Deprecated\")?(\"\\n「已废弃」 \" + it.ann(\"kotlin.Deprecated\",\"message\")):null\n" +
                 "\n" +
                 "#Additional json parsing rules\n" +
                 "#Support for Jackson annotations\n" +

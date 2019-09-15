@@ -15,7 +15,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.util.KV
+import com.itangcent.common.utils.KV
 import com.itangcent.intellij.util.traceError
 import kotlin.reflect.KClass
 

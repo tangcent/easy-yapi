@@ -1,8 +1,8 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.KV
 import com.itangcent.intellij.extend.asList
-import com.itangcent.intellij.util.KV
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.client.methods.HttpPost

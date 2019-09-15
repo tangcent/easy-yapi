@@ -14,7 +14,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassHelper
+import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.util.ToolUtils
 import com.itangcent.intellij.util.traceError
 
