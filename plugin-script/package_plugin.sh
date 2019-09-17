@@ -13,3 +13,8 @@ echo "baseDir:"${basedir}
 
 cd ${basedir}/idea-plugin
 ../gradlew clean buildPlugin --stacktrace
+
+if [[ ! -d "$basedir/plugin" ]];then
+mkdir ${basedir}/plugin
+fi
+mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-api.jar

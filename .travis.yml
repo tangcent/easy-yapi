@@ -1,0 +1,20 @@
+language: java
+sudo: false # faster builds
+
+matrix:
+  include:
+    - os: linux
+      sudo: required
+      jdk: openjdk8
+
+script:
+  - ./plugin-script/build_plugin.sh
+
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/**
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/

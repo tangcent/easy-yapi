@@ -22,7 +22,6 @@
 hs_err_pid*
 .gradle/
 .idea/
-gradle/wrapper/
 
 /build
 /idea-plugin/build
@@ -33,7 +32,5 @@ gradle/wrapper/
 common-api/build/
 
 /plugin/
-/gradlew
-/gradlew.bat
 /common-api/out/
 /idea-plugin/out/
