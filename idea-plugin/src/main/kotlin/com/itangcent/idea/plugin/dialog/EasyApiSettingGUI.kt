@@ -46,6 +46,8 @@ class EasyApiSettingGUI {
 
     private var hasProject = false
 
+    private var outputDemoCheckBox: JCheckBox? = null
+
     private var inferEnableCheckBox: JCheckBox? = null
 
     private var maxDeepTextField: JTextField? = null
@@ -106,6 +108,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(recommendedCheckBox!!)
                 .mutual(this, "settings.useRecommendConfig")
+
+        autoComputer.bind(outputDemoCheckBox!!)
+                .mutual(this, "settings.outputDemo")
 
         autoComputer.bind(this.maxDeepTextField!!)
                 .with<Int?>(this, "settings.inferMaxDeep")
