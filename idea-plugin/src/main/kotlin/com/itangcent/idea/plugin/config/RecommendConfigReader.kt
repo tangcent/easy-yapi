@@ -85,6 +85,8 @@ class RecommendConfigReader : ConfigReader {
             json.rule.convert[#regex:org.springframework.http.HttpEntity<(.*?)>]=#{1}
             json.rule.convert[#regex:org.springframework.http.RequestEntity<(.*?)>]=#{1}
             json.rule.convert[#regex:org.springframework.http.ResponseEntity<(.*?)>]=#{1}
+            json.rule.convert[#regex:reactor.core.publisher.Mono<(.*?)>]=#{1}
+            json.rule.convert[#regex:reactor.core.publisher.Flux<(.*?)>]=java.util.List<#{1}>
 
             #Support for javax.validation annotations
             param.required=groovy:it.hasAnn("javax.validation.constraints.NotBlank")
