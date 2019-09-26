@@ -71,6 +71,7 @@ class RecommendConfigReader : ConfigReader {
             #Support for Jackson annotations
             json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
             json.rule.field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
+
             #Support for Gson annotations
             json.rule.field.name=@com.google.gson.annotations.SerializedName#value
             json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize
@@ -80,6 +81,13 @@ class RecommendConfigReader : ConfigReader {
             json.rule.convert[java.util.Date]=java.lang.String
             json.rule.convert[java.sql.Timestamp]=java.lang.String
 
+            #resolve HttpEntity/RequestEntity/ResponseEntity
+            json.rule.convert[#regex:org.springframework.http.HttpEntity<(.*?)>]=#{1}
+            json.rule.convert[#regex:org.springframework.http.RequestEntity<(.*?)>]=#{1}
+            json.rule.convert[#regex:org.springframework.http.ResponseEntity<(.*?)>]=#{1}
+            json.rule.convert[#regex:reactor.core.publisher.Mono<(.*?)>]=#{1}
+            json.rule.convert[#regex:reactor.core.publisher.Flux<(.*?)>]=java.util.List<#{1}>
+
             #Support for javax.validation annotations
             param.required=groovy:it.hasAnn("javax.validation.constraints.NotBlank")
             field.required=groovy:it.hasAnn("javax.validation.constraints.NotBlank")
@@ -87,6 +95,7 @@ class RecommendConfigReader : ConfigReader {
             field.required=groovy:it.hasAnn("javax.validation.constraints.NotNull")
             param.required=groovy:it.hasAnn("javax.validation.constraints.NotEmpty")
             field.required=groovy:it.hasAnn("javax.validation.constraints.NotEmpty")
+
             #Support spring file
             type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
         """
