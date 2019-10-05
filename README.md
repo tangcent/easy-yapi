@@ -1,6 +1,5 @@
 # easy-api
 
-
 [![Build Status](https://travis-ci.com/tangcent/easy-api.svg?branch=master)](https://travis-ci.com/tangcent/easy-api)
 [![](https://img.shields.io/jetbrains/plugin/v/12211?color=blue&label=version)](https://plugins.jetbrains.com/plugin/12211-easyapi)
 [![](https://img.shields.io/jetbrains/plugin/d/12211)](https://plugins.jetbrains.com/plugin/12211-easyapi)
@@ -10,6 +9,28 @@
 - Simplifies API Development
 - Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
+# Table of Contents
+
+* 1 [Feature](#Feature)
+* 2 Doc
+  * 2.1 [Javadoc](#Javadoc)
+  * 2.2 [KDoc](#KDoc)
+* 3 [Installation](#Installation)
+* 4 [Guide](#Guide)
+* 5 [Support](#Support)
+
+
+## Feature
+
+- [X] Support Java&Kotlin
+- [X] Support Spring
+- [X] Export api to Postman
+- [ ] Export api to Word
+- [X] Export api to Markdown
+- [X] Export method doc(rpc) to Markdown
+- [X] Call api from code
+- [X] Api DashBoard
+
 ## Javadoc
 
 - [wiki](https://en.wikipedia.org/wiki/Javadoc)
@@ -17,7 +38,7 @@
 
 ## KDoc
 
-- [kotlinlang](https://kotlinlang.org/docs/reference/kotlin-doc.html)
+- [kotlin-doc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
 ## Version
 
@@ -98,18 +119,7 @@ restart **IDE**.
     You can use by this : "Click [Code -> ExportMarkdown] in top"
 ```
 
-## Feature
-- [X] Support Java&Kotlin
-- [X] Support Spring
-- [X] Export api to Postman
-- [ ] Export api to Word
-- [X] Export api to Markdown
-- [X] Export method doc(rpc) to Markdown
-- [X] Call api from code
-- [X] Api DashBoard
-
-
-### Support: 
+### Support 
 
 | doc type  |  Postman  |  Markdown  |
 | ------------ | ------------ | ------------ |
