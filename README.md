@@ -18,6 +18,7 @@
 * 3 [Installation](#Installation)
 * 4 [Guide](#Guide)
 * 5 [Support](#Support)
+* 6 [Changelog](https://github.com/tangcent/easy-api/blob/feature/doc/IDEA_CHANGELOG.md)
 
 
 ## Feature
