@@ -19,6 +19,10 @@
 * 4 [Guide](#Guide)
 * 5 [Support](#Support)
 * 6 [Changelog](https://github.com/tangcent/easy-api/blob/feature/doc/IDEA_CHANGELOG.md)
+* 7 Docs
+  * 7.1 [Config](https://github.com/tangcent/easy-api/blob/master/docs/1.%20Config.md)
+  * 7.2 [Supported-custom-rules](https://github.com/tangcent/easy-api/blob/master/docs/2.%20Supported-custom-rules.md)
+  * 7.3 [Support-local-groovy-extension](https://github.com/tangcent/easy-api/blob/master/docs/3.%20Support-local-groovy-extension.md)
 
 
 ## Feature
