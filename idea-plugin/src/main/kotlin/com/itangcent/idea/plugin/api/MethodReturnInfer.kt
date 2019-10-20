@@ -699,8 +699,8 @@ class MethodReturnInferHelper {
                 continue
             }
             //reference Type
-            if (psiClassHelper.isNormalType(type.canonicalText)) {//normal Type
-                kv[name] = psiClassHelper.getDefaultValue(type.canonicalText)
+            if (psiClassHelper.isNormalType(type)) {//normal Type
+                kv[name] = psiClassHelper.getDefaultValue(type)
                 continue
             }
 
@@ -714,7 +714,7 @@ class MethodReturnInferHelper {
         when {
             psiType == null || psiType == PsiType.NULL -> return null
             psiType is PsiPrimitiveType -> return PsiTypesUtil.getDefaultValue(psiType)
-            psiClassHelper!!.isNormalType(psiType.canonicalText) -> return psiClassHelper.getDefaultValue(psiType.canonicalText)
+            psiClassHelper!!.isNormalType(psiType) -> return psiClassHelper.getDefaultValue(psiType)
             psiType is PsiArrayType -> {
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }
@@ -747,7 +747,7 @@ class MethodReturnInferHelper {
         when {
             psiType == null || psiType == PsiType.NULL -> return null
             psiType is PsiPrimitiveType -> return PsiTypesUtil.getDefaultValue(psiType)
-            psiClassHelper!!.isNormalType(psiType.canonicalText) -> return psiClassHelper.getDefaultValue(psiType.canonicalText)
+            psiClassHelper!!.isNormalType(psiType) -> return psiClassHelper.getDefaultValue(psiType)
             psiType is PsiArrayType -> {
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
             }

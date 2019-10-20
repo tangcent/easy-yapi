@@ -255,7 +255,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                     override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
 
-                        psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name!!)
+                        psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name)
                                 ?.let { options.addAll(it) }
 
                         return super.linkToPsiElement(plainText, linkTo)
