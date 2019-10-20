@@ -8,6 +8,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -35,6 +36,8 @@ class ModuleHelper {
     fun findModule(resource: Any): String? {
         return actionContext!!.callInReadUI {
             when (resource) {
+                is PsiResource -> findModule(resource.resource() ?: resource.resourceClass()
+                ?: return@callInReadUI null)
                 is PsiMethod -> findModule(resource)
                 is PsiClass -> findModule(resource)
                 is PsiFile -> findModule(resource)

@@ -12,11 +12,11 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodReturnInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.traceError
@@ -109,7 +109,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
 
                     foreachMethod(cls) { method ->
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
-                            exportMethodApi(method, kv, docHandle)
+                            exportMethodApi(cls, method, kv, docHandle)
                         }
                     }
                 }
@@ -155,14 +155,14 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
         return false
     }
 
-    private fun exportMethodApi(method: PsiMethod, kv: KV<String, Any?>,
+    private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
                                 docHandle: DocHandle) {
 
         actionContext!!.checkStatus()
 
         val methodDoc = MethodDoc()
 
-        methodDoc.resource = method
+        methodDoc.resource = PsiMethodResource(method, psiClass)
 
         processMethod(method, kv, methodDoc)
 
