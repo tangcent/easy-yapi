@@ -14,10 +14,10 @@ import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.idea.icons.EasyIcons
-import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
+import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper

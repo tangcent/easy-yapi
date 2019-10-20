@@ -13,6 +13,35 @@
 
 - [demo](https://github.com/tangcent/spring-demo)
 
+# Table of Contents
+
+* 1 [Feature](#Feature)
+* 2 Doc
+  * 2.1 [Javadoc](#Javadoc)
+  * 2.2 [KDoc](#KDoc)
+* 3 [Installation](#Installation)
+* 4 [Guide](#Guide)
+* 5 [Support](#Support)
+* 6 [Changelog](https://github.com/tangcent/easy-yapi/blob/feature/doc/IDEA_CHANGELOG.md)
+* 7 [Docs](https://github.com/tangcent/easy-yapi/tree/master/docs)
+  * 7.1 [Config](https://github.com/tangcent/easy-yapi/blob/master/docs/1.%20Config.md)
+  * 7.2 [Supported-custom-rules](https://github.com/tangcent/easy-yapi/blob/master/docs/2.%20Supported-custom-rules.md)
+  * 7.3 [Support-local-groovy-extension](https://github.com/tangcent/easy-yapi/blob/master/docs/3.%20Support-local-groovy-extension.md)
+
+## Feature
+- [X] Support Java&Kotlin
+- [X] Support Spring
+- [X] Export api to Postman
+- [X] Export api to Yapi
+- [ ] Export api to Word
+- [X] Export api to Markdown
+- [X] Export method doc(rpc) to Markdown
+- [X] Export method doc(rpc) to Yapi
+- [X] Call api from code
+- [X] Api DashBoard
+- [X] YApi DashBoard
+
+
 ## Javadoc
 
 - [wiki](https://en.wikipedia.org/wiki/Javadoc)
@@ -21,14 +50,7 @@
 
 ## KDoc
 
-- [kotlinlang](https://kotlinlang.org/docs/reference/kotlin-doc.html)
-
-## Tips
-Before the 1.0.0 release, easy-yapi will be quick iteration.
-If you encounter a failure
-1. Please commit a issue.
-2. Try roll back to the previous version.
-3. Feel free to email [me](mailto:pentatangcent@gmail.com) at any time.
+- [kotlin-doc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
 ## Version
 
@@ -122,19 +144,6 @@ restart **IDE**.
     2. Select files or directories from project navigation
     You can use by this : "Click [Code -> ExportMarkdown] in top"
 ```
-
-## Feature
-- [X] Support Java&Kotlin
-- [X] Support Spring
-- [X] Export api to Postman
-- [X] Export api to Yapi
-- [ ] Export api to Word
-- [X] Export api to Markdown
-- [X] Export method doc(rpc) to Markdown
-- [X] Export method doc(rpc) to Yapi
-- [X] Call api from code
-- [X] Api DashBoard
-- [X] YApi DashBoard
 
 
 ### Support: 

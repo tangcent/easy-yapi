@@ -4,9 +4,9 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Doc
-import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
+import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper

@@ -10,34 +10,9 @@ import com.itangcent.intellij.jvm.SingleDuckType
 import com.itangcent.intellij.psi.DefaultPsiClassHelper
 
 /**
- *
- * 1.resolve HttpEntity/RequestEntity/ResponseEntity
- * 2.support rule:["field.required"]
+ * 1.support rule:["field.required"]
  */
 class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
-
-    override fun getTypeObject(clsWithParam: SingleDuckType?, context: PsiElement, option: Int): Any? {
-        if (clsWithParam != null) {
-            val psiClassName = clsWithParam.psiClass().qualifiedName
-            if (psiClassName == HTTP_ENTITY
-                    || psiClassName == RESPONSE_ENTITY
-                    || psiClassName == REQUEST_ENTITY) {
-                if (clsWithParam.genericInfo == null) {
-                    return Any()
-                }
-                var entityType = clsWithParam.genericInfo!!["T"]
-                if (entityType == null && clsWithParam.genericInfo!!.size == 1) {
-                    entityType = clsWithParam.genericInfo!!.values.first()
-                }
-                if (entityType == null) {
-                    return Any()
-                }
-                return super.getTypeObject(entityType, context, option)
-            }
-        }
-
-        return super.getTypeObject(clsWithParam, context, option)
-    }
 
     @Suppress("UNCHECKED_CAST")
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: PsiType, fieldOrMethod: PsiElement, resourcePsiClass: PsiClass, duckType: SingleDuckType, option: Int, kv: KV<String, Any?>) {
@@ -67,11 +42,4 @@ class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    companion object {
-        const val HTTP_ENTITY = "org.springframework.http.HttpEntity"
-
-        const val REQUEST_ENTITY = "org.springframework.http.RequestEntity"
-
-        const val RESPONSE_ENTITY = "org.springframework.http.ResponseEntity"
-    }
 }
