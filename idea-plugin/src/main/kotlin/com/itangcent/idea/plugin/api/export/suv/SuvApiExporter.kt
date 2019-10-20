@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
@@ -71,6 +70,7 @@ class SuvApiExporter {
         val docs: MutableList<DocWrapper> = Collections.synchronizedList(ArrayList<DocWrapper>())
 
         SelectedHelper.Builder()
+                .fileFilter { it.name.endsWith("java") || it.name.endsWith("kt") }
                 .classHandle {
                     actionContext!!.checkStatus()
                     classExporter!!.export(it) { doc ->
