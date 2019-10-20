@@ -151,9 +151,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 //Consider declaring it as object wrapper for the corresponding primitive type.
                 required = true
             }
-        } else if (psiClassHelper.isNormalType(unboxType.canonicalText)) {//normal type
+        } else if (psiClassHelper.isNormalType(unboxType)) {//normal type
             if (defaultVal == null || defaultVal == "") {
-                defaultVal = psiClassHelper.getDefaultValue(unboxType.canonicalText)
+                defaultVal = psiClassHelper.getDefaultValue(unboxType)
             }
         } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
             if (request.method == HttpMethod.GET) {
