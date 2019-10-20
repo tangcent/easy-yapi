@@ -10,13 +10,13 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.utils.SpringClassName
+import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import kotlin.reflect.KClass
@@ -83,7 +83,7 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
                     logger!!.info("search api from:${cls.qualifiedName}")
 
                     foreachMethod(cls) { method ->
-                        exportMethodApi(method, docHandle)
+                        exportMethodApi(cls, method, docHandle)
                     }
                 }
             }
@@ -105,14 +105,16 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
-    private fun exportMethodApi(method: PsiMethod, docHandle: DocHandle) {
+    private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, docHandle: DocHandle) {
 
         actionContext!!.checkStatus()
         //todo:support other web annotation
         findRequestMappingInAnn(method) ?: return
 
         val request = Request()
-        request.resource = method
+
+        request.resource = PsiMethodResource(method, psiClass)
+
 
         val attr: String?
         val attrOfMethod = findAttrOfMethod(method)!!

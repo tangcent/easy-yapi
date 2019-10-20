@@ -8,6 +8,7 @@ import com.itangcent.intellij.config.MutableConfigReader
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 
+
 class RecommendConfigReader : ConfigReader {
 
     @Inject
@@ -57,20 +58,23 @@ class RecommendConfigReader : ConfigReader {
             ignore=#ignore
 
             #deprecated info
-            doc.method=groovy:it.hasDoc("deprecated")?("「已废弃」 "+it.doc("deprecated")):null
-            doc.method=groovy:it.hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
-            doc.method=groovy:it.hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.ann("kotlin.Deprecated","message")):null
-            doc.method=groovy:it.containingClass().hasDoc("deprecated")?("「已废弃」 "+it.containingClass().doc("deprecated")):null
-            doc.method=groovy:it.containingClass().hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
-            doc.method=groovy:it.containingClass().hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.containingClass().ann("kotlin.Deprecated","message")):null
-            doc.field=groovy:it.hasDoc("deprecated")?("「已废弃」 "+it.doc("deprecated")):null
-            doc.field=groovy:it.hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
-            doc.field=groovy:it.hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.ann("kotlin.Deprecated","message")):null
+            doc.method[#deprecated]=groovy:"\n「已废弃」" + it.doc("deprecated")
+            doc.method[@java.lang.Deprecated]=「已废弃」
+            doc.method[@kotlin.Deprecated]=groovy:"\n「已废弃」" + it.ann("kotlin.Deprecated","message")
+
+            doc.method[groovy:it.containingClass().hasDoc("deprecated")]=groovy:"\n「已废弃」" + it.containingClass().doc("deprecated")
+            doc.method[groovy:it.containingClass().hasAnn("java.lang.Deprecated")]=「已废弃」
+            doc.method[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=groovy:"\n「已废弃」 " + it.containingClass().ann("kotlin.Deprecated","message")
+
+            doc.field[#deprecated]=groovy:"\n「已废弃」" + it.doc("deprecated")
+            doc.field[@java.lang.Deprecated]=「已废弃」
+            doc.field[@kotlin.Deprecated]=groovy:"\n「已废弃」" + it.ann("kotlin.Deprecated","message")
 
             #Additional json parsing rules
             #Support for Jackson annotations
             json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
             json.rule.field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
+
             #Support for Gson annotations
             json.rule.field.name=@com.google.gson.annotations.SerializedName#value
             json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize
@@ -80,13 +84,23 @@ class RecommendConfigReader : ConfigReader {
             json.rule.convert[java.util.Date]=java.lang.String
             json.rule.convert[java.sql.Timestamp]=java.lang.String
 
+            #resolve HttpEntity/RequestEntity/ResponseEntity/Mono/Flux
+            ###set resolveProperty = false
+            json.rule.convert[#regex:org.springframework.http.HttpEntity<(.*?)>]=${'$'}{1}
+            json.rule.convert[#regex:org.springframework.http.RequestEntity<(.*?)>]=${'$'}{1}
+            json.rule.convert[#regex:org.springframework.http.ResponseEntity<(.*?)>]=${'$'}{1}
+            json.rule.convert[#regex:reactor.core.publisher.Mono<(.*?)>]=${'$'}{1}
+            json.rule.convert[#regex:reactor.core.publisher.Flux<(.*?)>]=java.util.List<${'$'}{1}>
+            ###set resolveProperty = true
+
             #Support for javax.validation annotations
-            param.required=groovy:it.hasAnn("javax.validation.constraints.NotBlank")
-            field.required=groovy:it.hasAnn("javax.validation.constraints.NotBlank")
-            param.required=groovy:it.hasAnn("javax.validation.constraints.NotNull")
-            field.required=groovy:it.hasAnn("javax.validation.constraints.NotNull")
-            param.required=groovy:it.hasAnn("javax.validation.constraints.NotEmpty")
-            field.required=groovy:it.hasAnn("javax.validation.constraints.NotEmpty")
+            param.required=@javax.validation.constraints.NotBlank
+            field.required=@"javax.validation.constraints.NotBlank
+            param.required=@"javax.validation.constraints.NotNull
+            field.required=@javax.validation.constraints.NotNull
+            param.required=@javax.validation.constraints.NotEmpty
+            field.required=@javax.validation.constraints.NotEmpty
+
             #Support spring file
             type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
 """

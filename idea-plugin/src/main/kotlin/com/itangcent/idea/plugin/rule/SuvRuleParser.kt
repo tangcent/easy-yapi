@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.rule
 
 import com.google.inject.Inject
-import com.intellij.psi.PsiElement
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -29,34 +28,26 @@ class SuvRuleParser : RuleParser {
         actionContext.init(simpleRuleParser)
     }
 
-    override fun contextOf(psiElement: PsiElement): PsiElementContext {
-        return simpleRuleParser.contextOf(psiElement)
+    override fun contextOf(target: kotlin.Any, context: com.intellij.psi.PsiElement?): RuleContext {
+        return simpleRuleParser.contextOf(target, context)
     }
 
-    override fun parseBooleanRule(rule: String): List<BooleanRule> {
+    override fun parseBooleanRule(rule: String): BooleanRule? {
         return when {
-            rule.isBlank() -> emptyList()
+            rule.isBlank() -> null
             rule.startsWith(JS_PREFIX) -> jsRuleParser.parseBooleanRule(rule.removePrefix(JS_PREFIX))
             rule.startsWith(GROOVY_PREFIX) -> groovyRuleParser.parseBooleanRule(rule.removePrefix(GROOVY_PREFIX))
             else -> simpleRuleParser.parseBooleanRule(rule)
         }
     }
 
-    override fun parseBooleanRule(rule: String, delimiters: String, defaultValue: Boolean): List<BooleanRule> {
-        return simpleRuleParser.parseBooleanRule(rule, delimiters, defaultValue)
-    }
-
-    override fun parseStringRule(rule: String): List<StringRule> {
+    override fun parseStringRule(rule: String): StringRule? {
         return when {
-            rule.isBlank() -> emptyList()
+            rule.isBlank() -> null
             rule.startsWith(JS_PREFIX) -> jsRuleParser.parseStringRule(rule.removePrefix(JS_PREFIX))
             rule.startsWith(GROOVY_PREFIX) -> groovyRuleParser.parseStringRule(rule.removePrefix(GROOVY_PREFIX))
             else -> simpleRuleParser.parseStringRule(rule)
         }
-    }
-
-    override fun parseStringRule(rule: String, delimiters: String): List<StringRule> {
-        return simpleRuleParser.parseStringRule(rule, delimiters)
     }
 
     companion object {

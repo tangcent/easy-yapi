@@ -6,16 +6,17 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.model.MethodDoc
+import com.itangcent.common.utils.KV
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.common.utils.KV
 import com.itangcent.intellij.util.traceError
 import kotlin.reflect.KClass
 
@@ -92,7 +93,7 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
 
                     foreachMethod(cls) { method ->
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
-                            exportMethodApi(method, kv, docHandle)
+                            exportMethodApi(cls, method, kv, docHandle)
                         }
                     }
                 }
@@ -138,14 +139,14 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
         return false
     }
 
-    private fun exportMethodApi(method: PsiMethod, kv: KV<String, Any?>,
+    private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
                                 docHandle: DocHandle) {
 
         actionContext!!.checkStatus()
 
         val methodDoc = MethodDoc()
 
-        methodDoc.resource = method
+        methodDoc.resource = PsiMethodResource(method, psiClass)
 
         processMethod(method, kv, methodDoc)
 

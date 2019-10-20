@@ -3,21 +3,11 @@ package com.itangcent.idea.plugin.rule
 import com.google.inject.Inject
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
-import com.itangcent.intellij.config.rule.BooleanRule
-import com.itangcent.intellij.config.rule.PsiElementContext
-import com.itangcent.intellij.config.rule.RuleParser
-import com.itangcent.intellij.config.rule.StringRule
+import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toBoolean
-import com.itangcent.intellij.jvm.AnnotationHelper
-import com.itangcent.intellij.jvm.DocHelper
-import com.itangcent.intellij.jvm.JvmClassHelper
-import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.jvm.ArrayDuckType
-import com.itangcent.intellij.jvm.DuckType
-import com.itangcent.intellij.jvm.DuckTypeHelper
-import com.itangcent.intellij.jvm.SingleDuckType
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
@@ -37,34 +27,24 @@ abstract class ScriptRuleParser : RuleParser {
     @Inject
     private val logger: Logger? = null
 
-    override fun parseBooleanRule(rule: String): List<BooleanRule> {
-        return listOf(BooleanRule.of { context ->
+    override fun parseBooleanRule(rule: String): BooleanRule? {
+        return BooleanRule.of { context ->
             return@of eval(rule, context).toBoolean()
-        })
+        }
     }
 
-    @Deprecated(message = "it will be removed at next version")
-    override fun parseBooleanRule(rule: String, delimiters: String, defaultValue: Boolean): List<BooleanRule> {
-        TODO("com.itangcent.idea.plugin.rule.JsRuleParser.parseBooleanRule(java.lang.String, java.lang.String, boolean) was not implemented")
-    }
-
-    override fun parseStringRule(rule: String): List<StringRule> {
-        return listOf(StringRule.of { context ->
+    override fun parseStringRule(rule: String): StringRule? {
+        return StringRule.of { context ->
             return@of eval(rule, context)?.toString()
-        })
+        }
     }
 
-    @Deprecated(message = "it will be removed at next version")
-    override fun parseStringRule(rule: String, delimiters: String): List<StringRule> {
-        TODO("com.itangcent.idea.plugin.rule.JsRuleParser.parseStringRule(java.lang.String, java.lang.String) was not implemented")
-    }
-
-    private fun eval(ruleScript: String, context: PsiElementContext): Any? {
+    private fun eval(ruleScript: String, context: RuleContext): Any? {
         try {
             val simpleScriptContext = SimpleScriptContext()
-            val contextForScript: PsiElementContext? = when (context) {
-                is BaseScriptPsiElementContext -> context
-                else -> contextOf(context.getResource()!!)
+            val contextForScript: RuleContext? = when (context) {
+                is BaseScriptRuleContext -> context
+                else -> contextOf(context.getResource()!!, context.getResource()!!)
             }
             simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
             return getScriptEngine().eval(ruleScript, simpleScriptContext)
@@ -76,14 +56,16 @@ abstract class ScriptRuleParser : RuleParser {
 
     protected abstract fun getScriptEngine(): ScriptEngine
 
-    override fun contextOf(psiElement: PsiElement): PsiElementContext {
-        return when (psiElement) {
-            is PsiClass -> ScriptPsiClassContext(psiElement)
-            is PsiField -> ScriptPsiFieldContext(psiElement)
-            is PsiMethod -> ScriptPsiMethodContext(psiElement)
-            is PsiParameter -> ScriptPsiParameterContext(psiElement)
-            is PsiType -> ScriptPsiTypeContext(psiElement)
-            else -> BaseScriptPsiElementContext(psiElement)
+    override fun contextOf(target: kotlin.Any, context: com.intellij.psi.PsiElement?): RuleContext {
+        return when (target) {
+            is PsiClass -> ScriptPsiClassContext(target)
+            is PsiField -> ScriptPsiFieldContext(target)
+            is PsiMethod -> ScriptPsiMethodContext(target)
+            is PsiParameter -> ScriptPsiParameterContext(target)
+            is PsiType -> ScriptPsiTypeContext(target)
+            is PsiElement -> BaseScriptRuleContext(target)
+            is String -> StringRuleContext(target, context!!)
+            else -> throw IllegalArgumentException("unable to build context of:$target")
         }
     }
 
@@ -98,7 +80,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.doc("tag","subTag"):String?
      * it.hasDoc("tag"):Boolean
      */
-    open inner class BaseScriptPsiElementContext : PsiElementContext {
+    open inner class BaseScriptRuleContext : RuleContext {
 
         protected var psiElement: PsiElement? = null
 
@@ -197,7 +179,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isArray():Boolean
      * @see ScriptPsiTypeContext
      */
-    inner class ScriptPsiClassContext(private val psiClass: PsiClass) : BaseScriptPsiElementContext(psiClass) {
+    inner class ScriptPsiClassContext(private val psiClass: PsiClass) : BaseScriptRuleContext(psiClass) {
 
         fun methods(): Array<ScriptPsiMethodContext> {
             return psiClass.allMethods.map { ScriptPsiMethodContext(it) }
@@ -251,7 +233,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.containingClass:class
      * it.jsonName:String
      */
-    inner class ScriptPsiFieldContext(private val psiField: PsiField) : BaseScriptPsiElementContext(psiField) {
+    inner class ScriptPsiFieldContext(private val psiField: PsiField) : BaseScriptRuleContext(psiField) {
 
         fun type(): ScriptPsiTypeContext {
             return ScriptPsiTypeContext(psiField.type)
@@ -286,7 +268,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.argCnt:int
      * it.containingClass:class
      */
-    inner class ScriptPsiMethodContext(private val psiMethod: PsiMethod) : BaseScriptPsiElementContext(psiMethod) {
+    inner class ScriptPsiMethodContext(private val psiMethod: PsiMethod) : BaseScriptRuleContext(psiMethod) {
 
         /**
          * Returns the return type of the method.
@@ -348,7 +330,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.type:class
      * it.isVarArgs:Boolean
      */
-    inner class ScriptPsiParameterContext(private val psiParameter: PsiParameter) : BaseScriptPsiElementContext(psiParameter) {
+    inner class ScriptPsiParameterContext(private val psiParameter: PsiParameter) : BaseScriptRuleContext(psiParameter) {
 
         fun type(): ScriptPsiTypeContext {
             return ScriptPsiTypeContext(psiParameter.type)
@@ -377,7 +359,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isArray():Boolean
      * @see ScriptPsiClassContext
      */
-    inner class ScriptPsiTypeContext(private val psiType: PsiType) : BaseScriptPsiElementContext() {
+    inner class ScriptPsiTypeContext(private val psiType: PsiType) : BaseScriptRuleContext() {
 
         private var duckType: DuckType? = null
 

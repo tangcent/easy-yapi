@@ -28,6 +28,8 @@ class Settings {
 
     var logLevel: Int = ConfigurableLogger.CoarseLogLevel.LOW.getLevel()
 
+    var outputDemo: Boolean = true
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -41,6 +43,7 @@ class Settings {
         newSetting.httpTimeOut = this.httpTimeOut
         newSetting.useRecommendConfig = this.useRecommendConfig
         newSetting.logLevel = this.logLevel
+        newSetting.outputDemo = this.outputDemo
         return newSetting
     }
 
@@ -61,6 +64,7 @@ class Settings {
         if (httpTimeOut != other.httpTimeOut) return false
         if (useRecommendConfig != other.useRecommendConfig) return false
         if (logLevel != other.logLevel) return false
+        if (outputDemo != other.outputDemo) return false
 
         return true
     }
@@ -75,6 +79,7 @@ class Settings {
         result = 31 * result + httpTimeOut
         result = 31 * result + useRecommendConfig.hashCode()
         result = 31 * result + logLevel
+        result = 31 * result + outputDemo.hashCode()
         return result
     }
 

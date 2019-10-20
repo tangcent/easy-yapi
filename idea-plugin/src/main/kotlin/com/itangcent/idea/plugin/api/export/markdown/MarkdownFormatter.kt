@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.export.markdown
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
@@ -12,6 +11,8 @@ import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
+import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
@@ -19,7 +20,6 @@ import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.forEachValid
-import org.apache.commons.lang3.StringUtils
 import java.util.*
 
 @Singleton
@@ -40,6 +40,12 @@ class MarkdownFormatter {
     @Inject
     private val docHelper: DocHelper? = null
 
+    @Inject
+    protected val settingBinder: SettingBinder? = null
+
+    @Inject
+    protected val resourceHelper: ResourceHelper? = null
+
     fun parseRequests(requests: MutableList<Doc>): String {
         val sb = StringBuilder()
         val groupedRequest = groupRequests(requests)
@@ -53,7 +59,7 @@ class MarkdownFormatter {
         //group by class into: {class:requests}
         val clsGroupedMap: HashMap<Any, ArrayList<Any?>> = HashMap()
         docs.forEach { request ->
-            val resource = request.resource?.let { findResourceClass(it) } ?: NULL_RESOURCE
+            val resource = request.resource?.let { resourceHelper!!.findResourceClass(it) } ?: NULL_RESOURCE
             clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
                     .add(request)
         }
@@ -208,9 +214,10 @@ class MarkdownFormatter {
                 handle("| ------------ | ------------ | ------------ |\n")
                 parseBody(0, "", "", request.body, handle)
 
-                handle("\n**Request Demo：**\n\n")
-                parseToJson(handle, request.body)
-
+                if (settingBinder!!.read().outputDemo) {
+                    handle("\n**Request Demo：**\n\n")
+                    parseToJson(handle, request.body)
+                }
 
             } else if (!request.formParams.isNullOrEmpty()) {
                 handle("\n**Form：**\n\n")
@@ -246,8 +253,10 @@ class MarkdownFormatter {
                 response.body?.let { parseBody(0, "", "", it, handle) }
 
                 // handler json example
-                handle("\n**Response Demo：**\n\n")
-                parseToJson(handle, response.body)
+                if (settingBinder!!.read().outputDemo) {
+                    handle("\n**Response Demo：**\n\n")
+                    parseToJson(handle, response.body)
+                }
             }
 
         }
@@ -337,7 +346,7 @@ class MarkdownFormatter {
 
     private fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
-            val attr = findAttrOfClass(resource)
+            val attr = resourceHelper!!.findAttrOfClass(resource)
             if (attr.isNullOrBlank()) {
                 info[NAME] = resource.name!!
                 info[DESC] = "exported from module:${resource.qualifiedName}"
@@ -354,22 +363,6 @@ class MarkdownFormatter {
         } else {
             info[NAME] = "$resource-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}"
             info[DESC] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
-        }
-    }
-
-    private fun findResourceClass(resource: Any): PsiClass? {
-        return when (resource) {
-            is PsiMethod -> actionContext!!.callInReadUI { resource.containingClass }
-            is PsiClass -> resource
-            else -> null
-        }
-    }
-
-    private fun findAttrOfClass(cls: PsiClass): String? {
-        val docText = docHelper!!.getAttrOfDocComment(cls)
-        return when {
-            StringUtils.isBlank(docText) -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls)
         }
     }
 
