@@ -58,27 +58,17 @@ class RecommendConfigReader : ConfigReader {
             ignore=#ignore
 
             #deprecated info
-            doc.method=groovy:it.hasDoc("deprecated")?("「已废弃」 "+it.doc("deprecated")):null
-            doc.method=groovy:it.hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
-            doc.method=groovy:it.hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.ann("kotlin.Deprecated","message")):null
-            doc.method=groovy:it.containingClass().hasDoc("deprecated")?("「已废弃」 "+it.containingClass().doc("deprecated")):null
-            doc.method=groovy:it.containingClass().hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
-            doc.method=groovy:it.containingClass().hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.containingClass().ann("kotlin.Deprecated","message")):null
-            doc.field=groovy:it.hasDoc("deprecated")?("「已废弃」 "+it.doc("deprecated")):null
-            doc.field=groovy:it.hasAnn("java.lang.Deprecated")?"\n「已废弃」":null
-            doc.field=groovy:it.hasAnn("kotlin.Deprecated")?("\n「已废弃」 " + it.ann("kotlin.Deprecated","message")):null
+            doc.method[#deprecated]=groovy:"\n「已废弃」" + it.doc("deprecated")
+            doc.method[@java.lang.Deprecated]=「已废弃」
+            doc.method[@kotlin.Deprecated]=groovy:"\n「已废弃」" + it.ann("kotlin.Deprecated","message")
 
-            doc.method[#deprecated]=groovy:"\n「deprecated」" + it.doc("deprecated")
-            doc.method[@java.lang.Deprecated]=「deprecated」
-            doc.method[@kotlin.Deprecated]=groovy:"\n「deprecated」" + it.ann("kotlin.Deprecated","message")
+            doc.method[groovy:it.containingClass().hasDoc("deprecated")]=groovy:"\n「已废弃」" + it.containingClass().doc("deprecated")
+            doc.method[groovy:it.containingClass().hasAnn("java.lang.Deprecated")]=「已废弃」
+            doc.method[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=groovy:"\n「已废弃」 " + it.containingClass().ann("kotlin.Deprecated","message")
 
-            doc.method[groovy:it.containingClass().hasDoc("deprecated")]=groovy:"\n「deprecated」" + it.containingClass().doc("deprecated")
-            doc.method[groovy:it.containingClass().hasAnn("java.lang.Deprecated")]=「deprecated」
-            doc.method[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=groovy:"\n「deprecated」 " + it.containingClass().ann("kotlin.Deprecated","message")
-
-            doc.field[#deprecated]=groovy:"\n「deprecated」" + it.doc("deprecated")
-            doc.field[@java.lang.Deprecated]=「deprecated」
-            doc.field[@kotlin.Deprecated]=groovy:"\n「deprecated」" + it.ann("kotlin.Deprecated","message")
+            doc.field[#deprecated]=groovy:"\n「已废弃」" + it.doc("deprecated")
+            doc.field[@java.lang.Deprecated]=「已废弃」
+            doc.field[@kotlin.Deprecated]=groovy:"\n「已废弃」" + it.ann("kotlin.Deprecated","message")
 
             #Additional json parsing rules
             #Support for Jackson annotations
