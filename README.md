@@ -24,9 +24,9 @@
 * 5 [Support](#Support)
 * 6 [Changelog](https://github.com/tangcent/easy-yapi/blob/feature/doc/IDEA_CHANGELOG.md)
 * 7 [Docs](https://github.com/tangcent/easy-yapi/tree/master/docs)
-  * 7.1 [Config](https://github.com/tangcent/easy-yapi/blob/master/docs/1.%20Config.md)
-  * 7.2 [Supported-custom-rules](https://github.com/tangcent/easy-yapi/blob/master/docs/2.%20Supported-custom-rules.md)
-  * 7.3 [Support-local-groovy-extension](https://github.com/tangcent/easy-yapi/blob/master/docs/3.%20Support-local-groovy-extension.md)
+  * 7.1 [Config](https://github.com/tangcent/easy-yapi/blob/master/docs/en/1.%20Config.md)
+  * 7.2 [Supported-custom-rules](https://github.com/tangcent/easy-yapi/blob/master/docs/en/2.%20Supported-custom-rules.md)
+  * 7.3 [Support-local-groovy-extension](https://github.com/tangcent/easy-yapi/blob/master/docs/en/3.%20Support-local-groovy-extension.md)
 
 ## Feature
 - [X] Support Java&Kotlin
