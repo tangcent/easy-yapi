@@ -75,6 +75,7 @@ class SuvApiExporter {
         val docs: MutableList<DocWrapper> = Collections.synchronizedList(ArrayList<DocWrapper>())
 
         SelectedHelper.Builder()
+                .fileFilter { it.name.endsWith("java") || it.name.endsWith("kt") }
                 .classHandle {
                     actionContext!!.checkStatus()
                     classExporter!!.export(it) { doc ->

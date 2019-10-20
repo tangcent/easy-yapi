@@ -53,4 +53,10 @@
     8. Output path params in 'Export Markdown'[(#118)](https://github.com/tangcent/easy-api/pull/118)
 *   1.0.0 ~
     1. enhance:support kotlin  [(#125)](https://github.com/tangcent/easy-api/pull/125)
+*   1.1.0 ~
+    1. enhance:support rule: name\[filter]=value  [(#138)](https://github.com/tangcent/easy-api/pull/138)
+    2. enhance:parse kotlin files in ApiDashboard  [(#141)](https://github.com/tangcent/easy-api/pull/141)
+    3. fix: support Serializer for Enum  [(#134)](https://github.com/tangcent/easy-api/issues/134)
+    4. fix: fix error base path for APIs in super class  [(#137)](https://github.com/tangcent/easy-api/issues/137)
+    5. fix: ApiDashboard not show kotlin module&apis [(#140)](https://github.com/tangcent/easy-api/issues/140)
        
