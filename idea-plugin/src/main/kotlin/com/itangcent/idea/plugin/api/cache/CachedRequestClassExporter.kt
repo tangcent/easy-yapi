@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiMethod
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.StatusRecorder
@@ -13,6 +12,8 @@ import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DocHandle
 import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.psi.PsiMethodResource
+import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -131,7 +132,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                             tinyRequest.response = request.response
 
                             requests.add(RequestWithKey(
-                                    PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)
+                                    PsiClassUtils.fullNameOfMemmber(cls, (request.resource as PsiResource).resource()!!)
                                     , tinyRequest
                             ))
                         })
@@ -166,10 +167,10 @@ class CachedRequestClassExporter : ClassExporter, Worker {
         return true
     }
 
-    private fun readApiFromCache(cls: Any, fileApiCache: FileApiCache, requestHandle: DocHandle) {
+    private fun readApiFromCache(cls: PsiClass, fileApiCache: FileApiCache, requestHandle: DocHandle) {
         fileApiCache.requests?.forEach { request ->
             val method = request.key?.let { PsiClassUtils.findMethodFromFullName(it, cls as PsiElement) }
-            request.request!!.resource = method
+            request.request!!.resource = PsiMethodResource(method!!, cls)
             requestHandle(request.request!!)
         }
 

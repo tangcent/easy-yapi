@@ -26,6 +26,7 @@ import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.config.ConfigReader
@@ -187,6 +188,8 @@ class SuvApiExporter {
                     .filter { it != null }
                     .map { it.resource }
                     .filter { it != null }
+                    .map { it as PsiResource }
+                    .map { it.resource() }
                     .filter { it is PsiMethod }
                     .map { it as PsiMethod }
                     .toList()
@@ -292,8 +295,10 @@ class SuvApiExporter {
                     .stream()
                     .filter { it != null }
                     .map { it.resource }
+                    .filter { it is PsiResource }
+                    .map { it as PsiResource }
+                    .map { it.resourceClass() }
                     .filter { it != null }
-                    .map { psiResolver!!.getContainingClass(it as PsiMember) }
                     .distinct()
                     .toList()
 

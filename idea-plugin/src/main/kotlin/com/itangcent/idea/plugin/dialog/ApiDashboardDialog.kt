@@ -13,12 +13,13 @@ import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.icons.EasyIcons
-import com.itangcent.idea.plugin.api.ResourceHelper
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.psi.PsiResource
+import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
@@ -323,10 +324,10 @@ class ApiDashboardDialog : JDialog() {
                                 if (disposed) return@requestOnly
                                 if (request.resource == null) return@requestOnly
                                 anyFound = true
-                                val resourceClass = resourceHelper!!.findResourceClass(request.resource!!)
+                                val resourceClass = (request.resource as PsiResource?)?.resourceClass()
 
                                 val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
-                                    val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper.findAttrOfClass(resourceClass))
+                                    val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper!!.findAttrOfClass(resourceClass))
                                     val node = DefaultMutableTreeNode(classProjectNodeData)
                                     moduleNode.add(node)
                                     (moduleNode.userObject as ModuleProjectNodeData).addSubProjectNodeData(classProjectNodeData)
@@ -907,7 +908,8 @@ class ApiDashboardDialog : JDialog() {
 
     class ApiProjectNodeData : IconCustomized, Tooltipable {
         override fun toolTip(): String? {
-            return "${PsiClassUtils.fullNameOfMethod(request.resource as PsiMethod)}\n${request.method}:${request.path}"
+            val psiResource = (request.resource ?: return "") as PsiResource
+            return "${PsiClassUtils.fullNameOfMethod(psiResource.resourceClass()!!, psiResource.resource() as PsiMethod)}\n${request.method}:${request.path}"
         }
 
         private val apiDashboardDialog: ApiDashboardDialog
@@ -925,7 +927,8 @@ class ApiDashboardDialog : JDialog() {
 
         override fun toString(): String {
             if (this.apiDashboardDialog.projectMode == ProjectMode.Original) {
-                return (request.resource as PsiMethod).name
+                return ((request.resource as PsiResource?)?.resource() as PsiMethod?)?.name ?: request.name
+                ?: "anonymous"
             }
             return request.name ?: "anonymous"
 
