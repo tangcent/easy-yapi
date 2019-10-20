@@ -86,11 +86,16 @@ class RecommendConfigReader : ConfigReader {
 
             #resolve HttpEntity/RequestEntity/ResponseEntity/Mono/Flux
             ###set resolveProperty = false
+            json.rule.convert[#regex:org.springframework.http.HttpEntity]=java.lang.Object
             json.rule.convert[#regex:org.springframework.http.HttpEntity<(.*?)>]=${'$'}{1}
             json.rule.convert[#regex:org.springframework.http.RequestEntity<(.*?)>]=${'$'}{1}
+            json.rule.convert[#regex:org.springframework.http.RequestEntity]=java.lang.Object
             json.rule.convert[#regex:org.springframework.http.ResponseEntity<(.*?)>]=${'$'}{1}
+            json.rule.convert[#regex:org.springframework.http.ResponseEntity]=java.lang.Object
             json.rule.convert[#regex:reactor.core.publisher.Mono<(.*?)>]=${'$'}{1}
+            json.rule.convert[#regex:reactor.core.publisher.Mono]=java.lang.Object
             json.rule.convert[#regex:reactor.core.publisher.Flux<(.*?)>]=java.util.List<${'$'}{1}>
+            json.rule.convert[#regex:reactor.core.publisher.Flux]=java.util.List<java.lang.Object>
             ###set resolveProperty = true
 
             #Support for javax.validation annotations
