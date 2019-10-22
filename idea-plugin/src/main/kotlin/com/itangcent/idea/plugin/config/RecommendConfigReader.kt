@@ -84,6 +84,8 @@ class RecommendConfigReader : ConfigReader {
             json.rule.convert[org.bson.types.ObjectId]=java.lang.String
             json.rule.convert[java.util.Date]=java.lang.String
             json.rule.convert[java.sql.Timestamp]=java.lang.String
+            json.rule.convert[java.time.LocalDateTime]=java.lang.String
+            json.rule.convert[java.time.LocalDate]=java.lang.String
 
             #resolve HttpEntity/RequestEntity/ResponseEntity/Mono/Flux
             ###set resolveProperty = false
