@@ -6,19 +6,22 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.any
 import com.itangcent.common.utils.isNullOrEmpty
 import com.itangcent.common.utils.tinyString
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.psi.ClassRuleKeys
-import com.itangcent.common.utils.KV
 import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     @Inject
     private val annotationHelper: AnnotationHelper? = null
+
+    @Inject
+    private val commentResolver: CommentResolver? = null
 
     override fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
 
@@ -69,6 +72,10 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
+        var ultimateComment = (paramDesc ?: "")
+        commentResolver!!.resolveCommentForType(param.type, param)?.let {
+            ultimateComment = "$ultimateComment $it"
+        }
         val requestHeaderAnn = findRequestHeader(param)
         if (requestHeaderAnn != null) {
 
@@ -94,7 +101,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             header.name = headName?.toString()
             header.value = defaultValue.toString()
             header.example = defaultValue.toString()
-            header.desc = paramDesc
+            header.desc = ultimateComment
             header.required = required
             requestHelper!!.addHeader(request, header)
             return
@@ -109,7 +116,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 pathName = param.name
             }
 
-            requestHelper!!.addPathParam(request, pathName!!, paramDesc ?: "")
+            requestHelper!!.addPathParam(request, pathName!!, ultimateComment)
             return
         }
 
@@ -167,7 +174,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             }
 
             requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-            requestHelper.addFormFileParam(request, paramName!!, required, paramDesc)
+            requestHelper.addFormFileParam(request, paramName!!, required, ultimateComment)
             return
         } else if (SpringClassName.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
             //ignore @HttpServletRequest and @HttpServletResponse
@@ -179,15 +186,15 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                     paramName!!
                     , defaultVal.toString()
                     , required
-                    , paramDesc)
+                    , ultimateComment)
         } else {
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request, paramDesc)
+                addParamAsQuery(param, request, ultimateComment)
             } else {
                 if (request.method == HttpMethod.NO_METHOD) {
                     request.method = HttpMethod.POST
                 }
-                addParamAsForm(param, request, paramDesc)
+                addParamAsForm(param, request, ultimateComment)
             }
         }
 
