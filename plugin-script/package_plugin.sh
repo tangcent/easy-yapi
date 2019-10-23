@@ -13,7 +13,12 @@ echo "baseDir:"${basedir}
 
 cd ${basedir}/idea-plugin
 ../gradlew clean buildPlugin --stacktrace
+
+version=`cat ${basedir}/build.gradle | grep -Eo '[0-9][0-9.]+'`
+echo "version:"${version}
+
+
 if [[ ! -d "$basedir/plugin" ]];then
 mkdir ${basedir}/plugin
 fi
-mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-yapi.jar
+mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-yapi.${version}.jar

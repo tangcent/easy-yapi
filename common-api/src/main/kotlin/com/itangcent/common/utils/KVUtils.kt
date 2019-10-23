@@ -18,10 +18,10 @@ object KVUtils {
 
             val optionDesc = getOptionDesc(optionList)
             if (!optionDesc.isNullOrBlank()) {
-                if (desc.isNullOrBlank()) {
-                    desc = optionDesc
+                desc = if (desc.isNullOrBlank()) {
+                    optionDesc
                 } else {
-                    desc = desc + "\n" + optionDesc
+                    desc + "\n" + optionDesc
                 }
             }
 
@@ -34,9 +34,30 @@ object KVUtils {
      */
     fun getOptionDesc(options: List<Map<String, Any?>>): String? {
         return options.stream()
-                .map { it["value"].toString() + " :" + it["desc"] }
+                .map { concat(it["value"]?.toString(), it["desc"]?.toString()) }
                 .filter { it != null }
                 .reduce { s1, s2 -> s1 + "\n" + s2 }
                 .orElse(null)
+    }
+
+    /**
+     * get description of constants
+     */
+    fun getConstantDesc(constants: List<Map<String, Any?>>): String? {
+        return constants.stream()
+                .map { concat(it["name"]?.toString(), it["desc"]?.toString()) }
+                .filter { it != null }
+                .reduce { s1, s2 -> s1 + "\n" + s2 }
+                .orElse(null)
+    }
+
+    private fun concat(name: String?, desc: String?): String? {
+        if (name.isNullOrEmpty()) {
+            return null
+        }
+        if (desc.isNullOrEmpty()) {
+            return name
+        }
+        return "$name :$desc"
     }
 }
