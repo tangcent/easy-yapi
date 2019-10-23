@@ -10,7 +10,7 @@
 
 - [中文](https://github.com/tangcent/easy-yapi/blob/master/README_cn.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
-- [demo](https://github.com/tangcent/spring-demo)
+- [demo](https://github.com/Earth-1610/spring-demo)
 
 - 在[easy-api](https://github.com/tangcent/easy-api)的基础上增加对yapi的支持
 
