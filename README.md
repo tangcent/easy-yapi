@@ -5,6 +5,7 @@
 [![](https://img.shields.io/jetbrains/plugin/d/12211)](https://plugins.jetbrains.com/plugin/12211-easyapi)
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/tangcent/easy-api.svg)](http://isitmaintained.com/project/tangcent/easy-api "Average time to resolve an issue")
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/tangcent/easy-api.svg)](http://isitmaintained.com/project/tangcent/easy-api "Percentage of issues still open")
+[![Gitter](https://badges.gitter.im/Earth-1610/easy-api.svg)](https://gitter.im/Earth-1610/easy-api?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 - Simplifies API Development
 - Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
