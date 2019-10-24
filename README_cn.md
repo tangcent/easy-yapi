@@ -5,6 +5,7 @@
 [![](https://img.shields.io/jetbrains/plugin/d/12458)](https://plugins.jetbrains.com/plugin/12458-easyyapi)
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/tangcent/easy-yapi.svg)](http://isitmaintained.com/project/tangcent/easy-yapi "Average time to resolve an issue")
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/tangcent/easy-yapi.svg)](http://isitmaintained.com/project/tangcent/easy-yapi "Percentage of issues still open")
+[![Gitter](https://badges.gitter.im/Earth-1610/easy-yapi.svg)](https://gitter.im/Earth-1610/easy-yapi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 - [yapi](https://github.com/YMFE/yapi)定制版[easy-api](https://github.com/tangcent/easy-api)
 
