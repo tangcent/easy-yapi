@@ -8,7 +8,8 @@
 [![Gitter](https://badges.gitter.im/Earth-1610/easy-api.svg)](https://gitter.im/Earth-1610/easy-api?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 - Simplifies API Development
-- Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
+- Parsing based on [javadoc](#Javadoc)&[KDoc](#KDoc)
+- [QA](https://github.com/tangcent/easy-api/blob/master/docs/QA.md)
 
 # Table of Contents
 
