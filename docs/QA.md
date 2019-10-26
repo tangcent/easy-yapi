@@ -7,6 +7,7 @@
 2. How to group apis to special directory?
 
    * add config:
+   
    ```properties
    #find module for comment tag 
    module=#module
@@ -104,7 +105,7 @@
     
 6. How to declare a api requires some special permission in a description with javax.annotation.security?
 
-   ```
+   
    * add config for spring security:
    ```properties
    # security description
