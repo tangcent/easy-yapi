@@ -80,6 +80,9 @@ class RecommendConfigReader : ConfigReader {
             json.rule.field.name=@com.google.gson.annotations.SerializedName#value
             json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize
 
+            #ignore transient field
+            json.rule.field.ignore=groovy:it.hasModifier("transient")
+
             #The ObjectId and Date are parsed as strings
             json.rule.convert[org.bson.types.ObjectId]=java.lang.String
             json.rule.convert[java.util.Date]=java.lang.String

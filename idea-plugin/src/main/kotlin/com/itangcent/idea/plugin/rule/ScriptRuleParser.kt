@@ -98,18 +98,18 @@ abstract class ScriptRuleParser : RuleParser {
             return psiElement!!.getPropertyValue("name")?.toString()
         }
 
-        override fun asPsiDocCommentOwner(): PsiDocCommentOwner {
+        override fun asPsiDocCommentOwner(): PsiDocCommentOwner? {
             if (psiElement is PsiDocCommentOwner) {
                 return psiElement as PsiDocCommentOwner
             }
-            throw IllegalArgumentException("$psiElement has non comment")
+            return null
         }
 
-        override fun asPsiModifierListOwner(): PsiModifierListOwner {
+        override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             if (psiElement is PsiModifierListOwner) {
                 return psiElement as PsiModifierListOwner
             }
-            throw IllegalArgumentException("$psiElement has non annotation")
+            return null
         }
 
         fun name(): String {
@@ -166,6 +166,9 @@ abstract class ScriptRuleParser : RuleParser {
                     tag, subTag)
         }
 
+        fun hasModifier(modifier: String): Boolean {
+            return asPsiModifierListOwner()?.hasModifierProperty(modifier) ?: false
+        }
     }
 
     /**
@@ -223,6 +226,10 @@ abstract class ScriptRuleParser : RuleParser {
             return false
         }
 
+        override fun asPsiModifierListOwner(): PsiModifierListOwner? {
+            return psiClass
+        }
+
         override fun getName(): String? {
             return psiClass.qualifiedName
         }
@@ -241,6 +248,10 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun type(): ScriptPsiTypeContext {
             return ScriptPsiTypeContext(psiField.type)
+        }
+
+        override fun asPsiModifierListOwner(): PsiModifierListOwner? {
+            return psiField
         }
 
         override fun getName(): String? {
@@ -324,9 +335,14 @@ abstract class ScriptRuleParser : RuleParser {
             return ScriptPsiClassContext(psiMethod.containingClass!!)
         }
 
+        override fun asPsiModifierListOwner(): PsiModifierListOwner? {
+            return psiMethod
+        }
+
         override fun getName(): String? {
             return psiMethod.name
         }
+
     }
 
     /**
@@ -351,6 +367,10 @@ abstract class ScriptRuleParser : RuleParser {
 
         override fun getName(): String? {
             return psiParameter.name
+        }
+
+        override fun asPsiModifierListOwner(): PsiModifierListOwner? {
+            return psiParameter
         }
     }
 
@@ -394,7 +414,6 @@ abstract class ScriptRuleParser : RuleParser {
                 else -> duckType.toString()
             }
         }
-
 
         fun methods(): Array<ScriptPsiMethodContext> {
             return getResource()?.let { psiElement ->
