@@ -113,7 +113,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun name(): String {
-            return getName()!!
+            return getName() ?: ""
         }
 
         /**
@@ -224,6 +224,10 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun getName(): String? {
+            return psiClass.qualifiedName
+        }
+
+        override fun getSimpleName(): String? {
             return psiClass.name
         }
     }
@@ -364,16 +368,33 @@ abstract class ScriptRuleParser : RuleParser {
         private var duckType: DuckType? = null
 
         override fun getName(): String? {
-            return duckType?.let { getDuckTypeName(it) }
+            return getDuckTypeName(duckType)
         }
 
-        private fun getDuckTypeName(duckType: DuckType): String? {
+        private fun getDuckTypeName(duckType: DuckType?): String? {
             return when (duckType) {
+                null -> null
+                is SinglePrimitiveDuckType -> duckType.psiType().name
+                is SingleDuckType -> duckType.psiClass().qualifiedName ?: duckType.psiClass().name
                 is ArrayDuckType -> getDuckTypeName(duckType.componentType()) + "[]"
-                is SingleDuckType -> duckType.psiClass().name
                 else -> duckType.toString()
             }
         }
+
+        override fun getSimpleName(): String? {
+            return getDuckTypeSimpleName(duckType)
+        }
+
+        private fun getDuckTypeSimpleName(duckType: DuckType?): String? {
+            return when (duckType) {
+                null -> null
+                is SinglePrimitiveDuckType -> duckType.psiType().name
+                is SingleDuckType -> duckType.psiClass().name
+                is ArrayDuckType -> getDuckTypeSimpleName(duckType.componentType()) + "[]"
+                else -> duckType.toString()
+            }
+        }
+
 
         fun methods(): Array<ScriptPsiMethodContext> {
             return getResource()?.let { psiElement ->
