@@ -7,7 +7,6 @@
 2. How to group apis to special directory?
 
    * add config:
-   
    ```properties
    #find module for comment tag 
    module=#module
@@ -69,6 +68,7 @@
    ```
    
 4. How to set name&description of api/directory?
+
     * in general:
     ```java
     /**
@@ -91,6 +91,7 @@
     ```
     
 5. How to mark api as deprecated in description
+
     * you can add additional config:
     ```properties
     doc.method[#deprecated]=groovy:"\n「deprecated」" + it.doc("deprecated")
@@ -105,12 +106,12 @@
     
 6. How to declare a api requires some special permission in a description with javax.annotation.security?
 
-   
    * add config for spring security:
    ```properties
    # security description
-   doc.method[@javax.annotation.security.RolesAllowed]=groovy:"\require role:"+it.ann("javax.annotation.security.RolesAllowed")
+   doc.method[@javax.annotation.security.RolesAllowed]=groovy:"require role:"+it.ann("javax.annotation.security.RolesAllowed")
    ```
+   
    * code:
    ```java
    /**
@@ -133,6 +134,7 @@
    }
 
    ```
+   
 7. How to config for spring security
 
    * add config for spring security:
@@ -141,6 +143,7 @@
    find_role_in_PreAuthorize=(function(exp){var str="";if(exp.indexOf("hasRole")!=-1){var roles=exp.match(/hasRole\\((.*?)\\)/);if(roles&&roles.length>1){str+="require role:"+roles[1];}};return str})
    doc.method[@org.springframework.security.access.prepost.PreAuthorize]=js:${find_role_in_PreAuthorize}(it.ann("org.springframework.security.access.prepost.PreAuthorize"))
    ```
+   
    * code:
    ```java
    /**
@@ -163,3 +166,40 @@
    }
 
    ```
+   
+8. How to ignore the special field?
+
+   * To ignore the field with special name:
+   ```properties
+   # ignore field 'log'
+   json.rule.field.ignore=log
+   ```
+   
+   * To ignore the field with special type:
+   ```properties
+   # ignore field 'log' typed xxx.xxx.Log
+   json.rule.field.ignore=groovy:it.type().name()=="xxx.xxx.Log"
+   ```
+   
+   * To ignore the field with special modifier:
+   ```properties
+   #ignore transient field
+   json.rule.field.ignore=groovy:it.hasModifier("transient")
+   ```
+
+9. How to resolve the special type as another one?
+
+   * Receive or output 'java.time.LocalDateTime' as 'yyyy-mm-dd'
+   ```properties
+   #Resolve 'java.time.LocalDateTime' as 'java.lang.String'
+   json.rule.convert[java.time.LocalDateTime]=java.lang.String
+   json.rule.convert[java.time.LocalDate]=java.lang.String
+   ```
+   
+   * Receive or output 'java.time.LocalDateTime' as timestamp
+   ```properties
+   #Resolve 'java.time.LocalDateTime' as 'java.lang.Long'
+   json.rule.convert[java.time.LocalDateTime]=java.lang.Long
+   json.rule.convert[java.time.LocalDate]=java.lang.Long
+   ```
+   
