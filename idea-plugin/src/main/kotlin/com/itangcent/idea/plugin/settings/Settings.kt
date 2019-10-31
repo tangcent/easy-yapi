@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.settings
 
 import com.itangcent.idea.utils.ConfigurableLogger
 import java.util.*
+import kotlin.collections.ArrayList
 
 class Settings {
 
@@ -23,7 +24,7 @@ class Settings {
     //enable to use recommend config
     var useRecommendConfig: Boolean = true
 
-    var recommendConfigs: MutableList<String> = LinkedList()
+    var recommendConfigs: String = ""
 
     var logLevel: Int = ConfigurableLogger.CoarseLogLevel.LOW.getLevel()
 

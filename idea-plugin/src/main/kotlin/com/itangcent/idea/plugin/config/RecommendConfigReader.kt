@@ -54,7 +54,7 @@ class RecommendConfigReader : ConfigReader {
             }
 
             if (configReader is MutableConfigReader) {
-                val recommendConfig = buildRecommendConfig(settingBinder.read().recommendConfigs)
+                val recommendConfig = buildRecommendConfig(settingBinder.read().recommendConfigs.split(","))
 
                 if (recommendConfig.isEmpty()) {
                     logger!!.warn("No recommend config be selected!")
@@ -130,7 +130,9 @@ class RecommendConfigReader : ConfigReader {
         }
 
         fun buildRecommendConfig(codes: List<String>): String {
-            return RECOMMEND_CONFIG_CODES.filter { codes.contains(it) }
+            return RECOMMEND_CONFIG_CODES
+                    .filter { codes.contains(it) }
+                    .map { RECOMMEND_CONFIG_MAP[it] }
                     .reduceSafely { s1, s2 -> "$s1\n$s2" } ?: ""
 
         }

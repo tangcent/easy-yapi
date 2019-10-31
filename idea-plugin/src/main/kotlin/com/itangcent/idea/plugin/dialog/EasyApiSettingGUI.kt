@@ -8,6 +8,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.CheckBoxList
 import com.itangcent.common.utils.SystemUtils
+import com.itangcent.common.utils.reduceSafely
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.ConfigurableLogger
@@ -18,6 +19,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
+import java.util.*
 import javax.swing.*
 
 
@@ -66,6 +68,8 @@ class EasyApiSettingGUI {
     //endregion general-----------------------------------------------------
 
     private var recommendConfigList: CheckBoxList<String>? = null
+
+    private var previewTextArea: JTextArea? = null
 
     private val throttleHelper = ThrottleHelper()
 
@@ -157,6 +161,11 @@ class EasyApiSettingGUI {
                 .with(this.logLevelComboBox!!)
                 .filter { throttleHelper.acquire("settings.logLevel", 300) }
                 .eval { (it ?: ConfigurableLogger.CoarseLogLevel.LOW).getLevel() }
+
+        autoComputer.bind(this.previewTextArea!!)
+                .with<String>(this, "settings.recommendConfigs")
+                .eval { configs -> RecommendConfigReader.buildRecommendConfig(configs.split(",")) }
+
         //endregion  general-----------------------------------------------------
 
         bindRecommendConfig()
@@ -165,11 +174,18 @@ class EasyApiSettingGUI {
 
         this.recommendConfigList!!.setCheckBoxListListener { index, value ->
             val code = RecommendConfigReader.RECOMMEND_CONFIG_CODES[index]
+            val configs = settings!!.recommendConfigs.split(",")
             if (value) {
-                settings!!.recommendConfigs.remove(code)
+                if (!configs.contains(code)) {
+                    val newConfigs = LinkedList(configs)
+                    newConfigs.add(code)
+                    settings!!.recommendConfigs = newConfigs.reduceSafely { s1, s2 -> "$s1,$s2" } ?: ""
+                }
             } else {
-                settings!!.recommendConfigs.add(code)
+                settings!!.recommendConfigs = configs.filter { it != code }.reduceSafely { s1, s2 -> "$s1,$s2" } ?: ""
             }
+            autoComputer.value(this, "settings.recommendConfigs", settings!!.recommendConfigs)
+//            this.previewTextArea!!.text =  RecommendConfigReader.buildRecommendConfig(settings!!.recommendConfigs)
         }
     }
 
@@ -181,14 +197,24 @@ class EasyApiSettingGUI {
         this.logLevelComboBox!!.selectedItem =
                 settings.logLevel.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
 
-        this.recommendConfigList!!.selectedIndices = settings.recommendConfigs.map {
-            RecommendConfigReader.RECOMMEND_CONFIG_CODES.indexOf(it)
-        }.toIntArray()
+        settings.recommendConfigs.split(",").forEach {
+            this.recommendConfigList!!.setItemSelected(it, true)
+        }
+//        this.recommendConfigList!!.selectedIndices = settings.recommendConfigs.map {
+//            RecommendConfigReader.RECOMMEND_CONFIG_CODES.indexOf(it)
+//        }.toIntArray()
     }
 
     fun bindRecommendConfig() {
         recommendConfigList!!.setItems(RecommendConfigReader.RECOMMEND_CONFIG_CODES.toList())
-        { RecommendConfigReader.RECOMMEND_CONFIG_MAP[it] }
+        {
+            val content = RecommendConfigReader.RECOMMEND_CONFIG_MAP[it]
+            when {
+                content.isNullOrBlank() -> ""
+                content.length > 80 -> content.substring(0, 80) + "..."
+                else -> content
+            }
+        }
     }
 
     fun refresh() {
