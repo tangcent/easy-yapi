@@ -197,8 +197,9 @@ class EasyApiSettingGUI {
         this.logLevelComboBox!!.selectedItem =
                 settings.logLevel.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
 
-        settings.recommendConfigs.split(",").forEach {
-            this.recommendConfigList!!.setItemSelected(it, true)
+        val configs = settings.recommendConfigs.split(",");
+        RecommendConfigReader.RECOMMEND_CONFIG_CODES.forEach {
+            this.recommendConfigList!!.setItemSelected(it, configs.contains(it))
         }
 //        this.recommendConfigList!!.selectedIndices = settings.recommendConfigs.map {
 //            RecommendConfigReader.RECOMMEND_CONFIG_CODES.indexOf(it)
