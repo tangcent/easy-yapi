@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.config
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.ide.util.PropertiesComponent
-import com.itangcent.common.utils.reduceSafely
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
@@ -139,7 +138,7 @@ class RecommendConfigReader : ConfigReader {
             return RECOMMEND_CONFIG_CODES
                     .filter { codes.contains(it) }
                     .map { RECOMMEND_CONFIG_MAP[it] }
-                    .reduceSafely { s1, s2 -> "$s1\n$s2" } ?: ""
+                    .joinToString("\n")
 
         }
 

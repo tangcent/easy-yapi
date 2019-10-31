@@ -8,7 +8,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.CheckBoxList
 import com.itangcent.common.utils.SystemUtils
-import com.itangcent.common.utils.reduceSafely
+import com.itangcent.common.utils.truncate
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.ConfigurableLogger
@@ -179,10 +179,10 @@ class EasyApiSettingGUI {
                 if (!configs.contains(code)) {
                     val newConfigs = LinkedList(configs)
                     newConfigs.add(code)
-                    settings!!.recommendConfigs = newConfigs.reduceSafely { s1, s2 -> "$s1,$s2" } ?: ""
+                    settings!!.recommendConfigs = newConfigs.joinToString(",")
                 }
             } else {
-                settings!!.recommendConfigs = configs.filter { it != code }.reduceSafely { s1, s2 -> "$s1,$s2" } ?: ""
+                settings!!.recommendConfigs = configs.filter { it != code }.joinToString(",")
             }
             autoComputer.value(this, "settings.recommendConfigs", settings!!.recommendConfigs)
 //            this.previewTextArea!!.text =  RecommendConfigReader.buildRecommendConfig(settings!!.recommendConfigs)
@@ -197,7 +197,7 @@ class EasyApiSettingGUI {
         this.logLevelComboBox!!.selectedItem =
                 settings.logLevel.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
 
-        val configs = settings.recommendConfigs.split(",");
+        val configs = settings.recommendConfigs.split(",")
         RecommendConfigReader.RECOMMEND_CONFIG_CODES.forEach {
             this.recommendConfigList!!.setItemSelected(it, configs.contains(it))
         }
@@ -209,12 +209,7 @@ class EasyApiSettingGUI {
     fun bindRecommendConfig() {
         recommendConfigList!!.setItems(RecommendConfigReader.RECOMMEND_CONFIG_CODES.toList())
         {
-            val content = RecommendConfigReader.RECOMMEND_CONFIG_MAP[it]
-            when {
-                content.isNullOrBlank() -> ""
-                content.length > 80 -> content.substring(0, 80) + "..."
-                else -> content
-            }
+            RecommendConfigReader.RECOMMEND_CONFIG_MAP[it]?.truncate(100) ?: ""
         }
     }
 
