@@ -36,8 +36,7 @@ object KVUtils {
         return options.stream()
                 .map { concat(it["value"]?.toString(), it["desc"]?.toString()) }
                 .filter { it != null }
-                .reduce { s1, s2 -> s1 + "\n" + s2 }
-                .orElse(null)
+                .joinToString("\n")
     }
 
     /**
@@ -47,8 +46,7 @@ object KVUtils {
         return constants.stream()
                 .map { concat(it["name"]?.toString(), it["desc"]?.toString()) }
                 .filter { it != null }
-                .reduce { s1, s2 -> s1 + "\n" + s2 }
-                .orElse(null)
+                .joinToString("\n")
     }
 
     private fun concat(name: String?, desc: String?): String? {

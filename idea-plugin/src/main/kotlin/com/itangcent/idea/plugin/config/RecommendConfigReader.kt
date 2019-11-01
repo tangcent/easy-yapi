@@ -2,11 +2,15 @@ package com.itangcent.idea.plugin.config
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.intellij.ide.util.PropertiesComponent
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.util.*
 
 
 class RecommendConfigReader : ConfigReader {
@@ -40,8 +44,23 @@ class RecommendConfigReader : ConfigReader {
     @PostConstruct
     fun init() {
         if (settingBinder?.read()?.useRecommendConfig == true) {
+            if (settingBinder.read().recommendConfigs.isEmpty()) {
+                logger!!.info("Even useRecommendConfig was true, but no recommend config be selected!\n" +
+                        "\n" +
+                        "If you need to enable the built-in recommended configuration." +
+                        "Go to [Preference -> Other Setting -> EasyApi -> Recommend]")
+                return
+            }
+
             if (configReader is MutableConfigReader) {
-                configReader.loadConfigInfoContent(RECOMMEND_CONFIG)
+                val recommendConfig = buildRecommendConfig(settingBinder.read().recommendConfigs.split(","))
+
+                if (recommendConfig.isEmpty()) {
+                    logger!!.warn("No recommend config be selected!")
+                    return
+                }
+
+                configReader.loadConfigInfoContent(recommendConfig)
                 logger!!.info("use recommend config")
             } else {
                 logger!!.warn("failed to use recommend config")
@@ -50,70 +69,82 @@ class RecommendConfigReader : ConfigReader {
     }
 
     companion object {
-        const val RECOMMEND_CONFIG = """
-            #Get the module from the annotation,group the apis
-            module=#module
 
-            #Ignore class/api
-            ignore=#ignore
+        init {
+            loadRecommendConfig()
+            resolveRecommendConfig(RECOMMEND_CONFIG_PLAINT)
+        }
 
-            #deprecated info
+        private const val config_name = ".recommend.easy.api.config"
+        private const val config_version = ".recommend.easy.api.config.version"
+        private const val curr_version = "0.0.2"
 
-            doc.method[#deprecated]=groovy:"\n「deprecated」" + it.doc("deprecated")
-            doc.method[@java.lang.Deprecated]=「deprecated」
-            doc.method[@kotlin.Deprecated]=groovy:"\n「deprecated」" + it.ann("kotlin.Deprecated","message")
+        private fun loadRecommendConfig(): String {
 
-            doc.method[groovy:it.containingClass().hasDoc("deprecated")]=groovy:"\n「deprecated」" + it.containingClass().doc("deprecated")
-            doc.method[groovy:it.containingClass().hasAnn("java.lang.Deprecated")]=「deprecated」
-            doc.method[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=groovy:"\n「deprecated」 " + it.containingClass().ann("kotlin.Deprecated","message")
+            val propertiesComponent = PropertiesComponent.getInstance()
+            val cachedValue = propertiesComponent.getValue(config_name)
+            if (!cachedValue.isNullOrBlank()) {
+                val cachedVersion = propertiesComponent.getValue(config_version)
+                if (cachedVersion == curr_version) {
+                    RECOMMEND_CONFIG_PLAINT = cachedValue
+                    return cachedValue
+                }
+            }
 
-            doc.field[#deprecated]=groovy:"\n「deprecated」" + it.doc("deprecated")
-            doc.field[@java.lang.Deprecated]=「deprecated」
-            doc.field[@kotlin.Deprecated]=groovy:"\n「deprecated」" + it.ann("kotlin.Deprecated","message")
+            val bufferedReader = BufferedReader(InputStreamReader(
+                    RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
+                            ?: RecommendConfigReader::class.java.getResourceAsStream(config_name)
+            ))
 
-            #Additional json parsing rules
-            #Support for Jackson annotations
-            json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
-            json.rule.field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
+            val config = bufferedReader.readText()
+            RECOMMEND_CONFIG_PLAINT = config
+            propertiesComponent.setValue(config_name, config)
+            propertiesComponent.setValue(config_version, curr_version)
+            return config
+        }
 
-            #Support for Gson annotations
-            json.rule.field.name=@com.google.gson.annotations.SerializedName#value
-            json.rule.field.ignore=!@com.google.gson.annotations.Expose#serialize
+        private fun resolveRecommendConfig(config: String) {
+            val recommendConfig: MutableMap<String, String> = LinkedHashMap()
+            val recommendConfigCodes: MutableList<String> = LinkedList()
+            var code: String? = null
+            var content: String? = ""
+            for (line in config.lines()) {
+                if (line.startsWith("#[")) {
+                    if (code != null) {
+                        recommendConfigCodes.add(code)
+                        recommendConfig[code] = content ?: ""
+                        content = ""
+                    }
+                    code = line.removeSurrounding("#[", "]")
+                } else {
+                    if (content.isNullOrBlank()) {
+                        content = line
+                    } else {
+                        content += "\n"
+                        content += line
+                    }
+                }
+            }
 
-            #ignore transient field
-            json.rule.field.ignore=groovy:it.hasModifier("transient")
+            if (code != null) {
+                recommendConfigCodes.add(code)
+                recommendConfig[code] = content ?: ""
+            }
 
-            #The ObjectId and Date are parsed as strings
-            json.rule.convert[org.bson.types.ObjectId]=java.lang.String
-            json.rule.convert[java.util.Date]=java.lang.String
-            json.rule.convert[java.sql.Timestamp]=java.lang.String
-            json.rule.convert[java.time.LocalDateTime]=java.lang.String
-            json.rule.convert[java.time.LocalDate]=java.lang.String
+            RECOMMEND_CONFIG_CODES = recommendConfigCodes.toTypedArray()
+            RECOMMEND_CONFIG_MAP = recommendConfig
+        }
 
-            #resolve HttpEntity/RequestEntity/ResponseEntity/Mono/Flux
-            ###set resolveProperty = false
-            json.rule.convert[#regex:org.springframework.http.HttpEntity]=java.lang.Object
-            json.rule.convert[#regex:org.springframework.http.HttpEntity<(.*?)>]=${'$'}{1}
-            json.rule.convert[#regex:org.springframework.http.RequestEntity<(.*?)>]=${'$'}{1}
-            json.rule.convert[#regex:org.springframework.http.RequestEntity]=java.lang.Object
-            json.rule.convert[#regex:org.springframework.http.ResponseEntity<(.*?)>]=${'$'}{1}
-            json.rule.convert[#regex:org.springframework.http.ResponseEntity]=java.lang.Object
-            json.rule.convert[#regex:reactor.core.publisher.Mono<(.*?)>]=${'$'}{1}
-            json.rule.convert[#regex:reactor.core.publisher.Mono]=java.lang.Object
-            json.rule.convert[#regex:reactor.core.publisher.Flux<(.*?)>]=java.util.List<${'$'}{1}>
-            json.rule.convert[#regex:reactor.core.publisher.Flux]=java.util.List<java.lang.Object>
-            ###set resolveProperty = true
+        fun buildRecommendConfig(codes: List<String>): String {
+            return RECOMMEND_CONFIG_CODES
+                    .filter { codes.contains(it) }
+                    .map { RECOMMEND_CONFIG_MAP[it] }
+                    .joinToString("\n")
 
-            #Support for javax.validation annotations
-            param.required=@javax.validation.constraints.NotBlank
-            field.required=@"javax.validation.constraints.NotBlank
-            param.required=@"javax.validation.constraints.NotNull
-            field.required=@javax.validation.constraints.NotNull
-            param.required=@javax.validation.constraints.NotEmpty
-            field.required=@javax.validation.constraints.NotEmpty
+        }
 
-            #Support spring file
-            type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
-        """
+        lateinit var RECOMMEND_CONFIG_PLAINT: String
+        lateinit var RECOMMEND_CONFIG_CODES: Array<String>
+        lateinit var RECOMMEND_CONFIG_MAP: Map<String, String>
     }
 }
