@@ -127,6 +127,7 @@ class RecommendConfigReader : ConfigReader {
             }
 
             if (code != null) {
+                recommendConfigCodes.add(code)
                 recommendConfig[code] = content ?: ""
             }
 
