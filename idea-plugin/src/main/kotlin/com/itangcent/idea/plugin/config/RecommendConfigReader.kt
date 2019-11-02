@@ -76,17 +76,18 @@ class RecommendConfigReader : ConfigReader {
         }
 
         private const val config_name = ".recommend.easy.api.config"
-        private const val config_version = ".recommend.easy.api.config.version"
+        //        private const val config_version = ".recommend.easy.api.config.version"
         private const val curr_version = "0.0.2"
+        //$version$content
 
         private fun loadRecommendConfig(): String {
 
             val propertiesComponent = PropertiesComponent.getInstance()
             val cachedValue = propertiesComponent.getValue(config_name)
             if (!cachedValue.isNullOrBlank()) {
-                val cachedVersion = propertiesComponent.getValue(config_version)
+                val cachedVersion = cachedValue.substring(0, 10).trim()
                 if (cachedVersion == curr_version) {
-                    RECOMMEND_CONFIG_PLAINT = cachedValue
+                    RECOMMEND_CONFIG_PLAINT = cachedValue.substring(10)
                     return cachedValue
                 }
             }
@@ -98,8 +99,8 @@ class RecommendConfigReader : ConfigReader {
 
             val config = bufferedReader.readText()
             RECOMMEND_CONFIG_PLAINT = config
-            propertiesComponent.setValue(config_name, config)
-            propertiesComponent.setValue(config_version, curr_version)
+            //the version always take 10 chars
+            propertiesComponent.setValue(config_name, curr_version.padEnd(10) + config)
             return config
         }
 
