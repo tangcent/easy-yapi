@@ -206,10 +206,12 @@ class EasyApiSettingGUI {
 //        }.toIntArray()
     }
 
-    fun bindRecommendConfig() {
+    private fun bindRecommendConfig() {
         recommendConfigList!!.setItems(RecommendConfigReader.RECOMMEND_CONFIG_CODES.toList())
         {
-            RecommendConfigReader.RECOMMEND_CONFIG_MAP[it]?.truncate(100) ?: ""
+            RecommendConfigReader.RECOMMEND_CONFIG_MAP[it]?.truncate(100)
+                    ?.replace("\n", "     ")
+                    ?: ""
         }
     }
 
