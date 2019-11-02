@@ -39,7 +39,7 @@
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="50"/>
+                        <maximum-size width="-1" height="70"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -83,7 +83,7 @@
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="50"/>
+                        <maximum-size width="-1" height="60"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -119,7 +119,7 @@
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="50"/>
+                        <maximum-size width="-1" height="60"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -153,16 +153,6 @@
                     <properties/>
                     <border type="none" title="Postman"/>
                     <children>
-                      <component id="cf516" class="javax.swing.JTextArea" binding="postmanTokenTextArea">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="50"/>
-                          </grid>
-                        </constraints>
-                        <properties>
-                          <toolTipText value="privateToken of Postman"/>
-                        </properties>
-                      </component>
                       <component id="58498" class="javax.swing.JLabel">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false">
@@ -174,13 +164,31 @@
                           <text value="token:"/>
                         </properties>
                       </component>
+                      <scrollpane id="eaa35">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                            <preferred-size width="-1" height="80"/>
+                          </grid>
+                        </constraints>
+                        <properties/>
+                        <border type="none"/>
+                        <children>
+                          <component id="cf516" class="javax.swing.JTextArea" binding="postmanTokenTextArea">
+                            <constraints/>
+                            <properties>
+                              <lineWrap value="true"/>
+                              <toolTipText value="privateToken of Postman"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </scrollpane>
                     </children>
                   </grid>
                   <grid id="a7de6" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="50"/>
+                        <maximum-size width="-1" height="60"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -205,7 +213,7 @@
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="100"/>
+                        <maximum-size width="-1" height="110"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -309,7 +317,7 @@
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="100"/>
+                        <maximum-size width="-1" height="110"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -409,7 +417,7 @@
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="50"/>
+                        <maximum-size width="-1" height="60"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -503,7 +511,9 @@
                   <grid id="872aa" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
+                        <maximum-size width="-1" height="400"/>
+                      </grid>
                     </constraints>
                     <properties/>
                     <border type="none"/>
@@ -521,7 +531,9 @@
                         <children>
                           <scrollpane id="c745a">
                             <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                                <maximum-size width="-1" height="400"/>
+                              </grid>
                             </constraints>
                             <properties/>
                             <border type="none"/>
