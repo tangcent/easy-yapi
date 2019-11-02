@@ -3,11 +3,11 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.util.containers.stream
+import com.itangcent.common.utils.reduceSafely
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
-import com.itangcent.intellij.util.reduceSafely
 import kotlin.reflect.KClass
 
 class ComboClassExporter : ClassExporter, Worker {

@@ -37,3 +37,10 @@ fun <K, V> Map<K, V>?.any(vararg ks: K): V? {
     }
     return null
 }
+
+fun String.truncate(limit: Int, truncated: String = "..."): String {
+    return when {
+        this.length > limit -> this.substring(0, limit) + truncated
+        else -> this
+    }
+}

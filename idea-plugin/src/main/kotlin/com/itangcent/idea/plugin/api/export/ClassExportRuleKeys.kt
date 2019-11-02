@@ -27,6 +27,9 @@ object ClassExportRuleKeys {
     val METHOD_DOC: RuleKey<String> = SimpleRuleKey("doc.method", StringRule::class,
             StringRuleMode.MERGE_DISTINCT)
 
+    val CLASS_DOC: RuleKey<String> = SimpleRuleKey("doc.class", StringRule::class,
+            StringRuleMode.MERGE_DISTINCT)
+
     val PARAM_REQUIRED: RuleKey<Boolean> = SimpleRuleKey("param.required", BooleanRule::class,
             BooleanRuleMode.ANY)
 

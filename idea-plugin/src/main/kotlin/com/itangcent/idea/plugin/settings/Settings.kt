@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.settings
 
+import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.utils.ConfigurableLogger
 
 class Settings {
@@ -26,6 +27,8 @@ class Settings {
     //enable to use recommend config
     var useRecommendConfig: Boolean = true
 
+    var recommendConfigs: String = RecommendConfigReader.RECOMMEND_CONFIG_CODES.joinToString(",")
+
     var logLevel: Int = ConfigurableLogger.CoarseLogLevel.LOW.getLevel()
 
     var outputDemo: Boolean = true
@@ -42,6 +45,7 @@ class Settings {
         newSetting.yapiTokens = this.yapiTokens
         newSetting.httpTimeOut = this.httpTimeOut
         newSetting.useRecommendConfig = this.useRecommendConfig
+        newSetting.recommendConfigs = this.recommendConfigs
         newSetting.logLevel = this.logLevel
         newSetting.outputDemo = this.outputDemo
         return newSetting
@@ -63,6 +67,7 @@ class Settings {
         if (yapiTokens != other.yapiTokens) return false
         if (httpTimeOut != other.httpTimeOut) return false
         if (useRecommendConfig != other.useRecommendConfig) return false
+        if (recommendConfigs != other.recommendConfigs) return false
         if (logLevel != other.logLevel) return false
         if (outputDemo != other.outputDemo) return false
 
@@ -78,6 +83,7 @@ class Settings {
         result = 31 * result + inferMaxDeep
         result = 31 * result + httpTimeOut
         result = 31 * result + useRecommendConfig.hashCode()
+        result = 31 * result + recommendConfigs.hashCode()
         result = 31 * result + logLevel
         result = 31 * result + outputDemo.hashCode()
         return result
