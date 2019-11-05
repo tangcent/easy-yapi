@@ -54,6 +54,9 @@ patchPluginXml {
 
 jar {
     excludes = ["com/google/common/**"
+                , "org.checkerframework.checker/**"
+                , "afu.org.checkerframework.checker/**"
+                , "afu.org.plume/**"
                 , "kotlin/**"
     ]
 //    excludes = ["com/google/common/**"]
