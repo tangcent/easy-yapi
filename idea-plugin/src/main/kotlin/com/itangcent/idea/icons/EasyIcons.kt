@@ -36,6 +36,20 @@ object EasyIcons {
     val OK = tryLoad("${File.separator}general${File.separator}inspectionsOK.png",
             "${File.separator}process${File.separator}state/GreenOK.png") // 16x16
 
+    val Export = tryLoad(
+            "${File.separator}actions${File.separator}export.png",
+            "${File.separator}graph${File.separator}export.png",
+            "${File.separator}general${File.separator}ExportSettings.png"
+
+    )
+
+    val Import = tryLoad(
+            "${File.separator}css${File.separator}import.png",
+            "${File.separator}toolbarDecorator${File.separator}import.png",
+            "${File.separator}welcome${File.separator}importProject.png",
+            "${File.separator}general${File.separator}ImportSettings.png"
+    )
+
     private fun tryLoad(vararg paths: String): Icon? {
         for (path in paths) {
             try {

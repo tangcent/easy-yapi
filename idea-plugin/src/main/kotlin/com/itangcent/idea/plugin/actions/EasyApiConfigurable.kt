@@ -10,10 +10,10 @@ class EasyApiConfigurable : SearchableConfigurable {
 
     private var easyApiConfigurableGUI: EasyApiSettingGUI? = null
 
-    private val instance = ServiceManager.getService(SettingBinder::class.java)
+    private val settingBinder = ServiceManager.getService(SettingBinder::class.java)
 
     override fun isModified(): Boolean {
-        return instance.read() != easyApiConfigurableGUI?.getSettings()
+        return settingBinder.read() != easyApiConfigurableGUI?.getSettings()
     }
 
     override fun getId(): String {
@@ -25,19 +25,19 @@ class EasyApiConfigurable : SearchableConfigurable {
     }
 
     override fun apply() {
-        instance.save(easyApiConfigurableGUI!!.getSettings().copy())
+        settingBinder.save(easyApiConfigurableGUI!!.getSettings().copy())
     }
 
     override fun createComponent(): JComponent? {
         easyApiConfigurableGUI = EasyApiSettingGUI()
 
         easyApiConfigurableGUI!!.onCreate()
-        easyApiConfigurableGUI!!.setSettings(instance.read().copy())
+        easyApiConfigurableGUI!!.setSettings(settingBinder.read().copy())
         return easyApiConfigurableGUI!!.getRootPanel()
     }
 
     override fun reset() {
-        easyApiConfigurableGUI!!.setSettings(instance.read().copy())
+        easyApiConfigurableGUI!!.setSettings(settingBinder.read().copy())
         easyApiConfigurableGUI?.refresh()
     }
 }
