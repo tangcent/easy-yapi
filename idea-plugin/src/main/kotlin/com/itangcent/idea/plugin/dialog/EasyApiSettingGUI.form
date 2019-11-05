@@ -33,6 +33,7 @@
                 </constraints>
                 <properties>
                   <text value="Import"/>
+                  <toolTipText value="import settings"/>
                 </properties>
               </component>
               <component id="f9861" class="javax.swing.JButton" binding="exportButton">
@@ -45,6 +46,7 @@
                 <properties>
                   <horizontalTextPosition value="11"/>
                   <text value="Export"/>
+                  <toolTipText value="export settings"/>
                 </properties>
               </component>
             </children>

@@ -12,7 +12,7 @@ import javax.swing.Icon
  * @see com.intellij.icons.AllIcons
  */
 object EasyIcons {
-    
+
     val WebFolder = tryLoad("/nodes/webFolder.png") // 16x16
 
     val Class = tryLoad("/nodes/class.png") // 16x16
