@@ -13,6 +13,7 @@ import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
@@ -114,23 +115,10 @@ class ApiDashboardDialog : JDialog() {
             }
         })
 
-        if (EasyIcons.CollapseAll != null) {
-            this.projectCollapseButton!!.icon = EasyIcons.CollapseAll
-            this.projectCollapseButton!!.text = ""
-
-            this.postmanCollapseButton!!.icon = EasyIcons.CollapseAll
-            this.postmanCollapseButton!!.text = ""
-        }
-
-        if (EasyIcons.Add != null) {
-            this.postmanNewCollectionButton!!.icon = EasyIcons.Add
-            this.postmanNewCollectionButton!!.text = ""
-        }
-
-        if (EasyIcons.Refresh != null) {
-            this.postmanSyncButton!!.icon = EasyIcons.Refresh
-            this.postmanSyncButton!!.text = ""
-        }
+        EasyIcons.CollapseAll.iconOnly(this.projectCollapseButton)
+        EasyIcons.CollapseAll.iconOnly(this.postmanCollapseButton)
+        EasyIcons.Add.iconOnly(this.postmanNewCollectionButton)
+        EasyIcons.Refresh.iconOnly(this.postmanSyncButton)
 
         try {
             val projectCellRenderer = EasyApiTreeCellRenderer()
@@ -1344,3 +1332,4 @@ class ApiDashboardDialog : JDialog() {
     }
 
 }
+

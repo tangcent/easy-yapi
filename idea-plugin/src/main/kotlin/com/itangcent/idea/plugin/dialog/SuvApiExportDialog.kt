@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.components.JBCheckBox
 import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -65,15 +66,8 @@ class SuvApiExportDialog : JDialog() {
 
         SwingUtils.immersed(this.channelComboBox!!)
 
-        if (EasyIcons.Close != null) {
-            this.buttonCancel!!.icon = EasyIcons.Close
-            this.buttonCancel!!.text = ""
-        }
-
-        if (EasyIcons.OK != null) {
-            this.buttonOK!!.icon = EasyIcons.OK
-            this.buttonOK!!.text = ""
-        }
+        EasyIcons.Close.iconOnly(this.buttonCancel)
+        EasyIcons.OK.iconOnly(this.buttonOK)
 
         // call onCancel() on ESCAPE
         contentPane!!.registerKeyboardAction({ onCancel() }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)

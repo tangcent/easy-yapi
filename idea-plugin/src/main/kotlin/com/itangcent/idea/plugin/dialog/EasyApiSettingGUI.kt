@@ -17,9 +17,11 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.SystemUtils
 import com.itangcent.common.utils.truncate
 import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.ConfigurableLogger
+import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
@@ -100,15 +102,10 @@ class EasyApiSettingGUI {
 
     fun onCreate() {
 
-        EasyIcons.Export?.let {
-            this.exportButton!!.icon = it
-            this.exportButton!!.text = ""
-        }
-
-        EasyIcons.Import?.let {
-            this.importButton!!.icon = it
-            this.importButton!!.text = ""
-        }
+        EasyIcons.Export.iconOnly(this.exportButton)
+        EasyIcons.Import.iconOnly(this.importButton)
+        SwingUtils.immersed(this.exportButton!!)
+        SwingUtils.immersed(this.importButton!!)
 
         //region general-----------------------------------------------------
         recommendedCheckBox!!.toolTipText = RecommendConfigReader.RECOMMEND_CONFIG_PLAINT
