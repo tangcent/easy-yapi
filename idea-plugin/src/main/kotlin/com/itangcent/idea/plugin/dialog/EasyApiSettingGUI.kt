@@ -1,17 +1,27 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.intellij.ide.DataManager
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.CheckBoxList
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.SystemUtils
 import com.itangcent.common.utils.truncate
+import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.ConfigurableLogger
+import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
@@ -19,6 +29,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
+import java.nio.charset.Charset
 import java.util.*
 import javax.swing.*
 
@@ -26,6 +37,12 @@ import javax.swing.*
 class EasyApiSettingGUI {
 
     private var rootPanel: JPanel? = null
+
+    //region import&export
+    private var importButton: JButton? = null
+
+    private var exportButton: JButton? = null
+    //endregion
 
     //region general-----------------------------------------------------
     private var pullNewestDataBeforeCheckBox: JCheckBox? = null
@@ -71,9 +88,11 @@ class EasyApiSettingGUI {
     private var httpTimeOutTextField: JTextField? = null
     //endregion general-----------------------------------------------------
 
+    //region recommend
     private var recommendConfigList: CheckBoxList<String>? = null
 
     private var previewTextArea: JTextArea? = null
+    //endregion
 
     private val throttleHelper = ThrottleHelper()
 
@@ -86,6 +105,11 @@ class EasyApiSettingGUI {
     private var autoComputer: AutoComputer = AutoComputer()
 
     fun onCreate() {
+
+        EasyIcons.Export.iconOnly(this.exportButton)
+        EasyIcons.Import.iconOnly(this.importButton)
+        SwingUtils.immersed(this.exportButton!!)
+        SwingUtils.immersed(this.importButton!!)
 
         //region general-----------------------------------------------------
         recommendedCheckBox!!.toolTipText = RecommendConfigReader.RECOMMEND_CONFIG_PLAINT
@@ -197,15 +221,21 @@ class EasyApiSettingGUI {
             autoComputer.value(this, "settings.recommendConfigs", settings!!.recommendConfigs)
 //            this.previewTextArea!!.text =  RecommendConfigReader.buildRecommendConfig(settings!!.recommendConfigs)
         }
+
+        this.exportButton!!.addActionListener {
+            export()
+        }
+        this.importButton!!.addActionListener {
+            import()
+        }
     }
 
     fun setSettings(settings: Settings) {
         throttleHelper.refresh("throttleHelper")
 
-        autoComputer.value(this::settings, settings)
+        autoComputer.value(this::settings, settings.copy())
 
-        this.logLevelComboBox!!.selectedItem =
-                settings.logLevel.let { ConfigurableLogger.CoarseLogLevel.toLevel(it) }
+        this.logLevelComboBox!!.selectedItem = ConfigurableLogger.CoarseLogLevel.toLevel(settings.logLevel)
 
         val configs = settings.recommendConfigs.split(",")
         RecommendConfigReader.RECOMMEND_CONFIG_CODES.forEach {
@@ -345,7 +375,46 @@ class EasyApiSettingGUI {
         return home
     }
 
+    private fun export() {
+        val descriptor = FileSaverDescriptor("Export Setting",
+                "Choose directory to export setting to",
+                "json")
+        descriptor.withHideIgnored(false)
+        val chooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, this.getRootPanel()!!)
+        var toSelect: VirtualFile? = null
+        val lastLocation = PropertiesComponent.getInstance().getValue(setting_path)
+        if (lastLocation != null) {
+            toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
+        }
+        val fileWrapper = chooser.save(toSelect, "setting.json")
+        if (fileWrapper != null) {
+            com.itangcent.intellij.util.FileUtils.forceSave(fileWrapper.file.path, GsonUtils.toJson(settings).toByteArray(Charset.defaultCharset()))
+        }
+    }
+
+    private fun import() {
+        val descriptor = FileChooserDescriptorFactory
+                .createSingleFileOrFolderDescriptor()
+                .withTitle("Import Setting")
+                .withDescription("Choose setting file")
+                .withHideIgnored(false)
+        val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, null, this.getRootPanel()!!)
+        var toSelect: VirtualFile? = null
+        val lastLocation = PropertiesComponent.getInstance().getValue(setting_path)
+        if (lastLocation != null) {
+            toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
+        }
+        val files = chooser.choose(null, toSelect)
+        if (!files.isNullOrEmpty()) {
+            val virtualFile = files[0]
+            val read = com.itangcent.common.utils.FileUtils.read(File(virtualFile.path))
+            setSettings(GsonUtils.fromJson(read, Settings::class))
+        }
+    }
+
     companion object {
         const val basePath = ".easy_api"
+
+        const val setting_path = "easy.api.setting.path"
     }
 }

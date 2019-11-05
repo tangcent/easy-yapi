@@ -59,4 +59,9 @@
     3. fix: support Serializer for Enum  [(#134)](https://github.com/tangcent/easy-api/issues/134)
     4. fix: fix error base path for APIs in super class  [(#137)](https://github.com/tangcent/easy-api/issues/137)
     5. fix: ApiDashboard not show kotlin module&apis [(#140)](https://github.com/tangcent/easy-api/issues/140)
+*   1.2.0 ~
+    1. enhance:provide more recommended configurations  [(#153)](https://github.com/tangcent/easy-api/issues/153)
+    2. enhance:support for export&import settings [(#167)](https://github.com/tangcent/easy-api/issues/167)
+    3. fix: Some icon maybe missing in Windows  [(#164)](https://github.com/tangcent/easy-api/issues/164)
+   
        

@@ -20,6 +20,7 @@ import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBody
 import com.itangcent.common.utils.appendlnIfNotEmpty
 import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -177,10 +178,7 @@ class ApiCallDialog : JDialog() {
         SwingUtils.underLine(this.pathTextField!!)
         SwingUtils.underLine(this.paramsTextField!!)
 
-        if (EasyIcons.Run != null) {
-            this.callButton!!.icon = EasyIcons.Run
-            this.callButton!!.text = ""
-        }
+        EasyIcons.Run.iconOnly(this.callButton)
     }
 
     @PostConstruct
