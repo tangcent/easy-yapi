@@ -77,7 +77,7 @@ class RecommendConfigReader : ConfigReader {
 
         private const val config_name = ".recommend.easy.api.config"
         //        private const val config_version = ".recommend.easy.api.config.version"
-        private const val curr_version = "0.0.2"
+        private const val curr_version = "0.0.2.1"
         //$version$content
 
         private fun loadRecommendConfig(): String {
