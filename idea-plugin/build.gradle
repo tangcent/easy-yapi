@@ -10,10 +10,10 @@ buildscript {
 }
 plugins {
     //https://mvnrepository.com/artifact/org.jetbrains.kotlin.jvm/org.jetbrains.kotlin.jvm.gradle.plugin
-    id 'org.jetbrains.kotlin.jvm' version '1.3.31'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.50'
 
     //https://mvnrepository.com/artifact/org.jetbrains.intellij/org.jetbrains.intellij.gradle.plugin
-    id "org.jetbrains.intellij" version "0.4.10"
+    id "org.jetbrains.intellij" version "0.4.11"
 }
 
 group 'com.itangcent'
@@ -54,7 +54,12 @@ patchPluginXml {
 
 jar {
     excludes = ["com/google/common/**"
+                , "org/checkerframework/checker/**"
+                , "afu/org/checkerframework/checker/**"
+                , "afu/org/plume/**"
                 , "kotlin/**"
+                , "org/jetbrains/annotations/**"
+                , "org/intellij/langannotations/**"
     ]
 //    excludes = ["com/google/common/**"]
 //    excludes = ["com/google/common/**", "org/apache/http/util/**"]
@@ -69,13 +74,17 @@ artifacts {
 
 repositories {
 
-    flatDir {
-        dirs 'libs'
-    }
+//    flatDir {
+//        dirs 'libs'
+//    }
 
     mavenCentral()
 
+//    maven {
+//        url("https://oss.sonatype.org/content/repositories/snapshots/")
+//    }
 }
+
 
 dependencies {
     compile(project(path: ':common-api', configuration: 'default')) {
@@ -86,11 +95,17 @@ dependencies {
 
 //    compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile name: 'commons'
-    compile name: 'intellij-idea'
-    compile name: 'intellij-jvm'
-    compile name: 'intellij-kotlin-support'
-    compile name: 'guice-action'
+
+    compile('com.itangcent:intellij-idea:0.0.1') {
+        exclude group: 'com.google.inject'
+        exclude group: 'com.google.code.gson'
+    }
+
+    compile ('com.itangcent:intellij-kotlin-support:0.0.1'){
+        exclude group: 'com.google.inject'
+        exclude group: 'com.google.code.gson'
+    }
+
 
     compile("com.google.inject:guice:4.2.2") {
         exclude group: 'org.checkerframework', module: 'checker-compat-qual'

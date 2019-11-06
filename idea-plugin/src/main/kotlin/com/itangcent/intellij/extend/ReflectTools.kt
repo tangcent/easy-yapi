@@ -1,11 +1,5 @@
 package com.itangcent.intellij.extend
 
-import java.lang.reflect.Modifier
-import java.util.*
-import kotlin.jvm.internal.CallableReference
-import kotlin.jvm.internal.PropertyReference
-import kotlin.reflect.KProperty
-
 
 /**
  * copy from https://github.com/tangcent/intellij-kotlin
