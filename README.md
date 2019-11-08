@@ -47,9 +47,6 @@
 
 - [kotlin-doc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
-## Version
-
-`$major.$minor.$min_support.$max_support.$fix`
 
 Installation
 ----
@@ -94,7 +91,7 @@ restart **IDE**.
 
 ```text
     Click [Preference -> Other Setting -> EasyApi]
-    set postman privatetoken
+    set postman privateToken
     If you do not have a privateToken of postman,
     you can easily generate one by heading over to the Postman Integrations Dashboard
     [https://go.postman.co/integrations/services/pm_pro_api]
