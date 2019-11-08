@@ -309,6 +309,11 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
             val paramDocComment = extractParamComment(method)
 
             for (param in params) {
+
+                if (ruleComputer!!.computer(ClassExportRuleKeys.PARAM_IGNORE, param) == true) {
+                    continue
+                }
+                
                 processMethodParameter(method, methodDoc, param, paramDocComment?.get(param.name!!)?.toString())
             }
         }
