@@ -278,8 +278,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     protected fun contractPath(pathPre: String?, pathAfter: String?): String? {
-        if (pathPre == null) return pathAfter
-        if (pathAfter == null) return pathPre
+        if (pathPre.isNullOrBlank()) return pathAfter
+        if (pathAfter.isNullOrBlank()) return pathPre
         return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")
     }
 

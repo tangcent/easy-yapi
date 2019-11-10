@@ -44,3 +44,16 @@ fun String.truncate(limit: Int, truncated: String = "..."): String {
         else -> this
     }
 }
+
+fun String?.append(str: String?, split: String = " "): String? {
+    return when {
+        this == null -> str
+        str == null -> this
+        else -> this + split + str
+    }
+}
+
+fun <K> MutableMap<K, String?>?.append(key: K, str: String?, split: String = " ") {
+    if (this == null) return
+    this[key] = this[key].append(str, split)
+}
