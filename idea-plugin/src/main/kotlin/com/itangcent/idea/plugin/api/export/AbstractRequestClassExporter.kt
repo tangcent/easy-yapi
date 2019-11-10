@@ -192,6 +192,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DOC, param)
     }
 
+    protected open fun readParamDefaultValue(param: PsiElement): String? {
+        return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DEFAULT_VALUE, param)
+    }
+
     protected open fun processCompleted(method: PsiMethod, request: Request) {
         //parse additionalHeader by config
         val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER, method)
