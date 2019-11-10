@@ -4,7 +4,10 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.itangcent.common.utils.append
+import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.DocParseHelper
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import org.apache.commons.lang3.StringUtils
@@ -21,6 +24,10 @@ class ResourceHelper {
     @Inject
     private val docParseHelper: DocParseHelper? = null
 
+    @Inject
+    protected val ruleComputer: RuleComputer? = null
+
+
     fun findResourceClass(resource: Any): PsiClass? {
         return when (resource) {
             is PsiResource -> resource.resourceClass()
@@ -34,7 +41,8 @@ class ResourceHelper {
      * todo:should be move to DocHelper
      */
     fun findAttrOfClass(cls: PsiClass): String? {
-        val docText = docHelper!!.getAttrOfDocComment(cls)
+        var docText = ruleComputer!!.computer(ClassExportRuleKeys.CLASS_DOC, cls)
+        docText = docText.append(docHelper!!.getAttrOfDocComment(cls))
         return when {
             StringUtils.isBlank(docText) -> cls.name
             docParseHelper != null -> docParseHelper.resolveLinkInAttr(docText, cls)

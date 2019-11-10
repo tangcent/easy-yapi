@@ -38,9 +38,6 @@ class MarkdownFormatter {
     private val moduleHelper: ModuleHelper? = null
 
     @Inject
-    private val docHelper: DocHelper? = null
-
-    @Inject
     protected val settingBinder: SettingBinder? = null
 
     @Inject
