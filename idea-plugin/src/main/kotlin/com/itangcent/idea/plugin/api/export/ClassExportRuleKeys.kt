@@ -24,6 +24,15 @@ object ClassExportRuleKeys {
     val CLASS_DOC: RuleKey<String> = SimpleRuleKey("doc.class", StringRule::class,
             StringRuleMode.MERGE_DISTINCT)
 
+    val METHOD_ADDITIONAL_HEADER: RuleKey<String> = SimpleRuleKey("method.additional.header", StringRule::class,
+            StringRuleMode.MERGE_DISTINCT)
+
+    val METHOD_ADDITIONAL_PARAM: RuleKey<String> = SimpleRuleKey("method.additional.param", StringRule::class,
+            StringRuleMode.MERGE_DISTINCT)
+
+    val METHOD_ADDITIONAL_RESPONSE_HEADER: RuleKey<String> = SimpleRuleKey("method.additional.response.header", StringRule::class,
+            StringRuleMode.MERGE_DISTINCT)
+
     val PARAM_REQUIRED: RuleKey<Boolean> = SimpleRuleKey("param.required", BooleanRule::class,
             BooleanRuleMode.ANY)
 
