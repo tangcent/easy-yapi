@@ -143,6 +143,12 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             }
         }
 
+        val readParamDefaultValue = readParamDefaultValue(param)
+
+        if (!readParamDefaultValue.isNullOrBlank()) {
+            defaultVal = readParamDefaultValue;
+        }
+
         if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
             required = true
         }

@@ -14,6 +14,7 @@ import com.itangcent.common.model.Response
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
+import com.itangcent.common.utils.append
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
@@ -187,6 +188,14 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
     }
 
+    protected open fun readParamDoc(param: PsiElement): String? {
+        return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DOC, param)
+    }
+
+    protected open fun readParamDefaultValue(param: PsiElement): String? {
+        return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DEFAULT_VALUE, param)
+    }
+
     protected open fun processCompleted(method: PsiMethod, request: Request) {
         //parse additionalHeader by config
         val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER, method)
@@ -356,7 +365,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 if (ruleComputer!!.computer(ClassExportRuleKeys.PARAM_IGNORE, param) == true) {
                     continue
                 }
-                processMethodParameter(method, request, param, KVUtils.getUltimateComment(paramDocComment, param.name))
+                processMethodParameter(method, request, param, KVUtils.getUltimateComment(paramDocComment, param.name).append(readParamDoc(param)))
             }
         }
 
