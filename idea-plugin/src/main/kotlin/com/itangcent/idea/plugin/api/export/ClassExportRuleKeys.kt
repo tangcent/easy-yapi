@@ -42,4 +42,7 @@ object ClassExportRuleKeys {
     val FIELD_REQUIRED: RuleKey<Boolean> = SimpleRuleKey("field.required", BooleanRule::class,
             BooleanRuleMode.ANY)
 
+    val CLASS_PREFIX_PATH: RuleKey<String> = SimpleRuleKey("class.prefix.path", StringRule::class,
+            StringRuleMode.SINGLE)
+
 }
