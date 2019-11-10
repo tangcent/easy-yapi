@@ -7,8 +7,11 @@ import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
+import com.itangcent.common.model.Header
+import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.Response
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.StatusRecorder
@@ -185,7 +188,51 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     protected open fun processCompleted(method: PsiMethod, request: Request) {
-        //call after process
+        //parse additionalHeader by config
+        val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER, method)
+        if (!additionalHeader.isNullOrEmpty()) {
+            val additionalHeaders = additionalHeader.lines()
+            for (headerStr in additionalHeaders) {
+                val header = GsonUtils.fromJson(headerStr, Header::class)
+                if (header.name.isNullOrBlank()) {
+                    logger!!.warn("no name had be found in:$headerStr")
+                    continue
+                }
+                requestHelper!!.addHeader(request, header)
+            }
+        }
+
+        //parse additionalParam by config
+        val additionalParam = ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_PARAM, method)
+        if (!additionalParam.isNullOrEmpty()) {
+            val additionalParams = additionalParam.lines()
+            for (paramStr in additionalParams) {
+                val param = GsonUtils.fromJson(paramStr, Param::class)
+                if (param.name.isNullOrBlank()) {
+                    logger!!.warn("no name had be found in:$paramStr")
+                    continue
+                }
+                requestHelper!!.addParam(request, param)
+            }
+        }
+
+        //parse additionalResponseHeader by config
+        if (!request.response.isNullOrEmpty()) {
+            val additionalResponseHeader = ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_RESPONSE_HEADER, method)
+            if (!additionalResponseHeader.isNullOrEmpty()) {
+                val additionalHeaders = additionalResponseHeader.lines()
+                for (headerStr in additionalHeaders) {
+                    val header = GsonUtils.fromJson(headerStr, Header::class)
+                    if (header.name.isNullOrBlank()) {
+                        logger!!.warn("no name had be found in:$headerStr")
+                        continue
+                    }
+                    request.response!!.forEach {
+                        requestHelper!!.addResponseHeader(it, header)
+                    }
+                }
+            }
+        }
     }
 
     protected open fun processResponse(method: PsiMethod, request: Request) {
