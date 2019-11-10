@@ -48,6 +48,9 @@ object ClassExportRuleKeys {
     val PARAM_IGNORE: RuleKey<Boolean> = SimpleRuleKey("param.ignore", BooleanRule::class,
             BooleanRuleMode.ANY)
 
+    val PARAM_DEFAULT_VALUE: RuleKey<String> = SimpleRuleKey("param.default.value", StringRule::class,
+            StringRuleMode.MERGE_DISTINCT)
+
     val FIELD_REQUIRED: RuleKey<Boolean> = SimpleRuleKey("field.required", BooleanRule::class,
             BooleanRuleMode.ANY)
 
