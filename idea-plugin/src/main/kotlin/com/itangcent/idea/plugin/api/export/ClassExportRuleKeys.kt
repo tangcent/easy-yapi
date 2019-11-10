@@ -18,6 +18,9 @@ object ClassExportRuleKeys {
     val METHOD_FILTER: RuleKey<Boolean> = SimpleRuleKey("mdoc.method.filter", BooleanRule::class,
             BooleanRuleMode.ANY)
 
+    val PARAM_DOC: RuleKey<String> = SimpleRuleKey("doc.param", StringRule::class,
+            StringRuleMode.MERGE_DISTINCT)
+
     val METHOD_DOC: RuleKey<String> = SimpleRuleKey("doc.method", StringRule::class,
             StringRuleMode.MERGE_DISTINCT)
 
@@ -38,6 +41,9 @@ object ClassExportRuleKeys {
 
     val PARAM_IGNORE: RuleKey<Boolean> = SimpleRuleKey("param.ignore", BooleanRule::class,
             BooleanRuleMode.ANY)
+
+    val PARAM_DEFAULT_VALUE: RuleKey<String> = SimpleRuleKey("param.default.value", StringRule::class,
+            StringRuleMode.MERGE_DISTINCT)
 
     val FIELD_REQUIRED: RuleKey<Boolean> = SimpleRuleKey("field.required", BooleanRule::class,
             BooleanRuleMode.ANY)
