@@ -26,7 +26,11 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     override fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
 
         val ctrlRequestMappingAnn = findRequestMapping(cls)
-        val basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
+        var basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
+        val prefixPath = ruleComputer!!.computer(ClassExportRuleKeys.CLASS_PREFIX_PATH, cls)
+        if (!prefixPath.isNullOrBlank()) {
+            basePath = contractPath(prefixPath, basePath) ?: ""
+        }
 
         val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
 
