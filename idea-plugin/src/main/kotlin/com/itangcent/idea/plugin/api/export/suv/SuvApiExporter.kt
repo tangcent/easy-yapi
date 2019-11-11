@@ -41,7 +41,7 @@ import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.UIUtils
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
@@ -428,8 +428,8 @@ class SuvApiExporter {
                     logger!!.info("Apis save failed")
                 }
             } catch (e: Exception) {
-                logger!!.error("Apis save failed")
-                logger!!.traceError(e)
+                logger!!.traceError("Apis save failed",e)
+
             }
 
         }
@@ -485,13 +485,13 @@ class SuvApiExporter {
                             logger!!.info("Apis save failed")
                         }
                     } catch (e: Exception) {
-                        logger!!.error("Apis save failed")
-                        logger!!.traceError(e)
+                        logger!!.traceError("Apis save failed",e)
+
                     }
                 }
             } catch (e: Exception) {
-                logger!!.error("Apis save failed")
-                logger!!.traceError(e)
+                logger!!.traceError("Apis save failed",e)
+
             }
         }
     }
