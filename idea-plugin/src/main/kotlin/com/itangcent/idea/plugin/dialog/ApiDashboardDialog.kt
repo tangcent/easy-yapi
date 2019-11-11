@@ -293,7 +293,7 @@ class ApiDashboardDialog : JDialog() {
         val countLatch: CountLatch = AQSCountLatch()
         moduleData.status = NodeStatus.Loading
         var anyFound = false
-        for (contentRoot in moduleData.module.rootManager.getSourceRoots(false)) {
+        for (contentRoot in sourceRoots) {
             if (disposed) return
             countLatch.down()
             val classNodeMap: ConcurrentHashMap<PsiClass, DefaultMutableTreeNode> = ConcurrentHashMap()

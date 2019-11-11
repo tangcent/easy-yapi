@@ -25,6 +25,7 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.Magics
@@ -95,8 +96,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     @Inject
     private val linkResolver: LinkResolver? = null
 
+    @Inject
+    private val contextSwitchListener: ContextSwitchListener? = null
+
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) return false
+        contextSwitchListener?.switchTo(cls)
         actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
