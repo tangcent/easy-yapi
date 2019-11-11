@@ -3,11 +3,15 @@ package com.itangcent.idea.plugin.config
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.ide.util.PropertiesComponent
+import com.itangcent.common.utils.invokeMethod
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.ContextSwitchListener
+import org.jetbrains.kotlin.konan.file.File
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.*
@@ -43,6 +47,31 @@ class RecommendConfigReader : ConfigReader {
 
     @PostConstruct
     fun init() {
+
+        if (configReader is MutableConfigReader) {
+            val contextSwitchListener = ActionContext.getContext()!!.instance(ContextSwitchListener::class)
+            contextSwitchListener.clear()
+            contextSwitchListener.onModuleChange { module ->
+                configReader.reset()
+                val moduleFile = module.moduleFile
+                val modulePath: String = when {
+                    moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.pathSeparator)
+                    moduleFile.isDirectory -> moduleFile.path
+                    else -> moduleFile.parent.path
+                }
+                configReader.put("module_path", modulePath)
+                initDelegateAndRecommed()
+            }
+        } else {
+            initDelegateAndRecommed()
+        }
+    }
+
+    fun initDelegateAndRecommed() {
+        try {
+            configReader?.invokeMethod("init")
+        } catch (e: Throwable) {
+        }
         if (settingBinder?.read()?.useRecommendConfig == true) {
             if (settingBinder.read().recommendConfigs.isEmpty()) {
                 logger!!.info("Even useRecommendConfig was true, but no recommend config be selected!\n" +
@@ -77,7 +106,7 @@ class RecommendConfigReader : ConfigReader {
 
         private const val config_name = ".recommend.easy.api.config"
         //        private const val config_version = ".recommend.easy.api.config.version"
-        private const val curr_version = "0.0.2"
+        private const val curr_version = "0.0.4"
         //$version$content
 
         private fun loadRecommendConfig(): String {
