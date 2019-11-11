@@ -6,7 +6,7 @@ import java.util.*
 
 class PostmanConfigReader : AutoSearchConfigReader() {
 
-    @PostConstruct
+//    @PostConstruct
     fun init() {
         loadConfigInfo()
     }
