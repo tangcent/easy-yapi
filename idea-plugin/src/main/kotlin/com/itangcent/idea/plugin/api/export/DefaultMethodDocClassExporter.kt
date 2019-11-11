@@ -19,7 +19,7 @@ import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import kotlin.reflect.KClass
@@ -221,8 +221,8 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Throwable) {
-                logger!!.error("error to parse body")
-                logger.traceError(e)
+                logger!!.traceError("error to parse body",e)
+
             }
         }
     }

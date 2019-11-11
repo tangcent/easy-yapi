@@ -13,9 +13,9 @@ import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.util.traceError
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import kotlin.collections.ArrayList
@@ -117,13 +117,13 @@ class PostmanApiExporter {
                                     logger.info("Apis save failed")
                                 }
                             } catch (e: Exception) {
-                                logger.error("Apis save failed")
-                                logger.traceError(e)
+                                logger.traceError("Apis save failed", e)
+
                             }
                         }
                     } catch (e: Exception) {
-                        logger.error("Apis save failed")
-                        logger.traceError(e)
+                        logger.traceError("Apis save failed", e)
+
                     }
                 }
                 .traversal()
