@@ -8,7 +8,7 @@ import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
 import org.apache.http.client.methods.HttpGet
@@ -146,12 +146,10 @@ open class AbstractYapiApiHelper {
             null
         } catch (e: Exception) {
             if (!dumb) {
-                logger!!.trace("request $url failed")
-                logger.traceError(e)
+                logger!!.traceError("request $url failed", e)
                 throw e
             }
-            logger!!.trace("request $url failed")
-            logger.traceError(e)
+            logger!!.traceError("request $url failed", e)
             null
         }
     }
