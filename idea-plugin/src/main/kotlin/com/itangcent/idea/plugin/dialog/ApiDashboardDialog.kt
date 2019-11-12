@@ -21,6 +21,8 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.resourceClass
+import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
@@ -31,8 +33,8 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.logger.traceError
+import com.itangcent.intellij.psi.PsiClassUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
@@ -159,7 +161,7 @@ class ApiDashboardDialog : JDialog() {
             try {
                 syncPostmanAction()
             } catch (e: Exception) {
-                logger!!.traceError("sync failed",e)
+                logger!!.traceError("sync failed", e)
 
             }
         }
@@ -170,7 +172,7 @@ class ApiDashboardDialog : JDialog() {
             try {
                 deletePostmanAction()
             } catch (e: Exception) {
-                logger!!.traceError("delete failed",e)
+                logger!!.traceError("delete failed", e)
 
             }
         }
@@ -316,7 +318,7 @@ class ApiDashboardDialog : JDialog() {
                                 if (disposed) return@requestOnly
                                 if (request.resource == null) return@requestOnly
                                 anyFound = true
-                                val resourceClass = (request.resource as PsiResource?)?.resourceClass()
+                                val resourceClass = request.resourceClass()
 
                                 val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
                                     val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper!!.findAttrOfClass(resourceClass))
@@ -429,7 +431,7 @@ class ApiDashboardDialog : JDialog() {
                     handleDropEvent(projectNodeData, postmanNodeData)
 
                 } catch (e: java.lang.Exception) {
-                    logger!!.traceError("drop failed",e)
+                    logger!!.traceError("drop failed", e)
 
                 } finally {
                     dtde.dropComplete(true)
@@ -673,7 +675,7 @@ class ApiDashboardDialog : JDialog() {
                             rootPostmanNodeData.status = NodeStatus.Loaded
                         }
                     } catch (e: Exception) {
-                        logger!!.traceError("create failed",e)
+                        logger!!.traceError("create failed", e)
 
                     }
                 }
@@ -717,7 +719,7 @@ class ApiDashboardDialog : JDialog() {
                         }
                     }
                 } catch (e: Exception) {
-                    logger!!.traceError("rename failed",e)
+                    logger!!.traceError("rename failed", e)
 
                 }
             }
@@ -900,8 +902,7 @@ class ApiDashboardDialog : JDialog() {
 
     class ApiProjectNodeData : IconCustomized, Tooltipable {
         override fun toolTip(): String? {
-            val psiResource = (request.resource ?: return "") as PsiResource
-            return "${PsiClassUtils.fullNameOfMethod(psiResource.resourceClass()!!, psiResource.resource() as PsiMethod)}\n${request.method}:${request.path}"
+            return "${PsiClassUtils.fullNameOfMethod(request.resourceClass()!!, request.resourceMethod()!!)}\n${request.method}:${request.path}"
         }
 
         private val apiDashboardDialog: ApiDashboardDialog
@@ -1207,7 +1208,7 @@ class ApiDashboardDialog : JDialog() {
                     rootPostmanNodeData.status = NodeStatus.Loaded
                 }
             } catch (e: Exception) {
-                logger.traceError("export failed",e)
+                logger.traceError("export failed", e)
 
                 rootPostmanNodeData!!.status = NodeStatus.Loaded
             }
