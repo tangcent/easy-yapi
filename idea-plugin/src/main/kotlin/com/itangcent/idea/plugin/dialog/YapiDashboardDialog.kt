@@ -297,7 +297,11 @@ class YapiDashboardDialog : JDialog() {
                     val rootDirectory = PsiManager.getInstance(project!!).findDirectory(contentRoot)
                     traversal(rootDirectory!!,
                             { !disposed },
-                            { !disposed && it.name.endsWith("java") && (it is PsiClassOwner) }) { psiFile ->
+                            {
+                                !disposed &&
+                                        (it.name.endsWith("java") || it.name.endsWith("kt"))
+                                        && (it is PsiClassOwner)
+                            }) { psiFile ->
                         if (disposed) return@traversal
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
 
