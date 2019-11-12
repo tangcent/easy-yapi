@@ -13,7 +13,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import java.util.*
 
 @Singleton
@@ -86,13 +86,13 @@ class MarkdownApiExporter {
                                     logger.info("Apis save failed")
                                 }
                             } catch (e: Exception) {
-                                logger.error("Apis save failed")
-                                logger.traceError(e)
+                                logger.traceError("Apis save failed",e)
+
                             }
                         }
                     } catch (e: Exception) {
-                        logger.error("Apis save failed")
-                        logger.traceError(e)
+                        logger.traceError("Apis save failed",e)
+
                     }
                 }
                 .traversal()

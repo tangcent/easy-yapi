@@ -11,7 +11,7 @@ import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import org.apache.commons.lang3.StringUtils
 
 
@@ -94,8 +94,7 @@ open class AbstractYapiApiExporter {
         try {
             cartId = yapiApiHelper!!.findCat(privateToken, name!!)
         } catch (e: Exception) {
-            logger!!.error("error to find cart [$name]")
-            logger.traceError(e)
+            logger!!.traceError("error to find cart [$name]", e)
             return null
         }
         if (cartId == null) {

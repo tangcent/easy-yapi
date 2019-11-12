@@ -14,7 +14,7 @@ import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
 import org.apache.http.client.methods.HttpDelete
@@ -144,8 +144,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("Post failed")
-            logger.traceError(e)
+            logger!!.traceError("Post failed", e)
+
             return null
         }
     }
@@ -161,8 +161,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return true
             }
         } catch (e: Exception) {
-            logger!!.error("fix collection failed")
-            logger.traceError(e)
+            logger!!.traceError("fix collection failed", e)
+
         }
         return false
     }
@@ -230,8 +230,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             onErrorResponse(result)
             return false
         } catch (e: Throwable) {
-            logger!!.error("Post failed")
-            logger.traceError(e)
+            logger!!.traceError("Post failed", e)
+
             return false
         }
     }
@@ -257,8 +257,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("Load collections failed")
-            logger.traceError(e)
+            logger!!.traceError("Load collections failed", e)
+
             return null
         }
     }
@@ -281,8 +281,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("Load collection info  failed")
-            logger.traceError(e)
+            logger!!.traceError("Load collection info  failed", e)
+
             return null
         }
     }
@@ -305,8 +305,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.error("delete collection failed")
-            logger.traceError(e)
+            logger!!.traceError("delete collection failed", e)
             return null
         }
     }

@@ -30,7 +30,7 @@ import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.Magics
 import com.itangcent.intellij.util.forEachValid
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -269,8 +269,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Throwable) {
-                logger!!.error("error to parse body")
-                logger.traceError(e)
+                logger!!.traceError("error to parse body",e)
+
             }
         }
     }
@@ -406,8 +406,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
             }
         } catch (e: Exception) {
-            logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
-            logger.traceError(e)
+            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as ModelAttribute",e)
+
         }
     }
 
@@ -445,8 +445,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
             }
         } catch (e: Exception) {
-            logger!!.error("error to parse[" + paramType.canonicalText + "] as ModelAttribute")
-            logger.traceError(e)
+            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as ModelAttribute",e)
+
         }
     }
 

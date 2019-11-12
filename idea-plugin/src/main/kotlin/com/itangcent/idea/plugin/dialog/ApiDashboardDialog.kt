@@ -32,7 +32,7 @@ import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
@@ -159,8 +159,8 @@ class ApiDashboardDialog : JDialog() {
             try {
                 syncPostmanAction()
             } catch (e: Exception) {
-                logger!!.error("sync failed")
-                logger.traceError(e)
+                logger!!.traceError("sync failed",e)
+
             }
         }
 
@@ -170,8 +170,8 @@ class ApiDashboardDialog : JDialog() {
             try {
                 deletePostmanAction()
             } catch (e: Exception) {
-                logger!!.error("delete failed")
-                logger.traceError(e)
+                logger!!.traceError("delete failed",e)
+
             }
         }
 
@@ -429,8 +429,8 @@ class ApiDashboardDialog : JDialog() {
                     handleDropEvent(projectNodeData, postmanNodeData)
 
                 } catch (e: java.lang.Exception) {
-                    logger!!.error("drop failed")
-                    logger.traceError(e)
+                    logger!!.traceError("drop failed",e)
+
                 } finally {
                     dtde.dropComplete(true)
                 }
@@ -673,8 +673,8 @@ class ApiDashboardDialog : JDialog() {
                             rootPostmanNodeData.status = NodeStatus.Loaded
                         }
                     } catch (e: Exception) {
-                        logger!!.error("create failed")
-                        logger.traceError(e)
+                        logger!!.traceError("create failed",e)
+
                     }
                 }
             }
@@ -717,8 +717,8 @@ class ApiDashboardDialog : JDialog() {
                         }
                     }
                 } catch (e: Exception) {
-                    logger!!.error("rename failed")
-                    logger.traceError(e)
+                    logger!!.traceError("rename failed",e)
+
                 }
             }
         }
@@ -1207,8 +1207,8 @@ class ApiDashboardDialog : JDialog() {
                     rootPostmanNodeData.status = NodeStatus.Loaded
                 }
             } catch (e: Exception) {
-                logger.error("export failed")
-                logger.traceError(e)
+                logger.traceError("export failed",e)
+
                 rootPostmanNodeData!!.status = NodeStatus.Loaded
             }
         }
