@@ -9,15 +9,15 @@ import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.Visional
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.ClassRuleKeys
-import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.Magics
-import com.itangcent.intellij.util.traceError
 import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -99,8 +99,7 @@ class MethodReturnInferHelper {
                     return findComplexResult(GsonUtils.resolveCycle(valueOf(inferRet)), byType)
                 }
             } catch (e: Exception) {
-                logger!!.error("infer error")
-                logger!!.traceError(e)
+                logger!!.traceError("infer error", e)
                 //infer failed
             }
         }

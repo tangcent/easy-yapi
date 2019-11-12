@@ -19,7 +19,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import java.io.File
 import kotlin.reflect.KClass
 
@@ -148,8 +148,8 @@ class CachedRequestClassExporter : ClassExporter, Worker {
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Exception) {
-                logger!!.error("error to cache api info")
-                logger.traceError(e)
+                logger!!.traceError("error to cache api info",e)
+
                 disabled = true
 
                 statusRecorder.newWork()

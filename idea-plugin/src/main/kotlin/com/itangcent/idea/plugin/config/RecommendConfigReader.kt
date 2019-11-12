@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.konan.file.File
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 class RecommendConfigReader : ConfigReader {
@@ -29,20 +30,33 @@ class RecommendConfigReader : ConfigReader {
     @Inject
     val logger: Logger? = null
 
+    @Volatile
+    private var loading: Boolean = false
+
     override fun first(key: String): String? {
+        checkStatus()
         return configReader!!.first(key)
     }
 
     override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {
+        checkStatus()
         configReader!!.foreach(keyFilter, action)
     }
 
     override fun foreach(action: (String, String) -> Unit) {
+        checkStatus()
         configReader!!.foreach(action)
     }
 
     override fun read(key: String): Collection<String>? {
+        checkStatus()
         return configReader!!.read(key)
+    }
+
+    private fun checkStatus() {
+        while (loading) {
+            TimeUnit.MILLISECONDS.sleep(100)
+        }
     }
 
     @PostConstruct
@@ -52,22 +66,27 @@ class RecommendConfigReader : ConfigReader {
             val contextSwitchListener = ActionContext.getContext()!!.instance(ContextSwitchListener::class)
             contextSwitchListener.clear()
             contextSwitchListener.onModuleChange { module ->
-                configReader.reset()
-                val moduleFile = module.moduleFile
-                val modulePath: String = when {
-                    moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.pathSeparator)
-                    moduleFile.isDirectory -> moduleFile.path
-                    else -> moduleFile.parent.path
+                synchronized(this)
+                {
+                    loading = true
+                    configReader.reset()
+                    val moduleFile = module.moduleFile
+                    val modulePath: String = when {
+                        moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.pathSeparator)
+                        moduleFile.isDirectory -> moduleFile.path
+                        else -> moduleFile.parent.path
+                    }
+                    configReader.put("module_path", modulePath)
+                    initDelegateAndRecommed()
+                    loading = false
                 }
-                configReader.put("module_path", modulePath)
-                initDelegateAndRecommed()
             }
         } else {
             initDelegateAndRecommed()
         }
     }
 
-    fun initDelegateAndRecommed() {
+    private fun initDelegateAndRecommed() {
         try {
             configReader?.invokeMethod("init")
         } catch (e: Throwable) {
@@ -106,7 +125,7 @@ class RecommendConfigReader : ConfigReader {
 
         private const val config_name = ".recommend.easy.api.config"
         //        private const val config_version = ".recommend.easy.api.config.version"
-        private const val curr_version = "0.0.4.1"
+        private const val curr_version = "0.0.5"
         //$version$content
 
         private fun loadRecommendConfig(): String {

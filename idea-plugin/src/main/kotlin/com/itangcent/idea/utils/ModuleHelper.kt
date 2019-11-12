@@ -13,7 +13,7 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 import org.apache.commons.lang3.StringUtils
 import java.io.File
 
@@ -100,8 +100,8 @@ class ModuleHelper {
             }
             module = StringUtils.substringAfterLast(currentPath, File.separator)
         } catch (e: Exception) {
-            logger!!.error("error in findCurrentPath")
-            logger.traceError(e)
+            logger!!.traceError("error in findCurrentPath",e)
+
         }
         return module
 

@@ -16,7 +16,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.util.ToolUtils
-import com.itangcent.intellij.util.traceError
+import com.itangcent.intellij.logger.traceError
 
 /**
  * @author tangcent
@@ -53,8 +53,8 @@ class FieldsToJsonAction : BasicAnAction("To Json") {
                 }
             }
         } catch (e: Exception) {
-            logger!!.error("To json failed")
-            logger.traceError(e)
+            logger!!.traceError("To json failed",e)
+
         }
     }
 }
