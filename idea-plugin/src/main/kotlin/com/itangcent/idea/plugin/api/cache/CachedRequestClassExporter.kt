@@ -13,13 +13,13 @@ import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DocHandle
 import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.psi.PsiMethodResource
-import com.itangcent.idea.psi.PsiResource
+import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
-import com.itangcent.intellij.logger.traceError
 import java.io.File
 import kotlin.reflect.KClass
 
@@ -132,7 +132,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                             tinyRequest.response = request.response
 
                             requests.add(RequestWithKey(
-                                    PsiClassUtils.fullNameOfMemmber(cls, (request.resource as PsiResource).resource()!!)
+                                    PsiClassUtils.fullNameOfMemmber(cls, request.resourceMethod()!!)
                                     , tinyRequest
                             ))
                         })
@@ -148,7 +148,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Exception) {
-                logger!!.traceError("error to cache api info",e)
+                logger!!.traceError("error to cache api info", e)
 
                 disabled = true
 
