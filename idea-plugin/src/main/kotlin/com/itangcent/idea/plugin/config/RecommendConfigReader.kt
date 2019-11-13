@@ -11,8 +11,8 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
-import org.jetbrains.kotlin.konan.file.File
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -72,7 +72,7 @@ class RecommendConfigReader : ConfigReader {
                     configReader.reset()
                     val moduleFile = module.moduleFile
                     val modulePath: String = when {
-                        moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.pathSeparator)
+                        moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.separator)
                         moduleFile.isDirectory -> moduleFile.path
                         else -> moduleFile.parent.path
                     }
