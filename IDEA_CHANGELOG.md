@@ -1,15 +1,15 @@
 *   0.2.0
-    1.  enhance:support export api to postman[Code -> ExportPostman]
+    1.  enhance:support export api to postman`[Code -> ExportPostman]`
 *   0.3.0
     1.  enhance:cache api export result
 *   0.4.0 ~
-    1.  enhance:quick API requests from code[Alt + Insert -> Call]
+    1.  enhance:quick API requests from code`[Alt + Insert -> Call]`
     2.  enhance:support request&response header
     3.  enhance:support download response
     4.  enhance:support host history
     5.  enhance:support response auto format
-    6.  (beta)enhance:Export Api As Markdown[Code -> ExportMarkdown]
-    7.  fix:support Post File In [Call Api Action]
+    6.  (beta)enhance:Export Api As Markdown\[Code -> ExportMarkdown]
+    7.  fix:support Post File In `[Call Api Action]`
 *   0.5.0 ~
     1.  fix:auto format xml/html response
     2.  fix:set prompt for json response
@@ -44,12 +44,12 @@
     3. fix:opti method Infer  [(#103)](https://github.com/tangcent/easy-api/pull/103)
     4. enhance:support export method doc(rpc)  [(#107)](https://github.com/tangcent/easy-api/pull/107)
     5. fix config search[(#113)](https://github.com/tangcent/easy-api/pull/113)
-    6. resolve {@link ...} in param desc doc[(#117)](https://github.com/tangcent/easy-api/pull/117)
+    6. resolve `{@link ...}` in param desc doc[(#117)](https://github.com/tangcent/easy-api/pull/117)
     7. Output path params in 'Export Markdown'[(#118)](https://github.com/tangcent/easy-api/pull/118)
 *   1.0.0 ~
     1. enhance:support kotlin  [(#125)](https://github.com/tangcent/easy-api/pull/125)
 *   1.1.0 ~
-    1. enhance:support rule: name\[filter]=value  [(#138)](https://github.com/tangcent/easy-api/pull/138)
+    1. enhance:support rule: `name[filter]=value`  [(#138)](https://github.com/tangcent/easy-api/pull/138)
     2. enhance:parse kotlin files in ApiDashboard  [(#141)](https://github.com/tangcent/easy-api/pull/141)
     3. fix: support Serializer for Enum  [(#134)](https://github.com/tangcent/easy-api/issues/134)
     4. fix: fix error base path for APIs in super class  [(#137)](https://github.com/tangcent/easy-api/issues/137)
@@ -57,6 +57,13 @@
 *   1.2.0 ~
     1. enhance:provide more recommended configurations  [(#153)](https://github.com/tangcent/easy-api/issues/153)
     2. enhance:support for export&import settings [(#167)](https://github.com/tangcent/easy-api/issues/167)
-    3. fix: Some icon maybe missing in Windows  [(#164)](https://github.com/tangcent/easy-api/issues/164)
+    3. fix: Some icon maybe missing in Windows  [(#164)](https://github.com/tangcent/easy-api/issues/164)   
+*   1.3.0 ~
+    1. enhance:new rule:`[class.prefix.path]`  [(#181)](https://github.com/tangcent/easy-api/pull/181)
+    2. enhance:new rule:`[doc.class]`  [(#178)](https://github.com/tangcent/easy-api/pull/178)
+    3. enhance:new rule:`[param.ignore]`  [(#176)](https://github.com/tangcent/easy-api/pull/176)
+    4. enhance:import spring properties by recommend [(#181)](https://github.com/tangcent/easy-api/pull/181)
+    5. enhance:Auto reload the configuration while context switch [(#185)](https://github.com/tangcent/easy-api/pull/185)
+   
    
        
