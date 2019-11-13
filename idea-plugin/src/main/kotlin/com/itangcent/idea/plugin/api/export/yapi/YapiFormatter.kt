@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Doc
@@ -12,6 +11,8 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.psi.resource
+import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.SimpleRuleParser
@@ -102,11 +103,11 @@ class YapiFormatter {
 
             item["res_body_type"] = "json"
 
-            if (methodDoc.resource is PsiMethod) {
-                item["res_body"] = parseBySchema(methodDoc.ret, findReturnOfMethod(methodDoc.resource as PsiMethod))
-            } else {
-                item["res_body"] = parseBySchema(methodDoc.ret, null)
-            }
+
+            item["res_body"] = parseBySchema(methodDoc.ret,
+                    methodDoc.resourceMethod()?.let {
+                        findReturnOfMethod(it)
+                    })
         } else {
             item["res_body_type"] = "json"
 
@@ -117,13 +118,13 @@ class YapiFormatter {
     }
 
     private fun getPathOfMethodDoc(methodDoc: MethodDoc): String {
-        val path = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_PATH, methodDoc.resource as PsiElement)
+        val path = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_PATH, methodDoc.resource()!!)
 
         if (!path.isNullOrEmpty()) {
             return path
         }
 
-        return PsiClassUtils.fullNameOfMethod(methodDoc.resource as PsiMethod).let {
+        return PsiClassUtils.fullNameOfMethod(methodDoc.resourceMethod()!!).let {
             Regex("[^a-zA-Z0-9-/_:.!]").replace(it, "/")
         }.let {
             Regex("//+").replace(it, "/")
@@ -131,7 +132,7 @@ class YapiFormatter {
     }
 
     private fun getHttpMethodOfMethodDoc(methodDoc: MethodDoc): String {
-        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_METHOD, methodDoc.resource as PsiElement)
+        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_METHOD, methodDoc.resource()!!)
                 ?: "POST"
     }
 
@@ -269,11 +270,9 @@ class YapiFormatter {
             val response = request.response!![0]
             item["res_body_type"] = "json"
 
-            if (request.resource is PsiMethod) {
-                item["res_body"] = parseBySchema(response.body, findReturnOfMethod(request.resource as PsiMethod))
-            } else {
-                item["res_body"] = parseBySchema(response.body, null)
-            }
+            item["res_body"] = parseBySchema(response.body, request.resourceMethod()?.let {
+                findReturnOfMethod(it)
+            })
         } else {
             item["res_body_type"] = "json"
 

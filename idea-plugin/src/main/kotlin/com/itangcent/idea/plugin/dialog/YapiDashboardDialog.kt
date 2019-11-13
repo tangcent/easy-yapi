@@ -17,7 +17,9 @@ import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
+import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
@@ -297,7 +299,11 @@ class YapiDashboardDialog : JDialog() {
                     val rootDirectory = PsiManager.getInstance(project!!).findDirectory(contentRoot)
                     traversal(rootDirectory!!,
                             { !disposed },
-                            { !disposed && it.name.endsWith("java") && (it is PsiClassOwner) }) { psiFile ->
+                            {
+                                !disposed &&
+                                        (it.name.endsWith("java") || it.name.endsWith("kt"))
+                                        && (it is PsiClassOwner)
+                            }) { psiFile ->
                         if (disposed) return@traversal
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
 
@@ -853,9 +859,10 @@ class YapiDashboardDialog : JDialog() {
 
     class ApiProjectNodeData : IconCustomized, Tooltipable {
         override fun toolTip(): String? {
+            val psiResource = (doc.resource ?: return "") as PsiResource
             return when (doc) {
-                is Request -> "${PsiClassUtils.fullNameOfMethod(doc.resource as PsiMethod)}\n${(doc as Request).method}:${(doc as Request).path}"
-                else -> "${PsiClassUtils.fullNameOfMethod(doc.resource as PsiMethod)}\n${(doc as MethodDoc).name}"
+                is Request -> "${PsiClassUtils.fullNameOfMethod(psiResource.resourceClass()!!, psiResource.resource() as PsiMethod)}\n${(doc as Request).method}:${(doc as Request).path}"
+                else -> "${PsiClassUtils.fullNameOfMethod(psiResource.resourceClass()!!, psiResource.resource() as PsiMethod)}\n${(doc as MethodDoc).name}"
             }
         }
 
@@ -874,7 +881,7 @@ class YapiDashboardDialog : JDialog() {
 
         override fun toString(): String {
             if (this.apiDashboardDialog.projectMode == ProjectMode.Original) {
-                return (doc.resource as PsiMethod).name
+                return doc.resourceMethod()?.name ?: ""
             }
             return doc.name ?: "anonymous"
 

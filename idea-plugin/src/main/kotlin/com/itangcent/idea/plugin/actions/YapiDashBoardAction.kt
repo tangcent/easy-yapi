@@ -3,7 +3,9 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
-import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.ComboClassExporter
+import com.itangcent.idea.plugin.api.export.LinkResolver
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
@@ -12,8 +14,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.psi.ClassRuleConfig
-import com.itangcent.intellij.psi.DefaultClassRuleConfig
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 
@@ -24,8 +24,7 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
-        builder.bind(DocParseHelper::class) { it.with(DefaultDocParseHelper::class).singleton() }
-        builder.bind(ClassRuleConfig::class) { it.with(DefaultClassRuleConfig::class).singleton() }
+
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
         builder.bind(YapiDashBoard::class) { it.singleton() }
