@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.model.Doc
-import com.itangcent.common.model.Request
 import java.util.*
 
 
