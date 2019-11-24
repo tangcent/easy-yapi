@@ -74,7 +74,13 @@ class MethodReturnInferHelper {
         return inferReturn(null, psiMethod, caller, args, option)
     }
 
-    fun inferReturn(context: PsiElement?, psiMethod: PsiMethod, caller: Any? = null, args: Array<Any?>?, option: Int = DEFAULT_OPTION): Any? {
+    fun inferReturn(
+        context: PsiElement?,
+        psiMethod: PsiMethod,
+        caller: Any? = null,
+        args: Array<Any?>?,
+        option: Int = DEFAULT_OPTION
+    ): Any? {
         actionContext!!.checkStatus()
         if (methodStack.size < maxDeep) {
             try {
@@ -84,7 +90,8 @@ class MethodReturnInferHelper {
                     if (allowQuickCall(option)) {
                         val returnType = psiMethod.returnType
                         if (returnType != null && !PsiClassUtils.isInterface(returnType)
-                                && duckTypeHelper!!.isQualified(returnType, psiMethod)) {
+                            && duckTypeHelper!!.isQualified(returnType, psiMethod)
+                        ) {
                             return psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption)
                         }
                     }
@@ -195,7 +202,12 @@ class MethodReturnInferHelper {
      * getter/setter
      * method of collection(Set/List/Map...)
      */
-    private fun callSimpleMethod(context: PsiElement?, psiMethod: PsiMethod, caller: Any? = null, args: Array<Any?>?): Any? {
+    private fun callSimpleMethod(
+        context: PsiElement?,
+        psiMethod: PsiMethod,
+        caller: Any? = null,
+        args: Array<Any?>?
+    ): Any? {
         actionContext!!.checkStatus()
         try {
             if (psiMethod.hasModifier(JvmModifier.STATIC)) {
@@ -312,7 +324,7 @@ class MethodReturnInferHelper {
         actionContext!!.checkStatus()
         //find recursive call
         methodStack.filter { it.callMethod() == infer.callMethod() }
-                .forEach { return it.possible() }
+            .forEach { return it.possible() }
         try {
             methodStack.push(infer)
             return infer.infer()
@@ -345,20 +357,20 @@ class MethodReturnInferHelper {
 
             if (candidateMethod.size > 1) {
                 candidateMethod.filter { it.parameterCount == argCount }
-                        .forEach {
-                            try {
-                                return callMethod(null, it, args)
-                            } catch (e: Exception) {
-                            }
+                    .forEach {
+                        try {
+                            return callMethod(null, it, args)
+                        } catch (e: Exception) {
                         }
+                    }
 
                 candidateMethod.filter { it.parameterCount != argCount }
-                        .forEach {
-                            try {
-                                return callMethod(null, it, args)
-                            } catch (e: Exception) {
-                            }
+                    .forEach {
+                        try {
+                            return callMethod(null, it, args)
+                        } catch (e: Exception) {
                         }
+                    }
             }
 
             return CALL_FAILED
@@ -863,7 +875,11 @@ class MethodReturnInferHelper {
         fun callMethod(): Any?
     }
 
-    abstract class AbstractMethodReturnInfer(var caller: Any? = null, val args: Array<Any?>?, val methodReturnInferHelper: MethodReturnInferHelper) : Infer {
+    abstract class AbstractMethodReturnInfer(
+        var caller: Any? = null,
+        val args: Array<Any?>?,
+        val methodReturnInferHelper: MethodReturnInferHelper
+    ) : Infer {
 
         var localParams: HashMap<String, Any?> = HashMap()
 
@@ -946,17 +962,35 @@ class MethodReturnInferHelper {
                     if (inits.add(variableName)) {
                         val variableType = psiElement.type
 
-                        if (!PsiClassUtils.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(variableType, psiElement)) {
+                        if (!PsiClassUtils.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(
+                                variableType,
+                                psiElement
+                            )
+                        ) {
                             variable.addLazyAction {
-                                variable.setValue(methodReturnInferHelper.psiClassHelper!!.getTypeObject(variableType, psiElement, methodReturnInferHelper.jsonOption))
+                                variable.setValue(
+                                    methodReturnInferHelper.psiClassHelper!!.getTypeObject(
+                                        variableType,
+                                        psiElement,
+                                        methodReturnInferHelper.jsonOption
+                                    )
+                                )
                             }
                         } else {
                             variable.addLazyAction {
                                 val processValue: Any? = if (psiElement.initializer != null) {
-                                    processExpression(psiElement.initializer!!)
+                                    findComplexResult(
+                                        processExpression(psiElement.initializer!!),
+                                        methodReturnInferHelper.getSimpleFields(
+                                            psiElement.type,
+                                            psiElement
+                                        )
+                                    )
                                 } else {
-                                    methodReturnInferHelper.getSimpleFields(psiElement.type,
-                                            psiElement)
+                                    methodReturnInferHelper.getSimpleFields(
+                                        psiElement.type,
+                                        psiElement
+                                    )
                                 }
                                 variable.setValue(processValue)
                             }
@@ -1049,7 +1083,7 @@ class MethodReturnInferHelper {
                     val callMethod = psiExpression.resolveMethod() ?: return null
 
                     val args = psiExpression.argumentList?.expressions?.map { processExpression(it) }
-                            ?.toTypedArray()
+                        ?.toTypedArray()
 
                     var caller: Any? = null
                     if (!callMethod.hasModifier(JvmModifier.STATIC)) {
@@ -1094,8 +1128,14 @@ class MethodReturnInferHelper {
 
         protected fun processNewExpression(psiNewExpression: PsiNewExpression): Any? {
             val args = psiNewExpression.argumentList?.expressions?.map { processExpression(it) }
-                    ?.toTypedArray()
-            return DirectVariable { methodReturnInferHelper.NewExpressionInfer(psiNewExpression, args, methodReturnInferHelper).infer() }
+                ?.toTypedArray()
+            return DirectVariable {
+                methodReturnInferHelper.NewExpressionInfer(
+                    psiNewExpression,
+                    args,
+                    methodReturnInferHelper
+                ).infer()
+            }
         }
 
         private fun processBinaryExpression(psiExpression: PsiBinaryExpression): Any? {
@@ -1340,8 +1380,12 @@ class MethodReturnInferHelper {
         }
     }
 
-    inner class MethodReturnInfer(private val psiMethod: PsiMethod, caller: Any? = null, args: Array<Any?>?, methodReturnInferHelper: MethodReturnInferHelper)
-        : AbstractMethodReturnInfer(caller, args, methodReturnInferHelper) {
+    inner class MethodReturnInfer(
+        private val psiMethod: PsiMethod,
+        caller: Any? = null,
+        args: Array<Any?>?,
+        methodReturnInferHelper: MethodReturnInferHelper
+    ) : AbstractMethodReturnInfer(caller, args, methodReturnInferHelper) {
 
         override fun infer(): Any? {
 
@@ -1408,8 +1452,10 @@ class MethodReturnInferHelper {
      * Try to get the constant return without any arguments (include parameter and local variable)
      * Throws an exception if it finds that the return value is related to a parameter or a local variable
      */
-    open inner class QuicklyMethodReturnInfer(private val psiMethod: PsiMethod, methodReturnInferHelper: MethodReturnInferHelper)
-        : AbstractMethodReturnInfer(null, null, methodReturnInferHelper) {
+    open inner class QuicklyMethodReturnInfer(
+        private val psiMethod: PsiMethod,
+        methodReturnInferHelper: MethodReturnInferHelper
+    ) : AbstractMethodReturnInfer(null, null, methodReturnInferHelper) {
 
         override fun infer(): Any? {
 
@@ -1491,7 +1537,7 @@ class MethodReturnInferHelper {
                 is PsiCallExpression -> {
                     val callMethod = psiExpression.resolveMethod() ?: return null
                     val args = psiExpression.argumentList?.expressions?.map { processExpression(it) }
-                            ?.toTypedArray()
+                        ?.toTypedArray()
                     return if (callMethod.hasModifier(JvmModifier.STATIC)) {//only static can be call
                         DirectVariable { methodReturnInferHelper.inferReturn(callMethod, null, args) }
                     } else {
@@ -1519,11 +1565,20 @@ class MethodReturnInferHelper {
         }
     }
 
-    inner class NewExpressionInfer(private val psiNewExpression: PsiNewExpression, args: Array<Any?>?, methodReturnInferHelper: MethodReturnInferHelper)
-        : AbstractMethodReturnInfer(null, args, methodReturnInferHelper) {
+    inner class NewExpressionInfer(
+        private val psiNewExpression: PsiNewExpression,
+        args: Array<Any?>?,
+        methodReturnInferHelper: MethodReturnInferHelper
+    ) : AbstractMethodReturnInfer(null, args, methodReturnInferHelper) {
 
         override fun infer(): Any? {
-            this.caller = DirectVariable { methodReturnInferHelper.psiClassHelper!!.getTypeObject(psiNewExpression.type, psiNewExpression, methodReturnInferHelper.jsonOption) }
+            this.caller = DirectVariable {
+                methodReturnInferHelper.psiClassHelper!!.getTypeObject(
+                    psiNewExpression.type,
+                    psiNewExpression,
+                    methodReturnInferHelper.jsonOption
+                )
+            }
             this.fields = asMap((caller as DirectVariable).getValue())
             this.returnVal = this.caller//new exp return this
             psiNewExpression.children.forEach { child ->
@@ -1536,7 +1591,8 @@ class MethodReturnInferHelper {
 
             val resolveConstructor = this.psiNewExpression.resolveConstructor()
             if (resolveConstructor != null) {
-                val inferReturnResult = inferReturn(resolveConstructor, this.caller, args, DEFAULT_OPTION xor ALLOW_QUICK_CALL)
+                val inferReturnResult =
+                    inferReturn(resolveConstructor, this.caller, args, DEFAULT_OPTION xor ALLOW_QUICK_CALL)
                 if (inferReturnResult != null && inferReturnResult is Variable) {
                     inferReturnResult.getValue()
                 }
