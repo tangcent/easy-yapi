@@ -6,4 +6,6 @@ class MethodDoc : Doc() {
     var params: MutableList<Param>? = null
 
     var ret: Any? = null
+
+    var retDesc: String? = null
 }

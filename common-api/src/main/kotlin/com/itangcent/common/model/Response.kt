@@ -13,5 +13,7 @@ open class Response : Extensible(), Serializable {
 
     var body: Any? = null
 
+    var bodyDesc: String? = null
+
     var code: Int? = null
 }

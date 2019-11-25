@@ -25,12 +25,12 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.Magics
 import com.itangcent.intellij.util.forEachValid
-import com.itangcent.intellij.logger.traceError
 import java.util.*
 import kotlin.reflect.KClass
 
@@ -143,8 +143,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
-    private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
-                                docHandle: DocHandle) {
+    private fun exportMethodApi(
+        psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
+        docHandle: DocHandle
+    ) {
 
         actionContext!!.checkStatus()
 
@@ -232,7 +234,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         //parse additionalResponseHeader by config
         if (!request.response.isNullOrEmpty()) {
-            val additionalResponseHeader = ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_RESPONSE_HEADER, method)
+            val additionalResponseHeader =
+                ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_RESPONSE_HEADER, method)
             if (!additionalResponseHeader.isNullOrEmpty()) {
                 val additionalHeaders = additionalResponseHeader.lines()
                 for (headerStr in additionalHeaders) {
@@ -260,6 +263,53 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                 val typedResponse = parseResponseBody(returnType, method)
 
+                val descOfReturn = docHelper!!.findDocByTag(method, "return")
+                if (!descOfReturn.isNullOrBlank()) {
+                    val methodReturnMain = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, method)
+                    if (methodReturnMain.isNullOrBlank()) {
+                        requestHelper.appendResponseBodyDesc(response, descOfReturn)
+                    } else {
+                        val options: ArrayList<HashMap<String, Any?>> = ArrayList()
+                        val comment = linkExtractor!!.extract(descOfReturn, method, object : AbstractLinkResolve() {
+
+                            override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+
+                                psiClassHelper!!.resolveEnumOrStatic(plainText, method, "")
+                                    ?.let { options.addAll(it) }
+
+                                return super.linkToPsiElement(plainText, linkTo)
+                            }
+
+                            override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
+                                return linkResolver!!.linkToClass(linkClass)
+                            }
+
+                            override fun linkToField(plainText: String, linkField: PsiField): String? {
+                                return linkResolver!!.linkToProperty(linkField)
+                            }
+
+                            override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
+                                return linkResolver!!.linkToMethod(linkMethod)
+                            }
+
+                            override fun linkToUnresolved(plainText: String): String? {
+                                return plainText
+                            }
+                        })
+
+                        if (!comment.isNullOrBlank()) {
+                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, comment)) {
+                                requestHelper.appendResponseBodyDesc(response, comment)
+                            }
+                        }
+                        if (!options.isNullOrEmpty()) {
+                            if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain, options)) {
+                                requestHelper.appendResponseBodyDesc(response, KVUtils.getOptionDesc(options))
+                            }
+                        }
+                    }
+                }
+
                 requestHelper.setResponseBody(response, "raw", typedResponse)
 
                 requestHelper.addResponseHeader(response, "content-type", "application/json;charset=UTF-8")
@@ -269,7 +319,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Throwable) {
-                logger!!.traceError("error to parse body",e)
+                logger!!.traceError("error to parse body", e)
 
             }
         }
@@ -317,7 +367,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                     override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
 
                         psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name)
-                                ?.let { options.addAll(it) }
+                            ?.let { options.addAll(it) }
 
                         return super.linkToPsiElement(plainText, linkTo)
                     }
@@ -351,11 +401,11 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         cls.allMethods
-                .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
-                .filter { !it.hasModifier(JvmModifier.STATIC) }
-                .filter { !it.isConstructor }
-                .filter { !shouldIgnore(it) }
-                .forEach(handle)
+            .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
+            .filter { !it.hasModifier(JvmModifier.STATIC) }
+            .filter { !it.isConstructor }
+            .filter { !shouldIgnore(it) }
+            .forEach(handle)
     }
 
     private fun processMethodParameters(method: PsiMethod, request: Request) {
@@ -370,7 +420,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 if (ruleComputer!!.computer(ClassExportRuleKeys.PARAM_IGNORE, param) == true) {
                     continue
                 }
-                processMethodParameter(method, request, param, KVUtils.getUltimateComment(paramDocComment, param.name).append(readParamDoc(param)))
+                processMethodParameter(
+                    method,
+                    request,
+                    param,
+                    KVUtils.getUltimateComment(paramDocComment, param.name).append(readParamDoc(param))
+                )
             }
         }
 
@@ -393,20 +448,26 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
                 val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
                 fields.forEachValid { filedName, fieldVal ->
-                    requestHelper!!.addParam(request, filedName, tinyQueryParam(fieldVal.toString()),
-                            required?.getAs(filedName) ?: false,
-                            KVUtils.getUltimateComment(comment, filedName))
+                    requestHelper!!.addParam(
+                        request, filedName, tinyQueryParam(fieldVal.toString()),
+                        required?.getAs(filedName) ?: false,
+                        KVUtils.getUltimateComment(comment, filedName)
+                    )
                 }
             } else if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-                requestHelper.addFormFileParam(request, parameter.name!!,
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
+                requestHelper.addFormFileParam(
+                    request, parameter.name!!,
+                    ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                )
             } else {
-                requestHelper!!.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
+                requestHelper!!.addParam(
+                    request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                    ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                )
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as ModelAttribute",e)
+            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as ModelAttribute", e)
 
         }
     }
@@ -427,25 +488,33 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                     val fv = deepComponent(fieldVal)
                     if (fv == Magics.FILE_STR) {
                         requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
-                        requestHelper.addFormFileParam(request, filedName,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName))
+                        requestHelper.addFormFileParam(
+                            request, filedName,
+                            required?.getAs(filedName) ?: false,
+                            KVUtils.getUltimateComment(comment, filedName)
+                        )
                     } else {
-                        requestHelper.addFormParam(request, filedName, null,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName))
+                        requestHelper.addFormParam(
+                            request, filedName, null,
+                            required?.getAs(filedName) ?: false,
+                            KVUtils.getUltimateComment(comment, filedName)
+                        )
                     }
                 }
             } else if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-                requestHelper.addFormFileParam(request, parameter.name!!,
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
+                requestHelper.addFormFileParam(
+                    request, parameter.name!!,
+                    ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                )
             } else {
-                requestHelper!!.addParam(request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc)
+                requestHelper!!.addParam(
+                    request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                    ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                )
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as ModelAttribute",e)
+            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as ModelAttribute", e)
 
         }
     }
