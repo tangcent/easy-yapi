@@ -40,6 +40,8 @@ interface RequestHelper {
     fun setResponseBody(response: Response, bodyType: String, body: Any?)
 
     fun setResponseCode(response: Response, code: Int)
+
+    fun appendResponseBodyDesc(response: Response, bodyDesc: String?)
     //endregion
 }
 

@@ -21,8 +21,16 @@ open class DefaultMethodDocHelper : MethodDocHelper {
         methodDoc.params!!.add(param)
     }
 
-    override fun setRet(methodDoc: MethodDoc, ret: Any?, retAttr: String?) {
+    override fun setRet(methodDoc: MethodDoc, ret: Any?) {
         methodDoc.ret = ret
+    }
+
+    override fun appendRetDesc(methodDoc: MethodDoc, retDesc: String?) {
+        if (methodDoc.retDesc.isNullOrBlank()) {
+            methodDoc.retDesc = retDesc
+        } else {
+            methodDoc.retDesc = methodDoc.retDesc + "\n" + retDesc
+        }
     }
 
 }
