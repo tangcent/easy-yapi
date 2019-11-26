@@ -15,6 +15,7 @@ import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.jvm.SourceHelper
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
 import com.itangcent.intellij.logger.Logger
@@ -35,6 +36,7 @@ abstract class BasicAnAction : KotlinAnAction {
         super.onBuildActionContext(event, builder)
         builder.bindInstance("plugin.name", "easy_api")
 
+        builder.bind(SourceHelper::class) { it.with(com.itangcent.intellij.psi.SourceHelper::class) }
         builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
@@ -47,7 +49,8 @@ abstract class BasicAnAction : KotlinAnAction {
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
         val loggerBuffer: LoggerBuffer? = actionContext.getCache<LoggerBuffer>("LOGGER_BUF")
         loggerBuffer?.drainTo(actionContext.instance(Logger::class))
-        val actionExtLoader: GroovyActionExtLoader? = actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
+        val actionExtLoader: GroovyActionExtLoader? =
+            actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
         actionExtLoader?.let { extLoader ->
             actionContext.on(EventKey.ONCOMPLETED) {
                 extLoader.close()
@@ -59,14 +62,16 @@ abstract class BasicAnAction : KotlinAnAction {
 
     }
 
-    protected fun loadCustomActionExt(actionName: String, event: DataContext,
-                                      builder: ActionContext.ActionContextBuilder) {
+    protected fun loadCustomActionExt(
+        actionName: String, event: DataContext,
+        builder: ActionContext.ActionContextBuilder
+    ) {
         val logger = LoggerBuffer()
         builder.cache("LOGGER_BUF", logger)
         val actionExtLoader = GroovyActionExtLoader()
         builder.cache("GROOVY_ACTION_EXT_LOADER", actionExtLoader)
         val loadActionExt = actionExtLoader.loadActionExt(event, actionName, logger)
-                ?: return
+            ?: return
         loadActionExt.init(builder)
     }
 
