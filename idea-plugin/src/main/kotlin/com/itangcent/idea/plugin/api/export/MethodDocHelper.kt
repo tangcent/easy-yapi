@@ -13,7 +13,9 @@ interface MethodDocHelper {
 
     fun addParam(methodDoc: MethodDoc, param: Param)
 
-    fun setRet(methodDoc: MethodDoc, ret: Any?, retAttr: String?)
+    fun setRet(methodDoc: MethodDoc, ret: Any?)
+
+    fun appendRetDesc(methodDoc: MethodDoc, retDesc: String?)
 }
 
 //region utils------------------------------------------------------------------
@@ -28,10 +30,6 @@ fun MethodDocHelper.addParam(methodDoc: MethodDoc, paramName: String, value: Any
     param.required = required
     param.desc = desc
     this.addParam(methodDoc, param)
-}
-
-fun MethodDocHelper.setRet(methodDoc: MethodDoc, ret: Any?) {
-    this.setRet(methodDoc, ret, null)
 }
 
 //endregion utils------------------------------------------------------------------

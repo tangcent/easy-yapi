@@ -16,7 +16,6 @@ import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.forEachValid
@@ -58,16 +57,16 @@ class MarkdownFormatter {
         docs.forEach { request ->
             val resource = request.resource?.let { resourceHelper!!.findResourceClass(it) } ?: NULL_RESOURCE
             clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
-                    .add(request)
+                .add(request)
         }
 
         //only one class
         if (clsGroupedMap.size == 1) {
             clsGroupedMap.entries.first()
-                    .let {
-                        val module = moduleHelper!!.findModule(it.key) ?: "easy-api"
-                        return wrapInfo(module, arrayListOf(wrapInfo(it.key, it.value)))
-                    }
+                .let {
+                    val module = moduleHelper!!.findModule(it.key) ?: "easy-api"
+                    return wrapInfo(module, arrayListOf(wrapInfo(it.key, it.value)))
+                }
         }
 
         //group by module
@@ -75,24 +74,27 @@ class MarkdownFormatter {
         clsGroupedMap.forEach { cls, items ->
             val module = moduleHelper!!.findModule(cls) ?: "easy-api"
             moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
-                    .add(wrapInfo(cls, items))
+                .add(wrapInfo(cls, items))
         }
 
         //only one module
         if (moduleGroupedMap.size == 1) {
             moduleGroupedMap.entries.first()
-                    .let {
-                        return wrapInfo(it.key, arrayListOf(wrapInfo(it.key, it.value)))
-                    }
+                .let {
+                    return wrapInfo(it.key, arrayListOf(wrapInfo(it.key, it.value)))
+                }
         }
 
         val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
         moduleGroupedMap.entries
-                .map { wrapInfo(it.key, arrayListOf(wrapInfo(it.key, it.value))) }
-                .forEach { modules.add(it) }
+            .map { wrapInfo(it.key, arrayListOf(wrapInfo(it.key, it.value))) }
+            .forEach { modules.add(it) }
 
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
-        return wrapInfo("$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}", modules as ArrayList<Any?>)
+        return wrapInfo(
+            "$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}",
+            modules as ArrayList<Any?>
+        )
     }
 
     private fun parseApi(info: Any, deep: Int, handle: (String) -> Unit) {
@@ -113,11 +115,11 @@ class MarkdownFormatter {
             handle("\n\n")
         }
         (info[ITEMS] as List<*>)
-                .filterNotNull()
-                .forEach {
-                    parseApi(it, deep + 1, handle)
-                    handle("\n\n")
-                }
+            .filterNotNull()
+            .forEach {
+                parseApi(it, deep + 1, handle)
+                handle("\n\n")
+            }
     }
 
     private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, handle: (String) -> Unit) {
@@ -146,7 +148,7 @@ class MarkdownFormatter {
         } else {
             handle("| name  |  type  |  desc  |\n")
             handle("| ------------ | ------------ | ------------ |\n")
-            methodDoc.ret?.let { parseBody(0, "", "", it, handle) }
+            methodDoc.ret?.let { parseBody(0, "", methodDoc.retDesc ?: "", it, handle) }
         }
 
     }
@@ -175,8 +177,10 @@ class MarkdownFormatter {
             handle("| name  |  value   | desc  |\n")
             handle("| ------------ | ------------ | ------------ |\n")
             request.paths!!.forEach {
-                handle("| ${it.name} | ${it.value ?: ""} |" +
-                        " ${escape(it.desc)} |\n")
+                handle(
+                    "| ${it.name} | ${it.value ?: ""} |" +
+                            " ${escape(it.desc)} |\n"
+                )
             }
         }
 
@@ -186,8 +190,10 @@ class MarkdownFormatter {
             handle("| name  |  value  |  required | example  | desc  |\n")
             handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
             request.headers!!.forEach {
-                handle("| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                        " ${it.example ?: ""} | ${escape(it.desc)} |\n")
+                handle(
+                    "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
+                            " ${it.example ?: ""} | ${escape(it.desc)} |\n"
+                )
             }
         }
 
@@ -197,8 +203,10 @@ class MarkdownFormatter {
             handle("| name  |  value  |  required | desc  |\n")
             handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.querys!!.forEach {
-                handle("| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                        " ${escape(it.desc)} |\n")
+                handle(
+                    "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
+                            " ${escape(it.desc)} |\n"
+                )
             }
         }
 
@@ -221,8 +229,10 @@ class MarkdownFormatter {
                 handle("| name  |  value  | required |  type  |  desc  |\n")
                 handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
                 request.formParams!!.forEach {
-                    handle("| ${it.name} | ${it.value} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                            " ${it.type} | ${escape(it.desc)} |\n")
+                    handle(
+                        "| ${it.name} | ${it.value} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
+                                " ${it.type} | ${escape(it.desc)} |\n"
+                    )
                 }
             }
 
@@ -239,15 +249,19 @@ class MarkdownFormatter {
                 handle("| name  |  value  |  required | example  | desc  |\n")
                 handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
                 response.headers!!.forEach {
-                    handle("| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required
-                            ?: false, "YES", "NO")} |" +
-                            " ${it.example ?: ""} | ${escape(it.desc)} |\n")
+                    handle(
+                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(
+                            it.required
+                                ?: false, "YES", "NO"
+                        )} |" +
+                                " ${it.example ?: ""} | ${escape(it.desc)} |\n"
+                    )
                 }
 
                 handle("\n**Body：**\n\n")
                 handle("| name  |  type  |  desc  |\n")
                 handle("| ------------ | ------------ | ------------ |\n")
-                response.body?.let { parseBody(0, "", "", it, handle) }
+                response.body?.let { parseBody(0, "", response.bodyDesc ?: "", it, handle) }
 
                 // handler json example
                 if (settingBinder!!.read().outputDemo) {

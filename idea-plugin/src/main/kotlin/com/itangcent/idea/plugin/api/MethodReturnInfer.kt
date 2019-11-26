@@ -6,6 +6,7 @@ import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.KVUtils
 import com.itangcent.common.utils.Visional
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
@@ -252,7 +253,7 @@ class MethodReturnInferHelper {
                             asMap(realCaller)?.put(it, valueOf(args[1]))
                             val attr = findAttrFromContext(context)
                             if (!attr.isNullOrBlank()) {
-                                addComment(asMap(realCaller)!!, it, attr)
+                                KVUtils.addComment(asMap(realCaller)!!, it, attr)
                             }
                         }
                     }
