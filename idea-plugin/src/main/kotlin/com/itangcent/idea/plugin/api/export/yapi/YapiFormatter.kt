@@ -349,33 +349,46 @@ class YapiFormatter {
                 requireds = LinkedList()
             }
             typedObject.forEachValid { k, v ->
-                val propertyInfo = parseObject(contactPath(path, k.toString()), v)
-                if (comment != null) {
-                    val desc = comment[k]
-                    if (desc != null) {
-                        propertyInfo["description"] = desc.toString()
-                    }
-                    val options = comment["$k@options"]
-                    if (options != null) {
-                        val optionList = options as List<Map<String, Any?>>
+                try {
+                    val propertyInfo = parseObject(contactPath(path, k.toString()), v)
 
-                        val optionVals = optionList.stream()
-                                .map { it["value"] }
-                                .collect(Collectors.toList())
-
-                        val optionDesc = KVUtils.getOptionDesc(optionList)
-                        propertyInfo["enum"] = optionVals
-                        if (optionDesc != null) {
-                            propertyInfo["enumDesc"] = optionDesc
+                    if (comment != null) {
+                        val desc = comment[k]
+                        if (desc != null) {
+                            propertyInfo["description"] = desc.toString()
                         }
+                        val options = comment["$k@options"]
+                        if (options != null) {
+                            var mockPropertyInfo = propertyInfo
+                            try {
+                                while (mockPropertyInfo["type"] == "array") {
+                                    mockPropertyInfo = mockPropertyInfo["items"] as HashMap<String, Any?>
+                                }
+                            } catch (ignore: Exception) {
+                            }
 
-                        addMock(propertyInfo, "@pick(${GsonUtils.toJson(optionVals)})")
+                            val optionList = options as List<Map<String, Any?>>
+
+                            val optionVals = optionList.stream()
+                                    .map { it["value"] }
+                                    .collect(Collectors.toList())
+
+                            val optionDesc = KVUtils.getOptionDesc(optionList)
+                            mockPropertyInfo["enum"] = optionVals
+                            if (optionDesc != null) {
+                                mockPropertyInfo["enumDesc"] = optionDesc
+                            }
+
+                            addMock(mockPropertyInfo, "@pick(${GsonUtils.toJson(optionVals)})")
+                        }
                     }
+                    if (required?.get(k) == true) {
+                        requireds?.add(k.toString())
+                    }
+                    properties[k.toString()] = propertyInfo
+                } catch (e: Exception) {
+                    logger!!.warn("failed to mock for $path.$k")
                 }
-                if (required?.get(k) == true) {
-                    requireds?.add(k.toString())
-                }
-                properties[k.toString()] = propertyInfo
             }
             item["properties"] = properties
             if (!requireds.isNullOrEmpty()) {
