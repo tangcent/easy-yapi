@@ -2,6 +2,7 @@ package com.itangcent.common.utils
 
 import com.itangcent.common.constant.Attrs
 import java.util.*
+import kotlin.collections.ArrayList
 
 object KVUtils {
 
@@ -101,8 +102,15 @@ object KVUtils {
         if (comments == null) {
             comments = HashMap<String, String>()
             info[Attrs.COMMENT_ATTR] = comments
+            (comments as HashMap<Any?, Any?>)[field] = comment
+        } else {
+            val oldComment = (comments as HashMap<Any?, Any?>)[field]
+            if (oldComment == null) {
+                comments[field] = comment
+            } else {
+                comments[field] = "$oldComment\n$comment"
+            }
         }
-        (comments as HashMap<Any?, Any?>)[field] = comment
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -143,7 +151,16 @@ object KVUtils {
         if (comments == null) {
             comments = HashMap<String, String>()
             info[Attrs.COMMENT_ATTR] = comments
+            (comments as HashMap<Any?, Any?>)["$field@options"] = options
+        } else {
+            val oldOptions = (comments as HashMap<Any?, Any?>)["$field@options"]
+            if (oldOptions == null) {
+                comments["$field@options"] = options
+            } else {
+                val mergeOptions: ArrayList<HashMap<String, Any?>> = ArrayList(oldOptions as ArrayList<HashMap<String, Any?>>)
+                mergeOptions.addAll(options)
+                comments["$field@options"] = mergeOptions
+            }
         }
-        (comments as HashMap<Any?, Any?>)["$field@options"] = options
     }
 }
