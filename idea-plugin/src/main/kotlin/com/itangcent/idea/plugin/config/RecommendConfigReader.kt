@@ -93,10 +93,12 @@ class RecommendConfigReader : ConfigReader {
         }
         if (settingBinder?.read()?.useRecommendConfig == true) {
             if (settingBinder.read().recommendConfigs.isEmpty()) {
-                logger!!.info("Even useRecommendConfig was true, but no recommend config be selected!\n" +
-                        "\n" +
-                        "If you need to enable the built-in recommended configuration." +
-                        "Go to [Preference -> Other Setting -> EasyApi -> Recommend]")
+                logger!!.info(
+                    "Even useRecommendConfig was true, but no recommend config be selected!\n" +
+                            "\n" +
+                            "If you need to enable the built-in recommended configuration." +
+                            "Go to [Preference -> Other Setting -> EasyApi -> Recommend]"
+                )
                 return
             }
 
@@ -125,7 +127,7 @@ class RecommendConfigReader : ConfigReader {
 
         private const val config_name = ".recommend.easy.api.config"
         //        private const val config_version = ".recommend.easy.api.config.version"
-        private const val curr_version = "0.0.5.1"
+        private const val curr_version = "0.0.6.1"
         //$version$content
 
         private fun loadRecommendConfig(): String {
@@ -140,10 +142,12 @@ class RecommendConfigReader : ConfigReader {
                 }
             }
 
-            val bufferedReader = BufferedReader(InputStreamReader(
+            val bufferedReader = BufferedReader(
+                InputStreamReader(
                     RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
-                            ?: RecommendConfigReader::class.java.getResourceAsStream(config_name)
-            ))
+                        ?: RecommendConfigReader::class.java.getResourceAsStream(config_name)
+                )
+            )
 
             val config = bufferedReader.readText()
             RECOMMEND_CONFIG_PLAINT = config
@@ -186,9 +190,9 @@ class RecommendConfigReader : ConfigReader {
 
         fun buildRecommendConfig(codes: List<String>): String {
             return RECOMMEND_CONFIG_CODES
-                    .filter { codes.contains(it) }
-                    .map { RECOMMEND_CONFIG_MAP[it] }
-                    .joinToString("\n")
+                .filter { codes.contains(it) }
+                .map { RECOMMEND_CONFIG_MAP[it] }
+                .joinToString("\n")
 
         }
 
