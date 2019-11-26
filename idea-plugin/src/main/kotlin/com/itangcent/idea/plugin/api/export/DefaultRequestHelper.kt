@@ -28,8 +28,10 @@ open class DefaultRequestHelper : RequestHelper {
         if (model is Map<*, *>) {
             val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
             model.forEach { k, v ->
-                addFormParam(request, k.toString(), v.toString(),
-                        KVUtils.getUltimateComment(comment, k))
+                addFormParam(
+                    request, k.toString(), v.toString(),
+                    KVUtils.getUltimateComment(comment, k)
+                )
             }
         }
     }
@@ -97,5 +99,13 @@ open class DefaultRequestHelper : RequestHelper {
 
     override fun setResponseCode(response: Response, code: Int) {
         response.code = code
+    }
+
+    override fun appendResponseBodyDesc(response: Response, bodyDesc: String?) {
+        if (response.bodyDesc.isNullOrBlank()) {
+            response.bodyDesc = bodyDesc
+        } else {
+            response.bodyDesc = response.bodyDesc + "\n" + bodyDesc
+        }
     }
 }
