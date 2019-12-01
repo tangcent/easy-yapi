@@ -68,6 +68,9 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
     @Inject
     private var actionContext: ActionContext? = null
 
+    @Inject
+    protected var apiHelper: ApiHelper? = null
+
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) return false
         actionContext!!.checkStatus()
@@ -115,17 +118,12 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
 
         request.resource = PsiMethodResource(method, psiClass)
 
+        apiHelper!!.nameAndAttrOfApi(method, {
+            requestHelper!!.setName(request, it)
+        }, {
+            requestHelper!!.appendDesc(request, it)
+        })
 
-        val attr: String?
-        val attrOfMethod = findAttrOfMethod(method)!!
-        val lines = attrOfMethod.lines()
-        attr = if (lines.size > 1) {//multi line
-            lines.firstOrNull { it.isNotBlank() }
-        } else {
-            attrOfMethod
-        }
-
-        requestHelper!!.setName(request, attr ?: method.name)
         docHandle(request)
     }
 

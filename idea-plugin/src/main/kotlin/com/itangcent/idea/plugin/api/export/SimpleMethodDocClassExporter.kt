@@ -70,6 +70,9 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
     @Inject
     protected var actionContext: ActionContext? = null
 
+    @Inject
+    protected var apiHelper: ApiHelper? = null
+
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (!methodDocEnable()) {
             return false
@@ -154,29 +157,11 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
     }
 
     protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, methodDoc: MethodDoc) {
-
-        val attr: String?
-        var attrOfMethod = findAttrOfMethod(method)
-        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method)
-
-        if (attrOfMethod.isNullOrBlank()) {
-            methodDocHelper!!.setName(methodDoc, method.name)
-        } else {
-            val lines = attrOfMethod.lines()
-            attr = if (lines.size > 1) {//multi line
-                lines.firstOrNull { it.isNotBlank() }
-            } else {
-                attrOfMethod
-            }
-
-            methodDocHelper!!.appendDesc(methodDoc, attrOfMethod)
-            methodDocHelper.setName(methodDoc, attr ?: method.name)
-        }
-
-        readMethodDoc(method)?.let {
-            methodDocHelper.appendDesc(methodDoc, docParseHelper.resolveLinkInAttr(it, method))
-        }
-
+        apiHelper!!.nameAndAttrOfApi(method, {
+            methodDocHelper!!.setName(methodDoc, it)
+        }, {
+            methodDocHelper!!.appendDesc(methodDoc, it)
+        })
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
@@ -186,14 +171,6 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
-    }
-
-    open protected fun findAttrOfMethod(method: PsiMethod): String? {
-        return docHelper!!.getAttrOfDocComment(method)
-    }
-
-    protected open fun readMethodDoc(method: PsiMethod): String? {
-        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
     }
 
     private fun methodDocEnable(): Boolean {
