@@ -14,7 +14,6 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.traceError
@@ -24,9 +23,6 @@ import kotlin.reflect.KClass
  * only parse name
  */
 open class SimpleMethodDocClassExporter : ClassExporter, Worker {
-
-    @Inject
-    private val docHelper: DocHelper? = null
 
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
@@ -157,11 +153,7 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
     }
 
     protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, methodDoc: MethodDoc) {
-        apiHelper!!.nameAndAttrOfApi(method, {
-            methodDocHelper!!.setName(methodDoc, it)
-        }, {
-            methodDocHelper!!.appendDesc(methodDoc, it)
-        })
+        methodDocHelper!!.setName(methodDoc, apiHelper!!.nameOfApi(method))
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {

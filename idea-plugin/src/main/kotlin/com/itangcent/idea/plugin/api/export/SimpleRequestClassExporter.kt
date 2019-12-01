@@ -18,16 +18,12 @@ import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.traceError
-import org.apache.commons.lang3.StringUtils
 import kotlin.reflect.KClass
 
 /**
  * only parse name
  */
 open class SimpleRequestClassExporter : ClassExporter, Worker {
-
-    @Inject
-    private val docHelper: DocHelper? = null
 
     @Inject
     private val annotationHelper: AnnotationHelper? = null
@@ -118,11 +114,7 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
 
         request.resource = PsiMethodResource(method, psiClass)
 
-        apiHelper!!.nameAndAttrOfApi(method, {
-            requestHelper!!.setName(request, it)
-        }, {
-            requestHelper!!.appendDesc(request, it)
-        })
+        requestHelper!!.setName(request, apiHelper!!.nameOfApi(method))
 
         docHandle(request)
     }
@@ -131,15 +123,6 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
         return SPRING_REQUEST_MAPPING_ANNOTATIONS
                 .map { annotationHelper!!.findAnnMap(ele, it) }
                 .firstOrNull { it != null }
-    }
-
-    private fun findAttrOfMethod(method: PsiMethod): String? {
-
-        val docText = docHelper!!.getAttrOfDocComment(method)
-        return when {
-            StringUtils.isBlank(docText) -> method.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, method)
-        }
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
