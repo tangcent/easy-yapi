@@ -169,6 +169,10 @@ abstract class ScriptRuleParser : RuleParser {
         fun hasModifier(modifier: String): Boolean {
             return asPsiModifierListOwner()?.hasModifierProperty(modifier) ?: false
         }
+
+        open fun contextType(): String {
+            return "unknown"
+        }
     }
 
     /**
@@ -183,6 +187,9 @@ abstract class ScriptRuleParser : RuleParser {
      * @see ScriptPsiTypeContext
      */
     inner class ScriptPsiClassContext(private val psiClass: PsiClass) : BaseScriptRuleContext(psiClass) {
+        override fun contextType(): String {
+            return "class"
+        }
 
         fun methods(): Array<ScriptPsiMethodContext> {
             return psiClass.allMethods.map { ScriptPsiMethodContext(it) }
@@ -245,6 +252,9 @@ abstract class ScriptRuleParser : RuleParser {
      * it.jsonName:String
      */
     inner class ScriptPsiFieldContext(private val psiField: PsiField) : BaseScriptRuleContext(psiField) {
+        override fun contextType(): String {
+            return "field"
+        }
 
         fun type(): ScriptPsiTypeContext {
             return ScriptPsiTypeContext(psiField.type)
@@ -284,6 +294,9 @@ abstract class ScriptRuleParser : RuleParser {
      * it.containingClass:class
      */
     inner class ScriptPsiMethodContext(private val psiMethod: PsiMethod) : BaseScriptRuleContext(psiMethod) {
+        override fun contextType(): String {
+            return "method"
+        }
 
         /**
          * Returns the return type of the method.
@@ -351,6 +364,9 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isVarArgs:Boolean
      */
     inner class ScriptPsiParameterContext(private val psiParameter: PsiParameter) : BaseScriptRuleContext(psiParameter) {
+        override fun contextType(): String {
+            return "param"
+        }
 
         fun type(): ScriptPsiTypeContext {
             return ScriptPsiTypeContext(psiParameter.type)
@@ -384,6 +400,9 @@ abstract class ScriptRuleParser : RuleParser {
      * @see ScriptPsiClassContext
      */
     inner class ScriptPsiTypeContext(private val psiType: PsiType) : BaseScriptRuleContext() {
+        override fun contextType(): String {
+            return "class"
+        }
 
         private var duckType: DuckType? = null
 
