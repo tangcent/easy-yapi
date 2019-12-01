@@ -39,9 +39,10 @@ import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.SelectedHelper
-import com.itangcent.intellij.util.UIUtils
 import com.itangcent.intellij.logger.traceError
+import com.itangcent.intellij.psi.SelectedHelper
+import com.itangcent.intellij.tip.TipsHelper
+import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
@@ -263,6 +264,8 @@ class SuvApiExporter {
 
             builder.inheritFrom(actionContext, Logger::class)
 
+            builder.inheritFrom(actionContext, TipsHelper::class)
+
 //            builder.bindInstance(Logger::class, BeanWrapperProxies.wrap(Logger::class, actionContext.instance(Logger::class)))
 
 //            builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
@@ -428,7 +431,7 @@ class SuvApiExporter {
                     logger!!.info("Apis save failed")
                 }
             } catch (e: Exception) {
-                logger!!.traceError("Apis save failed",e)
+                logger!!.traceError("Apis save failed", e)
 
             }
 
@@ -485,12 +488,12 @@ class SuvApiExporter {
                             logger!!.info("Apis save failed")
                         }
                     } catch (e: Exception) {
-                        logger!!.traceError("Apis save failed",e)
+                        logger!!.traceError("Apis save failed", e)
 
                     }
                 }
             } catch (e: Exception) {
-                logger!!.traceError("Apis save failed",e)
+                logger!!.traceError("Apis save failed", e)
 
             }
         }
