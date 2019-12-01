@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.DataEventCollector
 import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
+import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -40,7 +41,8 @@ class SuvExportAction : ApiExportAction("Export Api") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-        builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
+        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
+        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bind(SuvApiExporter::class) { it.singleton() }
 

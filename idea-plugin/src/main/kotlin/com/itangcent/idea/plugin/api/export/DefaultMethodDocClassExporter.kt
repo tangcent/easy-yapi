@@ -87,6 +87,9 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     @Inject
     protected var actionContext: ActionContext? = null
 
+    @Inject
+    protected var apiHelper: ApiHelper? = null
+
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (!methodDocEnable()) {
             return false
@@ -157,8 +160,8 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     }
 
     private fun exportMethodApi(
-        psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
-        docHandle: DocHandle
+            psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
+            docHandle: DocHandle
     ) {
 
         actionContext!!.checkStatus()
@@ -179,33 +182,11 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     }
 
     protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, methodDoc: MethodDoc) {
-
-        val attr: String?
-        var attrOfMethod = findAttrOfMethod(method)
-        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method)
-
-        if (attrOfMethod.isNullOrBlank()) {
-            methodDocHelper!!.setName(methodDoc, method.name)
-        } else {
-            val lines = attrOfMethod.lines()
-            attr = if (lines.size > 1) {//multi line
-                lines.firstOrNull { it.isNotBlank() }
-            } else {
-                attrOfMethod
-            }
-
-            methodDocHelper!!.appendDesc(methodDoc, attrOfMethod)
-            methodDocHelper.setName(methodDoc, attr ?: method.name)
-        }
-
-        readMethodDoc(method)?.let {
-            methodDocHelper.appendDesc(methodDoc, docParseHelper.resolveLinkInAttr(it, method))
-        }
-
-    }
-
-    protected open fun readMethodDoc(method: PsiMethod): String? {
-        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
+        apiHelper!!.nameAndAttrOfApi(method, {
+            methodDocHelper!!.setName(methodDoc, it)
+        }, {
+            methodDocHelper!!.appendDesc(methodDoc, it)
+        })
     }
 
     protected open fun processCompleted(method: PsiMethod, methodDoc: MethodDoc) {
@@ -234,7 +215,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                             override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
 
                                 psiClassHelper!!.resolveEnumOrStatic(plainText, method, "")
-                                    ?.let { options.addAll(it) }
+                                        ?.let { options.addAll(it) }
 
                                 return super.linkToPsiElement(plainText, linkTo)
                             }
@@ -278,10 +259,6 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
         }
     }
 
-    open protected fun findAttrOfMethod(method: PsiMethod): String? {
-        return docHelper!!.getAttrOfDocComment(method)
-    }
-
     private fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
         val docComment = psiMethod.docComment
         var methodParamComment: KV<String, Any>? = null
@@ -290,16 +267,16 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                 var name: String? = null
                 var value: String? = null
                 paramDocTag.dataElements
-                    .asSequence()
-                    .map { it?.text }
-                    .filterNot { StringUtils.isBlank(it) }
-                    .forEach {
-                        when {
-                            name == null -> name = it
-                            value == null -> value = it
-                            else -> value += it
+                        .asSequence()
+                        .map { it?.text }
+                        .filterNot { StringUtils.isBlank(it) }
+                        .forEach {
+                            when {
+                                name == null -> name = it
+                                value == null -> value = it
+                                else -> value += it
+                            }
                         }
-                    }
                 if (StringUtils.isNoneBlank(name, value)) {
                     if (methodParamComment == null) methodParamComment = KV.create()
 
@@ -309,7 +286,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                         override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
 
                             psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name!!)
-                                ?.let { options.addAll(it) }
+                                    ?.let { options.addAll(it) }
 
                             return super.linkToPsiElement(plainText, linkTo)
                         }
@@ -344,11 +321,11 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         cls.allMethods
-            .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
-            .filter { !it.hasModifier(JvmModifier.STATIC) }
-            .filter { !it.isConstructor }
-            .filter { !shouldIgnore(it) }
-            .forEach(handle)
+                .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
+                .filter { !it.hasModifier(JvmModifier.STATIC) }
+                .filter { !it.isConstructor }
+                .filter { !shouldIgnore(it) }
+                .forEach(handle)
     }
 
     private fun processMethodParameters(method: PsiMethod, methodDoc: MethodDoc) {
@@ -372,10 +349,10 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     }
 
     protected fun processMethodParameter(
-        method: PsiMethod,
-        methodDoc: MethodDoc,
-        param: PsiParameter,
-        paramDesc: String?
+            method: PsiMethod,
+            methodDoc: MethodDoc,
+            param: PsiParameter,
+            paramDesc: String?
     ) {
         val typeObject = psiClassHelper!!.getTypeObject(param.type, method, JsonOption.READ_COMMENT)
         methodDocHelper!!.addParam(methodDoc, param.name!!, typeObject, paramDesc)

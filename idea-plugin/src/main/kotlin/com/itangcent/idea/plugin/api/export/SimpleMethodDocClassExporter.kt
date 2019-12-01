@@ -14,7 +14,6 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.traceError
@@ -24,9 +23,6 @@ import kotlin.reflect.KClass
  * only parse name
  */
 open class SimpleMethodDocClassExporter : ClassExporter, Worker {
-
-    @Inject
-    private val docHelper: DocHelper? = null
 
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
@@ -69,6 +65,9 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
 
     @Inject
     protected var actionContext: ActionContext? = null
+
+    @Inject
+    protected var apiHelper: ApiHelper? = null
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (!methodDocEnable()) {
@@ -154,29 +153,7 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
     }
 
     protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, methodDoc: MethodDoc) {
-
-        val attr: String?
-        var attrOfMethod = findAttrOfMethod(method)
-        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, method)
-
-        if (attrOfMethod.isNullOrBlank()) {
-            methodDocHelper!!.setName(methodDoc, method.name)
-        } else {
-            val lines = attrOfMethod.lines()
-            attr = if (lines.size > 1) {//multi line
-                lines.firstOrNull { it.isNotBlank() }
-            } else {
-                attrOfMethod
-            }
-
-            methodDocHelper!!.appendDesc(methodDoc, attrOfMethod)
-            methodDocHelper.setName(methodDoc, attr ?: method.name)
-        }
-
-        readMethodDoc(method)?.let {
-            methodDocHelper.appendDesc(methodDoc, docParseHelper.resolveLinkInAttr(it, method))
-        }
-
+        methodDocHelper!!.setName(methodDoc, apiHelper!!.nameOfApi(method))
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
@@ -186,14 +163,6 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
-    }
-
-    open protected fun findAttrOfMethod(method: PsiMethod): String? {
-        return docHelper!!.getAttrOfDocComment(method)
-    }
-
-    protected open fun readMethodDoc(method: PsiMethod): String? {
-        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
     }
 
     private fun methodDocEnable(): Boolean {
