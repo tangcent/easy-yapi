@@ -18,16 +18,12 @@ import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.traceError
-import org.apache.commons.lang3.StringUtils
 import kotlin.reflect.KClass
 
 /**
  * only parse name
  */
 open class SimpleRequestClassExporter : ClassExporter, Worker {
-
-    @Inject
-    private val docHelper: DocHelper? = null
 
     @Inject
     private val annotationHelper: AnnotationHelper? = null
@@ -67,6 +63,9 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
 
     @Inject
     private var actionContext: ActionContext? = null
+
+    @Inject
+    protected var apiHelper: ApiHelper? = null
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) return false
@@ -115,17 +114,8 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
 
         request.resource = PsiMethodResource(method, psiClass)
 
+        requestHelper!!.setName(request, apiHelper!!.nameOfApi(method))
 
-        val attr: String?
-        val attrOfMethod = findAttrOfMethod(method)!!
-        val lines = attrOfMethod.lines()
-        attr = if (lines.size > 1) {//multi line
-            lines.firstOrNull { it.isNotBlank() }
-        } else {
-            attrOfMethod
-        }
-
-        requestHelper!!.setName(request, attr ?: method.name)
         docHandle(request)
     }
 
@@ -133,15 +123,6 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
         return SPRING_REQUEST_MAPPING_ANNOTATIONS
                 .map { annotationHelper!!.findAnnMap(ele, it) }
                 .firstOrNull { it != null }
-    }
-
-    private fun findAttrOfMethod(method: PsiMethod): String? {
-
-        val docText = docHelper!!.getAttrOfDocComment(method)
-        return when {
-            StringUtils.isBlank(docText) -> method.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, method)
-        }
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
