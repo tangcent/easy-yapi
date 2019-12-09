@@ -4,7 +4,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
-import com.itangcent.common.Setup
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -73,11 +72,5 @@ abstract class BasicAnAction : KotlinAnAction {
         val loadActionExt = actionExtLoader.loadActionExt(event, actionName, logger)
             ?: return
         loadActionExt.init(builder)
-    }
-
-    companion object {
-        init {
-            Setup.setup(KotlinAutoInject::class)
-        }
     }
 }

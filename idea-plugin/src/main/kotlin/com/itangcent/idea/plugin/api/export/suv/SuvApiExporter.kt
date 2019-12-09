@@ -180,6 +180,7 @@ class SuvApiExporter {
             this.logger = actionContext.instance(Logger::class)
 
             val actionContextBuilder = ActionContext.builder()
+            actionContextBuilder.setParentContext(actionContext)
             actionContextBuilder.bindInstance(Project::class, actionContext.instance(Project::class))
             actionContextBuilder.bindInstance(AnActionEvent::class, actionContext.instance(AnActionEvent::class))
             actionContextBuilder.bindInstance(DataContext::class, actionContext.instance(DataContext::class))
