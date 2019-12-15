@@ -68,7 +68,7 @@ class ApiCaller {
                         apiCallDialog!!.updateRequestList(requests)
                         UIUtils.show(apiCallDialog!!)
                         project.putUserData(API_CALL_DIALOG, WeakReference(apiCallDialog!!))
-                        actionContext.on(EventKey.ONCOMPLETED) {
+                        actionContext.on(EventKey.ON_COMPLETED) {
                             project.putUserData(API_CALL_DIALOG, null)
                         }
                     } catch (e: Exception) {
