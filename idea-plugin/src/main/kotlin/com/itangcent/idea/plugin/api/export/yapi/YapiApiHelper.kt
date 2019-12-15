@@ -17,18 +17,18 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
     //$projectId$cartName -> $cartId
     private var cartIdCache: HashMap<String, String> = HashMap()
 
-    fun findCartWeb(module: String, cartName: String): String? {
+    open fun findCartWeb(module: String, cartName: String): String? {
         val token = getPrivateToken(module)
         val projectId = getProjectIdByToken(token!!) ?: return null
         val catId = findCat(token, cartName) ?: return null
         return getCartWeb(projectId, catId)
     }
 
-    fun getCartWeb(projectId: String, catId: String): String? {
+    open fun getCartWeb(projectId: String, catId: String): String? {
         return "$server/project/$projectId/interface/api/cat_$catId"
     }
 
-    fun getApiWeb(module: String, cartName: String, apiName: String): String? {
+    open fun getApiWeb(module: String, cartName: String, apiName: String): String? {
         val token = getPrivateToken(module)
         val projectId = getProjectIdByToken(token!!) ?: return null
         val catId = findCat(token, cartName) ?: return null
@@ -36,7 +36,7 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
         return "$server/project/$projectId/interface/api/$apiId"
     }
 
-    fun findCat(token: String, name: String): String? {
+    open fun findCat(token: String, name: String): String? {
         val projectId: String? = getProjectIdByToken(token) ?: return null
         val key = "$projectId$name"
         var cachedCartId = cacheLock.readLock().withLock { cartIdCache[key] }
@@ -65,7 +65,7 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
         return null
     }
 
-    fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
+    open fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
 
         val httpClient = httpClientProvide!!.getHttpClient()
 
@@ -91,12 +91,12 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
         }
     }
 
-    fun addCart(privateToken: String, name: String, desc: String): Boolean {
+    open fun addCart(privateToken: String, name: String, desc: String): Boolean {
         val projectId = getProjectIdByToken(privateToken) ?: return false
         return addCart(projectId, privateToken, name, desc)
     }
 
-    fun addCart(projectId: String, token: String, name: String, desc: String): Boolean {
+    open fun addCart(projectId: String, token: String, name: String, desc: String): Boolean {
 
         val httpClient = httpClientProvide!!.getHttpClient()
 
@@ -143,7 +143,7 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
         }
     }
 
-    private fun findApi(token: String, catId: String, apiName: String): String? {
+    protected open fun findApi(token: String, catId: String, apiName: String): String? {
         val url = "$server$GETCAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.asJsonObject
@@ -156,7 +156,7 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
         }?.asJsonObject?.get("_id")?.asString
     }
 
-    fun findApis(token: String, catId: String): ArrayList<Any?>? {
+    open fun findApis(token: String, catId: String): ArrayList<Any?>? {
         val url = "$server$GETCAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.asJsonObject
@@ -166,7 +166,7 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
                 ?.asList()
     }
 
-    fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
+    open fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
         val url = "$server$GETCATMENU?project_id=$project_id&token=$token"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.asJsonObject
@@ -176,8 +176,8 @@ open class YapiApiHelper : AbstractYapiApiHelper() {
 
     companion object {
         var ADDCART = "/api/interface/add_cat"
-        val GETCATMENU = "/api/interface/getCatMenu"
-        val SAVEAPI = "/api/interface/save"
-        val GETCAT = "/api/interface/list_cat"
+        const val GETCATMENU = "/api/interface/getCatMenu"
+        const val SAVEAPI = "/api/interface/save"
+        const val GETCAT = "/api/interface/list_cat"
     }
 }
