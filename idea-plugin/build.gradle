@@ -86,7 +86,6 @@ repositories {
     }
 }
 
-
 dependencies {
     compile(project(path: ':common-api', configuration: 'default')) {
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
@@ -97,12 +96,12 @@ dependencies {
 //    compile fileTree(dir: 'libs', include: ['*.jar'])
 
 
-    compile('com.itangcent:intellij-idea:0.1.7-SNAPSHOT') {
+    compile('com.itangcent:intellij-idea:0.1.8-SNAPSHOT') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
 
-    compile('com.itangcent:intellij-kotlin-support:0.1.7-SNAPSHOT') {
+    compile('com.itangcent:intellij-kotlin-support:0.1.8-SNAPSHOT') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
@@ -124,7 +123,6 @@ dependencies {
 
 // https://mvnrepository.com/artifact/org.jetbrains.anko/anko-sqlite
 //    compile group: 'org.jetbrains.anko', name: 'anko-sqlite', version: '0.10.4'
-
 
 }
 

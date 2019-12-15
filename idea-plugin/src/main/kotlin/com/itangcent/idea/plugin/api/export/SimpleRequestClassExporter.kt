@@ -14,7 +14,6 @@ import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.AnnotationHelper
-import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.traceError
@@ -135,7 +134,7 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
     }
 
     companion object {
-        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUESTMAPPING_ANNOTATION,
+        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUEST_MAPPING_ANNOTATION,
                 SpringClassName.GET_MAPPING,
                 SpringClassName.DELETE_MAPPING,
                 SpringClassName.PATCH_MAPPING,

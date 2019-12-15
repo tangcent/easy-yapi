@@ -15,7 +15,7 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.MethodReturnInferHelper
+import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
@@ -74,7 +74,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected val duckTypeHelper: DuckTypeHelper? = null
 
     @Inject
-    protected val methodReturnInferHelper: MethodReturnInferHelper? = null
+    protected val methodReturnInferHelper: MethodInferHelper? = null
 
     @Inject
     protected val ruleComputer: RuleComputer? = null
@@ -538,9 +538,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return when {
             needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
                     PsiClassUtils.isInterface(psiType)) -> {
-                methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
-                methodReturnInferHelper.inferReturn(method)
+                methodReturnInferHelper!!.inferReturn(method)
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
@@ -569,9 +568,5 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     private fun needInfer(): Boolean {
         return settingBinder!!.read().inferEnable
-    }
-
-    private fun inferMaxDeep(): Int {
-        return settingBinder!!.read().inferMaxDeep
     }
 }

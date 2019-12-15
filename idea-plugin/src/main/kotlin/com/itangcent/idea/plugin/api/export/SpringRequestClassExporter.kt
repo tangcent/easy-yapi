@@ -186,8 +186,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
             requestHelper.addFormFileParam(request, paramName!!, required, ultimateComment)
             return
-        } else if (SpringClassName.SPRING_REQUEST_RESPONSE.contains(unboxType.presentableText)) {
+        } else if (jvmClassHelper!!.isInheritor(unboxType, *SpringClassName.SPRING_REQUEST_RESPONSE)) {
             //ignore @HttpServletRequest and @HttpServletResponse
+
             return
         }
 
@@ -240,7 +241,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     private fun findHttpMethod(requestMappingAnn: Pair<Map<String, Any?>, String>?): String {
         if (requestMappingAnn != null) {
             when {
-                requestMappingAnn.second == SpringClassName.REQUESTMAPPING_ANNOTATION -> {
+                requestMappingAnn.second == SpringClassName.REQUEST_MAPPING_ANNOTATION -> {
                     var method = requestMappingAnn.first["method"].tinyString() ?: return HttpMethod.NO_METHOD
                     if (method.contains(",")) {
                         method = method.substringBefore(",")
@@ -287,11 +288,11 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     }
 
     private fun isRequestBody(parameter: PsiParameter): Boolean {
-        return annotationHelper!!.hasAnn(parameter, SpringClassName.REQUESTBOODY_ANNOTATION)
+        return annotationHelper!!.hasAnn(parameter, SpringClassName.REQUEST_BODY_ANNOTATION)
     }
 
     private fun isModelAttr(parameter: PsiParameter): Boolean {
-        return annotationHelper!!.hasAnn(parameter, SpringClassName.MODELATTRIBUTE_ANNOTATION)
+        return annotationHelper!!.hasAnn(parameter, SpringClassName.MODEL_ATTRIBUTE_ANNOTATION)
     }
 
     private fun findRequestHeader(parameter: PsiParameter): Map<String, Any?>? {
@@ -299,11 +300,11 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     }
 
     private fun findPathVariable(parameter: PsiParameter): Map<String, Any?>? {
-        return annotationHelper!!.findAnnMap(parameter, SpringClassName.PATHVARIABLE_ANNOTATION)
+        return annotationHelper!!.findAnnMap(parameter, SpringClassName.PATH_VARIABLE_ANNOTATION)
     }
 
     private fun findRequestParam(parameter: PsiParameter): Map<String, Any?>? {
-        return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUESTPARAM_ANNOTATION)
+        return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_PARAM_ANNOTATION)
     }
 
     private fun findParamName(requestParamAnn: Map<String, Any?>?): String? {
