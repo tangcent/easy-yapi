@@ -11,14 +11,11 @@ import com.itangcent.common.model.Header
 import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.Response
-import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.KVUtils
-import com.itangcent.common.utils.append
+import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.MethodReturnInferHelper
+import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
@@ -29,12 +26,16 @@ import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.util.CacheAble
 import com.itangcent.intellij.util.Magics
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
 import kotlin.reflect.KClass
 
 abstract class AbstractRequestClassExporter : ClassExporter, Worker {
+
+    @Inject
+    protected val cacheAble: CacheAble? = null
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
@@ -64,9 +65,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected val psiClassHelper: PsiClassHelper? = null
 
     @Inject
-    protected val docParseHelper: DocParseHelper? = null
-
-    @Inject
     protected val requestHelper: RequestHelper? = null
 
     @Inject
@@ -76,7 +74,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected val duckTypeHelper: DuckTypeHelper? = null
 
     @Inject
-    protected val methodReturnInferHelper: MethodReturnInferHelper? = null
+    protected val methodReturnInferHelper: MethodInferHelper? = null
 
     @Inject
     protected val ruleComputer: RuleComputer? = null
@@ -188,28 +186,48 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         //parse additionalHeader by config
         val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER, method)
         if (!additionalHeader.isNullOrEmpty()) {
-            val additionalHeaders = additionalHeader.lines()
+            val additionalHeaders = additionalHeader!!.lines()
             for (headerStr in additionalHeaders) {
-                val header = GsonUtils.fromJson(headerStr, Header::class)
-                if (header.name.isNullOrBlank()) {
-                    logger!!.warn("no name had be found in:$headerStr")
-                    continue
+                cacheAble!!.cache("header" to headerStr) {
+                    val header = KitUtils.safe { GsonUtils.fromJson(headerStr, Header::class) }
+                    when {
+                        header == null -> {
+                            logger!!.error("error to parse additional header: $headerStr")
+                            return@cache null
+                        }
+                        header.name.isNullOrBlank() -> {
+                            logger!!.error("no name had be found in: $headerStr")
+                            return@cache null
+                        }
+                        else -> return@cache header
+                    }
+                }?.let {
+                    requestHelper!!.addHeader(request, it)
                 }
-                requestHelper!!.addHeader(request, header)
             }
         }
 
         //parse additionalParam by config
         val additionalParam = ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_PARAM, method)
         if (!additionalParam.isNullOrEmpty()) {
-            val additionalParams = additionalParam.lines()
+            val additionalParams = additionalParam!!.lines()
             for (paramStr in additionalParams) {
-                val param = GsonUtils.fromJson(paramStr, Param::class)
-                if (param.name.isNullOrBlank()) {
-                    logger!!.warn("no name had be found in:$paramStr")
-                    continue
+                cacheAble!!.cache("param" to paramStr) {
+                    val param = KitUtils.safe { GsonUtils.fromJson(paramStr, Param::class) }
+                    when {
+                        param == null -> {
+                            logger!!.error("error to parse additional param: $paramStr")
+                            return@cache null
+                        }
+                        param.name.isNullOrBlank() -> {
+                            logger!!.error("no name had be found in: $paramStr")
+                            return@cache null
+                        }
+                        else -> return@cache param
+                    }
+                }?.let {
+                    requestHelper!!.addParam(request, it)
                 }
-                requestHelper!!.addParam(request, param)
             }
         }
 
@@ -218,15 +236,25 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val additionalResponseHeader =
                     ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_RESPONSE_HEADER, method)
             if (!additionalResponseHeader.isNullOrEmpty()) {
-                val additionalHeaders = additionalResponseHeader.lines()
+                val additionalHeaders = additionalResponseHeader!!.lines()
                 for (headerStr in additionalHeaders) {
-                    val header = GsonUtils.fromJson(headerStr, Header::class)
-                    if (header.name.isNullOrBlank()) {
-                        logger!!.warn("no name had be found in:$headerStr")
-                        continue
-                    }
-                    request.response!!.forEach {
-                        requestHelper!!.addResponseHeader(it, header)
+                    cacheAble!!.cache("header" to headerStr) {
+                        val header = KitUtils.safe { GsonUtils.fromJson(headerStr, Header::class) }
+                        when {
+                            header == null -> {
+                                logger!!.error("error to parse additional response header: $headerStr")
+                                return@cache null
+                            }
+                            header.name.isNullOrBlank() -> {
+                                logger!!.error("no name had be found in: $headerStr")
+                                return@cache null
+                            }
+                            else -> return@cache header
+                        }
+                    }?.let {
+                        request.response!!.forEach { response ->
+                            requestHelper!!.addResponseHeader(response, it)
+                        }
                     }
                 }
             }
@@ -279,12 +307,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         })
 
                         if (!comment.isNullOrBlank()) {
-                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, comment)) {
+                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain!!, comment!!)) {
                                 requestHelper.appendResponseBodyDesc(response, comment)
                             }
                         }
                         if (!options.isNullOrEmpty()) {
-                            if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain, options)) {
+                            if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain!!, options)) {
                                 requestHelper.appendResponseBodyDesc(response, KVUtils.getOptionDesc(options))
                             }
                         }
@@ -312,12 +340,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected fun tinyQueryParam(paramVal: String?): String? {
         if (paramVal == null) return null
         var pv = paramVal.trim()
-        while (true) {
-            if (pv.startsWith("[")) {
-                pv = pv.trim('[', ']')
-                continue
-            }
-            break
+        while (pv.startsWith("[") && pv.endsWith("]")) {
+            pv = pv.removeSurrounding("[", "]")
         }
         return pv
     }
@@ -325,9 +349,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected fun contractPath(pathPre: String?, pathAfter: String?): String? {
         if (pathPre.isNullOrBlank()) return pathAfter
         if (pathAfter.isNullOrBlank()) return pathPre
-        return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")
+        return "${pathPre!!.removeSuffix("/")}/${pathAfter!!.removePrefix("/")}"
     }
 
+    @Deprecated(message = "will be removed soon")
     open protected fun findAttrOfMethod(method: PsiMethod): String? {
         return docHelper!!.getAttrOfDocComment(method)
     }
@@ -410,9 +435,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             }
         }
 
-        //default to GET
         if (request.method == null || request.method == HttpMethod.NO_METHOD) {
-            requestHelper!!.setMethod(request, HttpMethod.GET)
+            val defaultHttpMethod = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD,
+                    method)
+            requestHelper!!.setMethod(request, defaultHttpMethod ?: HttpMethod.GET)
         }
     }
 
@@ -513,9 +539,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return when {
             needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
                     PsiClassUtils.isInterface(psiType)) -> {
-                methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
-                methodReturnInferHelper.inferReturn(method)
+                methodReturnInferHelper!!.inferReturn(method)
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
@@ -544,9 +569,5 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     private fun needInfer(): Boolean {
         return settingBinder!!.read().inferEnable
-    }
-
-    private fun inferMaxDeep(): Int {
-        return settingBinder!!.read().inferMaxDeep
     }
 }

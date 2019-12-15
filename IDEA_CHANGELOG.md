@@ -70,5 +70,13 @@
     4. enhance:import spring properties by recommend [(#181)](https://github.com/tangcent/easy-api/pull/181)
     5. enhance:Auto reload the configuration while context switch [(#185)](https://github.com/tangcent/easy-api/pull/185)
    
+*   1.4.0 ~
+    1. enhance:support new rule: `api.name`  [(#200)](https://github.com/tangcent/easy-api/pull/200)
+    2. enhance:new method `contextType` for rule  [(#201)](https://github.com/tangcent/easy-api/pull/201)
+    3. enhance:cache parsed additional `Header`/`Param`  [(#205)](https://github.com/tangcent/easy-api/pull/205)
+    4. enhance:ignore param extend HttpServletRequest/HttpServletResponse  [(#206)](https://github.com/tangcent/easy-api/pull/206)
+    5. enhance:new rule: `method.default.http.method`   [(#207)](https://github.com/tangcent/easy-api/pull/207)
+   
+   
    
        

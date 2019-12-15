@@ -8,6 +8,14 @@ object KitUtils {
             false -> whenFalse
         }
     }
+
+    fun <T> safe(action: () -> T): T? {
+        return try {
+            action()
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
 
 fun String?.concat(any: Any?, separator: CharSequence = "\n"): String? {
