@@ -435,9 +435,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             }
         }
 
-        //default to GET
         if (request.method == null || request.method == HttpMethod.NO_METHOD) {
-            requestHelper!!.setMethod(request, HttpMethod.GET)
+            val defaultHttpMethod = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD,
+                    method)
+            requestHelper!!.setMethod(request, defaultHttpMethod ?: HttpMethod.GET)
         }
     }
 
