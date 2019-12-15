@@ -11,7 +11,7 @@ import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.MethodReturnInferHelper
+import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
@@ -76,7 +76,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     protected val duckTypeHelper: DuckTypeHelper? = null
 
     @Inject
-    protected val methodReturnInferHelper: MethodReturnInferHelper? = null
+    protected val methodInferHelper: MethodInferHelper? = null
 
     @Inject
     protected val ruleComputer: RuleComputer? = null
@@ -367,9 +367,9 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
         return when {
             needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
                     PsiClassUtils.isInterface(psiType)) -> {
-                methodReturnInferHelper!!.setMaxDeep(inferMaxDeep())
+                methodInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
-                methodReturnInferHelper.inferReturn(method)
+                methodInferHelper.inferReturn(method)
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
