@@ -49,9 +49,6 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
     private val logger: Logger? = null
 
     @Inject
-    protected val docParseHelper: DocParseHelper? = null
-
-    @Inject
     protected val methodDocHelper: MethodDocHelper? = null
 
     @Inject

@@ -64,6 +64,7 @@ jar {
 //    excludes = ["com/google/common/**"]
 //    excludes = ["com/google/common/**", "org/apache/http/util/**"]
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+//    from { configurations.runtime }
 }
 
 artifacts {
@@ -85,7 +86,6 @@ repositories {
     }
 }
 
-
 dependencies {
     compile(project(path: ':common-api', configuration: 'default')) {
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
@@ -96,12 +96,12 @@ dependencies {
 //    compile fileTree(dir: 'libs', include: ['*.jar'])
 
 
-    compile('com.itangcent:intellij-idea:0.1.6') {
+    compile('com.itangcent:intellij-idea:0.1.8-SNAPSHOT') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
 
-    compile('com.itangcent:intellij-kotlin-support:0.1.6') {
+    compile('com.itangcent:intellij-kotlin-support:0.1.8-SNAPSHOT') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
@@ -124,7 +124,6 @@ dependencies {
 // https://mvnrepository.com/artifact/org.jetbrains.anko/anko-sqlite
 //    compile group: 'org.jetbrains.anko', name: 'anko-sqlite', version: '0.10.4'
 
-
 }
 
 compileKotlin {
@@ -132,4 +131,54 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+
+task findSpi {
+    def names = [] as Set<String>
+    def duplicated = [] as Set<String>
+    //find duplicated files
+    configurations.compile.forEach {
+        if (it.isFile()) {
+            zipTree(it)
+                    .filter { it.parentFile.path.endsWith("META-INF/services") }
+                    .forEach {
+//                println("file:" + it.name)
+                if (!names.add(it.name)) {
+                    if (!duplicated.contains(it.name)) {
+                        duplicated.add(it.name)
+                    }
+                }
+            }
+        }
+    }
+
+    def servicesDir = new File("./src/main/resources/META-INF/services/")
+    servicesDir.deleteOnExit()
+    servicesDir.mkdirs()
+
+    duplicated.forEach {
+        try {
+            def targetFile = new File(servicesDir, it)
+            targetFile.createNewFile()
+            targetFile.text = ""
+        } catch (e) {
+            println("error:" + e)
+        }
+    }
+
+    configurations.compile.forEach {
+        if (it.isFile()) {
+            zipTree(it)
+                    .filter {
+                it.parentFile.path.endsWith("META-INF/services") &&
+                        duplicated.contains(it.name)
+            }
+            .forEach {
+                def targetFile = new File(servicesDir, it.name)
+                targetFile.append(it.text)
+                targetFile.append("\n")
+            }
+        }
+    }
 }

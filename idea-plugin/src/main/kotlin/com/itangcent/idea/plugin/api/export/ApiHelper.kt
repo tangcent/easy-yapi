@@ -10,7 +10,7 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.jvm.DocHelper
 
 @Singleton
-class ApiHelper {
+open class ApiHelper {
 
     @Inject
     private val docHelper: DocHelper? = null
@@ -39,7 +39,7 @@ class ApiHelper {
         return psiMethod.name
     }
 
-    open protected fun findAttrOfMethod(method: PsiMethod): String? {
+    protected open fun findAttrOfMethod(method: PsiMethod): String? {
         val attrOfDocComment = docHelper!!.getAttrOfDocComment(method)
 
         val docByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)

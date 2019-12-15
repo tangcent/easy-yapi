@@ -185,6 +185,7 @@ class SuvApiExporter {
             this.logger = actionContext.instance(Logger::class)
 
             val actionContextBuilder = ActionContext.builder()
+            actionContextBuilder.setParentContext(actionContext)
             actionContextBuilder.bindInstance(Project::class, actionContext.instance(Project::class))
             actionContextBuilder.bindInstance(AnActionEvent::class, actionContext.instance(AnActionEvent::class))
             actionContextBuilder.bindInstance(DataContext::class, actionContext.instance(DataContext::class))
@@ -239,7 +240,7 @@ class SuvApiExporter {
 
             actionContext.hold()
 
-            newActionContext.on(EventKey.ONCOMPLETED) {
+            newActionContext.on(EventKey.ON_COMPLETED) {
                 actionContext.unHold()
             }
 
@@ -251,7 +252,7 @@ class SuvApiExporter {
             loggerBuffer?.drainTo(actionContext.instance(Logger::class))
             val actionExtLoader: GroovyActionExtLoader? = actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
             actionExtLoader?.let { extLoader ->
-                actionContext.on(EventKey.ONCOMPLETED) {
+                actionContext.on(EventKey.ON_COMPLETED) {
                     extLoader.close()
                 }
             }

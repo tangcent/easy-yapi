@@ -101,4 +101,9 @@ object ClassExportRuleKeys {
             StringRuleMode.SINGLE
     )
 
+    //default http method of api(method)
+    val METHOD_DEFAULT_HTTP_METHOD: RuleKey<String> = SimpleRuleKey(
+            "method.default.http.method", StringRule::class,
+            StringRuleMode.SINGLE
+    )
 }

@@ -42,7 +42,7 @@ class GroovyActionExtLoader : ActionExtLoader {
 
         close()
 
-        logger.trace("none useable ext be found!")
+        logger.trace("none useAble ext be found!")
 
         return null
     }
