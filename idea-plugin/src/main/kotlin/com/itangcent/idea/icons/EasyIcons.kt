@@ -5,6 +5,7 @@ import com.intellij.util.ReflectionUtil
 import com.itangcent.common.utils.invokeMethod
 import org.jetbrains.annotations.NonNls
 import java.awt.Component
+import java.net.URL
 import javax.swing.AbstractButton
 import javax.swing.Icon
 
@@ -37,10 +38,12 @@ object EasyIcons {
     val UpFolder = tryLoad("/nodes/upFolder.png") // 16x16
 
     val Close = tryLoad("/notification/close.png",
-            "/actions/close.png") // 16x16
+            "/actions/close.png")
+            ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/close.png"))
 
     val OK = tryLoad("/general/inspectionsOK.png",
-            "/process/state/GreenOK.png") // 16x16
+            "/process/state/GreenOK.png")
+            ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/ok.png"))
 
     val Export = tryLoad(
             "/actions/export.png",
@@ -71,6 +74,17 @@ object EasyIcons {
 
         return IconLoader.findIcon(path, callerClass)
     }
+
+    private fun tryLoadByUrl(vararg paths: URL): Icon? {
+        for (path in paths) {
+            try {
+                IconLoader.findIcon(path)?.let { return it }
+            } catch (e: Exception) {
+            }
+        }
+        return null
+    }
+
 }
 
 fun Icon?.iconOnly(component: Component?) {
