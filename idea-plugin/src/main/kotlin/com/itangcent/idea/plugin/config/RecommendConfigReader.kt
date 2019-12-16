@@ -11,9 +11,8 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
-import org.jetbrains.kotlin.konan.file.File
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import org.apache.commons.io.IOUtils
+import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -94,10 +93,10 @@ class RecommendConfigReader : ConfigReader {
         if (settingBinder?.read()?.useRecommendConfig == true) {
             if (settingBinder.read().recommendConfigs.isEmpty()) {
                 logger!!.info(
-                    "Even useRecommendConfig was true, but no recommend config be selected!\n" +
-                            "\n" +
-                            "If you need to enable the built-in recommended configuration." +
-                            "Go to [Preference -> Other Setting -> EasyApi -> Recommend]"
+                        "Even useRecommendConfig was true, but no recommend config be selected!\n" +
+                                "\n" +
+                                "If you need to enable the built-in recommended configuration." +
+                                "Go to [Preference -> Other Setting -> EasyApi -> Recommend]"
                 )
                 return
             }
@@ -142,14 +141,10 @@ class RecommendConfigReader : ConfigReader {
                 }
             }
 
-            val bufferedReader = BufferedReader(
-                InputStreamReader(
-                    RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
-                        ?: RecommendConfigReader::class.java.getResourceAsStream(config_name)
-                )
-            )
+            val config = IOUtils.toString(RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
+                    ?: RecommendConfigReader::class.java.getResourceAsStream(config_name),
+                    Charsets.UTF_8)
 
-            val config = bufferedReader.readText()
             RECOMMEND_CONFIG_PLAINT = config
             //the version always take 10 chars
             propertiesComponent.setValue(config_name, curr_version.padEnd(10) + config)
@@ -190,9 +185,9 @@ class RecommendConfigReader : ConfigReader {
 
         fun buildRecommendConfig(codes: List<String>): String {
             return RECOMMEND_CONFIG_CODES
-                .filter { codes.contains(it) }
-                .map { RECOMMEND_CONFIG_MAP[it] }
-                .joinToString("\n")
+                    .filter { codes.contains(it) }
+                    .map { RECOMMEND_CONFIG_MAP[it] }
+                    .joinToString("\n")
 
         }
 
