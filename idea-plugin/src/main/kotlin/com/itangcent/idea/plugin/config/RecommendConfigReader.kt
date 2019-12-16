@@ -12,9 +12,7 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import org.apache.commons.io.IOUtils
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -78,16 +76,16 @@ class RecommendConfigReader : ConfigReader {
                         else -> moduleFile.parent.path
                     }
                     configReader.put("module_path", modulePath)
-                    initDelegateAndRecommed()
+                    initDelegateAndRecommend()
                     loading = false
                 }
             }
         } else {
-            initDelegateAndRecommed()
+            initDelegateAndRecommend()
         }
     }
 
-    private fun initDelegateAndRecommed() {
+    private fun initDelegateAndRecommend() {
         try {
             configReader?.invokeMethod("init")
         } catch (e: Throwable) {
