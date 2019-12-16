@@ -11,6 +11,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
+import org.apache.commons.io.IOUtils
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
@@ -142,14 +143,10 @@ class RecommendConfigReader : ConfigReader {
                 }
             }
 
-            val bufferedReader = BufferedReader(
-                InputStreamReader(
-                    RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
-                        ?: RecommendConfigReader::class.java.getResourceAsStream(config_name)
-                )
-            )
+            val config = IOUtils.toString(RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
+                    ?: RecommendConfigReader::class.java.getResourceAsStream(config_name),
+                    Charsets.UTF_8)
 
-            val config = bufferedReader.readText()
             RECOMMEND_CONFIG_PLAINT = config
             //the version always take 10 chars
             propertiesComponent.setValue(config_name, curr_version.padEnd(10) + config)
