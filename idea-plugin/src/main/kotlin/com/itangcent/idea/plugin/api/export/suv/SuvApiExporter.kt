@@ -26,6 +26,7 @@ import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.PsiResource
+import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.config.ConfigReader
@@ -62,7 +63,6 @@ class SuvApiExporter {
 
     @Inject
     private val classExporter: ClassExporter? = null
-
 
     @Suppress("UNCHECKED_CAST")
     fun showExportWindow() {
@@ -447,6 +447,9 @@ class SuvApiExporter {
         @Inject
         private val markdownFormatter: MarkdownFormatter? = null
 
+        @Inject
+        private val settingBinder: SettingBinder? = null
+
         override fun actionName(): String {
             return "MarkdownExportAction"
         }
@@ -481,7 +484,8 @@ class SuvApiExporter {
                 docs.clear()
                 actionContext!!.runAsync {
                     try {
-                        fileSaveHelper!!.saveOrCopy(apiInfo, {
+                        fileSaveHelper!!.saveOrCopy(apiInfo, Charsets.forName(settingBinder!!.read().outputCharset)?.charset()
+                                ?: kotlin.text.Charsets.UTF_8, {
                             logger!!.info("Exported data are copied to clipboard,you can paste to a md file now")
                         }, {
                             logger!!.info("Apis save success")
