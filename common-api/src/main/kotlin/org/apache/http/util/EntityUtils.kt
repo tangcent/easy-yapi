@@ -87,7 +87,7 @@ object EntityUtils {
     @JvmOverloads
     fun toString(entity: HttpEntity, defaultCharset: Charset? = null): String? {
         Args.notNull(entity, "Entity")
-        return entity.content?.use { instream ->
+        return entity.content?.use { inStream ->
             Args.check(entity.contentLength <= 2147483647L, "HTTP entity too large to be buffered in memory")
             var i = entity.contentLength.toInt()
             if (i < 0) {
@@ -115,7 +115,7 @@ object EntityUtils {
                 charset = HTTP.DEF_CONTENT_CHARSET
             }
 
-            val reader = InputStreamReader(instream, charset!!)
+            val reader = InputStreamReader(inStream, charset!!)
             val buffer = CharArrayBuffer(i)
             val tmp = CharArray(1024)
 

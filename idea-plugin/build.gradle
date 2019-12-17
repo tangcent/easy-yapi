@@ -96,12 +96,12 @@ dependencies {
 //    compile fileTree(dir: 'libs', include: ['*.jar'])
 
 
-    compile('com.itangcent:intellij-idea:0.1.8-SNAPSHOT') {
+    compile('com.itangcent:intellij-idea:0.1.9-SNAPSHOT') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
 
-    compile('com.itangcent:intellij-kotlin-support:0.1.8-SNAPSHOT') {
+    compile('com.itangcent:intellij-kotlin-support:0.1.9-SNAPSHOT') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }

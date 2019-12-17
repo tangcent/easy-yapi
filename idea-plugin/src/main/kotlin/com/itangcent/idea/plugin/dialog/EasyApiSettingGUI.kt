@@ -20,6 +20,7 @@ import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.extend.rx.AutoComputer
@@ -29,7 +30,6 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
-import java.nio.charset.Charset
 import java.util.*
 import javax.swing.*
 
@@ -72,6 +72,8 @@ class EasyApiSettingGUI {
     private var hasProject = false
 
     private var outputDemoCheckBox: JCheckBox? = null
+
+    private var outputCharsetComboBox: JComboBox<Charsets>? = null
 
     private var inferEnableCheckBox: JCheckBox? = null
 
@@ -196,6 +198,13 @@ class EasyApiSettingGUI {
                 .filter { throttleHelper.acquire("settings.logLevel", 300) }
                 .eval { (it ?: ConfigurableLogger.CoarseLogLevel.LOW).getLevel() }
 
+        outputCharsetComboBox!!.model = DefaultComboBoxModel(Charsets.SUPPORTED_CHARSETS)
+
+        autoComputer.bind<String?>(this, "settings.outputCharset")
+                .with(this.outputCharsetComboBox!!)
+                .filter { throttleHelper.acquire("settings.outputCharset", 300) }
+                .eval { (it ?: Charsets.UTF_8).displayName() }
+
         autoComputer.bind(this.previewTextArea!!)
                 .with<String>(this, "settings.recommendConfigs")
                 .eval { configs -> RecommendConfigReader.buildRecommendConfig(configs.split(",")) }
@@ -236,6 +245,7 @@ class EasyApiSettingGUI {
         autoComputer.value(this::settings, settings.copy())
 
         this.logLevelComboBox!!.selectedItem = ConfigurableLogger.CoarseLogLevel.toLevel(settings.logLevel)
+        this.outputCharsetComboBox!!.selectedItem = Charsets.forName(settings.outputCharset)
 
         val configs = settings.recommendConfigs.split(",")
         RecommendConfigReader.RECOMMEND_CONFIG_CODES.forEach {
@@ -388,7 +398,7 @@ class EasyApiSettingGUI {
         }
         val fileWrapper = chooser.save(toSelect, "setting.json")
         if (fileWrapper != null) {
-            com.itangcent.intellij.util.FileUtils.forceSave(fileWrapper.file.path, GsonUtils.toJson(settings).toByteArray(Charset.defaultCharset()))
+            com.itangcent.intellij.util.FileUtils.forceSave(fileWrapper.file.path, GsonUtils.toJson(settings).toByteArray(kotlin.text.Charsets.UTF_8))
         }
     }
 
@@ -407,8 +417,10 @@ class EasyApiSettingGUI {
         val files = chooser.choose(null, toSelect)
         if (!files.isNullOrEmpty()) {
             val virtualFile = files[0]
-            val read = com.itangcent.common.utils.FileUtils.read(File(virtualFile.path))
-            setSettings(GsonUtils.fromJson(read, Settings::class))
+            val read = com.itangcent.common.utils.FileUtils.read(File(virtualFile.path), kotlin.text.Charsets.UTF_8)
+            if (!read.isNullOrEmpty()) {
+                setSettings(GsonUtils.fromJson(read, Settings::class))
+            }
         }
     }
 
