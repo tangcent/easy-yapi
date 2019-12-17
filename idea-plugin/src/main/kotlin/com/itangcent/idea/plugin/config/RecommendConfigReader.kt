@@ -76,16 +76,16 @@ class RecommendConfigReader : ConfigReader {
                         else -> moduleFile.parent.path
                     }
                     configReader.put("module_path", modulePath)
-                    initDelegateAndRecommed()
+                    initDelegateAndRecommend()
                     loading = false
                 }
             }
         } else {
-            initDelegateAndRecommed()
+            initDelegateAndRecommend()
         }
     }
 
-    private fun initDelegateAndRecommed() {
+    private fun initDelegateAndRecommend() {
         try {
             configReader?.invokeMethod("init")
         } catch (e: Throwable) {
