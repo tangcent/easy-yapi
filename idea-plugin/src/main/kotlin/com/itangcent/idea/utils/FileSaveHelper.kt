@@ -15,6 +15,7 @@ import com.itangcent.intellij.util.FileUtils
 import com.itangcent.intellij.util.ToolUtils
 import java.io.File
 import java.nio.charset.Charset
+import kotlin.text.Charsets
 
 class FileSaveHelper {
 
@@ -33,6 +34,14 @@ class FileSaveHelper {
     private val actionContext: ActionContext? = null
 
     fun saveOrCopy(info: String?,
+                   onCopy: () -> Unit,
+                   onSaveSuccess: () -> Unit,
+                   onSaveFailed: () -> Unit) {
+        saveOrCopy(info, Charsets.UTF_8, onCopy, onSaveSuccess, onSaveFailed)
+    }
+
+    fun saveOrCopy(info: String?,
+                   charset: Charset,
                    onCopy: () -> Unit,
                    onSaveSuccess: () -> Unit,
                    onSaveFailed: () -> Unit) {
@@ -59,7 +68,7 @@ class FileSaveHelper {
                     if (file.isDirectory) {
                         try {
                             val defaultFile = getDefaultExportedFile()
-                            FileUtils.forceSave("${file.path}${File.separator}$defaultFile", info.toByteArray(Charset.defaultCharset()))
+                            FileUtils.forceSave("${file.path}${File.separator}$defaultFile", info.toByteArray(charset))
                             onSaveSuccess()
                         } catch (e: Exception) {
                             onSaveFailed()
@@ -69,7 +78,7 @@ class FileSaveHelper {
                         }
                     } else {
                         try {
-                            FileUtils.forceSave(file, info.toByteArray(Charset.defaultCharset()))
+                            FileUtils.forceSave(file, info.toByteArray(charset))
                             onSaveSuccess()
                         } catch (e: Exception) {
                             onSaveFailed()

@@ -7,13 +7,14 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.RequestHelper
+import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.logger.traceError
 import java.util.*
 
 @Singleton
@@ -33,6 +34,9 @@ class MarkdownApiExporter {
 
     @Inject
     private val markdownFormatter: MarkdownFormatter? = null
+
+    @Inject
+    private val settingBinder: SettingBinder? = null
 
     fun export() {
 
@@ -78,7 +82,8 @@ class MarkdownApiExporter {
                         docs.clear()
                         actionContext!!.runAsync {
                             try {
-                                fileSaveHelper!!.saveOrCopy(apiInfo, {
+                                fileSaveHelper!!.saveOrCopy(apiInfo, Charsets.forName(settingBinder!!.read().outputCharset)?.charset()
+                                        ?: kotlin.text.Charsets.UTF_8, {
                                     logger.info("Exported data are copied to clipboard,you can paste to a md file now")
                                 }, {
                                     logger.info("Apis save success")
@@ -86,12 +91,12 @@ class MarkdownApiExporter {
                                     logger.info("Apis save failed")
                                 }
                             } catch (e: Exception) {
-                                logger.traceError("Apis save failed",e)
+                                logger.traceError("Apis save failed", e)
 
                             }
                         }
                     } catch (e: Exception) {
-                        logger.traceError("Apis save failed",e)
+                        logger.traceError("Apis save failed", e)
 
                     }
                 }
