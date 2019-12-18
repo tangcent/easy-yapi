@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.settings
 
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.ConfigurableLogger
 
 class Settings {
@@ -33,6 +34,8 @@ class Settings {
 
     var outputDemo: Boolean = true
 
+    var outputCharset: String = Charsets.UTF_8.displayName()
+
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
@@ -48,6 +51,7 @@ class Settings {
         newSetting.recommendConfigs = this.recommendConfigs
         newSetting.logLevel = this.logLevel
         newSetting.outputDemo = this.outputDemo
+        newSetting.outputCharset = this.outputCharset
         return newSetting
     }
 
@@ -70,6 +74,7 @@ class Settings {
         if (recommendConfigs != other.recommendConfigs) return false
         if (logLevel != other.logLevel) return false
         if (outputDemo != other.outputDemo) return false
+        if (outputCharset != other.outputCharset) return false
 
         return true
     }
@@ -86,9 +91,9 @@ class Settings {
         result = 31 * result + recommendConfigs.hashCode()
         result = 31 * result + logLevel
         result = 31 * result + outputDemo.hashCode()
+        result = 31 * result + outputCharset.hashCode()
         return result
     }
-
 
     companion object {
         const val DEFAULT_INFER_MAX_DEEP = 4
