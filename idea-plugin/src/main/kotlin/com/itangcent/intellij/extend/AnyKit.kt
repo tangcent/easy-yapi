@@ -35,7 +35,7 @@ fun Any?.toBoolean(): Boolean? {
     if (this == null) return null
     if (this is Boolean) return this
     if (this is Number) return this.toInt() == 1
-    if (this is String) return this == "true"
+    if (this is String) return this == "true" || this == "1"
     return null
 }
 

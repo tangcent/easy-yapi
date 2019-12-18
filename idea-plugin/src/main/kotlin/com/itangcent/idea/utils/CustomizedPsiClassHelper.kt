@@ -12,7 +12,7 @@ import com.itangcent.intellij.psi.DefaultPsiClassHelper
 /**
  * 1.support rule:["field.required"]
  */
-class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
+open class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
 
     @Suppress("UNCHECKED_CAST")
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: PsiType, fieldOrMethod: PsiElement, resourcePsiClass: PsiClass, duckType: SingleDuckType, option: Int, kv: KV<String, Any?>) {

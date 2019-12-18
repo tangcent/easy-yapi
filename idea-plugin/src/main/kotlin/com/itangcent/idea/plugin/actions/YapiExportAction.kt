@@ -11,6 +11,7 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
 
@@ -33,6 +34,8 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
 
         builder.bindInstance("file.save.default", "yapi.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.yapi.export.path")
+
+        builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

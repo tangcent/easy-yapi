@@ -348,9 +348,15 @@ class YapiFormatter {
             if (!required.isNullOrEmpty()) {
                 requireds = LinkedList()
             }
+            var mocks: HashMap<String, Any?>? = null
+            try {
+                mocks = typedObject[Attrs.MOCK_ATTR] as HashMap<String, Any?>?
+            } catch (e: Throwable) {
+            }
             typedObject.forEachValid { k, v ->
                 try {
-                    val propertyInfo = parseObject(contactPath(path, k.toString()), v)
+                    val key = k.toString()
+                    val propertyInfo = parseObject(contactPath(path, key), v)
 
                     if (comment != null) {
                         val desc = comment[k]
@@ -383,9 +389,10 @@ class YapiFormatter {
                         }
                     }
                     if (required?.get(k) == true) {
-                        requireds?.add(k.toString())
+                        requireds?.add(key)
                     }
-                    properties[k.toString()] = propertyInfo
+                    mocks?.get(key)?.let { addMock(propertyInfo, it) }
+                    properties[key] = propertyInfo
                 } catch (e: Exception) {
                     logger!!.warn("failed to mock for $path.$k")
                 }
@@ -396,14 +403,16 @@ class YapiFormatter {
             }
         }
 
-        //try read mock rules
-        val mockRules = readMockRules()
-        if (mockRules.isNotEmpty()) {
-            for (mockRule in mockRules) {
-                if (mockRule.pathPredict(path) &&
-                        mockRule.typePredict(item["type"] as String?)) {
-                    addMock(item, mockRule.mockStr)
-                    break
+        if (!item.containsKey("mock")) {
+            //try read mock rules
+            val mockRules = readMockRules()
+            if (mockRules.isNotEmpty()) {
+                for (mockRule in mockRules) {
+                    if (mockRule.pathPredict(path) &&
+                            mockRule.typePredict(item["type"] as String?)) {
+                        addMock(item, mockRule.mockStr)
+                        break
+                    }
                 }
             }
         }

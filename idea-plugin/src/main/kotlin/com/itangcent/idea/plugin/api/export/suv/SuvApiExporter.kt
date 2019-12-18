@@ -6,7 +6,6 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiMember
 import com.intellij.psi.PsiMethod
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Doc
@@ -475,6 +474,8 @@ class SuvApiExporter {
 
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
+
+            builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
 
 
         }
