@@ -52,6 +52,11 @@ class RecommendConfigReader : ConfigReader {
         return configReader!!.read(key)
     }
 
+    override fun resolveProperty(property: String): String {
+        checkStatus()
+        return configReader!!.resolveProperty(property)
+    }
+
     private fun checkStatus() {
         while (loading) {
             TimeUnit.MILLISECONDS.sleep(100)
@@ -126,7 +131,7 @@ class RecommendConfigReader : ConfigReader {
 
         private const val config_name = ".recommend.easy.api.config"
         //        private const val config_version = ".recommend.easy.api.config.version"
-        private const val curr_version = "0.0.8.1"
+        private const val curr_version = "0.0.8.2"
         //$version$content
 
         private fun loadRecommendConfig(): String {

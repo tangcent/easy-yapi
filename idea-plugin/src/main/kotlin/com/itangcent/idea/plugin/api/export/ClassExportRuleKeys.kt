@@ -106,4 +106,9 @@ object ClassExportRuleKeys {
             "method.default.http.method", StringRule::class,
             StringRuleMode.SINGLE
     )
+
+    val FIELD_MOCK: RuleKey<String> = SimpleRuleKey(
+            "field.mock", StringRule::class,
+            StringRuleMode.SINGLE
+    )
 }
