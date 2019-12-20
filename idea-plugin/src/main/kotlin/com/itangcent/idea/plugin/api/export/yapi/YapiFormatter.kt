@@ -403,19 +403,18 @@ class YapiFormatter {
             }
         }
 
-        if (!item.containsKey("mock")) {
-            //try read mock rules
-            val mockRules = readMockRules()
-            if (mockRules.isNotEmpty()) {
-                for (mockRule in mockRules) {
-                    if (mockRule.pathPredict(path) &&
-                            mockRule.typePredict(item["type"] as String?)) {
-                        addMock(item, mockRule.mockStr)
-                        break
-                    }
+        //try read mock rules
+        val mockRules = readMockRules()
+        if (mockRules.isNotEmpty()) {
+            for (mockRule in mockRules) {
+                if (mockRule.pathPredict(path) &&
+                        mockRule.typePredict(item["type"] as String?)) {
+                    addMock(item, mockRule.mockStr)
+                    break
                 }
             }
         }
+
 
         return item
     }
