@@ -8,6 +8,7 @@ import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toBoolean
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.ClassRuleConfig
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
@@ -15,17 +16,19 @@ import javax.script.SimpleScriptContext
 abstract class ScriptRuleParser : RuleParser {
 
     @Inject
-    private val duckTypeHelper: DuckTypeHelper? = null
+    protected val duckTypeHelper: DuckTypeHelper? = null
     @Inject
-    private val psiClassHelper: PsiClassHelper? = null
+    protected val psiClassHelper: PsiClassHelper? = null
     @Inject
-    private val docHelper: DocHelper? = null
+    protected val classRuleConfig: ClassRuleConfig? = null
     @Inject
-    private val annotationHelper: AnnotationHelper? = null
+    protected val docHelper: DocHelper? = null
+    @Inject
+    protected val annotationHelper: AnnotationHelper? = null
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
     @Inject
-    private val logger: Logger? = null
+    protected val logger: Logger? = null
 
     override fun parseBooleanRule(rule: String): BooleanRule? {
         return BooleanRule.of { context ->
@@ -283,6 +286,10 @@ abstract class ScriptRuleParser : RuleParser {
         fun jsonName(): String? {
             return psiClassHelper!!.getJsonFieldName(psiField)
         }
+
+        fun jsonType(): ScriptPsiTypeContext {
+            return ScriptPsiTypeContext(classRuleConfig!!.tryConvert(psiField.type, psiField))
+        }
     }
 
     /**
@@ -356,6 +363,9 @@ abstract class ScriptRuleParser : RuleParser {
             return psiMethod.name
         }
 
+        fun jsonType(): ScriptPsiTypeContext? {
+            return psiMethod.returnType?.let { classRuleConfig!!.tryConvert(it, psiMethod) }?.let { ScriptPsiTypeContext(it) }
+        }
     }
 
     /**
