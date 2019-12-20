@@ -35,6 +35,4 @@ common-api/build/
 /common-api/out/
 /idea-plugin/out/
 
-easy-yapi\.iml
-
-src/
+/src
