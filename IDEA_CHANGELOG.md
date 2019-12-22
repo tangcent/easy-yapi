@@ -77,7 +77,7 @@
     4. enhance:ignore param extend HttpServletRequest/HttpServletResponse  [(#206)](https://github.com/tangcent/easy-api/pull/206)
     5. enhance:new rule: `method.default.http.method` [(#207)](https://github.com/tangcent/easy-api/pull/207)
     6. enhance:new rule `field.mock` [(#113)](https://github.com/tangcent/easy-yapi/pull/113)
-    6. enhance:provide recommend config for yapi mock [(#116)](https://github.com/tangcent/easy-yapi/pull/116)
+    7. enhance:provide recommend config for yapi mock [(#116)](https://github.com/tangcent/easy-yapi/pull/116)
    
    
    
