@@ -75,7 +75,9 @@
     2. enhance:new method `contextType` for rule  [(#201)](https://github.com/tangcent/easy-api/pull/201)
     3. enhance:cache parsed additional `Header`/`Param`  [(#205)](https://github.com/tangcent/easy-api/pull/205)
     4. enhance:ignore param extend HttpServletRequest/HttpServletResponse  [(#206)](https://github.com/tangcent/easy-api/pull/206)
-    5. enhance:new rule: `method.default.http.method`   [(#207)](https://github.com/tangcent/easy-api/pull/207)
+    5. enhance:new rule: `method.default.http.method` [(#207)](https://github.com/tangcent/easy-api/pull/207)
+    6. enhance:new rule `field.mock` [(#113)](https://github.com/tangcent/easy-yapi/pull/113)
+    7. enhance:provide recommend config for yapi mock [(#116)](https://github.com/tangcent/easy-yapi/pull/116)
    
    
    
