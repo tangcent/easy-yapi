@@ -2,8 +2,8 @@ package com.itangcent.idea.plugin.script
 
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
+import com.itangcent.common.logger.traceError
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import groovy.lang.GroovyClassLoader
 import org.codehaus.groovy.control.CompilerConfiguration
 import java.io.File

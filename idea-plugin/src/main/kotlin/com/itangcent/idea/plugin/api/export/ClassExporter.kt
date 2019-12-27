@@ -5,8 +5,6 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import kotlin.reflect.KClass
 
-import org.jetbrains.kotlin.psi.KtFile
-
 interface ClassExporter {
     fun export(cls: Any, docHandle: DocHandle): Boolean
 

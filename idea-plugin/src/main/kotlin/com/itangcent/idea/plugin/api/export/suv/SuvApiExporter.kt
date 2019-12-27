@@ -5,10 +5,13 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiMethod
+import com.intellij.util.containers.ContainerUtil
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
@@ -40,7 +43,6 @@ import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.UIUtils
@@ -68,6 +70,9 @@ class SuvApiExporter {
     fun showExportWindow() {
 
         logger!!.info("Start find apis...")
+
+        LoggerCollector.getLog().takeIf { it.isNotBlank() }?.let { logger.debug(it) }
+
         val docs: MutableList<DocWrapper> = Collections.synchronizedList(ArrayList<DocWrapper>())
 
         SelectedHelper.Builder()
