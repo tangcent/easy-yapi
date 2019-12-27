@@ -7,6 +7,7 @@ import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
@@ -22,7 +23,6 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -121,13 +121,17 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                     foreachMethod(cls) { method ->
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
-                            exportMethodApi(cls, method, kv, docHandle)
+                            try {
+                                exportMethodApi(cls, method, kv, docHandle)
+                            } catch (e: Exception) {
+                                logger.traceError("error to export api from method:" + method.name, e)
+                            }
                         }
                     }
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError(e)
+            logger!!.traceError("error to export api from class:" + cls.name, e)
         } finally {
             statusRecorder.endWork()
         }
@@ -406,8 +410,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        cls.allMethods
-                .filter { !jvmClassHelper!!.isBasicMethod(it.name) }
+        jvmClassHelper!!.getAllMethods(cls)
+                .filter { !jvmClassHelper.isBasicMethod(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }

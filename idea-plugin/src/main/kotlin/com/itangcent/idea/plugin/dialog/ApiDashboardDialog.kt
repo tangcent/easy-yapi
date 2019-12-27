@@ -10,6 +10,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.*
 import com.itangcent.common.concurrent.AQSCountLatch
 import com.itangcent.common.concurrent.CountLatch
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.icons.EasyIcons
@@ -33,7 +34,6 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.PsiClassUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor

@@ -195,22 +195,23 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun methods(): Array<ScriptPsiMethodContext> {
-            return psiClass.allMethods.map { ScriptPsiMethodContext(it) }
+            return jvmClassHelper!!.getAllMethods(psiClass)
+                    .map { ScriptPsiMethodContext(it) }
                     .toTypedArray()
         }
 
         fun methodCnt(): Int {
-            return psiClass.allMethods.size
+            return jvmClassHelper!!.getAllMethods(psiClass).size
         }
 
         fun fields(): Array<ScriptPsiFieldContext> {
-            return psiClass.allFields
+            return jvmClassHelper!!.getAllFields(psiClass)
                     .map { ScriptPsiFieldContext(it) }
                     .toTypedArray()
         }
 
         fun fieldCnt(): Int {
-            return psiClass.allFields.size
+            return jvmClassHelper!!.getAllFields(psiClass).size
         }
 
         fun isExtend(superClass: String): Boolean {
@@ -446,7 +447,8 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun methods(): Array<ScriptPsiMethodContext> {
             return getResource()?.let { psiElement ->
-                return@let (psiElement as PsiClass).allMethods.map { ScriptPsiMethodContext(it) }
+                return@let jvmClassHelper!!.getAllMethods((psiElement as PsiClass))
+                        .map { ScriptPsiMethodContext(it) }
                         .toTypedArray()
             } ?: emptyArray()
         }

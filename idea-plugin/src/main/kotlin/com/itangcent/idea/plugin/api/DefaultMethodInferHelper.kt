@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.*
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
@@ -16,7 +17,6 @@ import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
