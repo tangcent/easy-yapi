@@ -28,6 +28,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
+import kotlin.collections.LinkedHashMap
 
 /**
  *1.Try infer the return type of method
@@ -156,7 +157,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 if (obj.isEmpty() || obj.size == 1) {
                     return obj
                 }
-                val copy: HashMap<Any?, Any?> = HashMap()
+                val copy: HashMap<Any?, Any?> = LinkedHashMap()
                 obj.forEach { k, v ->
                     if (isValidKey(k) || isValidKey(v)) {
                         copy[k] = cleanInvalidKeys(v)
@@ -622,7 +623,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             val ub = valueOf(b)
 
             if (ua is Map<*, *> && ub is Map<*, *>) {
-                val res: HashMap<Any?, Any?> = HashMap()
+                val res: HashMap<Any?, Any?> = LinkedHashMap()
                 res.putAll(ua)
                 res.putAll(ub)
                 return res
@@ -1429,10 +1430,10 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     if (realCaller is HashMap<*, *>) {
                         asMap(realCaller)
                     } else {
-                        HashMap()
+                        LinkedHashMap()
                     }
                 } else {
-                    HashMap()
+                    LinkedHashMap()
                 }
             }
         }
@@ -1441,7 +1442,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             if (caller != null && caller is HashMap<*, *>) {
                 this.fields = asMap(caller)
             } else {
-                this.fields = HashMap()
+                this.fields = LinkedHashMap()
                 val fields = getSimpleFields(psiClass)
                 if (fields != null) {
                     this.fields!!.putAll(fields)
