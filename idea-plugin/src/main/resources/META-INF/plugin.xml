@@ -28,4 +28,5 @@
     <!--<depends optional="true">com.intellij.modules.idea</depends>-->
 
     <depends optional="true" config-file="easy-api-kotlin.xml">org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="easy-api-scala.xml">org.intellij.scala</depends>
 </idea-plugin>

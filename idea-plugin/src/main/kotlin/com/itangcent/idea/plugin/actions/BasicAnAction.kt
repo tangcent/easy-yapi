@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
+import com.itangcent.common.spi.Setup
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -15,8 +16,11 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.SourceHelper
+import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
+import com.itangcent.intellij.jvm.scala.ScalaAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.tip.OnlyOnceInContextTipSetup
 import javax.swing.Icon
 
 abstract class BasicAnAction : KotlinAnAction {
@@ -71,5 +75,14 @@ abstract class BasicAnAction : KotlinAnAction {
         val loadActionExt = actionExtLoader.loadActionExt(event, actionName, logger)
                 ?: return
         loadActionExt.init(builder)
+    }
+
+    companion object {
+        init {
+            Setup.load(ApiExportAction::class.java.classLoader)
+            Setup.setup(OnlyOnceInContextTipSetup::class)
+            Setup.setup(KotlinAutoInject::class)
+            Setup.setup(ScalaAutoInject::class)
+        }
     }
 }
