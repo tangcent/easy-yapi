@@ -30,7 +30,7 @@ class ConfigurableLogger : AbstractLogger() {
     }
 
     override fun currentLogLevel(): Level {
-        return currentLogLevel!!
+        return currentLogLevel ?: CoarseLogLevel.LOW
     }
 
     override fun processLog(level: Level, msg: String) {

@@ -7,7 +7,6 @@ import com.itangcent.common.utils.invokeMethod
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
@@ -25,6 +24,9 @@ class RecommendConfigReader : ConfigReader {
 
     @Inject(optional = true)
     val settingBinder: SettingBinder? = null
+
+    @Inject
+    val contextSwitchListener: ContextSwitchListener? = null
 
     @Inject
     val logger: Logger? = null
@@ -56,7 +58,7 @@ class RecommendConfigReader : ConfigReader {
         checkStatus()
         return configReader!!.resolveProperty(property)
     }
-
+    
     private fun checkStatus() {
         while (loading) {
             TimeUnit.MILLISECONDS.sleep(100)
@@ -67,8 +69,7 @@ class RecommendConfigReader : ConfigReader {
     fun init() {
 
         if (configReader is MutableConfigReader) {
-            val contextSwitchListener = ActionContext.getContext()!!.instance(ContextSwitchListener::class)
-            contextSwitchListener.clear()
+            contextSwitchListener!!.clear()
             contextSwitchListener.onModuleChange { module ->
                 synchronized(this)
                 {
