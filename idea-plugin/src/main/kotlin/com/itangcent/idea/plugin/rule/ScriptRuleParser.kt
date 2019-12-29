@@ -364,6 +364,14 @@ abstract class ScriptRuleParser : RuleParser {
             return psiMethod.name
         }
 
+        fun jsonName(): String? {
+            return psiClassHelper!!.getJsonFieldName(psiMethod)
+        }
+
+        fun type(): ScriptPsiTypeContext? {
+            return returnType()
+        }
+
         fun jsonType(): ScriptPsiTypeContext? {
             return psiMethod.returnType?.let { classRuleConfig!!.tryConvert(it, psiMethod) }?.let { ScriptPsiTypeContext(it) }
         }
