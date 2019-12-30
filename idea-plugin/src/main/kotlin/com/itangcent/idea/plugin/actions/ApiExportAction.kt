@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.itangcent.common.spi.Setup
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
@@ -15,8 +14,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
-import com.itangcent.intellij.jvm.scala.ScalaAutoInject
 
 abstract class ApiExportAction(text: String) : BasicAnAction(text) {
 
@@ -31,14 +28,6 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
         builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {
             it.with(ProjectCacheRepository::class).singleton()
-        }
-    }
-
-    companion object {
-        init {
-            Setup.load(ApiExportAction::class.java.classLoader)
-            Setup.setup(KotlinAutoInject::class)
-            Setup.setup(ScalaAutoInject::class)
         }
     }
 }

@@ -20,6 +20,7 @@ import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
 import com.itangcent.intellij.jvm.scala.ScalaAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.spi.IdeaAutoInject
 import com.itangcent.intellij.tip.OnlyOnceInContextTipSetup
 import javax.swing.Icon
 
@@ -81,6 +82,7 @@ abstract class BasicAnAction : KotlinAnAction {
         init {
             Setup.load(ApiExportAction::class.java.classLoader)
             Setup.setup(OnlyOnceInContextTipSetup::class)
+            Setup.setup(IdeaAutoInject::class)
             Setup.setup(KotlinAutoInject::class)
             Setup.setup(ScalaAutoInject::class)
         }
