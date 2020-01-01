@@ -283,7 +283,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Pair<Map<String, Any?>, String>? {
         return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
-                .map { annotationHelper!!.findAnnMap(ele, it)?.to(it) }
+                .map { ann -> annotationHelper!!.findAnnMap(ele, ann).takeIf { !it.isNullOrEmpty() }?.to(ann) }
                 .firstOrNull { it != null }
     }
 

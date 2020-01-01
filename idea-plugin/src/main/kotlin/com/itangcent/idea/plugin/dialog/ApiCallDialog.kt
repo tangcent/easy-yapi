@@ -14,6 +14,7 @@ import com.itangcent.common.http.EntityUtils
 import com.itangcent.common.http.HttpResponse
 import com.itangcent.common.http.UltimateResponseHandler
 import com.itangcent.common.http.getHeaderFileName
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
@@ -33,7 +34,6 @@ import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.Header
@@ -162,7 +162,7 @@ class ApiCallDialog : JDialog() {
                     paramsTextField!!.caretPosition = index
                 }
             } catch (e: Exception) {
-                logger!!.traceError("error process tab",e)
+                logger!!.traceError("error process tab", e)
 
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), JComponent.WHEN_FOCUSED)

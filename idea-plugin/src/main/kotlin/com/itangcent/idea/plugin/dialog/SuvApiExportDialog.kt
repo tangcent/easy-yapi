@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.components.JBCheckBox
+import com.itangcent.common.logger.traceError
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.SwingUtils
@@ -10,7 +11,6 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -178,7 +178,7 @@ class SuvApiExportDialog : JDialog() {
             try {
                 this.apisHandle!!(selectedChannel, selectedApis)
             } catch (e: Throwable) {
-                logger!!.traceError("apis export failed",e)
+                logger!!.traceError("apis export failed", e)
 
             } finally {
                 actionContext!!.unHold()

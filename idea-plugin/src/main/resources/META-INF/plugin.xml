@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.itangcent.idea.plugin.easy-yapi</id>
     <name>EasyYapi</name>
-    <version>1.4.2.3.183.0</version>
+    <version>1.5.1.0.183.0</version>
     <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
 
     <description><![CDATA[ Description will be added by gradle build]]></description>
@@ -28,4 +28,5 @@
     <!--<depends optional="true">com.intellij.modules.idea</depends>-->
 
     <depends optional="true" config-file="easy-api-kotlin.xml">org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="easy-api-scala.xml">org.intellij.scala</depends>
 </idea-plugin>
