@@ -8,7 +8,7 @@
 [![Gitter](https://badges.gitter.im/Earth-1610/easy-api.svg)](https://gitter.im/Earth-1610/easy-api?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 - Simplifies API Development
-- Parsing based on [javadoc](#Javadoc)&[KDoc](#KDoc)
+- Parsing based on [javadoc](#Javadoc)&[KDoc](#KDoc)&[ScalaDoc](#ScalaDoc)
 - [QA](https://github.com/tangcent/easy-api/blob/master/docs/QA.md)
 
 # Table of Contents
@@ -46,6 +46,11 @@
 ## KDoc
 
 - [kotlin-doc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
+
+
+## ScalaDoc
+
+- [scaladoc](https://docs.scala-lang.org/style/scaladoc.html)
 
 
 Installation
