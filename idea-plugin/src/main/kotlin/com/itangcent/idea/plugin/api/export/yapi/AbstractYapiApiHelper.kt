@@ -2,13 +2,13 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.gson.JsonElement
 import com.google.inject.Inject
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
 import org.apache.http.client.methods.HttpGet

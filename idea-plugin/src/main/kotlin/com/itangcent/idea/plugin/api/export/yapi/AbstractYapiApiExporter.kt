@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
@@ -11,7 +12,6 @@ import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.logger.traceError
 import org.apache.commons.lang3.StringUtils
 
 
