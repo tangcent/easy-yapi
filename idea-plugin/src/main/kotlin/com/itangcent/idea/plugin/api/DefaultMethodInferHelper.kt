@@ -16,6 +16,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.JsonOption
@@ -53,6 +54,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
     @Inject
     private val jvmClassHelper: JvmClassHelper? = null
+
+    @Inject
+    private val psiResolver: PsiResolver? = null
 
     private val staticMethodCache: HashMap<Pair<PsiMethod, Array<Any?>?>, Any?> = HashMap()
 
@@ -609,11 +613,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
         @Suppress("UNCHECKED_CAST")
         fun asMap(obj: Any?): HashMap<Any, Any?>? {
-            if (obj == null) return null
-            if (obj !is HashMap<*, *>) {
-                return null
-            }
-            return obj as HashMap<Any, Any?>?
+            return obj as? HashMap<Any, Any?>?
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -971,6 +971,10 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
 
         protected open fun processElement(psiElement: PsiElement): Any? {
+            return processElement(psiElement, getThis())
+        }
+
+        protected open fun processElement(psiElement: PsiElement, context: Any?): Any? {
 
             when (psiElement) {
                 is PsiExpression -> return processExpression(psiElement)
@@ -1018,13 +1022,20 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     }
                     return variable
                 }
+                is PsiEnumConstant -> {
+                    return resolveEnumFields(psiElement)
+                }
                 is PsiField -> {
                     if (methodReturnInferHelper.jvmClassHelper!!.isStaticFinal(psiElement)) {
                         return processStaticField(psiElement)
                     }
-                    val fieldName = methodReturnInferHelper.psiClassHelper!!.getJsonFieldName(psiElement)
+                    val fieldName =
+                            methodReturnInferHelper.psiClassHelper!!.getJsonFieldName(psiElement)
+                                    .removePrefix("this.")
+                    (context as? Map<*, *>)?.let { return findVariableIn(fieldName, context) }
+
                     return if (fields?.containsKey(fieldName) == true) {
-                        findField(fieldName)
+                        findVariableIn(fieldName, fields)
                     } else {
                         DirectVariable { methodReturnInferHelper.getSimpleFields(psiElement.type, psiElement) }
                     }
@@ -1084,6 +1095,14 @@ class DefaultMethodInferHelper : MethodInferHelper {
             return null
         }
 
+        @Suppress("UNCHECKED_CAST")
+        fun resolveEnumFields(value: PsiEnumConstant): Map<String, Any?>? {
+
+            val constantInfo = methodReturnInferHelper.psiResolver!!.resolveEnumFields(0, value) ?: return null
+
+            return constantInfo["params"] as? Map<String, Any?>
+        }
+
         protected open fun processExpression(psiExpression: PsiExpression): Any? {
             when (psiExpression) {
                 is PsiAssignmentExpression -> {
@@ -1124,13 +1143,18 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 }
                 is PsiReferenceExpression -> {
 
-                    val resolve = psiExpression.resolve()
-                    if (resolve != null) return processElement(resolve)
-
-                    val name = psiExpression.qualifierExpression?.let { processExpression(it) }
-                    if (name != null && name is String) {
-                        return findVariable(name)
+                    val qualifierExpression = psiExpression.qualifierExpression
+                    val qualifier: Any?
+                    if (qualifierExpression == null) {
+                        qualifier = getThis()
+                    } else {
+                        qualifier = processExpression(qualifierExpression)
+                        if (qualifier != null && qualifier is String) {
+                            return findVariable(qualifier)
+                        }
                     }
+                    val resolve = psiExpression.resolve()
+                    if (resolve != null) return processElement(resolve, qualifier)
                 }
                 is PsiThisExpression -> return getThis()
                 is PsiLiteralExpression -> return psiExpression.value
@@ -1340,14 +1364,6 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 localParams.containsKey(name) -> findVariableIn(name, localParams)
                 fields?.containsKey(name) == true -> findVariableIn(name, fields)
                 else -> findVariableIn(name, localParams)
-            }
-        }
-
-        protected fun findField(name: String): Variable? {
-            return if (name.startsWith("this.")) {
-                findVariableIn(name.removePrefix("this."), fields)
-            } else {
-                findVariableIn(name, fields)
             }
         }
 
