@@ -43,17 +43,15 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     private fun eval(ruleScript: String, context: RuleContext): Any? {
-        try {
+        return try {
             val simpleScriptContext = SimpleScriptContext()
-            val contextForScript: RuleContext? = when (context) {
-                is BaseScriptRuleContext -> context
-                else -> contextOf(context.getResource()!!, context.getResource()!!)
-            }
+            val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
+                    context.getCore() ?: context.getResource()!!, context.getResource()!!)
             simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
-            return getScriptEngine().eval(ruleScript, simpleScriptContext)
+            getScriptEngine().eval(ruleScript, simpleScriptContext)
         } catch (e: UnsupportedScriptException) {
             logger?.error("unsupported script type:${e.getType()},script:$ruleScript")
-            return null
+            null
         }
     }
 
