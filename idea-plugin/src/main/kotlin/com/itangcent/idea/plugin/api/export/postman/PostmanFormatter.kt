@@ -7,11 +7,13 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KV
+import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
-import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.RequestUtils
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils
 import org.apache.commons.lang3.RandomUtils
@@ -36,16 +38,24 @@ class PostmanFormatter {
     private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
-    private val requestHelper: RequestHelper? = null
+    private val ruleComputer: RuleComputer? = null
 
     fun request2Item(request: Request): HashMap<String, Any?> {
 
-        val module = request.resource?.let { resource ->
-            actionContext!!.callInReadUI { moduleHelper!!.findModule(resource) }
-        }
         var host = "{{host}}"
-        if (module != null) {
-            host = "{{$module}}"
+
+        val hostByRule = request.resourceClass()
+                ?.let { ruleComputer!!.computer(ClassExportRuleKeys.POST_MAN_HOST, it) }
+
+        if (hostByRule == null) {
+            val module = request.resource?.let { resource ->
+                actionContext!!.callInReadUI { moduleHelper!!.findModule(resource) }
+            }
+            if (module != null) {
+                host = "{{$module}}"
+            }
+        } else {
+            host = hostByRule
         }
 
         val item: HashMap<String, Any?> = HashMap()
