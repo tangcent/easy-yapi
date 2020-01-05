@@ -79,6 +79,12 @@
     6. enhance:new rule `field.mock` [(#113)](https://github.com/tangcent/easy-yapi/pull/113)
     7. enhance:provide recommend config for yapi mock [(#116)](https://github.com/tangcent/easy-yapi/pull/116)
    
-   
-   
+*   1.5.0 ~
+    1. enhance:support setting charset for export markdown  [(#211)](https://github.com/tangcent/easy-api/pull/211)
+    2. enhance:add new method `jsonType` for `method`&`field`  [(#213)](https://github.com/tangcent/easy-api/pull/213)
+    3. enhance:support scala project   [(#214)](https://github.com/tangcent/easy-api/pull/214)
+    4. bug-fix: preserving the order of field in infer   [(#216)](https://github.com/tangcent/easy-api/pull/216)
+
+
+
        
