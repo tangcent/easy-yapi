@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.rule
 import com.google.inject.Inject
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.PostConstruct
+import kotlin.reflect.KClass
 
 /**
  * [js:] -> jsRule
@@ -12,41 +12,46 @@ import com.itangcent.intellij.extend.guice.PostConstruct
  */
 class SuvRuleParser : RuleParser {
 
-    private val jsRuleParser: RuleParser = JsRuleParser()
-
-    private val groovyRuleParser: RuleParser = GroovyRuleParser()
-
-    private val simpleRuleParser: RuleParser = SimpleRuleParser()
-
     @Inject
     private val actionContext: ActionContext? = null
 
-    @PostConstruct
-    fun init() {
-        actionContext!!.init(jsRuleParser)
-        actionContext.init(groovyRuleParser)
-        actionContext.init(simpleRuleParser)
-    }
-
     override fun contextOf(target: kotlin.Any, context: com.intellij.psi.PsiElement?): RuleContext {
-        return simpleRuleParser.contextOf(target, context)
+        return getRuleParser(SimpleRuleParser::class).contextOf(target, context)
     }
 
     override fun parseBooleanRule(rule: String): BooleanRule? {
         return when {
             rule.isBlank() -> null
-            rule.startsWith(JS_PREFIX) -> jsRuleParser.parseBooleanRule(rule.removePrefix(JS_PREFIX))
-            rule.startsWith(GROOVY_PREFIX) -> groovyRuleParser.parseBooleanRule(rule.removePrefix(GROOVY_PREFIX))
-            else -> simpleRuleParser.parseBooleanRule(rule)
+            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseBooleanRule(rule.removePrefix(JS_PREFIX))
+            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseBooleanRule(rule.removePrefix(GROOVY_PREFIX))
+            else -> getRuleParser(SimpleRuleParser::class).parseBooleanRule(rule)
         }
     }
 
     override fun parseStringRule(rule: String): StringRule? {
         return when {
             rule.isBlank() -> null
-            rule.startsWith(JS_PREFIX) -> jsRuleParser.parseStringRule(rule.removePrefix(JS_PREFIX))
-            rule.startsWith(GROOVY_PREFIX) -> groovyRuleParser.parseStringRule(rule.removePrefix(GROOVY_PREFIX))
-            else -> simpleRuleParser.parseStringRule(rule)
+            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseStringRule(rule.removePrefix(JS_PREFIX))
+            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseStringRule(rule.removePrefix(GROOVY_PREFIX))
+            else -> getRuleParser(SimpleRuleParser::class).parseStringRule(rule)
+        }
+    }
+
+
+    private val ruleParserCache: HashMap<KClass<*>, RuleParser> = LinkedHashMap()
+
+    private fun getRuleParser(parserClass: KClass<*>): RuleParser {
+        var ruleParser = ruleParserCache[parserClass]
+        if (ruleParser != null) return ruleParser
+        synchronized(this) {
+            ruleParser = ruleParserCache[parserClass]
+            if (ruleParser != null) return ruleParser!!
+            ruleParser = actionContext!!.instance(parserClass) as? RuleParser
+            if (ruleParser == null) {
+                throw IllegalArgumentException("error to build rule parser:${parserClass.qualifiedName}")
+            }
+            ruleParserCache[parserClass] = ruleParser!!
+            return ruleParser!!
         }
     }
 
