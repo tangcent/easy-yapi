@@ -72,6 +72,12 @@
     4. enhance:ignore param extend HttpServletRequest/HttpServletResponse  [(#206)](https://github.com/tangcent/easy-api/pull/206)
     5. enhance:new rule: `method.default.http.method`   [(#207)](https://github.com/tangcent/easy-api/pull/207)
    
-   
-   
+*   1.5.0 ~
+    1. enhance:support setting charset for export markdown  [(#211)](https://github.com/tangcent/easy-api/pull/211)
+    2. enhance:add new method `jsonType` for `method`&`field`  [(#213)](https://github.com/tangcent/easy-api/pull/213)
+    3. enhance:support scala project   [(#214)](https://github.com/tangcent/easy-api/pull/214)
+    4. bug-fix: preserving the order of field in infer   [(#216)](https://github.com/tangcent/easy-api/pull/216)
+
+
+
        
