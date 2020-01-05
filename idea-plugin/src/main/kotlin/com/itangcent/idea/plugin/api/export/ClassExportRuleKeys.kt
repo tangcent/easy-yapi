@@ -102,4 +102,9 @@ object ClassExportRuleKeys {
             "method.default.http.method", StringRule::class,
             StringRuleMode.SINGLE
     )
+
+    val POST_MAN_HOST: RuleKey<String> = SimpleRuleKey(
+            "postman.host", StringRule::class,
+            StringRuleMode.SINGLE
+    )
 }
