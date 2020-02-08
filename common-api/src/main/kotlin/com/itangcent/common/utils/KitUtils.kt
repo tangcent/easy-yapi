@@ -35,10 +35,7 @@ fun String?.notEmpty(): Boolean {
 fun String.headLine(): String? {
     if (this.isBlank()) return null
 
-    val lines = this.lines()
-    return if (lines.size > 1) {//multi line
-        lines.firstOrNull { it.isNotBlank() }
-    } else {
-        this
-    }
+    val headLine = this.substringBefore("\r\n")
+    if (headLine.isBlank()) return ""
+    return headLine
 }
