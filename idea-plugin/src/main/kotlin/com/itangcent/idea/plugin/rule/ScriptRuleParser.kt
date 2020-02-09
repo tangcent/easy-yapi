@@ -85,6 +85,8 @@ abstract class ScriptRuleParser : RuleParser {
      * it.doc("tag"):String?
      * it.doc("tag","subTag"):String?
      * it.hasDoc("tag"):Boolean
+     * it.hasModifier("modifier"):Boolean
+     * it.sourceCode():String
      */
     open inner class BaseScriptRuleContext : RuleContext {
 
@@ -174,6 +176,18 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun hasModifier(modifier: String): Boolean {
             return asPsiModifierListOwner()?.hasModifierProperty(modifier) ?: false
+        }
+
+        fun modifiers(): List<String>? {
+            return psiElement?.let { jvmClassHelper!!.extractModifiers(it) }
+        }
+
+        fun sourceCode(): String? {
+            return psiElement?.text
+        }
+
+        fun defineCode(): String? {
+            return psiElement?.let { jvmClassHelper!!.defineCode(it) }
         }
 
         open fun contextType(): String {
@@ -305,6 +319,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.containingClass:class
      */
     inner class ScriptPsiMethodContext(private val psiMethod: PsiMethod) : BaseScriptRuleContext(psiMethod) {
+
         override fun contextType(): String {
             return "method"
         }
@@ -378,6 +393,7 @@ abstract class ScriptRuleParser : RuleParser {
         fun jsonType(): ScriptPsiTypeContext? {
             return psiMethod.returnType?.let { classRuleConfig!!.tryConvert(it, psiMethod) }?.let { ScriptPsiTypeContext(it) }
         }
+
     }
 
     /**
