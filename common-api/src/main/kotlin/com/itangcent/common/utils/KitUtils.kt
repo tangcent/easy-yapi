@@ -35,7 +35,15 @@ fun String?.notEmpty(): Boolean {
 fun String.headLine(): String? {
     if (this.isBlank()) return null
 
-    val headLine = this.substringBefore("\r\n")
-    if (headLine.isBlank()) return ""
-    return headLine
+    var index = -1
+    for ((i, c) in this.withIndex()) {
+        if (c == '\r' || c == '\n') {
+            index = i
+            break
+        }
+    }
+    if (index == -1) {
+        return this
+    }
+    return substring(0, index)
 }
