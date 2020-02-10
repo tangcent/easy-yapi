@@ -36,8 +36,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
     }
 
     override fun initScriptContext(scriptContext: ScriptContext) {
-        val oldBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
-        oldBindings.putAll(toolBindings)
+        val engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
+        engineBindings.putAll(toolBindings)
+        engineBindings["logger"] = logger
     }
 
     companion object {
