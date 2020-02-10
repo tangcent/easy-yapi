@@ -320,12 +320,12 @@ class EasyApiSettingGUI {
     }
 
     private fun getCurrentProject(): Project? {
-        val wm = WindowManager.getInstance()
         val projects = ProjectManager.getInstance().openProjects
         if (projects.size == 1) {
             return projects[0]
         }
 
+        val wm = WindowManager.getInstance()
         if (generalPanel?.parent != null) {
             for (project in projects) {
                 if (SwingUtilities.isDescendingFrom(generalPanel,
