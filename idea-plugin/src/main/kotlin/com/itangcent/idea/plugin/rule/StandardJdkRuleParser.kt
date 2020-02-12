@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.rule
 
-import javax.script.ScriptEngine
-import javax.script.ScriptEngineManager
+import com.itangcent.idea.plugin.utils.RegexUtils
+import javax.script.*
 
 abstract class StandardJdkRuleParser : ScriptRuleParser() {
     private var scriptEngine: ScriptEngine? = null
@@ -27,6 +27,28 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             unsupported = true
             throw UnsupportedScriptException(scriptType())
         }
+        initScripEngine(scriptEngine!!)
         return scriptEngine!!
+    }
+
+    open fun initScripEngine(scriptEngine: ScriptEngine) {
+        scriptEngine.setBindings(SimpleBindings(toolBindings), ScriptContext.GLOBAL_SCOPE)
+    }
+
+    override fun initScriptContext(scriptContext: ScriptContext) {
+        val engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
+        engineBindings.putAll(toolBindings)
+        engineBindings["logger"] = logger
+    }
+
+    companion object {
+        private val toolBindings: Bindings
+
+        init {
+            val bindings: Bindings = SimpleBindings()
+            bindings["tool"] = RuleToolUtils()
+            bindings["regex"] = RegexUtils()
+            toolBindings = bindings
+        }
     }
 }
