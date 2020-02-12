@@ -77,7 +77,7 @@ class RecommendConfigReader : ConfigReader {
                     configReader.reset()
                     val moduleFile = module.moduleFile
                     val modulePath: String = when {
-                        moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.pathSeparator)
+                        moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.separator)
                         moduleFile.isDirectory -> moduleFile.path
                         else -> moduleFile.parent.path
                     }
