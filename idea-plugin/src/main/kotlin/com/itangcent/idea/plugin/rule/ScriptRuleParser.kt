@@ -3,12 +3,17 @@ package com.itangcent.idea.plugin.rule
 import com.google.inject.Inject
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
+import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toBoolean
+import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
+import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.psi.PsiClassUtils
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
@@ -28,6 +33,8 @@ abstract class ScriptRuleParser : RuleParser {
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
     @Inject
+    protected val methodReturnInferHelper: MethodInferHelper? = null
+    @Inject
     protected val logger: Logger? = null
 
     override fun parseBooleanRule(rule: String): BooleanRule? {
@@ -38,7 +45,7 @@ abstract class ScriptRuleParser : RuleParser {
 
     override fun parseStringRule(rule: String): StringRule? {
         return StringRule.of { context ->
-            return@of eval(rule, context)?.toString()
+            return@of eval(rule, context)?.toPrettyString()
         }
     }
 
@@ -48,6 +55,7 @@ abstract class ScriptRuleParser : RuleParser {
             val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
                     context.getCore() ?: context.getResource()!!, context.getResource()!!)
             simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
+            initScriptContext(simpleScriptContext)
             getScriptEngine().eval(ruleScript, simpleScriptContext)
         } catch (e: UnsupportedScriptException) {
             logger?.error("unsupported script type:${e.getType()},script:$ruleScript")
@@ -56,6 +64,10 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     protected abstract fun getScriptEngine(): ScriptEngine
+
+    protected open fun initScriptContext(scriptContext: ScriptContext) {
+
+    }
 
     override fun contextOf(target: kotlin.Any, context: com.intellij.psi.PsiElement?): RuleContext {
         return when (target) {
@@ -80,6 +92,8 @@ abstract class ScriptRuleParser : RuleParser {
      * it.doc("tag"):String?
      * it.doc("tag","subTag"):String?
      * it.hasDoc("tag"):Boolean
+     * it.hasModifier("modifier"):Boolean
+     * it.sourceCode():String
      */
     open inner class BaseScriptRuleContext : RuleContext {
 
@@ -171,6 +185,18 @@ abstract class ScriptRuleParser : RuleParser {
             return asPsiModifierListOwner()?.hasModifierProperty(modifier) ?: false
         }
 
+        fun modifiers(): List<String>? {
+            return psiElement?.let { jvmClassHelper!!.extractModifiers(it) }
+        }
+
+        fun sourceCode(): String? {
+            return psiElement?.text
+        }
+
+        fun defineCode(): String? {
+            return psiElement?.let { jvmClassHelper!!.defineCode(it) }
+        }
+
         open fun contextType(): String {
             return "unknown"
         }
@@ -246,6 +272,16 @@ abstract class ScriptRuleParser : RuleParser {
         override fun getSimpleName(): String? {
             return psiClass.name
         }
+
+        fun toJson(readGetter: Boolean): String? {
+            return psiClassHelper!!.getFields(psiClass,
+                    if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
+            ).let { RequestUtils.parseRawBody(it) }
+        }
+
+        override fun toString(): String {
+            return "class:" + psiClass.qualifiedName
+        }
     }
 
     /**
@@ -289,6 +325,10 @@ abstract class ScriptRuleParser : RuleParser {
         fun jsonType(): ScriptPsiTypeContext {
             return ScriptPsiTypeContext(classRuleConfig!!.tryConvert(psiField.type, psiField))
         }
+
+        override fun toString(): String {
+            return "field:" + psiField.name
+        }
     }
 
     /**
@@ -300,6 +340,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.containingClass:class
      */
     inner class ScriptPsiMethodContext(private val psiMethod: PsiMethod) : BaseScriptRuleContext(psiMethod) {
+
         override fun contextType(): String {
             return "method"
         }
@@ -373,6 +414,23 @@ abstract class ScriptRuleParser : RuleParser {
         fun jsonType(): ScriptPsiTypeContext? {
             return psiMethod.returnType?.let { classRuleConfig!!.tryConvert(it, psiMethod) }?.let { ScriptPsiTypeContext(it) }
         }
+
+        fun returnJson(needInfer: Boolean = false, readGetter: Boolean = true): String? {
+            val psiType = psiMethod.returnType ?: return null
+            return when {
+                needInfer && (!duckTypeHelper!!.isQualified(psiType, psiMethod) ||
+                        PsiClassUtils.isInterface(psiType)) -> {
+                    logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
+                    methodReturnInferHelper!!.inferReturn(psiMethod)
+                }
+                readGetter -> psiClassHelper!!.getTypeObject(psiType, psiMethod, JsonOption.READ_GETTER)
+                else -> psiClassHelper!!.getTypeObject(psiType, psiMethod, JsonOption.NONE)
+            }?.let { RequestUtils.parseRawBody(it) }
+        }
+
+        override fun toString(): String {
+            return "method:" + psiMethod.name
+        }
     }
 
     /**
@@ -404,6 +462,10 @@ abstract class ScriptRuleParser : RuleParser {
 
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             return psiParameter
+        }
+
+        override fun toString(): String {
+            return "param:" + psiParameter.name
         }
     }
 
@@ -490,6 +552,16 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun isArray(): Boolean {
             return duckType is ArrayDuckType
+        }
+
+        fun toJson(readGetter: Boolean): String? {
+            return psiClassHelper!!.getTypeObject(psiType, getResource()!!,
+                    if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
+            )?.let { RequestUtils.parseRawBody(it) }
+        }
+
+        override fun toString(): String {
+            return "class:" + psiType.canonicalText
         }
 
         init {

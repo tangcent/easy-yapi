@@ -35,10 +35,15 @@ fun String?.notEmpty(): Boolean {
 fun String.headLine(): String? {
     if (this.isBlank()) return null
 
-    val lines = this.lines()
-    return if (lines.size > 1) {//multi line
-        lines.firstOrNull { it.isNotBlank() }
-    } else {
-        this
+    var index = -1
+    for ((i, c) in this.withIndex()) {
+        if (c == '\r' || c == '\n') {
+            index = i
+            break
+        }
     }
+    if (index == -1) {
+        return this
+    }
+    return substring(0, index)
 }
