@@ -1,14 +1,57 @@
 package com.itangcent.idea.plugin.rule
 
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.headLine
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
+import java.lang.reflect.Modifier
 import java.util.*
 
 /**
  * <p>Util operations for rule.</p>
  */
 class RuleToolUtils {
+
+    //region collections
+
+    fun newSet(vararg items: Any): Set<*> {
+        return HashSet(Arrays.asList(*items))
+    }
+
+    fun newList(vararg items: Any): List<*> {
+        return ArrayList(Arrays.asList(*items))
+    }
+
+    fun newMap(): Map<*, *> {
+        return LinkedHashMap<Any, Any>()
+    }
+
+    //endregion
+
+    //region json
+
+    fun parseJson(json: String): Any? {
+        if (StringUtils.isEmpty(json)) {
+            return null
+        }
+        return GsonUtils.fromJson(json, Any::class)
+    }
+
+    fun toJson(obj: Any): String? {
+        if (obj == null) {
+            return null
+        }
+        return GsonUtils.toJson(obj)
+    }
+
+    fun prettyJson(obj: Any?): String? {
+        if (obj == null) {
+            return null
+        }
+        return GsonUtils.prettyJson(obj)
+    }
+
+    //endregion
 
     //region string
 
@@ -671,4 +714,49 @@ class RuleToolUtils {
 
     //endregion
 
+    fun debug(any: Any?): String {
+        if (any == null) {
+            return "debug object is null"
+        }
+
+        val kClass: Class<out Any> = any::class.java
+        val qualifiedName = kClass.name ?: return "debug error"
+        if (!qualifiedName.startsWith("com.itangcent")) {
+            return "[$qualifiedName] cannot debug"
+        }
+
+        val sb = StringBuilder()
+        sb.append("type:")
+                .append(qualifiedName)
+                .appendln()
+
+        val declaredMethods = kClass.declaredMethods
+        if (declaredMethods.isNotEmpty()) {
+            sb.append("methods:").appendln()
+            for (method in kClass.methods) {
+                if (Modifier.isPrivate(method.modifiers)
+                        || Modifier.isStatic(method.modifiers)
+                        || method.declaringClass == Object::class
+                        || excludedMethods.contains(method.name)
+                ) {
+                    continue
+                }
+                sb.append(method.genericReturnType.typeName)
+                        .append(" ")
+                        .append(method.name)
+                        .append("(")
+                        .append(method.parameters.joinToString(separator = ", ") {
+                            it.parameterizedType.typeName + " " + it.name
+                        })
+                        .append(")")
+                        .appendln()
+            }
+        }
+
+        return sb.toString()
+    }
+
+    companion object {
+        private val excludedMethods = Arrays.asList("hashCode", "toString", "equals", "getClass", "clone", "notify", "notifyAll", "wait", "finalize")
+    }
 }
