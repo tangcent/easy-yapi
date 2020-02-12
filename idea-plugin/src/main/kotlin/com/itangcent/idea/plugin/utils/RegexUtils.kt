@@ -32,7 +32,7 @@ class RegexUtils {
     /**
      * Removes all of the cached [Pattern]
      */
-    fun clear() {
+    private fun clear() {
         writeLock.lock()
         try {
             cache.clear()
@@ -212,7 +212,7 @@ class RegexUtils {
         return findAll(regex, content, group, ArrayList())
     }
 
-    fun <T : MutableCollection<String>> findAll(regex: String?, content: String, group: Int, collection: T): T? {
+    private fun <T : MutableCollection<String>> findAll(regex: String?, content: String, group: Int, collection: T): T? {
         if (null == regex) {
             return null
         }
@@ -314,7 +314,7 @@ class RegexUtils {
     /**
      * escape for Regex keywords
      */
-    private fun escape(content: String): String {
+    fun escape(content: String): String {
         if (StringUtils.isBlank(content)) {
             return content
         }
