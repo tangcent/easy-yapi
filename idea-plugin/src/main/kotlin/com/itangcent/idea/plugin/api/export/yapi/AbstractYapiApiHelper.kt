@@ -116,7 +116,12 @@ open class AbstractYapiApiHelper {
         }
 
         val ret = getByApi(url, false) ?: return null
-        val projectInfo = GsonUtils.parseToJsonTree(ret)
+        var projectInfo: JsonElement? = null
+        try {
+            projectInfo = GsonUtils.parseToJsonTree(ret)
+        } catch (e: Exception) {
+            logger!!.error("error to parse project [$projectId] info:$ret")
+        }
         if (projectId != null && projectInfo != null) {
             cacheLock.writeLock().withLock { projectInfoCache[projectId] = projectInfo }
         }
