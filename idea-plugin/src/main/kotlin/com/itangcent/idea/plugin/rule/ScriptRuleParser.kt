@@ -514,16 +514,16 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun methods(): Array<ScriptPsiMethodContext> {
-            return getResource()?.let { psiElement ->
-                return@let jvmClassHelper!!.getAllMethods((psiElement as PsiClass))
+            return (getResource() as? PsiClass)?.let { psiElement ->
+                return@let jvmClassHelper!!.getAllMethods(psiElement)
                         .map { ScriptPsiMethodContext(it) }
                         .toTypedArray()
             } ?: emptyArray()
         }
 
         fun fields(): Array<ScriptPsiFieldContext> {
-            return getResource()?.let { psiElement ->
-                return@let (psiElement as PsiClass).allFields
+            return (getResource() as? PsiClass)?.let { psiElement ->
+                return@let jvmClassHelper!!.getAllFields(psiElement)
                         .map { ScriptPsiFieldContext(it) }
                         .toTypedArray()
             } ?: emptyArray()
