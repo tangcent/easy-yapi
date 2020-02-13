@@ -708,7 +708,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
         actionContext!!.checkStatus()
         val kv = KV.create<String, Any?>()
-        for (field in psiClass.allFields) {
+        for (field in jvmClassHelper!!.getAllFields(psiClass)) {
             val type = field.type
             val name = psiClassHelper!!.getJsonFieldName(field)
 
