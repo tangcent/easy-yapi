@@ -1,15 +1,27 @@
 package com.itangcent.idea.plugin.rule
 
+import com.itangcent.annotation.script.ScriptIgnore
+import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.headLine
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
-import java.lang.reflect.Modifier
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.reflect.KClass
+import kotlin.reflect.KParameter
+import kotlin.reflect.KType
+import kotlin.reflect.KVisibility
+import kotlin.reflect.full.allSuperclasses
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.functions
 
 /**
  * <p>Util operations for rule.</p>
  */
+@ScriptTypeName("tool")
 class RuleToolUtils {
 
     //region collections
@@ -719,36 +731,69 @@ class RuleToolUtils {
             return "debug object is null"
         }
 
-        val kClass: Class<out Any> = any::class.java
-        val qualifiedName = kClass.name ?: return "debug error"
+        val kClass: KClass<out Any> = any::class
+        val qualifiedName = kClass.qualifiedName ?: return "debug error"
         if (!qualifiedName.startsWith("com.itangcent")) {
             return "[$qualifiedName] cannot debug"
         }
 
+
         val sb = StringBuilder()
         sb.append("type:")
-                .append(qualifiedName)
+                .append(typeName(kClass))
                 .appendln()
 
-        val declaredMethods = kClass.declaredMethods
-        if (declaredMethods.isNotEmpty()) {
+        val ignoreMethods: ArrayList<String> = ArrayList()
+        kClass.findAnnotation<ScriptIgnore>()?.let { ignoreMethods.addAll(it.name) }
+        kClass.allSuperclasses.map { it.findAnnotation<ScriptIgnore>() }
+                .filter { it != null }
+                .map { it!!.name }
+                .forEach { ignoreMethods.addAll(it) }
+
+
+        val functions = kClass.functions
+        if (functions.isNotEmpty()) {
             sb.append("methods:").appendln()
-            for (method in kClass.methods) {
-                if (Modifier.isPrivate(method.modifiers)
-                        || Modifier.isStatic(method.modifiers)
-                        || method.declaringClass == Object::class
-                        || excludedMethods.contains(method.name)
+            for (function in functions) {
+                if (function.visibility != KVisibility.PUBLIC
+                        || excludedMethods.contains(function.name)
+                        || function.findAnnotation<ScriptIgnore>() != null
+                        || (ignoreMethods.contains(function.name) &&
+                                function.findAnnotation<ScriptUnIgnore>() == null)
                 ) {
                     continue
                 }
-                sb.append(method.genericReturnType.typeName)
+
+
+                sb.append(typeName(function.returnType))
                         .append(" ")
-                        .append(method.name)
+                        .append(function.name)
                         .append("(")
-                        .append(method.parameters.joinToString(separator = ", ") {
-                            it.parameterizedType.typeName + " " + it.name
-                        })
-                        .append(")")
+                var appended = false
+                for (param in function.parameters) {
+                    if (param.kind != KParameter.Kind.VALUE) {
+                        continue
+                    }
+
+                    if (appended) {
+                        sb.append(", ")
+                    } else {
+                        appended = true
+                    }
+
+                    if (param.isVararg) {
+                        val type = param.type.arguments.firstOrNull()?.type
+                        if (type == null) {
+                            sb.append(typeName(param.type))
+                        } else {
+                            sb.append(typeName(type))
+                                    .append("...")
+                        }
+                    } else {
+                        sb.append(typeName(param.type))
+                    }
+                }
+                sb.append(")")
                         .appendln()
             }
         }
@@ -756,7 +801,64 @@ class RuleToolUtils {
         return sb.toString()
     }
 
+    private fun typeName(kType: KType): String {
+        val arguments = kType.arguments
+        val classifier = kType.classifier
+        if (arguments.isEmpty()) {
+            return if (classifier is KClass<*>) {
+                typeName(classifier)
+            } else {
+                typeName(classifier.toString())
+            }
+        } else {
+            val sb = StringBuilder()
+
+            sb.append(if (classifier is KClass<*>) {
+                typeName(classifier)
+            } else {
+                typeName(classifier.toString())
+            })
+
+            sb.append("<")
+            sb.append(arguments.joinToString(separator = ", ") { argument ->
+                argument.type?.let { typeName(it) } ?: "object"
+            })
+            sb.append(">")
+
+            return sb.toString()
+        }
+    }
+
+    private fun typeName(kClass: KClass<*>): String {
+        val annotation = kClass.findAnnotation<ScriptTypeName>()
+        if (annotation != null) return annotation.name
+        val qualifiedName = kClass.qualifiedName ?: return "object"
+        return typeName(qualifiedName)
+    }
+
+    private fun typeName(qualifiedName: String): String {
+        return typeMapper[qualifiedName] ?: qualifiedName
+    }
+
     companion object {
         private val excludedMethods = Arrays.asList("hashCode", "toString", "equals", "getClass", "clone", "notify", "notifyAll", "wait", "finalize")
+
+        private val typeMapper = KV.create<String, String>()
+                .set("java.lang.String", "string")
+                .set("java.lang.Long", "long")
+                .set("java.lang.Double", "double")
+                .set("java.lang.Short", "short")
+                .set("java.lang.Integer", "int")
+                .set("java.lang.Object", "object")
+                .set("kotlin.String", "string")
+                .set("kotlin.Array", "array")
+                .set("kotlin.Int", "int")
+                .set("kotlin.Unit", "void")
+                .set("kotlin.collections.List", "array")
+                .set("kotlin.Any", "object")
+                .set("kotlin.Boolean", "bool")
+                .set("kotlin.collections.Map", "map")
+                .set("kotlin.collections.Set", "array")
+
     }
 }
