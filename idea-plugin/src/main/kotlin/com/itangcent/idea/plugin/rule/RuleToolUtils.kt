@@ -672,7 +672,7 @@ class RuleToolUtils {
             return delimiterHashSet
         }
 
-        for (index in 0..delimiters.size) {
+        for (index in 0 until delimiters.size) {
             delimiterHashSet.add(Character.codePointAt(delimiters, index))
         }
         return delimiterHashSet

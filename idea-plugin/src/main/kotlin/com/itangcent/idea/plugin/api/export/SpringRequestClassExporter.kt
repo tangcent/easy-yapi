@@ -39,13 +39,15 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     }
 
     override fun hasApi(psiClass: PsiClass): Boolean {
-        return psiClass.annotations.any {
-            SpringClassName.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
+        return SpringClassName.SPRING_CONTROLLER_ANNOTATION.any {
+            annotationHelper!!.hasAnn(psiClass, it)
         }
     }
 
     override fun isApi(psiMethod: PsiMethod): Boolean {
-        return findRequestMappingInAnn(psiMethod) != null
+        return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS.any {
+            annotationHelper!!.hasAnn(psiMethod, it)
+        }
     }
 
     override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?) {
@@ -283,7 +285,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Pair<Map<String, Any?>, String>? {
         return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
-                .map { ann -> annotationHelper!!.findAnnMap(ele, ann).takeIf { !it.isNullOrEmpty() }?.to(ann) }
+                .map { ann -> annotationHelper!!.findAnnMap(ele, ann)?.to(ann) }
                 .firstOrNull { it != null }
     }
 
