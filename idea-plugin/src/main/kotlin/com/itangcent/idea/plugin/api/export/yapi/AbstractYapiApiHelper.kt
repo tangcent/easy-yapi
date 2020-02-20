@@ -12,6 +12,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
 import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.methods.HttpRequestBase
 import java.io.ByteArrayOutputStream
 import java.net.SocketException
 import java.net.SocketTimeoutException
@@ -21,7 +22,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.collections.HashMap
 import kotlin.concurrent.withLock
 
-open class AbstractYapiApiHelper {
+abstract class AbstractYapiApiHelper : YapiApiHelper {
     @Inject
     private val settingBinder: SettingBinder? = null
 
@@ -43,11 +44,11 @@ open class AbstractYapiApiHelper {
 
     protected var cacheLock: ReadWriteLock = ReentrantReadWriteLock()
 
-    fun hasPrivateToken(module: String): Boolean {
+    open fun hasPrivateToken(module: String): Boolean {
         return getPrivateToken(module) != null
     }
 
-    fun findServer(): String? {
+    override fun findServer(): String? {
         if (!server.isNullOrBlank()) return server
         server = configReader!!.first("server")?.trim()?.removeSuffix("/")
         if (!server.isNullOrBlank()) return server
@@ -55,7 +56,7 @@ open class AbstractYapiApiHelper {
         return server
     }
 
-    fun setYapiServer(yapiServer: String) {
+    override fun setYapiServer(yapiServer: String) {
         val settings = settingBinder!!.read()
         settings.yapiServer = yapiServer
         settingBinder.save(settings)
@@ -63,13 +64,13 @@ open class AbstractYapiApiHelper {
         server = yapiServer.removeSuffix("/")
     }
 
-    fun getProjectWeb(module: String): String? {
+    open fun getProjectWeb(module: String): String? {
         val token = getPrivateToken(module)
         val projectId = getProjectIdByToken(token!!) ?: return null
         return "$server/project/$projectId/interface/api"
     }
 
-    protected fun findErrorMsg(res: String?): String? {
+    open protected fun findErrorMsg(res: String?): String? {
         if (res == null) return "no response"
         if (StringUtils.isNotBlank(res) && res.contains("errmsg")) {
             val returnObj = GsonUtils.parseToJsonTree(res)
@@ -84,7 +85,7 @@ open class AbstractYapiApiHelper {
         return null
     }
 
-    open fun getProjectIdByToken(token: String): String? {
+    override fun getProjectIdByToken(token: String): String? {
         var projectId = cacheLock.readLock().withLock { projectIdCache[token] }
         if (projectId != null) return projectId
         try {
@@ -104,7 +105,7 @@ open class AbstractYapiApiHelper {
         return projectId
     }
 
-    fun getProjectInfo(token: String, projectId: String?): JsonElement? {
+    override fun getProjectInfo(token: String, projectId: String?): JsonElement? {
         if (projectId != null) {
             val cachedProjectInfo = cacheLock.readLock().withLock { projectInfoCache[projectId] }
             if (cachedProjectInfo != null) return cachedProjectInfo
@@ -116,17 +117,23 @@ open class AbstractYapiApiHelper {
         }
 
         val ret = getByApi(url, false) ?: return null
-        val projectInfo = GsonUtils.parseToJsonTree(ret)
+        var projectInfo: JsonElement? = null
+        try {
+            projectInfo = GsonUtils.parseToJsonTree(ret)
+        } catch (e: Exception) {
+            logger!!.error("error to parse project [$projectId] info:$ret")
+        }
         if (projectId != null && projectInfo != null) {
             cacheLock.writeLock().withLock { projectInfoCache[projectId] = projectInfo }
         }
         return projectInfo
     }
 
-    fun getByApi(url: String, dumb: Boolean = true): String? {
+    open fun getByApi(url: String, dumb: Boolean = true): String? {
         return try {
             val httpClient = httpClientProvide!!.getHttpClient()
             val httpGet = HttpGet(url)
+            beforeCall(httpGet)
             val responseHandler = reservedResponseHandle()
 
             httpClient.execute(httpGet, responseHandler).result()
@@ -154,13 +161,17 @@ open class AbstractYapiApiHelper {
         }
     }
 
+    open protected fun beforeCall(httpRequest: HttpRequestBase) {
+
+    }
+
     protected fun reservedResponseHandle(): ReservedResponseHandle<String> {
         return responseHandler
     }
 
     private var tokenMap: HashMap<String, String>? = null
 
-    fun getPrivateToken(module: String): String? {
+    override fun getPrivateToken(module: String): String? {
 
         cacheLock.readLock().withLock {
             if (tokenMap != null) {
@@ -209,19 +220,19 @@ open class AbstractYapiApiHelper {
         }
     }
 
-    fun setToken(module: String, token: String) {
+    override fun setToken(module: String, token: String) {
         updateTokens { properties ->
             properties[module] = token
         }
     }
 
-    fun removeTokenByModule(module: String) {
+    override fun removeTokenByModule(module: String) {
         updateTokens { properties ->
             properties.remove(module)
         }
     }
 
-    fun removeToken(token: String) {
+    override fun removeToken(token: String) {
 
         updateTokens { properties ->
             val removedKeys = properties.entries
@@ -232,7 +243,7 @@ open class AbstractYapiApiHelper {
         }
     }
 
-    fun readTokens(): HashMap<String, String> {
+    override fun readTokens(): HashMap<String, String> {
         if (tokenMap == null) {
             initToken()
         }

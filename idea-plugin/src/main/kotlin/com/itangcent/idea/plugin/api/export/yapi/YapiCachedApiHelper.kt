@@ -8,7 +8,7 @@ import com.itangcent.intellij.file.LocalFileRepository
  * cache:
  * projectToken -> projectId
  */
-class YapiCachedApiHelper : YapiApiHelper() {
+open class YapiCachedApiHelper : DefaultYapiApiHelper() {
 
     @Inject
     private val localFileRepository: LocalFileRepository? = null
