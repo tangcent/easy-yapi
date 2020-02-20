@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Doc
@@ -11,6 +12,7 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.plugin.render.MarkdownRender
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.intellij.config.ConfigReader
@@ -27,7 +29,9 @@ import java.util.regex.Pattern
 import java.util.stream.Collectors
 import kotlin.collections.ArrayList
 
+@Singleton
 class YapiFormatter {
+
     @Inject
     private val logger: Logger? = null
 
@@ -42,6 +46,9 @@ class YapiFormatter {
 
     @Inject
     protected val docHelper: DocHelper? = null
+
+    @Inject
+    protected val markdownRender: MarkdownRender? = null
 
     fun doc2Item(doc: Doc): HashMap<String, Any?> {
         if (doc is Request) {
@@ -167,6 +174,7 @@ class YapiFormatter {
 
         return toJson(result, rootDesc)
     }
+
     //endregion methodDoc----------------------------------------------------------
 
 
@@ -457,10 +465,10 @@ class YapiFormatter {
         val existedDesc = item["markdown"]
         if (existedDesc == null) {
             item["markdown"] = desc
-            item["desc"] = "<p>$desc</p>"
+            item["desc"] = markdownRender?.render(desc) ?: "<p>$desc</p>"
         } else {
             item["markdown"] = "$existedDesc\n$desc"
-            item["desc"] = "<p>$existedDesc\n$desc</p>"
+            item["desc"] = markdownRender?.render(desc) ?: "<p>$existedDesc\n$desc</p>"
         }
     }
 

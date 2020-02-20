@@ -27,6 +27,8 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
+import com.itangcent.idea.plugin.render.ConfigurableShellFileMarkdownRender
+import com.itangcent.idea.plugin.render.MarkdownRender
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
@@ -481,6 +483,7 @@ class SuvApiExporter {
 
             builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
 
+            builder.bind(MarkdownRender::class) { it.with(ConfigurableShellFileMarkdownRender::class).singleton() }
 
         }
 
