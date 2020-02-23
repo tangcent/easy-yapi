@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export
 import com.intellij.util.containers.stream
 import org.apache.http.HttpResponse
 import org.apache.http.client.ResponseHandler
+import java.util.*
 import kotlin.streams.toList
 
 class ReservedResponseHandle<T> : ResponseHandler<ReservedResult<T>> {
@@ -16,6 +17,29 @@ class ReservedResponseHandle<T> : ResponseHandler<ReservedResult<T>> {
     override fun handleResponse(httpResponse: HttpResponse?): ReservedResult<T> {
         val result = delegate.handleResponse(httpResponse)
         return ReservedResult(result, httpResponse)
+    }
+
+    companion object {
+
+        @Suppress("UNCHECKED_CAST")
+        fun <T> wrap(delegate: ResponseHandler<T>): ReservedResponseHandle<T> {
+            if (delegate is ReservedResponseHandle<*>) {
+                return delegate as ReservedResponseHandle<T>
+            }
+
+            var reservedResponseHandle = weakHashMap[delegate]
+            if (reservedResponseHandle != null) {
+                return reservedResponseHandle as ReservedResponseHandle<T>
+            }
+            synchronized(weakHashMap)
+            {
+                reservedResponseHandle = weakHashMap[delegate] ?: ReservedResponseHandle(delegate)
+                weakHashMap[delegate] = reservedResponseHandle
+                return reservedResponseHandle as ReservedResponseHandle<T>
+            }
+        }
+
+        private val weakHashMap = WeakHashMap<ResponseHandler<*>, ReservedResponseHandle<*>>()
     }
 }
 
@@ -51,4 +75,8 @@ class ReservedResult<T> {
                 .map { it!! }
                 .toList()
     }
+}
+
+fun <T> ResponseHandler<T>.reserved(): ReservedResponseHandle<T> {
+    return ReservedResponseHandle.wrap(this)
 }

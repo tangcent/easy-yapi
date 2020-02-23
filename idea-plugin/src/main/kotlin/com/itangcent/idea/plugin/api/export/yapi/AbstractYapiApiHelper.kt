@@ -6,6 +6,7 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
@@ -166,7 +167,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     }
 
     protected fun reservedResponseHandle(): ReservedResponseHandle<String> {
-        return responseHandler
+        return StringResponseHandler.DEFAULT_RESPONSE_HANDLER.reserved()
     }
 
     private var tokenMap: HashMap<String, String>? = null
@@ -252,7 +253,5 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
 
     companion object {
         var GETPROJECT = "/api/project/get"
-
-        private val responseHandler = ReservedResponseHandle(StringResponseHandler())
     }
 }

@@ -481,7 +481,6 @@ class SuvApiExporter {
 
             builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
 
-
         }
 
         override fun beforeExport(next: () -> Unit) {
