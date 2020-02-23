@@ -21,7 +21,7 @@ class AdaptiveMarkdownRender : MarkdownRender {
     @Inject
     private val contextSwitchListener: ContextSwitchListener? = null
 
-    private val availableRender = ArrayList<MarkdownRender>()
+    private var availableRender: ArrayList<MarkdownRender>? = null
 
     @Volatile
     private var init = false
@@ -30,7 +30,7 @@ class AdaptiveMarkdownRender : MarkdownRender {
     fun init() {
         contextSwitchListener!!.onModuleChange {
             synchronized(this) {
-                availableRender.clear()
+                availableRender = null
                 init = false
             }
         }
@@ -52,17 +52,20 @@ class AdaptiveMarkdownRender : MarkdownRender {
     }
 
     protected fun findAvailableRender() {
+        val availableRender = ArrayList<MarkdownRender>()
         if (!configReader!!.first("markdown.render.shell").isNullOrBlank()) {
             availableRender.add(configurableShellFileMarkdownRender!!)
         }
         if (!configReader.first("markdown.render.server").isNullOrBlank()) {
             availableRender.add(remoteMarkdownRender!!)
         }
+        this.availableRender = availableRender
     }
 
     override fun render(markdown: String): String? {
         tryInit()
-        for (markdownRender in availableRender) {
+        val renders = availableRender ?: return null
+        for (markdownRender in renders) {
             val html = markdownRender.render(markdown)
             if (html != null) {
                 return html
