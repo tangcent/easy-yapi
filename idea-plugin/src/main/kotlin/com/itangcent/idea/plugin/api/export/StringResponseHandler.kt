@@ -29,4 +29,8 @@ class StringResponseHandler : ResponseHandler<String> {
             "empty response"
         }
     }
+
+    companion object {
+        val DEFAULT_RESPONSE_HANDLER = StringResponseHandler()
+    }
 }

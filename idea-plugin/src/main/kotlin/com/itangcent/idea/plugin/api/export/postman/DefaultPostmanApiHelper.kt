@@ -7,6 +7,7 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.ReservedResult
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.asHashMap
@@ -311,14 +312,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     private fun reservedResponseHandle(): ReservedResponseHandle<String> {
-        return responseHandler
+        return StringResponseHandler.DEFAULT_RESPONSE_HANDLER.reserved()
     }
 
     companion object {
         const val POSTMANHOST = "https://api.getpostman.com"
         val IMPOREDAPI = "$POSTMANHOST/import/exported"
         const val COLLECTION = "$POSTMANHOST/collections"
-        private val DEFAULT_RESPONSE_HANDLER = StringResponseHandler()
+
         //the postman rate limit is 60 per/s
         //Just to be on the safe side,limit to 30 per/s
         private val LIMIT_PERIOD_PRE_REQUEST = TimeUnit.MINUTES.toMillis(1) / 30
@@ -328,7 +329,6 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 "And for free,The requests made to the Postman API was limited 1000.\n" +
                 "You can see usage overview at:https://web.postman.co/usage"
 
-        private val responseHandler = ReservedResponseHandle(StringResponseHandler())
     }
 
 }
