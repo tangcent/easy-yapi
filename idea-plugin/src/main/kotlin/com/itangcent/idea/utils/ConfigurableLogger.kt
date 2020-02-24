@@ -2,12 +2,17 @@ package com.itangcent.idea.utils
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.itangcent.annotation.script.ScriptIgnore
+import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.AbstractLogger
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.Logger.Level
 
+@ScriptIgnore("processLog", "log")
+@ScriptTypeName("logger")
 class ConfigurableLogger : AbstractLogger() {
 
     @Inject(optional = true)
@@ -20,23 +25,28 @@ class ConfigurableLogger : AbstractLogger() {
     private var currentLogLevel: Level? = null
 
     @PostConstruct
+    @ScriptIgnore
     fun init() {
         val logLevel: Int? = settingBinder?.read()?.logLevel
         currentLogLevel = logLevel?.let { CoarseLogLevel.toLevel(it, CoarseLogLevel.LOW) } ?: CoarseLogLevel.LOW
     }
 
+    @ScriptUnIgnore
     override fun log(msg: String) {
         super.log(CoarseLogLevel.EMPTY, msg)
     }
 
+    @ScriptIgnore
     override fun currentLogLevel(): Level {
         return currentLogLevel ?: CoarseLogLevel.LOW
     }
 
+    @ScriptIgnore
     override fun processLog(level: Level, msg: String) {
         delegateLogger!!.log(level, msg)
     }
 
+    @ScriptIgnore
     override fun processLog(logData: String?) {
         //This method will not be called
         throw IllegalArgumentException("ConfigurableLogger#processLog not be implemented")
