@@ -9,6 +9,7 @@ import com.itangcent.common.utils.headLine
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
+import java.util.regex.Pattern
 import kotlin.collections.ArrayList
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
@@ -692,6 +693,45 @@ class RuleToolUtils {
 
     //endregion
 
+    /**
+     * Convert camel words to underline, all lowercase
+     *
+     * @param str camel words
+     * @return underline words
+     */
+    fun camel2Underline(str: String): String {
+        if (StringUtils.isEmpty(str)) {
+            return str
+        }
+        val matcher = TO_LINE_PATTERN.matcher(str)
+        val buffer = StringBuffer()
+        while (matcher.find()) {
+            if (matcher.start() > 0) {
+                matcher.appendReplacement(buffer, "_" + matcher.group(0).toLowerCase())
+            } else {
+                matcher.appendReplacement(buffer, matcher.group(0).toLowerCase())
+            }
+        }
+        matcher.appendTail(buffer)
+        return buffer.toString()
+    }
+
+    /**
+     * If this string starts with the given [prefix], returns a copy of this string
+     * with the prefix removed. Otherwise, returns this string.
+     */
+    fun removePrefix(str: String, prefix: String): String {
+        return str.removePrefix(prefix)
+    }
+
+    /**
+     * If this string ends with the given [suffix], returns a copy of this string
+     * with the suffix removed. Otherwise, returns this string.
+     */
+    fun removeSuffix(str: String, suffix: String): String {
+        return str.removeSuffix(suffix)
+    }
+
     //endregion
 
     //region time&date
@@ -842,6 +882,8 @@ class RuleToolUtils {
 
     companion object {
         private val excludedMethods = Arrays.asList("hashCode", "toString", "equals", "getClass", "clone", "notify", "notifyAll", "wait", "finalize")
+
+        private val TO_LINE_PATTERN = Pattern.compile("[A-Z]+")
 
         private val typeMapper = KV.create<String, String>()
                 .set("java.lang.String", "string")
