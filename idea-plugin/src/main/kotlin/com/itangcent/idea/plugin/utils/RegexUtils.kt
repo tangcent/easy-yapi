@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.utils
 
+import com.itangcent.annotation.script.ScriptTypeName
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -8,6 +9,7 @@ import java.util.regex.Pattern
 /**
  * Refactoring from {@url https://github.com/aoju/bus/blob/master/bus-core/src/main/java/org/aoju/bus/core/utils/PatternUtils.java}
  */
+@ScriptTypeName("regex")
 class RegexUtils {
 
     private val cache = WeakHashMap<RegexWithFlag, Pattern>()
@@ -219,10 +221,6 @@ class RegexUtils {
 
         val pattern = getPattern(regex, Pattern.DOTALL)
         return findAll(pattern, content, group, collection)
-    }
-
-    fun findAll(pattern: Pattern, content: String, group: Int): List<String>? {
-        return findAll(pattern, content, group, ArrayList())
     }
 
     private fun <T : MutableCollection<String>> findAll(pattern: Pattern?, content: String?, group: Int, collection: T?): T? {

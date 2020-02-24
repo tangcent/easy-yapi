@@ -3,6 +3,8 @@ package com.itangcent.idea.plugin.rule
 import com.google.inject.Inject
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
+import com.itangcent.annotation.script.ScriptIgnore
+import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.config.rule.*
@@ -95,6 +97,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.hasModifier("modifier"):Boolean
      * it.sourceCode():String
      */
+    @ScriptIgnore("getResource", "asPsiDocCommentOwner", "asPsiModifierListOwner")
     open inner class BaseScriptRuleContext : RuleContext {
 
         protected var psiElement: PsiElement? = null
@@ -105,6 +108,7 @@ abstract class ScriptRuleParser : RuleParser {
 
         constructor()
 
+        @ScriptIgnore
         override fun getResource(): PsiElement? {
             return psiElement
         }
@@ -113,6 +117,7 @@ abstract class ScriptRuleParser : RuleParser {
             return psiElement!!.getPropertyValue("name")?.toString()
         }
 
+        @ScriptIgnore
         override fun asPsiDocCommentOwner(): PsiDocCommentOwner? {
             if (psiElement is PsiDocCommentOwner) {
                 return psiElement as PsiDocCommentOwner
@@ -120,6 +125,7 @@ abstract class ScriptRuleParser : RuleParser {
             return null
         }
 
+        @ScriptIgnore
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             if (psiElement is PsiModifierListOwner) {
                 return psiElement as PsiModifierListOwner
@@ -213,6 +219,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isArray():Boolean
      * @see ScriptPsiTypeContext
      */
+    @ScriptTypeName("class")
     inner class ScriptPsiClassContext(private val psiClass: PsiClass) : BaseScriptRuleContext(psiClass) {
         override fun contextType(): String {
             return "class"
@@ -261,6 +268,7 @@ abstract class ScriptRuleParser : RuleParser {
             return false
         }
 
+        @ScriptIgnore
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             return psiClass
         }
@@ -289,6 +297,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.containingClass:class
      * it.jsonName:String
      */
+    @ScriptTypeName("field")
     inner class ScriptPsiFieldContext(private val psiField: PsiField) : BaseScriptRuleContext(psiField) {
         override fun contextType(): String {
             return "field"
@@ -298,6 +307,7 @@ abstract class ScriptRuleParser : RuleParser {
             return ScriptPsiTypeContext(psiField.type)
         }
 
+        @ScriptIgnore
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             return psiField
         }
@@ -339,6 +349,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.argCnt:int
      * it.containingClass:class
      */
+    @ScriptTypeName("method")
     inner class ScriptPsiMethodContext(private val psiMethod: PsiMethod) : BaseScriptRuleContext(psiMethod) {
 
         override fun contextType(): String {
@@ -395,6 +406,7 @@ abstract class ScriptRuleParser : RuleParser {
             return ScriptPsiClassContext(psiMethod.containingClass!!)
         }
 
+        @ScriptIgnore
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             return psiMethod
         }
@@ -438,6 +450,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.type:class
      * it.isVarArgs:Boolean
      */
+    @ScriptTypeName("arg")
     inner class ScriptPsiParameterContext(private val psiParameter: PsiParameter) : BaseScriptRuleContext(psiParameter) {
         override fun contextType(): String {
             return "param"
@@ -460,6 +473,7 @@ abstract class ScriptRuleParser : RuleParser {
             return psiParameter.name
         }
 
+        @ScriptIgnore
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             return psiParameter
         }
@@ -478,6 +492,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isArray():Boolean
      * @see ScriptPsiClassContext
      */
+    @ScriptTypeName("class")
     inner class ScriptPsiTypeContext(private val psiType: PsiType) : BaseScriptRuleContext() {
         override fun contextType(): String {
             return "class"
