@@ -19,12 +19,10 @@ object KitUtils {
 }
 
 fun String?.concat(any: Any?, separator: CharSequence = "\n"): String? {
-    if (this == null) {
-        return any?.toString()
-    } else if (any == null) {
-        return this
-    } else {
-        return this + separator + any
+    return when {
+        this == null -> any?.toString()
+        any == null -> this
+        else -> this + separator + any
     }
 }
 
