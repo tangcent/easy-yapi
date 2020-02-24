@@ -43,14 +43,14 @@ class RuleToolUtils {
 
     //region json
 
-    fun parseJson(json: String): Any? {
-        if (StringUtils.isEmpty(json)) {
+    fun parseJson(json: String?): Any? {
+        if (json.isNullOrEmpty()) {
             return null
         }
         return GsonUtils.fromJson(json, Any::class)
     }
 
-    fun toJson(obj: Any): String? {
+    fun toJson(obj: Any?): String? {
         if (obj == null) {
             return null
         }

@@ -132,7 +132,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                             tinyRequest.response = request.response
 
                             requests.add(RequestWithKey(
-                                    PsiClassUtils.fullNameOfMemmber(cls, request.resourceMethod()!!)
+                                    PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
                                     , tinyRequest
                             ))
                         })

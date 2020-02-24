@@ -39,8 +39,8 @@ class Debugger {
         }
 
         debugDialog = actionContext!!.instance { DebugDialog() }
-        UIUtils.show(debugDialog!!)
-        project.putUserData(DEBUG_DIALOG, WeakReference(debugDialog!!))
+        UIUtils.show(debugDialog)
+        project.putUserData(DEBUG_DIALOG, WeakReference(debugDialog))
         actionContext.on(EventKey.ON_COMPLETED) {
             project.putUserData(DEBUG_DIALOG, null)
         }
