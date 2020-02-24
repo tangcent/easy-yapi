@@ -90,6 +90,14 @@ object ClassExportRuleKeys {
     )
 
     /**
+     * the real return type of method
+     */
+    val METHOD_RETURN: RuleKey<String> = SimpleRuleKey(
+            "method.return", StringRule::class,
+            StringRuleMode.SINGLE
+    )
+
+    /**
      * name of api
      */
     val API_NAME: RuleKey<String> = SimpleRuleKey(

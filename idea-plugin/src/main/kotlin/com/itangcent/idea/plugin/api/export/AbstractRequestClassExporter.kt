@@ -267,7 +267,15 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     protected open fun processResponse(method: PsiMethod, request: Request) {
 
-        val returnType = method.returnType
+        var returnType = method.returnType
+        val returnTypeByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN, method)
+        if (!returnTypeByRule.isNullOrBlank()) {
+            val resolvedReturnType = duckTypeHelper!!.buildPsiType(returnTypeByRule!!.trim(), method)
+            if (resolvedReturnType != null) {
+                returnType = resolvedReturnType
+            }
+        }
+
         if (returnType != null) {
             try {
                 val response = Response()
@@ -278,7 +286,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                 val descOfReturn = docHelper!!.findDocByTag(method, "return")
                 if (!descOfReturn.isNullOrBlank()) {
-                    val methodReturnMain = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, method)
+                    val methodReturnMain = ruleComputer.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, method)
                     if (methodReturnMain.isNullOrBlank()) {
                         requestHelper.appendResponseBodyDesc(response, descOfReturn)
                     } else {
