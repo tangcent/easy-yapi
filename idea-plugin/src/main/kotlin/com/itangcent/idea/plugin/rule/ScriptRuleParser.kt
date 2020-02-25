@@ -57,7 +57,7 @@ abstract class ScriptRuleParser : RuleParser {
             val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
                     context.getCore() ?: context.getResource()!!, context.getResource()!!)
             simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
-            initScriptContext(simpleScriptContext)
+            initScriptContext(simpleScriptContext, context)
             getScriptEngine().eval(ruleScript, simpleScriptContext)
         } catch (e: UnsupportedScriptException) {
             logger?.error("unsupported script type:${e.getType()},script:$ruleScript")
@@ -67,7 +67,7 @@ abstract class ScriptRuleParser : RuleParser {
 
     protected abstract fun getScriptEngine(): ScriptEngine
 
-    protected open fun initScriptContext(scriptContext: ScriptContext) {
+    protected open fun initScriptContext(scriptContext: ScriptContext, context: RuleContext) {
 
     }
 
@@ -496,6 +496,10 @@ abstract class ScriptRuleParser : RuleParser {
     inner class ScriptPsiTypeContext(private val psiType: PsiType) : BaseScriptRuleContext() {
         override fun contextType(): String {
             return "class"
+        }
+
+        override fun getPsiContext(): PsiElement? {
+            return getResource() ?: jvmClassHelper!!.resolveClassInType(psiType)
         }
 
         private var duckType: DuckType? = null
