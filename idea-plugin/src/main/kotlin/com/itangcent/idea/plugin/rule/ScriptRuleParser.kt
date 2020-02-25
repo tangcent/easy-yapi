@@ -173,6 +173,13 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         /**
+         * it.docs("tag"):List<String>?
+         */
+        fun docs(tag: String): List<String>? {
+            return docHelper!!.findDocsByTag(getResource(), tag)
+        }
+
+        /**
          * it.hasDoc("tag"):Boolean
          */
         fun hasDoc(tag: String): Boolean {
