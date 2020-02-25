@@ -270,7 +270,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         var returnType = method.returnType
         val returnTypeByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN, method)
         if (!returnTypeByRule.isNullOrBlank()) {
-            val resolvedReturnType = duckTypeHelper!!.buildPsiType(returnTypeByRule!!.trim(), method)
+            val resolvedReturnType = duckTypeHelper!!.findType(returnTypeByRule!!.trim(), method)
             if (resolvedReturnType != null) {
                 returnType = resolvedReturnType
             }

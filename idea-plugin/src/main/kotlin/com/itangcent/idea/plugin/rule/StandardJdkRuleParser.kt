@@ -1,6 +1,9 @@
 package com.itangcent.idea.plugin.rule
 
+import com.intellij.psi.PsiElement
+import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.idea.plugin.utils.RegexUtils
+import com.itangcent.intellij.config.rule.RuleContext
 import javax.script.*
 
 abstract class StandardJdkRuleParser : ScriptRuleParser() {
@@ -35,10 +38,18 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         scriptEngine.setBindings(SimpleBindings(toolBindings), ScriptContext.GLOBAL_SCOPE)
     }
 
-    override fun initScriptContext(scriptContext: ScriptContext) {
+    override fun initScriptContext(scriptContext: ScriptContext, context: RuleContext) {
         val engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
         engineBindings.putAll(toolBindings)
         engineBindings["logger"] = logger
+        engineBindings["helper"] = Helper(context.getPsiContext())
+    }
+
+    @ScriptTypeName("helper")
+    inner class Helper(val context: PsiElement?) {
+        fun findClass(canonicalText: String): ScriptPsiTypeContext? {
+            return context?.let { duckTypeHelper!!.findType(canonicalText, it)?.let { type -> ScriptPsiTypeContext(type) } }
+        }
     }
 
     companion object {
