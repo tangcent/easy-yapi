@@ -1,9 +1,18 @@
 package com.itangcent.idea.plugin.rule
 
+import com.google.inject.Inject
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMember
+import com.itangcent.annotation.script.ScriptReturn
+import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.idea.plugin.utils.RegexUtils
+import com.itangcent.intellij.config.rule.RuleContext
+import com.itangcent.intellij.jvm.LinkExtractor
+import com.itangcent.intellij.jvm.LinkResolver
 import javax.script.*
 
 abstract class StandardJdkRuleParser : ScriptRuleParser() {
+
     private var scriptEngine: ScriptEngine? = null
     private var unsupported = false
 
@@ -35,10 +44,59 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         scriptEngine.setBindings(SimpleBindings(toolBindings), ScriptContext.GLOBAL_SCOPE)
     }
 
-    override fun initScriptContext(scriptContext: ScriptContext) {
+    override fun initScriptContext(scriptContext: ScriptContext, context: RuleContext) {
         val engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
         engineBindings.putAll(toolBindings)
         engineBindings["logger"] = logger
+        engineBindings["helper"] = Helper(context.getPsiContext())
+    }
+
+    @Inject
+    private val linkExtractor: LinkExtractor? = null
+
+    @ScriptTypeName("helper")
+    inner class Helper(val context: PsiElement?) {
+
+        fun findClass(canonicalText: String): ScriptPsiTypeContext? {
+            return context?.let { duckTypeHelper!!.findType(canonicalText, it)?.let { type -> ScriptPsiTypeContext(type) } }
+        }
+
+        @ScriptReturn("array<class/method/field>")
+        fun resolveLinks(canonicalText: String): List<RuleContext>? {
+            val psiMember = context as? PsiMember ?: return null
+            var linkTargets: ArrayList<PsiElement>? = null
+            linkExtractor!!.extract(canonicalText, psiMember, object : LinkResolver {
+                override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                    if (linkTo != null) {
+                        if (linkTargets == null) {
+                            linkTargets = ArrayList()
+                        }
+                        linkTargets!!.add(linkTo)
+                    }
+                    return null
+                }
+            })
+            if (linkTargets.isNullOrEmpty()) {
+                return emptyList()
+            }
+            return linkTargets!!.map { contextOf(it, it) }
+        }
+
+        @ScriptReturn("class/method/field")
+        fun resolveLink(canonicalText: String): RuleContext? {
+            val psiMember = context as? PsiMember ?: return null
+            var linkTarget: PsiElement? = null
+            linkExtractor!!.extract(canonicalText, psiMember, object : LinkResolver {
+                override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                    if (linkTarget == null && linkTo != null) {
+                        linkTarget = linkTo
+                    }
+                    return null
+                }
+            })
+            return linkTarget?.let { contextOf(it, it) }
+        }
+
     }
 
     companion object {

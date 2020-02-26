@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.rule
 
 import com.itangcent.annotation.script.ScriptIgnore
+import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.common.utils.GsonUtils
@@ -11,10 +12,7 @@ import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.collections.ArrayList
-import kotlin.reflect.KClass
-import kotlin.reflect.KParameter
-import kotlin.reflect.KType
-import kotlin.reflect.KVisibility
+import kotlin.reflect.*
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.functions
@@ -805,7 +803,7 @@ class RuleToolUtils {
                 }
 
 
-                sb.append(typeName(function.returnType))
+                sb.append(returnTypeOfFun(function))
                         .append(" ")
                         .append(function.name)
                         .append("(")
@@ -839,6 +837,14 @@ class RuleToolUtils {
         }
 
         return sb.toString()
+    }
+
+    private fun returnTypeOfFun(function: KFunction<*>): String {
+        val scriptReturn = function.findAnnotation<ScriptReturn>()
+        if (scriptReturn != null) {
+            return scriptReturn.name
+        }
+        return typeName(function.returnType)
     }
 
     private fun typeName(kType: KType): String {
@@ -901,6 +907,7 @@ class RuleToolUtils {
                 .set("kotlin.Boolean", "bool")
                 .set("kotlin.collections.Map", "map")
                 .set("kotlin.collections.Set", "array")
+                .set("kotlin.CharArray", "array<char>")
 
     }
 }
