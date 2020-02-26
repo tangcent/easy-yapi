@@ -3,13 +3,7 @@ package com.itangcent.idea.plugin.config
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.ide.util.PropertiesComponent
-import com.itangcent.common.utils.invokeMethod
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.intellij.config.ConfigReader
-import com.itangcent.intellij.config.MutableConfigReader
-import com.itangcent.intellij.extend.guice.PostConstruct
-import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.ContextSwitchListener
 import org.apache.commons.io.IOUtils
 import java.io.File
 import java.util.*
@@ -58,7 +52,7 @@ class RecommendConfigReader : ConfigReader {
         checkStatus()
         return configReader!!.resolveProperty(property)
     }
-    
+
     private fun checkStatus() {
         while (loading) {
             TimeUnit.MILLISECONDS.sleep(100)
@@ -132,7 +126,7 @@ class RecommendConfigReader : ConfigReader {
 
         private const val config_name = ".recommend.easy.api.config"
         //        private const val config_version = ".recommend.easy.api.config.version"
-        private const val curr_version = "0.0.9.5"
+        private const val curr_version = "1.0.0.0"
         //$version$content
 
         private fun loadRecommendConfig(): String {
