@@ -212,12 +212,18 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                         val options: ArrayList<HashMap<String, Any?>> = ArrayList()
                         val comment = linkExtractor!!.extract(descOfReturn, method, object : AbstractLinkResolve() {
 
-                            override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                            override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
                                 psiClassHelper!!.resolveEnumOrStatic(plainText, method, "")
                                         ?.let { options.addAll(it) }
 
                                 return super.linkToPsiElement(plainText, linkTo)
+                            }
+
+                            override fun linkToType(plainText: String, linkType: PsiType): String? {
+                                return jvmClassHelper!!.resolveClassInType(linkType)?.let {
+                                    linkResolver!!.linkToClass(it)
+                                }
                             }
 
                             override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
@@ -283,7 +289,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                     val options: ArrayList<HashMap<String, Any?>> = ArrayList()
                     val comment = linkExtractor!!.extract(value, psiMethod, object : AbstractLinkResolve() {
 
-                        override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                        override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
                             psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name!!)
                                     ?.let { options.addAll(it) }

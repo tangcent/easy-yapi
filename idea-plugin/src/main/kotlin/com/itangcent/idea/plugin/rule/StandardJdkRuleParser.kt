@@ -64,9 +64,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         @ScriptReturn("array<class/method/field>")
         fun resolveLinks(canonicalText: String): List<RuleContext>? {
             val psiMember = context as? PsiMember ?: return null
-            var linkTargets: ArrayList<PsiElement>? = null
+            var linkTargets: ArrayList<Any>? = null
             linkExtractor!!.extract(canonicalText, psiMember, object : LinkResolver {
-                override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
                     if (linkTo != null) {
                         if (linkTargets == null) {
                             linkTargets = ArrayList()
@@ -79,22 +79,22 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             if (linkTargets.isNullOrEmpty()) {
                 return emptyList()
             }
-            return linkTargets!!.map { contextOf(it, it) }
+            return linkTargets!!.map { contextOf(it, psiMember) }
         }
 
         @ScriptReturn("class/method/field")
         fun resolveLink(canonicalText: String): RuleContext? {
             val psiMember = context as? PsiMember ?: return null
-            var linkTarget: PsiElement? = null
+            var linkTarget: Any? = null
             linkExtractor!!.extract(canonicalText, psiMember, object : LinkResolver {
-                override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
                     if (linkTarget == null && linkTo != null) {
                         linkTarget = linkTo
                     }
                     return null
                 }
             })
-            return linkTarget?.let { contextOf(it, it) }
+            return linkTarget?.let { contextOf(it, psiMember) }
         }
 
     }

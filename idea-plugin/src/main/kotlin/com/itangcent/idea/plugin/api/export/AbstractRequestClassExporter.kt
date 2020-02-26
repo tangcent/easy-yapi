@@ -267,13 +267,18 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     protected open fun processResponse(method: PsiMethod, request: Request) {
 
-        var returnType = method.returnType
+        var returnType: PsiType? = null
+        var fromRule = false
         val returnTypeByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN, method)
         if (!returnTypeByRule.isNullOrBlank()) {
             val resolvedReturnType = duckTypeHelper!!.findType(returnTypeByRule!!.trim(), method)
             if (resolvedReturnType != null) {
                 returnType = resolvedReturnType
+                fromRule = true
             }
+        }
+        if (!fromRule) {
+            returnType = method.returnType
         }
 
         if (returnType != null) {
@@ -282,7 +287,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                 requestHelper!!.setResponseCode(response, 200)
 
-                val typedResponse = parseResponseBody(returnType, method)
+                val typedResponse = parseResponseBody(returnType, fromRule, method)
 
                 val descOfReturn = docHelper!!.findDocByTag(method, "return")
                 if (!descOfReturn.isNullOrBlank()) {
@@ -293,12 +298,18 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         val options: ArrayList<HashMap<String, Any?>> = ArrayList()
                         val comment = linkExtractor!!.extract(descOfReturn, method, object : AbstractLinkResolve() {
 
-                            override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                            override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
                                 psiClassHelper!!.resolveEnumOrStatic(plainText, method, "")
                                         ?.let { options.addAll(it) }
 
                                 return super.linkToPsiElement(plainText, linkTo)
+                            }
+
+                            override fun linkToType(plainText: String, linkType: PsiType): String? {
+                                return jvmClassHelper!!.resolveClassInType(linkType)?.let {
+                                    linkResolver!!.linkToClass(it)
+                                }
                             }
 
                             override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
@@ -382,7 +393,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val options: ArrayList<HashMap<String, Any?>> = ArrayList()
                 val comment = linkExtractor!!.extract(value, psiMethod, object : AbstractLinkResolve() {
 
-                    override fun linkToPsiElement(plainText: String, linkTo: PsiElement?): String? {
+                    override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
                         psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name)
                                 ?.let { options.addAll(it) }
@@ -392,6 +403,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                     override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
                         return linkResolver!!.linkToClass(linkClass)
+                    }
+
+                    override fun linkToType(plainText: String, linkType: PsiType): String? {
+                        return jvmClassHelper!!.resolveClassInType(linkType)?.let {
+                            linkResolver!!.linkToClass(it)
+                        }
                     }
 
                     override fun linkToField(plainText: String, linkField: PsiField): String? {
@@ -542,13 +559,14 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return psiClassHelper!!.getTypeObject(psiType, context, JsonOption.READ_COMMENT)
     }
 
-    protected fun parseResponseBody(psiType: PsiType?, method: PsiMethod): Any? {
+    protected fun parseResponseBody(psiType: PsiType?, fromRule: Boolean, method: PsiMethod): Any? {
 
         if (psiType == null) {
             return null
         }
 
         return when {
+            fromRule -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.READ_COMMENT)
             needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
                     PsiClassUtils.isInterface(psiType)) -> {
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
