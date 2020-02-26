@@ -512,17 +512,7 @@ abstract class ScriptRuleParser : RuleParser {
         private var duckType: DuckType? = null
 
         override fun getName(): String? {
-            return getDuckTypeName(duckType)
-        }
-
-        private fun getDuckTypeName(duckType: DuckType?): String? {
-            return when (duckType) {
-                null -> null
-                is SinglePrimitiveDuckType -> duckType.psiType().name
-                is SingleDuckType -> duckType.psiClass().qualifiedName ?: duckType.psiClass().name
-                is ArrayDuckType -> getDuckTypeName(duckType.componentType()) + "[]"
-                else -> duckType.toString()
-            }
+            return duckType?.canonicalText()
         }
 
         override fun getSimpleName(): String? {
