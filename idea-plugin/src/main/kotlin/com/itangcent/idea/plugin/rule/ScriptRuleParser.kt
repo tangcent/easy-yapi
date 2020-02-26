@@ -295,7 +295,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "class:" + psiClass.qualifiedName
+            return name()
         }
     }
 
@@ -344,7 +344,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "field:" + psiField.name
+            return containingClass().name() + "#" + psiField.name
         }
     }
 
@@ -448,7 +448,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "method:" + psiMethod.name
+            return containingClass().name() + "#" + psiMethod.name
         }
     }
 
@@ -486,7 +486,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "param:" + psiParameter.name
+            return name()
         }
     }
 
@@ -587,7 +587,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "class:" + psiType.canonicalText
+            return name()
         }
 
         init {
