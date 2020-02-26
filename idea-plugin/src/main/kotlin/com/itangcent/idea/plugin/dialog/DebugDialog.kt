@@ -347,7 +347,7 @@ class DebugDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "var separator = tool.repeat(\"-\", 35) + \"\\n\"\nvar sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb"
+            return "var separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\nvar sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb"
         }
     }
 
@@ -370,7 +370,7 @@ class DebugDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "def separator = tool.repeat(\"-\", 35) + \"\\n\"\ndef sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nreturn sb"
+            return "def separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\ndef sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nreturn sb"
         }
     }
 

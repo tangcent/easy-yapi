@@ -57,7 +57,7 @@ abstract class ScriptRuleParser : RuleParser {
             val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
                     context.getCore() ?: context.getResource()!!, context.getResource()!!)
             simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
-            initScriptContext(simpleScriptContext)
+            initScriptContext(simpleScriptContext, context)
             getScriptEngine().eval(ruleScript, simpleScriptContext)
         } catch (e: UnsupportedScriptException) {
             logger?.error("unsupported script type:${e.getType()},script:$ruleScript")
@@ -67,7 +67,7 @@ abstract class ScriptRuleParser : RuleParser {
 
     protected abstract fun getScriptEngine(): ScriptEngine
 
-    protected open fun initScriptContext(scriptContext: ScriptContext) {
+    protected open fun initScriptContext(scriptContext: ScriptContext, context: RuleContext) {
 
     }
 
@@ -170,6 +170,13 @@ abstract class ScriptRuleParser : RuleParser {
          */
         fun doc(tag: String): String? {
             return docHelper!!.findDocByTag(getResource(), tag)
+        }
+
+        /**
+         * it.docs("tag"):List<String>?
+         */
+        fun docs(tag: String): List<String>? {
+            return docHelper!!.findDocsByTag(getResource(), tag)
         }
 
         /**
@@ -288,7 +295,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "class:" + psiClass.qualifiedName
+            return name()
         }
     }
 
@@ -337,7 +344,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "field:" + psiField.name
+            return containingClass().name() + "#" + psiField.name
         }
     }
 
@@ -441,7 +448,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "method:" + psiMethod.name
+            return containingClass().name() + "#" + psiMethod.name
         }
     }
 
@@ -479,7 +486,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "param:" + psiParameter.name
+            return name()
         }
     }
 
@@ -496,6 +503,10 @@ abstract class ScriptRuleParser : RuleParser {
     inner class ScriptPsiTypeContext(private val psiType: PsiType) : BaseScriptRuleContext() {
         override fun contextType(): String {
             return "class"
+        }
+
+        override fun getPsiContext(): PsiElement? {
+            return getResource() ?: jvmClassHelper!!.resolveClassInType(psiType)
         }
 
         private var duckType: DuckType? = null
@@ -576,7 +587,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toString(): String {
-            return "class:" + psiType.canonicalText
+            return name()
         }
 
         init {
