@@ -3,7 +3,13 @@ package com.itangcent.idea.plugin.config
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.ide.util.PropertiesComponent
+import com.itangcent.common.utils.invokeMethod
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.config.MutableConfigReader
+import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.ContextSwitchListener
 import org.apache.commons.io.IOUtils
 import java.io.File
 import java.util.*
