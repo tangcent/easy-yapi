@@ -87,9 +87,9 @@
 
 
 *   1.7.0 ~
-    1. enhance:new rule tool: helper  [(#242)](https://github.com/tangcent/easy-api/pull/242)
-    2. enhance:support rule: method.return  [(#240)](https://github.com/tangcent/easy-api/pull/240)
-   
+    1. enhance:new rule tool: [helper](http://easyyapi.com/setting/tools/helper.html)  [(#242)](https://github.com/tangcent/easy-api/pull/242)
+    2. enhance:support rule: [method.return](http://easyyapi.com/setting/rules/method_return.html)  [(#240)](https://github.com/tangcent/easy-api/pull/240)
+    3. enhance:support render yapi desc: [yapi render](http://easyyapi.com/documents/yapi_render.html)  [(#138)](https://github.com/tangcent/easy-api/pull/138)
 
 
 
