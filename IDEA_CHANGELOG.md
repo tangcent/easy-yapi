@@ -86,5 +86,11 @@
     4. bug-fix: preserving the order of field in infer   [(#216)](https://github.com/tangcent/easy-api/pull/216)
 
 
+*   1.7.0 ~
+    1. enhance:new rule tool: helper  [(#242)](https://github.com/tangcent/easy-api/pull/242)
+    2. enhance:support rule: method.return  [(#240)](https://github.com/tangcent/easy-api/pull/240)
+   
+
+
 
        
