@@ -13,6 +13,7 @@ import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.KitUtils
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
@@ -249,7 +250,10 @@ class YapiDashboardDialog : JDialog() {
                         for (moduleNode in moduleNodes) {
                             if (disposed) break
                             loadApiInModule(moduleNode, rootTreeModel)
-                            rootTreeModel.reload(moduleNode)
+                            KitUtils.safe(ArrayIndexOutOfBoundsException::class,
+                                    NullPointerException::class) {
+                                rootTreeModel.reload(moduleNode)
+                            }
                         }
                         apiLoadFuture = null
                     }
@@ -343,7 +347,10 @@ class YapiDashboardDialog : JDialog() {
             } else {
                 moduleNode.removeFromParent()
             }
-            rootTreeModel.reload(moduleNode)
+            KitUtils.safe(ArrayIndexOutOfBoundsException::class,
+                    NullPointerException::class) {
+                rootTreeModel.reload(moduleNode)
+            }
         }
     }
 

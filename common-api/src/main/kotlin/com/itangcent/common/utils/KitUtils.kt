@@ -1,5 +1,7 @@
 package com.itangcent.common.utils
 
+import kotlin.reflect.KClass
+
 object KitUtils {
 
     fun <T> fromBool(boolean: Boolean, whenTrue: T, whenFalse: T): T {
@@ -13,6 +15,31 @@ object KitUtils {
         return try {
             action()
         } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun <T> safe(ignoreThrowable: KClass<*>, action: () -> T): T? {
+        return try {
+            action()
+        } catch (e: Exception) {
+            if (ignoreThrowable.isInstance(e)) {
+                null
+            } else {
+                throw e
+            }
+        }
+    }
+
+    fun <T> safe(vararg ignoreThrowable: KClass<*>, action: () -> T): T? {
+        return try {
+            action()
+        } catch (e: Exception) {
+            for (throwable in ignoreThrowable) {
+                if (throwable.isInstance(e)) {
+                    return null
+                }
+            }
             null
         }
     }
