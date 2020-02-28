@@ -233,6 +233,7 @@ class YapiFormatter {
             queryList.add(KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
+                    .set("example", it.value)
                     .set("desc", it.desc)
                     .set("required", it.required.toInt())
             )
@@ -245,7 +246,7 @@ class YapiFormatter {
             request.formParams!!.forEach {
                 urlencodeds.add(KV.create<String, Any?>()
                         .set("name", it.name)
-                        .set("value", it.value)
+                        .set("example", it.value)
                         .set("type", it.type)
                         .set("required", it.required.toInt())
                         .set("desc", it.desc)
