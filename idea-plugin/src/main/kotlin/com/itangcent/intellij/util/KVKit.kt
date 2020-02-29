@@ -11,7 +11,6 @@ fun <V> KV<String, V>.forEachValid(action: (Map.Entry<String, V>) -> Unit) {
     }
 }
 
-
 fun <V> KV<String, V>.forEachValid(action: BiConsumer<String, V>) {
     this.forEach { k, v ->
         if (!k.isBlank() && !k.startsWith("@")) {
@@ -38,5 +37,24 @@ fun <K, V> Map<K, V>.forEachValid(action: (K, V) -> Unit) {
             }
         }
         action(k, v)
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+fun KV<String, Any?>.sub(key: String): KV<String, Any?> {
+    var subKV: KV<String, Any?>? = this[key] as KV<String, Any?>?
+    if (subKV == null) {
+        subKV = KV.create()
+        this[key] = subKV
+    }
+    return subKV
+}
+
+@Suppress("UNCHECKED_CAST")
+public fun <K, V> Map<out K, V>.mutable(copy: Boolean = false): MutableMap<K, V> {
+    return when {
+        copy -> LinkedHashMap(this)
+        this is MutableMap -> this as MutableMap<K, V>
+        else -> LinkedHashMap(this)
     }
 }

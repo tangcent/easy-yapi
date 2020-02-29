@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiType
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.KV
@@ -12,11 +13,15 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.toBoolean
+import com.itangcent.intellij.extend.toPrettyString
+import com.itangcent.intellij.jvm.PsiUtils
 import com.itangcent.intellij.jvm.SingleDuckType
 import com.itangcent.intellij.psi.ContextSwitchListener
+import com.itangcent.intellij.util.sub
 
 /**
  * 1.support rule:["field.mock"]
+ * 2.support rule:["field.default.value"]
  */
 class YapiPsiClassHelper : CustomizedPsiClassHelper() {
 
@@ -45,13 +50,18 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
                 ?.takeIf { !it.isBlank() }
                 ?.let { if (resolveProperty) configReader!!.resolveProperty(it) else it }
                 ?.let { mockInfo ->
-                    var mockKV: KV<String, Any?>? = kv[Attrs.MOCK_ATTR] as KV<String, Any?>?
-                    if (mockKV == null) {
-                        mockKV = KV.create()
-                        kv[Attrs.MOCK_ATTR] = mockKV
-                    }
-                    mockKV[fieldName] = mockInfo
+                    kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
                 }
+
+        val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, fieldOrMethod)
+        if (defaultValue.isNullOrEmpty()) {
+            if (fieldOrMethod is PsiField) {
+                fieldOrMethod.initializer?.let { PsiUtils.resolveExpr(it) }?.toPrettyString()
+                        ?.let { kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = it }
+            }
+        } else {
+            kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -61,14 +71,19 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         ruleComputer!!.computer(ClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
                 ?.takeIf { !it.isBlank() }
                 ?.let { if (resolveProperty) configReader!!.resolveProperty(it) else it }
-                ?.let { required ->
-                    var mockKV: KV<String, Any?>? = kv[Attrs.MOCK_ATTR] as KV<String, Any?>?
-                    if (mockKV == null) {
-                        mockKV = KV.create()
-                        kv[Attrs.MOCK_ATTR] = mockKV
-                    }
-                    mockKV[fieldName] = required
+                ?.let { mockInfo ->
+                    kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
                 }
+
+        val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, fieldOrMethod)
+        if (defaultValue.isNullOrEmpty()) {
+            if (fieldOrMethod is PsiField) {
+                fieldOrMethod.initializer?.let { PsiUtils.resolveExpr(it) }?.toPrettyString()
+                        ?.let { kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = it }
+            }
+        } else {
+            kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
+        }
     }
 
 }
