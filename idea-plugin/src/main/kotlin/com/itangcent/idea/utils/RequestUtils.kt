@@ -3,42 +3,34 @@ package com.itangcent.idea.utils
 import com.intellij.util.containers.stream
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
+import com.itangcent.intellij.util.mutable
 import java.net.URL
 import kotlin.streams.toList
 
 object RequestUtils {
 
-    fun parseRawBody(body: Any): String {
+    fun parseRawBody(body: Any, copy: Boolean = true): String {
         if (body is String) {
             return body
         }
-        return GsonUtils.prettyJson(toRawBody(body))
+        return GsonUtils.prettyJson(toRawBody(body, copy))
     }
 
-    fun toRawBody(body: Any?): Any? {
+    fun toRawBody(body: Any?, copy: Boolean): Any? {
         if (body == null) return null
         if (body is Map<*, *>) {
-            val mutableBody = body.toMutableMap()
-            if (mutableBody.containsKey(Attrs.COMMENT_ATTR)) {
-                mutableBody.remove(Attrs.COMMENT_ATTR)
-            }
-            if (mutableBody.containsKey(Attrs.REQUIRED_ATTR)) {
-                mutableBody.remove(Attrs.REQUIRED_ATTR)
-            }
-            if (mutableBody.containsKey(Attrs.MOCK_ATTR)) {
-                mutableBody.remove(Attrs.MOCK_ATTR)
-            }
+            val mutableBody = body.mutable(copy)
+            Attrs.ALL.forEach { mutableBody.remove(it) }
             for (mutableEntry in mutableBody) {
-                mutableEntry.value?.let { mutableEntry.setValue(toRawBody(it)) }
+                mutableEntry.value?.let { mutableEntry.setValue(toRawBody(it, copy)) }
             }
             return mutableBody
         }
         if (body is List<*>) {
-            return body.stream().map { toRawBody(it) }.toList()
+            return body.stream().map { toRawBody(it, copy) }.toList()
         }
         if (body is Array<*>) {
-            return body.stream().map { toRawBody(it) }.toArray()
+            return body.stream().map { toRawBody(it, copy) }.toArray()
         }
         return body
     }

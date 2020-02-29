@@ -11,6 +11,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.KVUtils
+import com.itangcent.common.utils.isNullOrBlank
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.plugin.render.MarkdownRender
 import com.itangcent.idea.psi.resource
@@ -343,25 +344,16 @@ class YapiFormatter {
         } else if (typedObject is Map<*, *>) {
             item["type"] = "object"
             val properties: HashMap<String, Any?> = HashMap()
-            var comment: HashMap<String, Any?>? = null
-            try {
-                comment = typedObject[Attrs.COMMENT_ATTR] as HashMap<String, Any?>?
-            } catch (e: Throwable) {
-            }
-            var required: HashMap<String, Any?>? = null
-            try {
-                required = typedObject[Attrs.REQUIRED_ATTR] as HashMap<String, Any?>?
-            } catch (e: Throwable) {
-            }
+            val comment: HashMap<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
+            val required: HashMap<String, Any?>? = typedObject[Attrs.REQUIRED_ATTR] as? HashMap<String, Any?>?
+            val default: HashMap<String, Any?>? = typedObject[Attrs.DEFAULT_VALUE_ATTR] as? HashMap<String, Any?>?
+
             var requireds: LinkedList<String>? = null
             if (!required.isNullOrEmpty()) {
                 requireds = LinkedList()
             }
-            var mocks: HashMap<String, Any?>? = null
-            try {
-                mocks = typedObject[Attrs.MOCK_ATTR] as HashMap<String, Any?>?
-            } catch (e: Throwable) {
-            }
+            val mocks: HashMap<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? HashMap<String, Any?>?
+
             typedObject.forEachValid { k, v ->
                 try {
                     val key = k.toString()
@@ -401,6 +393,10 @@ class YapiFormatter {
                         requireds?.add(key)
                     }
                     mocks?.get(key)?.let { addMock(propertyInfo, it) }
+
+                    default?.get(k)?.takeUnless { it.isNullOrBlank() }
+                            ?.let { propertyInfo["default"] = it }
+
                     properties[key] = propertyInfo
                 } catch (e: Exception) {
                     logger!!.warn("failed to mock for $path.$k")

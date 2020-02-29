@@ -21,6 +21,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
@@ -483,9 +484,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val fields = typeObject as KV<String, Any>
                 val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
                 val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+                val default: KV<String, Any>? = fields.getAs(Attrs.DEFAULT_VALUE_ATTR)
                 fields.forEachValid { filedName, fieldVal ->
                     requestHelper!!.addParam(
-                            request, filedName, tinyQueryParam(fieldVal.toString()),
+                            request, filedName, tinyQueryParam((default?.get(filedName) ?: fieldVal).toPrettyString()),
                             required?.getAs(filedName) ?: false,
                             KVUtils.getUltimateComment(comment, filedName)
                     )
@@ -519,6 +521,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val fields = typeObject as KV<String, Any>
                 val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
                 val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+                val default: KV<String, Any>? = fields.getAs(Attrs.DEFAULT_VALUE_ATTR)
                 requestHelper!!.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
                 fields.forEachValid { filedName, fieldVal ->
                     val fv = deepComponent(fieldVal)
@@ -531,7 +534,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         )
                     } else {
                         requestHelper.addFormParam(
-                                request, filedName, null,
+                                request, filedName, (default?.get(filedName) ?: fv).toPrettyString(),
                                 required?.getAs(filedName) ?: false,
                                 KVUtils.getUltimateComment(comment, filedName)
                         )
