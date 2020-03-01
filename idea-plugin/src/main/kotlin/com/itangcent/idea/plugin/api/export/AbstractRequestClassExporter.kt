@@ -493,8 +493,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                     override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
                         requestHelper!!.addParam(
                                 request, path,
-                                tinyQueryParam((parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
-                                        ?: value).toString()),
+                                tinyQueryParam(parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)?.toString()),
                                 parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                 KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                         )
@@ -537,15 +536,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                                     parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                     KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                             )
-                        } else {
-                            requestHelper.addParam(
-                                    request, path,
-                                    tinyQueryParam((parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
-                                            ?: value).toString()),
-                                    parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
-                                    KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
-                            )
-                        }
+                        } else requestHelper.addParam(
+                                request, path,
+                                tinyQueryParam((parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key))?.toString()),
+                                parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
+                                KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
+                        )
                     }
                 })
             } else if (typeObject == Magics.FILE_STR) {
