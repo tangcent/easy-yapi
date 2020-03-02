@@ -289,9 +289,10 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun toJson(readGetter: Boolean): String? {
-            return psiClassHelper!!.getFields(psiClass,
-                    if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
-            ).let { RequestUtils.parseRawBody(it) }
+            val option = if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
+            return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
+                psiClassHelper!!.getTypeObject(it, psiClass, option)
+            } ?: psiClassHelper!!.getFields(psiClass)).let { RequestUtils.parseRawBody(it) }
         }
 
         override fun toString(): String {
