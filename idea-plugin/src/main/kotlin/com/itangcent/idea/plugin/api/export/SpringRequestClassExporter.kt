@@ -1,8 +1,10 @@
 package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
-import com.intellij.psi.*
-import com.intellij.psi.util.PsiTypesUtil
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
@@ -12,7 +14,7 @@ import com.itangcent.common.utils.isNullOrEmpty
 import com.itangcent.common.utils.tinyString
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.jvm.AnnotationHelper
-import com.itangcent.intellij.psi.ClassRuleKeys
+import com.itangcent.intellij.util.hasFile
 import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
@@ -50,16 +52,14 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
     }
 
-    override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?) {
+    override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, typeObject: Any?, paramDesc: String?) {
 
         if (isRequestBody(param)) {
-            if (request.method == HttpMethod.NO_METHOD) {
-                requestHelper!!.setMethod(request, HttpMethod.POST)
-            }
-            requestHelper!!.addHeader(request, "Content-Type", "application/json")
+            requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
+            requestHelper.addHeader(request, "Content-Type", "application/json")
             requestHelper.setJsonBody(
                     request,
-                    parseRequestBody(param.type, method),
+                    typeObject,
                     paramDesc
             )
             return
@@ -67,13 +67,13 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         if (isModelAttr(param)) {
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request)
+                addParamAsQuery(param, typeObject, request)
             } else {
                 if (request.method == HttpMethod.NO_METHOD) {
-                    requestHelper!!.setMethod(request, HttpMethod.POST)
+                    requestHelper!!.setMethod(request, ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, method)
+                            ?: HttpMethod.POST)
                 }
-
-                addParamAsForm(param, request)
+                addParamAsForm(param, request, typeObject, paramDesc)
             }
             return
         }
@@ -159,41 +159,6 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             paramName = param.name!!
         }
 
-        val paramType = param.type
-        val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-        val paramCls = PsiTypesUtil.getPsiClass(unboxType)
-        if (unboxType is PsiPrimitiveType) { //primitive Type
-            if (defaultVal == null || defaultVal == "") {
-                defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
-                //Primitive type parameter is required
-                //Optional primitive type parameter is present but cannot be translated into a null value due to being declared as a primitive type.
-                //Consider declaring it as object wrapper for the corresponding primitive type.
-                required = true
-            }
-        } else if (psiClassHelper.isNormalType(unboxType)) {//normal type
-            if (defaultVal == null || defaultVal == "") {
-                defaultVal = psiClassHelper.getDefaultValue(unboxType)
-            }
-        } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
-            if (request.method == HttpMethod.GET) {
-                //can not upload file in a GET method
-                logger!!.error("Couldn't upload file in 'GET':[$request.method:${request.path}],param:${param.name} type:{${paramType.canonicalText}}")
-                return
-            }
-
-            if (request.method == HttpMethod.NO_METHOD) {
-                request.method = HttpMethod.POST
-            }
-
-            requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-            requestHelper.addFormFileParam(request, paramName!!, required, ultimateComment)
-            return
-        } else if (jvmClassHelper!!.isInheritor(unboxType, *SpringClassName.SPRING_REQUEST_RESPONSE)) {
-            //ignore @HttpServletRequest and @HttpServletResponse
-
-            return
-        }
-
         if (defaultVal != null) {
             requestHelper!!.addParam(request,
                     paramName!!
@@ -201,14 +166,12 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                     , required
                     , ultimateComment)
         } else {
-            if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request, ultimateComment)
-            } else {
-                if (request.method == HttpMethod.NO_METHOD) {
-                    request.method = HttpMethod.POST
-                }
-                addParamAsForm(param, request, ultimateComment)
+            when {
+                request.method == HttpMethod.GET -> addParamAsQuery(param, typeObject, request, ultimateComment)
+                typeObject.hasFile() -> addParamAsForm(param, request, typeObject, ultimateComment)
+                else -> addParamAsQuery(param, typeObject, request, ultimateComment)
             }
+
         }
 
     }
