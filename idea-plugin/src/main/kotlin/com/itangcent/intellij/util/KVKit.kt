@@ -93,3 +93,26 @@ fun <T> Map<*, *>.getAs(key: Any?): T? {
 fun <T> Map<*, *>.getAs(key: Any?, subKey: Any?): T? {
     return this.getAs<Map<*, *>>(key)?.getAs(subKey)
 }
+
+fun Any?.isComplex(root: Boolean = true): Boolean {
+    when {
+        this == null -> return false
+        this is Collection<*> -> return this.any { it.isComplex(false) }
+        this is Array<*> -> return this.any { it.isComplex(false) }
+        this is Map<*, *> -> {
+            if (!root) return true
+            for (entry in this.entries) {
+                val key = entry.key
+                if (key != null && key is String && key.startsWith("@")) {
+                    continue
+                }
+                if (entry.value.isComplex(false)) {
+                    return true
+                }
+            }
+            return false
+        }
+        this == Magics.FILE_STR -> return false
+        else -> return false
+    }
+}

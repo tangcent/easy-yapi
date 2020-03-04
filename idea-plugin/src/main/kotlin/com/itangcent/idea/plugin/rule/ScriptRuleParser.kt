@@ -272,7 +272,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun isArray(): Boolean {
-            return false
+            return psiClass.qualifiedName?.endsWith("[]") ?: false
         }
 
         @ScriptIgnore

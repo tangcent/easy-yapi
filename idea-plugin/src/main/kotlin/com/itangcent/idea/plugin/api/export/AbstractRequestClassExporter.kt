@@ -473,37 +473,61 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     @Suppress("UNCHECKED_CAST")
     protected fun addParamAsQuery(parameter: PsiParameter, request: Request, paramDesc: String? = null) {
+
         val paramType = parameter.type
         try {
             val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
             val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
-            if (typeObject != null && typeObject is Map<*, *>) {
-//                val comment: KV<String, Any>? = typeObject.getAs(Attrs.COMMENT_ATTR)
-//                val required: KV<String, Any>? = typeObject.getAs(Attrs.REQUIRED_ATTR)
-//                typeObject.forEachValid { filedName, fieldVal ->
-//                    filedName.toPrettyString()?.let {
-//                        requestHelper!!.addParam(
-//                                request, it, tinyQueryParam(fieldVal.toString()),
-//                                required?.getAs(filedName) ?: false,
-//                                KVUtils.getUltimateComment(comment, filedName)
-//                        )
-//                    }
-//                }
-                typeObject.flatValid(object : FieldConsumer {
-                    override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
-                        requestHelper!!.addParam(
-                                request, path, tinyQueryParam(value.toString()),
-                                parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
-                                KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
-                        )
-                    }
-                })
-            } else if (typeObject == Magics.FILE_STR) {
+            if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
                 requestHelper.addFormFileParam(
                         request, parameter.name!!,
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
+            } else if (typeObject != null && typeObject is Map<*, *>) {
+                if (typeObject.isComplex()) {
+                    requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
+                    typeObject.flatValid(object : FieldConsumer {
+                        override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
+                            val fv = deepComponent(value)
+                            if (fv == Magics.FILE_STR) {
+                                requestHelper.addFormFileParam(
+                                        request, path,
+                                        parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
+                                        KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
+                                )
+                            } else {
+                                requestHelper.addParam(
+                                        request, path, tinyQueryParam(value.toString()),
+                                        parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
+                                        KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
+                                )
+                            }
+                        }
+                    })
+                } else {
+                    val fields = typeObject as KV<String, Any>
+                    val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
+                    val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+                    requestHelper!!.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
+                    fields.forEachValid { filedName, fieldVal ->
+                        val fv = deepComponent(fieldVal)
+                        if (fv == Magics.FILE_STR) {
+                            requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
+                            requestHelper.addFormFileParam(
+                                    request, filedName,
+                                    required?.getAs(filedName) ?: false,
+                                    KVUtils.getUltimateComment(comment, filedName)
+                            )
+                        } else {
+                            requestHelper.addParam(
+                                    request, filedName, null,
+                                    required?.getAs(filedName) ?: false,
+                                    KVUtils.getUltimateComment(comment, filedName)
+                            )
+                        }
+                    }
+                }
             } else {
                 requestHelper!!.addParam(
                         request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
@@ -511,7 +535,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 )
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as ModelAttribute", e)
+            logger!!.traceError("error to parse[" + paramType.canonicalText + "] as Querys", e)
 
         }
     }
@@ -523,20 +547,24 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         try {
             val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
             val typeObject = psiClassHelper.getTypeObject(unboxType, parameter, JsonOption.READ_COMMENT)
-            if (typeObject != null && typeObject is Map<*, *>) {
-                requestHelper!!.addHeader(request, "Content-Type", "application/x-www-form-urlencoded")
+            requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
+            if (typeObject == Magics.FILE_STR) {
+                requestHelper.addFormFileParam(
+                        request, parameter.name!!,
+                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                )
+            } else if (typeObject != null && typeObject is Map<*, *>) {
                 typeObject.flatValid(object : FieldConsumer {
                     override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
                         val fv = deepComponent(value)
                         if (fv == Magics.FILE_STR) {
-                            requestHelper.addHeader(request, "Content-Type", "multipart/form-data")
                             requestHelper.addFormFileParam(
                                     request, path,
                                     parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                     KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                             )
                         } else {
-                            requestHelper.addParam(
+                            requestHelper.addFormParam(
                                     request, path, tinyQueryParam(value.toString()),
                                     parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                     KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
@@ -544,14 +572,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         }
                     }
                 })
-            } else if (typeObject == Magics.FILE_STR) {
-                requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-                requestHelper.addFormFileParam(
-                        request, parameter.name!!,
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
-                )
             } else {
-                requestHelper!!.addParam(
+                requestHelper.addFormParam(
                         request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
