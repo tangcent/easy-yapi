@@ -1,5 +1,7 @@
 package com.itangcent.common.model
 
+import com.itangcent.common.constant.HttpMethod
+
 open class Request : Doc() {
 
     var path: String? = null
@@ -25,14 +27,23 @@ open class Request : Doc() {
 }
 
 fun Request.getContentType(): String? {
+    return this.header("content-type")
+}
+
+fun Request.header(name: String): String? {
     if (this.headers.isNullOrEmpty()) {
         return null
     }
-    return this.headers!!.filter { it.name?.toLowerCase() == "content-type" }
+    val lowerName = name.toLowerCase()
+    return this.headers!!.filter { it.name?.toLowerCase() == lowerName }
             .map { it.value }
             .firstOrNull()
 }
 
 fun Request.hasBody(): Boolean {
-    return this.method != null && this.method != "GET"
+    return this.method != null && this.method != HttpMethod.GET
+}
+
+fun Request.hasMethod(): Boolean {
+    return this.method != null && this.method != HttpMethod.NO_METHOD
 }

@@ -90,6 +90,15 @@ fun RequestHelper.addHeader(request: Request, name: String, value: String) {
     addHeader(request, header)
 }
 
+
+fun RequestHelper.addHeaderIfMissed(request: Request, name: String, value: String): Boolean {
+    if (request.header(name) != null) {
+        return false
+    }
+    addHeader(request, name, value)
+    return true
+}
+
 fun RequestHelper.addPathParam(request: Request, name: String, desc: String) {
     val pathParam = PathParam()
     pathParam.name = name
@@ -102,5 +111,12 @@ fun RequestHelper.addResponseHeader(response: Response, name: String, value: Str
     header.name = name
     header.value = value
     addResponseHeader(response, header)
+}
+
+fun RequestHelper.setMethodIfMissed(request: Request, method: String) {
+    if (request.hasMethod()) {
+        return
+    }
+    this.setMethod(request, method)
 }
 //endregion utils------------------------------------------------------------------
