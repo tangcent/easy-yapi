@@ -124,7 +124,7 @@ class MarkdownFormatter {
 
     private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, handle: (String) -> Unit) {
 
-        handle("---\n")
+        handle("\n---\n")
         handle("${hN(deep)} ${methodDoc.name}\n\n")
         handle("<a id=${methodDoc.name}> </a>\n\n")
 
@@ -155,7 +155,7 @@ class MarkdownFormatter {
 
     private fun parseRequest(request: Request, deep: Int, handle: (String) -> Unit) {
 
-        handle("---\n")
+        handle("\n---\n")
         handle("${hN(deep)} ${request.name}\n\n")
         handle("<a id=${request.name}> </a>\n\n")
 
