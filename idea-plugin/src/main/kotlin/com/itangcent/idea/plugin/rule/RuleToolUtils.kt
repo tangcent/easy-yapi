@@ -12,6 +12,7 @@ import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.collections.ArrayList
+import kotlin.collections.HashSet
 import kotlin.reflect.*
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.findAnnotation
@@ -775,7 +776,6 @@ class RuleToolUtils {
             return "[$qualifiedName] cannot debug"
         }
 
-
         val sb = StringBuilder()
         sb.append("type:")
                 .append(typeName(kClass))
@@ -788,11 +788,12 @@ class RuleToolUtils {
                 .map { it!!.name }
                 .forEach { ignoreMethods.addAll(it) }
 
-
         val functions = kClass.functions
         if (functions.isNotEmpty()) {
             sb.append("methods:").appendln()
+            val set: HashSet<String> = HashSet()
             for (function in functions) {
+                val functionSb = StringBuilder()
                 if (function.visibility != KVisibility.PUBLIC
                         || excludedMethods.contains(function.name)
                         || function.findAnnotation<ScriptIgnore>() != null
@@ -803,7 +804,7 @@ class RuleToolUtils {
                 }
 
 
-                sb.append(returnTypeOfFun(function))
+                functionSb.append(returnTypeOfFun(function))
                         .append(" ")
                         .append(function.name)
                         .append("(")
@@ -814,7 +815,7 @@ class RuleToolUtils {
                     }
 
                     if (appended) {
-                        sb.append(", ")
+                        functionSb.append(", ")
                     } else {
                         appended = true
                     }
@@ -822,17 +823,20 @@ class RuleToolUtils {
                     if (param.isVararg) {
                         val type = param.type.arguments.firstOrNull()?.type
                         if (type == null) {
-                            sb.append(typeName(param.type))
+                            functionSb.append(typeName(param.type))
                         } else {
-                            sb.append(typeName(type))
+                            functionSb.append(typeName(type))
                                     .append("...")
                         }
                     } else {
-                        sb.append(typeName(param.type))
+                        functionSb.append(typeName(param.type))
                     }
                 }
-                sb.append(")")
-                        .appendln()
+                functionSb.append(")")
+                val functionStr = functionSb.toString()
+                if (set.add(functionStr)) {
+                    sb.append(functionStr).appendln()
+                }
             }
         }
 

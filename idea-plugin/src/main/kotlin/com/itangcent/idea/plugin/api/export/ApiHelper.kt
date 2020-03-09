@@ -6,8 +6,10 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.utils.concat
 import com.itangcent.common.utils.headLine
 import com.itangcent.common.utils.notEmpty
+import com.itangcent.idea.plugin.rule.computer
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.jvm.DocHelper
+import com.itangcent.intellij.jvm.element.ExplicitMethod
 
 @Singleton
 open class ApiHelper {
@@ -39,6 +41,14 @@ open class ApiHelper {
         return psiMethod.name
     }
 
+    protected open fun findAttrOfMethod(method: ExplicitMethod): String? {
+        val attrOfDocComment = docHelper!!.getAttrOfDocComment(method.psi())
+
+        val docByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
+
+        return attrOfDocComment.concat(docByRule)
+    }
+
     protected open fun findAttrOfMethod(method: PsiMethod): String? {
         val attrOfDocComment = docHelper!!.getAttrOfDocComment(method)
 
@@ -47,10 +57,10 @@ open class ApiHelper {
         return attrOfDocComment.concat(docByRule)
     }
 
-    fun nameAndAttrOfApi(psiMethod: PsiMethod): Pair<String?, String?> {
+    fun nameAndAttrOfApi(explicitMethod: ExplicitMethod): Pair<String?, String?> {
         var name: String? = null
         var attr: String? = null
-        nameAndAttrOfApi(psiMethod, {
+        nameAndAttrOfApi(explicitMethod, {
             name = it
         }, {
             attr = attr.concat(it)
@@ -58,32 +68,61 @@ open class ApiHelper {
         return name to attr
     }
 
-    fun nameAndAttrOfApi(psiMethod: PsiMethod, nameHandle: (String) -> Unit,
+    fun nameAndAttrOfApi(explicitMethod: ExplicitMethod, nameHandle: (String) -> Unit,
                          attrHandle: (String) -> Unit) {
 
 
         var named = false
-        val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, psiMethod)
+        val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, explicitMethod)
         if (nameByRule.notEmpty()) {
             nameHandle(nameByRule!!)
             named = true
         }
 
-        var attrOfMethod = findAttrOfMethod(psiMethod)
+        var attrOfMethod = findAttrOfMethod(explicitMethod)
 
-        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, psiMethod)
+        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, explicitMethod.psi())
 
         if (attrOfMethod.notEmpty()) {
             attrHandle(attrOfMethod!!)
 
             if (!named) {
-                nameHandle(attrOfMethod.headLine() ?: psiMethod.name)
+                nameHandle(attrOfMethod.headLine() ?: explicitMethod.name())
                 named = true
             }
         }
 
         if (!named) {
-            nameHandle(psiMethod.name)
+            nameHandle(explicitMethod.name())
+        }
+    }
+
+    fun nameAndAttrOfApi(explicitMethod: PsiMethod, nameHandle: (String) -> Unit,
+                         attrHandle: (String) -> Unit) {
+
+
+        var named = false
+        val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, explicitMethod)
+        if (nameByRule.notEmpty()) {
+            nameHandle(nameByRule!!)
+            named = true
+        }
+
+        var attrOfMethod = findAttrOfMethod(explicitMethod)
+
+        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, explicitMethod)
+
+        if (attrOfMethod.notEmpty()) {
+            attrHandle(attrOfMethod!!)
+
+            if (!named) {
+                nameHandle(attrOfMethod.headLine() ?: explicitMethod.name)
+                named = true
+            }
+        }
+
+        if (!named) {
+            nameHandle(explicitMethod.name)
         }
     }
 }

@@ -1,8 +1,10 @@
 package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
-import com.intellij.psi.*
-import com.intellij.psi.util.PsiTypesUtil
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
@@ -10,9 +12,12 @@ import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.any
 import com.itangcent.common.utils.isNullOrEmpty
 import com.itangcent.common.utils.tinyString
+import com.itangcent.idea.plugin.rule.computer
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.jvm.AnnotationHelper
-import com.itangcent.intellij.psi.ClassRuleKeys
+import com.itangcent.intellij.jvm.element.ExplicitMethod
+import com.itangcent.intellij.jvm.element.ExplicitParameter
+import com.itangcent.intellij.util.hasFile
 import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
@@ -50,44 +55,45 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
     }
 
-    override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, paramDesc: String?) {
+    override fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?) {
 
-        if (isRequestBody(param)) {
-            if (request.method == HttpMethod.NO_METHOD) {
-                requestHelper!!.setMethod(request, HttpMethod.POST)
-            }
-            requestHelper!!.addHeader(request, "Content-Type", "application/json")
+        if (isRequestBody(param.psi())) {
+            requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
+            requestHelper.addHeader(request, "Content-Type", "application/json")
             requestHelper.setJsonBody(
                     request,
-                    parseRequestBody(param.type, method),
+                    typeObject,
                     paramDesc
             )
             return
         }
 
-        if (isModelAttr(param)) {
+        if (isModelAttr(param.psi())) {
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request)
+                addParamAsQuery(param, typeObject, request)
             } else {
                 if (request.method == HttpMethod.NO_METHOD) {
-                    requestHelper!!.setMethod(request, HttpMethod.POST)
+                    requestHelper!!.setMethod(request,
+                            ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
+                                    ?: HttpMethod.POST)
                 }
-
-                addParamAsForm(param, request)
+                addParamAsForm(param, request, typeObject, paramDesc)
             }
             return
         }
 
         var ultimateComment = (paramDesc ?: "")
-        commentResolver!!.resolveCommentForType(param.type, param)?.let {
-            ultimateComment = "$ultimateComment $it"
+        param.getType()?.let { duckType ->
+            commentResolver!!.resolveCommentForType(duckType, param.psi())?.let {
+                ultimateComment = "$ultimateComment $it"
+            }
         }
-        val requestHeaderAnn = findRequestHeader(param)
+        val requestHeaderAnn = findRequestHeader(param.psi())
         if (requestHeaderAnn != null) {
 
             var headName = requestHeaderAnn.any("value", "name")
             if (headName.isNullOrEmpty()) {
-                headName = param.name
+                headName = param.name()
             }
 
             var required = findParamRequired(requestHeaderAnn)
@@ -113,16 +119,16 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
-        val pathVariableAnn = findPathVariable(param)
+        val pathVariableAnn = findPathVariable(param.psi())
         if (pathVariableAnn != null) {
 
             var pathName = pathVariableAnn["value"]?.toString()
 
             if (pathName == null) {
-                pathName = param.name
+                pathName = param.name()
             }
 
-            requestHelper!!.addPathParam(request, pathName!!, ultimateComment)
+            requestHelper!!.addPathParam(request, pathName, ultimateComment)
             return
         }
 
@@ -130,7 +136,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         var required = false
         var defaultVal: Any? = null
 
-        val requestParamAnn = findRequestParam(param)
+        val requestParamAnn = findRequestParam(param.psi())
 
         if (requestParamAnn != null) {
             paramName = findParamName(requestParamAnn)
@@ -156,42 +162,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (StringUtils.isBlank(paramName)) {
-            paramName = param.name!!
-        }
-
-        val paramType = param.type
-        val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
-        val paramCls = PsiTypesUtil.getPsiClass(unboxType)
-        if (unboxType is PsiPrimitiveType) { //primitive Type
-            if (defaultVal == null || defaultVal == "") {
-                defaultVal = PsiTypesUtil.getDefaultValue(unboxType)
-                //Primitive type parameter is required
-                //Optional primitive type parameter is present but cannot be translated into a null value due to being declared as a primitive type.
-                //Consider declaring it as object wrapper for the corresponding primitive type.
-                required = true
-            }
-        } else if (psiClassHelper.isNormalType(unboxType)) {//normal type
-            if (defaultVal == null || defaultVal == "") {
-                defaultVal = psiClassHelper.getDefaultValue(unboxType)
-            }
-        } else if (paramCls != null && ruleComputer!!.computer(ClassRuleKeys.TYPE_IS_FILE, paramCls) == true) {
-            if (request.method == HttpMethod.GET) {
-                //can not upload file in a GET method
-                logger!!.error("Couldn't upload file in 'GET':[$request.method:${request.path}],param:${param.name} type:{${paramType.canonicalText}}")
-                return
-            }
-
-            if (request.method == HttpMethod.NO_METHOD) {
-                request.method = HttpMethod.POST
-            }
-
-            requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
-            requestHelper.addFormFileParam(request, paramName!!, required, ultimateComment)
-            return
-        } else if (jvmClassHelper!!.isInheritor(unboxType, *SpringClassName.SPRING_REQUEST_RESPONSE)) {
-            //ignore @HttpServletRequest and @HttpServletResponse
-
-            return
+            paramName = param.name()!!
         }
 
         if (defaultVal != null) {
@@ -201,24 +172,22 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                     , required
                     , ultimateComment)
         } else {
-            if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request, ultimateComment)
-            } else {
-                if (request.method == HttpMethod.NO_METHOD) {
-                    request.method = HttpMethod.POST
-                }
-                addParamAsForm(param, request, ultimateComment)
+            when {
+                request.method == HttpMethod.GET -> addParamAsQuery(param, typeObject, request, ultimateComment)
+                typeObject.hasFile() -> addParamAsForm(param, request, typeObject, ultimateComment)
+                else -> addParamAsQuery(param, typeObject, request, ultimateComment)
             }
+
         }
 
     }
 
-    override fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request) {
+    override fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         super.processMethod(method, kv, request)
 
         val basePath: String? = kv.getAs("basePath")
         val ctrlHttpMethod: String? = kv.getAs("ctrlHttpMethod")
-        val requestMapping = findRequestMappingInAnn(method)
+        val requestMapping = findRequestMappingInAnn(method.psi())
         var httpMethod = findHttpMethod(requestMapping)
         if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
             httpMethod = ctrlHttpMethod!!

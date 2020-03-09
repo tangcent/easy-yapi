@@ -85,6 +85,8 @@ class EasyApiSettingGUI {
 
     private var yapiTokenTextArea: JTextArea? = null
 
+    private var formExpandedCheckBox: JCheckBox? = null
+
     private var recommendedCheckBox: JCheckBox? = null
 
     private var httpTimeOutTextField: JTextField? = null
@@ -150,6 +152,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(readGetterCheckBox!!)
                 .mutual(this, "settings.readGetter")
+
+        autoComputer.bind(formExpandedCheckBox!!)
+                .mutual(this, "settings.formExpanded")
 
         autoComputer.bind(recommendedCheckBox!!)
                 .mutual(this, "settings.useRecommendConfig")
