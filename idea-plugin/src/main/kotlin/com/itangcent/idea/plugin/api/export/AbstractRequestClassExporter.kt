@@ -14,12 +14,17 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.plugin.rule.computer
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
+import com.itangcent.intellij.jvm.duck.DuckType
+import com.itangcent.intellij.jvm.element.ExplicitElement
+import com.itangcent.intellij.jvm.element.ExplicitMethod
+import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.JsonOption
@@ -115,10 +120,11 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                     processClass(cls, kv)
 
-                    foreachMethod(cls) { method ->
+                    foreachMethod(cls) { explicitMethod ->
+                        val method = explicitMethod.psi()
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
                             try {
-                                exportMethodApi(cls, method, kv, docHandle)
+                                exportMethodApi(cls, explicitMethod, kv, docHandle)
                             } catch (e: Exception) {
                                 logger.traceError("error to export api from method:" + method.name, e)
                             }
@@ -144,8 +150,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
+    open protected fun shouldIgnore(explicitElement: ExplicitElement<*>): Boolean {
+        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, explicitElement) ?: false
+    }
+
     private fun exportMethodApi(
-            psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
+            psiClass: PsiClass, method: ExplicitMethod, kv: KV<String, Any?>,
             docHandle: DocHandle
     ) {
 
@@ -153,7 +163,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         val request = Request()
 
-        request.resource = PsiMethodResource(method, psiClass)
+        request.resource = PsiMethodResource(method.psi(), psiClass)
 
         processMethod(method, kv, request)
 
@@ -166,7 +176,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         docHandle(request)
     }
 
-    protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request) {
+    protected open fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         apiHelper!!.nameAndAttrOfApi(method, {
             requestHelper!!.setName(request, it)
         }, {
@@ -174,17 +184,18 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         })
     }
 
-    protected open fun readParamDoc(param: PsiElement): String? {
-        return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DOC, param)
+    protected open fun readParamDoc(explicitParameter: ExplicitParameter): String? {
+        return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DOC, explicitParameter)
     }
 
-    protected open fun readParamDefaultValue(param: PsiElement): String? {
+    protected open fun readParamDefaultValue(param: ExplicitParameter): String? {
         return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DEFAULT_VALUE, param)
     }
 
-    protected open fun processCompleted(method: PsiMethod, request: Request) {
+    protected open fun processCompleted(method: ExplicitMethod, request: Request) {
         //parse additionalHeader by config
-        val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER, method)
+        val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER,
+                method)
         if (!additionalHeader.isNullOrEmpty()) {
             val additionalHeaders = additionalHeader!!.lines()
             for (headerStr in additionalHeaders) {
@@ -261,20 +272,20 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
     }
 
-    protected open fun processResponse(method: PsiMethod, request: Request) {
+    protected open fun processResponse(method: ExplicitMethod, request: Request) {
 
-        var returnType: PsiType? = null
+        var returnType: DuckType? = null
         var fromRule = false
         val returnTypeByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN, method)
         if (!returnTypeByRule.isNullOrBlank()) {
-            val resolvedReturnType = duckTypeHelper!!.findType(returnTypeByRule!!.trim(), method)
+            val resolvedReturnType = duckTypeHelper!!.resolve(returnTypeByRule!!.trim(), method.psi())
             if (resolvedReturnType != null) {
                 returnType = resolvedReturnType
                 fromRule = true
             }
         }
         if (!fromRule) {
-            returnType = method.returnType
+            returnType = method.getReturnType()
         }
 
         if (returnType != null) {
@@ -285,18 +296,18 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                 val typedResponse = parseResponseBody(returnType, fromRule, method)
 
-                val descOfReturn = docHelper!!.findDocByTag(method, "return")
+                val descOfReturn = docHelper!!.findDocByTag(method.psi(), "return")
                 if (!descOfReturn.isNullOrBlank()) {
                     val methodReturnMain = ruleComputer.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, method)
                     if (methodReturnMain.isNullOrBlank()) {
                         requestHelper.appendResponseBodyDesc(response, descOfReturn)
                     } else {
                         val options: ArrayList<HashMap<String, Any?>> = ArrayList()
-                        val comment = linkExtractor!!.extract(descOfReturn, method, object : AbstractLinkResolve() {
+                        val comment = linkExtractor!!.extract(descOfReturn, method.psi(), object : AbstractLinkResolve() {
 
                             override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
-                                psiClassHelper!!.resolveEnumOrStatic(plainText, method, "")
+                                psiClassHelper!!.resolveEnumOrStatic(plainText, method.psi(), "")
                                         ?.let { options.addAll(it) }
 
                                 return super.linkToPsiElement(plainText, linkTo)
@@ -430,31 +441,33 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return methodParamComment
     }
 
-    private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        jvmClassHelper!!.getAllMethods(cls)
-                .filter { !jvmClassHelper.isBasicMethod(it.name) }
-                .filter { !it.hasModifier(JvmModifier.STATIC) }
-                .filter { !it.isConstructor }
+    private fun foreachMethod(cls: PsiClass, handle: (ExplicitMethod) -> Unit) {
+        duckTypeHelper!!.explicit(cls)
+                .methods()
+                .filter { !jvmClassHelper!!.isBasicMethod(it.psi().name) }
+                .filter { !it.psi().hasModifier(JvmModifier.STATIC) }
+                .filter { !it.psi().isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
     }
 
-    private fun processMethodParameters(method: PsiMethod, request: Request) {
 
-        val params = method.parameterList.parameters
+    private fun processMethodParameters(method: ExplicitMethod, request: Request) {
+
+        val params = method.getParameters()
 
         if (params.isNotEmpty()) {
 
-            val paramDocComment = extractParamComment(method)
+            val paramDocComment = extractParamComment(method.psi())
 
-            val parsedParams: ArrayList<Pair<PsiParameter, Any?>> = ArrayList()
+            val parsedParams: ArrayList<Pair<ExplicitParameter, Any?>> = ArrayList()
             for (param in params) {
                 if (ruleComputer!!.computer(ClassExportRuleKeys.PARAM_IGNORE, param) == true) {
                     continue
                 }
 
-                val paramType = param.type
-                val unboxType = psiClassHelper!!.unboxArrayOrList(paramType)
+                val paramType = param.getType() ?: continue
+                val unboxType = paramType.unbox()
 
                 if (jvmClassHelper!!.isInheritor(unboxType, *SpringClassName.SPRING_REQUEST_RESPONSE)) {
                     //ignore @HttpServletRequest and @HttpServletResponse
@@ -462,7 +475,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                     continue
                 }
 
-                parsedParams.add(param to psiClassHelper.getTypeObject(unboxType, param, JsonOption.READ_COMMENT))
+                parsedParams.add(param to psiClassHelper!!.getTypeObject(unboxType, param.psi(), JsonOption.READ_COMMENT))
             }
 
             val hasFile = parsedParams.any { it.second.hasFile() }
@@ -482,11 +495,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val typeObject = parsedParam.second
 
                 processMethodParameter(
-                        method,
                         request,
                         param,
                         typeObject,
-                        KVUtils.getUltimateComment(paramDocComment, param.name).append(readParamDoc(param))
+                        KVUtils.getUltimateComment(paramDocComment, param.psi().name).append(readParamDoc(param))
                 )
             }
         }
@@ -500,15 +512,15 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
     }
 
-    abstract fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, typeObject: Any?, paramDesc: String?)
+    abstract fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?)
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsQuery(parameter: PsiParameter, typeObject: Any?, request: Request, paramDesc: String? = null) {
+    protected fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String? = null) {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addFormFileParam(
-                        request, parameter.name!!,
+                        request, parameter.name()!!,
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
@@ -558,23 +570,22 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 }
             } else {
                 requestHelper!!.addParam(
-                        request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                        request, parameter.name(), tinyQueryParam(typeObject?.toString()),
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to parse[" + parameter.type.canonicalText + "] as Querys", e)
-
+            logger!!.traceError("error to parse[" + parameter.getType()?.canonicalText() + "] as Querys", e)
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsForm(parameter: PsiParameter, request: Request, typeObject: Any?, paramDesc: String? = null) {
+    protected fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null) {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addFormFileParam(
-                        request, parameter.name!!,
+                        request, parameter.name(),
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
@@ -622,32 +633,31 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 }
             } else {
                 requestHelper!!.addFormParam(
-                        request, parameter.name!!, tinyQueryParam(typeObject?.toString()),
+                        request, parameter.name(), tinyQueryParam(typeObject?.toString()),
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to parse[" + parameter.type.canonicalText + "] as ModelAttribute", e)
-
+            logger!!.traceError("error to parse[" + parameter.getType()?.canonicalText() + "] as ModelAttribute", e)
         }
     }
 
-    protected fun parseResponseBody(psiType: PsiType?, fromRule: Boolean, method: PsiMethod): Any? {
+    protected fun parseResponseBody(psiType: DuckType?, fromRule: Boolean, method: ExplicitMethod): Any? {
 
         if (psiType == null) {
             return null
         }
 
         return when {
-            fromRule -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.READ_COMMENT)
-            needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
-                    PsiClassUtils.isInterface(psiType)) -> {
-                logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
-                methodReturnInferHelper!!.inferReturn(method)
+            fromRule -> psiClassHelper!!.getTypeObject(psiType, method.psi(), JsonOption.READ_COMMENT)
+            needInfer() && (!duckTypeHelper!!.isQualified(psiType) ||
+                    jvmClassHelper!!.isInterface(psiType)) -> {
+                logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
+                methodReturnInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
-            readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
-            else -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.READ_COMMENT)
+            readGetter() -> psiClassHelper!!.getTypeObject(psiType, method.psi(), JsonOption.ALL)
+            else -> psiClassHelper!!.getTypeObject(psiType, method.psi(), JsonOption.READ_COMMENT)
         }
     }
 

@@ -12,8 +12,11 @@ import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.any
 import com.itangcent.common.utils.isNullOrEmpty
 import com.itangcent.common.utils.tinyString
+import com.itangcent.idea.plugin.rule.computer
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.jvm.AnnotationHelper
+import com.itangcent.intellij.jvm.element.ExplicitMethod
+import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.util.hasFile
 import org.apache.commons.lang3.StringUtils
 
@@ -52,9 +55,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
     }
 
-    override fun processMethodParameter(method: PsiMethod, request: Request, param: PsiParameter, typeObject: Any?, paramDesc: String?) {
+    override fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?) {
 
-        if (isRequestBody(param)) {
+        if (isRequestBody(param.psi())) {
             requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
             requestHelper.addHeader(request, "Content-Type", "application/json")
             requestHelper.setJsonBody(
@@ -65,13 +68,14 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
-        if (isModelAttr(param)) {
+        if (isModelAttr(param.psi())) {
             if (request.method == HttpMethod.GET) {
                 addParamAsQuery(param, typeObject, request)
             } else {
                 if (request.method == HttpMethod.NO_METHOD) {
-                    requestHelper!!.setMethod(request, ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, method)
-                            ?: HttpMethod.POST)
+                    requestHelper!!.setMethod(request,
+                            ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
+                                    ?: HttpMethod.POST)
                 }
                 addParamAsForm(param, request, typeObject, paramDesc)
             }
@@ -79,15 +83,17 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         var ultimateComment = (paramDesc ?: "")
-        commentResolver!!.resolveCommentForType(param.type, param)?.let {
-            ultimateComment = "$ultimateComment $it"
+        param.getType()?.let { duckType ->
+            commentResolver!!.resolveCommentForType(duckType, param.psi())?.let {
+                ultimateComment = "$ultimateComment $it"
+            }
         }
-        val requestHeaderAnn = findRequestHeader(param)
+        val requestHeaderAnn = findRequestHeader(param.psi())
         if (requestHeaderAnn != null) {
 
             var headName = requestHeaderAnn.any("value", "name")
             if (headName.isNullOrEmpty()) {
-                headName = param.name
+                headName = param.name()
             }
 
             var required = findParamRequired(requestHeaderAnn)
@@ -113,16 +119,16 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
-        val pathVariableAnn = findPathVariable(param)
+        val pathVariableAnn = findPathVariable(param.psi())
         if (pathVariableAnn != null) {
 
             var pathName = pathVariableAnn["value"]?.toString()
 
             if (pathName == null) {
-                pathName = param.name
+                pathName = param.name()
             }
 
-            requestHelper!!.addPathParam(request, pathName!!, ultimateComment)
+            requestHelper!!.addPathParam(request, pathName, ultimateComment)
             return
         }
 
@@ -130,7 +136,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         var required = false
         var defaultVal: Any? = null
 
-        val requestParamAnn = findRequestParam(param)
+        val requestParamAnn = findRequestParam(param.psi())
 
         if (requestParamAnn != null) {
             paramName = findParamName(requestParamAnn)
@@ -156,7 +162,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (StringUtils.isBlank(paramName)) {
-            paramName = param.name!!
+            paramName = param.name()!!
         }
 
         if (defaultVal != null) {
@@ -176,12 +182,12 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     }
 
-    override fun processMethod(method: PsiMethod, kv: KV<String, Any?>, request: Request) {
+    override fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         super.processMethod(method, kv, request)
 
         val basePath: String? = kv.getAs("basePath")
         val ctrlHttpMethod: String? = kv.getAs("ctrlHttpMethod")
-        val requestMapping = findRequestMappingInAnn(method)
+        val requestMapping = findRequestMappingInAnn(method.psi())
         var httpMethod = findHttpMethod(requestMapping)
         if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
             httpMethod = ctrlHttpMethod!!
