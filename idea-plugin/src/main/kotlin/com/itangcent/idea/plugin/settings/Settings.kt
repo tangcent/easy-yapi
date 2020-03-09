@@ -12,6 +12,8 @@ class Settings {
 
     var postmanToken: String? = null
 
+    var formExpanded: Boolean = true
+
     var readGetter: Boolean = false
 
     var inferEnable: Boolean = true
@@ -41,6 +43,7 @@ class Settings {
         newSetting.postmanToken = this.postmanToken
         newSetting.pullNewestDataBefore = this.pullNewestDataBefore
         newSetting.methodDocEnable = this.methodDocEnable
+        newSetting.formExpanded = this.formExpanded
         newSetting.readGetter = this.readGetter
         newSetting.inferEnable = this.inferEnable
         newSetting.inferMaxDeep = this.inferMaxDeep
@@ -64,6 +67,7 @@ class Settings {
         if (pullNewestDataBefore != other.pullNewestDataBefore) return false
         if (methodDocEnable != other.methodDocEnable) return false
         if (postmanToken != other.postmanToken) return false
+        if (formExpanded != other.formExpanded) return false
         if (readGetter != other.readGetter) return false
         if (inferEnable != other.inferEnable) return false
         if (inferMaxDeep != other.inferMaxDeep) return false
@@ -83,6 +87,7 @@ class Settings {
         var result = pullNewestDataBefore.hashCode()
         result = 31 * result + methodDocEnable.hashCode()
         result = 31 * result + (postmanToken?.hashCode() ?: 0)
+        result = 31 * result + formExpanded.hashCode()
         result = 31 * result + readGetter.hashCode()
         result = 31 * result + inferEnable.hashCode()
         result = 31 * result + inferMaxDeep

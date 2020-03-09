@@ -6,10 +6,7 @@ import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.KVUtils
-import com.itangcent.common.utils.Visional
+import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
@@ -87,8 +84,14 @@ class DefaultMethodInferHelper : MethodInferHelper {
         return maxDeep!!
     }
 
+    private val emptyCallMethodCache: HashMap<PsiMethod, Any?> = HashMap()
+
     override fun inferReturn(psiMethod: PsiMethod, option: Int): Any? {
-        return cleanInvalidKeys(inferReturn(psiMethod, null, null, option))
+        return cleanInvalidKeys(
+                emptyCallMethodCache.safeComputeIfAbsent(psiMethod) {
+                    return@safeComputeIfAbsent inferReturn(psiMethod, null, null, option)
+                }
+        )
     }
 
     override fun inferReturn(psiMethod: PsiMethod, caller: Any?, args: Array<Any?>?, option: Int): Any? {

@@ -112,3 +112,48 @@ public fun <K, V> Map<out K, V>.mutable(copy: Boolean = false): MutableMap<K, V>
         else -> LinkedHashMap(this)
     }
 }
+
+fun Any?.isComplex(root: Boolean = true): Boolean {
+    when {
+        this == null -> return false
+        this is Collection<*> -> return this.any { it.isComplex(false) }
+        this is Array<*> -> return this.any { it.isComplex(false) }
+        this is Map<*, *> -> {
+            if (!root) return true
+            for (entry in this.entries) {
+                val key = entry.key
+                if (key != null && key is String && key.startsWith("@")) {
+                    continue
+                }
+                if (entry.value.isComplex(false)) {
+                    return true
+                }
+            }
+            return false
+        }
+        this == Magics.FILE_STR -> return false
+        else -> return false
+    }
+}
+
+fun Any?.hasFile(): Boolean {
+    when {
+        this == null -> return false
+        this is Collection<*> -> return this.any { it.hasFile() }
+        this is Array<*> -> return this.any { it.hasFile() }
+        this is Map<*, *> -> {
+            for (entry in this.entries) {
+                val key = entry.key
+                if (key != null && key is String && key.startsWith("@")) {
+                    continue
+                }
+                if (entry.value.hasFile()) {
+                    return true
+                }
+            }
+            return false
+        }
+        this == Magics.FILE_STR -> return true
+        else -> return false
+    }
+}
