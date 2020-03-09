@@ -7,6 +7,7 @@ import com.itangcent.common.utils.KV
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.psi.DefaultPsiClassHelper
+import com.itangcent.intellij.util.sub
 
 /**
  * 1.support rule:["field.required"]
@@ -17,12 +18,7 @@ class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
 
         ruleComputer!!.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
-            var requiredKV: KV<String, Any?>? = kv.getAs(Attrs.REQUIRED_ATTR)
-            if (requiredKV == null) {
-                requiredKV = KV.create()
-                kv[Attrs.REQUIRED_ATTR] = requiredKV
-            }
-            requiredKV[fieldName] = required
+            kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = required
         }
     }
 

@@ -520,7 +520,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         try {
             if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addFormFileParam(
-                        request, parameter.name()!!,
+                        request, parameter.name(),
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
@@ -545,9 +545,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         }
                     })
                 } else {
-                    val fields = typeObject as KV<String, Any>
-                    val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-                    val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+                    val fields = typeObject as KV<String, Any?>
+                    val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
+                    val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
                     fields.forEachValid { filedName, fieldVal ->
                         val fv = deepComponent(fieldVal)
                         if (fv == Magics.FILE_STR) {
@@ -610,9 +610,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         }
                     })
                 } else {
-                    val fields = typeObject as KV<String, Any>
-                    val comment: KV<String, Any>? = fields.getAs(Attrs.COMMENT_ATTR)
-                    val required: KV<String, Any>? = fields.getAs(Attrs.REQUIRED_ATTR)
+                    val fields = typeObject as KV<String, Any?>
+                    val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
+                    val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
                     requestHelper!!.addHeaderIfMissed(request, "Content-Type", "application/x-www-form-urlencoded")
                     fields.forEachValid { filedName, fieldVal ->
                         val fv = deepComponent(fieldVal)
