@@ -16,12 +16,13 @@ import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.LightVirtualFile
 import com.itangcent.common.logger.traceError
+import com.itangcent.idea.plugin.rule.contextOf
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
-import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -53,7 +54,7 @@ class DebugDialog : JDialog() {
     var actionContext: ActionContext? = null
 
     @Inject
-    var psiClassHelper: PsiClassHelper? = null
+    var duckTypeHelper: DuckTypeHelper? = null
 
     @Inject
     var ruleParser: RuleParser? = null
@@ -255,7 +256,12 @@ class DebugDialog : JDialog() {
         }
         val ret: String?
         try {
-            ret = parseStringRule.compute(ruleParser!!.contextOf(scriptInfo.context!!, scriptInfo.context!!))
+            val context = scriptInfo.context
+            ret = parseStringRule.compute(
+                    when (context) {
+                        is PsiClass -> ruleParser!!.contextOf(duckTypeHelper!!.explicit(context))
+                        else -> ruleParser!!.contextOf(scriptInfo.context!!, scriptInfo.context!!)
+                    })
         } catch (e: Exception) {
             return "script eval failed:" + ExceptionUtils.getStackTrace(e)
         }
