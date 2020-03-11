@@ -13,7 +13,6 @@
 
 ## Feature
 - [Export API Doc To`Postman`](https://easyapi.itangcent.com/documents/export2postman.html)
-- [Export API Doc To`Yapi`](https://easyapi.itangcent.com/documents/export2yapi.html)
 - [Export API Doc To`Markdown`](https://easyapi.itangcent.com/documents/export2markdown.html)
 - [Export RPC Doc To`Markdown`](https://easyapi.itangcent.com/documents/export_rpc.html)
 - Api DashBoard
