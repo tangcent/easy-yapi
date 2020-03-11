@@ -95,6 +95,11 @@ fun <T> Map<*, *>.getAs(key: Any?, subKey: Any?): T? {
 }
 
 @Suppress("UNCHECKED_CAST")
+fun KV<String, Any?>.getAsKv(key: String): KV<String, Any?>? {
+    return this[key] as KV<String, Any?>?
+}
+
+@Suppress("UNCHECKED_CAST")
 fun KV<String, Any?>.sub(key: String): KV<String, Any?> {
     var subKV: KV<String, Any?>? = this[key] as KV<String, Any?>?
     if (subKV == null) {
@@ -105,7 +110,7 @@ fun KV<String, Any?>.sub(key: String): KV<String, Any?> {
 }
 
 @Suppress("UNCHECKED_CAST")
-public fun <K, V> Map<out K, V>.mutable(copy: Boolean = false): MutableMap<K, V> {
+fun <K, V> Map<out K, V>.mutable(copy: Boolean = false): MutableMap<K, V> {
     return when {
         copy -> LinkedHashMap(this)
         this is MutableMap -> this as MutableMap<K, V>

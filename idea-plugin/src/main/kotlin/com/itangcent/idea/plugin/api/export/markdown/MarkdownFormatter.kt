@@ -10,7 +10,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.KVUtils
 import com.itangcent.common.utils.KitUtils
-import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
+import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
@@ -29,9 +29,6 @@ class MarkdownFormatter {
 
     @Inject
     private val actionContext: ActionContext? = null
-
-    @Inject
-    private val docParseHelper: DefaultDocParseHelper? = null
 
     @Inject
     private val moduleHelper: ModuleHelper? = null
@@ -124,7 +121,7 @@ class MarkdownFormatter {
 
     private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, handle: (String) -> Unit) {
 
-        handle("---\n")
+        handle("\n---\n")
         handle("${hN(deep)} ${methodDoc.name}\n\n")
         handle("<a id=${methodDoc.name}> </a>\n\n")
 
@@ -155,7 +152,7 @@ class MarkdownFormatter {
 
     private fun parseRequest(request: Request, deep: Int, handle: (String) -> Unit) {
 
-        handle("---\n")
+        handle("\n---\n")
         handle("${hN(deep)} ${request.name}\n\n")
         handle("<a id=${request.name}> </a>\n\n")
 
