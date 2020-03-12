@@ -283,7 +283,7 @@ class MarkdownFormatter {
 
         var type: String? = null
         when (obj) {
-            obj == null -> type = "object"
+            null -> type = "object"
             is String -> type = "string"
             is Number -> type = if (obj is Int || obj is Long) {
                 "integer"
