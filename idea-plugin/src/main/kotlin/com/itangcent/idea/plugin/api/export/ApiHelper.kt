@@ -6,7 +6,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.utils.concat
 import com.itangcent.common.utils.headLine
 import com.itangcent.common.utils.notEmpty
-import com.itangcent.idea.plugin.rule.computer
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
