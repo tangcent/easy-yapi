@@ -1,20 +1,21 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.KV
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.toBoolean
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.PsiUtils
 import com.itangcent.intellij.jvm.duck.DuckType
+import com.itangcent.intellij.jvm.element.ExplicitClass
+import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.util.sub
 
@@ -25,9 +26,9 @@ import com.itangcent.intellij.util.sub
 class YapiPsiClassHelper : CustomizedPsiClassHelper() {
 
     @Inject(optional = true)
-    val configReader: ConfigReader? = null
+    private val configReader: ConfigReader? = null
 
-    var resolveProperty: Boolean = true
+    private var resolveProperty: Boolean = true
 
     @PostConstruct
     fun initYapiInfo() {
@@ -41,8 +42,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: PsiElement, resourcePsiClass: PsiClass, option: Int, kv: KV<String, Any?>) {
+    override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
 
         ruleComputer!!.computer(ClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
