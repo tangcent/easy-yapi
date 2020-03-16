@@ -12,7 +12,7 @@ import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.any
 import com.itangcent.common.utils.isNullOrEmpty
 import com.itangcent.common.utils.tinyString
-import com.itangcent.idea.plugin.rule.computer
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod

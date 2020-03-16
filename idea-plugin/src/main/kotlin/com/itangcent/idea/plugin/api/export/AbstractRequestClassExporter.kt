@@ -14,7 +14,7 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodInferHelper
-import com.itangcent.idea.plugin.rule.computer
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.idea.psi.PsiMethodResource
