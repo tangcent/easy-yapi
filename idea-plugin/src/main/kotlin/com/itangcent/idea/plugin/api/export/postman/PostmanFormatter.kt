@@ -12,7 +12,7 @@ import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.idea.utils.RequestUtils
+import com.itangcent.http.RequestUtils
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils

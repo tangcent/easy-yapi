@@ -115,4 +115,13 @@ object ClassExportRuleKeys {
             "postman.host", StringRule::class,
             StringRuleMode.SINGLE
     )
+
+    val HTTP_CLIENT_BEFORE_CALL: RuleKey<String> = SimpleRuleKey(
+            "http.call.before", BooleanRule::class,
+            BooleanRuleMode.ALL
+    )
+    val HTTP_CLIENT_AFTER_CALL: RuleKey<String> = SimpleRuleKey(
+            "http.call.after", BooleanRule::class,
+            BooleanRuleMode.ALL
+    )
 }
