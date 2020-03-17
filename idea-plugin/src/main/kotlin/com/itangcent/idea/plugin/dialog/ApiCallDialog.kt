@@ -10,16 +10,15 @@ import com.intellij.ui.BooleanTableCellRenderer
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
-import com.itangcent.common.http.EntityUtils
-import com.itangcent.common.http.HttpResponse
-import com.itangcent.common.http.UltimateResponseHandler
-import com.itangcent.common.http.getHeaderFileName
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBody
+import com.itangcent.common.utils.KitUtils
 import com.itangcent.common.utils.appendlnIfNotEmpty
+import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.http.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.*
@@ -36,27 +35,12 @@ import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.http.Header
-import org.apache.http.HttpEntity
-import org.apache.http.NameValuePair
-import org.apache.http.client.HttpClient
-import org.apache.http.client.entity.UrlEncodedFormEntity
-import org.apache.http.client.methods.RequestBuilder
-import org.apache.http.client.protocol.HttpClientContext
-import org.apache.http.cookie.Cookie
 import org.apache.http.entity.ContentType
-import org.apache.http.entity.StringEntity
-import org.apache.http.entity.mime.MultipartEntityBuilder
-import org.apache.http.impl.client.BasicCookieStore
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.message.BasicHeader
-import org.apache.http.message.BasicNameValuePair
 import org.jdesktop.swingx.prompt.PromptSupport
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.awt.event.*
 import java.io.Closeable
-import java.io.File
 import javax.swing.*
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableColumn
@@ -237,10 +221,6 @@ class ApiCallDialog : JDialog() {
     @Volatile
     private var httpContextCache: HttpContextCache? = null
 
-    private var httpClientContext: HttpClientContext? = null
-
-    private var ultimateResponseHandler: UltimateResponseHandler? = null
-
     @Inject(optional = true)
     @Named("host.history.max")
     private var maxHostHistory: Int = 8
@@ -252,17 +232,17 @@ class ApiCallDialog : JDialog() {
     @Synchronized
     private fun getHttpClient(): HttpClient {
         if (httpClient == null) {
-            httpClient = httpClientProvider?.getHttpClient() ?: HttpClients.createDefault()
-            httpClientContext = HttpClientContext.create()
-            ultimateResponseHandler = UltimateResponseHandler()
-            httpClientContext!!.cookieStore = BasicCookieStore()
+            httpClient = httpClientProvider!!.getHttpClient()
 
             try {
-                getHttpContextCache().cookies?.forEach {
-                    httpClientContext!!.cookieStore.addCookie(GsonExUtils.fromJson<Cookie>(it))
-                }
+                getHttpContextCache().cookies
+                        ?.map { BasicCookie.fromJson(it) }
+                        ?.filter { it.getName().notNullOrEmpty() }
+                        ?.forEach {
+                            httpClient!!.cookieStore().addCookie(it)
+                        }
             } catch (e: Exception) {
-                logger!!.error("load cookie failed!" + ExceptionUtils.getStackTrace(e))
+                logger!!.traceError("load cookie failed!", e)
             }
         }
         return httpClient!!
@@ -423,7 +403,7 @@ class ApiCallDialog : JDialog() {
             newFormTableBinder.refreshTable(this.formTable!!, readForm)
             changeFormTableBinder(newFormTableBinder)
         } catch (e: Throwable) {
-            logger!!.error(ExceptionUtils.getStackTrace(e))
+            logger!!.traceError("failed to refresh form", e)
         }
     }
 
@@ -777,66 +757,47 @@ class ApiCallDialog : JDialog() {
                         .path(path)
                         .query(query).url()
                 this.currUrl = url
-                val requestBuilder = RequestBuilder.create(request.method)
-                        .setUri(url)
+                val httpRequest = getHttpClient().request().method(request.method ?: "GET")
+                        .url(url)
 
                 if (!requestHeader.isNullOrBlank()) {
-                    parseHeader(requestHeader).forEach { requestBuilder.addHeader(it) }
+                    parseEqualLine(requestHeader) { name, value ->
+                        httpRequest.header(name, value)
+                    }
                 }
 
                 if (request.method?.toUpperCase() != "GET") {
 
-                    var requestEntity: HttpEntity? = null
                     if (!request.formParams.isNullOrEmpty()) {
 
                         val formParams = formTableBinder.readAvailableForm(this.formTable!!)
                         if (formParams != null) {
                             if (contentType.startsWith("application/x-www-form-urlencoded")) {
-                                val nameValuePairs: ArrayList<NameValuePair> = ArrayList()
                                 for (param in formParams) {
-                                    nameValuePairs.add(BasicNameValuePair(param.name, param.value))
+                                    param.name?.let { httpRequest.param(it, param.value) }
                                 }
-                                requestEntity = UrlEncodedFormEntity(nameValuePairs)
                             } else if (contentType.startsWith("multipart/form-data")) {
-                                val entityBuilder = MultipartEntityBuilder.create()
                                 for (param in formParams) {
                                     if (param.type == "file") {
                                         val filePath = param.value
                                         if (filePath.isNullOrBlank()) {
                                             continue
                                         }
-                                        val file = File(filePath)
-                                        if (!file.exists() || !file.isFile) {
-                                            actionContext!!.runInSwingUI {
-                                                Messages.showErrorDialog(project, "[$filePath] not exist", "File missing")
-                                            }
-                                            return@runAsync
-                                        }
-                                        entityBuilder.addBinaryBody(param.name, file)
+                                        param.name?.let { httpRequest.fileParam(it, filePath) }
                                     } else {
-                                        entityBuilder.addTextBody(param.name, param.value)
+                                        param.name?.let { httpRequest.param(it, param.value) }
                                     }
                                 }
-                                val boundary = EntityUtils.generateBoundary()
-                                entityBuilder.setBoundary(boundary)
-                                //set boundary to header
-                                requestBuilder.setHeader("Content-type", "multipart/form-data; boundary=$boundary")
-                                requestEntity = entityBuilder.build()
                             }
                         }
                     }
                     if (request.body != null) {
-                        requestEntity = StringEntity(requestBodyOrForm,
-                                ContentType.APPLICATION_JSON)
-                    }
-                    if (requestEntity != null) {
-                        requestBuilder.entity = requestEntity
+                        httpRequest.contentType(ContentType.APPLICATION_JSON)
+                                .body(requestBodyOrForm)
                     }
                 }
 
-                val httpClient = getHttpClient()
-
-                val response = httpClient.execute(requestBuilder.build(), ultimateResponseHandler, httpClientContext)
+                val response = httpRequest.call()
 
                 actionContext!!.runInSwingUI {
                     autoComputer.value(this::currResponse, ResponseStatus(response))
@@ -877,7 +838,7 @@ class ApiCallDialog : JDialog() {
 
         autoComputer.bind(this.statusLabel!!)
                 .with(this::currResponse)
-                .eval { "status:" + it?.response?.getCode()?.toString() }
+                .eval { "status:" + it?.response?.code()?.toString() }
 
         autoComputer.bindText(this.formatOrRawButton!!)
                 .with(this::currResponse)
@@ -898,12 +859,12 @@ class ApiCallDialog : JDialog() {
     }
 
     private fun formatResponseHeaders(response: HttpResponse?): String? {
-        if (response?.getHeader() == null) return ""
+        if (response?.headers() == null) return ""
         val sb = StringBuilder()
-        response.getHeader()?.forEach {
-            sb.append(it.first)
+        response.headers()?.forEach {
+            sb.append(it.name())
                     .append("=")
-                    .append(it.second)
+                    .append(it.value())
                     .appendln()
         }
         return sb.toString()
@@ -922,10 +883,16 @@ class ApiCallDialog : JDialog() {
         }
 
         val response = this.currResponse!!.response
+        val bytes = response.bytes()
+        if (bytes == null) {
+            Messages.showMessageDialog(this, "Response is empty",
+                    "Error", Messages.getErrorIcon())
+            return
+        }
         val url = this.currUrl
 //        var request = this.currRequest
         fileSaveHelper!!.save({
-            response.asBytes()
+            bytes
         }, {
             var fileName = response.getHeaderFileName()
             if (fileName == null && url != null) {
@@ -967,10 +934,6 @@ class ApiCallDialog : JDialog() {
         return httpContextCache!!
     }
 
-    private fun parseHeader(headerText: String): List<Header> {
-        return parseEqualLine(headerText) { name, value -> BasicHeader(name, value) }
-    }
-
     private fun <T> parseEqualLine(formText: String, handle: ((String, String) -> T)): List<T> {
         val nameValuePairs: ArrayList<T> = ArrayList()
         for (line in formText.lines()) {
@@ -985,15 +948,17 @@ class ApiCallDialog : JDialog() {
     //endregion
 
     private fun onCancel() {
-        if (httpContextCacheBinder != null && httpClientContext != null) {
+        if (httpContextCacheBinder != null && httpClient != null) {
             val httpContextCache = getHttpContextCache()
             val cookies: ArrayList<String> = ArrayList()
             httpContextCache.cookies = cookies
             try {
-                httpClientContext!!.cookieStore.cookies.forEach { cookies.add(GsonExUtils.toJson(it)) }
+                httpClient!!.cookieStore().cookies().forEach {
+                    cookies.add(it.json())
+                }
                 httpContextCacheBinder!!.save(httpContextCache)
             } catch (e: Exception) {
-                logger!!.error("error to save http context.")
+                logger!!.traceError("error to save http context.", e)
             }
         }
         if (httpClient != null && httpClient is Closeable) {
@@ -1029,7 +994,7 @@ class ApiCallDialog : JDialog() {
 
         private fun formatResponse(): String? {
             return try {
-                val contentType = response.getContentType()
+                val contentType = KitUtils.safe { response.contentType()?.let { ContentType.parse(it) } }
                 if (contentType != null) {
                     if (contentType.mimeType.startsWith("text/html") ||
                             contentType.mimeType.startsWith("text/xml")) {
@@ -1047,7 +1012,7 @@ class ApiCallDialog : JDialog() {
 
         private fun getRawResult(): String? {
             if (rawResult == null) {
-                rawResult = response.asString()
+                rawResult = response.string()
             }
             return rawResult
         }

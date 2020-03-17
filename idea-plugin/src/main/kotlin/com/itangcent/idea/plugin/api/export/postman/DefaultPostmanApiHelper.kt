@@ -4,8 +4,13 @@ import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.http.HttpClient
+import com.itangcent.http.HttpRequest
+import com.itangcent.http.HttpResponse
+import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
-import com.itangcent.idea.plugin.api.export.ReservedResult
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -18,13 +23,7 @@ import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
-import org.apache.http.client.HttpClient
-import org.apache.http.client.methods.HttpDelete
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.client.methods.HttpPut
 import org.apache.http.entity.ContentType
-import org.apache.http.entity.StringEntity
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -70,13 +69,17 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         settingBinder.save(settings)
     }
 
-    private fun beforeRequest() {
+    open protected fun beforeRequest(request: HttpRequest) {
         apiThrottle.acquireGreedy(LIMIT_PERIOD_PRE_REQUEST)
     }
 
-    private fun onErrorResponse(result: ReservedResult<String>) {
+    private fun onErrorResponse(response: HttpResponse) {
 
-        val returnValue = result.result()
+        val returnValue = response.string()
+        if (returnValue.isNullOrBlank()) {
+            logger!!.error("No Response For:${response.request().url()}")
+            return
+        }
         if (returnValue.contains("AuthenticationError")
                 && returnValue.contains("Invalid API Key")) {
             logger!!.error("Authentication failed!")
@@ -94,7 +97,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 ?.get("message")
                 ?.asString
 
-        if (result.status() == 429) {
+        if (response.code() == 429) {
 
             if (errorName == null) {
                 logger!!.error("$errorMessage \n $LIMIT_ERROR_MSG")
@@ -113,27 +116,26 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         logger!!.error("Error Response:$returnValue")
     }
 
+    open protected fun getHttpClient(): HttpClient {
+        return httpClientProvider!!.getHttpClient()
+    }
+
     /**
      * @return collection id
      */
     override fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>? {
 
-        val httpPost = HttpPost(COLLECTION)
-
-        val collectionWrap: HashMap<String, Any?> = HashMap()
-        collectionWrap["collection"] = collection
-
-        val requestEntity = StringEntity(GsonUtils.toJson(collectionWrap),
-                ContentType.APPLICATION_JSON)
-
-        httpPost.setHeader("x-api-key", getPrivateToken())
-        httpPost.entity = requestEntity
+        val request = getHttpClient()
+                .post(COLLECTION)
+                .contentType(ContentType.APPLICATION_JSON)
+                .header("x-api-key", getPrivateToken())
+                .body(KV.by("collection", collection))
 
         try {
-            beforeRequest()
-            val result = useHttpClient { it.execute(httpPost, reservedResponseHandle()) }
-            val returnValue = result.result()
-            if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
+            beforeRequest(request)
+            val response = call(request)
+            val returnValue = response.string()
+            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collectionInfo = returnObj?.asJsonObject?.get("collection")?.asMap()
                 if (!collectionInfo.isNullOrEmpty()) {
@@ -141,7 +143,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 }
             }
 
-            onErrorResponse(result)
+            onErrorResponse(response)
 
             return null
         } catch (e: Throwable) {
@@ -204,22 +206,17 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     private fun doUpdateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
 
-        val httpPut = HttpPut("$COLLECTION/$collectionId")
-        val collection: HashMap<String, Any?> = HashMap()
-        collection["collection"] = apiInfo
-
-        val requestEntity = StringEntity(GsonUtils.toJson(collection),
-                ContentType.APPLICATION_JSON)
-
-        httpPut.setHeader("x-api-key", getPrivateToken())
-        httpPut.entity = requestEntity
+        val request = getHttpClient().put("$COLLECTION/$collectionId")
+                .contentType(ContentType.APPLICATION_JSON)
+                .header("x-api-key", getPrivateToken())
+                .body(KV.by("collection", apiInfo))
 
         try {
-            beforeRequest()
+            beforeRequest(request)
 
-            val result = useHttpClient { it.execute(httpPut, reservedResponseHandle()) }
-            val returnValue = result.result()
-            if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
+            val response = call(request)
+            val returnValue = response.string()
+            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collectionName = returnObj?.asJsonObject?.get("collection")
                         ?.asJsonObject?.get("name")?.asString
@@ -228,7 +225,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 }
             }
 
-            onErrorResponse(result)
+            onErrorResponse(response)
             return false
         } catch (e: Throwable) {
             logger!!.traceError("Post failed", e)
@@ -238,14 +235,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun getAllCollection(): ArrayList<HashMap<String, Any?>>? {
-        val httpGet = HttpGet(COLLECTION)
-        httpGet.setHeader("x-api-key", getPrivateToken())
+        val request = getHttpClient().get(COLLECTION)
+                .header("x-api-key", getPrivateToken())
 
         try {
-            beforeRequest()
-            val result = useHttpClient { it.execute(httpGet, reservedResponseHandle()) }
-            val returnValue = result.result()
-            if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collections")) {
+            beforeRequest(request)
+            val response = call(request)
+            val returnValue = response.string()
+            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collections")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collections = returnObj?.asJsonObject?.get("collections")
                         ?.asJsonArray ?: return null
@@ -254,7 +251,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return collectionList
             }
 
-            onErrorResponse(result)
+            onErrorResponse(response)
 
             return null
         } catch (e: Throwable) {
@@ -265,20 +262,20 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
-        val httpGet = HttpGet("$COLLECTION/$collectionId")
-        httpGet.setHeader("x-api-key", getPrivateToken())
+        val request = getHttpClient().get("$COLLECTION/$collectionId")
+                .header("x-api-key", getPrivateToken())
         try {
-            beforeRequest()
-            val result = useHttpClient { it.execute(httpGet, reservedResponseHandle()) }
-            val returnValue = result.result()
+            beforeRequest(request)
+            val response = call(request)
+            val returnValue = response.string()
 
-            if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
+            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 return returnObj?.asJsonObject?.get("collection")
                         ?.asMap()
             }
 
-            onErrorResponse(result)
+            onErrorResponse(response)
 
             return null
         } catch (e: Throwable) {
@@ -289,14 +286,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
-        val httpDelete = HttpDelete("$COLLECTION/$collectionId")
-        httpDelete.setHeader("x-api-key", getPrivateToken())
+        val request = getHttpClient().delete("$COLLECTION/$collectionId")
+                .header("x-api-key", getPrivateToken())
         try {
-            beforeRequest()
-            val result = useHttpClient { it.execute(httpDelete, reservedResponseHandle()) }
-            val returnValue = result.result()
+            beforeRequest(request)
+            val result = call(request)
+            val returnValue = result.string()
 
-            if (StringUtils.isNotBlank(returnValue) && returnValue.contains("collection")) {
+            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 return returnObj?.asJsonObject?.get("collection")
                         ?.asMap()
@@ -315,17 +312,17 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     private val cnt = AtomicInteger(0)
 
-    protected fun <T> useHttpClient(action: (HttpClient) -> T): T {
+    protected fun call(request: HttpRequest): HttpResponse {
         return try {
             if (cnt.incrementAndGet() > 2) {
                 semaphore.acquire()
                 try {
-                    action(httpClientProvider!!.getHttpClient())
+                    request.call()
                 } finally {
                     semaphore.release()
                 }
             } else {
-                action(httpClientProvider!!.getHttpClient())
+                request.call()
             }
         } finally {
             cnt.decrementAndGet()

@@ -1,9 +1,8 @@
-package com.itangcent.idea.utils
+package com.itangcent.http
 
-import com.intellij.util.containers.stream
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.append
 import java.net.URL
 import kotlin.streams.toList
 
@@ -35,7 +34,7 @@ object RequestUtils {
             return body.stream().map { toRawBody(it) }.toList()
         }
         if (body is Array<*>) {
-            return body.stream().map { toRawBody(it) }.toArray()
+            return body.map { toRawBody(it) }.toTypedArray()
         }
         return body
     }
@@ -80,7 +79,6 @@ object RequestUtils {
         }
 
         fun host(host: String?): UrlBuild {
-
             try {
                 val parsedURL = URL(host)
                 this.protocol = parsedURL.protocol
@@ -99,6 +97,10 @@ object RequestUtils {
         fun query(query: String?): UrlBuild {
             this.query = query
             return this
+        }
+
+        fun query(name: String, value: String) {
+            this.query = this.query.append("$name=$value", "&")
         }
 
         fun url(): String {

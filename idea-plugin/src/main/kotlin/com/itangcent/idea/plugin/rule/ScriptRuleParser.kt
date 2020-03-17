@@ -5,8 +5,8 @@ import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
-import com.itangcent.idea.utils.RequestUtils
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toBoolean
@@ -62,9 +62,15 @@ abstract class ScriptRuleParser : RuleParser {
     private fun eval(ruleScript: String, context: RuleContext): Any? {
         return try {
             val simpleScriptContext = SimpleScriptContext()
-            val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
-                    context.getCore() ?: context.getResource()!!, context.getResource()!!)
-            simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
+            if (context is SuvRuleContext) {
+                context.exts()?.forEach {
+                    simpleScriptContext.setAttribute(it.key, it.value, ScriptContext.ENGINE_SCOPE)
+                }
+            } else {
+                val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
+                        context.getCore() ?: context.getResource()!!, context.getResource()!!)
+                simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
+            }
             initScriptContext(simpleScriptContext, context)
             getScriptEngine().eval(ruleScript, simpleScriptContext)
         } catch (e: UnsupportedScriptException) {

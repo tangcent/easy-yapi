@@ -15,13 +15,26 @@ version '1.0-SNAPSHOT'
 apply plugin: 'kotlin'
 
 repositories {
+
     mavenCentral()
+
+    maven {
+        url("https://oss.sonatype.org/content/repositories/snapshots/")
+    }
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+
+    compile('com.itangcent:commons:0.4.3-SNAPSHOT') {
+        exclude group: 'com.google.inject'
+        exclude group: 'com.google.code.gson'
+    }
+
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime
+    compileOnly group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.10'
 
     // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
     compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'

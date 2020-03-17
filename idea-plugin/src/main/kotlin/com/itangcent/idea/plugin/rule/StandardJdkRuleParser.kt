@@ -9,9 +9,13 @@ import com.itangcent.idea.plugin.utils.RegexUtils
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.jvm.LinkExtractor
 import com.itangcent.intellij.jvm.LinkResolver
+import com.itangcent.suv.http.HttpClientProvider
 import javax.script.*
 
 abstract class StandardJdkRuleParser : ScriptRuleParser() {
+
+    @Inject
+    private var httpClientProvider: HttpClientProvider? = null
 
     private var scriptEngine: ScriptEngine? = null
     private var unsupported = false
@@ -49,6 +53,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         engineBindings.putAll(toolBindings)
         engineBindings["logger"] = logger
         engineBindings["helper"] = Helper(context.getPsiContext())
+        engineBindings["httpClient"] = httpClientProvider!!.getHttpClient()
     }
 
     @Inject

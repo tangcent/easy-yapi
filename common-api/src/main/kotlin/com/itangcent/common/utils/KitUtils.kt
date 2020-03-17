@@ -18,6 +18,18 @@ object KitUtils {
     }
 }
 
+fun Any?.toJson(): String? {
+    if (this == null) {
+        return "null"
+    }
+
+    if (this is String) {
+        return this
+    }
+
+    return GsonUtils.toJson(this)
+}
+
 fun String?.concat(any: Any?, separator: CharSequence = "\n"): String? {
     return when {
         this == null -> any?.toString()
@@ -26,7 +38,7 @@ fun String?.concat(any: Any?, separator: CharSequence = "\n"): String? {
     }
 }
 
-fun String?.notEmpty(): Boolean {
+fun String?.notNullOrEmpty(): Boolean {
     return !this.isNullOrEmpty()
 }
 
@@ -44,4 +56,13 @@ fun String.headLine(): String? {
         return this
     }
     return substring(0, index)
+}
+
+fun String?.equalIgnoreCase(str: String?): Boolean {
+    if (this == null) {
+        return str == null
+    } else if (str == null) {
+        return false
+    }
+    return this.toLowerCase() == str.toLowerCase()
 }

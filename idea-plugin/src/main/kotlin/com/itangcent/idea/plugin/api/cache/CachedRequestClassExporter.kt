@@ -170,7 +170,11 @@ class CachedRequestClassExporter : ClassExporter, Worker {
     private fun readApiFromCache(cls: PsiClass, fileApiCache: FileApiCache, requestHandle: DocHandle) {
         fileApiCache.requests?.forEach { request ->
             val method = request.key?.let { PsiClassUtils.findMethodFromFullName(it, cls as PsiElement) }
-            request.request!!.resource = PsiMethodResource(method!!, cls)
+            if (method == null) {
+                logger?.warn("${request.key} not be found")
+                return@forEach
+            }
+            request.request!!.resource = PsiMethodResource(method, cls)
             requestHandle(request.request!!)
         }
 
