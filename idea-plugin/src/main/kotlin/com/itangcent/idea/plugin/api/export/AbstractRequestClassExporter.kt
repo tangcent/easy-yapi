@@ -14,11 +14,11 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodInferHelper
-import com.itangcent.intellij.config.rule.computer
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.DuckType
@@ -503,13 +503,16 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             }
         }
 
-        requestHelper!!.addHeaderIfMissed(request, "Content-Type", "application/x-www-form-urlencoded")
-
         if (request.method == null || request.method == HttpMethod.NO_METHOD) {
             val defaultHttpMethod = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD,
                     method)
-            requestHelper.setMethod(request, defaultHttpMethod ?: HttpMethod.GET)
+            requestHelper!!.setMethod(request, defaultHttpMethod ?: HttpMethod.GET)
         }
+
+        if (request.hasBody()) {
+            requestHelper!!.addHeaderIfMissed(request, "Content-Type", "application/x-www-form-urlencoded")
+        }
+
     }
 
     abstract fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?)
