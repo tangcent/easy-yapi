@@ -54,7 +54,6 @@ class EasyApiSettingGUI {
     private var logLevelComboBox: JComboBox<Logger.Level>? = null
 
     private var methodDocEnableCheckBox: JCheckBox? = null
-
     private var globalCacheSizeLabel: JLabel? = null
 
     private var projectCacheSizeLabel: JLabel? = null
@@ -84,6 +83,8 @@ class EasyApiSettingGUI {
     private var yapiServerTextField: JTextField? = null
 
     private var yapiTokenTextArea: JTextArea? = null
+
+    private var enableUrlTemplatingCheckBox: JCheckBox? = null
 
     private var formExpandedCheckBox: JCheckBox? = null
 
@@ -181,6 +182,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(yapiTokenTextArea!!)
                 .mutual(this, "settings.yapiTokens")
+
+        autoComputer.bind(enableUrlTemplatingCheckBox!!)
+                .mutual(this, "settings.enableUrlTemplating")
 
         autoComputer.bind(this.httpTimeOutTextField!!)
                 .with<Int?>(this, "settings.httpTimeOut")

@@ -52,6 +52,10 @@ open class DefaultRequestHelper : RequestHelper {
         request.querys!!.add(param)
     }
 
+    override fun removeParam(request: Request, param: Param) {
+        request.querys?.remove(param)
+    }
+
     override fun addPathParam(request: Request, pathParam: PathParam) {
         if (request.paths == null) {
             request.paths = LinkedList()

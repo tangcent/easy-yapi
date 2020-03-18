@@ -24,6 +24,8 @@ interface RequestHelper {
 
     fun addParam(request: Request, param: Param)
 
+    fun removeParam(request: Request, param: Param)
+
     fun addPathParam(request: Request, pathParam: PathParam)
 
     fun setJsonBody(request: Request, body: Any?, bodyAttr: String?)
@@ -102,6 +104,14 @@ fun RequestHelper.addHeaderIfMissed(request: Request, name: String, value: Strin
 fun RequestHelper.addPathParam(request: Request, name: String, desc: String) {
     val pathParam = PathParam()
     pathParam.name = name
+    pathParam.desc = desc
+    this.addPathParam(request, pathParam)
+}
+
+fun RequestHelper.addPathParam(request: Request, name: String, value: String, desc: String?) {
+    val pathParam = PathParam()
+    pathParam.name = name
+    pathParam.value = value
     pathParam.desc = desc
     this.addPathParam(request, pathParam)
 }
