@@ -171,7 +171,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         processResponse(method, request)
 
-        processCompleted(method, request)
+        processCompleted(method, kv, request)
 
         docHandle(request)
     }
@@ -192,7 +192,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DEFAULT_VALUE, param)
     }
 
-    protected open fun processCompleted(method: ExplicitMethod, request: Request) {
+    protected open fun processCompleted(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         //parse additionalHeader by config
         val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER,
                 method)
