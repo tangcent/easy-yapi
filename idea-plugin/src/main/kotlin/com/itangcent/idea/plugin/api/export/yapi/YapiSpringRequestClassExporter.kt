@@ -45,8 +45,9 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             !params.contains('=') -> {
                 val param = request.querys?.find { it.name == params }
                 if (enableUrlTemplating()) {
-                    addParamToPath(request, params, "{$params}", param?.desc)
-                    param?.let { requestHelper!!.removeParam(request, it) }
+                    addParamToPath(request, params, "{$params}")
+                    requestHelper!!.addPathParam(request, params, "", param?.desc)
+                    param?.let { requestHelper.removeParam(request, it) }
                 } else {
                     if (param == null) {
                         requestHelper!!.addParam(request, params, null, true, null)
@@ -61,8 +62,9 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                 val param = request.querys?.find { it.name == name }
 
                 if (enableUrlTemplating()) {
-                    addParamToPath(request, name, value, param?.desc)
-                    param?.let { requestHelper!!.removeParam(request, it) }
+                    addParamToPath(request, name, value)
+                    requestHelper!!.addPathParam(request, name, value, param?.desc)
+                    param?.let { requestHelper.removeParam(request, it) }
                 } else {
                     if (param == null) {
                         requestHelper!!.addParam(request, name, value, true, null)
@@ -77,15 +79,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
     protected open fun addParamToPath(request: Request,
                                       paramName: String,
-                                      value: String,
-                                      desc: String?) {
+                                      value: String) {
         val path = request.path ?: ""
         request.path = when {
             path.endsWith('?') -> "$path$paramName=$value"
             path.contains('?') -> "$path&$paramName=$value"
             else -> "$path?$paramName=$value"
         }
-        requestHelper!!.addPathParam(request, paramName, value, desc)
     }
 
     protected fun enableUrlTemplating(): Boolean {

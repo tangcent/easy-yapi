@@ -261,6 +261,7 @@ class YapiFormatter {
             request.paths!!.forEach {
                 pathParmas.add(KV.create<String, Any?>()
                         .set("name", it.name)
+                        .set("example", it.value)
                         .set("desc", it.desc)
                 )
             }
