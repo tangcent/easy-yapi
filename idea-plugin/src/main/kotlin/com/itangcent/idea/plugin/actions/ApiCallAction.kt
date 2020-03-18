@@ -2,11 +2,9 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.call.ApiCaller
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
@@ -16,6 +14,8 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.suv.http.ConfigurableHttpClientProvider
+import com.itangcent.suv.http.HttpClientProvider
 
 class ApiCallAction : ApiExportAction("Call Api") {
 
@@ -30,6 +30,8 @@ class ApiCallAction : ApiExportAction("Call Api") {
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
+
+        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
         builder.bind(ApiCaller::class) { it.singleton() }
 

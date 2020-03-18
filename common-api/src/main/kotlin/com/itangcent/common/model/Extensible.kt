@@ -15,4 +15,8 @@ abstract class Extensible {
         }
         ext!![attr] = value
     }
+
+    fun exts(): Map<String, Any?>? {
+        return ext
+    }
 }

@@ -16,6 +16,9 @@ class SuvRuleParser : RuleParser {
     private val actionContext: ActionContext? = null
 
     override fun contextOf(target: kotlin.Any, context: com.intellij.psi.PsiElement?): RuleContext {
+        if (target is RuleContext) {
+            return target
+        }
         return getRuleParser(SimpleRuleParser::class).contextOf(target, context)
     }
 

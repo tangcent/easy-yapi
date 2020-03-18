@@ -1,6 +1,7 @@
 package com.itangcent.suv.http
 
-import org.apache.http.client.HttpClient
+import com.itangcent.http.HttpClient
+
 
 abstract class AbstractHttpClientProvider : HttpClientProvider {
 

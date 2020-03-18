@@ -84,9 +84,6 @@ class ApiDashboardDialog : JDialog() {
     private val classExporter: ClassExporter? = null
 
     @Inject
-    private val requestHelper: RequestHelper? = null
-
-    @Inject
     private val resourceHelper: ResourceHelper? = null
 
     @Inject

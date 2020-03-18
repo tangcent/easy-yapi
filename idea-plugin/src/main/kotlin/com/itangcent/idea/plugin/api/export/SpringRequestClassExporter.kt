@@ -8,12 +8,9 @@ import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.any
-import com.itangcent.common.utils.isNullOrEmpty
-import com.itangcent.common.utils.tinyString
-import com.itangcent.intellij.config.rule.computer
+import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.utils.SpringClassName
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
@@ -188,6 +185,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         val basePath: String? = kv.getAs("basePath")
         val ctrlHttpMethod: String? = kv.getAs("ctrlHttpMethod")
         val requestMapping = findRequestMappingInAnn(method.psi())
+        kv["requestMapping"] = requestMapping
         var httpMethod = findHttpMethod(requestMapping)
         if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
             httpMethod = ctrlHttpMethod!!
@@ -198,6 +196,14 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         requestHelper!!.setPath(request, httpPath)
     }
 
+    override fun processCompleted(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
+        val requestMapping: Pair<Map<String, Any?>, String>? = kv.getAs("requestMapping")
+        requestMapping?.let {
+            resolveParamInRequestMapping(request, it)
+            resolveHeaderInRequestMapping(request, it)
+        }
+    }
+
     //region process spring annotation-------------------------------------------------------------------
 
     private fun findHttpPath(requestMappingAnn: Pair<Map<String, Any?>, String>?): String? {
@@ -206,6 +212,108 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         return when {
             path.contains(",") -> path.substringBefore(',')
             else -> path
+        }
+    }
+
+    protected open fun resolveParamInRequestMapping(request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>) {
+        val params = requestMappingAnn.first["params"] ?: return
+        if (params is Array<*>) {
+            params.map { it.tinyString() }
+                    .filter { it.notNullOrEmpty() }
+                    .forEach { resolveParamStr(request, it!!) }
+        } else {
+            params.tinyString()
+                    ?.takeIf { it.notNullOrEmpty() }
+                    ?.let { resolveParamStr(request, it) }
+        }
+    }
+
+    protected open fun resolveParamStr(request: Request, params: String) {
+        when {
+            params.startsWith("!") -> {
+                requestHelper!!.appendDesc(request, "parameter [${params.removeSuffix("!")}] should not be present")
+            }
+            params.contains("!=") -> {
+                val name = params.substringBefore("!=").trim()
+                val value = params.substringAfter("!=").trim()
+                val param = request.querys?.find { it.name == name }
+                if (param == null) {
+                    requestHelper!!.appendDesc(request, "parameter [$name] " +
+                            "should not equal to [$value]")
+                } else {
+                    param.desc = param.desc.append("should not equal to [$value]", "\n")
+                }
+            }
+            !params.contains('=') -> {
+                val param = request.querys?.find { it.name == params }
+                if (param == null) {
+                    requestHelper!!.addParam(request, params, null, true, null)
+                } else {
+                    param.required = true
+                }
+            }
+            else -> {
+                val name = params.substringBefore("=").trim()
+                val value = params.substringAfter("=").trim()
+                val param = request.querys?.find { it.name == name }
+                if (param == null) {
+                    requestHelper!!.addParam(request, name, value, true, null)
+                } else {
+                    param.required = true
+                    param.value = value
+                }
+            }
+        }
+    }
+
+    protected open fun resolveHeaderInRequestMapping(request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>) {
+        val headers = requestMappingAnn.first["headers"] ?: return
+        if (headers is Array<*>) {
+            headers.map { it.tinyString() }
+                    .filter { it.notNullOrEmpty() }
+                    .forEach { resolveHeaderStr(request, it!!) }
+        } else {
+            headers.tinyString()
+                    ?.takeIf { it.notNullOrEmpty() }
+                    ?.let { resolveHeaderStr(request, it) }
+        }
+    }
+
+    protected open fun resolveHeaderStr(request: Request, headers: String) {
+        when {
+            headers.startsWith("!") -> {
+                requestHelper!!.appendDesc(request, "header [${headers.removeSuffix("!")}] should not be present")
+            }
+            headers.contains("!=") -> {
+                val name = headers.substringBefore("!=").trim()
+                val value = headers.substringAfter("!=").trim()
+                val header = request.querys?.find { it.name == name }
+                if (header == null) {
+                    requestHelper!!.appendDesc(request, "\nheader [$name] " +
+                            "should not equal to [$value]")
+                } else {
+                    header.desc = header.desc.append("should not equal to [$value]", "\n")
+                }
+            }
+            !headers.contains('=') -> {
+                val header = request.querys?.find { it.name == headers }
+                if (header == null) {
+                    requestHelper!!.addHeader(request, headers, "")
+                } else {
+                    header.required = true
+                }
+            }
+            else -> {
+                val name = headers.substringBefore("=").trim()
+                val value = headers.substringAfter("=").trim()
+                val header = request.querys?.find { it.name == name }
+                if (header == null) {
+                    requestHelper!!.addHeader(request, name, value)
+                } else {
+                    header.required = true
+                    header.value = value
+                }
+            }
         }
     }
 
@@ -290,6 +398,6 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
     }
 
-    //endregion process spring annotation-------------------------------------------------------------------
+//endregion process spring annotation-------------------------------------------------------------------
 
 }
