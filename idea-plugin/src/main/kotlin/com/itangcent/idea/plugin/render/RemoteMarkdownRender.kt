@@ -3,13 +3,11 @@ package com.itangcent.idea.plugin.render
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.common.logger.traceError
-import com.itangcent.idea.plugin.api.export.StringResponseHandler
-import com.itangcent.idea.plugin.api.export.reserved
+import com.itangcent.http.contentType
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.StringEntity
+import org.apache.http.entity.ContentType
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -57,17 +55,15 @@ open class RemoteMarkdownRender : MarkdownRender {
     protected fun doRender(markdown: String): String? {
 
         val server = configReader!!.first("markdown.render.server") ?: return null
-        val httpPost = HttpPost(server)
-
-        httpPost.entity = StringEntity(markdown, Charsets.UTF_8)
-
         try {
-            val result = httpClientProvide!!.getHttpClient().execute(httpPost,
-                    StringResponseHandler.DEFAULT_RESPONSE_HANDLER.reserved())
-            if (result.status() == 200) {
-                return result.result()
+            val httpResponse = httpClientProvide!!.getHttpClient().post(server)
+                    .contentType(ContentType.TEXT_PLAIN)
+                    .body(markdown)
+                    .call()
+            if (httpResponse.code() == 200) {
+                return httpResponse.string()
             }
-            logger!!.warn(" try render markdown with $server,but response code is ${result.status()}, response is:${result.result()}")
+            logger!!.warn(" try render markdown with $server,but response code is ${httpResponse.code()}, response is:${httpResponse.string()}")
         } catch (e: Exception) {
             logger!!.traceError(" try render markdown with $server failed", e)
         }
