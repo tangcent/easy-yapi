@@ -67,9 +67,8 @@ open class AbstractYapiApiExporter {
 
         var name: String? = null
         val desc: String?
-        val attrOfCls = findAttrOfClass(psiClass)!!
-
-        val clsName = actionContext!!.callInReadUI { psiClass.name }
+        val attrOfCls = actionContext!!.callInReadUI { findAttrOfClass(psiClass) }!!
+        val clsName = actionContext.callInReadUI { psiClass.name }
         when {
             attrOfCls.contains("\n") -> {//multi line
                 val lines = attrOfCls.lines()
