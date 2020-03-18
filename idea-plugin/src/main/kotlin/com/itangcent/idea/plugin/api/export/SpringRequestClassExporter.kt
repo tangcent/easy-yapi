@@ -198,7 +198,10 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     override fun processCompleted(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         val requestMapping: Pair<Map<String, Any?>, String>? = kv.getAs("requestMapping")
-        requestMapping?.let { resolveParamInRequestMapping(request, it) }
+        requestMapping?.let {
+            resolveParamInRequestMapping(request, it)
+            resolveHeaderInRequestMapping(request, it)
+        }
     }
 
     //region process spring annotation-------------------------------------------------------------------
@@ -258,6 +261,57 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 } else {
                     param.required = true
                     param.value = value
+                }
+            }
+        }
+    }
+
+    protected open fun resolveHeaderInRequestMapping(request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>) {
+        val headers = requestMappingAnn.first["headers"] ?: return
+        if (headers is Array<*>) {
+            headers.map { it.tinyString() }
+                    .filter { it.notNullOrEmpty() }
+                    .forEach { resolveHeaderStr(request, it!!) }
+        } else {
+            headers.tinyString()
+                    ?.takeIf { it.notNullOrEmpty() }
+                    ?.let { resolveHeaderStr(request, it) }
+        }
+    }
+
+    protected open fun resolveHeaderStr(request: Request, headers: String) {
+        when {
+            headers.startsWith("!") -> {
+                requestHelper!!.appendDesc(request, "header [${headers.removeSuffix("!")}] should not be present")
+            }
+            headers.contains("!=") -> {
+                val name = headers.substringBefore("!=").trim()
+                val value = headers.substringAfter("!=").trim()
+                val header = request.querys?.find { it.name == name }
+                if (header == null) {
+                    requestHelper!!.appendDesc(request, "\nheader [$name] " +
+                            "should not equal to [$value]")
+                } else {
+                    header.desc = header.desc.append("should not equal to [$value]", "\n")
+                }
+            }
+            !headers.contains('=') -> {
+                val header = request.querys?.find { it.name == headers }
+                if (header == null) {
+                    requestHelper!!.addHeader(request, headers, "")
+                } else {
+                    header.required = true
+                }
+            }
+            else -> {
+                val name = headers.substringBefore("=").trim()
+                val value = headers.substringAfter("=").trim()
+                val header = request.querys?.find { it.name == name }
+                if (header == null) {
+                    requestHelper!!.addHeader(request, name, value)
+                } else {
+                    header.required = true
+                    header.value = value
                 }
             }
         }
