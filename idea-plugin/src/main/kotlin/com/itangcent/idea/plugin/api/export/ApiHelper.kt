@@ -5,7 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.utils.concat
 import com.itangcent.common.utils.headLine
-import com.itangcent.common.utils.notEmpty
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.jvm.DocHelper
@@ -26,17 +26,17 @@ open class ApiHelper {
     fun nameOfApi(psiMethod: PsiMethod): String {
 
         val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, psiMethod)
-        if (nameByRule.notEmpty()) {
+        if (nameByRule.notNullOrEmpty()) {
             return nameByRule!!
         }
 
         val attrOfDocComment = docHelper!!.getAttrOfDocComment(psiMethod)
         var headLine = attrOfDocComment?.headLine()
-        if (headLine.notEmpty()) return headLine!!
+        if (headLine.notNullOrEmpty()) return headLine!!
 
         val docByRule = ruleComputer.computer(ClassExportRuleKeys.METHOD_DOC, psiMethod)
         headLine = docByRule?.headLine()
-        if (headLine.notEmpty()) return headLine!!
+        if (headLine.notNullOrEmpty()) return headLine!!
 
         return psiMethod.name
     }
@@ -74,7 +74,7 @@ open class ApiHelper {
 
         var named = false
         val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, explicitMethod)
-        if (nameByRule.notEmpty()) {
+        if (nameByRule.notNullOrEmpty()) {
             nameHandle(nameByRule!!)
             named = true
         }
@@ -83,7 +83,7 @@ open class ApiHelper {
 
         attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, explicitMethod.psi())
 
-        if (attrOfMethod.notEmpty()) {
+        if (attrOfMethod.notNullOrEmpty()) {
             attrHandle(attrOfMethod!!)
 
             if (!named) {
@@ -103,7 +103,7 @@ open class ApiHelper {
 
         var named = false
         val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, explicitMethod)
-        if (nameByRule.notEmpty()) {
+        if (nameByRule.notNullOrEmpty()) {
             nameHandle(nameByRule!!)
             named = true
         }
@@ -112,7 +112,7 @@ open class ApiHelper {
 
         attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, explicitMethod)
 
-        if (attrOfMethod.notEmpty()) {
+        if (attrOfMethod.notNullOrEmpty()) {
             attrHandle(attrOfMethod!!)
 
             if (!named) {

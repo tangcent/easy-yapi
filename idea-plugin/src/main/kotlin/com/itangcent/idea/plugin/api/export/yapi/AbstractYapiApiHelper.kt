@@ -12,8 +12,6 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.methods.HttpRequestBase
 import java.io.ByteArrayOutputStream
 import java.net.SocketException
 import java.net.SocketTimeoutException
@@ -132,12 +130,10 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
 
     open fun getByApi(url: String, dumb: Boolean = true): String? {
         return try {
-            val httpClient = httpClientProvide!!.getHttpClient()
-            val httpGet = HttpGet(url)
-            beforeCall(httpGet)
-            val responseHandler = reservedResponseHandle()
-
-            httpClient.execute(httpGet, responseHandler).result()
+            httpClientProvide!!.getHttpClient()
+                    .get(url)
+                    .call()
+                    .string()
         } catch (e: SocketTimeoutException) {
             if (!dumb) {
                 logger!!.trace("$url connect timeout")
@@ -160,10 +156,6 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             logger!!.traceError("request $url failed", e)
             null
         }
-    }
-
-    open protected fun beforeCall(httpRequest: HttpRequestBase) {
-
     }
 
     protected fun reservedResponseHandle(): ReservedResponseHandle<String> {

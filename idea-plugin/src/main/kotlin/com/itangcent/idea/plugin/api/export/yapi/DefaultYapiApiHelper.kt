@@ -3,12 +3,11 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Singleton
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
+import com.itangcent.http.contentType
 import com.itangcent.intellij.extend.asList
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.ContentType
-import org.apache.http.entity.StringEntity
 import java.util.*
 import kotlin.collections.set
 import kotlin.concurrent.withLock
@@ -69,18 +68,13 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
     override fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
 
-        val httpClient = httpClientProvide!!.getHttpClient()
-
-        val httpPost = HttpPost(server + SAVEAPI)
-        beforeCall(httpPost)
-
-        val requestEntity = StringEntity(GsonUtils.toJson(apiInfo),
-                ContentType.APPLICATION_JSON)
-        httpPost.entity = requestEntity
-        val responseHandler = reservedResponseHandle()
-
         try {
-            val returnValue = httpClient.execute(httpPost, responseHandler).result()
+            val returnValue = httpClientProvide!!.getHttpClient()
+                    .post(server + SAVEAPI)
+                    .contentType(ContentType.APPLICATION_JSON)
+                    .body(apiInfo)
+                    .call()
+                    .string()
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
                 logger!!.info("Post failed:$errMsg")
@@ -100,26 +94,18 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun addCart(projectId: String, token: String, name: String, desc: String): Boolean {
-
-        val httpClient = httpClientProvide!!.getHttpClient()
-
-        val httpPost = HttpPost(server + ADDCART)
-        beforeCall(httpPost)
-
-        val requestEntity = StringEntity(GsonUtils.toJson(KV.create<Any?, Any?>()
-                .set("desc", desc)
-                .set("project_id", projectId)
-                .set("name", name)
-                .set("token", token)
-        ),
-                ContentType.APPLICATION_JSON)
-
-        httpPost.entity = requestEntity
-
-        val responseHandler = reservedResponseHandle()
-
         try {
-            val returnValue = httpClient.execute(httpPost, responseHandler).result()
+            val returnValue = httpClientProvide!!.getHttpClient()
+                    .post(server + ADDCART)
+                    .contentType(ContentType.APPLICATION_JSON)
+                    .body(KV.create<Any?, Any?>()
+                            .set("desc", desc)
+                            .set("project_id", projectId)
+                            .set("name", name)
+                            .set("token", token))
+                    .call()
+                    .string()
+
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
                 logger!!.info("Post failed:$errMsg")

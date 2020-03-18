@@ -1,36 +1,40 @@
-package com.itangcent.idea.utils
+package com.itangcent.http
 
-import com.intellij.util.containers.stream
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.intellij.util.mutable
+import com.itangcent.common.utils.append
 import java.net.URL
 import kotlin.streams.toList
 
 object RequestUtils {
 
-    fun parseRawBody(body: Any, copy: Boolean = true): String {
+    fun parseRawBody(body: Any): String {
         if (body is String) {
             return body
         }
-        return GsonUtils.prettyJson(toRawBody(body, copy))
+        return GsonUtils.prettyJson(toRawBody(body))
     }
 
-    fun toRawBody(body: Any?, copy: Boolean): Any? {
+    fun toRawBody(body: Any?): Any? {
         if (body == null) return null
         if (body is Map<*, *>) {
-            val mutableBody = body.mutable(copy)
-            Attrs.ALL.forEach { mutableBody.remove(it) }
+            val mutableBody = body.toMutableMap()
+            if (mutableBody.containsKey(Attrs.COMMENT_ATTR)) {
+                mutableBody.remove(Attrs.COMMENT_ATTR)
+            }
+            if (mutableBody.containsKey(Attrs.REQUIRED_ATTR)) {
+                mutableBody.remove(Attrs.REQUIRED_ATTR)
+            }
             for (mutableEntry in mutableBody) {
-                mutableEntry.value?.let { mutableEntry.setValue(toRawBody(it, copy)) }
+                mutableEntry.value?.let { mutableEntry.setValue(toRawBody(it)) }
             }
             return mutableBody
         }
         if (body is List<*>) {
-            return body.stream().map { toRawBody(it, copy) }.toList()
+            return body.stream().map { toRawBody(it) }.toList()
         }
         if (body is Array<*>) {
-            return body.stream().map { toRawBody(it, copy) }.toArray()
+            return body.map { toRawBody(it) }.toTypedArray()
         }
         return body
     }
@@ -75,7 +79,6 @@ object RequestUtils {
         }
 
         fun host(host: String?): UrlBuild {
-
             try {
                 val parsedURL = URL(host)
                 this.protocol = parsedURL.protocol
@@ -94,6 +97,10 @@ object RequestUtils {
         fun query(query: String?): UrlBuild {
             this.query = query
             return this
+        }
+
+        fun query(name: String, value: String) {
+            this.query = this.query.append("$name=$value", "&")
         }
 
         fun url(): String {

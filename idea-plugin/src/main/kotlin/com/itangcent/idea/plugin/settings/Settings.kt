@@ -24,6 +24,8 @@ class Settings {
 
     var yapiTokens: String? = null
 
+    var enableUrlTemplating: Boolean = true
+
     //unit:s
     var httpTimeOut: Int = 5
 
@@ -49,6 +51,7 @@ class Settings {
         newSetting.inferMaxDeep = this.inferMaxDeep
         newSetting.yapiServer = this.yapiServer
         newSetting.yapiTokens = this.yapiTokens
+        newSetting.enableUrlTemplating = this.enableUrlTemplating
         newSetting.httpTimeOut = this.httpTimeOut
         newSetting.useRecommendConfig = this.useRecommendConfig
         newSetting.recommendConfigs = this.recommendConfigs
@@ -73,6 +76,7 @@ class Settings {
         if (inferMaxDeep != other.inferMaxDeep) return false
         if (yapiServer != other.yapiServer) return false
         if (yapiTokens != other.yapiTokens) return false
+        if (enableUrlTemplating != other.enableUrlTemplating) return false
         if (httpTimeOut != other.httpTimeOut) return false
         if (useRecommendConfig != other.useRecommendConfig) return false
         if (recommendConfigs != other.recommendConfigs) return false
@@ -91,6 +95,9 @@ class Settings {
         result = 31 * result + readGetter.hashCode()
         result = 31 * result + inferEnable.hashCode()
         result = 31 * result + inferMaxDeep
+        result = 31 * result + (yapiServer?.hashCode() ?: 0)
+        result = 31 * result + (yapiTokens?.hashCode() ?: 0)
+        result = 31 * result + enableUrlTemplating.hashCode()
         result = 31 * result + httpTimeOut
         result = 31 * result + useRecommendConfig.hashCode()
         result = 31 * result + recommendConfigs.hashCode()
@@ -99,6 +106,7 @@ class Settings {
         result = 31 * result + outputCharset.hashCode()
         return result
     }
+
 
     companion object {
         const val DEFAULT_INFER_MAX_DEEP = 4
