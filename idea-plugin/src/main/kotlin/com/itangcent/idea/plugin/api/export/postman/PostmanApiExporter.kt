@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
+import com.itangcent.common.kit.getAs
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
@@ -91,7 +92,7 @@ class PostmanApiExporter {
                                     val createdCollection = postmanApiHelper.createCollection(postman)
 
                                     if (!createdCollection.isNullOrEmpty()) {
-                                        val collectionName = createdCollection.get("name")?.toString()
+                                        val collectionName = createdCollection.getAs<String>("name")
                                         if (StringUtils.isNotBlank(collectionName)) {
                                             logger.info("Imported as collection:$collectionName")
                                             return@runAsync
@@ -112,7 +113,7 @@ class PostmanApiExporter {
                                 fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
                                     logger.info("Exported data are copied to clipboard,you can paste to postman now")
                                 }, {
-                                    logger.info("Apis save success")
+                                    logger.info("Apis save success: $it")
                                 }) {
                                     logger.info("Apis save failed")
                                 }

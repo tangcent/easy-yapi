@@ -5,12 +5,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.utils.filterAs
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.filterAs
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
@@ -430,7 +430,7 @@ class SuvApiExporter {
                 fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
                     logger!!.info("Exported data are copied to clipboard,you can paste to postman now")
                 }, {
-                    logger!!.info("Apis save success")
+                    logger!!.info("Apis save success: $it")
                 }) {
                     logger!!.info("Apis save failed")
                 }
@@ -491,7 +491,7 @@ class SuvApiExporter {
                                 ?: kotlin.text.Charsets.UTF_8, {
                             logger!!.info("Exported data are copied to clipboard,you can paste to a md file now")
                         }, {
-                            logger!!.info("Apis save success")
+                            logger!!.info("Apis save success: $it")
                         }) {
                             logger!!.info("Apis save failed")
                         }

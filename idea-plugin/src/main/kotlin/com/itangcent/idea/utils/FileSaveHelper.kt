@@ -35,7 +35,7 @@ class FileSaveHelper {
 
     fun saveOrCopy(info: String?,
                    onCopy: () -> Unit,
-                   onSaveSuccess: () -> Unit,
+                   onSaveSuccess: (String) -> Unit,
                    onSaveFailed: () -> Unit) {
         saveOrCopy(info, Charsets.UTF_8, onCopy, onSaveSuccess, onSaveFailed)
     }
@@ -43,7 +43,7 @@ class FileSaveHelper {
     fun saveOrCopy(info: String?,
                    charset: Charset,
                    onCopy: () -> Unit,
-                   onSaveSuccess: () -> Unit,
+                   onSaveSuccess: (String) -> Unit,
                    onSaveFailed: () -> Unit) {
 
         if (info == null) return
@@ -68,8 +68,9 @@ class FileSaveHelper {
                     if (file.isDirectory) {
                         try {
                             val defaultFile = getDefaultExportedFile()
-                            FileUtils.forceSave("${file.path}${File.separator}$defaultFile", info.toByteArray(charset))
-                            onSaveSuccess()
+                            val filePath = "${file.path}${File.separator}$defaultFile"
+                            FileUtils.forceSave(filePath, info.toByteArray(charset))
+                            onSaveSuccess(filePath)
                         } catch (e: Exception) {
                             onSaveFailed()
                             actionContext.runAsync {
@@ -79,7 +80,7 @@ class FileSaveHelper {
                     } else {
                         try {
                             FileUtils.forceSave(file, info.toByteArray(charset))
-                            onSaveSuccess()
+                            onSaveSuccess(file.path)
                         } catch (e: Exception) {
                             onSaveFailed()
                             actionContext.runAsync {
