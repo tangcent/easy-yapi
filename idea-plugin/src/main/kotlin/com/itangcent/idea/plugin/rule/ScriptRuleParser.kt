@@ -5,6 +5,7 @@ import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.common.logger.traceError
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.intellij.config.rule.*
@@ -75,6 +76,9 @@ abstract class ScriptRuleParser : RuleParser {
             getScriptEngine().eval(ruleScript, simpleScriptContext)
         } catch (e: UnsupportedScriptException) {
             logger?.error("unsupported script type:${e.getType()},script:$ruleScript")
+            null
+        } catch (e: Exception) {
+            logger?.traceError("error eval script:$ruleScript", e)
             null
         }
     }
@@ -816,7 +820,8 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun toJson(readGetter: Boolean): String? {
-            return psiClassHelper!!.getTypeObject(duckType, getResource()!!,
+            val resource: PsiElement = getResource() ?: return null
+            return psiClassHelper!!.getTypeObject(duckType, resource,
                     if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
             )?.let { RequestUtils.parseRawBody(it) }
         }
