@@ -1,4 +1,8 @@
-package com.itangcent.common.utils
+package com.itangcent.common.kit
+
+import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.isNullOrEmpty
+import java.util.stream.Stream
 
 object KitUtils {
 
@@ -38,10 +42,6 @@ fun String?.concat(any: Any?, separator: CharSequence = "\n"): String? {
     }
 }
 
-fun String?.notNullOrEmpty(): Boolean {
-    return !this.isNullOrEmpty()
-}
-
 fun String.headLine(): String? {
     if (this.isBlank()) return null
 
@@ -66,3 +66,4 @@ fun String?.equalIgnoreCase(str: String?): Boolean {
     }
     return this.toLowerCase() == str.toLowerCase()
 }
+

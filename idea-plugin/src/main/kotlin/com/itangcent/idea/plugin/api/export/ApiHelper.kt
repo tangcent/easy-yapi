@@ -3,8 +3,8 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.utils.concat
-import com.itangcent.common.utils.headLine
+import com.itangcent.common.kit.concat
+import com.itangcent.common.kit.headLine
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.config.rule.RuleComputer

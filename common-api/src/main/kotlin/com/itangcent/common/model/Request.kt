@@ -1,6 +1,7 @@
 package com.itangcent.common.model
 
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.utils.firstOrNull
 
 open class Request : Doc() {
 
@@ -35,7 +36,9 @@ fun Request.header(name: String): String? {
         return null
     }
     val lowerName = name.toLowerCase()
-    return this.headers!!.filter { it.name?.toLowerCase() == lowerName }
+    return this.headers!!
+            .stream()
+            .filter { it.name?.toLowerCase() == lowerName }
             .map { it.value }
             .firstOrNull()
 }

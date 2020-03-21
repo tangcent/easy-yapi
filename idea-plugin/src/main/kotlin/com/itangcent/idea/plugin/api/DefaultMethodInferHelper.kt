@@ -5,6 +5,8 @@ import com.google.inject.Singleton
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.*
+import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -952,6 +954,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
                         returnVal = findComplexResult(returnVal, processExpression(returnValue))
                     }
                 }
+                is PsiThrowStatement -> {
+                    //ignore
+                }
                 else -> {
                     methodReturnInferHelper.logger!!.debug("no matched statement:${statement::class} - ${statement.text}")
                 }
@@ -1111,8 +1116,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
                     val callMethod = psiExpression.resolveMethod() ?: return null
 
-                    val args = psiExpression.argumentList?.expressions?.map { processExpression(it) }
-                            ?.toTypedArray()
+                    val args = psiExpression.argumentList?.expressions?.mapToTypedArray { processExpression(it) }
 
                     var caller: Any? = null
                     if (!callMethod.hasModifier(JvmModifier.STATIC)) {
@@ -1161,8 +1165,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
 
         protected fun processNewExpression(psiNewExpression: PsiNewExpression): Any? {
-            val args = psiNewExpression.argumentList?.expressions?.map { processExpression(it) }
-                    ?.toTypedArray()
+            val args = psiNewExpression.argumentList?.expressions?.mapToTypedArray { processExpression(it) }
             return DirectVariable {
                 methodReturnInferHelper.NewExpressionInfer(
                         psiNewExpression,
@@ -1562,8 +1565,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 is PsiNewExpression -> return processNewExpression(psiExpression)
                 is PsiCallExpression -> {
                     val callMethod = psiExpression.resolveMethod() ?: return null
-                    val args = psiExpression.argumentList?.expressions?.map { processExpression(it) }
-                            ?.toTypedArray()
+                    val args = psiExpression.argumentList?.expressions?.mapToTypedArray { processExpression(it) }
                     return if (callMethod.hasModifier(JvmModifier.STATIC)) {//only static can be call
                         DirectVariable { methodReturnInferHelper.inferReturn(callMethod, null, args) }
                     } else {

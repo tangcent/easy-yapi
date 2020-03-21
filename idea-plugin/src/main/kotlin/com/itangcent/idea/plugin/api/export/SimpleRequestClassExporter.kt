@@ -7,6 +7,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.firstOrNull
+import com.itangcent.common.utils.stream
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
@@ -120,12 +122,14 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Map<String, Any?>? {
         return SPRING_REQUEST_MAPPING_ANNOTATIONS
+                .stream()
                 .map { annotationHelper!!.findAnnMap(ele, it) }
                 .firstOrNull { it != null }
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         jvmClassHelper!!.getAllMethods(cls)
+                .stream()
                 .filter { !jvmClassHelper.isBasicMethod(it.name) }
                 .filter { !it.hasModifier(JvmModifier.STATIC) }
                 .filter { !it.isConstructor }

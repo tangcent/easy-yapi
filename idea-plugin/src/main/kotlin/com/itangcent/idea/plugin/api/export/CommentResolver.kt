@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiType
-import com.itangcent.common.utils.KVUtils
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
@@ -104,7 +104,7 @@ class CommentResolver {
                         return KVUtils.getOptionDesc(options)
                     }
                 } else {
-                    val resolveClass = psiResolver!!.resolveClass(convertTo, context)
+                    val resolveClass = duckTypeHelper!!.resolveClass(convertTo, context)
                     if (resolveClass == null) {
                         logger!!.error("failed to resolve class:$convertTo")
                         return null

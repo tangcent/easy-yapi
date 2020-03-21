@@ -6,6 +6,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.utils.firstOrNull
+import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.stream
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
@@ -218,7 +221,8 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     protected open fun resolveParamInRequestMapping(request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>) {
         val params = requestMappingAnn.first["params"] ?: return
         if (params is Array<*>) {
-            params.map { it.tinyString() }
+            params.stream()
+                    .map { it.tinyString() }
                     .filter { it.notNullOrEmpty() }
                     .forEach { resolveParamStr(request, it!!) }
         } else {
@@ -269,7 +273,8 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     protected open fun resolveHeaderInRequestMapping(request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>) {
         val headers = requestMappingAnn.first["headers"] ?: return
         if (headers is Array<*>) {
-            headers.map { it.tinyString() }
+            headers.stream()
+                    .map { it.tinyString() }
                     .filter { it.notNullOrEmpty() }
                     .forEach { resolveHeaderStr(request, it!!) }
         } else {
@@ -362,6 +367,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Pair<Map<String, Any?>, String>? {
         return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
+                .stream()
                 .map { ann -> annotationHelper!!.findAnnMap(ele, ann)?.to(ann) }
                 .firstOrNull { it != null }
     }
