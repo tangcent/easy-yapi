@@ -3,7 +3,7 @@ package com.itangcent.http
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.utils.append
-import com.itangcent.common.utils.toJson
+import com.itangcent.common.kit.toJson
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
 import org.apache.http.client.config.RequestConfig

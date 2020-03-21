@@ -2,8 +2,10 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
-import com.intellij.util.containers.stream
+import com.itangcent.common.utils.filterAs
 import com.itangcent.common.utils.reduceSafely
+import com.itangcent.common.utils.stream
+import com.itangcent.common.utils.toTypedArray
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.intellij.context.ActionContext
@@ -24,6 +26,7 @@ class ComboClassExporter : ClassExporter, Worker {
     @PostConstruct
     fun init() {
         subClassExporters = classExporters
+                ?.stream()
                 ?.map { it as KClass<*> }
                 ?.map { actionContext!!.instance(it) }
                 ?.map { it as ClassExporter }
@@ -40,6 +43,7 @@ class ComboClassExporter : ClassExporter, Worker {
 
     override fun status(): WorkerStatus {
         return this.subClassExporters
+                ?.stream()
                 ?.filter { it is Worker }
                 ?.map { it as Worker }
                 ?.map { it.status() }
@@ -49,15 +53,15 @@ class ComboClassExporter : ClassExporter, Worker {
 
     override fun waitCompleted() {
         this.subClassExporters
-                ?.filter { it is Worker }
-                ?.map { it as Worker }
+                ?.stream()
+                ?.filterAs<Worker>()
                 ?.forEach { it.waitCompleted() }
     }
 
     override fun cancel() {
         this.subClassExporters
-                ?.filter { it is Worker }
-                ?.map { it as Worker }
+                ?.stream()
+                ?.filterAs<Worker>()
                 ?.forEach { it.cancel() }
     }
 }

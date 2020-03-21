@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.util.containers.ContainerUtil
+import com.itangcent.common.utils.filterAs
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
@@ -405,9 +406,7 @@ class SuvApiExporter {
         override fun doExportDocs(docs: MutableList<Doc>) {
 
             try {
-                val postman = postmanFormatter!!.parseRequests(docs.filter { it is Request }
-                        .map { it as Request }
-                        .toMutableList())
+                val postman = postmanFormatter!!.parseRequests(docs.filterAs())
                 docs.clear()
                 if (postmanApiHelper!!.hasPrivateToken()) {
                     logger!!.info("PrivateToken of postman be found")

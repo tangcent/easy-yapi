@@ -1,6 +1,9 @@
-package com.itangcent.common.utils
+package com.itangcent.common.kit
 
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.utils.isNullOrBlank
+import com.itangcent.common.utils.isNullOrEmpty
+import com.itangcent.common.utils.joinToString
 import java.util.*
 import kotlin.collections.ArrayList
 

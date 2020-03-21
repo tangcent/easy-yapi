@@ -10,7 +10,7 @@ import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.KVUtils
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.utils.isNullOrBlank
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.plugin.render.MarkdownRender

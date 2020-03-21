@@ -1,5 +1,7 @@
 package com.itangcent.common.http
 
+import com.itangcent.common.utils.firstOrNull
+
 object ResponseUtils {
 
     fun getHeaderFileName(response: HttpResponse): String? {
@@ -23,6 +25,7 @@ fun HttpResponse.getHeaderFileName(): String? {
 
 fun HttpResponse.getHeader(name: String): String? {
     return this.getHeader()
+            ?.stream()
             ?.filter { it.first.equals(name, true) }
             ?.map { it.second }
             ?.firstOrNull()

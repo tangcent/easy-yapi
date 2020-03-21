@@ -68,7 +68,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
             val cacheOfAllCollection = allCollectionBeanBinder.read()
             if (cacheOfAllCollection != NULL_COLLECTION_INFO_CACHE) {
                 if (cacheOfAllCollection.allCollection != null) {
-                    val collectionInAllCollectionCache = cacheOfAllCollection.allCollection!!.filter { it["id"] == collectionId }.firstOrNull()
+                    val collectionInAllCollectionCache = cacheOfAllCollection.allCollection!!.firstOrNull { it["id"] == collectionId }
                     if (collectionInAllCollectionCache != null) {
                         val info = collectionInfo["info"] as MutableMap<String, Any?>
                         //check collection name

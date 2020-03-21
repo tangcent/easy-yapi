@@ -10,12 +10,12 @@ import com.intellij.ui.BooleanTableCellRenderer
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
+import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBody
-import com.itangcent.common.utils.KitUtils
 import com.itangcent.common.utils.appendlnIfNotEmpty
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.http.*
@@ -236,6 +236,7 @@ class ApiCallDialog : JDialog() {
 
             try {
                 getHttpContextCache().cookies
+                        ?.stream()
                         ?.map { BasicCookie.fromJson(it) }
                         ?.filter { it.getName().notNullOrEmpty() }
                         ?.forEach {
