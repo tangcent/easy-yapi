@@ -86,7 +86,7 @@ class MarkdownApiExporter {
                                         ?: kotlin.text.Charsets.UTF_8, {
                                     logger.info("Exported data are copied to clipboard,you can paste to a md file now")
                                 }, {
-                                    logger.info("Apis save success")
+                                    logger.info("Apis save success: $it")
                                 }) {
                                     logger.info("Apis save failed")
                                 }
