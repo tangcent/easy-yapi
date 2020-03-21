@@ -952,6 +952,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
                         returnVal = findComplexResult(returnVal, processExpression(returnValue))
                     }
                 }
+                is PsiThrowStatement -> {
+                    //ignore
+                }
                 else -> {
                     methodReturnInferHelper.logger!!.debug("no matched statement:${statement::class} - ${statement.text}")
                 }
