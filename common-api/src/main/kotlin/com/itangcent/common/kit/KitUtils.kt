@@ -1,8 +1,6 @@
 package com.itangcent.common.kit
 
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.isNullOrEmpty
-import java.util.stream.Stream
 
 object KitUtils {
 
@@ -46,7 +44,7 @@ fun String.headLine(): String? {
     if (this.isBlank()) return null
 
     var index = -1
-    for ((i, c) in this.withIndex()) {
+    for ((i, c) in this.trim().withIndex()) {
         if (c == '\r' || c == '\n') {
             index = i
             break
