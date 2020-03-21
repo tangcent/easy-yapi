@@ -6,7 +6,7 @@ import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.headLine
+import com.itangcent.common.kit.headLine
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*

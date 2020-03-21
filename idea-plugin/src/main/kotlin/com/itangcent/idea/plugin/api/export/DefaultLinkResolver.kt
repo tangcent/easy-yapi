@@ -54,7 +54,7 @@ open class DefaultLinkResolver : LinkResolver {
         if (linkField !is PsiField) {
             return "[$linkField]"
         }
-        val attrOfProperty = psiClassHelper!!.getAttrOfField(linkField)
+        val attrOfProperty = docHelper!!.getAttrOfField(linkField)
         return when {
             attrOfProperty.isNullOrBlank() -> "[${PsiClassUtils.fullNameOfField(linkField)}]"
             else -> "[$attrOfProperty]"

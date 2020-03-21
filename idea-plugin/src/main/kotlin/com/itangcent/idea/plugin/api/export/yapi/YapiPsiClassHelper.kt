@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.sub
 import com.itangcent.common.utils.KV
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
@@ -17,7 +18,6 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.psi.ContextSwitchListener
-import com.itangcent.intellij.util.sub
 
 /**
  * 1.support rule:["field.mock"]

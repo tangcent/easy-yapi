@@ -5,10 +5,10 @@ import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.exception.ProcessCanceledException
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.KVUtils
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
@@ -127,21 +127,21 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNUSED")
-    protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
+    protected open fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
     }
 
     @Suppress("UNUSED")
-    protected fun hasApi(psiClass: PsiClass): Boolean {
+    protected open fun hasApi(psiClass: PsiClass): Boolean {
         return true
     }
 
     @Suppress("UNUSED")
-    protected fun isApi(psiMethod: PsiMethod): Boolean {
+    protected open fun isApi(psiMethod: PsiMethod): Boolean {
         return true
     }
 
     @Suppress("UNUSED")
-    open protected fun shouldIgnore(psiElement: PsiElement): Boolean {
+    protected open fun shouldIgnore(psiElement: PsiElement): Boolean {
         if (ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) == true) {
             return true
         }

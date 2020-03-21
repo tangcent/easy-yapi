@@ -1,8 +1,8 @@
 package com.itangcent.http
 
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.common.utils.KitUtils
-import com.itangcent.common.utils.equalIgnoreCase
+import com.itangcent.common.kit.KitUtils
+import com.itangcent.common.kit.equalIgnoreCase
 import org.apache.http.Consts
 import org.apache.http.entity.ContentType
 import java.io.ByteArrayInputStream

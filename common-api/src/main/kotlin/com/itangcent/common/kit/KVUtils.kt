@@ -1,6 +1,10 @@
-package com.itangcent.common.utils
+package com.itangcent.common.kit
 
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.isNullOrBlank
+import com.itangcent.common.utils.isNullOrEmpty
+import com.itangcent.common.utils.joinToString
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -38,9 +42,9 @@ object KVUtils {
      */
     fun getOptionDesc(options: List<Map<String, Any?>>): String? {
         return options.stream()
-            .map { concat(it["value"]?.toString(), it["desc"]?.toString()) }
-            .filter { it != null }
-            .joinToString("\n")
+                .map { concat(it["value"]?.toString(), it["desc"]?.toString()) }
+                .filter { it != null }
+                .joinToString("\n")
     }
 
     /**
@@ -48,9 +52,9 @@ object KVUtils {
      */
     fun getConstantDesc(constants: List<Map<String, Any?>>): String? {
         return constants.stream()
-            .map { concat(it["name"]?.toString(), it["desc"]?.toString()) }
-            .filter { it != null }
-            .joinToString("\n")
+                .map { concat(it["name"]?.toString(), it["desc"]?.toString()) }
+                .filter { it != null }
+                .joinToString("\n")
     }
 
     private fun concat(name: String?, desc: String?): String? {
@@ -162,5 +166,40 @@ object KVUtils {
                 comments["$field@options"] = mergeOptions
             }
         }
+    }
+}
+
+
+@Suppress("UNCHECKED_CAST")
+fun <T> Map<*, *>.getAs(key: Any?): T? {
+    return this[key] as? T
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <T> Map<*, *>.getAs(key: Any?, subKey: Any?): T? {
+    return this.getAs<Map<*, *>>(key)?.getAs(subKey)
+}
+
+@Suppress("UNCHECKED_CAST")
+fun KV<String, Any?>.getAsKv(key: String): KV<String, Any?>? {
+    return this[key] as KV<String, Any?>?
+}
+
+@Suppress("UNCHECKED_CAST")
+fun KV<String, Any?>.sub(key: String): KV<String, Any?> {
+    var subKV: KV<String, Any?>? = this[key] as KV<String, Any?>?
+    if (subKV == null) {
+        subKV = KV.create()
+        this[key] = subKV
+    }
+    return subKV
+}
+
+@Suppress("UNCHECKED_CAST")
+fun <K, V> Map<out K, V>.mutable(copy: Boolean = false): MutableMap<K, V> {
+    return when {
+        copy -> LinkedHashMap(this)
+        this is MutableMap -> this as MutableMap<K, V>
+        else -> LinkedHashMap(this)
     }
 }

@@ -13,7 +13,7 @@ import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.KitUtils
+import com.itangcent.common.kit.KitUtils
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter

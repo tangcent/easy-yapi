@@ -7,6 +7,10 @@ import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
+import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.kit.KitUtils
+import com.itangcent.common.kit.getAs
+import com.itangcent.common.kit.getAsKv
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
@@ -444,6 +448,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     private fun foreachMethod(cls: PsiClass, handle: (ExplicitMethod) -> Unit) {
         duckTypeHelper!!.explicit(cls)
                 .methods()
+                .stream()
                 .filter { !jvmClassHelper!!.isBasicMethod(it.psi().name) }
                 .filter { !it.psi().hasModifier(JvmModifier.STATIC) }
                 .filter { !it.psi().isConstructor }
