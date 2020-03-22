@@ -16,6 +16,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.LightVirtualFile
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.logger.traceWarn
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.rule.contextOf
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
@@ -25,6 +26,7 @@ import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Dimension
 import java.awt.EventQueue
@@ -45,6 +47,10 @@ class DebugDialog : JDialog() {
     private var scriptTextScrollPane: JScrollPane? = null
     private var scriptTextArea: JComponent? = null
     private var scriptTypeComboBox: JComboBox<ScriptSupport>? = null
+    private var resetButton: JButton? = null
+    private var helpButton: JButton? = null
+    private var copyButton: JButton? = null
+
 
     private val autoComputer: AutoComputer = AutoComputer()
 
@@ -104,6 +110,22 @@ class DebugDialog : JDialog() {
             chooser.showDialog()
             val selected = chooser.selected ?: return@addActionListener
             autoComputer.value(this::context, selected)
+        }
+
+        resetButton!!.addActionListener {
+            scriptInfo?.scriptType?.demoCode()?.let { code ->
+                editor?.document?.setText(code)
+            }
+        }
+
+        helpButton!!.addActionListener {
+            scriptInfo?.scriptType?.demoCode()?.let { code ->
+                autoComputer.value(this::scriptText, code)
+            }
+        }
+
+        copyButton!!.addActionListener {
+            doCopy()
         }
 
 //        autoComputer.bind<Any>(this, "context")
@@ -235,7 +257,7 @@ class DebugDialog : JDialog() {
             if (this.lastEvalTime.compareAndSet(lastEvalTime, now)) {
                 actionContext!!.runInReadUI {
                     val ret = doEval(scriptInfo)
-                    actionContext!!.runAsync {
+                    actionContext.runAsync {
                         autoComputer.value(this::consoleText, ret ?: "")
                     }
                 }
@@ -276,13 +298,20 @@ class DebugDialog : JDialog() {
             val context = scriptInfo.context
             ret = parseStringRule.compute(
                     when (context) {
-                        is PsiClass -> ruleParser!!.contextOf(duckTypeHelper!!.explicit(context))
-                        else -> ruleParser!!.contextOf(scriptInfo.context!!, scriptInfo.context!!)
+                        is PsiClass -> ruleParser.contextOf(duckTypeHelper!!.explicit(context))
+                        else -> ruleParser.contextOf(scriptInfo.context!!, scriptInfo.context!!)
                     })
         } catch (e: Exception) {
             return "script eval failed:" + ExceptionUtils.getStackTrace(e)
         }
         return ret
+    }
+
+    private fun doCopy() {
+        this.scriptInfo
+                ?.takeIf { it.script.notNullOrEmpty() }
+                ?.let { it.scriptType?.buildProperty(it.script) }
+                ?.let { ToolUtils.copy2Clipboard(it) }
     }
 
     private fun onCancel() {
@@ -295,6 +324,8 @@ class DebugDialog : JDialog() {
 
         fun buildScript(script: String): String
 
+        fun buildProperty(script: String): String
+
         fun checkSupport(): Boolean
 
         fun suffix(): String
@@ -303,11 +334,16 @@ class DebugDialog : JDialog() {
     }
 
     object GeneralScriptSupport : ScriptSupport {
+
         override fun demoCode(): String {
             return "@org.springframework.web.bind.annotation.RequestMapping"
         }
 
         override fun buildScript(script: String): String {
+            return script
+        }
+
+        override fun buildProperty(script: String): String {
             return script
         }
 
@@ -333,6 +369,10 @@ class DebugDialog : JDialog() {
 
         override fun buildScript(script: String): String {
             return "${prefix()}:$script"
+        }
+
+        override fun buildProperty(script: String): String {
+            return "${prefix()}:```\n$script\n```"
         }
 
         open fun prefix(): String {
