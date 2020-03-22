@@ -3,19 +3,19 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.intellij.ide.util.ClassFilter
 import com.intellij.ide.util.TreeClassChooserFactory
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.LightVirtualFile
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.logger.traceWarn
 import com.itangcent.idea.plugin.rule.contextOf
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
@@ -51,17 +51,19 @@ class DebugDialog : JDialog() {
     private var context: PsiElement? = null
 
     @Inject
-    var actionContext: ActionContext? = null
+    val actionContext: ActionContext? = null
 
     @Inject
-    var duckTypeHelper: DuckTypeHelper? = null
+    val duckTypeHelper: DuckTypeHelper? = null
 
     @Inject
-    var ruleParser: RuleParser? = null
+    val ruleParser: RuleParser? = null
 
     @Inject
-    var project: Project? = null
+    val project: Project? = null
 
+    @Inject
+    val logger: Logger? = null
 
     private var evalTimer: Timer = Timer()
     private var lastEvalTime: AtomicLong = AtomicLong(0)
@@ -152,9 +154,24 @@ class DebugDialog : JDialog() {
                     return@eval "script parsing..."
                 }
 
-        EvalTimeTask(actionContext!!, evalTimer) { eval() }.schedule()
+        EvalTimer(actionContext, evalTimer) { eval() }.schedule()
 
         buildEditor(GroovyScriptSupport)
+
+        actionContext.runInReadUI {
+            try {
+                val psiFile = actionContext.cacheOrCompute(CommonDataKeys.PSI_FILE.name) {
+                    actionContext.instance(DataContext::class).getData(CommonDataKeys.PSI_FILE)
+                }
+                if (psiFile != null && psiFile is PsiClassOwner) {
+                    psiFile.classes.firstOrNull()?.let {
+                        autoComputer.value(this::context, it)
+                    }
+                }
+            } catch (e: Exception) {
+                logger!!.traceWarn("error handle class", e)
+            }
+        }
     }
 
     private var editor: Editor? = null
@@ -380,7 +397,7 @@ class DebugDialog : JDialog() {
         }
     }
 
-    class EvalTimeTask(private var actionContext: ActionContext, private var evalTimer: Timer, private val task: (() -> Long?)) {
+    class EvalTimer(private var actionContext: ActionContext, private var evalTimer: Timer, private val task: (() -> Long?)) {
 
         private fun run() {
             var delay: Long? = null
@@ -399,12 +416,11 @@ class DebugDialog : JDialog() {
                 actionContext.runAsync { run() }
                 return
             }
-            val evalTimeTask = this
-            evalTimer.schedule(object : TimerTask() {
+            val evalTimer = this
+            this.evalTimer.schedule(object : TimerTask() {
                 override fun run() {
-                    evalTimeTask.run()
+                    evalTimer.run()
                 }
-
             }, delay)
         }
 
@@ -432,7 +448,6 @@ class DebugDialog : JDialog() {
             result = 31 * result + (context?.hashCode() ?: 0)
             return result
         }
-
     }
 
     companion object {
