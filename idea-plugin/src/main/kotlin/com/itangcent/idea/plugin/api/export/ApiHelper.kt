@@ -6,8 +6,8 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.kit.concat
 import com.itangcent.common.kit.headLine
 import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.config.rule.RuleComputer
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 
@@ -87,7 +87,7 @@ open class ApiHelper {
             attrHandle(attrOfMethod!!)
 
             if (!named) {
-                nameHandle(attrOfMethod.headLine() ?: explicitMethod.name())
+                nameHandle(attrOfMethod.headLine().takeIf { it.notNullOrEmpty() } ?: explicitMethod.name())
                 named = true
             }
         }
