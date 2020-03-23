@@ -6,9 +6,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.utils.firstOrNull
-import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.common.utils.stream
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
@@ -200,6 +197,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     }
 
     override fun processCompleted(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
+        super.processCompleted(method, kv, request)
         val requestMapping: Pair<Map<String, Any?>, String>? = kv.getAs("requestMapping")
         requestMapping?.let {
             resolveParamInRequestMapping(request, it)
