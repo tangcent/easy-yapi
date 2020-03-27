@@ -6,6 +6,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
@@ -30,7 +31,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         val ctrlRequestMappingAnn = findRequestMapping(cls)
         var basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
         val prefixPath = ruleComputer!!.computer(ClassExportRuleKeys.CLASS_PREFIX_PATH, cls)
-        if (!prefixPath.isNullOrBlank()) {
+        if (prefixPath.notNullOrBlank()) {
             basePath = contractPath(prefixPath, basePath) ?: ""
         }
 
@@ -150,7 +151,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         val readParamDefaultValue = readParamDefaultValue(param)
 
-        if (!readParamDefaultValue.isNullOrBlank()) {
+        if (readParamDefaultValue.notNullOrBlank()) {
             defaultVal = readParamDefaultValue
         }
 

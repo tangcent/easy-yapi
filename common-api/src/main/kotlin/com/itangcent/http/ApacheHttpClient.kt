@@ -2,8 +2,9 @@ package com.itangcent.http
 
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.common.utils.append
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.kit.toJson
+import com.itangcent.common.utils.append
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
 import org.apache.http.client.config.RequestConfig
@@ -81,7 +82,7 @@ open class ApacheHttpClient : HttpClient {
         if (request.method().toUpperCase() != "GET") {
 
             var requestEntity: HttpEntity? = null
-            if (!request.params().isNullOrEmpty()) {
+            if (request.params().notNullOrEmpty()) {
 
                 if (request.contentType()?.startsWith("application/x-www-form-urlencoded") != true) {
                     if (request.contentType()?.startsWith("multipart/form-data") == true) {

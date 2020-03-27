@@ -11,6 +11,8 @@ import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
 import com.itangcent.common.kit.KitUtils
+import com.itangcent.common.kit.notNullOrBlank
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
@@ -293,7 +295,7 @@ class ApiCallDialog : JDialog() {
 
         autoComputer.bindVisible(this.paramPanel!!)
                 .with(this::currRequest)
-                .eval { !it?.querys.isNullOrEmpty() }
+                .eval { it?.querys.notNullOrEmpty() }
 
         autoComputer.bindVisible(this.contentTypePanel!!)
                 .with(this::currRequest)
@@ -761,7 +763,7 @@ class ApiCallDialog : JDialog() {
                 val httpRequest = getHttpClient().request().method(request.method ?: "GET")
                         .url(url)
 
-                if (!requestHeader.isNullOrBlank()) {
+                if (requestHeader.notNullOrBlank()) {
                     parseEqualLine(requestHeader) { name, value ->
                         httpRequest.header(name, value)
                     }
@@ -769,7 +771,7 @@ class ApiCallDialog : JDialog() {
 
                 if (request.method?.toUpperCase() != "GET") {
 
-                    if (!request.formParams.isNullOrEmpty()) {
+                    if (request.formParams.notNullOrEmpty()) {
 
                         val formParams = formTableBinder.readAvailableForm(this.formTable!!)
                         if (formParams != null) {

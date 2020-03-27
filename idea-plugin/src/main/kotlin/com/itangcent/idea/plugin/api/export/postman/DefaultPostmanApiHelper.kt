@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
@@ -56,7 +57,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
     override fun hasPrivateToken(): Boolean {
-        return !getPrivateToken().isNullOrEmpty()
+        return getPrivateToken().notNullOrEmpty()
     }
 
     override fun getPrivateToken(): String? {
@@ -138,7 +139,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collectionInfo = returnObj?.asJsonObject?.get("collection")?.asMap()
-                if (!collectionInfo.isNullOrEmpty()) {
+                if (collectionInfo.notNullOrEmpty()) {
                     return collectionInfo
                 }
             }

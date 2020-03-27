@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.kit.getAs
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
@@ -91,8 +92,8 @@ class PostmanApiExporter {
                                     logger.info("PrivateToken of postman be found")
                                     val createdCollection = postmanApiHelper.createCollection(postman)
 
-                                    if (!createdCollection.isNullOrEmpty()) {
-                                        val collectionName = createdCollection.getAs<String>("name")
+                                    if (createdCollection.notNullOrEmpty()) {
+                                        val collectionName = createdCollection!!.getAs<String>("name")
                                         if (StringUtils.isNotBlank(collectionName)) {
                                             logger.info("Imported as collection:$collectionName")
                                             return@runAsync

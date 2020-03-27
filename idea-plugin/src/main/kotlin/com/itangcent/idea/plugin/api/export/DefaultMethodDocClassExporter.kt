@@ -3,9 +3,10 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
-import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.kit.notNullOrBlank
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.utils.KV
@@ -204,7 +205,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
 
                 val descOfReturn = docHelper!!.findDocByTag(method, "return")
 
-                if (!descOfReturn.isNullOrBlank()) {
+                if (descOfReturn.notNullOrBlank()) {
                     val methodReturnMain = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, method)
                     if (methodReturnMain.isNullOrBlank()) {
                         methodDocHelper.appendRetDesc(methodDoc, descOfReturn)
@@ -243,12 +244,12 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                             }
                         })
 
-                        if (!comment.isNullOrBlank()) {
-                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, comment)) {
+                        if (comment.notNullOrBlank()) {
+                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, comment!!)) {
                                 methodDocHelper.appendRetDesc(methodDoc, comment)
                             }
                         }
-                        if (!options.isNullOrEmpty()) {
+                        if (options.notNullOrEmpty()) {
                             if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain, options)) {
                                 methodDocHelper.appendRetDesc(methodDoc, KVUtils.getOptionDesc(options))
                             }
@@ -315,7 +316,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                     })
 
                     methodParamComment[name!!] = comment ?: ""
-                    if (!options.isNullOrEmpty()) {
+                    if (options.notNullOrEmpty()) {
                         methodParamComment["$name@options"] = options
                     }
 

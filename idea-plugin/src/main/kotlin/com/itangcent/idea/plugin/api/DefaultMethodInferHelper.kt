@@ -6,7 +6,7 @@ import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.utils.mapToTypedArray
+import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -277,7 +277,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                         valueOf(args[0])?.let {
                             asMap(realCaller)?.put(it, valueOf(args[1]))
                             val attr = findAttrFromContext(context)
-                            if (!attr.isNullOrBlank()) {
+                            if (attr.notNullOrBlank()) {
                                 KVUtils.addComment(asMap(realCaller)!!, it, attr)
                             }
                         }
@@ -437,7 +437,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         if (context == null) return null
 
         var comment = findNextEndOfLineComment(context)
-        if (!comment.isNullOrBlank()) return comment
+        if (comment.notNullOrBlank()) return comment
         comment = findPreLineEndOfLineComment(context)
         return comment
     }

@@ -4,8 +4,6 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import java.util.*
-import kotlin.collections.ArrayList
 
 fun JsonObject.asMap(): HashMap<String, Any?> {
     val map: HashMap<String, Any?> = HashMap()
