@@ -4,7 +4,6 @@ import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.kit.toJson
-import com.itangcent.common.utils.append
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
 import org.apache.http.client.config.RequestConfig
@@ -68,9 +67,14 @@ open class ApacheHttpClient : HttpClient {
     open fun call(request: ApacheHttpRequest): HttpResponse {
 
         var url = request.url()!!
-        request.querys()?.let { params ->
-            params.joinToString("&") { "${it.name()}=${it.value()}" }
-        }?.let { url = url.append(it, "&")!! }
+        val querys = request.querys()
+        if (querys.notNullOrEmpty()) {
+            val urlParams = querys!!.joinToString("&") { "${it.name()}=${it.value()}" }
+            url = when {
+                url.contains('?') -> "$url&$urlParams"
+                else -> "$url?$urlParams"
+            }
+        }
 
         val requestBuilder = RequestBuilder.create(request.method())
                 .setUri(url)
