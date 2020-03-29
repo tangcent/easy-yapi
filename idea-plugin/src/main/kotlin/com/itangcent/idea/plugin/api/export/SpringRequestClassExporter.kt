@@ -159,7 +159,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             required = true
         }
 
-        if (StringUtils.isBlank(paramName)) {
+        if (paramName.isNullOrBlank()) {
             paramName = param.name()!!
         }
 
@@ -330,7 +330,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                         method = method.substringBefore(",")
                     }
                     return when {
-                        StringUtils.isBlank(method) -> {
+                        method.isNullOrBlank() -> {
                             HttpMethod.NO_METHOD
                         }
                         method.startsWith("RequestMethod.") -> {

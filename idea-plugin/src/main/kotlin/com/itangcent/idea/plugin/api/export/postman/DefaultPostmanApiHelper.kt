@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
+import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
@@ -23,7 +24,6 @@ import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
-import org.apache.commons.lang3.StringUtils
 import org.apache.http.entity.ContentType
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -221,7 +221,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 val returnObj = GsonUtils.parseToJsonTree(returnValue)
                 val collectionName = returnObj?.asJsonObject?.get("collection")
                         ?.asJsonObject?.get("name")?.asString
-                if (StringUtils.isNotBlank(collectionName)) {
+                if (collectionName.notNullOrBlank()) {
                     return true
                 }
             }

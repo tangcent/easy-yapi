@@ -276,7 +276,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                 paramDocTag.dataElements
                         .asSequence()
                         .map { it?.text }
-                        .filterNot { StringUtils.isBlank(it) }
+                        .filterNot { it.isNullOrBlank() }
                         .forEach {
                             when {
                                 name == null -> name = it
