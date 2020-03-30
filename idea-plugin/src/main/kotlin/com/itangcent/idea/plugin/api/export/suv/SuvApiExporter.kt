@@ -7,7 +7,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.intellij.util.containers.ContainerUtil
+import com.itangcent.common.kit.notNullOrBlank
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
@@ -52,7 +53,6 @@ import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
-import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import kotlin.reflect.KClass
@@ -412,9 +412,9 @@ class SuvApiExporter {
                     logger!!.info("PrivateToken of postman be found")
                     val createdCollection = postmanApiHelper.createCollection(postman)
 
-                    if (!createdCollection.isNullOrEmpty()) {
-                        val collectionName = createdCollection["name"]?.toString()
-                        if (StringUtils.isNotBlank(collectionName)) {
+                    if (createdCollection.notNullOrEmpty()) {
+                        val collectionName = createdCollection!!["name"]?.toString()
+                        if (collectionName.notNullOrBlank()) {
                             logger!!.info("Imported as collection:$collectionName")
                             return
                         }
@@ -559,12 +559,14 @@ class SuvApiExporter {
                 }
             }
 
-            private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
+            private val successExportedCarts: MutableSet<String> = HashSet()
 
             override fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
                 if (super.exportDoc(doc, privateToken, cartId)) {
-                    if (successExportedCarts.add(cartId)) {
-                        logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
+                    synchronized(successExportedCarts) {
+                        if (successExportedCarts.add(cartId)) {
+                            logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
+                        }
                     }
                     return true
                 }

@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.components.JBCheckBox
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.SwingUtils
@@ -106,7 +107,7 @@ class SuvApiExportDialog : JDialog() {
 
 
         val lastUsedChannel = PropertiesComponent.getInstance().getValue(LAST_USED_CHANNEL)
-        if (!lastUsedChannel.isNullOrEmpty()) {
+        if (lastUsedChannel.notNullOrEmpty()) {
             channels.firstOrNull { it.toString() == lastUsedChannel }
                     ?.let { this.channelComboBox!!.model.selectedItem = it }
         }

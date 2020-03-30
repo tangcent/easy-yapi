@@ -410,7 +410,7 @@ class DebugDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "var separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\nvar sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nsb"
+            return "var separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\nvar sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += separator\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nsb += separator\nsb += \"debug `localStorage`:\\n\"\nsb += tool.debug(localStorage)\nsb += separator\nsb"
         }
     }
 
@@ -433,7 +433,7 @@ class DebugDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "def separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\ndef sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nreturn sb"
+            return "def separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\ndef sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += separator\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nsb += separator\nsb += \"debug `localStorage`:\\n\"\nsb += tool.debug(localStorage)\nsb += separator\nreturn sb"
         }
     }
 

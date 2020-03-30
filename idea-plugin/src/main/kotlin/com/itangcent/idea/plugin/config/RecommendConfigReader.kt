@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.config
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.ide.util.PropertiesComponent
+import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.utils.invokeMethod
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
@@ -139,8 +140,8 @@ class RecommendConfigReader : ConfigReader {
 
             val propertiesComponent = PropertiesComponent.getInstance()
             val cachedValue = propertiesComponent.getValue(config_name)
-            if (!cachedValue.isNullOrBlank()) {
-                val cachedVersion = cachedValue.substring(0, 10).trim()
+            if (cachedValue.notNullOrBlank()) {
+                val cachedVersion = cachedValue!!.substring(0, 10).trim()
                 if (cachedVersion == curr_version) {
                     RECOMMEND_CONFIG_PLAINT = cachedValue.substring(10)
                     return cachedValue

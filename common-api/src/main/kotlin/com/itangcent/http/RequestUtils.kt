@@ -2,6 +2,7 @@ package com.itangcent.http
 
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.mutable
+import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.append
 import com.itangcent.common.utils.mapToTypedArray
@@ -105,11 +106,11 @@ object RequestUtils {
                     .append(this.protocol ?: "http")
                     .append("://")
                     .append(host!!.removeSuffix("?/"))
-            if (!path.isNullOrBlank()) {
+            if (path.notNullOrBlank()) {
                 sb.append("/")
                 sb.append(path!!.removePrefix("/").removeSuffix("?"))
             }
-            if (!query.isNullOrBlank()) {
+            if (query.notNullOrBlank()) {
                 sb.append("?")
                 sb.append(query!!.removePrefix("?"))
             }
