@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.DateUtils
@@ -138,7 +139,7 @@ class PostmanFormatter {
         }
 
 
-        if (!request.response.isNullOrEmpty()) {
+        if (request.response.notNullOrEmpty()) {
 
             val responses: ArrayList<HashMap<String, Any?>> = ArrayList()
             val exampleName = request.name + "-Example"

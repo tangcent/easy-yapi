@@ -4,9 +4,9 @@ import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.annotation.script.ScriptUnIgnore
+import com.itangcent.common.kit.headLine
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
-import com.itangcent.common.kit.headLine
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
@@ -107,7 +107,7 @@ class RuleToolUtils {
      * @see #uncapitalize(String)
      * @since 2.0
      */
-    fun capitalize(str: String): String {
+    fun capitalize(str: String?): String {
         return StringUtils.capitalize(str)
     }
 
@@ -698,8 +698,8 @@ class RuleToolUtils {
      * @param str camel words
      * @return underline words
      */
-    fun camel2Underline(str: String): String {
-        if (StringUtils.isEmpty(str)) {
+    fun camel2Underline(str: String?): String? {
+        if (str.isNullOrBlank()) {
             return str
         }
         val matcher = TO_LINE_PATTERN.matcher(str)

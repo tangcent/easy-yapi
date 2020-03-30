@@ -2,7 +2,7 @@ package com.itangcent.http
 
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.common.utils.append
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.kit.toJson
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
@@ -67,9 +67,14 @@ open class ApacheHttpClient : HttpClient {
     open fun call(request: ApacheHttpRequest): HttpResponse {
 
         var url = request.url()!!
-        request.querys()?.let { params ->
-            params.joinToString("&") { "${it.name()}=${it.value()}" }
-        }?.let { url = url.append(it, "&")!! }
+        val querys = request.querys()
+        if (querys.notNullOrEmpty()) {
+            val urlParams = querys!!.joinToString("&") { "${it.name()}=${it.value()}" }
+            url = when {
+                url.contains('?') -> "$url&$urlParams"
+                else -> "$url?$urlParams"
+            }
+        }
 
         val requestBuilder = RequestBuilder.create(request.method())
                 .setUri(url)
@@ -81,7 +86,7 @@ open class ApacheHttpClient : HttpClient {
         if (request.method().toUpperCase() != "GET") {
 
             var requestEntity: HttpEntity? = null
-            if (!request.params().isNullOrEmpty()) {
+            if (request.params().notNullOrEmpty()) {
 
                 if (request.contentType()?.startsWith("application/x-www-form-urlencoded") != true) {
                     if (request.contentType()?.startsWith("multipart/form-data") == true) {

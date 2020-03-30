@@ -111,3 +111,9 @@
     
     * opti: [DEBUG ACTION] [(#265)](https://github.com/tangcent/easy-api/pull/265)
     
+    * fix HttpRequest querys [(#267)](https://github.com/tangcent/easy-api/pull/267)
+    
+    * new rule tool: localStorage [(#268)](https://github.com/tangcent/easy-api/pull/268)
+
+
+       

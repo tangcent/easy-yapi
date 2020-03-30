@@ -13,8 +13,10 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.CheckBoxList
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.SystemUtils
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.common.utils.truncate
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
@@ -424,11 +426,11 @@ class EasyApiSettingGUI {
             toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
         }
         val files = chooser.choose(null, toSelect)
-        if (!files.isNullOrEmpty()) {
+        if (files.notNullOrEmpty()) {
             val virtualFile = files[0]
             val read = com.itangcent.common.utils.FileUtils.read(File(virtualFile.path), kotlin.text.Charsets.UTF_8)
-            if (!read.isNullOrEmpty()) {
-                setSettings(GsonUtils.fromJson(read, Settings::class))
+            if (read.notNullOrEmpty()) {
+                setSettings(GsonUtils.fromJson(read!!, Settings::class))
             }
         }
     }

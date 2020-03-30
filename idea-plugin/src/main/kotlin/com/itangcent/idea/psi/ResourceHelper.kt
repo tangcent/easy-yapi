@@ -10,7 +10,6 @@ import com.itangcent.idea.plugin.api.export.DocParseHelper
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
-import org.apache.commons.lang3.StringUtils
 
 @Singleton
 class ResourceHelper {
@@ -21,7 +20,7 @@ class ResourceHelper {
     @Inject
     private val docHelper: DocHelper? = null
 
-    @Inject
+    @Inject(optional = true)
     private val docParseHelper: DocParseHelper? = null
 
     @Inject
@@ -44,7 +43,7 @@ class ResourceHelper {
         var docText = ruleComputer!!.computer(ClassExportRuleKeys.CLASS_DOC, cls)
         docText = docText.append(docHelper!!.getAttrOfDocComment(cls))
         return when {
-            StringUtils.isBlank(docText) -> cls.name
+            docText.isNullOrBlank() -> cls.name
             docParseHelper != null -> docParseHelper.resolveLinkInAttr(docText, cls)
             else -> docText
         }

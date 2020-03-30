@@ -1,6 +1,7 @@
 package com.itangcent.common.kit
 
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.isNullOrBlank
 
 import kotlin.reflect.KClass
 
@@ -92,3 +93,18 @@ fun String?.equalIgnoreCase(str: String?): Boolean {
     return this.toLowerCase() == str.toLowerCase()
 }
 
+fun String?.notNullOrBlank(): Boolean {
+    return !this.isNullOrBlank()
+}
+
+fun Array<*>?.notNullOrEmpty(): Boolean {
+    return !this.isNullOrEmpty()
+}
+
+fun Collection<*>?.notNullOrEmpty(): Boolean {
+    return !this.isNullOrEmpty()
+}
+
+fun Map<*, *>?.notNullOrEmpty(): Boolean {
+    return !this.isNullOrEmpty()
+}

@@ -3,14 +3,10 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
-import com.intellij.util.containers.isNullOrEmpty
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
-import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.KitUtils
-import com.itangcent.common.kit.getAs
-import com.itangcent.common.kit.getAsKv
+import com.itangcent.common.kit.*
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
@@ -200,7 +196,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         //parse additionalHeader by config
         val additionalHeader = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_HEADER,
                 method)
-        if (!additionalHeader.isNullOrEmpty()) {
+        if (additionalHeader.notNullOrEmpty()) {
             val additionalHeaders = additionalHeader!!.lines()
             for (headerStr in additionalHeaders) {
                 cacheAble!!.cache("header" to headerStr) {
@@ -224,7 +220,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         //parse additionalParam by config
         val additionalParam = ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_PARAM, method)
-        if (!additionalParam.isNullOrEmpty()) {
+        if (additionalParam.notNullOrEmpty()) {
             val additionalParams = additionalParam!!.lines()
             for (paramStr in additionalParams) {
                 cacheAble!!.cache("param" to paramStr) {
@@ -247,10 +243,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
 
         //parse additionalResponseHeader by config
-        if (!request.response.isNullOrEmpty()) {
+        if (request.response.notNullOrEmpty()) {
             val additionalResponseHeader =
                     ruleComputer.computer(ClassExportRuleKeys.METHOD_ADDITIONAL_RESPONSE_HEADER, method)
-            if (!additionalResponseHeader.isNullOrEmpty()) {
+            if (additionalResponseHeader.notNullOrEmpty()) {
                 val additionalHeaders = additionalResponseHeader!!.lines()
                 for (headerStr in additionalHeaders) {
                     cacheAble!!.cache("header" to headerStr) {
@@ -281,7 +277,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         var returnType: DuckType? = null
         var fromRule = false
         val returnTypeByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN, method)
-        if (!returnTypeByRule.isNullOrBlank()) {
+        if (returnTypeByRule.notNullOrBlank()) {
             val resolvedReturnType = duckTypeHelper!!.resolve(returnTypeByRule!!.trim(), method.psi())
             if (resolvedReturnType != null) {
                 returnType = resolvedReturnType
@@ -301,7 +297,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val typedResponse = parseResponseBody(returnType, fromRule, method)
 
                 val descOfReturn = docHelper!!.findDocByTag(method.psi(), "return")
-                if (!descOfReturn.isNullOrBlank()) {
+                if (descOfReturn.notNullOrBlank()) {
                     val methodReturnMain = ruleComputer.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, method)
                     if (methodReturnMain.isNullOrBlank()) {
                         requestHelper.appendResponseBodyDesc(response, descOfReturn)
@@ -340,12 +336,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                             }
                         })
 
-                        if (!comment.isNullOrBlank()) {
+                        if (comment.notNullOrBlank()) {
                             if (!KVUtils.addKeyComment(typedResponse, methodReturnMain!!, comment!!)) {
                                 requestHelper.appendResponseBodyDesc(response, comment)
                             }
                         }
-                        if (!options.isNullOrEmpty()) {
+                        if (options.notNullOrEmpty()) {
                             if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain!!, options)) {
                                 requestHelper.appendResponseBodyDesc(response, KVUtils.getOptionDesc(options))
                             }
@@ -399,7 +395,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val name: String = entry.key
             val value: String? = entry.value
             if (methodParamComment == null) methodParamComment = KV.create()
-            if (!value.isNullOrBlank()) {
+            if (value.notNullOrBlank()) {
 
                 val options: ArrayList<HashMap<String, Any?>> = ArrayList()
                 val comment = linkExtractor!!.extract(value, psiMethod, object : AbstractLinkResolve() {
@@ -436,7 +432,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 })
 
                 methodParamComment!![name] = comment ?: ""
-                if (!options.isNullOrEmpty()) {
+                if (options.notNullOrEmpty()) {
                     methodParamComment!!["$name@options"] = options
                 }
             }

@@ -1,10 +1,7 @@
 package com.itangcent.common.kit
 
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.isNullOrBlank
-import com.itangcent.common.utils.isNullOrEmpty
-import com.itangcent.common.utils.joinToString
+import com.itangcent.common.utils.*
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -25,7 +22,7 @@ object KVUtils {
             val optionList = options as List<Map<String, Any?>>
 
             val optionDesc = getOptionDesc(optionList)
-            if (!optionDesc.isNullOrBlank()) {
+            if (optionDesc.notNullOrEmpty()) {
                 desc = if (desc.isNullOrBlank()) {
                     optionDesc
                 } else {
