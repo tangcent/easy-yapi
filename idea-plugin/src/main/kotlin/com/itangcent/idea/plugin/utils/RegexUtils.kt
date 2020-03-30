@@ -155,7 +155,7 @@ class RegexUtils {
     }
 
     private fun delFirst(pattern: Pattern?, content: String): String {
-        return if (null == pattern || StringUtils.isBlank(content)) {
+        return if (null == pattern || content.isNullOrBlank()) {
             content
         } else {
             pattern.matcher(content).replaceFirst("")
@@ -183,7 +183,7 @@ class RegexUtils {
      * pattern
      */
     private fun delAll(pattern: Pattern?, content: String): String {
-        return if (null == pattern || StringUtils.isBlank(content)) {
+        return if (null == pattern || content.isNullOrBlank()) {
             content
         } else pattern.matcher(content).replaceAll("")
 
@@ -275,12 +275,12 @@ class RegexUtils {
         } else pattern.matcher(content).find()
     }
 
-    fun isMatch(regex: String, content: String?): Boolean {
+    fun isMatch(regex: String?, content: String?): Boolean {
         if (content == null) {
             return false
         }
 
-        if (StringUtils.isEmpty(regex)) {
+        if (regex.isNullOrBlank()) {
             return true
         }
         val pattern = getPattern(regex, Pattern.DOTALL)
@@ -312,8 +312,8 @@ class RegexUtils {
     /**
      * escape for Regex keywords
      */
-    fun escape(content: String): String {
-        if (StringUtils.isBlank(content)) {
+    fun escape(content: String?): String? {
+        if (content.isNullOrBlank()) {
             return content
         }
 

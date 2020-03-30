@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
+import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.logger.traceError
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.psi.PsiResource
@@ -62,7 +63,7 @@ class ModuleHelper {
 
         val moduleByRule = ruleComputer!!.computer(ClassExportRuleKeys.MODULE, cls)
 
-        if (!moduleByRule.isNullOrBlank()) {
+        if (moduleByRule.notNullOrBlank()) {
             return moduleByRule
         }
 

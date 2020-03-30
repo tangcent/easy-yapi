@@ -4,16 +4,18 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.kit.KitUtils
+import com.itangcent.common.kit.notNullOrBlank
+import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.KitUtils
+import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.http.RequestUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
@@ -124,7 +126,7 @@ class MarkdownFormatter {
         handle("${hN(deep)} ${methodDoc.name}\n\n")
         handle("<a id=${methodDoc.name}> </a>\n\n")
 
-        if (!methodDoc.desc.isNullOrBlank()) {
+        if (methodDoc.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
             handle("<p>${methodDoc.desc}</p>\n\n")
         }
@@ -159,7 +161,7 @@ class MarkdownFormatter {
         handle("${hN(deep + 1)} BASIC\n\n")
         handle("**Path：** ${request.path}\n\n")
         handle("**Method：** ${request.method}\n\n")
-        if (!request.desc.isNullOrBlank()) {
+        if (request.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
             handle("<p>${request.desc}</p>\n\n")
         }
@@ -168,7 +170,7 @@ class MarkdownFormatter {
         handle("${hN(deep + 1)} REQUEST\n\n")
 
         //path
-        if (!request.paths.isNullOrEmpty()) {
+        if (request.paths.notNullOrEmpty()) {
             handle("\n**Path：**\n\n")
             handle("| name  |  value   | desc  |\n")
             handle("| ------------ | ------------ | ------------ |\n")
@@ -181,7 +183,7 @@ class MarkdownFormatter {
         }
 
         //header
-        if (!request.headers.isNullOrEmpty()) {
+        if (request.headers.notNullOrEmpty()) {
             handle("\n**Headers：**\n\n")
             handle("| name  |  value  |  required | example  | desc  |\n")
             handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
@@ -194,7 +196,7 @@ class MarkdownFormatter {
         }
 
         //query
-        if (!request.querys.isNullOrEmpty()) {
+        if (request.querys.notNullOrEmpty()) {
             handle("\n**Query：**\n\n")
             handle("| name  |  value  |  required | desc  |\n")
             handle("| ------------ | ------------ | ------------ | ------------ |\n")
@@ -220,7 +222,7 @@ class MarkdownFormatter {
 
         }
 
-        if (!request.formParams.isNullOrEmpty()) {
+        if (request.formParams.notNullOrEmpty()) {
             handle("\n**Form：**\n\n")
             handle("| name  |  value  | required |  type  |  desc  |\n")
             handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
@@ -232,7 +234,7 @@ class MarkdownFormatter {
             }
         }
 
-        if (!request.response.isNullOrEmpty()) {
+        if (request.response.notNullOrEmpty()) {
 
             val response = request.response!!.firstOrNull { it.body != null }
             //todo:support multiple response
