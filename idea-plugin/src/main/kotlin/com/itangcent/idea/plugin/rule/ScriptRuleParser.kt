@@ -5,8 +5,8 @@ import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.intellij.config.rule.*

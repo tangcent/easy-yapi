@@ -5,6 +5,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMember
 import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.idea.plugin.utils.LocalStorageUtils
 import com.itangcent.idea.plugin.utils.RegexUtils
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.jvm.LinkExtractor
@@ -16,6 +17,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
 
     @Inject
     private var httpClientProvider: HttpClientProvider? = null
+
+    @Inject
+    protected val localStorageUtils: LocalStorageUtils? = null
 
     private var scriptEngine: ScriptEngine? = null
     private var unsupported = false
@@ -52,6 +56,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         val engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
         engineBindings.putAll(toolBindings)
         engineBindings["logger"] = logger
+        engineBindings["localStorage"] = localStorageUtils
         engineBindings["helper"] = Helper(context.getPsiContext())
         engineBindings["httpClient"] = httpClientProvider!!.getHttpClient()
     }
