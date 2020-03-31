@@ -49,6 +49,7 @@ interface Cookie {
     fun getVersion(): Int?
 }
 
+@ScriptTypeName("cookie")
 interface MutableCookie : Cookie {
 
     fun setName(name: String?)
