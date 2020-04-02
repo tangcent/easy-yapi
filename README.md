@@ -13,7 +13,7 @@
 - [导出API文档到`Markdown`](https://easyyapi.com/documents/export2markdown.html)
 - [导出RPC文档到`Yapi`](https://easyyapi.com/documents/export_rpc.html)
 - [导出RPC文档到`Markdown`](https://easyyapi.com/documents/export_rpc.html)
-- 在`IDEA`中直接发起API请求
+- [在`IDEA`中直接发起API请求](http://easyyapi.com/documents/call.html)
 - Api DashBoard
 - YApi DashBoard
 
