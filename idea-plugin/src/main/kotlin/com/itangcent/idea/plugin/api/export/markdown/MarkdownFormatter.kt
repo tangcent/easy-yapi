@@ -185,12 +185,12 @@ class MarkdownFormatter {
         //header
         if (request.headers.notNullOrEmpty()) {
             handle("\n**Headers：**\n\n")
-            handle("| name  |  value  |  required | example  | desc  |\n")
-            handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
+            handle("| name  |  value  |  required  | desc  |\n")
+            handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.headers!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                                " ${it.example ?: ""} | ${escape(it.desc)} |\n"
+                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required
+                                ?: false, "YES", "NO")} | ${escape(it.desc)} |\n"
                 )
             }
         }
@@ -242,15 +242,14 @@ class MarkdownFormatter {
                 handle("\n\n")
                 handle("${hN(deep + 1)} RESPONSE\n\n")
                 handle("**Header：**\n\n")
-                handle("| name  |  value  |  required | example  | desc  |\n")
+                handle("| name  |  value  |  required  | desc  |\n")
                 handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
                 response.headers!!.forEach {
                     handle(
                             "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(
                                     it.required
                                             ?: false, "YES", "NO"
-                            )} |" +
-                                    " ${it.example ?: ""} | ${escape(it.desc)} |\n"
+                            )} |  ${escape(it.desc)} |\n"
                     )
                 }
 

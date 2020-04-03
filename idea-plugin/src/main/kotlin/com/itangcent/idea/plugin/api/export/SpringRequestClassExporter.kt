@@ -16,7 +16,6 @@ import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.util.hasFile
-import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
@@ -110,7 +109,6 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             val header = Header()
             header.name = headName?.toString()
             header.value = defaultValue.toString()
-            header.example = defaultValue.toString()
             header.desc = ultimateComment
             header.required = required
             requestHelper!!.addHeader(request, header)
