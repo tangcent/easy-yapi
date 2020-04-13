@@ -10,6 +10,4 @@ class Header : Extensible(), Serializable {
     var desc: String? = null
 
     var required: Boolean? = null
-
-    var example: String? = null
 }
