@@ -22,6 +22,9 @@ import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
 
+/**
+ * format [com.itangcent.common.model.Doc] to `markdown`.
+ */
 @Singleton
 class MarkdownFormatter {
 
@@ -89,10 +92,7 @@ class MarkdownFormatter {
                 .forEach { modules.add(it) }
 
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
-        return wrapInfo(
-                "$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}",
-                modules as ArrayList<Any?>
-        )
+        return wrapInfo(rootModule, modules as ArrayList<Any?>)
     }
 
     private fun parseApi(info: Any, deep: Int, handle: (String) -> Unit) {
@@ -124,11 +124,10 @@ class MarkdownFormatter {
 
         handle("\n---\n")
         handle("${hN(deep)} ${methodDoc.name}\n\n")
-        handle("<a id=${methodDoc.name}> </a>\n\n")
 
         if (methodDoc.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
-            handle("<p>${methodDoc.desc}</p>\n\n")
+            handle("<p>${escape(methodDoc.desc)}</p>\n\n")
         }
 
         handle("\n**Params：**\n\n")
@@ -155,7 +154,6 @@ class MarkdownFormatter {
 
         handle("\n---\n")
         handle("${hN(deep)} ${request.name}\n\n")
-        handle("<a id=${request.name}> </a>\n\n")
 
         //region basic info
         handle("${hN(deep + 1)} BASIC\n\n")
@@ -163,7 +161,7 @@ class MarkdownFormatter {
         handle("**Method：** ${request.method}\n\n")
         if (request.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
-            handle("<p>${request.desc}</p>\n\n")
+            handle("<p>${escape(request.desc)}</p>\n\n")
         }
         //endregion
 
