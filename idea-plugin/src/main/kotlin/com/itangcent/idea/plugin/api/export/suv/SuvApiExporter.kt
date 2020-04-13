@@ -47,6 +47,7 @@ import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.tip.TipsHelper
+import com.itangcent.intellij.util.FileType
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
@@ -77,7 +78,7 @@ class SuvApiExporter {
         val docs: MutableList<DocWrapper> = Collections.synchronizedList(ArrayList<DocWrapper>())
 
         SelectedHelper.Builder()
-                .fileFilter { it.name.endsWith("java") || it.name.endsWith("kt") }
+                .fileFilter { FileType.acceptable(it.name) }
                 .classHandle {
                     actionContext!!.checkStatus()
                     classExporter!!.export(it) { doc ->
