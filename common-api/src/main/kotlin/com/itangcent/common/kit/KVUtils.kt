@@ -200,3 +200,17 @@ fun <K, V> Map<out K, V>.mutable(copy: Boolean = false): MutableMap<K, V> {
         else -> LinkedHashMap(this)
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+fun Any?.asKV(): KV<String, Any?> {
+    if (this == null) {
+        return KV.create()
+    }
+    if (this is KV<*, *>) {
+        return this as KV<String, Any?>
+    }
+    if (this is Map<*, *>) {
+        return KV.create<String, Any?>().set(this as Map<String, Any?>)
+    }
+    return KV.create()
+}

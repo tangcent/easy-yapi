@@ -19,6 +19,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.FileType
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -71,7 +72,7 @@ class PostmanApiExporter {
                         }
                     }
                 }
-                .fileFilter { file -> file.name.endsWith(".java") }
+                .fileFilter { file -> FileType.acceptable(file.name) }
                 .classHandle {
                     classExporter!!.export(it, requestOnly { request -> requests.add(request) })
                 }
