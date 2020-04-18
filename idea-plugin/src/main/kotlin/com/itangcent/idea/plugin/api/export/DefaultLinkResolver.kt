@@ -6,7 +6,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PropertyUtil
-import com.itangcent.common.kit.notNullOrBlank
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -35,7 +35,7 @@ open class DefaultLinkResolver : LinkResolver {
             return "[$linkMethod]"
         }
         val attrOfMethod = docHelper!!.getAttrOfDocComment(linkMethod)
-            ?.lines()?.first { !it.isBlank() }
+                ?.lines()?.first { !it.isBlank() }
         if (attrOfMethod.notNullOrBlank()) {
             return "[$attrOfMethod]"
         }

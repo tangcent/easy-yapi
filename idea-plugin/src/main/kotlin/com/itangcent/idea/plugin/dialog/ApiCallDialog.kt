@@ -11,7 +11,6 @@ import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
 import com.itangcent.common.kit.KitUtils
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
@@ -19,6 +18,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBody
 import com.itangcent.common.utils.appendlnIfNotEmpty
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.http.*
 import com.itangcent.idea.icons.EasyIcons
