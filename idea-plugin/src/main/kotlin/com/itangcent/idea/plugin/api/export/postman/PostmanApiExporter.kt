@@ -5,11 +5,11 @@ import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.kit.getAs
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.RequestHelper
@@ -19,6 +19,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.FileType
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -71,7 +72,7 @@ class PostmanApiExporter {
                         }
                     }
                 }
-                .fileFilter { file -> file.name.endsWith(".java") }
+                .fileFilter { file -> FileType.acceptable(file.name) }
                 .classHandle {
                     classExporter!!.export(it, requestOnly { request -> requests.add(request) })
                 }

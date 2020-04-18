@@ -6,7 +6,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
@@ -16,7 +15,6 @@ import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.util.hasFile
-import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
@@ -110,7 +108,6 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             val header = Header()
             header.name = headName?.toString()
             header.value = defaultValue.toString()
-            header.example = defaultValue.toString()
             header.desc = ultimateComment
             header.required = required
             requestHelper!!.addHeader(request, header)

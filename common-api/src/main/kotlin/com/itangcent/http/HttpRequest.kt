@@ -49,6 +49,7 @@ interface Cookie {
     fun getVersion(): Int?
 }
 
+@ScriptTypeName("cookie")
 interface MutableCookie : Cookie {
 
     fun setName(name: String?)
@@ -94,10 +95,10 @@ interface HttpRequest {
     fun header(headerName: String, headerValue: String?): HttpRequest
     fun setHeader(headerName: String, headerValue: String?): HttpRequest
     fun removeHeaders(headerName: String): HttpRequest
-
     fun removeHeader(headerName: String, headerValue: String?): HttpRequest
 
     //endregion header---------------------------------------------------------
+
     fun query(name: String, value: String?): HttpRequest
 
     fun querys(): List<HttpParam>?
@@ -114,8 +115,6 @@ interface HttpRequest {
     fun lastParam(paramName: String): HttpParam?
     fun lastParamValue(paramName: String): String?
     fun contentType(): String?
-
-
     fun contentType(contentType: String): HttpRequest
     fun call(): HttpResponse
 }

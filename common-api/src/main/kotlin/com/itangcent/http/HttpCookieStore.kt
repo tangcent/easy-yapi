@@ -1,5 +1,6 @@
 package com.itangcent.http
 
+import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.utils.GsonUtils
 
 fun Cookie.json(): String {
@@ -25,6 +26,7 @@ fun Cookie.mutable(): MutableCookie {
     }
 }
 
+@ScriptTypeName("cookie")
 class BasicCookie : MutableCookie {
 
     private var name: String? = null
