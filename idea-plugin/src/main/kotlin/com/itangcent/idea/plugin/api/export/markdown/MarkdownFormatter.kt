@@ -6,12 +6,12 @@ import com.intellij.psi.PsiClass
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.kit.KitUtils
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
@@ -22,6 +22,9 @@ import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
 
+/**
+ * format [com.itangcent.common.model.Doc] to `markdown`.
+ */
 @Singleton
 class MarkdownFormatter {
 
@@ -89,10 +92,7 @@ class MarkdownFormatter {
                 .forEach { modules.add(it) }
 
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
-        return wrapInfo(
-                "$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}",
-                modules as ArrayList<Any?>
-        )
+        return wrapInfo(rootModule, modules as ArrayList<Any?>)
     }
 
     private fun parseApi(info: Any, deep: Int, handle: (String) -> Unit) {
@@ -124,11 +124,10 @@ class MarkdownFormatter {
 
         handle("\n---\n")
         handle("${hN(deep)} ${methodDoc.name}\n\n")
-        handle("<a id=${methodDoc.name}> </a>\n\n")
 
         if (methodDoc.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
-            handle("<p>${methodDoc.desc}</p>\n\n")
+            handle("<p>${escape(methodDoc.desc)}</p>\n\n")
         }
 
         handle("\n**Params：**\n\n")
@@ -155,7 +154,6 @@ class MarkdownFormatter {
 
         handle("\n---\n")
         handle("${hN(deep)} ${request.name}\n\n")
-        handle("<a id=${request.name}> </a>\n\n")
 
         //region basic info
         handle("${hN(deep + 1)} BASIC\n\n")
@@ -163,7 +161,7 @@ class MarkdownFormatter {
         handle("**Method：** ${request.method}\n\n")
         if (request.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
-            handle("<p>${request.desc}</p>\n\n")
+            handle("<p>${escape(request.desc)}</p>\n\n")
         }
         //endregion
 
@@ -185,12 +183,12 @@ class MarkdownFormatter {
         //header
         if (request.headers.notNullOrEmpty()) {
             handle("\n**Headers：**\n\n")
-            handle("| name  |  value  |  required | example  | desc  |\n")
-            handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
+            handle("| name  |  value  |  required  | desc  |\n")
+            handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.headers!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                                " ${it.example ?: ""} | ${escape(it.desc)} |\n"
+                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required
+                                ?: false, "YES", "NO")} | ${escape(it.desc)} |\n"
                 )
             }
         }
@@ -242,15 +240,14 @@ class MarkdownFormatter {
                 handle("\n\n")
                 handle("${hN(deep + 1)} RESPONSE\n\n")
                 handle("**Header：**\n\n")
-                handle("| name  |  value  |  required | example  | desc  |\n")
+                handle("| name  |  value  |  required  | desc  |\n")
                 handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
                 response.headers!!.forEach {
                     handle(
                             "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(
                                     it.required
                                             ?: false, "YES", "NO"
-                            )} |" +
-                                    " ${it.example ?: ""} | ${escape(it.desc)} |\n"
+                            )} |  ${escape(it.desc)} |\n"
                     )
                 }
 

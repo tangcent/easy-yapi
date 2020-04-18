@@ -6,7 +6,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
@@ -16,7 +15,6 @@ import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.util.hasFile
-import org.apache.commons.lang3.StringUtils
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
@@ -24,7 +22,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     private val annotationHelper: AnnotationHelper? = null
 
     @Inject
-    private val commentResolver: CommentResolver? = null
+    protected val commentResolver: CommentResolver? = null
 
     override fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
 
@@ -110,7 +108,6 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             val header = Header()
             header.name = headName?.toString()
             header.value = defaultValue.toString()
-            header.example = defaultValue.toString()
             header.desc = ultimateComment
             header.required = required
             requestHelper!!.addHeader(request, header)
@@ -175,7 +172,6 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 typeObject.hasFile() -> addParamAsForm(param, request, typeObject, ultimateComment)
                 else -> addParamAsQuery(param, typeObject, request, ultimateComment)
             }
-
         }
 
     }
@@ -371,31 +367,31 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 .firstOrNull { it != null }
     }
 
-    private fun isRequestBody(parameter: PsiParameter): Boolean {
+    protected fun isRequestBody(parameter: PsiParameter): Boolean {
         return annotationHelper!!.hasAnn(parameter, SpringClassName.REQUEST_BODY_ANNOTATION)
     }
 
-    private fun isModelAttr(parameter: PsiParameter): Boolean {
+    protected fun isModelAttr(parameter: PsiParameter): Boolean {
         return annotationHelper!!.hasAnn(parameter, SpringClassName.MODEL_ATTRIBUTE_ANNOTATION)
     }
 
-    private fun findRequestHeader(parameter: PsiParameter): Map<String, Any?>? {
+    protected fun findRequestHeader(parameter: PsiParameter): Map<String, Any?>? {
         return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_HEADER)
     }
 
-    private fun findPathVariable(parameter: PsiParameter): Map<String, Any?>? {
+    protected fun findPathVariable(parameter: PsiParameter): Map<String, Any?>? {
         return annotationHelper!!.findAnnMap(parameter, SpringClassName.PATH_VARIABLE_ANNOTATION)
     }
 
-    private fun findRequestParam(parameter: PsiParameter): Map<String, Any?>? {
+    protected fun findRequestParam(parameter: PsiParameter): Map<String, Any?>? {
         return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_PARAM_ANNOTATION)
     }
 
-    private fun findParamName(requestParamAnn: Map<String, Any?>?): String? {
+    protected fun findParamName(requestParamAnn: Map<String, Any?>?): String? {
         return requestParamAnn.any("name", "value")?.toString()
     }
 
-    private fun findParamRequired(requestParamAnn: Map<String, Any?>): Boolean {
+    protected fun findParamRequired(requestParamAnn: Map<String, Any?>): Boolean {
         val required = requestParamAnn["required"]?.toString()
         return when {
             required?.contains("false") == true -> false

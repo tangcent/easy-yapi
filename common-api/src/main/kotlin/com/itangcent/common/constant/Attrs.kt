@@ -10,5 +10,7 @@ object Attrs {
 
     const val DEFAULT_VALUE_ATTR = "@default"
 
-    val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, MOCK_ATTR, DEFAULT_VALUE_ATTR)
+    const val DEMO_ATTR = "@demo"
+
+    val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, MOCK_ATTR, DEFAULT_VALUE_ATTR,DEMO_ATTR)
 }

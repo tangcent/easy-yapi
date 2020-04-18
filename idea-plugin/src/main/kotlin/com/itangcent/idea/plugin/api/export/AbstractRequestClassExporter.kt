@@ -519,7 +519,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     abstract fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?)
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String? = null) {
+    protected open fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String? = null): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
@@ -581,10 +581,11 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         } catch (e: Exception) {
             logger!!.traceError("error to parse[" + parameter.getType()?.canonicalText() + "] as Querys", e)
         }
+        return null
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null) {
+    protected open fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
@@ -614,7 +615,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         }
                     })
                 } else {
-                    val fields = typeObject as KV<String, Any?>
+                    val fields = typeObject.asKV()
                     val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
                     val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
                     requestHelper!!.addHeaderIfMissed(request, "Content-Type", "application/x-www-form-urlencoded")
@@ -644,6 +645,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         } catch (e: Exception) {
             logger!!.traceError("error to parse[" + parameter.getType()?.canonicalText() + "] as ModelAttribute", e)
         }
+
+        return null
     }
 
     protected fun parseResponseBody(psiType: DuckType?, fromRule: Boolean, method: ExplicitMethod): Any? {
@@ -665,7 +668,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
     }
 
-    private fun deepComponent(obj: Any?): Any? {
+    protected fun deepComponent(obj: Any?): Any? {
         if (obj == null) {
             return null
         }

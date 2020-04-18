@@ -16,7 +16,6 @@ import com.itangcent.common.utils.DateUtils
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.api.export.requestOnly
@@ -35,6 +34,7 @@ import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.util.FileType
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
@@ -304,7 +304,7 @@ class ApiDashboardDialog : JDialog() {
                             { !disposed },
                             {
                                 !disposed
-                                        && (it.name.endsWith("java") || it.name.endsWith("kt"))
+                                        && FileType.acceptable(it.name)
                                         && (it is PsiClassOwner)
                             }) { psiFile ->
                         if (disposed) return@traversal

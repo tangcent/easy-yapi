@@ -3,8 +3,8 @@ package com.itangcent.idea.plugin.config
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.ide.util.PropertiesComponent
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.utils.invokeMethod
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader

@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
@@ -15,6 +14,7 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.filterAs
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
@@ -50,6 +50,7 @@ import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.tip.TipsHelper
+import com.itangcent.intellij.util.FileType
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
@@ -80,7 +81,7 @@ class SuvApiExporter {
         val docs: MutableList<DocWrapper> = Collections.synchronizedList(ArrayList<DocWrapper>())
 
         SelectedHelper.Builder()
-                .fileFilter { it.name.endsWith("java") || it.name.endsWith("kt") }
+                .fileFilter { FileType.acceptable(it.name) }
                 .classHandle {
                     actionContext!!.checkStatus()
                     classExporter!!.export(it) { doc ->
