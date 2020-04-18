@@ -589,6 +589,23 @@ abstract class ScriptRuleParser : RuleParser {
             return psiParameter
         }
 
+        /**
+         * Returns the method which declare the param.
+         * May be null
+         */
+        open fun method(): ScriptPsiMethodContext? {
+            return declaration() as? ScriptPsiMethodContext
+        }
+
+        /**
+         * Returns the element which declare the param.
+         */
+        open fun declaration(): RuleContext {
+            return psiParameter.declarationScope.let {
+                contextOf(it, it)
+            }
+        }
+
         override fun toString(): String {
             return name()
         }
@@ -604,6 +621,14 @@ abstract class ScriptRuleParser : RuleParser {
         @ScriptIgnore
         override fun getCore(): Any? {
             return explicitParam
+        }
+
+        override fun method(): ScriptPsiMethodContext? {
+            return ScriptExplicitMethodContext(explicitParam.containMethod())
+        }
+
+        override fun declaration(): RuleContext {
+            return ScriptExplicitMethodContext(explicitParam.containMethod())
         }
     }
 
