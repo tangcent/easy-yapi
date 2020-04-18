@@ -6,7 +6,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*

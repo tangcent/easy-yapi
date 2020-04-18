@@ -6,7 +6,6 @@ import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.notNullOrBlank
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.settings.SettingBinder
