@@ -4,13 +4,13 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
-import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.utils.isNullOrBlank
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.plugin.render.MarkdownRender
@@ -223,7 +223,7 @@ class YapiFormatter {
                     .set("name", it.name)
                     .set("value", it.value)
                     .set("desc", it.desc)
-                    .set("example", it.example)
+                    .set("example", it.getDemo() ?: it.value)
                     .set("required", it.required.toInt())
             )
         }
@@ -234,7 +234,7 @@ class YapiFormatter {
             queryList.add(KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
-                    .set("example", it.value)
+                    .set("example", it.getDemo() ?: it.value)
                     .set("desc", it.desc)
                     .set("required", it.required.toInt())
             )
@@ -247,7 +247,7 @@ class YapiFormatter {
             request.formParams!!.forEach {
                 urlencodeds.add(KV.create<String, Any?>()
                         .set("name", it.name)
-                        .set("example", it.value)
+                        .set("example", it.getDemo() ?: it.value)
                         .set("type", it.type)
                         .set("required", it.required.toInt())
                         .set("desc", it.desc)
@@ -261,7 +261,7 @@ class YapiFormatter {
             request.paths!!.forEach {
                 pathParmas.add(KV.create<String, Any?>()
                         .set("name", it.name)
-                        .set("example", it.value)
+                        .set("example", it.getDemo() ?: it.value)
                         .set("desc", it.desc)
                 )
             }
@@ -397,6 +397,7 @@ class YapiFormatter {
 
                     default?.get(k)?.takeUnless { it.isNullOrBlank() }
                             ?.let { propertyInfo["default"] = it }
+
 
                     properties[key] = propertyInfo
                 } catch (e: Exception) {
@@ -549,11 +550,4 @@ class YapiFormatter {
         val EMPTY_PARAMS: List<String> = Collections.emptyList<String>()
     }
 
-}
-
-fun Boolean?.toInt(): Int {
-    return when {
-        this != null && this -> 1
-        else -> 0
-    }
 }

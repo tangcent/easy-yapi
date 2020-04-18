@@ -1,10 +1,12 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
-import com.itangcent.common.model.Doc
+import com.itangcent.common.constant.Attrs
+import com.itangcent.common.model.Extensible
+import com.itangcent.common.utils.notNullOrBlank
 import java.util.*
 
 
-fun Doc.getStatus(): String {
+fun Extensible.getStatus(): String {
     val status = this.getExt<String?>("status") ?: return "done"
 
     return when (status) {
@@ -13,19 +15,29 @@ fun Doc.getStatus(): String {
     }
 }
 
-fun Doc.setStatus(status: String?) {
+fun Extensible.setStatus(status: String?) {
     if (!status.isNullOrBlank()) {
         this.setExt("status", status)
     }
 }
 
-fun Doc.getTags(): List<String>? {
+fun Extensible.getTags(): List<String>? {
     return this.getExt("tags") ?: EMPTY_TAGS
 }
 
-fun Doc.setTags(tags: List<String>?) {
+fun Extensible.setTags(tags: List<String>?) {
     if (!tags.isNullOrEmpty()) {
         this.setExt("tags", tags)
+    }
+}
+
+fun Extensible.getDemo(): String? {
+    return this.getExt(Attrs.DEMO_ATTR)
+}
+
+fun Extensible.setDemo(demo: String?) {
+    if (demo.notNullOrBlank()) {
+        this.setExt(Attrs.DEMO_ATTR, demo)
     }
 }
 

@@ -52,20 +52,21 @@ fun RequestHelper.addParam(request: Request, paramName: String, defaultVal: Stri
     addParam(request, paramName, defaultVal, false, attr)
 }
 
-fun RequestHelper.addParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {
+fun RequestHelper.addParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?): Param {
     val param = Param()
     param.name = paramName
     param.value = defaultVal
     param.required = required
     param.desc = desc
     this.addParam(request, param)
+    return param
 }
 
 fun RequestHelper.addFormParam(request: Request, paramName: String, defaultVal: String?, desc: String?) {
     addFormParam(request, paramName, defaultVal, false, desc)
 }
 
-fun RequestHelper.addFormParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?) {
+fun RequestHelper.addFormParam(request: Request, paramName: String, defaultVal: String?, required: Boolean, desc: String?): FormParam {
     val param = FormParam()
     param.name = paramName
     param.value = defaultVal
@@ -73,23 +74,26 @@ fun RequestHelper.addFormParam(request: Request, paramName: String, defaultVal: 
     param.desc = desc
     param.type = "text"
     this.addFormParam(request, param)
+    return param
 }
 
-fun RequestHelper.addFormFileParam(request: Request, paramName: String, required: Boolean, desc: String?) {
+fun RequestHelper.addFormFileParam(request: Request, paramName: String, required: Boolean, desc: String?): FormParam {
     val param = FormParam()
     param.name = paramName
     param.required = required
     param.desc = desc
     param.type = "file"
     this.addFormParam(request, param)
+    return param
 }
 
-fun RequestHelper.addHeader(request: Request, name: String, value: String) {
+fun RequestHelper.addHeader(request: Request, name: String, value: String): Header {
     val header = Header()
     header.name = name
     header.value = value
     header.required = true
     addHeader(request, header)
+    return header
 }
 
 

@@ -5,6 +5,7 @@ import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.sub
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.intellij.config.ConfigReader
@@ -60,6 +61,12 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
             }
         } else {
             kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
+        }
+
+        val demoValue = ruleComputer.computer(YapiClassExportRuleKeys.FIELD_DEMO,
+                fieldOrMethod)
+        if (demoValue.notNullOrBlank()) {
+            kv.sub(Attrs.DEMO_ATTR)[fieldName] = demoValue
         }
     }
 
