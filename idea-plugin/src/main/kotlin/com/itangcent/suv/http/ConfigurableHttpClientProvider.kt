@@ -33,15 +33,19 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
         httpClientBuilder
                 .setDefaultSocketConfig(SocketConfig.custom()
-                        .setSoTimeout(config.timeOut * 1000)
+                        .setSoTimeout(config.timeOut.toMill())
                         .build())
                 .setDefaultRequestConfig(RequestConfig.custom()
-                        .setConnectTimeout(config.timeOut * 1000)
-                        .setConnectionRequestTimeout(config.timeOut * 1000)
-                        .setSocketTimeout(config.timeOut * 1000)
+                        .setConnectTimeout(config.timeOut.toMill())
+                        .setConnectionRequestTimeout(config.timeOut.toMill())
+                        .setSocketTimeout(config.timeOut.toMill())
                         .build())
 
         return HttpClientWrapper(ApacheHttpClient(httpClientBuilder.build()))
+    }
+
+    private fun Int.toMill(): Int {
+        return this * 1000
     }
 
     private fun readHttpConfig(): HttpConfig {
@@ -77,36 +81,80 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
     @ScriptTypeName("request")
     private inner class HttpRequestWrapper(private val httpRequest: HttpRequest) : HttpRequest by httpRequest {
+
+        /**
+         * Set the HTTP method to request
+         * @return current request
+         */
         override fun method(method: String): HttpRequest {
             httpRequest.method(method)
             return this
         }
 
+        /**
+         * Set the url to request
+         * @return current request
+         */
         override fun url(url: String): HttpRequest {
             httpRequest.url(url)
             return this
         }
 
+        /**
+         * Adds the given header to the request.
+         * The order in which this header was added is preserved.
+         *
+         * @param header the header to add
+         * @return current request
+         */
         override fun header(header: HttpHeader): HttpRequest {
             httpRequest.header(header)
             return this
         }
 
+        /**
+         * Adds the given header to the request.
+         * The order in which this header was added is preserved.
+         * @param headerName the name of the header to add
+         * @param headerValue the value of the header to add
+         * @return current request
+         */
         override fun header(headerName: String, headerValue: String?): HttpRequest {
             httpRequest.header(headerName, headerValue)
             return this
         }
 
+        /**
+         * Sets the header to the request overriding any
+         * existing headers with same name.
+         *
+         * @param headerName the name of the header to set
+         * @param headerValue the value of the header to set
+         * @return current request
+         */
         override fun setHeader(headerName: String, headerValue: String?): HttpRequest {
             httpRequest.setHeader(headerName, headerValue)
             return this
         }
 
+        /**
+         * Removes the given header by special name.
+         *
+         * @param headerName the name of the header to remove
+         * @return current request
+         */
         override fun removeHeaders(headerName: String): HttpRequest {
             httpRequest.removeHeaders(headerName)
             return this
         }
 
+        /**
+         * Removes the given header by special name and value.
+         *
+         * @param headerName the name of the header to remove
+         * @param headerValue the value of the header to remove
+         * @return current request
+         */
         override fun removeHeader(headerName: String, headerValue: String?): HttpRequest {
             httpRequest.removeHeader(headerName, headerValue)
             return this
@@ -116,7 +164,9 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             httpRequest.query(name, value)
             return this
         }
-
+        /**
+         * Set the body to be sent with the request.
+         */
         override fun body(body: Any?): HttpRequest {
             httpRequest.body(body)
             return this
@@ -132,11 +182,21 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             return this
         }
 
+        /**
+         * Set the Content-Type header value.
+         * Overriding existing headers with Content-Type.
+         *
+         * @return current request
+         */
         override fun contentType(contentType: String): HttpRequest {
             httpRequest.contentType(contentType)
             return this
         }
-
+        /**
+         * Executes HTTP request
+         *
+         * @return  the response to the request
+         */
         override fun call(): HttpResponse {
             var i = 0
             while (true) {
@@ -158,8 +218,12 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
     @ScriptTypeName("response")
     class DiscardableHttpResponse(httpResponse: HttpResponse) : HttpResponse by httpResponse {
 
-        var discarded = false
+        private var discarded = false
 
+        /**
+         * Discard current response.
+         * Recall the request.
+         */
         fun discard() {
             this.discarded = true
         }

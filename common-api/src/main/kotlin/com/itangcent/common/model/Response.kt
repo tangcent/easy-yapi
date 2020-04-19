@@ -2,6 +2,9 @@ package com.itangcent.common.model
 
 import java.io.Serializable
 
+/**
+ * A response of [Request].
+ */
 open class Response : Extensible(), Serializable {
 
     var headers: MutableList<Header>? = null
