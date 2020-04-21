@@ -245,7 +245,7 @@ class PostmanFormatter {
 
     fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
-            val attr = findAttrOfClass(resource)
+            val attr = resourceHelper!!.findAttrOfClass(resource)
             if (attr.isNullOrBlank()) {
                 info["name"] = resource.name!!
                 info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
@@ -265,14 +265,6 @@ class PostmanFormatter {
         } else {
             info["name"] = resource.toString()
             info["description"] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
-        }
-    }
-
-    private fun findAttrOfClass(cls: PsiClass): String? {
-        val docText = resourceHelper!!.findAttrOfClass(cls)
-        return when {
-            docText.isNullOrBlank() -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls)
         }
     }
 
@@ -323,7 +315,7 @@ class PostmanFormatter {
                 .map { moduleAndFolders ->
                     val items: ArrayList<HashMap<String, Any?>> = ArrayList()
                     moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
-                    return@map wrapRootInfo(moduleAndFolders.key, items)
+                    return@map wrapInfo(moduleAndFolders.key, items)
                 }
                 .forEach { modules.add(it) }
 
