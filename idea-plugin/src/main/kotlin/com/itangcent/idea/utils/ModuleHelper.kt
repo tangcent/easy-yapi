@@ -48,10 +48,18 @@ class ModuleHelper {
     }
 
     fun findModule(psiMethod: PsiMethod): String? {
+
+        val moduleByRule = ruleComputer!!.computer(ClassExportRuleKeys.MODULE, psiMethod)
+        if (moduleByRule.notNullOrBlank()) {
+            return moduleByRule
+        }
+
+
         val containingClass = psiMethod.containingClass
         if (containingClass != null) {
             return findModule(containingClass)
         }
+
         val module = ModuleUtil.findModuleForPsiElement(psiMethod)
         if (module != null) {
             return module.name
@@ -98,6 +106,7 @@ class ModuleHelper {
                 currentPath.contains(main) -> currentPath = StringUtils.substringBefore(currentPath, main)
                 currentPath.contains(java) -> currentPath = StringUtils.substringBefore(currentPath, java)
                 currentPath.contains(kotlin) -> currentPath = StringUtils.substringBefore(currentPath, kotlin)
+                currentPath.contains(scala) -> currentPath = StringUtils.substringBefore(currentPath, scala)
             }
             module = StringUtils.substringAfterLast(currentPath, File.separator)
         } catch (e: Exception) {
@@ -114,6 +123,7 @@ class ModuleHelper {
         private val main = "${File.separator}main${File.separator}"
         private val java = "${File.separator}java${File.separator}"
         private val kotlin = "${File.separator}kotlin${File.separator}"
+        private val scala = "${File.separator}scala${File.separator}"
 
     }
 }

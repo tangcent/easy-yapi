@@ -365,7 +365,7 @@ class MarkdownFormatter {
                 }
             }
         } else {
-            info[NAME] = "$resource-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}"
+            info[NAME] = resource.toString()
             info[DESC] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
         }
     }

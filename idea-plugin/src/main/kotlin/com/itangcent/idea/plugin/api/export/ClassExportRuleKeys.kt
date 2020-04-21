@@ -105,6 +105,14 @@ object ClassExportRuleKeys {
             StringRuleMode.SINGLE
     )
 
+    /**
+     * folder of api
+     */
+    val API_FOLDER: RuleKey<String> = SimpleRuleKey(
+            "folder.name", StringRule::class,
+            StringRuleMode.SINGLE
+    )
+
     //default http method of api(method)
     val METHOD_DEFAULT_HTTP_METHOD: RuleKey<String> = SimpleRuleKey(
             "method.default.http.method", StringRule::class,
