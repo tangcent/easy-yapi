@@ -30,19 +30,40 @@ fun Cookie.mutable(): MutableCookie {
 class BasicCookie : MutableCookie {
 
     private var name: String? = null
+
+    /**
+     * Returns the name.
+     *
+     * @return String name The name
+     */
     override fun getName(): String? = name
+
     override fun setName(name: String?) {
         this.name = name
     }
 
     private var value: String? = null
+
+    /**
+     * Returns the value.
+     *
+     * @return String value The current value.
+     */
     override fun getValue(): String? = value
     override fun setValue(value: String?) {
         this.value = value
     }
 
     private var comment: String? = null
+
+    /**
+     * Returns the comment describing the purpose of this cookie, or
+     * {@code null} if no such comment has been defined.
+     * Compatible only.Obsolete.
+     * @return comment
+     */
     override fun getComment(): String? = comment
+
     override fun setComment(comment: String?) {
         this.comment = comment
     }
@@ -55,24 +76,55 @@ class BasicCookie : MutableCookie {
 
 
     private var domain: String? = null
+
+    /**
+     * Returns domain attribute of the cookie. The value of the Domain
+     * attribute specifies the domain for which the cookie is valid.
+     *
+     * @return the value of the domain attribute.
+     */
     override fun getDomain(): String? = domain
     override fun setDomain(domain: String?) {
         this.domain = domain
     }
 
     private var path: String? = null
+
+    /**
+     * Returns the path attribute of the cookie. The value of the Path
+     * attribute specifies the subset of URLs on the origin server to which
+     * this cookie applies.
+     *
+     * @return The value of the path attribute.
+     */
     override fun getPath(): String? = path
+
     override fun setPath(path: String?) {
         this.path = path
     }
 
     private var version: Int? = null
+
+    /**
+     * Returns the version of the cookie specification to which this
+     * cookie conforms.
+     * Compatible only.Obsolete.
+     *
+     * @return the version of the cookie.
+     */
     override fun getVersion(): Int? = version
     override fun setVersion(version: Int?) {
         this.version = version
     }
 
     private var secure: Boolean = false
+
+    /**
+     * Indicates whether this cookie requires a secure connection.
+     *
+     * @return  {@code true} if this cookie should only be sent
+     *          over secure connections, {@code false} otherwise.
+     */
     override fun isSecure(): Boolean = secure
     override fun setSecure(secure: Boolean) {
         this.secure = secure

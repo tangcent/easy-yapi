@@ -3,12 +3,23 @@ package com.itangcent.common.model
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.utils.firstOrNull
 
+/**
+ * Request represent A Http API.
+ */
 open class Request : Doc() {
 
     var path: String? = null
 
+    /**
+     * The HTTP method.
+     *
+     * @see HttpMethod
+     */
     var method: String? = null
 
+    /**
+     * All of the headers.
+     */
     var headers: MutableList<Header>? = null
 
     var paths: MutableList<PathParam>? = null

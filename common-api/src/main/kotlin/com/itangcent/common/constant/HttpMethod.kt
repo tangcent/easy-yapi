@@ -7,4 +7,7 @@ object HttpMethod {
     const val DELETE = "DELETE"
     const val PUT = "PUT"
     const val PATCH = "PATCH"
+    const val OPTIONS = "OPTIONS"
+    const val TRACE = "TRACE"
+    const val HEAD = "HEAD"
 }
