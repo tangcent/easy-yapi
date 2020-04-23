@@ -2,8 +2,8 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Singleton
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.model.*
 import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.model.*
 import java.util.*
 
 @Singleton
@@ -16,7 +16,7 @@ open class DefaultRequestHelper : RequestHelper {
         request.method = method
     }
 
-    override fun setPath(request: Request, path: String) {
+    override fun setPath(request: Request, path: URL) {
         request.path = path
     }
 
@@ -29,8 +29,8 @@ open class DefaultRequestHelper : RequestHelper {
             val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
             model.forEach { k, v ->
                 addFormParam(
-                    request, k.toString(), v.toString(),
-                    KVUtils.getUltimateComment(comment, k)
+                        request, k.toString(), v.toString(),
+                        KVUtils.getUltimateComment(comment, k)
                 )
             }
         }

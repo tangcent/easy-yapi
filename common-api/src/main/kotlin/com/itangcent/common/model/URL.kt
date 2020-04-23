@@ -1,7 +1,7 @@
 package com.itangcent.common.model
 
-import com.itangcent.common.utils.isNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.http.RequestUtils
 
 /**
  * Represents a url path.
@@ -94,10 +94,11 @@ private class SingleURL(private val url: String) : URL {
     }
 
     override fun contract(url: URL): URL {
-        if (url.single()) {
-            return URL.of(contractPath(this.url, url.url()))
+        return when {
+            url == URL.nil() -> this
+            url.single() -> URL.of(RequestUtils.contractPath(this.url, url.url()))
+            else -> URL.of(url.urls().mapNotNull { RequestUtils.contractPath(this.url, it) })
         }
-        return URL.of(url.urls().mapNotNull { contractPath(this.url, it) })
     }
 
     override fun toString(): String {
@@ -123,21 +124,16 @@ private class MultiURL(private val urls: List<String>) : URL {
     }
 
     override fun contract(url: URL): URL {
-        if (url.single()) {
-            return URL.of(this.urls().mapNotNull { contractPath(it, url.url()) })
+        return when {
+            url == URL.nil() -> this
+            url.single() -> URL.of(this.urls().mapNotNull { RequestUtils.contractPath(it, url.url()) })
+            else -> URL.of(this.urls().flatMap { prefixPath ->
+                url.urls().mapNotNull { RequestUtils.contractPath(prefixPath, it) }
+            })
         }
-        return URL.of(this.urls().flatMap { prefixPath ->
-            url.urls().mapNotNull { contractPath(prefixPath, it) }
-        })
     }
 
     override fun toString(): String {
         return urls.joinToString(",")
     }
-}
-
-private fun contractPath(pathPre: String?, pathAfter: String?): String? {
-    if (pathPre.isNullOrBlank()) return pathAfter
-    if (pathAfter.isNullOrBlank()) return pathPre
-    return "${pathPre!!.removeSuffix("/")}/${pathAfter!!.removePrefix("/")}"
 }
