@@ -3,17 +3,19 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
+import com.itangcent.common.kit.getAs
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.model.Request
+import com.itangcent.common.model.URL
 import com.itangcent.common.model.getContentType
-import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.utils.KV
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.DefaultDocParseHelper
+import com.itangcent.common.utils.*
+import com.itangcent.http.RequestUtils
+import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.http.RequestUtils
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils
@@ -36,12 +38,90 @@ class PostmanFormatter {
     private val actionContext: ActionContext? = null
 
     @Inject
-    private val docParseHelper: DefaultDocParseHelper? = null
+    private val formatFolderHelper: FormatFolderHelper? = null
 
     @Inject
     private val ruleComputer: RuleComputer? = null
 
+
+    fun request2Items(request: Request): List<HashMap<String, Any?>> {
+
+        val item = formatRequest2Item(request)
+
+        val url: HashMap<String, Any?> = item.getAs("request", "url")!!
+
+        val pathInRequest = request.path ?: URL.nil()
+        if (pathInRequest.single()) {
+            val path = pathInRequest.url() ?: ""
+            url["path"] = path.trim().trim('/').split("/")
+            url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+            return listOf(item)
+        }
+
+        val pathMultiResolve = ruleComputer!!.computer(ClassExportRuleKeys.PATH_MULTI, request.resource()!!)?.let {
+            ResolveMultiPath.valueOf(it.toUpperCase())
+        } ?: ResolveMultiPath.FIRST
+
+        if (pathMultiResolve == ResolveMultiPath.ALL) {
+            val host = item.getAs<String>("request", "url", "host") ?: ""
+            return pathInRequest.urls().map {
+                val copyItem = copyItem(item)
+                val copyUrl: HashMap<String, Any?> = copyItem.getAs("request", "url")!!
+                copyUrl["path"] = it.trim().trim('/').split("/")
+                copyUrl["raw"] = RequestUtils.contractPath(host, it)
+                return@map copyItem
+            }
+        } else {
+            val path: String? = when (pathMultiResolve) {
+                ResolveMultiPath.FIRST -> {
+                    pathInRequest.urls().firstOrNull()
+                }
+                ResolveMultiPath.LAST -> {
+                    pathInRequest.urls().lastOrNull()
+                }
+                ResolveMultiPath.LONGEST -> {
+                    pathInRequest.urls().longest()
+                }
+                ResolveMultiPath.SHORTEST -> {
+                    pathInRequest.urls().shortest()
+                }
+                else -> ""
+            }
+
+            url["path"] = (path ?: "").trim().trim('/').split("/")
+            url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+            return listOf(item)
+        }
+    }
+
+    protected open fun copyItem(item: HashMap<String, Any?>): HashMap<String, Any?> {
+        val copyItem = KV.create<String, Any?>()
+        copyItem.putAll(item)
+
+        val request = HashMap(item.getAs<HashMap<String, Any?>>("request"))
+        copyItem["request"] = request
+
+        val url = HashMap(request.getAs<HashMap<String, Any?>>("url"))
+        request["url"] = url
+
+        return copyItem
+    }
+
     fun request2Item(request: Request): HashMap<String, Any?> {
+
+        val item = formatRequest2Item(request)
+
+        val url: HashMap<String, Any?> = item.getAs("request", "url")!!
+
+        val pathInRequest = request.path ?: URL.nil()
+
+        val path = pathInRequest.url() ?: ""
+        url["path"] = path.trim().trim('/').split("/")
+        url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+        return item
+    }
+
+    protected open fun formatRequest2Item(request: Request): HashMap<String, Any?> {
 
         var host = "{{host}}"
 
@@ -73,8 +153,6 @@ class PostmanFormatter {
         requestInfo["url"] = url
 
         url["host"] = host
-        url["path"] = request.path!!.trim().trim('/').split("/")
-        url["raw"] = RequestUtils.contractPath(host, request.path)
 
         val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
         requestInfo["header"] = headers
@@ -172,7 +250,7 @@ class PostmanFormatter {
                     responseHeader.add(KV.create<String, Any?>()
                             .set("name", "date")
                             .set("key", "date")
-                            .set("value", DateUtils.format(Date(), "EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
+                            .set("value", Date().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
                             .set("description", "The date and time that the message was sent")
                     )
                 }
@@ -224,6 +302,7 @@ class PostmanFormatter {
         val info: HashMap<String, Any?> = HashMap()
         postman["info"] = info
         parseNameAndDesc(resource, info)
+        info["name"] = "${info["name"]}-${Date().formatDate("yyyyMMddHHmmss")}"
         info["schema"] = POSTMAN_SCHEMA_V2_1_0
         postman["item"] = items
         return postman
@@ -238,12 +317,12 @@ class PostmanFormatter {
 
     fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
-            val attr = findAttrOfClass(resource)
+            val attr = resourceHelper!!.findAttrOfClass(resource)
             if (attr.isNullOrBlank()) {
                 info["name"] = resource.name!!
                 info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
             } else {
-                val lines = attr.lines()
+                val lines = attr!!.lines()
                 if (lines.size == 1) {
                     info["name"] = attr
                     info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
@@ -252,67 +331,89 @@ class PostmanFormatter {
                     info["description"] = attr
                 }
             }
+        } else if (resource is Pair<*, *>) {
+            info["name"] = resource.first
+            info["description"] = resource.second
         } else {
-            info["name"] = "$resource-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}"
+            info["name"] = resource.toString()
             info["description"] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
-        }
-    }
-
-    private fun findAttrOfClass(cls: PsiClass): String? {
-        val docText = resourceHelper!!.findAttrOfClass(cls)
-        return when {
-            docText.isNullOrBlank() -> cls.name
-            else -> docParseHelper!!.resolveLinkInAttr(docText, cls)
         }
     }
 
     fun parseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
 
-        //group by class into: {class:requests}
-        val clsGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
-        requests.forEach { request ->
-            val resource = request.resource?.let { resourceHelper!!.findResourceClass(it) } ?: NULL_RESOURCE
-            clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
-                    .add(request2Item(request))
-        }
 
-        //only one class
-        if (clsGroupedMap.size == 1) {
-            clsGroupedMap.entries.first()
-                    .let {
-                        val module = moduleHelper!!.findModule(it.key) ?: "easy-api"
-                        return wrapRootInfo(module, arrayListOf(wrapInfo(it.key, it.value)))
-                    }
-        }
+        //parse [request...] ->
+        //                      {
+        //                          "module":{
+        //                              "folder":[request...]
+        //                          }
+        //                      }
+
+        val moduleFolderApiMap: HashMap<String, HashMap<Folder, ArrayList<HashMap<String, Any?>>>> = HashMap()
 
         //group by module
-        val moduleGroupedMap: HashMap<Any, ArrayList<HashMap<String, Any?>>> = HashMap()
-        clsGroupedMap.forEach { cls, items ->
-            val module = moduleHelper!!.findModule(cls) ?: "easy-api"
+        val moduleGroupedMap: HashMap<String, MutableList<Request>> = HashMap()
+        requests.forEach { request ->
+            val module = request.resource?.let { moduleHelper!!.findModule(it) } ?: "easy-api"
             moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
-                    .add(wrapInfo(cls, items))
+                    .add(request)
+        }
+
+        moduleGroupedMap.forEach { module, requestsInModule ->
+            moduleFolderApiMap[module] = parseRequestsToFolder(requestsInModule)
         }
 
 
-        //only one module
-        if (moduleGroupedMap.size == 1) {
-            moduleGroupedMap.entries.first()
-                    .let {
-                        return wrapRootInfo(it.key, arrayListOf(wrapInfo(it.key, it.value)))
-                    }
+        if (moduleFolderApiMap.size == 1) {
+            //single module
+            val folderApiMap = moduleFolderApiMap.values.first()
+            if (folderApiMap.size == 1) {
+                //single folder
+                folderApiMap.entries.first().let {
+                    return wrapRootInfo(it.key, it.value)
+                }
+            } else {
+                moduleFolderApiMap.entries.first().let { moduleAndFolders ->
+                    val items: ArrayList<HashMap<String, Any?>> = ArrayList()
+                    moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
+                    return wrapRootInfo(moduleAndFolders.key, items)
+                }
+            }
         }
 
         val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
-        moduleGroupedMap.entries
-                .map { wrapInfo(it.key, it.value) }
+        moduleFolderApiMap.entries
+                .map { moduleAndFolders ->
+                    val items: ArrayList<HashMap<String, Any?>> = ArrayList()
+                    moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
+                    return@map wrapInfo(moduleAndFolders.key, items)
+                }
                 .forEach { modules.add(it) }
 
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
-        return wrapRootInfo("$rootModule-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}", modules)
+        return wrapRootInfo(rootModule, modules)
+    }
+
+    private fun parseRequestsToFolder(requests: MutableList<Request>): HashMap<Folder, ArrayList<HashMap<String, Any?>>> {
+        //parse [request...] ->
+        //                      {
+        //                          "folder":[request...]
+        //                      }
+
+        //group by folder into: {folder:requests}
+        val folderGroupedMap: HashMap<Folder, ArrayList<HashMap<String, Any?>>> = HashMap()
+        requests.forEach { request ->
+            val folder = formatFolderHelper!!.resolveFolder(request.resource ?: NULL_RESOURCE)
+            folderGroupedMap.computeIfAbsent(folder) { ArrayList() }
+                    .addAll(request2Items(request))
+        }
+
+        return folderGroupedMap
     }
 
     companion object {
-        val NULL_RESOURCE = Any()
+        const val NULL_RESOURCE = "unknown"
 
         const val POSTMAN_SCHEMA_V2_1_0 = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     }

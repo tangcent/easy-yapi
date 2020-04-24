@@ -178,6 +178,11 @@ fun <T> Map<*, *>.getAs(key: Any?, subKey: Any?): T? {
 }
 
 @Suppress("UNCHECKED_CAST")
+fun <T> Map<*, *>.getAs(key: Any?, subKey: Any?, grandKey: Any?): T? {
+    return this.getAs<Map<*, *>>(key)?.getAs<Map<*, *>>(subKey)?.getAs(grandKey)
+}
+
+@Suppress("UNCHECKED_CAST")
 fun KV<String, Any?>.getAsKv(key: String): KV<String, Any?>? {
     return this[key] as KV<String, Any?>?
 }

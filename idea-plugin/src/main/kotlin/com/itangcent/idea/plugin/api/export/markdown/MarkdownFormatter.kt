@@ -13,6 +13,9 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.http.RequestUtils
+import com.itangcent.idea.plugin.api.export.Folder
+import com.itangcent.idea.plugin.api.export.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
@@ -43,6 +46,9 @@ class MarkdownFormatter {
     @Inject
     protected val resourceHelper: ResourceHelper? = null
 
+    @Inject
+    private val formatFolderHelper: FormatFolderHelper? = null
+
     fun parseRequests(requests: MutableList<Doc>): String {
         val sb = StringBuilder()
         val groupedRequest = groupRequests(requests)
@@ -51,48 +57,76 @@ class MarkdownFormatter {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun groupRequests(docs: MutableList<Doc>): Any {
+    private fun groupRequests(requests: MutableList<Doc>): Any {
 
-        //group by class into: {class:requests}
-        val clsGroupedMap: HashMap<Any, ArrayList<Any?>> = HashMap()
-        docs.forEach { request ->
-            val resource = request.resource?.let { resourceHelper!!.findResourceClass(it) } ?: NULL_RESOURCE
-            clsGroupedMap.computeIfAbsent(resource) { ArrayList() }
+
+        //parse [request...] ->
+        //                      {
+        //                          "module":{
+        //                              "folder":[request...]
+        //                          }
+        //                      }
+
+        val moduleFolderApiMap: HashMap<String, HashMap<Folder, ArrayList<Doc>>> = HashMap()
+
+        //group by module
+        val moduleGroupedMap: HashMap<String, MutableList<Doc>> = HashMap()
+        requests.forEach { request ->
+            val module = request.resource?.let { moduleHelper!!.findModule(it) } ?: "easy-api"
+            moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
                     .add(request)
         }
 
-        //only one class
-        if (clsGroupedMap.size == 1) {
-            clsGroupedMap.entries.first()
-                    .let {
-                        val module = moduleHelper!!.findModule(it.key) ?: "easy-api"
-                        return wrapInfo(module, arrayListOf(wrapInfo(it.key, it.value)))
-                    }
+        moduleGroupedMap.forEach { module, requestsInModule ->
+            moduleFolderApiMap[module] = parseRequestsToFolder(requestsInModule)
         }
 
-        //group by module
-        val moduleGroupedMap: HashMap<Any, ArrayList<Any?>> = HashMap()
-        clsGroupedMap.forEach { cls, items ->
-            val module = moduleHelper!!.findModule(cls) ?: "easy-api"
-            moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
-                    .add(wrapInfo(cls, items))
-        }
 
-        //only one module
-        if (moduleGroupedMap.size == 1) {
-            moduleGroupedMap.entries.first()
-                    .let {
-                        return wrapInfo(it.key, arrayListOf(wrapInfo(it.key, it.value)))
-                    }
+        if (moduleFolderApiMap.size == 1) {
+            //single module
+            val folderApiMap = moduleFolderApiMap.values.first()
+            if (folderApiMap.size == 1) {
+                //single folder
+                folderApiMap.entries.first().let {
+                    return wrapInfo(it.key, it.value)
+                }
+            } else {
+                moduleFolderApiMap.entries.first().let { moduleAndFolders ->
+                    val items: ArrayList<HashMap<String, Any?>> = ArrayList()
+                    moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
+                    return wrapInfo(moduleAndFolders.key, items)
+                }
+            }
         }
 
         val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
-        moduleGroupedMap.entries
-                .map { wrapInfo(it.key, arrayListOf(wrapInfo(it.key, it.value))) }
+        moduleFolderApiMap.entries
+                .map { moduleAndFolders ->
+                    val items: ArrayList<HashMap<String, Any?>> = ArrayList()
+                    moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
+                    return@map wrapInfo(moduleAndFolders.key, items)
+                }
                 .forEach { modules.add(it) }
 
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
-        return wrapInfo(rootModule, modules as ArrayList<Any?>)
+        return wrapInfo(rootModule, modules)
+    }
+
+    private fun parseRequestsToFolder(requests: MutableList<Doc>): HashMap<Folder, ArrayList<Doc>> {
+        //parse [request...] ->
+        //                      {
+        //                          "folder":[request...]
+        //                      }
+
+        //group by folder into: {folder:requests}
+        val folderGroupedMap: HashMap<Folder, ArrayList<Doc>> = HashMap()
+        requests.forEach { request ->
+            val folder = formatFolderHelper!!.resolveFolder(request.resource ?: PostmanFormatter.NULL_RESOURCE)
+            folderGroupedMap.computeIfAbsent(folder) { ArrayList() }
+                    .add(request)
+        }
+
+        return folderGroupedMap
     }
 
     private fun parseApi(info: Any, deep: Int, handle: (String) -> Unit) {
@@ -341,32 +375,35 @@ class MarkdownFormatter {
         return "#".repeat(n)
     }
 
-    private fun wrapInfo(resource: Any, items: ArrayList<Any?>): HashMap<String, Any?> {
+    private fun wrapInfo(resource: Any, items: List<Any?>): HashMap<String, Any?> {
         val info: HashMap<String, Any?> = HashMap()
         parseNameAndDesc(resource, info)
         info[ITEMS] = items
         return info
     }
 
-    private fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
+    fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
             val attr = resourceHelper!!.findAttrOfClass(resource)
             if (attr.isNullOrBlank()) {
-                info[NAME] = resource.name!!
-                info[DESC] = "exported from module:${resource.qualifiedName}"
+                info["name"] = resource.name!!
+                info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
             } else {
                 val lines = attr.lines()
                 if (lines.size == 1) {
-                    info[NAME] = attr
-                    info[DESC] = "exported from module:${actionContext!!.callInReadUI { resource.qualifiedName }}"
+                    info["name"] = attr
+                    info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
                 } else {
-                    info[NAME] = lines[0]
-                    info[DESC] = attr
+                    info["name"] = lines[0]
+                    info["description"] = attr
                 }
             }
+        } else if (resource is Pair<*, *>) {
+            info["name"] = resource.first
+            info["description"] = resource.second
         } else {
-            info[NAME] = "$resource-${DateUtils.format(DateUtils.now(), "yyyyMMddHHmmss")}"
-            info[DESC] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
+            info["name"] = resource.toString()
+            info["description"] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
         }
     }
 

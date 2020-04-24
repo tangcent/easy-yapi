@@ -1648,7 +1648,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
 }
 
-typealias  LazyAction = () -> Unit
+private typealias LazyAction = () -> Unit
 
 class DisposableLazyAction : LazyAction {
     private var disposed = false
