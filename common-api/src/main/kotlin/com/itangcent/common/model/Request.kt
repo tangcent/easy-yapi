@@ -8,7 +8,7 @@ import com.itangcent.common.utils.firstOrNull
  */
 open class Request : Doc() {
 
-    var path: String? = null
+    var path: URL? = null
 
     /**
      * The HTTP method.

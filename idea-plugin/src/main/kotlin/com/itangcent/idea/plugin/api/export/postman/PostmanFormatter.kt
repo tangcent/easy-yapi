@@ -3,20 +3,19 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
+import com.itangcent.common.kit.getAs
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.model.Request
+import com.itangcent.common.model.URL
 import com.itangcent.common.model.getContentType
-import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.formatDate
+import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.DocParseHelper
-import com.itangcent.idea.plugin.api.export.Folder
-import com.itangcent.idea.plugin.api.export.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils
@@ -39,15 +38,90 @@ class PostmanFormatter {
     private val actionContext: ActionContext? = null
 
     @Inject
-    private val docParseHelper: DocParseHelper? = null
-
-    @Inject
     private val formatFolderHelper: FormatFolderHelper? = null
 
     @Inject
     private val ruleComputer: RuleComputer? = null
 
+
+    fun request2Items(request: Request): List<HashMap<String, Any?>> {
+
+        val item = formatRequest2Item(request)
+
+        val url: HashMap<String, Any?> = item.getAs("request", "url")!!
+
+        val pathInRequest = request.path ?: URL.nil()
+        if (pathInRequest.single()) {
+            val path = pathInRequest.url() ?: ""
+            url["path"] = path.trim().trim('/').split("/")
+            url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+            return listOf(item)
+        }
+
+        val pathMultiResolve = ruleComputer!!.computer(ClassExportRuleKeys.PATH_MULTI, request.resource()!!)?.let {
+            ResolveMultiPath.valueOf(it.toUpperCase())
+        } ?: ResolveMultiPath.FIRST
+
+        if (pathMultiResolve == ResolveMultiPath.ALL) {
+            val host = item.getAs<String>("request", "url", "host") ?: ""
+            return pathInRequest.urls().map {
+                val copyItem = copyItem(item)
+                val copyUrl: HashMap<String, Any?> = copyItem.getAs("request", "url")!!
+                copyUrl["path"] = it.trim().trim('/').split("/")
+                copyUrl["raw"] = RequestUtils.contractPath(host, it)
+                return@map copyItem
+            }
+        } else {
+            val path: String? = when (pathMultiResolve) {
+                ResolveMultiPath.FIRST -> {
+                    pathInRequest.urls().firstOrNull()
+                }
+                ResolveMultiPath.LAST -> {
+                    pathInRequest.urls().lastOrNull()
+                }
+                ResolveMultiPath.LONGEST -> {
+                    pathInRequest.urls().longest()
+                }
+                ResolveMultiPath.SHORTEST -> {
+                    pathInRequest.urls().shortest()
+                }
+                else -> ""
+            }
+
+            url["path"] = (path ?: "").trim().trim('/').split("/")
+            url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+            return listOf(item)
+        }
+    }
+
+    protected open fun copyItem(item: HashMap<String, Any?>): HashMap<String, Any?> {
+        val copyItem = KV.create<String, Any?>()
+        copyItem.putAll(item)
+
+        val request = HashMap(item.getAs<HashMap<String, Any?>>("request"))
+        copyItem["request"] = request
+
+        val url = HashMap(request.getAs<HashMap<String, Any?>>("url"))
+        request["url"] = url
+
+        return copyItem
+    }
+
     fun request2Item(request: Request): HashMap<String, Any?> {
+
+        val item = formatRequest2Item(request)
+
+        val url: HashMap<String, Any?> = item.getAs("request", "url")!!
+
+        val pathInRequest = request.path ?: URL.nil()
+
+        val path = pathInRequest.url() ?: ""
+        url["path"] = path.trim().trim('/').split("/")
+        url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+        return item
+    }
+
+    protected open fun formatRequest2Item(request: Request): HashMap<String, Any?> {
 
         var host = "{{host}}"
 
@@ -79,8 +153,6 @@ class PostmanFormatter {
         requestInfo["url"] = url
 
         url["host"] = host
-        url["path"] = request.path!!.trim().trim('/').split("/")
-        url["raw"] = RequestUtils.contractPath(host, request.path)
 
         val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
         requestInfo["header"] = headers
@@ -250,7 +322,7 @@ class PostmanFormatter {
                 info["name"] = resource.name!!
                 info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
             } else {
-                val lines = attr.lines()
+                val lines = attr!!.lines()
                 if (lines.size == 1) {
                     info["name"] = attr
                     info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
@@ -334,7 +406,7 @@ class PostmanFormatter {
         requests.forEach { request ->
             val folder = formatFolderHelper!!.resolveFolder(request.resource ?: NULL_RESOURCE)
             folderGroupedMap.computeIfAbsent(folder) { ArrayList() }
-                    .add(request2Item(request))
+                    .addAll(request2Items(request))
         }
 
         return folderGroupedMap

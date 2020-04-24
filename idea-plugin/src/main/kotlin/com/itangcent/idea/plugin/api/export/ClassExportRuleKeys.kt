@@ -124,12 +124,18 @@ object ClassExportRuleKeys {
             StringRuleMode.SINGLE
     )
 
-    val HTTP_CLIENT_BEFORE_CALL: RuleKey<String> = SimpleRuleKey(
+    val HTTP_CLIENT_BEFORE_CALL: RuleKey<Boolean> = SimpleRuleKey(
             "http.call.before", BooleanRule::class,
             BooleanRuleMode.ALL
     )
-    val HTTP_CLIENT_AFTER_CALL: RuleKey<String> = SimpleRuleKey(
+
+    val HTTP_CLIENT_AFTER_CALL: RuleKey<Boolean> = SimpleRuleKey(
             "http.call.after", BooleanRule::class,
             BooleanRuleMode.ALL
+    )
+
+    val PATH_MULTI: RuleKey<String> = SimpleRuleKey(
+            "path.multi", StringRule::class,
+            StringRuleMode.SINGLE
     )
 }

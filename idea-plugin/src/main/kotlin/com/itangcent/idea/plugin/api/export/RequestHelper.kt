@@ -10,7 +10,7 @@ interface RequestHelper {
 
     fun setMethod(request: Request, method: String)
 
-    fun setPath(request: Request, path: String)
+    fun setPath(request: Request, path: URL)
 
     /**
      * addAsJsonBody if content-type is json

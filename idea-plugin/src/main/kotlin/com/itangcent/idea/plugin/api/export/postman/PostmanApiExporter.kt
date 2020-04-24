@@ -12,7 +12,6 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
@@ -38,9 +37,6 @@ class PostmanApiExporter {
 
     @Inject
     private val classExporter: ClassExporter? = null
-
-    @Inject
-    private val requestHelper: RequestHelper? = null
 
     @Inject
     private val fileSaveHelper: FileSaveHelper? = null
