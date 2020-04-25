@@ -376,12 +376,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return pv
     }
 
-    protected fun contractPath(pathPre: String?, pathAfter: String?): String? {
-        if (pathPre.isNullOrBlank()) return pathAfter
-        if (pathAfter.isNullOrBlank()) return pathPre
-        return "${pathPre!!.removeSuffix("/")}/${pathAfter!!.removePrefix("/")}"
-    }
-
     @Deprecated(message = "will be removed soon")
     open protected fun findAttrOfMethod(method: PsiMethod): String? {
         return docHelper!!.getAttrOfDocComment(method)

@@ -2,7 +2,10 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.kit.*
+import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.kit.asKV
+import com.itangcent.common.kit.getAs
+import com.itangcent.common.kit.getAsKv
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
@@ -356,11 +359,15 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
     protected open fun addParamToPath(request: Request,
                                       paramName: String,
                                       value: String) {
-        val path = request.path ?: ""
-        request.path = when {
-            path.endsWith('?') -> "$path$paramName=$value"
-            path.contains('?') -> "$path&$paramName=$value"
-            else -> "$path?$paramName=$value"
+        request.path = (request.path ?: URL.nil()).map { path ->
+            if (path != null) {
+                if (path.endsWith('?')) {
+                    return@map "$path$paramName=$value"
+                } else if (path.contains('?')) {
+                    return@map "$path&$paramName=$value"
+                }
+            }
+            "$path?$paramName=$value"
         }
     }
 

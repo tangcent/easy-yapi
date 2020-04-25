@@ -5,6 +5,7 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.*
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.model.*
 import java.util.*
 
 @Singleton
@@ -17,7 +18,7 @@ open class DefaultRequestHelper : RequestHelper {
         request.method = method
     }
 
-    override fun setPath(request: Request, path: String) {
+    override fun setPath(request: Request, path: URL) {
         request.path = path
     }
 

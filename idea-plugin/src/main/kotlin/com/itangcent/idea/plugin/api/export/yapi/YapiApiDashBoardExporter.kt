@@ -1,25 +1,15 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.intellij.openapi.ui.Messages
-import com.intellij.psi.PsiClass
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Doc
+import com.itangcent.idea.plugin.api.export.Folder
+import java.util.HashMap
+import kotlin.collections.HashSet
+import kotlin.collections.set
 
 
 class YapiApiDashBoardExporter : AbstractYapiApiExporter() {
-
-    override fun getCartForCls(psiClass: PsiClass): CartInfo? {
-
-        var cartId = clsCartMap[psiClass to ""]
-        if (cartId != null) return cartId
-        synchronized(clsCartMap)
-        {
-            cartId = clsCartMap[psiClass to ""]
-            if (cartId != null) return cartId
-
-            return super.getCartForCls(psiClass)
-        }
-    }
 
     private var tryInputTokenOfModule: HashSet<String> = HashSet()
 
@@ -48,24 +38,24 @@ class YapiApiDashBoardExporter : AbstractYapiApiExporter() {
 
     private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
 
-    //cls -> CartInfo
-    private val clsCartMap: HashMap<Pair<PsiClass, String>, CartInfo> = HashMap()
+    //privateToken+folderName -> CartInfo
+    private val folderNameCartMap: HashMap<String, CartInfo> = HashMap()
 
-    override fun getCartForCls(psiClass: PsiClass, privateToken: String): CartInfo? {
-        var cartId = clsCartMap[psiClass to privateToken]
-        if (cartId != null) return cartId
-        synchronized(clsCartMap)
-        {
-            cartId = clsCartMap[psiClass to privateToken]
-            if (cartId != null) return cartId
+    @Synchronized
+    override fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
+        var cartInfo = folderNameCartMap["$privateToken${folder.first}"]
+        if (cartInfo != null) return cartInfo
 
-            return super.getCartForCls(psiClass, privateToken)
+        cartInfo = super.getCartForDoc(folder, privateToken)
+        if (cartInfo != null) {
+            folderNameCartMap["$privateToken${folder.first}"] = cartInfo
         }
+        return cartInfo
     }
 
     fun exportDoc(doc: Doc, privateToken: String): Boolean {
-        val findResourceClass = resourceHelper!!.findResourceClass(doc.resource!!) ?: return false
-        val cartInfo = getCartForCls(findResourceClass, privateToken) ?: return false
+        if (doc.resource == null) return false
+        val cartInfo = getCartForDoc(doc.resource!!) ?: return false
         return exportDoc(doc, privateToken, cartInfo.cartId!!)
     }
 

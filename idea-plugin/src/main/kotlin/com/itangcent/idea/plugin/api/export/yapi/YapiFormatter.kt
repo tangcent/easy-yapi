@@ -5,14 +5,12 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.model.Doc
-import com.itangcent.common.model.MethodDoc
-import com.itangcent.common.model.Param
-import com.itangcent.common.model.Request
-import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.isNullOrBlank
+import com.itangcent.common.kit.getAs
+import com.itangcent.common.kit.notNullOrEmpty
+import com.itangcent.common.model.*
+import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.ResolveMultiPath
 import com.itangcent.idea.plugin.render.MarkdownRender
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceMethod
@@ -31,7 +29,7 @@ import java.util.stream.Collectors
 import kotlin.collections.ArrayList
 
 @Singleton
-class YapiFormatter {
+open class YapiFormatter {
 
     @Inject
     private val logger: Logger? = null
@@ -51,11 +49,11 @@ class YapiFormatter {
     @Inject
     protected val markdownRender: MarkdownRender? = null
 
-    fun doc2Item(doc: Doc): HashMap<String, Any?> {
+    fun doc2Item(doc: Doc): List<HashMap<String, Any?>> {
         if (doc is Request) {
-            return request2Item(doc)
+            return request2Items(doc)
         } else if (doc is MethodDoc) {
-            return methodDoc2Item(doc)
+            return listOf(methodDoc2Item(doc))
         }
         throw IllegalArgumentException("unknown doc")
     }
@@ -128,8 +126,8 @@ class YapiFormatter {
     private fun getPathOfMethodDoc(methodDoc: MethodDoc): String {
         val path = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_PATH, methodDoc.resource()!!)
 
-        if (!path.isNullOrEmpty()) {
-            return path
+        if (path.notNullOrEmpty()) {
+            return path!!
         }
 
         return PsiClassUtils.fullNameOfMethod(methodDoc.resourceMethod()!!).let {
@@ -169,8 +167,8 @@ class YapiFormatter {
         }
 
         result["properties"] = properties
-        if (!requireds.isNullOrEmpty()) {
-            result["required"] = requireds.toTypedArray()
+        if (requireds.notNullOrEmpty()) {
+            result["required"] = requireds!!.toTypedArray()
         }
 
         return toJson(result, rootDesc)
@@ -178,13 +176,73 @@ class YapiFormatter {
 
     //endregion methodDoc----------------------------------------------------------
 
-
     private fun toJson(result: HashMap<String, Any?>, rootDesc: String?): String {
         result["\$schema"] = "http://json-schema.org/draft-04/schema#"
         if (rootDesc != null) {
             result["description"] = rootDesc
         }
         return GsonUtils.toJson(result)
+    }
+
+    fun request2Items(request: Request): List<HashMap<String, Any?>> {
+
+        val item = request2Item(request)
+
+        val pathInRequest = request.path ?: URL.nil()
+        if (pathInRequest.single()) {
+            val path = formatPath(pathInRequest.url() ?: "")
+            val queryPath: HashMap<String, Any?> = item.getAs("query_path")!!
+            queryPath["path"] = path
+            item["path"] = path
+            return listOf(item)
+        }
+
+        val pathMultiResolve = ruleComputer!!.computer(ClassExportRuleKeys.PATH_MULTI, request.resource()!!)?.let {
+            ResolveMultiPath.valueOf(it.toUpperCase())
+        } ?: ResolveMultiPath.FIRST
+
+        if (pathMultiResolve == ResolveMultiPath.ALL) {
+            return pathInRequest.urls().map {
+                val copyItem = copyItem(item)
+                val path = formatPath(it)
+                val queryPath: HashMap<String, Any?> = copyItem.getAs("query_path")!!
+                copyItem["path"] = path
+                queryPath["path"] = path
+                return@map copyItem
+            }
+        } else {
+            val path: String? = when (pathMultiResolve) {
+                ResolveMultiPath.FIRST -> {
+                    pathInRequest.urls().firstOrNull()
+                }
+                ResolveMultiPath.LAST -> {
+                    pathInRequest.urls().lastOrNull()
+                }
+                ResolveMultiPath.LONGEST -> {
+                    pathInRequest.urls().longest()
+                }
+                ResolveMultiPath.SHORTEST -> {
+                    pathInRequest.urls().shortest()
+                }
+                else -> ""
+            }
+
+            val queryPath: HashMap<String, Any?> = item.getAs("query_path")!!
+            queryPath["path"] = path
+            item["path"] = path
+            return listOf(item)
+        }
+
+    }
+
+    protected open fun copyItem(item: HashMap<String, Any?>): HashMap<String, Any?> {
+        val copyItem = KV.create<String, Any?>()
+        copyItem.putAll(item)
+
+        val queryPath = HashMap(item.getAs<HashMap<String, Any?>>("query_path"))
+        copyItem["queryPath"] = queryPath
+
+        return copyItem
     }
 
     fun request2Item(request: Request): HashMap<String, Any?> {
@@ -208,8 +266,8 @@ class YapiFormatter {
         item["query_path"] = queryPath
         queryPath["params"] = EMPTY_PARAMS
 
-        queryPath["path"] = formatPath(request.path)
-        item["path"] = formatPath(request.path)
+//        queryPath["path"] = formatPath(request.path)
+//        item["path"] = formatPath(request.path)
 
         addTimeAttr(item)
         item["__v"] = 0
@@ -299,7 +357,7 @@ class YapiFormatter {
     private fun formatPath(path: String?): String {
         return when {
             path.isNullOrEmpty() -> "/"
-            path.startsWith("/") -> path
+            path!!.startsWith("/") -> path
             else -> "/$path"
         }
     }
@@ -405,8 +463,8 @@ class YapiFormatter {
                 }
             }
             item["properties"] = properties
-            if (!requireds.isNullOrEmpty()) {
-                item["required"] = requireds.toTypedArray()
+            if (requireds.notNullOrEmpty()) {
+                item["required"] = requireds!!.toTypedArray()
             }
         }
 

@@ -8,6 +8,7 @@ import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
+import com.itangcent.common.model.URL
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.config.rule.computer
@@ -27,10 +28,10 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     override fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
 
         val ctrlRequestMappingAnn = findRequestMapping(cls)
-        var basePath: String = findHttpPath(ctrlRequestMappingAnn) ?: ""
+        var basePath: URL = findHttpPath(ctrlRequestMappingAnn)
         val prefixPath = ruleComputer!!.computer(ClassExportRuleKeys.CLASS_PREFIX_PATH, cls)
         if (prefixPath.notNullOrBlank()) {
-            basePath = contractPath(prefixPath, basePath) ?: ""
+            basePath = URL.of(prefixPath).contract(basePath)
         }
 
         val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
@@ -179,7 +180,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     override fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         super.processMethod(method, kv, request)
 
-        val basePath: String? = kv.getAs("basePath")
+        val basePath: URL = kv.getAs("basePath")
         val ctrlHttpMethod: String? = kv.getAs("ctrlHttpMethod")
         val requestMapping = findRequestMappingInAnn(method.psi())
         kv["requestMapping"] = requestMapping
@@ -189,7 +190,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
         request.method = httpMethod
 
-        val httpPath = contractPath(basePath, findHttpPath(requestMapping))!!
+        val httpPath = basePath.contract(findHttpPath(requestMapping))
         requestHelper!!.setPath(request, httpPath)
     }
 
@@ -204,12 +205,12 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     //region process spring annotation-------------------------------------------------------------------
 
-    private fun findHttpPath(requestMappingAnn: Pair<Map<String, Any?>, String>?): String? {
-        val path = requestMappingAnn?.first.any("path", "value")?.tinyString() ?: return null
-
-        return when {
-            path.contains(",") -> path.substringBefore(',')
-            else -> path
+    private fun findHttpPath(requestMappingAnn: Pair<Map<String, Any?>, String>?): URL {
+        val path = requestMappingAnn?.first.any("path", "value")
+        return when (path) {
+            null -> URL.nil()
+            is Array<*> -> URL.of(path.mapNotNull { it?.toString() })
+            else -> URL.of(path.toString())
         }
     }
 

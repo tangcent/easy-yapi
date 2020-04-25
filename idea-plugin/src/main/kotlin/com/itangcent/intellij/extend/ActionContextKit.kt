@@ -1,6 +1,6 @@
 package com.itangcent.intellij.extend
 
-import com.itangcent.common.function.ResultHolder
+import com.itangcent.common.concurrent.ValueHolder
 import com.itangcent.intellij.context.ActionContext
 import java.util.concurrent.TimeUnit
 
@@ -14,14 +14,14 @@ fun ActionContext?.tryRunAsync(action: () -> Unit) {
 
 
 fun <T> ActionContext.callWithTimeout(timeout: Long, action: () -> T): T? {
-    val resultHolder = ResultHolder<T>()
+    val resultHolder = ValueHolder<T>()
 
-    val runAsync = this.runAsync { resultHolder.setResultVal(action()) }
+    val runAsync = this.runAsync { resultHolder.compute { action() } }
     try {
         runAsync!!.get(timeout, TimeUnit.MINUTES)
     } catch (e: Exception) {
         runAsync!!.cancel(true)
-        resultHolder.setResultVal(null)
+        resultHolder.failed(e)
     }
-    return resultHolder.getResultVal()
+    return resultHolder.value()
 }
