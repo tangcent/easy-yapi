@@ -16,6 +16,12 @@ interface URL {
 
     fun contract(url: URL): URL
 
+    /**
+     * Returns a new [URL] of applying the given [transform] function
+     * to each url.
+     */
+    fun map(transform: (String?) -> String?): URL
+
     companion object {
         private val NULL_URL: NullURL = NullURL()
 
@@ -71,6 +77,10 @@ private class NullURL : URL {
         return url
     }
 
+    override fun map(transform: (String?) -> String?): URL {
+        return URL.of(transform(null))
+    }
+
     override fun toString(): String {
         return ""
     }
@@ -99,6 +109,10 @@ private class SingleURL(private val url: String) : URL {
             url.single() -> URL.of(RequestUtils.contractPath(this.url, url.url()))
             else -> URL.of(url.urls().mapNotNull { RequestUtils.contractPath(this.url, it) })
         }
+    }
+
+    override fun map(transform: (String?) -> String?): URL {
+        return URL.of(transform(this.url))
     }
 
     override fun toString(): String {
@@ -131,6 +145,10 @@ private class MultiURL(private val urls: List<String>) : URL {
                 url.urls().mapNotNull { RequestUtils.contractPath(prefixPath, it) }
             })
         }
+    }
+
+    override fun map(transform: (String?) -> String?): URL {
+        return URL.of(this.urls().mapNotNull { transform(it) })
     }
 
     override fun toString(): String {

@@ -2,12 +2,15 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.psi.PsiClass
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.Worker
+import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
+import java.util.HashMap
+import kotlin.collections.HashSet
+import kotlin.collections.set
 
 
 class YapiApiExporter : AbstractYapiApiExporter() {
@@ -73,21 +76,21 @@ class YapiApiExporter : AbstractYapiApiExporter() {
                 .traversal()
     }
 
-    //cls -> CartInfo
-    private val clsCartMap: HashMap<PsiClass, CartInfo> = HashMap()
+    //privateToken+folderName -> CartInfo
+    private val folderNameCartMap: HashMap<String, CartInfo> = HashMap()
 
-    override fun getCartForCls(psiClass: PsiClass): CartInfo? {
+    @Synchronized
+    override fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
+        var cartInfo = folderNameCartMap["$privateToken${folder.first}"]
+        if (cartInfo != null) return cartInfo
 
-        var cartId = clsCartMap[psiClass]
-        if (cartId != null) return cartId
-        synchronized(clsCartMap)
-        {
-            cartId = clsCartMap[psiClass]
-            if (cartId != null) return cartId
-
-            return super.getCartForCls(psiClass)
+        cartInfo = super.getCartForDoc(folder, privateToken)
+        if (cartInfo != null) {
+            folderNameCartMap["$privateToken${folder.first}"] = cartInfo
         }
+        return cartInfo
     }
+
 
     private var tryInputTokenOfModule: HashSet<String> = HashSet()
 
