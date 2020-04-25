@@ -31,7 +31,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         var basePath: URL = findHttpPath(ctrlRequestMappingAnn)
         val prefixPath = ruleComputer!!.computer(ClassExportRuleKeys.CLASS_PREFIX_PATH, cls)
         if (prefixPath.notNullOrBlank()) {
-            basePath = URL.of(prefixPath).contract(basePath)
+            basePath = URL.of(prefixPath).concat(basePath)
         }
 
         val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
@@ -190,7 +190,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
         request.method = httpMethod
 
-        val httpPath = basePath.contract(findHttpPath(requestMapping))
+        val httpPath = basePath.concat(findHttpPath(requestMapping))
         requestHelper!!.setPath(request, httpPath)
     }
 
