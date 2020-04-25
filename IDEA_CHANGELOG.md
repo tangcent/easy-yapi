@@ -116,4 +116,12 @@
     * new rule tool: localStorage [(#268)](https://github.com/tangcent/easy-api/pull/268)
 
 
-       
+* 1.9.0 ~
+
+    * fix: support `java`/`kt`/`scala` in all action. [(#271)](https://github.com/tangcent/easy-api/pull/271
+    
+    * support new method 'method/declaration' of 'arg' [(#273)](https://github.com/tangcent/easy-api/pull/273)
+    
+    * opti: support rule `folder.name` [(#274)](https://github.com/tangcent/easy-api/pull/274
+    
+    * support new rule `path.multi` [(#275)](https://github.com/tangcent/easy-api/pull/275)
