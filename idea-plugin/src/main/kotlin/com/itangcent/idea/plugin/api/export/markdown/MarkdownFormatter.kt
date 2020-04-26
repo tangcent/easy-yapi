@@ -245,7 +245,7 @@ class MarkdownFormatter {
             handle("\n**RequestBody**\n\n")
             handle("| name  |  type  |  desc  |\n")
             handle("| ------------ | ------------ | ------------ |\n")
-            parseBody(0, "", "", request.body, handle)
+            parseBody(0, "", request.bodyAttr ?: "", request.body, handle)
 
             if (settingBinder!!.read().outputDemo) {
                 handle("\n**Request Demo：**\n\n")
