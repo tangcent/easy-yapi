@@ -37,7 +37,7 @@ object RequestUtils {
         return body
     }
 
-    fun contractPath(pathPre: String?, pathAfter: String?): String? {
+    fun concatPath(pathPre: String?, pathAfter: String?): String? {
         if (pathPre.isNullOrBlank()) return pathAfter
         if (pathAfter.isNullOrBlank()) return pathPre
         return pathPre.removeSuffix("/") + "/" + pathAfter.removePrefix("/")

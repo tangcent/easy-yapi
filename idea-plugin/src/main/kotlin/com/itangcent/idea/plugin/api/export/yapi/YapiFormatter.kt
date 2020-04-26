@@ -331,7 +331,7 @@ open class YapiFormatter {
             item["req_body_form"] = EMPTY_ARR
 
             //todo:need desc of body
-            item["req_body_other"] = parseBySchema(request.body, "")
+            item["req_body_other"] = parseBySchema(request.body, request.bodyAttr)
         }
 
         if (!request.response.isNullOrEmpty()) {

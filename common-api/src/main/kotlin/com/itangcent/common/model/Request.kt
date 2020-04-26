@@ -35,6 +35,11 @@ open class Request : Doc() {
 
     var body: Any? = null
 
+    /**
+     * The description of [body] if it is present.
+     */
+    var bodyAttr: String? = null
+
     var response: MutableList<Response>? = null
 }
 

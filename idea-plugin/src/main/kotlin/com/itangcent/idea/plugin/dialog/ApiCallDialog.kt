@@ -13,10 +13,7 @@ import com.intellij.util.ui.ComboBoxCellEditor
 import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.model.FormParam
-import com.itangcent.common.model.Request
-import com.itangcent.common.model.getContentType
-import com.itangcent.common.model.hasBody
+import com.itangcent.common.model.*
 import com.itangcent.common.utils.appendlnIfNotEmpty
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
@@ -291,7 +288,8 @@ class ApiCallDialog : JDialog() {
                 }
 
         autoComputer.bind(this.pathTextField!!)
-                .from(this, "this.currRequest.path")
+                .with<URL>(this, "this.currRequest.path")
+                .eval { it.url()?:"" }
 
         autoComputer.bindVisible(this.paramPanel!!)
                 .with(this::currRequest)

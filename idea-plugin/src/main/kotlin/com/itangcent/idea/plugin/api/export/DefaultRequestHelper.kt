@@ -66,6 +66,7 @@ open class DefaultRequestHelper : RequestHelper {
 
     override fun setJsonBody(request: Request, body: Any?, bodyAttr: String?) {
         request.body = body
+        request.bodyAttr = bodyAttr
     }
 
     override fun appendDesc(request: Request, desc: String?) {
