@@ -145,7 +145,7 @@ private class SingleURL(private val url: String) : URL {
     }
 
     override fun concat(url: URL): URL {
-        return url.map { RequestUtils.contractPath(this.url, it) }
+        return url.map { RequestUtils.concatPath(this.url, it) }
     }
 
     override fun union(url: URL): URL {

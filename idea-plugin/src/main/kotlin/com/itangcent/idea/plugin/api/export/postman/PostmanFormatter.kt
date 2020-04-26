@@ -15,7 +15,6 @@ import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils
@@ -54,7 +53,7 @@ class PostmanFormatter {
         if (pathInRequest.single()) {
             val path = pathInRequest.url() ?: ""
             url["path"] = path.trim().trim('/').split("/")
-            url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+            url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
             return listOf(item)
         }
 
@@ -68,7 +67,7 @@ class PostmanFormatter {
                 val copyItem = copyItem(item)
                 val copyUrl: HashMap<String, Any?> = copyItem.getAs("request", "url")!!
                 copyUrl["path"] = it.trim().trim('/').split("/")
-                copyUrl["raw"] = RequestUtils.contractPath(host, it)
+                copyUrl["raw"] = RequestUtils.concatPath(host, it)
                 return@map copyItem
             }
         } else {
@@ -89,7 +88,7 @@ class PostmanFormatter {
             }
 
             url["path"] = (path ?: "").trim().trim('/').split("/")
-            url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+            url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
             return listOf(item)
         }
     }
@@ -117,7 +116,7 @@ class PostmanFormatter {
 
         val path = pathInRequest.url() ?: ""
         url["path"] = path.trim().trim('/').split("/")
-        url["raw"] = RequestUtils.contractPath(url.getAs("host"), path)
+        url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
         return item
     }
 
