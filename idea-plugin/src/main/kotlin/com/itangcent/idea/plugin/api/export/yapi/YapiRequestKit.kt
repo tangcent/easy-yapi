@@ -31,6 +31,16 @@ fun Extensible.setTags(tags: List<String>?) {
     }
 }
 
+fun Extensible.isOpen(): Boolean {
+    return this.getExt("open") ?: false
+}
+
+fun Extensible.setOpen(open: Boolean?) {
+    if (open != null) {
+        this.setExt("open", open)
+    }
+}
+
 fun Extensible.getDemo(): String? {
     return this.getExt(Attrs.DEMO_ATTR)
 }

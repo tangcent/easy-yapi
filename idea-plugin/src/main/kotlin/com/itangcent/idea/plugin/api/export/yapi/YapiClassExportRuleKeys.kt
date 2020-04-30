@@ -1,9 +1,6 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
-import com.itangcent.intellij.config.rule.RuleKey
-import com.itangcent.intellij.config.rule.SimpleRuleKey
-import com.itangcent.intellij.config.rule.StringRule
-import com.itangcent.intellij.config.rule.StringRuleMode
+import com.itangcent.intellij.config.rule.*
 
 object YapiClassExportRuleKeys {
 
@@ -24,4 +21,8 @@ object YapiClassExportRuleKeys {
             "param.demo", StringRule::class,
             StringRuleMode.SINGLE
     )
+
+    val OPEN: RuleKey<Boolean> = SimpleRuleKey(
+            "api.open", BooleanRule::class,
+            BooleanRuleMode.ANY)
 }
