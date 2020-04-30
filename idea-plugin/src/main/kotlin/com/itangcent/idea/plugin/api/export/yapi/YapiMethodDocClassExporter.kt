@@ -18,5 +18,8 @@ class YapiMethodDocClassExporter : DefaultMethodDocClassExporter() {
 
         val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, method)
         methodDoc.setStatus(status)
+
+        val open = ruleComputer.computer(YapiClassExportRuleKeys.OPEN, method)
+        methodDoc.setOpen(open)
     }
 }

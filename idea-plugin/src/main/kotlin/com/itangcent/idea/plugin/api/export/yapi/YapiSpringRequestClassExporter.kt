@@ -30,6 +30,9 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
         val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, method)
         request.setStatus(status)
+
+        val open = ruleComputer.computer(YapiClassExportRuleKeys.OPEN, method)
+        request.setOpen(open)
     }
 
 

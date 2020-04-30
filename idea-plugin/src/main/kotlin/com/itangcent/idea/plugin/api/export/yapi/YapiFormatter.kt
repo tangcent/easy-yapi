@@ -69,7 +69,7 @@ open class YapiFormatter {
         item["type"] = "static"
         item["req_body_is_json_schema"] = false
         item["res_body_is_json_schema"] = true
-        item["api_opened"] = false
+        item["api_opened"] = methodDoc.isOpen()
         item["index"] = 0
         item["tag"] = methodDoc.getTags()
 
@@ -254,7 +254,7 @@ open class YapiFormatter {
         item["type"] = "static"
         item["req_body_is_json_schema"] = false
         item["res_body_is_json_schema"] = true
-        item["api_opened"] = false
+        item["api_opened"] = request.isOpen()
         item["index"] = 0
         item["tag"] = request.getTags()
 
