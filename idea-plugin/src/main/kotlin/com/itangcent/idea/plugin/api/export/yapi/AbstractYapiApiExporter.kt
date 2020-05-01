@@ -7,6 +7,7 @@ import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.idea.plugin.api.export.FormatFolderHelper
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -36,7 +37,10 @@ open class AbstractYapiApiExporter {
     protected val project: Project? = null
 
     @Inject
-    private val formatFolderHelper: FormatFolderHelper? = null
+    protected val settingBinder: SettingBinder? = null
+
+    @Inject
+    protected val formatFolderHelper: FormatFolderHelper? = null
 
     protected open fun getTokenOfModule(module: String): String? {
         return yapiApiHelper!!.getPrivateToken(module)
@@ -95,10 +99,15 @@ open class AbstractYapiApiExporter {
         apiInfos.forEach { apiInfo ->
             apiInfo["token"] = privateToken
             apiInfo["catid"] = cartId
-            apiInfo["switch_notice"] = true
+            apiInfo["switch_notice"] = switchNotice()
             ret = ret or yapiApiHelper!!.saveApiInfo(apiInfo)
         }
         return ret
+    }
+
+
+    protected fun switchNotice(): Boolean {
+        return settingBinder!!.read().switchNotice
     }
 
     companion object {
