@@ -88,6 +88,8 @@ class EasyApiSettingGUI {
 
     private var enableUrlTemplatingCheckBox: JCheckBox? = null
 
+    private var switchNoticeCheckBox: JCheckBox? = null
+
     private var formExpandedCheckBox: JCheckBox? = null
 
     private var recommendedCheckBox: JCheckBox? = null
@@ -187,6 +189,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(enableUrlTemplatingCheckBox!!)
                 .mutual(this, "settings.enableUrlTemplating")
+
+        autoComputer.bind(switchNoticeCheckBox!!)
+                .mutual(this, "settings.switchNotice")
 
         autoComputer.bind(this.httpTimeOutTextField!!)
                 .with<Int?>(this, "settings.httpTimeOut")
