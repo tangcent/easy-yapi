@@ -70,7 +70,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
         try {
             val returnValue = httpClientProvide!!.getHttpClient()
-                    .post(server + SAVEAPI)
+                    .post(server + SAVE_API)
                     .contentType(ContentType.APPLICATION_JSON)
                     .body(apiInfo)
                     .call()
@@ -96,7 +96,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     override fun addCart(projectId: String, token: String, name: String, desc: String): Boolean {
         try {
             val returnValue = httpClientProvide!!.getHttpClient()
-                    .post(server + ADDCART)
+                    .post(server + ADD_CART)
                     .contentType(ContentType.APPLICATION_JSON)
                     .body(KV.create<Any?, Any?>()
                             .set("desc", desc)
@@ -134,7 +134,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun findApi(token: String, catId: String, apiName: String): String? {
-        val url = "$server$GETCAT?token=$token&catid=$catId&limit=1000"
+        val url = "$server$GET_CAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.asJsonObject
                 ?.get("data")
@@ -147,7 +147,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun findApis(token: String, catId: String): ArrayList<Any?>? {
-        val url = "$server$GETCAT?token=$token&catid=$catId&limit=1000"
+        val url = "$server$GET_CAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.asJsonObject
                 ?.get("data")
@@ -157,7 +157,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
-        val url = "$server$GETCATMENU?project_id=$project_id&token=$token"
+        val url = "$server$GET_CAT_MENU?project_id=$project_id&token=$token"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.asJsonObject
                 ?.get("data")
@@ -165,9 +165,9 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     companion object {
-        var ADDCART = "/api/interface/add_cat"
-        const val GETCATMENU = "/api/interface/getCatMenu"
-        const val SAVEAPI = "/api/interface/save"
-        const val GETCAT = "/api/interface/list_cat"
+        const val ADD_CART = "/api/interface/add_cat"
+        const val GET_CAT_MENU = "/api/interface/getCatMenu"
+        const val SAVE_API = "/api/interface/save"
+        const val GET_CAT = "/api/interface/list_cat"
     }
 }

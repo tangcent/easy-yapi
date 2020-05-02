@@ -8,6 +8,7 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.FileType
 import java.util.HashMap
 import kotlin.collections.HashSet
 import kotlin.collections.set
@@ -20,7 +21,6 @@ class YapiApiExporter : AbstractYapiApiExporter() {
         if (serverFound) {
             doExport()
         } else {
-
             actionContext!!.runAsync {
                 Thread.sleep(200)
                 actionContext.runInSwingUI {
@@ -63,7 +63,7 @@ class YapiApiExporter : AbstractYapiApiExporter() {
                         }
                     }
                 }
-                .fileFilter { file -> file.name.endsWith(".java") }
+                .fileFilter { file -> FileType.acceptable(file.name) }
                 .classHandle {
                     classExporter!!.export(it) { doc -> exportDoc(doc) }
                 }

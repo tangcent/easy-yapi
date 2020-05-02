@@ -17,6 +17,8 @@ open class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
 
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
+
+        //compute `field.required`
         ruleComputer!!.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
             kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = required
         }

@@ -46,6 +46,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
 
+        //compute `field.mock`
         ruleComputer!!.computer(ClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
                 ?.takeIf { !it.isBlank() }
                 ?.let { if (resolveProperty) configReader!!.resolveProperty(it) else it }
@@ -53,6 +54,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
                     kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
                 }
 
+        //compute `field.default.value`
         val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, fieldOrMethod)
         if (defaultValue.isNullOrEmpty()) {
             if (fieldOrMethod is PsiField) {
@@ -63,6 +65,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
             kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
         }
 
+        //compute `field.demo`
         val demoValue = ruleComputer.computer(YapiClassExportRuleKeys.FIELD_DEMO,
                 fieldOrMethod)
         if (demoValue.notNullOrBlank()) {
