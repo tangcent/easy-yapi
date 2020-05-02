@@ -130,11 +130,7 @@ open class YapiFormatter {
             return path!!
         }
 
-        return PsiClassUtils.fullNameOfMethod(methodDoc.resourceMethod()!!).let {
-            Regex("[^a-zA-Z0-9-/_:.!]").replace(it, "/")
-        }.let {
-            Regex("//+").replace(it, "/")
-        }
+        return formatPath(PsiClassUtils.fullNameOfMethod(methodDoc.resourceMethod()!!))
     }
 
     private fun getHttpMethodOfMethodDoc(methodDoc: MethodDoc): String {
@@ -352,13 +348,18 @@ open class YapiFormatter {
     }
 
     /**
-     * make sure the path prefix with "/"
+     * Make sure  the path prefix with `/`
+     * Path is only allowed to consist of alphanumeric or `-/_:.{}=`
      */
     private fun formatPath(path: String?): String {
         return when {
             path.isNullOrEmpty() -> "/"
             path!!.startsWith("/") -> path
             else -> "/$path"
+        }.let {
+            Regex("[^a-zA-Z0-9-/_:.{}!]").replace(it, "/")
+        }.let {
+            Regex("//+").replace(it, "/")
         }
     }
 

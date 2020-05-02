@@ -42,20 +42,28 @@ open class AbstractYapiApiExporter {
     @Inject
     protected val formatFolderHelper: FormatFolderHelper? = null
 
+    /**
+     * Get the token of the special module.
+     * see https://hellosean1025.github.io/yapi/documents/project.html#token
+     * Used to request openapi.
+     * see https://hellosean1025.github.io/yapi/openapi.html
+     */
     protected open fun getTokenOfModule(module: String): String? {
         return yapiApiHelper!!.getPrivateToken(module)
     }
 
     protected open fun getCartForDoc(resource: Any): CartInfo? {
 
+        //get token
         val module = actionContext!!.callInReadUI { moduleHelper!!.findModule(resource) } ?: return null
-        val folder = formatFolderHelper!!.resolveFolder(resource)
-
         val privateToken = getTokenOfModule(module)
         if (privateToken == null) {
             logger!!.info("No token be found for $module")
             return null
         }
+
+        //get cart
+        val folder = formatFolderHelper!!.resolveFolder(resource)
         return getCartForDoc(folder, privateToken)
     }
 
@@ -64,12 +72,16 @@ open class AbstractYapiApiExporter {
         val name: String = folder.first
 
         var cartId: String?
+
+        //try find existed cart.
         try {
             cartId = yapiApiHelper!!.findCat(privateToken, name)
         } catch (e: Exception) {
             logger!!.traceError("error to find cart [$name]", e)
             return null
         }
+
+        //create new cart.
         if (cartId == null) {
             if (yapiApiHelper.addCart(privateToken, name, folder.second)) {
                 cartId = yapiApiHelper.findCat(privateToken, name)
