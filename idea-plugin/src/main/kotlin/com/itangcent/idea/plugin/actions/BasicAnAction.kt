@@ -15,7 +15,6 @@ import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.intellij.jvm.SourceHelper
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
 import com.itangcent.intellij.jvm.scala.ScalaAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
@@ -39,7 +38,6 @@ abstract class BasicAnAction : KotlinAnAction {
         super.onBuildActionContext(event, builder)
         builder.bindInstance("plugin.name", "easy_api")
 
-        builder.bind(SourceHelper::class) { it.with(com.itangcent.intellij.psi.SourceHelper::class) }
         builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }

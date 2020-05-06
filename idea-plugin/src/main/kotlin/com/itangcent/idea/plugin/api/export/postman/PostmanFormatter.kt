@@ -10,7 +10,10 @@ import com.itangcent.common.model.URL
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
-import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.Folder
+import com.itangcent.idea.plugin.api.export.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.ResolveMultiPath
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
@@ -25,7 +28,7 @@ import kotlin.collections.HashMap
 import kotlin.collections.set
 
 @Singleton
-class PostmanFormatter {
+open class PostmanFormatter {
 
     @Inject
     private val moduleHelper: ModuleHelper? = null
@@ -209,6 +212,7 @@ class PostmanFormatter {
         if (request.body != null) {
             body["mode"] = "raw"
             body["raw"] = RequestUtils.parseRawBody(request.body!!)
+            body["options"] = KV.by("raw", KV.by("language", "json"))
         }
 
         if (body.isNotEmpty()) {
