@@ -127,3 +127,8 @@
     * support new rule `path.multi` [(#275)](https://github.com/tangcent/easy-api/pull/275)
     
     * fix: request body preview-language in postman example [(#281)](https://github.com/tangcent/easy-api/pull/281)
+    
+    * feat: support new rule `api.open` [(#179)](https://github.com/tangcent/easy-yapi/pull/179)
+    
+    * feat: support switch notice at `Setting` [(#180)](https://github.com/tangcent/easy-yapi/pull/180)
+                                                    
