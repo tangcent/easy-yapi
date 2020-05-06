@@ -37,6 +37,10 @@ class SafeHashHelper {
         return h xor h.ushr(16)
     }
 
+    /**
+     * Get bean by [hash]
+     * The [hash] here must be returned by [SafeHashHelper.hash].
+     */
     @Synchronized
     fun getBean(hash: Int): Any? {
         return hashCache[hash]?.get()

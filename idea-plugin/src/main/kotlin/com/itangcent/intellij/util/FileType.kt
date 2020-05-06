@@ -1,5 +1,8 @@
 package com.itangcent.intellij.util
 
+/**
+ * All file types currently supported.
+ */
 enum class FileType(private val suffix: String) {
 
     JAVA("java"),
