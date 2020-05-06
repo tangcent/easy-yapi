@@ -10,14 +10,18 @@ import java.util.*
 interface URL {
 
     /**
-     * One url in [URL]
+     * Returns the url in [URL], if one exists.
+     * If the [URL] has multiple urls, returns the first associated reference.
+     *
+     * @return the url in [URL], or null if the [URL] does not have any url.
      */
     fun url(): String?
 
     /**
-     * All url in [URL] as list.
+     * Returns all urls in [URL].
+     * @return the array of urls, or an empty array if the [URL]] has no urls.
      */
-    fun urls(): List<String>
+    fun urls(): Array<String>
 
     /**
      * Return true if only one url be contained at this [URL].
@@ -98,8 +102,8 @@ private class NullURL : URL {
         return null
     }
 
-    override fun urls(): List<String> {
-        return emptyList()
+    override fun urls(): Array<String> {
+        return emptyArray()
     }
 
     override fun single(): Boolean {
@@ -136,8 +140,8 @@ private class SingleURL(private val url: String) : URL {
         return this.url
     }
 
-    override fun urls(): List<String> {
-        return listOf(this.url)
+    override fun urls(): Array<String> {
+        return arrayOf(this.url)
     }
 
     override fun single(): Boolean {
@@ -172,12 +176,22 @@ private class SingleURL(private val url: String) : URL {
  * Represents a multiPath url.It contain more than one url.
  * Create it by [URL.of]
  */
-private class MultiURL(private val urls: List<String>) : URL {
+private class MultiURL : URL {
+    private val urls: Array<String>
+
+    constructor(urls: List<String>) {
+        this.urls = urls.toTypedArray()
+    }
+
+    constructor(urls: Array<String>) {
+        this.urls = urls
+    }
+
     override fun url(): String? {
         return this.urls.first { it.notNullOrEmpty() }
     }
 
-    override fun urls(): List<String> {
+    override fun urls(): Array<String> {
         return this.urls
     }
 

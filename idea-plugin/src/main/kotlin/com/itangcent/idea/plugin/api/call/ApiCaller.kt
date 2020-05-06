@@ -6,7 +6,6 @@ import com.intellij.openapi.util.Key
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.RequestHelper
 import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.plugin.dialog.ApiCallDialog
 import com.itangcent.idea.utils.SwingUtils
@@ -32,9 +31,6 @@ class ApiCaller {
 
     @Inject
     private val classExporter: ClassExporter? = null
-
-    @Inject
-    private val requestHelper: RequestHelper? = null
 
     fun showCallWindow() {
 

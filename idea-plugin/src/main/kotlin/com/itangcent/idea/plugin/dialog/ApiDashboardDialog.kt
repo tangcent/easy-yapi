@@ -26,7 +26,7 @@ import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.SafeHashHelper
-import com.itangcent.idea.swing.Tooltipable
+import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -197,7 +197,7 @@ class ApiDashboardDialog : JDialog() {
     }
 
     @PostConstruct
-    fun postConstruct() {
+    fun init() {
         actionContext!!.hold()
 
         initProjectApiModule()
@@ -834,7 +834,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized, Tooltipable {
+    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized, ToolTipAble {
         override fun toolTip(): String? {
             return cls.qualifiedName
         }
@@ -897,7 +897,7 @@ class ApiDashboardDialog : JDialog() {
         abstract fun next(): ProjectMode
     }
 
-    class ApiProjectNodeData : IconCustomized, Tooltipable {
+    class ApiProjectNodeData : IconCustomized, ToolTipAble {
         override fun toolTip(): String? {
             return "${PsiClassUtils.fullNameOfMethod(request.resourceClass()!!, request.resourceMethod()!!)}\n${request.method}:${request.path}"
         }
@@ -1010,7 +1010,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanCollectionNodeData : PostmanNodeData, IconCustomized, Tooltipable {
+    class PostmanCollectionNodeData : PostmanNodeData, IconCustomized, ToolTipAble {
         override fun icon(): Icon? {
             return when (status) {
                 NodeStatus.Loading -> EasyIcons.Refresh
@@ -1070,7 +1070,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanSubCollectionNodeData : PostmanNodeData, IconCustomized, Tooltipable {
+    class PostmanSubCollectionNodeData : PostmanNodeData, IconCustomized, ToolTipAble {
         override fun icon(): Icon? {
             return EasyIcons.Module
         }
@@ -1102,7 +1102,7 @@ class ApiDashboardDialog : JDialog() {
         }
     }
 
-    class PostmanApiNodeData : PostmanNodeData, IconCustomized, Tooltipable {
+    class PostmanApiNodeData : PostmanNodeData, IconCustomized, ToolTipAble {
 
         override fun icon(): Icon? {
             return EasyIcons.Link

@@ -32,6 +32,9 @@ class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
     }
 
 
+    /**
+     * Find the icon this component will display.
+     */
     private fun findIcon(value: Any,
                          expanded: Boolean,
                          leaf: Boolean): Icon? {
@@ -60,18 +63,21 @@ class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
         return icon
     }
 
+    /**
+     * Find the text to display in a tool tip.
+     */
     private fun findTooltips(value: Any): String? {
         var tooltip: String? = null
 
         try {
             if (value is DefaultMutableTreeNode) {
                 val userObject = value.userObject
-                if (userObject is Tooltipable) {
+                if (userObject is ToolTipAble) {
                     tooltip = userObject.toolTip()
                 }
             }
 
-            if (tooltip == null && value is Tooltipable) {
+            if (tooltip == null && value is ToolTipAble) {
                 tooltip = value.toolTip()
             }
         } catch (ignore: Exception) {
