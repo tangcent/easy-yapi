@@ -20,10 +20,7 @@ import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
-import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.api.export.postman.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
@@ -388,7 +385,7 @@ class SuvApiExporter {
             builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
-            builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
+            builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
 
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
