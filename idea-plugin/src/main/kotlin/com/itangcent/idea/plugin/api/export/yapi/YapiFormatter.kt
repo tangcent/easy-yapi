@@ -455,7 +455,7 @@ open class YapiFormatter {
                     }
                     mocks?.get(key)?.let { addMock(propertyInfo, it) }
 
-                    default?.get(k)?.takeUnless { it.isNullOrBlank() }
+                    default?.get(k)?.takeUnless { it.anyIsNullOrBlank() }
                             ?.let { propertyInfo["default"] = it }
 
 

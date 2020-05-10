@@ -76,7 +76,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         if (requestHeaderAnn != null) {
 
             var headName = requestHeaderAnn.any("value", "name")
-            if (headName.isNullOrEmpty()) {
+            if (headName.anyIsNullOrEmpty()) {
                 headName = param.name()
             }
 
