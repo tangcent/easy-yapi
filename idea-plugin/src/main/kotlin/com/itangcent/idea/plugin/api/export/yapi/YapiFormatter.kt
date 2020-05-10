@@ -27,6 +27,7 @@ import java.util.*
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 import kotlin.collections.ArrayList
+import kotlin.collections.LinkedHashMap
 
 @Singleton
 open class YapiFormatter {
@@ -376,7 +377,7 @@ open class YapiFormatter {
     @Suppress("UNCHECKED_CAST")
     private fun parseObject(path: String?, typedObject: Any?): HashMap<String, Any?> {
         if (typedObject == null) return nullObject()
-        val item: HashMap<String, Any?> = HashMap()
+        val item: HashMap<String, Any?> = LinkedHashMap()
         if (typedObject is String) {
             item["type"] = "string"
         } else if (typedObject is Number) {
@@ -403,7 +404,7 @@ open class YapiFormatter {
             }
         } else if (typedObject is Map<*, *>) {
             item["type"] = "object"
-            val properties: HashMap<String, Any?> = HashMap()
+            val properties: HashMap<String, Any?> = LinkedHashMap()
             val comment: HashMap<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
             val required: HashMap<String, Any?>? = typedObject[Attrs.REQUIRED_ATTR] as? HashMap<String, Any?>?
             val default: HashMap<String, Any?>? = typedObject[Attrs.DEFAULT_VALUE_ATTR] as? HashMap<String, Any?>?
