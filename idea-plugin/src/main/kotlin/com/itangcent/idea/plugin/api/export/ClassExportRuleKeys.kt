@@ -138,4 +138,24 @@ object ClassExportRuleKeys {
             "path.multi", StringRule::class,
             StringRuleMode.SINGLE
     )
+
+    /**
+     * The pre-request scripts in Postman to execute JavaScript before a request runs.
+     *
+     * @see [https://learning.postman.com/docs/postman/scripts/pre-request-scripts]
+     */
+    val POST_PREREQUEST: RuleKey<String> = SimpleRuleKey(
+            "postman.prerequest", StringRule::class,
+            StringRuleMode.MERGE
+    )
+
+    /**
+     * The test scripts for Postman API requests in JavaScript.
+     *
+     * @see [https://learning.postman.com/docs/postman/scripts/test-scripts]
+     */
+    val POST_TEST: RuleKey<String> = SimpleRuleKey(
+            "postman.test", StringRule::class,
+            StringRuleMode.MERGE
+    )
 }

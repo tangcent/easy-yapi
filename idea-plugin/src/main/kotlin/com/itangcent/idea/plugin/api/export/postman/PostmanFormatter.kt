@@ -45,7 +45,6 @@ open class PostmanFormatter {
     @Inject
     private val ruleComputer: RuleComputer? = null
 
-
     fun request2Items(request: Request): List<HashMap<String, Any?>> {
 
         val item = formatRequest2Item(request)
@@ -144,6 +143,27 @@ open class PostmanFormatter {
         val item: HashMap<String, Any?> = HashMap()
 
         item["name"] = request.name
+
+        if (request.hasAnyExt(ClassExportRuleKeys.POST_PREREQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
+            val events = ArrayList<Any>()
+            val preRequest = request.getExt<String>(ClassExportRuleKeys.POST_PREREQUEST.name())
+            if (preRequest.notNullOrBlank()) {
+                events.add(KV.any().set("listen", "prerequest")
+                        .set("script", KV.any()
+                                .set("exec", preRequest!!.lines())
+                                .set("type", "text/javascript")
+                        ))
+            }
+            val test = request.getExt<String>(ClassExportRuleKeys.POST_TEST.name())
+            if (test.notNullOrBlank()) {
+                events.add(KV.any().set("listen", "test")
+                        .set("script", KV.any()
+                                .set("exec", test!!.lines())
+                                .set("type", "text/javascript")
+                        ))
+            }
+            item["event"] = events
+        }
 
         val requestInfo: HashMap<String, Any?> = HashMap()
         item["request"] = requestInfo
