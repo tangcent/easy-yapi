@@ -4,6 +4,17 @@ abstract class Extensible {
 
     private var ext: LinkedHashMap<String, Any?>? = null
 
+    fun hasExt(attr: String): Boolean {
+        return ext?.containsKey(attr) ?: false
+    }
+
+    fun hasAnyExt(vararg attr: String): Boolean {
+        if (ext == null) {
+            return false
+        }
+        return attr.any { ext!!.containsKey(it) }
+    }
+
     @Suppress("UNCHECKED_CAST")
     fun <T> getExt(attr: String): T? {
         return ext?.get(attr) as T?

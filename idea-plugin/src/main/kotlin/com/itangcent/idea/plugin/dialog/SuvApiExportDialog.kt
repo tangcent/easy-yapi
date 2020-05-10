@@ -171,7 +171,6 @@ class SuvApiExportDialog : JDialog() {
 
     }
 
-
     private fun onOK() {
         val selectedChannel = this.channelComboBox!!.selectedItem
         val selectedApis = psiClassHelper!!.copy(this.apiList!!.selectedValuesList!!) as List<*>

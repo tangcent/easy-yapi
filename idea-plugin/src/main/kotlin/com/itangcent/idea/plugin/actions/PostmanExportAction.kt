@@ -2,12 +2,8 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.idea.plugin.api.export.RequestHelper
-import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
+import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.postman.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -24,6 +20,8 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         super.afterBuildActionContext(event, builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
+
+        builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
 
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
