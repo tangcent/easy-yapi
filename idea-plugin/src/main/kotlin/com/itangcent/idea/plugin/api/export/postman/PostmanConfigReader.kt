@@ -1,11 +1,12 @@
 package com.itangcent.idea.plugin.api.export.postman
 
 import com.itangcent.intellij.config.AutoSearchConfigReader
+import com.itangcent.utils.Initializable
 
-class PostmanConfigReader : AutoSearchConfigReader() {
+class PostmanConfigReader : AutoSearchConfigReader(), Initializable {
 
     //    @PostConstruct
-    fun init() {
+    override fun init() {
         loadConfigInfo()
     }
 
