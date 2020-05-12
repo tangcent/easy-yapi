@@ -18,6 +18,7 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.logger.traceWarn
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.rule.contextOf
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.context.ActionContext
@@ -25,6 +26,7 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -70,6 +72,12 @@ class DebugDialog : JDialog() {
 
     @Inject
     val logger: Logger? = null
+
+    @Inject
+    val configReader: ConfigReader? = null
+
+    @Inject
+    val contextSwitchListener: ContextSwitchListener? = null
 
     private var evalTimer: Timer = Timer()
     private var lastEvalTime: AtomicLong = AtomicLong(0)
@@ -128,9 +136,13 @@ class DebugDialog : JDialog() {
             doCopy()
         }
 
-//        autoComputer.bind<Any>(this, "context")
-//                .with(this.contextTextField!!)
-//                .eval { contextStr -> }
+        autoComputer.listen(this::context)
+                .action { ele ->
+                    ele?.let {
+                        contextSwitchListener?.switchTo(it)
+                    }
+                }
+
         autoComputer.bind(this.contextTextField!!)
                 .with(this::context)
                 .eval { context ->
@@ -410,7 +422,7 @@ class DebugDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "var separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\nvar sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += separator\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nsb += separator\nsb += \"debug `localStorage`:\\n\"\nsb += tool.debug(localStorage)\nsb += separator\nsb"
+            return "var separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\nvar sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += separator\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nsb += separator\nsb += \"debug `localStorage`:\\n\"\nsb += tool.debug(localStorage)\nsb += separator\nsb += \"debug `config`:\\n\"\nsb += tool.debug(config)\nsb += separator\nsb"
         }
     }
 
@@ -433,7 +445,7 @@ class DebugDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "def separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\ndef sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += separator\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nsb += separator\nsb += \"debug `localStorage`:\\n\"\nsb += tool.debug(localStorage)\nsb += separator\nreturn sb"
+            return "def separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\ndef sb = \"\"\nsb += \"debug `tool`:\\n\"\nsb += tool.debug(tool)\nsb += separator\nsb += \"debug `it`:\\n\"\nsb += tool.debug(it)\nsb += separator\nsb += \"debug `regex`:\\n\"\nsb += tool.debug(regex)\nsb += separator\nsb += \"debug `logger`:\\n\"\nsb += tool.debug(logger)\nsb += separator\nsb += \"debug `helper`:\\n\"\nsb += tool.debug(helper)\nsb += separator\nsb += \"debug `httpClient`:\\n\"\nsb += tool.debug(httpClient)\nsb += separator\nsb += \"debug `localStorage`:\\n\"\nsb += tool.debug(localStorage)\nsb += separator\nsb += \"debug `config`:\\n\"\nsb += tool.debug(config)\nsb += separator\nreturn sb"
         }
     }
 

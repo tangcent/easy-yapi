@@ -7,7 +7,9 @@ import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.idea.plugin.utils.LocalStorageUtils
 import com.itangcent.idea.plugin.utils.RegexUtils
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleContext
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.LinkExtractor
 import com.itangcent.intellij.jvm.LinkResolver
 import com.itangcent.suv.http.HttpClientProvider
@@ -21,7 +23,11 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
     @Inject
     protected val localStorageUtils: LocalStorageUtils? = null
 
+    @Inject
+    protected val actionContext: ActionContext? = null
+
     private var scriptEngine: ScriptEngine? = null
+
     private var unsupported = false
 
     protected abstract fun scriptType(): String
@@ -59,6 +65,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         engineBindings["localStorage"] = localStorageUtils
         engineBindings["helper"] = Helper(context.getPsiContext())
         engineBindings["httpClient"] = httpClientProvider!!.getHttpClient()
+        engineBindings["config"] = actionContext!!.instance(Config::class)
     }
 
     @Inject
@@ -107,6 +114,26 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             return linkTarget?.let { contextOf(it, psiMember) }
         }
 
+    }
+
+    @ScriptTypeName("config")
+    class Config {
+
+        @Inject
+        private val configReader: ConfigReader? = null
+
+        fun get(name: String): String? {
+            return configReader!!.first(name)
+        }
+
+        @ScriptReturn("array<string>")
+        fun getValues(name: String): Collection<String>? {
+            return configReader!!.read(name)
+        }
+
+        fun resolveProperty(property: String): String {
+            return configReader!!.resolveProperty(property)
+        }
     }
 
     companion object {
