@@ -1,6 +1,8 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.google.gson.JsonElement
 import com.google.inject.Singleton
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.http.contentType
@@ -42,26 +44,31 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
         val key = "$projectId$name"
         var cachedCartId = cacheLock.readLock().withLock { cartIdCache[key] }
         if (cachedCartId != null) return cachedCartId
-        val cats = getProjectInfo(token, projectId)
-                ?.asJsonObject
-                ?.get("data")
-                ?.asJsonObject
-                ?.get("cat")
-                ?.asJsonArray
-        cats?.forEach { cat ->
-            if (cat.asJsonObject
-                            .get("name")
-                            .asString == name) {
-                cachedCartId = cat.asJsonObject
-                        .get("_id")
-                        .asString
-                if (cachedCartId != null) {
-                    cacheLock.writeLock().withLock {
-                        cartIdCache[key] = cachedCartId!!
+        var projectInfo: JsonElement? = null
+        try {
+            projectInfo = getProjectInfo(token, projectId)
+            val cats = projectInfo
+                    ?.asJsonObject
+                    ?.get("data")
+                    ?.asJsonObject
+                    ?.get("cat")
+                    ?.asJsonArray
+            cats?.forEach { cat ->
+                if (cat.asJsonObject.get("name")
+                                .asString == name) {
+                    cachedCartId = cat.asJsonObject
+                            .get("_id")
+                            .asString
+                    if (cachedCartId != null) {
+                        cacheLock.writeLock().withLock {
+                            cartIdCache[key] = cachedCartId!!
+                        }
                     }
+                    return cachedCartId
                 }
-                return cachedCartId
             }
+        } catch (e: Exception) {
+            logger!!.traceError("error to find cat. projectId:$projectId, info: ${projectInfo?.toString()}", e)
         }
         return null
     }
