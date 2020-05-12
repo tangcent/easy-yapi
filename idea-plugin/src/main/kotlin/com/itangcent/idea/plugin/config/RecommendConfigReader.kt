@@ -11,13 +11,14 @@ import com.itangcent.intellij.config.MutableConfigReader
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
+import com.itangcent.utils.Initializable
 import org.apache.commons.io.IOUtils
 import java.io.File
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 
-class RecommendConfigReader : ConfigReader {
+class RecommendConfigReader : ConfigReader, Initializable {
 
     @Inject
     @Named("delegate_config_reader")
@@ -67,7 +68,7 @@ class RecommendConfigReader : ConfigReader {
     }
 
     @PostConstruct
-    fun init() {
+    override fun init() {
 
         if (configReader is MutableConfigReader) {
             contextSwitchListener!!.clear()
@@ -94,7 +95,11 @@ class RecommendConfigReader : ConfigReader {
 
     private fun initDelegateAndRecommend() {
         try {
-            configReader?.invokeMethod("init")
+            if (configReader is Initializable) {
+                configReader.init()
+            } else {
+                configReader?.invokeMethod("init")
+            }
         } catch (e: Throwable) {
         }
         if (settingBinder?.read()?.useRecommendConfig == true) {
