@@ -119,3 +119,6 @@
     * support new rule `path.multi` [(#275)](https://github.com/tangcent/easy-api/pull/275)
     
     * fix: request body preview-language in postman example [(#281)](https://github.com/tangcent/easy-api/pull/281)
+    
+    * opti: support new rule `postman.prerequest`&`postman.test` [(#283)](https://github.com/tangcent/easy-api/pull/283)
+    * opti: support new rule tool `config` [(#284)](https://github.com/tangcent/easy-api/pull/284)
