@@ -1,6 +1,8 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.gson.JsonElement
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
@@ -107,25 +109,42 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     override fun getProjectInfo(token: String, projectId: String?): JsonElement? {
         if (projectId != null) {
             val cachedProjectInfo = cacheLock.readLock().withLock { projectInfoCache[projectId] }
-            if (cachedProjectInfo != null) return cachedProjectInfo
+            if (cachedProjectInfo != null) {
+                if (cachedProjectInfo == NULL_PROJECT) {
+                    return null
+                }
+                return cachedProjectInfo
+            }
         }
 
-        var url = "$server$GETPROJECT?token=$token"
+        var url = "$server$GET_PROJECT_URL?token=$token"
         if (projectId != null) {
             url = "$url&id=$projectId"
         }
 
         val ret = getByApi(url, false) ?: return null
-        var projectInfo: JsonElement? = null
+        var projectInfo: JsonObject? = null
         try {
-            projectInfo = GsonUtils.parseToJsonTree(ret)
+            projectInfo = GsonUtils.parseToJsonTree(ret) as? JsonObject
         } catch (e: Exception) {
             logger!!.error("error to parse project [$projectId] info:$ret")
         }
+
         if (projectId != null && projectInfo != null) {
-            cacheLock.writeLock().withLock { projectInfoCache[projectId] = projectInfo }
+            if (projectInfo.has("errcode")) {
+                if (projectInfo.get("errcode").asInt == 40011) {
+                    logger!!.warn("project:$projectId may be deleted.")
+                    cacheLock.writeLock().withLock { projectInfoCache[projectId] = NULL_PROJECT }
+                    return null
+                }
+            }
         }
         return projectInfo
+    }
+
+    override fun getProjectInfo(token: String): JsonObject? {
+        val projectId = getProjectIdByToken(token) ?: return null
+        return getProjectInfo(token, projectId) as? JsonObject ?: return null
     }
 
     open fun getByApi(url: String, dumb: Boolean = true): String? {
@@ -162,13 +181,26 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         return StringResponseHandler.DEFAULT_RESPONSE_HANDLER.reserved()
     }
 
-    private var tokenMap: HashMap<String, String>? = null
+    /**
+     * Tokens in setting.
+     * Map<module,<token,state>>
+     * state: null->no_checked, true->valid, false->invalid
+     */
+    private var tokenMap: HashMap<String, Pair<String, Boolean?>>? = null
 
     override fun getPrivateToken(module: String): String? {
 
         cacheLock.readLock().withLock {
             if (tokenMap != null) {
-                return tokenMap!![module]
+                val token = tokenMap!![module] ?: return null
+                when (token.second) {
+                    true -> {
+                        return token.first
+                    }
+                    false -> {
+                        return null
+                    }
+                }
             }
         }
 
@@ -176,7 +208,14 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             if (tokenMap == null) {
                 initToken()
             }
-            return tokenMap!![module]
+            val token = tokenMap!![module] ?: return null
+            return if (getProjectInfo(token.first) == null) {
+                tokenMap!![module] = token.first to false
+                null
+            } else {
+                tokenMap!![module] = token.first to true
+                token.first
+            }
         }
     }
 
@@ -186,7 +225,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         if (settings.yapiTokens != null) {
             val properties = Properties()
             properties.load(settings.yapiTokens!!.byteInputStream())
-            properties.forEach { t, u -> tokenMap!![t.toString()] = u.toString() }
+            properties.forEach { t, u -> tokenMap!![t.toString()] = u.toString() to null }
         }
     }
 
@@ -209,7 +248,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             } else {
                 tokenMap!!.clear()
             }
-            properties.forEach { t, u -> tokenMap!![t.toString()] = u.toString() }
+            properties.forEach { t, u -> tokenMap!![t.toString()] = u.toString() to null }
         }
     }
 
@@ -226,7 +265,6 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     }
 
     override fun removeToken(token: String) {
-
         updateTokens { properties ->
             val removedKeys = properties.entries
                     .filter { it.value == token }
@@ -240,10 +278,11 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         if (tokenMap == null) {
             initToken()
         }
-        return tokenMap!!
+        return HashMap(tokenMap!!.mapValues { it.value.first })
     }
 
     companion object {
-        var GETPROJECT = "/api/project/get"
+        const val GET_PROJECT_URL = "/api/project/get"
+        val NULL_PROJECT: JsonElement = JsonNull.INSTANCE
     }
 }

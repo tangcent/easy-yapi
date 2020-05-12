@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.inject.ImplementedBy
 import java.util.*
 import kotlin.collections.HashMap
@@ -38,6 +39,8 @@ interface YapiApiHelper {
     fun getProjectIdByToken(token: String): String?
 
     fun getProjectInfo(token: String, projectId: String?): JsonElement?
+
+    fun getProjectInfo(token: String): JsonObject?
 
     fun readTokens(): HashMap<String, String>
 
