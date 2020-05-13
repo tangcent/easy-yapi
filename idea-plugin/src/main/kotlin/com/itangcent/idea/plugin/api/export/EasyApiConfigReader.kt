@@ -1,11 +1,12 @@
 package com.itangcent.idea.plugin.api.export
 
 import com.itangcent.intellij.config.AutoSearchConfigReader
+import com.itangcent.utils.Initializable
 
-class EasyApiConfigReader : AutoSearchConfigReader() {
+class EasyApiConfigReader : AutoSearchConfigReader(), Initializable {
 
     //    @PostConstruct
-    fun init() {
+    override fun init() {
         loadConfigInfo()
     }
 
