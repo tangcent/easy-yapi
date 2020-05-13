@@ -135,3 +135,8 @@
     * opti: support new rule `postman.prerequest`&`postman.test` [(#283)](https://github.com/tangcent/easy-api/pull/283)
     
     * opti: support new rule tool `config` [(#284)](https://github.com/tangcent/easy-api/pull/284)
+    
+    * fix: preserving the order of field in `YapiFormatter` [(#189)](https://github.com/tangcent/easy-yapi/pull/189)
+    
+    * opti: input new token if the old one be deleted. [(#192)](https://github.com/tangcent/easy-yapi/pull/192)
+                                                          
