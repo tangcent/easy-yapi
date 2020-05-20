@@ -6,7 +6,9 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.http.contentType
+import com.itangcent.intellij.extend.asJsonElement
 import com.itangcent.intellij.extend.asList
+import com.itangcent.intellij.extend.sub
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
@@ -48,16 +50,12 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
         try {
             projectInfo = getProjectInfo(token, projectId)
             val cats = projectInfo
-                    ?.asJsonObject
-                    ?.get("data")
-                    ?.asJsonObject
-                    ?.get("cat")
+                    ?.sub("data")
+                    ?.sub("cat")
                     ?.asJsonArray
             cats?.forEach { cat ->
-                if (cat.asJsonObject.get("name")
-                                .asString == name) {
-                    cachedCartId = cat.asJsonObject
-                            .get("_id")
+                if (cat.sub("name")?.asString == name) {
+                    cachedCartId = cat.sub("_id")!!
                             .asString
                     if (cachedCartId != null) {
                         cacheLock.writeLock().withLock {
@@ -118,11 +116,9 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 logger!!.info("Post failed:$errMsg")
                 return false
             }
-            val resObj = GsonUtils.parseToJsonTree(returnValue)
-            val addCartId: String? = resObj?.asJsonObject
-                    ?.get("data")
-                    ?.asJsonObject
-                    ?.get("_id")
+            val resObj = returnValue?.asJsonElement()
+            val addCartId: String? = resObj.sub("data")
+                    .sub("_id")
                     ?.asString
             if (addCartId != null) {
                 cacheLock.writeLock().withLock {
@@ -143,31 +139,26 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     override fun findApi(token: String, catId: String, apiName: String): String? {
         val url = "$server$GET_CAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
-                ?.asJsonObject
-                ?.get("data")
-                ?.asJsonObject
-                ?.get("list")
+                ?.sub("data")
+                ?.sub("list")
                 ?.asJsonArray?.firstOrNull { api ->
-            api.asJsonObject.get("title")
-                    .asString == apiName
-        }?.asJsonObject?.get("_id")?.asString
+                    api.sub("title")
+                            ?.asString == apiName
+                }?.sub("_id")?.asString
     }
 
     override fun findApis(token: String, catId: String): ArrayList<Any?>? {
         val url = "$server$GET_CAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
-                ?.asJsonObject
-                ?.get("data")
-                ?.asJsonObject
-                ?.get("list")
+                ?.sub("data")
+                ?.sub("list")
                 ?.asList()
     }
 
     override fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
         val url = "$server$GET_CAT_MENU?project_id=$project_id&token=$token"
         return GsonUtils.parseToJsonTree(getByApi(url))
-                ?.asJsonObject
-                ?.get("data")
+                ?.sub("data")
                 ?.asList()
     }
 

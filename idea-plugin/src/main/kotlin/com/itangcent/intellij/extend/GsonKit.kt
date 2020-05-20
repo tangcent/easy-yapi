@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import com.itangcent.common.utils.GsonUtils
 
 fun JsonObject.asMap(): HashMap<String, Any?> {
     val map: HashMap<String, Any?> = HashMap()
@@ -15,7 +16,7 @@ fun JsonElement.asMap(dumb: Boolean = true): HashMap<String, Any?> {
     return when {
         this.isJsonObject -> this.asJsonObject.asMap()
         dumb -> HashMap()
-        else -> throw IllegalStateException("Not a JSON Object: " + this)
+        else -> throw IllegalStateException("Not a JSON Object: $this")
     }
 }
 
@@ -29,7 +30,7 @@ fun JsonElement.asList(dumb: Boolean = true): ArrayList<Any?> {
     return when {
         this.isJsonArray -> this.asJsonArray.asList()
         dumb -> ArrayList()
-        else -> throw IllegalStateException("Not a JSON Array: " + this)
+        else -> throw IllegalStateException("Not a JSON Array: $this")
     }
 }
 
@@ -51,4 +52,15 @@ fun JsonPrimitive.unbox(): Any? {
         this.isString -> this.asString
         else -> null
     }
+}
+
+fun String.asJsonElement(): JsonElement? {
+    return GsonUtils.parseToJsonTree(this)
+}
+
+fun JsonElement?.sub(property: String): JsonElement? {
+    if (this == null || !this.isJsonObject) {
+        return null
+    }
+    return this.asJsonObject.get(property)
 }
