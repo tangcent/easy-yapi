@@ -31,6 +31,7 @@ import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
+import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
@@ -518,8 +519,8 @@ class YapiDashboardDialog : JDialog() {
                             return@forEach
                         }
 
-                        val projectInfo = yapiApiHelper.getProjectInfo(token, projectId)?.asJsonObject
-                                ?.get("data")
+                        val projectInfo = yapiApiHelper.getProjectInfo(token, projectId)
+                                .sub("data")
                                 ?.asMap()
 
                         if (projectInfo.isNullOrEmpty()) {
@@ -640,8 +641,7 @@ class YapiDashboardDialog : JDialog() {
                 }
 
                 val projectInfo = yapiApiHelper.getProjectInfo(projectToken, projectId)
-                        ?.asJsonObject
-                        ?.get("data")
+                        .sub("data")
                         ?.asMap()
 
                 if (projectInfo.isNullOrEmpty()) {

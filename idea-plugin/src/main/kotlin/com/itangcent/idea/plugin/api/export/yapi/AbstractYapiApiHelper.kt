@@ -11,6 +11,7 @@ import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.StringUtils
@@ -76,8 +77,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         if (StringUtils.isNotBlank(res) && res.contains("errmsg")) {
             val returnObj = GsonUtils.parseToJsonTree(res)
             val errMsg = returnObj
-                    ?.asJsonObject
-                    ?.get("errmsg")
+                    .sub("errmsg")
                     ?.asString
             if (StringUtils.isNotBlank(errMsg) && !errMsg!!.contains("成功")) {
                 return errMsg
@@ -90,10 +90,9 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         var projectId = cacheLock.readLock().withLock { projectIdCache[token] }
         if (projectId != null) return projectId
         try {
-            projectId = getProjectInfo(token, null)?.asJsonObject
-                    ?.get("data")
-                    ?.asJsonObject
-                    ?.get("_id")
+            projectId = getProjectInfo(token, null)
+                    ?.sub("data")
+                    ?.sub("_id")
                     ?.asString
         } catch (e: IllegalStateException) {
             logger!!.error("invalid token:$token")
