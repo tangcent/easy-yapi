@@ -4,7 +4,6 @@ import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
 import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
@@ -16,12 +15,9 @@ import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.intellij.extend.acquireGreedy
-import com.itangcent.intellij.extend.asHashMap
-import com.itangcent.intellij.extend.asMap
+import com.itangcent.intellij.extend.*
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
-import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.http.entity.ContentType
@@ -86,16 +82,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             logger!!.error("Authentication failed!")
             return
         }
-        val returnObj = GsonUtils.parseToJsonTree(returnValue)
-        val errorName = returnObj?.asJsonObject
-                ?.get("error")
-                ?.asJsonObject
-                ?.get("name")
+        val returnObj = returnValue.asJsonElement()
+        val errorName = returnObj
+                .sub("error")
+                .sub("name")
                 ?.asString
         val errorMessage = returnObj?.asJsonObject
-                ?.get("error")
-                ?.asJsonObject
-                ?.get("message")
+                .sub("error")
+                .sub("message")
                 ?.asString
 
         if (response.code() == 429) {
@@ -137,8 +131,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             val response = call(request)
             val returnValue = response.string()
             if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = GsonUtils.parseToJsonTree(returnValue)
-                val collectionInfo = returnObj?.asJsonObject?.get("collection")?.asMap()
+                val returnObj = returnValue.asJsonElement()
+                val collectionInfo = returnObj.sub("collection")?.asMap()
                 if (collectionInfo.notNullOrEmpty()) {
                     return collectionInfo
                 }
@@ -194,7 +188,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                             val responseCode = response["code"]
                             if (responseCode != null) {
                                 when (responseCode) {
-                                    is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] = responseCode["value"].toInt() ?: 200
+                                    is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] = responseCode["value"].toInt()
+                                            ?: 200
                                     is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                     is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                 }
@@ -218,9 +213,11 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             val response = call(request)
             val returnValue = response.string()
             if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = GsonUtils.parseToJsonTree(returnValue)
-                val collectionName = returnObj?.asJsonObject?.get("collection")
-                        ?.asJsonObject?.get("name")?.asString
+                val returnObj = returnValue.asJsonElement()
+                val collectionName = returnObj
+                        .sub("collection")
+                        .sub("name")
+                        ?.asString
                 if (collectionName.notNullOrBlank()) {
                     return true
                 }
@@ -244,8 +241,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             val response = call(request)
             val returnValue = response.string()
             if (returnValue.notNullOrEmpty() && returnValue!!.contains("collections")) {
-                val returnObj = GsonUtils.parseToJsonTree(returnValue)
-                val collections = returnObj?.asJsonObject?.get("collections")
+                val returnObj = returnValue.asJsonElement()
+                val collections = returnObj.sub("collections")
                         ?.asJsonArray ?: return null
                 val collectionList: ArrayList<HashMap<String, Any?>> = ArrayList()
                 collections.forEach { collectionList.add(it.asMap()) }
@@ -271,8 +268,9 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             val returnValue = response.string()
 
             if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = GsonUtils.parseToJsonTree(returnValue)
-                return returnObj?.asJsonObject?.get("collection")
+                val returnObj = returnValue.asJsonElement()
+                return returnObj
+                        .sub("collection")
                         ?.asMap()
             }
 
@@ -295,8 +293,9 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             val returnValue = result.string()
 
             if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = GsonUtils.parseToJsonTree(returnValue)
-                return returnObj?.asJsonObject?.get("collection")
+                val returnObj = returnValue.asJsonElement()
+                return returnObj
+                        .sub("collection")
                         ?.asMap()
             }
 
@@ -338,6 +337,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         const val POSTMANHOST = "https://api.getpostman.com"
         val IMPOREDAPI = "$POSTMANHOST/import/exported"
         const val COLLECTION = "$POSTMANHOST/collections"
+
         //the postman rate limit is 60 per/s
         //Just to be on the safe side,limit to 30 per/s
         private val LIMIT_PERIOD_PRE_REQUEST = TimeUnit.MINUTES.toMillis(1) / 30
