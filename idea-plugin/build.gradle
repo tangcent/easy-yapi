@@ -151,18 +151,17 @@ task findSpi {
             zipTree(it)
                     .filter { it.parentFile.path.endsWith("META-INF/services") }
                     .forEach {
-//                println("file:" + it.name)
-                if (!names.add(it.name)) {
-                    if (!duplicated.contains(it.name)) {
-                        duplicated.add(it.name)
+                        if (!names.add(it.name)) {
+                            if (!duplicated.contains(it.name)) {
+                                duplicated.add(it.name)
+                            }
+                        }
                     }
-                }
-            }
         }
     }
 
     def servicesDir = new File("./src/main/resources/META-INF/services/")
-    servicesDir.deleteOnExit()
+    servicesDir.delete()
     servicesDir.mkdirs()
 
     duplicated.forEach {
@@ -179,14 +178,21 @@ task findSpi {
         if (it.isFile()) {
             zipTree(it)
                     .filter {
-                it.parentFile.path.endsWith("META-INF/services") &&
-                        duplicated.contains(it.name)
-            }
-            .forEach {
-                def targetFile = new File(servicesDir, it.name)
-                targetFile.append(it.text)
-                targetFile.append("\n")
-            }
+                        it.parentFile.path.endsWith("META-INF/services") &&
+                                duplicated.contains(it.name)
+                    }
+                    .forEach {
+                        try {
+                            def targetFile = new File(servicesDir, it.name)
+                            if (!targetFile.exists()) {
+                                targetFile.createNewFile()
+                            }
+                            targetFile.append(it.text)
+                            targetFile.append("\n")
+                        } catch (e) {
+                            println("error to append services info to:" + it.name + e)
+                        }
+                    }
         }
     }
 }
