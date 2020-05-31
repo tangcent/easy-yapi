@@ -11,7 +11,6 @@ import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
 import com.itangcent.common.kit.KitUtils
-import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.appendlnIfNotEmpty

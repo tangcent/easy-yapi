@@ -40,7 +40,6 @@ class SuvRuleParser : RuleParser {
         }
     }
 
-
     private val ruleParserCache: HashMap<KClass<*>, RuleParser> = LinkedHashMap()
 
     private fun getRuleParser(parserClass: KClass<*>): RuleParser {

@@ -6,12 +6,12 @@ import com.intellij.psi.PsiClass
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.kit.KitUtils
-import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.idea.plugin.api.export.FormatFolderHelper
@@ -30,9 +30,6 @@ import java.util.*
  */
 @Singleton
 class MarkdownFormatter {
-
-    @Inject
-    private val logger: Logger? = null
 
     @Inject
     private val actionContext: ActionContext? = null
@@ -161,7 +158,7 @@ class MarkdownFormatter {
 
         if (methodDoc.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
-            handle("<p>${escape(methodDoc.desc)}</p>\n\n")
+            handle("${methodDoc.desc}\n\n")
         }
 
         handle("\n**Params：**\n\n")
@@ -195,7 +192,7 @@ class MarkdownFormatter {
         handle("**Method：** ${request.method}\n\n")
         if (request.desc.notNullOrBlank()) {
             handle("**Desc：**\n\n")
-            handle("<p>${escape(request.desc)}</p>\n\n")
+            handle("${request.desc}\n\n")
         }
         //endregion
 

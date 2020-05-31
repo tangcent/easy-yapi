@@ -1,11 +1,12 @@
 package com.itangcent.common.model
 
+import com.itangcent.common.utils.SimpleExtensible
 import java.io.Serializable
 
 /**
  * Instances of the [Doc] represent a document(Http or RPC) in the project.
  */
-open class Doc : Extensible(), Serializable {
+open class Doc : SimpleExtensible(), Serializable {
 
     /**
      * The element associated the origin code.

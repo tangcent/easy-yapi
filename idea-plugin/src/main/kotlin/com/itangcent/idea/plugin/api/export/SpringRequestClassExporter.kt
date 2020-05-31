@@ -10,7 +10,9 @@ import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.common.utils.*
+import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
+import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
@@ -197,10 +199,15 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     override fun processCompleted(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         super.processCompleted(method, kv, request)
+
         val requestMapping: Pair<Map<String, Any?>, String>? = kv.getAs("requestMapping")
         requestMapping?.let {
             resolveParamInRequestMapping(request, it)
             resolveHeaderInRequestMapping(request, it)
+        }
+
+        ruleComputer!!.computer(ClassExportRuleKeys.AFTER_EXPORT, method) {
+            it.setExt("api", RequestRuleWrap(request))
         }
     }
 

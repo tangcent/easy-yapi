@@ -5,8 +5,8 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiType
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JvmClassHelper

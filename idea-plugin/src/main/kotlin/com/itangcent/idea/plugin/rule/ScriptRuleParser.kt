@@ -6,12 +6,13 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.utils.SimpleExtensible
+import com.itangcent.common.utils.asBool
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.extend.getPropertyValue
-import com.itangcent.intellij.extend.toBoolean
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.ArrayDuckType
@@ -34,24 +35,31 @@ abstract class ScriptRuleParser : RuleParser {
 
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
+
     @Inject
     protected val psiClassHelper: PsiClassHelper? = null
+
     @Inject
     protected val classRuleConfig: ClassRuleConfig? = null
+
     @Inject
     protected val docHelper: DocHelper? = null
+
     @Inject
     protected val annotationHelper: AnnotationHelper? = null
+
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
+
     @Inject
     protected val methodReturnInferHelper: MethodInferHelper? = null
+
     @Inject
     protected val logger: Logger? = null
 
     override fun parseBooleanRule(rule: String): BooleanRule? {
         return BooleanRule.of { context ->
-            return@of eval(rule, context).toBoolean()
+            return@of eval(rule, context).asBool()
         }
     }
 
@@ -64,15 +72,18 @@ abstract class ScriptRuleParser : RuleParser {
     private fun eval(ruleScript: String, context: RuleContext): Any? {
         return try {
             val simpleScriptContext = SimpleScriptContext()
-            if (context is SuvRuleContext) {
-                context.exts()?.forEach {
-                    simpleScriptContext.setAttribute(it.key, it.value, ScriptContext.ENGINE_SCOPE)
-                }
-            } else {
-                val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
-                        context.getCore() ?: context.getResource()!!, context.getResource()!!)
+
+
+            context.exts()?.forEach {
+                simpleScriptContext.setAttribute(it.key, it.value, ScriptContext.ENGINE_SCOPE)
+            }
+
+            val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
+                    context.getCore() ?: context.getResource()!!, context.getResource()!!)
+            if (contextForScript != null) {
                 simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
             }
+
             initScriptContext(simpleScriptContext, context)
             getScriptEngine().eval(ruleScript, simpleScriptContext)
         } catch (e: UnsupportedScriptException) {
@@ -122,7 +133,7 @@ abstract class ScriptRuleParser : RuleParser {
      * it.sourceCode():String
      */
     @ScriptIgnore("getResource", "getCore", "asPsiDocCommentOwner", "asPsiModifierListOwner")
-    open inner class BaseScriptRuleContext : RuleContext {
+    open inner class BaseScriptRuleContext : SimpleExtensible, RuleContext {
 
         protected var psiElement: PsiElement? = null
 
@@ -173,6 +184,20 @@ abstract class ScriptRuleParser : RuleParser {
          */
         fun ann(name: String): String? {
             return ann(name, "value")
+        }
+
+        /**
+         * it.annMap("annotation_name"):Map<String, Any?>?
+         */
+        fun annMap(name: String): Map<String, Any?>? {
+            return annotationHelper!!.findAnnMap(getResource(), name)
+        }
+
+        /**
+         * it.annMaps("annotation_name"):List<Map<String, Any?>>?
+         */
+        fun annMaps(name: String): List<Map<String, Any?>>? {
+            return annotationHelper!!.findAnnMaps(getResource(), name)
         }
 
         /**

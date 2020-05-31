@@ -64,15 +64,3 @@ fun String?.equalIgnoreCase(str: String?): Boolean {
     }
     return this.toLowerCase() == str.toLowerCase()
 }
-
-fun Array<*>?.notNullOrEmpty(): Boolean {
-    return !this.isNullOrEmpty()
-}
-
-fun Collection<*>?.notNullOrEmpty(): Boolean {
-    return !this.isNullOrEmpty()
-}
-
-fun Map<*, *>?.notNullOrEmpty(): Boolean {
-    return !this.isNullOrEmpty()
-}
