@@ -3,10 +3,10 @@ package com.itangcent.idea.plugin.rule
 import com.intellij.psi.PsiDocCommentOwner
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiModifierListOwner
-import com.itangcent.common.model.Extensible
+import com.itangcent.common.utils.SimpleExtensible
 import com.itangcent.intellij.config.rule.RuleContext
 
-class SuvRuleContext : Extensible(), RuleContext {
+class SuvRuleContext : SimpleExtensible(), RuleContext {
 
     override fun asPsiDocCommentOwner(): PsiDocCommentOwner? {
         return null

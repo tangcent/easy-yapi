@@ -2,9 +2,9 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
-import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.asInt
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.http.HttpClient
@@ -188,8 +188,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                             val responseCode = response["code"]
                             if (responseCode != null) {
                                 when (responseCode) {
-                                    is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] = responseCode["value"].toInt()
-                                            ?: 200
+                                    is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] =
+                                            responseCode["value"].asInt() ?: 200
                                     is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                     is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                 }
