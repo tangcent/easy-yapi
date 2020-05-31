@@ -6,7 +6,6 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.kit.getAs
-import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
@@ -18,7 +17,6 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -279,7 +277,7 @@ open class YapiFormatter {
                     .set("value", it.value)
                     .set("desc", it.desc)
                     .set("example", it.getDemo() ?: it.value)
-                    .set("required", it.required.toInt())
+                    .set("required", it.required.asInt())
             )
         }
 
@@ -291,7 +289,7 @@ open class YapiFormatter {
                     .set("value", it.value)
                     .set("example", it.getDemo() ?: it.value)
                     .set("desc", it.desc)
-                    .set("required", it.required.toInt())
+                    .set("required", it.required.asInt())
             )
         }
 
@@ -304,7 +302,7 @@ open class YapiFormatter {
                         .set("name", it.name)
                         .set("example", it.getDemo() ?: it.value)
                         .set("type", it.type)
-                        .set("required", it.required.toInt())
+                        .set("required", it.required.asInt())
                         .set("desc", it.desc)
                 )
             }
@@ -355,7 +353,7 @@ open class YapiFormatter {
     private fun formatPath(path: String?): String {
         return when {
             path.isNullOrEmpty() -> "/"
-            path!!.startsWith("/") -> path
+            path.startsWith("/") -> path
             else -> "/$path"
         }.let {
             Regex("[^a-zA-Z0-9-/_:.{}!]").replace(it, "/")

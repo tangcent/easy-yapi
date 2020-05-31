@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.model.Extensible
+import com.itangcent.common.utils.Extensible
 import com.itangcent.common.utils.notNullOrBlank
 import java.util.*
 
