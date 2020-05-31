@@ -7,6 +7,8 @@ import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.common.kit.headLine
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.notNullOrEmpty
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
@@ -66,6 +68,22 @@ class RuleToolUtils {
     //endregion
 
     //region string
+
+    fun nullOrEmpty(str: String?): Boolean {
+        return str.isNullOrEmpty()
+    }
+
+    fun nullOrBlank(str: String?): Boolean {
+        return str.isNullOrBlank()
+    }
+
+    fun notNullOrEmpty(str: String?): Boolean {
+        return str.notNullOrEmpty()
+    }
+
+    fun notNullOrBlank(str: String?): Boolean {
+        return str.notNullOrBlank()
+    }
 
     /**
      * <p>find the first line in a string</p>

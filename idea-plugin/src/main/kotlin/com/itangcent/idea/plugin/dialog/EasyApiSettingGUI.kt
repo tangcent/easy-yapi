@@ -13,7 +13,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.CheckBoxList
-import com.itangcent.common.kit.notNullOrEmpty
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.SystemUtils
 import com.itangcent.common.utils.notNullOrEmpty

@@ -48,6 +48,7 @@ interface RequestHelper {
 }
 
 //region utils------------------------------------------------------------------
+
 fun RequestHelper.addParam(request: Request, paramName: String, defaultVal: String?, attr: String?) {
     addParam(request, paramName, defaultVal, false, attr)
 }
@@ -95,7 +96,6 @@ fun RequestHelper.addHeader(request: Request, name: String, value: String): Head
     addHeader(request, header)
     return header
 }
-
 
 fun RequestHelper.addHeaderIfMissed(request: Request, name: String, value: String): Boolean {
     if (request.header(name) != null) {

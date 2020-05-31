@@ -12,7 +12,6 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
-import com.itangcent.intellij.extend.toBoolean
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.PsiUtils
 import com.itangcent.intellij.jvm.duck.DuckType
