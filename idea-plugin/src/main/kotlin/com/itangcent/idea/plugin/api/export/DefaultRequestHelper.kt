@@ -27,7 +27,7 @@ open class DefaultRequestHelper : RequestHelper {
     override fun addModelAsParam(request: Request, model: Any) {
         if (model is Map<*, *>) {
             val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
-            model.forEach { k, v ->
+            model.forEach { (k, v) ->
                 addFormParam(
                         request, k.toString(), v.toString(),
                         KVUtils.getUltimateComment(comment, k)

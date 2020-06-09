@@ -29,12 +29,12 @@ class SpringClassName {
         const val DELETE_MAPPING = "org.springframework.web.bind.annotation.DeleteMapping"
         const val PATCH_MAPPING = "org.springframework.web.bind.annotation.PatchMapping"
 
-        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(SpringClassName.REQUEST_MAPPING_ANNOTATION,
-                SpringClassName.GET_MAPPING,
-                SpringClassName.DELETE_MAPPING,
-                SpringClassName.PATCH_MAPPING,
-                SpringClassName.POST_MAPPING,
-                SpringClassName.PUT_MAPPING)
+        val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(REQUEST_MAPPING_ANNOTATION,
+                GET_MAPPING,
+                DELETE_MAPPING,
+                PATCH_MAPPING,
+                POST_MAPPING,
+                PUT_MAPPING)
 
         const val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
 

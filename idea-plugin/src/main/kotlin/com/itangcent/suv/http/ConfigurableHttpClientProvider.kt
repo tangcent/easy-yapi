@@ -164,6 +164,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             httpRequest.query(name, value)
             return this
         }
+
         /**
          * Set the body to be sent with the request.
          */
@@ -192,6 +193,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             httpRequest.contentType(contentType)
             return this
         }
+
         /**
          * Executes HTTP request
          *
@@ -203,7 +205,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
                 val suvRuleContext = SuvRuleContext()
                 suvRuleContext.setExt("request", this)
                 ruleComputer!!.computer(ClassExportRuleKeys.HTTP_CLIENT_BEFORE_CALL, suvRuleContext, null)
-                val response = DiscardableHttpResponse(httpRequest.call())
+                val response = DiscardAbleHttpResponse(httpRequest.call())
                 suvRuleContext.setExt("response", response)
                 ruleComputer.computer(ClassExportRuleKeys.HTTP_CLIENT_AFTER_CALL, suvRuleContext, null)
                 if (response.isDiscarded() && i < 3) {
@@ -216,7 +218,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
     }
 
     @ScriptTypeName("response")
-    class DiscardableHttpResponse(httpResponse: HttpResponse) : HttpResponse by httpResponse {
+    class DiscardAbleHttpResponse(httpResponse: HttpResponse) : HttpResponse by httpResponse {
 
         private var discarded = false
 
