@@ -891,7 +891,7 @@ class ApiCallDialog : JDialog() {
         }
         val url = this.currUrl
 //        var request = this.currRequest
-        fileSaveHelper!!.save({
+        fileSaveHelper!!.saveBytes({
             bytes
         }, {
             var fileName = response.getHeaderFileName()
@@ -906,7 +906,7 @@ class ApiCallDialog : JDialog() {
                     else -> url.substringAfterLast("/").substringBefore("?")
                 }
             }
-            return@save fileName
+            return@saveBytes fileName
         }, {
             logger!!.info("save response success")
         }, {

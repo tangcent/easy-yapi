@@ -7,12 +7,16 @@ import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.idea.plugin.utils.LocalStorageUtils
 import com.itangcent.idea.plugin.utils.RegexUtils
+import com.itangcent.idea.utils.Charsets
+import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.LinkExtractor
 import com.itangcent.intellij.jvm.LinkResolver
+import com.itangcent.intellij.util.FileUtils
 import com.itangcent.suv.http.HttpClientProvider
+import java.nio.charset.Charset
 import javax.script.*
 
 abstract class StandardJdkRuleParser : ScriptRuleParser() {
@@ -65,7 +69,8 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         engineBindings["localStorage"] = localStorageUtils
         engineBindings["helper"] = Helper(context.getPsiContext())
         engineBindings["httpClient"] = httpClientProvider!!.getHttpClient()
-        engineBindings["config"] = actionContext!!.instance(Config::class)
+        engineBindings["files"] = actionContext!!.instance(Files::class)
+        engineBindings["config"] = actionContext.instance(Config::class)
     }
 
     @Inject
@@ -134,6 +139,75 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         fun resolveProperty(property: String): String {
             return configReader!!.resolveProperty(property)
         }
+    }
+
+    @ScriptTypeName("files")
+    class Files {
+
+        @Inject
+        private val fileSaveHelper: FileSaveHelper? = null
+
+        fun saveWithUI(content: (String) -> String,
+                       defaultFileName: String?,
+                       onSaveSuccess: () -> Unit,
+                       onSaveFailed: () -> Unit,
+                       onSaveCancel: () -> Unit) {
+            saveWithUI(content,
+                    kotlin.text.Charsets.UTF_8,
+                    defaultFileName,
+                    onSaveSuccess,
+                    onSaveFailed,
+                    onSaveCancel)
+        }
+
+        fun saveWithUI(content: (String) -> String,
+                       charset: String,
+                       defaultFileName: String?,
+                       onSaveSuccess: () -> Unit,
+                       onSaveFailed: () -> Unit,
+                       onSaveCancel: () -> Unit) {
+            saveWithUI(content,
+                    Charsets.forName(charset)!!.charset(),
+                    defaultFileName,
+                    onSaveSuccess,
+                    onSaveFailed,
+                    onSaveCancel)
+
+        }
+
+        private fun saveWithUI(content: (String) -> String,
+                               charset: Charset,
+                               defaultFileName: String?,
+                               onSaveSuccess: () -> Unit,
+                               onSaveFailed: () -> Unit,
+                               onSaveCancel: () -> Unit) {
+            fileSaveHelper!!.saveBytes(
+                    {
+                        content(it).toByteArray(charset)
+                    },
+                    {
+                        defaultFileName
+                    },
+                    onSaveSuccess, onSaveFailed, onSaveCancel
+            )
+        }
+
+        fun save(content: String, path: String) {
+            save(content, kotlin.text.Charsets.UTF_8, path)
+        }
+
+        fun save(content: String,
+                 charset: String,
+                 path: String) {
+            save(content, Charsets.forName(charset)!!.charset(), path)
+        }
+
+        private fun save(content: String,
+                         charset: Charset,
+                         path: String) {
+            FileUtils.forceSave(path, content.toByteArray(charset))
+        }
+
     }
 
     companion object {

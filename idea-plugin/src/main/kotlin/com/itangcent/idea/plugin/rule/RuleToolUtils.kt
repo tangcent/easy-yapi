@@ -9,6 +9,7 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
@@ -22,6 +23,8 @@ import kotlin.reflect.full.functions
 
 /**
  * <p>Util operations for rule.</p>
+ * For rules only.
+ * @see StandardJdkRuleParser
  */
 @ScriptTypeName("tool")
 class RuleToolUtils {
@@ -906,6 +909,10 @@ class RuleToolUtils {
 
     private fun typeName(qualifiedName: String): String {
         return typeMapper[qualifiedName] ?: qualifiedName
+    }
+
+    fun copy2Clipboard(str: String) {
+        ToolUtils.copy2Clipboard(str)
     }
 
     companion object {
