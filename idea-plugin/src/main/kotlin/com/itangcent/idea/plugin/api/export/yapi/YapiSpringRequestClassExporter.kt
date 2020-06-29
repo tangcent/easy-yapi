@@ -174,7 +174,6 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
     }
 
-
     @Suppress("UNCHECKED_CAST")
     override fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String?): Any? {
 

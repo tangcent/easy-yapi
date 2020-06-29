@@ -351,12 +351,15 @@ open class YapiFormatter {
      * Path is only allowed to consist of alphanumeric or `-/_:.{}=`
      */
     private fun formatPath(path: String?): String {
+        if (!autoFormatUrl()) {
+            return path ?: ""
+        }
         return when {
             path.isNullOrEmpty() -> "/"
             path.startsWith("/") -> path
             else -> "/$path"
         }.let {
-            Regex("[^a-zA-Z0-9-/_:.{}!]").replace(it, "/")
+            Regex("[^a-zA-Z0-9-/_:.{}?=!]").replace(it, "/")
         }.let {
             Regex("//+").replace(it, "/")
         }
@@ -602,6 +605,10 @@ open class YapiFormatter {
                    val mockStr: String)
 
     //endregion mock rules---------------------------------------------------------
+
+    protected fun autoFormatUrl(): Boolean {
+        return configReader!!.first("auto.format.url")?.toBool() ?: true
+    }
 
     companion object {
         val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!
