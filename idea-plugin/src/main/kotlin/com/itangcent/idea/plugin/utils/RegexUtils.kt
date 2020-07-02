@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.utils
 
 import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.idea.plugin.rule.StandardJdkRuleParser
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
