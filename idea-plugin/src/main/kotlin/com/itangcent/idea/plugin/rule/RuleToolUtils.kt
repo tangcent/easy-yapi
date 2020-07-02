@@ -937,6 +937,8 @@ class RuleToolUtils {
                 .set("kotlin.collections.Map", "map")
                 .set("kotlin.collections.Set", "array")
                 .set("kotlin.CharArray", "array<char>")
+                .set("kotlin.Function0", "func")
+                .set("kotlin.Function1", "func")
 
     }
 }

@@ -9,20 +9,20 @@ interface FileSaveHelper {
     fun saveOrCopy(content: String?,
                    onCopy: () -> Unit,
                    onSaveSuccess: (String) -> Unit,
-                   onSaveFailed: () -> Unit)
+                   onSaveFailed: (String?) -> Unit)
 
     fun saveOrCopy(content: String?,
                    charset: Charset,
                    onCopy: () -> Unit,
                    onSaveSuccess: (String) -> Unit,
-                   onSaveFailed: () -> Unit)
+                   onSaveFailed: (String?) -> Unit)
 
     fun saveOrCopy(content: String?,
                    charset: Charset,
                    defaultFileName: () -> String?,
                    onCopy: () -> Unit,
                    onSaveSuccess: (String) -> Unit,
-                   onSaveFailed: () -> Unit)
+                   onSaveFailed: (String?) -> Unit)
 
     /**
      * @param content provide file content with file path.
@@ -30,6 +30,6 @@ interface FileSaveHelper {
     fun saveBytes(content: (String) -> ByteArray,
                   defaultFileName: () -> String?,
                   onSaveSuccess: () -> Unit,
-                  onSaveFailed: () -> Unit,
+                  onSaveFailed: (String?) -> Unit,
                   onSaveCancel: () -> Unit)
 }

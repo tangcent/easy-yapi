@@ -150,7 +150,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         fun saveWithUI(content: (String) -> String,
                        defaultFileName: String?,
                        onSaveSuccess: () -> Unit,
-                       onSaveFailed: () -> Unit,
+                       onSaveFailed: (String?) -> Unit,
                        onSaveCancel: () -> Unit) {
             saveWithUI(content,
                     kotlin.text.Charsets.UTF_8,
@@ -164,7 +164,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
                        charset: String,
                        defaultFileName: String?,
                        onSaveSuccess: () -> Unit,
-                       onSaveFailed: () -> Unit,
+                       onSaveFailed: (String?) -> Unit,
                        onSaveCancel: () -> Unit) {
             saveWithUI(content,
                     Charsets.forName(charset)!!.charset(),
@@ -179,7 +179,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
                                charset: Charset,
                                defaultFileName: String?,
                                onSaveSuccess: () -> Unit,
-                               onSaveFailed: () -> Unit,
+                               onSaveFailed: (String?) -> Unit,
                                onSaveCancel: () -> Unit) {
             fileSaveHelper!!.saveBytes(
                     {

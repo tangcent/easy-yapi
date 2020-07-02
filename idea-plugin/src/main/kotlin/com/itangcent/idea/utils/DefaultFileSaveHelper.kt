@@ -36,7 +36,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
     override fun saveOrCopy(content: String?,
                             onCopy: () -> Unit,
                             onSaveSuccess: (String) -> Unit,
-                            onSaveFailed: () -> Unit) {
+                            onSaveFailed: (String?) -> Unit) {
         saveOrCopy(content, Charsets.UTF_8, onCopy, onSaveSuccess, onSaveFailed)
     }
 
@@ -44,7 +44,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                             charset: Charset,
                             onCopy: () -> Unit,
                             onSaveSuccess: (String) -> Unit,
-                            onSaveFailed: () -> Unit) {
+                            onSaveFailed: (String?) -> Unit) {
         if (content == null) return
 
         saveOrCopy(content, charset, {
@@ -57,7 +57,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                             defaultFileName: () -> String?,
                             onCopy: () -> Unit,
                             onSaveSuccess: (String) -> Unit,
-                            onSaveFailed: () -> Unit) {
+                            onSaveFailed: (String?) -> Unit) {
         if (content == null) return
 
         actionContext!!.runInSwingUI {
@@ -84,7 +84,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                             FileUtils.forceSave(filePath, content.toByteArray(charset))
                             onSaveSuccess(filePath)
                         } catch (e: Exception) {
-                            onSaveFailed()
+                            onSaveFailed(e.message)
                             actionContext.runAsync {
                                 copyAndLog(content, onCopy)
                             }
@@ -94,7 +94,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                             FileUtils.forceSave(file, content.toByteArray(charset))
                             onSaveSuccess(file.path)
                         } catch (e: Exception) {
-                            onSaveFailed()
+                            onSaveFailed(e.message)
                             actionContext.runAsync {
                                 copyAndLog(content, onCopy)
                             }
@@ -110,13 +110,13 @@ class DefaultFileSaveHelper : FileSaveHelper {
     override fun saveBytes(content: (String) -> ByteArray,
                            defaultFileName: () -> String?,
                            onSaveSuccess: () -> Unit,
-                           onSaveFailed: () -> Unit,
+                           onSaveFailed: (String?) -> Unit,
                            onSaveCancel: () -> Unit) {
         actionContext!!.runInSwingUI {
             val descriptor = FileChooserDescriptorFactory
                     .createSingleFileOrFolderDescriptor()
                     .withTitle("Select location")
-                    .withDescription("Choose directory to save")
+                    .withDescription("Choose folder/file to save")
                     .withHideIgnored(false)
             val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
             var toSelect: VirtualFile? = null
@@ -152,14 +152,14 @@ class DefaultFileSaveHelper : FileSaveHelper {
                             FileUtils.forceSave(path, content(path))
                             onSaveSuccess()
                         } catch (e: Exception) {
-                            onSaveFailed()
+                            onSaveFailed(e.message)
                         }
                     } else {
                         try {
                             FileUtils.forceSave(file, content(file.path))
                             onSaveSuccess()
                         } catch (e: Exception) {
-                            onSaveFailed()
+                            onSaveFailed(e.message)
                         }
                     }
                 }

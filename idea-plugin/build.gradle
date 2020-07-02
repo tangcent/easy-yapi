@@ -143,56 +143,60 @@ compileTestKotlin {
 
 
 task findSpi {
-    def names = [] as Set<String>
-    def duplicated = [] as Set<String>
-    //find duplicated files
-    configurations.compile.forEach {
-        if (it.isFile()) {
-            zipTree(it)
-                    .filter { it.parentFile.path.endsWith("META-INF/services") }
-                    .forEach {
-                        if (!names.add(it.name)) {
-                            if (!duplicated.contains(it.name)) {
-                                duplicated.add(it.name)
+    try {
+        def names = [] as Set<String>
+        def duplicated = [] as Set<String>
+        //find duplicated files
+        configurations.compile.forEach {
+            if (it.isFile()) {
+                zipTree(it)
+                        .filter { it.parentFile.path.endsWith("META-INF/services") }
+                        .forEach {
+                            if (!names.add(it.name)) {
+                                if (!duplicated.contains(it.name)) {
+                                    duplicated.add(it.name)
+                                }
                             }
                         }
-                    }
+            }
         }
-    }
 
-    def servicesDir = new File("./src/main/resources/META-INF/services/")
-    servicesDir.delete()
-    servicesDir.mkdirs()
+        def servicesDir = new File("./src/main/resources/META-INF/services/")
+        servicesDir.delete()
+        servicesDir.mkdirs()
 
-    duplicated.forEach {
-        try {
-            def targetFile = new File(servicesDir, it)
-            targetFile.createNewFile()
-            targetFile.text = ""
-        } catch (e) {
-            println("error:" + e)
+        duplicated.forEach {
+            try {
+                def targetFile = new File(servicesDir, it)
+                targetFile.createNewFile()
+                targetFile.text = ""
+            } catch (e) {
+                println("error:" + e)
+            }
         }
-    }
 
-    configurations.compile.forEach {
-        if (it.isFile()) {
-            zipTree(it)
-                    .filter {
-                        it.parentFile.path.endsWith("META-INF/services") &&
-                                duplicated.contains(it.name)
-                    }
-                    .forEach {
-                        try {
-                            def targetFile = new File(servicesDir, it.name)
-                            if (!targetFile.exists()) {
-                                targetFile.createNewFile()
-                            }
-                            targetFile.append(it.text)
-                            targetFile.append("\n")
-                        } catch (e) {
-                            println("error to append services info to:" + it.name + e)
+        configurations.compile.forEach {
+            if (it.isFile()) {
+                zipTree(it)
+                        .filter {
+                            it.parentFile.path.endsWith("META-INF/services") &&
+                                    duplicated.contains(it.name)
                         }
-                    }
+                        .forEach {
+                            try {
+                                def targetFile = new File(servicesDir, it.name)
+                                if (!targetFile.exists()) {
+                                    targetFile.createNewFile()
+                                }
+                                targetFile.append(it.text)
+                                targetFile.append("\n")
+                            } catch (e) {
+                                println("error to append services info to:" + it.name + e)
+                            }
+                        }
+            }
         }
+    } catch (e) {
+        println("error to find spi:" + e)
     }
 }

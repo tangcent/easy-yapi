@@ -221,7 +221,7 @@ class ApiCallDialog : JDialog() {
 
     @Inject(optional = true)
     @Named("host.history.max")
-    private var maxHostHistory: Int = 8
+    private var maxHostHistory: Int = 10
 
     @Inject(optional = true)
     @Named("host.default")
@@ -288,7 +288,7 @@ class ApiCallDialog : JDialog() {
 
         autoComputer.bind(this.pathTextField!!)
                 .with<URL>(this, "this.currRequest.path")
-                .eval { it.url()?:"" }
+                .eval { it.url() ?: "" }
 
         autoComputer.bindVisible(this.paramPanel!!)
                 .with(this::currRequest)
@@ -671,7 +671,7 @@ class ApiCallDialog : JDialog() {
                     }
 
                     if (apiCallDialog!!.throttleHelper.acquire("select_file_for_form_param", 1000)) {
-                        FileSelectHelper(apiCallDialog!!.actionContext!!, FileChooserDescriptorFactory.createSingleFileDescriptor())
+                        IdeaFileChooserHelper(apiCallDialog!!.actionContext!!, FileChooserDescriptorFactory.createSingleFileDescriptor())
                                 .lastSelectedLocation("file.form.param.select.last.location.key")
                                 .selectFile {
                                     formTable.setValueAt(it?.path, row, column)
