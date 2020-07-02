@@ -337,12 +337,12 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         })
 
                         if (comment.notNullOrBlank()) {
-                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain!!, comment!!)) {
+                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, comment!!)) {
                                 requestHelper.appendResponseBodyDesc(response, comment)
                             }
                         }
                         if (options.notNullOrEmpty()) {
-                            if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain!!, options)) {
+                            if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain, options)) {
                                 requestHelper.appendResponseBodyDesc(response, KVUtils.getOptionDesc(options))
                             }
                         }

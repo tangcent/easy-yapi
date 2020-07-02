@@ -93,7 +93,6 @@ class MarkdownApiExporter {
                                 }
                             } catch (e: Exception) {
                                 logger.traceError("Apis save failed", e)
-
                             }
                         }
                     } catch (e: Exception) {

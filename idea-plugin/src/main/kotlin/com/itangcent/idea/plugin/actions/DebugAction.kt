@@ -29,6 +29,9 @@ class DebugAction : ApiExportAction("Debug") {
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
+        builder.bindInstance("file.save.default", "script.txt")
+        builder.bindInstance("file.save.last.location.key", "com.itangcent.debug.loadOrSave.path")
+
         builder.bind(Debugger::class) { it.singleton() }
 
     }

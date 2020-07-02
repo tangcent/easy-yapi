@@ -30,7 +30,7 @@ open class DefaultRequestHelper : RequestHelper {
         if (model is Map<*, *>) {
             val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
             val default = model[Attrs.DEFAULT_VALUE_ATTR] as Map<*, *>?
-            model.forEach { k, v ->
+            model.forEach { (k, v) ->
                 addFormParam(
                         request, k.toString(), (default?.get(k) ?: v).toPrettyString(),
                         KVUtils.getUltimateComment(comment, k)

@@ -344,7 +344,7 @@ open class PostmanFormatter {
                 info["name"] = resource.name!!
                 info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
             } else {
-                val lines = attr!!.lines()
+                val lines = attr.lines()
                 if (lines.size == 1) {
                     info["name"] = attr
                     info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"

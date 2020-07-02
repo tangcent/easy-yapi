@@ -165,7 +165,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         if (defaultVal != null) {
             requestHelper!!.addParam(request,
-                    paramName!!
+                    paramName
                     , defaultVal.toString()
                     , required
                     , ultimateComment)
@@ -407,6 +407,6 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
     }
 
-//endregion process spring annotation-------------------------------------------------------------------
+    //endregion process spring annotation-------------------------------------------------------------------
 
 }
