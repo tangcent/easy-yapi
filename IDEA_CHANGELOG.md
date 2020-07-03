@@ -121,4 +121,11 @@
     * fix: request body preview-language in postman example [(#281)](https://github.com/tangcent/easy-api/pull/281)
     
     * opti: support new rule `postman.prerequest`&`postman.test` [(#283)](https://github.com/tangcent/easy-api/pull/283)
+    
     * opti: support new rule tool `config` [(#284)](https://github.com/tangcent/easy-api/pull/284)
+    
+    * feat: support new rule `export.after` [(#287)](https://github.com/tangcent/easy-api/pull/287)
+   
+    * feat: new tool `files` [(#289)](https://github.com/tangcent/easy-api/pull/289)
+    
+    * feat: `Debug` enhancement [(#290)](https://github.com/tangcent/easy-api/pull/290)
