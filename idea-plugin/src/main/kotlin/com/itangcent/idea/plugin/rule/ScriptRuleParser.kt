@@ -23,6 +23,7 @@ import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitField
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
+import com.itangcent.intellij.jvm.standard.StandardJvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
 import com.itangcent.intellij.psi.JsonOption
@@ -276,7 +277,9 @@ abstract class ScriptRuleParser : RuleParser {
      * @see ScriptPsiTypeContext
      */
     @ScriptTypeName("class")
-    open inner class ScriptPsiClassContext(protected val psiClass: PsiClass) : BaseScriptRuleContext(psiClass) {
+    open inner class ScriptPsiClassContext(protected val psiClass: PsiClass)
+        : BaseScriptRuleContext(psiClass), ScriptClassContext {
+
         override fun contextType(): String {
             return "class"
         }
@@ -286,7 +289,7 @@ abstract class ScriptRuleParser : RuleParser {
                     .mapToTypedArray { ScriptPsiMethodContext(it) }
         }
 
-        fun methodCnt(): Int {
+        override fun methodCnt(): Int {
             return jvmClassHelper!!.getAllMethods(psiClass).size
         }
 
@@ -295,11 +298,11 @@ abstract class ScriptRuleParser : RuleParser {
                     .mapToTypedArray { ScriptPsiFieldContext(it) }
         }
 
-        fun fieldCnt(): Int {
+        override fun fieldCnt(): Int {
             return jvmClassHelper!!.getAllFields(psiClass).size
         }
 
-        fun isExtend(superClass: String): Boolean {
+        override fun isExtend(superClass: String): Boolean {
             var currClass: PsiClass? = psiClass
             do {
                 if (superClass == currClass!!.qualifiedName) {
@@ -310,16 +313,20 @@ abstract class ScriptRuleParser : RuleParser {
             return false
         }
 
-        fun isMap(): Boolean {
+        override fun isMap(): Boolean {
             return jvmClassHelper!!.isMap(PsiTypesUtil.getClassType(psiClass))
         }
 
-        fun isCollection(): Boolean {
+        override fun isCollection(): Boolean {
             return jvmClassHelper!!.isCollection(PsiTypesUtil.getClassType(psiClass))
         }
 
-        fun isArray(): Boolean {
+        override fun isArray(): Boolean {
             return psiClass.qualifiedName?.endsWith("[]") ?: false
+        }
+
+        override fun isNormalType(): Boolean {
+            return jvmClassHelper!!.isNormalType(name())
         }
 
         @ScriptIgnore
@@ -659,6 +666,7 @@ abstract class ScriptRuleParser : RuleParser {
 
     @ScriptTypeName("class")
     interface ScriptClassContext {
+
         fun isExtend(superClass: String): Boolean
 
         fun isMap(): Boolean
@@ -666,6 +674,12 @@ abstract class ScriptRuleParser : RuleParser {
         fun isCollection(): Boolean
 
         fun isArray(): Boolean
+
+        fun isNormalType(): Boolean
+
+        fun fieldCnt(): Int
+
+        fun methodCnt(): Int
     }
 
     /**
@@ -746,6 +760,24 @@ abstract class ScriptRuleParser : RuleParser {
 
         override fun isArray(): Boolean {
             return duckType is ArrayDuckType
+        }
+
+        override fun isNormalType(): Boolean {
+            return jvmClassHelper!!.isNormalType(name())
+        }
+
+        override fun fieldCnt(): Int {
+            return (getResource() as? PsiClass)?.let { psiElement ->
+                return@let jvmClassHelper!!.getAllFields(psiElement)
+                        .mapToTypedArray { ScriptPsiFieldContext(it) }
+            }?.size ?: 0
+        }
+
+        override fun methodCnt(): Int {
+            return (getResource() as? PsiClass)?.let { psiElement ->
+                return@let jvmClassHelper!!.getAllMethods(psiElement)
+                        .mapToTypedArray { ScriptPsiMethodContext(it) }
+            }?.size ?: 0
         }
 
         fun toJson(readGetter: Boolean): String? {
@@ -862,6 +894,24 @@ abstract class ScriptRuleParser : RuleParser {
             return duckType is ArrayDuckType
         }
 
+        override fun isNormalType(): Boolean {
+            return jvmClassHelper!!.isNormalType(name())
+        }
+
+        override fun fieldCnt(): Int {
+            return (getResource() as? PsiClass)?.let { psiElement ->
+                return@let jvmClassHelper!!.getAllFields(psiElement)
+                        .mapToTypedArray { ScriptPsiFieldContext(it) }
+            }?.size ?: 0
+        }
+
+        override fun methodCnt(): Int {
+            return (getResource() as? PsiClass)?.let { psiElement ->
+                return@let jvmClassHelper!!.getAllMethods(psiElement)
+                        .mapToTypedArray { ScriptPsiMethodContext(it) }
+            }?.size ?: 0
+        }
+
         fun toJson(readGetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
             return psiClassHelper!!.getTypeObject(duckType, resource,
@@ -872,8 +922,6 @@ abstract class ScriptRuleParser : RuleParser {
         override fun toString(): String {
             return name()
         }
-
-
     }
 }
 
