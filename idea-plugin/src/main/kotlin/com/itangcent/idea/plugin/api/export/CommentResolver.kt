@@ -31,9 +31,6 @@ class CommentResolver {
     protected val jvmClassHelper: JvmClassHelper? = null
 
     @Inject
-    protected val psiResolver: PsiResolver? = null
-
-    @Inject
     protected val psiClassHelper: PsiClassHelper? = null
 
     @Inject

@@ -9,6 +9,7 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
+import com.itangcent.common.model.hasForm
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
@@ -56,17 +57,13 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
     override fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?) {
 
+        //RequestBody(json)
         if (isRequestBody(param.psi())) {
-            requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
-            requestHelper.addHeader(request, "Content-Type", "application/json")
-            requestHelper.setJsonBody(
-                    request,
-                    typeObject,
-                    paramDesc
-            )
+            setRequestBody(request, typeObject, paramDesc)
             return
         }
 
+        //ModelAttr(form)
         if (isModelAttr(param.psi())) {
             if (request.method == HttpMethod.GET) {
                 addParamAsQuery(param, typeObject, request)
@@ -87,6 +84,8 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 ultimateComment = "$ultimateComment $it"
             }
         }
+
+        //head
         val requestHeaderAnn = findRequestHeader(param.psi())
         if (requestHeaderAnn != null) {
 
@@ -117,6 +116,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
+        //path
         val pathVariableAnn = findPathVariable(param.psi())
         if (pathVariableAnn != null) {
 
@@ -160,7 +160,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (paramName.isNullOrBlank()) {
-            paramName = param.name()!!
+            paramName = param.name()
         }
 
         if (defaultVal != null) {
@@ -169,14 +169,51 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                     , defaultVal.toString()
                     , required
                     , ultimateComment)
-        } else {
-            when {
-                request.method == HttpMethod.GET -> addParamAsQuery(param, typeObject, request, ultimateComment)
-                typeObject.hasFile() -> addParamAsForm(param, request, typeObject, ultimateComment)
-                else -> addParamAsQuery(param, typeObject, request, ultimateComment)
+            return
+        }
+
+        if (request.method == HttpMethod.GET) {
+            addParamAsQuery(param, typeObject, request, ultimateComment)
+            return
+        }
+
+        val paramType = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_WITHOUT_ANN_TYPE,
+                param)
+        if (paramType.notNullOrBlank()) {
+            when (paramType) {
+                "body" -> {
+                    setRequestBody(request, typeObject, ultimateComment)
+                    return
+                }
+                "form" -> {
+                    addParamAsForm(param, request, typeObject, ultimateComment)
+                    return
+                }
+                "query" -> {
+                    addParamAsQuery(param, typeObject, request, ultimateComment)
+                    return
+                }
+                else -> {
+                    logger!!.warn("Unknown param type:$paramType." +
+                            "Return of rule `param.without.ann.type`" +
+                            "should be `body/form/query`")
+                }
             }
         }
 
+
+        if (typeObject.hasFile()) {
+            addParamAsForm(param, request, typeObject, ultimateComment)
+            return
+        }
+
+        if (request.hasForm()) {
+            addParamAsForm(param, request, typeObject, ultimateComment)
+            return
+        }
+
+        //else
+        addParamAsQuery(param, typeObject, request, ultimateComment)
     }
 
     override fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {

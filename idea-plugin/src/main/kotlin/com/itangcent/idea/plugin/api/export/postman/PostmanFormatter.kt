@@ -143,9 +143,9 @@ open class PostmanFormatter {
 
         item["name"] = request.name
 
-        if (request.hasAnyExt(ClassExportRuleKeys.POST_PREREQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
+        if (request.hasAnyExt(ClassExportRuleKeys.POST_PRE_REQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
             val events = ArrayList<Any>()
-            val preRequest = request.getExt<String>(ClassExportRuleKeys.POST_PREREQUEST.name())
+            val preRequest = request.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name())
             if (preRequest.notNullOrBlank()) {
                 events.add(KV.any().set("listen", "prerequest")
                         .set("script", KV.any()
