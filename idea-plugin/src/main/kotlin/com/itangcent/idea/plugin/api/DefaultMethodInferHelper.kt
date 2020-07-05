@@ -235,7 +235,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
     ): Any? {
         actionContext!!.checkStatus()
         try {
-            if (psiMethod.hasModifier(JvmModifier.STATIC)) {
+            if (psiMethod.hasModifierProperty("static")) {
                 val unboxedArgs = unboxArgs(args)
                 val key = psiMethod to unboxedArgs
                 if (staticMethodCache.containsKey(key)) {
@@ -1118,7 +1118,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     val args = psiExpression.argumentList?.expressions?.mapToTypedArray { processExpression(it) }
 
                     var caller: Any? = null
-                    if (!callMethod.hasModifier(JvmModifier.STATIC)) {
+                    if (!callMethod.hasModifierProperty("static")) {
                         caller = findCaller(psiExpression)
                     }
                     val ret = DirectVariable {
@@ -1432,7 +1432,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
             fullThis()
 
-            if (!psiMethod.hasModifier(JvmModifier.STATIC)) {
+            if (!psiMethod.hasModifierProperty("static")) {
                 psiMethod.containingClass?.let { initFields(it) }
             }
 
@@ -1565,7 +1565,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 is PsiCallExpression -> {
                     val callMethod = psiExpression.resolveMethod() ?: return null
                     val args = psiExpression.argumentList?.expressions?.mapToTypedArray { processExpression(it) }
-                    return if (callMethod.hasModifier(JvmModifier.STATIC)) {//only static can be call
+                    return if (callMethod.hasModifierProperty("static")) {//only static can be call
                         DirectVariable { methodReturnInferHelper.inferReturn(callMethod, null, args) }
                     } else {
                         throw IllegalArgumentException("Quickly Infer Failed")
