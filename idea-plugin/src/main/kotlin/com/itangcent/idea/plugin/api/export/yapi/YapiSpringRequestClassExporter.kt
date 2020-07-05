@@ -35,7 +35,6 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         request.setOpen(open)
     }
 
-
     override fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?) {
 
         if (isRequestBody(param.psi())) {
@@ -81,7 +80,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             }
 
             var required = findParamRequired(requestHeaderAnn)
-            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
                 required = true
             }
 
@@ -160,18 +159,61 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
         if (defaultVal != null) {
             requestHelper!!.addParam(request,
-                    paramName!!
+                    paramName
                     , defaultVal.toString()
                     , required
                     , ultimateComment).setDemo(demo)
-        } else {
-            (when {
-                request.method == HttpMethod.GET -> addParamAsQuery(param, typeObject, request, ultimateComment)
-                typeObject.hasFile() -> addParamAsForm(param, request, typeObject, ultimateComment)
-                else -> addParamAsQuery(param, typeObject, request, ultimateComment)
-            }).trySetDemo(demo)
+            return
         }
 
+        if (request.method == HttpMethod.GET) {
+            addParamAsQuery(param, typeObject, request, ultimateComment)
+                    .trySetDemo(demo)
+            return
+        }
+
+        val paramType = ruleComputer.computer(ClassExportRuleKeys.PARAM_WITHOUT_ANN_TYPE,
+                param)
+        if (paramType.notNullOrBlank()) {
+            when (paramType) {
+                "body" -> {
+                    setRequestBody(request, typeObject, ultimateComment)
+                    return
+                }
+                "form" -> {
+                    addParamAsForm(param, request, typeObject, ultimateComment)
+                            .trySetDemo(demo)
+                    return
+                }
+                "query" -> {
+                    addParamAsQuery(param, typeObject, request, ultimateComment)
+                            .trySetDemo(demo)
+                    return
+                }
+                else -> {
+                    logger!!.warn("Unknown param type:$paramType." +
+                            "Return of rule `param.without.ann.type`" +
+                            "should be `body/form/query`")
+                }
+            }
+        }
+
+
+        if (typeObject.hasFile()) {
+            addParamAsForm(param, request, typeObject, ultimateComment)
+                    .trySetDemo(demo)
+            return
+        }
+
+        if (request.hasForm()) {
+            addParamAsForm(param, request, typeObject, ultimateComment)
+                    .trySetDemo(demo)
+            return
+        }
+
+        //else
+        addParamAsQuery(param, typeObject, request, ultimateComment)
+                .trySetDemo(demo)
     }
 
     @Suppress("UNCHECKED_CAST")
