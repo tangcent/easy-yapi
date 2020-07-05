@@ -9,11 +9,10 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
-import com.itangcent.common.model.hasForm
+import com.itangcent.common.model.canHasForm
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
-import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
@@ -207,7 +206,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
-        if (request.hasForm()) {
+        if (request.canHasForm()) {
             addParamAsForm(param, request, typeObject, ultimateComment)
             return
         }

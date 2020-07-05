@@ -47,13 +47,12 @@ fun Request.getContentType(): String? {
     return this.header("content-type")
 }
 
-fun Request.hasForm(): Boolean {
+fun Request.canHasForm(): Boolean {
     if (this.method == "GET") {
         return false
     }
-    val contentType = this.getContentType() ?: return false
-    return (contentType.contains("application/x-www-form-urlencoded")
-            || contentType.contains("multipart/form-data"))
+    val contentType = this.getContentType() ?: return true
+    return !contentType.contains("application/json")
 }
 
 fun Request.header(name: String): String? {
@@ -68,7 +67,7 @@ fun Request.header(name: String): String? {
             .firstOrNull()
 }
 
-fun Request.hasBody(): Boolean {
+fun Request.hasBodyOrForm(): Boolean {
     return this.method != null && this.method != HttpMethod.GET
 }
 
