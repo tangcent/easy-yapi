@@ -98,6 +98,14 @@ object ClassExportRuleKeys {
     )
 
     /**
+     * The content-type of the api.
+     */
+    val METHOD_CONTENT_TYPE: RuleKey<String> = SimpleRuleKey(
+            "method.content.type", StringRule::class,
+            StringRuleMode.SINGLE
+    )
+
+    /**
      * name of api
      */
     val API_NAME: RuleKey<String> = SimpleRuleKey(
@@ -144,7 +152,7 @@ object ClassExportRuleKeys {
      *
      * @see [https://learning.postman.com/docs/postman/scripts/pre-request-scripts]
      */
-    val POST_PREREQUEST: RuleKey<String> = SimpleRuleKey(
+    val POST_PRE_REQUEST: RuleKey<String> = SimpleRuleKey(
             "postman.prerequest", StringRule::class,
             StringRuleMode.MERGE
     )

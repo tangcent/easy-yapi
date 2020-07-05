@@ -9,6 +9,7 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
+import com.itangcent.common.model.hasForm
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
@@ -160,7 +161,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (paramName.isNullOrBlank()) {
-            paramName = param.name()!!
+            paramName = param.name()
         }
 
         if (defaultVal != null) {
@@ -172,7 +173,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         } else {
             when {
                 request.method == HttpMethod.GET -> addParamAsQuery(param, typeObject, request, ultimateComment)
-                typeObject.hasFile() -> addParamAsForm(param, request, typeObject, ultimateComment)
+                typeObject.hasFile() || request.hasForm() -> addParamAsForm(param, request, typeObject, ultimateComment)
                 else -> addParamAsQuery(param, typeObject, request, ultimateComment)
             }
 

@@ -47,6 +47,15 @@ fun Request.getContentType(): String? {
     return this.header("content-type")
 }
 
+fun Request.hasForm(): Boolean {
+    if (this.method == "GET") {
+        return false
+    }
+    val contentType = this.getContentType() ?: return false
+    return (contentType.contains("application/x-www-form-urlencoded")
+            || contentType.contains("multipart/form-data"))
+}
+
 fun Request.header(name: String): String? {
     if (this.headers.isNullOrEmpty()) {
         return null
