@@ -102,7 +102,7 @@ abstract class ScriptRuleParser : RuleParser {
 
     }
 
-    override fun contextOf(target: kotlin.Any, context: com.intellij.psi.PsiElement?): RuleContext {
+    override fun contextOf(target: Any, context: PsiElement?): RuleContext {
         return when (target) {
             is PsiClass -> ScriptPsiClassContext(target)
             is PsiField -> ScriptPsiFieldContext(target)

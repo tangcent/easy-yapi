@@ -518,6 +518,17 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     abstract fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?)
 
+    protected fun setRequestBody(request: Request, typeObject: Any?, paramDesc: String?) {
+        requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
+        requestHelper.addHeader(request, "Content-Type", "application/json")
+        requestHelper.setJsonBody(
+                request,
+                typeObject,
+                paramDesc
+        )
+        return
+    }
+
     @Suppress("UNCHECKED_CAST")
     protected fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String? = null) {
 
