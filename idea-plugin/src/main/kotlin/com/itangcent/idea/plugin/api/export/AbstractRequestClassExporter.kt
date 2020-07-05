@@ -182,6 +182,13 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }, {
             requestHelper!!.appendDesc(request, it)
         })
+
+        //computer content-type.
+        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_CONTENT_TYPE, method)
+                ?.let {
+                    requestHelper!!.setContentType(request, it)
+                }
+
     }
 
     protected open fun readParamDoc(explicitParameter: ExplicitParameter): String? {
@@ -440,12 +447,11 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 .methods()
                 .stream()
                 .filter { !jvmClassHelper!!.isBasicMethod(it.psi().name) }
-                .filter { !it.psi().hasModifier(JvmModifier.STATIC) }
+                .filter { !it.psi().hasModifierProperty("static") }
                 .filter { !it.psi().isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
     }
-
 
     private fun processMethodParameters(method: ExplicitMethod, request: Request) {
 
@@ -511,6 +517,17 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     abstract fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?)
+
+    protected fun setRequestBody(request: Request, typeObject: Any?, paramDesc: String?) {
+        requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
+        requestHelper.addHeader(request, "Content-Type", "application/json")
+        requestHelper.setJsonBody(
+                request,
+                typeObject,
+                paramDesc
+        )
+        return
+    }
 
     @Suppress("UNCHECKED_CAST")
     protected open fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String? = null): Any? {

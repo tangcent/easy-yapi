@@ -140,3 +140,9 @@
     
     * opti: input new token if the old one be deleted. [(#192)](https://github.com/tangcent/easy-yapi/pull/192)
                                                           
+    
+    * feat: support new rule `export.after` [(#287)](https://github.com/tangcent/easy-api/pull/287)
+   
+    * feat: new tool `files` [(#289)](https://github.com/tangcent/easy-api/pull/289)
+    
+    * feat: `Debug` enhancement [(#290)](https://github.com/tangcent/easy-api/pull/290)
