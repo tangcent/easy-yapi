@@ -329,7 +329,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         jvmClassHelper!!.getAllMethods(cls)
                 .filter { !jvmClassHelper.isBasicMethod(it.name) }
-                .filter { !it.hasModifier(JvmModifier.STATIC) }
+                .filter { !it.hasModifierProperty("static") }
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)

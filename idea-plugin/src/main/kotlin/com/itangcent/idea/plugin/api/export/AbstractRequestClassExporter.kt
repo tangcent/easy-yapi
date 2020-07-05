@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
-import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
@@ -472,7 +471,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                 if (jvmClassHelper!!.isInheritor(unboxType, *SpringClassName.SPRING_REQUEST_RESPONSE)) {
                     //ignore @HttpServletRequest and @HttpServletResponse
-
                     continue
                 }
 
@@ -510,7 +508,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             requestHelper!!.setMethod(request, defaultHttpMethod ?: HttpMethod.GET)
         }
 
-        if (request.hasBody()) {
+        if (request.hasBodyOrForm()) {
             requestHelper!!.addHeaderIfMissed(request, "Content-Type", "application/x-www-form-urlencoded")
         }
 
@@ -539,7 +537,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
-                if (request.hasBody() && formExpanded() && typeObject.isComplex()
+                if (request.hasBodyOrForm() && formExpanded() && typeObject.isComplex()
                         && requestHelper!!.addHeaderIfMissed(request, "Content-Type", "multipart/form-data")) {
                     typeObject.flatValid(object : FieldConsumer {
                         override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {

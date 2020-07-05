@@ -254,7 +254,7 @@ class ApiCallDialog : JDialog() {
 
         autoComputer.bindEnable(this.requestBodyTextArea!!)
                 .with(this::currRequest)
-                .eval { it?.hasBody() ?: false }
+                .eval { it?.hasBodyOrForm() ?: false }
 
         autoComputer.bind(this.requestBodyTextArea!!)
                 .with(this::currRequest)
@@ -362,7 +362,7 @@ class ApiCallDialog : JDialog() {
     }
 
     private fun formatRequestBody(request: Request?): String {
-        if (request?.hasBody() == true) {
+        if (request?.hasBodyOrForm() == true) {
             return when {
                 request.body != null -> RequestUtils.parseRawBody(request.body!!)
                 else -> ""
