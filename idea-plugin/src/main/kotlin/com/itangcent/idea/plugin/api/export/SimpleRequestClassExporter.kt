@@ -131,7 +131,7 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
         jvmClassHelper!!.getAllMethods(cls)
                 .stream()
                 .filter { !jvmClassHelper.isBasicMethod(it.name) }
-                .filter { !it.hasModifier(JvmModifier.STATIC) }
+                .filter { !it.hasModifierProperty("static") }
                 .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)

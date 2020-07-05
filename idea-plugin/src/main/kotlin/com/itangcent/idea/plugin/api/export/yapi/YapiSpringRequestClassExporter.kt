@@ -205,7 +205,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             return
         }
 
-        if (request.hasForm()) {
+        if (request.canHasForm()) {
             addParamAsForm(param, request, typeObject, ultimateComment)
                     .trySetDemo(demo)
             return
@@ -226,7 +226,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                         ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
-                if (request.hasBody() && formExpanded() && typeObject.isComplex()
+                if (request.hasBodyOrForm() && formExpanded() && typeObject.isComplex()
                         && requestHelper!!.addHeaderIfMissed(request, "Content-Type", "multipart/form-data")) {
                     typeObject.flatValid(object : FieldConsumer {
                         override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
