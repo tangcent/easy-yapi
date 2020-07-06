@@ -106,11 +106,12 @@ object ClassExportRuleKeys {
     )
 
     /**
-     * The type of the param without annotations(@RequestBody/@ModelAttribute/...).
+     * The type of the param in http request.
+     * Param with annotation like @RequestBody/@ModelAttribute/... do not compute this rule.
      * should return body/form/query
      */
-    val PARAM_WITHOUT_ANN_TYPE: RuleKey<String> = SimpleRuleKey(
-            "param.without.ann.type", StringRule::class,
+    val PARAM_HTTP_TYPE: RuleKey<String> = SimpleRuleKey(
+            "param.http.type", StringRule::class,
             StringRuleMode.SINGLE
     )
 

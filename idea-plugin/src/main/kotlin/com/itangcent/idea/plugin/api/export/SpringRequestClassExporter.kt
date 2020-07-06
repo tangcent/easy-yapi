@@ -6,10 +6,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.model.Header
-import com.itangcent.common.model.Request
-import com.itangcent.common.model.URL
-import com.itangcent.common.model.canHasForm
+import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
@@ -64,14 +61,14 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         //ModelAttr(form)
         if (isModelAttr(param.psi())) {
+            if (request.method == HttpMethod.NO_METHOD) {
+                requestHelper!!.setMethod(request,
+                        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
+                                ?: HttpMethod.POST)
+            }
             if (request.method == HttpMethod.GET) {
                 addParamAsQuery(param, typeObject, request)
             } else {
-                if (request.method == HttpMethod.NO_METHOD) {
-                    requestHelper!!.setMethod(request,
-                            ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
-                                    ?: HttpMethod.POST)
-                }
                 addParamAsForm(param, request, typeObject, paramDesc)
             }
             return
@@ -129,6 +126,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
+        //form/body/query
+        var paramType: String? = null
+
         var paramName: String? = null
         var required = false
         var defaultVal: Any? = null
@@ -146,6 +146,10 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                     || defaultVal == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
                 defaultVal = ""
             }
+
+            if (request.method == "GET") {
+                paramType = "query"
+            }
         }
 
         val readParamDefaultValue = readParamDefaultValue(param)
@@ -162,22 +166,16 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             paramName = param.name()
         }
 
-        if (defaultVal != null) {
-            requestHelper!!.addParam(request,
-                    paramName
-                    , defaultVal.toString()
-                    , required
-                    , ultimateComment)
-            return
-        }
-
         if (request.method == HttpMethod.GET) {
             addParamAsQuery(param, typeObject, request, ultimateComment)
             return
         }
 
-        val paramType = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_WITHOUT_ANN_TYPE,
-                param)
+        if (paramType.isNullOrBlank()) {
+            paramType = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
+                    param)
+        }
+
         if (paramType.notNullOrBlank()) {
             when (paramType) {
                 "body" -> {
@@ -200,9 +198,17 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             }
         }
 
-
         if (typeObject.hasFile()) {
             addParamAsForm(param, request, typeObject, ultimateComment)
+            return
+        }
+
+        if (defaultVal != null) {
+            requestHelper!!.addParam(request,
+                    paramName
+                    , defaultVal.toString()
+                    , required
+                    , ultimateComment)
             return
         }
 
