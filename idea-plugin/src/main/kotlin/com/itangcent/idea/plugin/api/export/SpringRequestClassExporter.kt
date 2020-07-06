@@ -90,22 +90,16 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 headName = param.name()
             }
 
-            var required = findParamRequired(requestHeaderAnn)
+            var required = findRequired(requestHeaderAnn)
             if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
                 required = true
             }
 
-            var defaultValue = requestHeaderAnn["defaultValue"]
-
-            if (defaultValue == null
-                    || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                    || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
-                defaultValue = ""
-            }
+            val defaultValue = findDefaultValue(requestHeaderAnn) ?: ""
 
             val header = Header()
             header.name = headName?.toString()
-            header.value = defaultValue.toString()
+            header.value = defaultValue
             header.desc = ultimateComment
             header.required = required
             requestHelper!!.addHeader(request, header)
@@ -126,6 +120,36 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
+        //cookie
+        val cookieValueAnn = findCookieValue(param.psi())
+        if (cookieValueAnn != null) {
+
+            var cookieName = cookieValueAnn["value"]?.toString()
+
+            if (cookieName == null) {
+                cookieName = param.name()
+            }
+
+            var required = findRequired(cookieValueAnn)
+            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                required = true
+            }
+
+            requestHelper!!.appendDesc(request, if (required) {
+                "\nNeed cookie:$cookieName ($ultimateComment)"
+            } else {
+                val defaultValue = findDefaultValue(cookieValueAnn)
+                if (defaultValue.isNullOrBlank()) {
+                    "\nCookie:$cookieName ($ultimateComment)"
+                } else {
+                    "\nCookie:$cookieName=$defaultValue ($ultimateComment)"
+                }
+            })
+
+            return
+        }
+
+
         //form/body/query
         var paramType: String? = null
 
@@ -137,15 +161,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         if (requestParamAnn != null) {
             paramName = findParamName(requestParamAnn)
-            required = findParamRequired(requestParamAnn)
+            required = findRequired(requestParamAnn)
 
-            defaultVal = requestParamAnn["defaultValue"]
-
-            if (defaultVal == null
-                    || defaultVal == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                    || defaultVal == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
-                defaultVal = ""
-            }
+            defaultVal = findDefaultValue(requestParamAnn) ?: ""
 
             if (request.method == "GET") {
                 paramType = "query"
@@ -433,6 +451,10 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         return annotationHelper!!.findAnnMap(parameter, SpringClassName.PATH_VARIABLE_ANNOTATION)
     }
 
+    private fun findCookieValue(parameter: PsiParameter): Map<String, Any?>? {
+        return annotationHelper!!.findAnnMap(parameter, SpringClassName.COOKIE_VALUE_ANNOTATION)
+    }
+
     private fun findRequestParam(parameter: PsiParameter): Map<String, Any?>? {
         return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_PARAM_ANNOTATION)
     }
@@ -441,12 +463,22 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         return requestParamAnn.any("name", "value")?.toString()
     }
 
-    private fun findParamRequired(requestParamAnn: Map<String, Any?>): Boolean {
-        val required = requestParamAnn["required"]?.toString()
+    private fun findRequired(annMap: Map<String, Any?>): Boolean {
+        val required = annMap["required"]?.toString()
         return when {
             required?.contains("false") == true -> false
             else -> true
         }
+    }
+
+    private fun findDefaultValue(annMap: Map<String, Any?>): String? {
+        val defaultValue = annMap["defaultValue"]?.toString()
+        if (defaultValue == null
+                || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+                || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
+            return null
+        }
+        return defaultValue
     }
 
     //endregion process spring annotation-------------------------------------------------------------------
