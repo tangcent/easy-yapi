@@ -528,13 +528,14 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String? = null) {
+    protected fun addParamAsQuery(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null) {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addFormFileParam(
                         request, parameter.name(),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
                 if (request.hasBodyOrForm() && formExpanded() && typeObject.isComplex()
@@ -584,7 +585,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             } else {
                 requestHelper!!.addParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        ?: false, paramDesc
                 )
             }
         } catch (e: Exception) {
@@ -593,7 +595,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null) {
+    protected fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null) {
 
         try {
             if (typeObject == Magics.FILE_STR) {
@@ -647,7 +649,8 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             } else {
                 requestHelper!!.addFormParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        ?: false, paramDesc
                 )
             }
         } catch (e: Exception) {

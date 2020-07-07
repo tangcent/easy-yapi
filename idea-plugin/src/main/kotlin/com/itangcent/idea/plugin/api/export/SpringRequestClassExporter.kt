@@ -6,7 +6,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.model.*
+import com.itangcent.common.model.Header
+import com.itangcent.common.model.Request
+import com.itangcent.common.model.URL
+import com.itangcent.common.model.canHasForm
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
@@ -67,7 +70,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                                 ?: HttpMethod.POST)
             }
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, typeObject, request)
+                addParamAsQuery(param, request, typeObject)
             } else {
                 addParamAsForm(param, request, typeObject, paramDesc)
             }
@@ -154,7 +157,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         var paramType: String? = null
 
         var paramName: String? = null
-        var required = false
+        var required: Boolean? = null
         var defaultVal: Any? = null
 
         val requestParamAnn = findRequestParam(param.psi())
@@ -163,7 +166,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             paramName = findParamName(requestParamAnn)
             required = findRequired(requestParamAnn)
 
-            defaultVal = findDefaultValue(requestParamAnn) ?: ""
+            defaultVal = findDefaultValue(requestParamAnn)
 
             if (request.method == "GET") {
                 paramType = "query"
@@ -176,7 +179,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             defaultVal = readParamDefaultValue
         }
 
-        if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+        if (required == null && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
             required = true
         }
 
@@ -185,7 +188,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(param, typeObject, request, ultimateComment)
+            addParamAsQuery(param, request, typeObject, ultimateComment)
             return
         }
 
@@ -201,11 +204,11 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                     return
                 }
                 "form" -> {
-                    addParamAsForm(param, request, typeObject, ultimateComment)
+                    addParamAsForm(param, request, defaultVal ?: typeObject, ultimateComment, required)
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(param, typeObject, request, ultimateComment)
+                    addParamAsQuery(param, request, defaultVal ?: typeObject, ultimateComment, required)
                     return
                 }
                 else -> {
@@ -225,7 +228,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             requestHelper!!.addParam(request,
                     paramName
                     , defaultVal.toString()
-                    , required
+                    , required ?: false
                     , ultimateComment)
             return
         }
@@ -236,7 +239,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         //else
-        addParamAsQuery(param, typeObject, request, ultimateComment)
+        addParamAsQuery(param, request, typeObject, ultimateComment)
     }
 
     override fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
