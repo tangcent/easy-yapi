@@ -6,10 +6,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.model.Header
-import com.itangcent.common.model.Request
-import com.itangcent.common.model.URL
-import com.itangcent.common.model.canHasForm
+import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
@@ -64,14 +61,14 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         //ModelAttr(form)
         if (isModelAttr(param.psi())) {
+            if (request.method == HttpMethod.NO_METHOD) {
+                requestHelper!!.setMethod(request,
+                        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
+                                ?: HttpMethod.POST)
+            }
             if (request.method == HttpMethod.GET) {
                 addParamAsQuery(param, typeObject, request)
             } else {
-                if (request.method == HttpMethod.NO_METHOD) {
-                    requestHelper!!.setMethod(request,
-                            ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
-                                    ?: HttpMethod.POST)
-                }
                 addParamAsForm(param, request, typeObject, paramDesc)
             }
             return
@@ -93,22 +90,16 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                 headName = param.name()
             }
 
-            var required = findParamRequired(requestHeaderAnn)
+            var required = findRequired(requestHeaderAnn)
             if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
                 required = true
             }
 
-            var defaultValue = requestHeaderAnn["defaultValue"]
-
-            if (defaultValue == null
-                    || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                    || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
-                defaultValue = ""
-            }
+            val defaultValue = findDefaultValue(requestHeaderAnn) ?: ""
 
             val header = Header()
             header.name = headName?.toString()
-            header.value = defaultValue.toString()
+            header.value = defaultValue
             header.desc = ultimateComment
             header.required = required
             requestHelper!!.addHeader(request, header)
@@ -129,6 +120,39 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
+        //cookie
+        val cookieValueAnn = findCookieValue(param.psi())
+        if (cookieValueAnn != null) {
+
+            var cookieName = cookieValueAnn["value"]?.toString()
+
+            if (cookieName == null) {
+                cookieName = param.name()
+            }
+
+            var required = findRequired(cookieValueAnn)
+            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                required = true
+            }
+
+            requestHelper!!.appendDesc(request, if (required) {
+                "\nNeed cookie:$cookieName ($ultimateComment)"
+            } else {
+                val defaultValue = findDefaultValue(cookieValueAnn)
+                if (defaultValue.isNullOrBlank()) {
+                    "\nCookie:$cookieName ($ultimateComment)"
+                } else {
+                    "\nCookie:$cookieName=$defaultValue ($ultimateComment)"
+                }
+            })
+
+            return
+        }
+
+
+        //form/body/query
+        var paramType: String? = null
+
         var paramName: String? = null
         var required = false
         var defaultVal: Any? = null
@@ -137,14 +161,12 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         if (requestParamAnn != null) {
             paramName = findParamName(requestParamAnn)
-            required = findParamRequired(requestParamAnn)
+            required = findRequired(requestParamAnn)
 
-            defaultVal = requestParamAnn["defaultValue"]
+            defaultVal = findDefaultValue(requestParamAnn) ?: ""
 
-            if (defaultVal == null
-                    || defaultVal == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                    || defaultVal == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
-                defaultVal = ""
+            if (request.method == "GET") {
+                paramType = "query"
             }
         }
 
@@ -162,22 +184,16 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             paramName = param.name()
         }
 
-        if (defaultVal != null) {
-            requestHelper!!.addParam(request,
-                    paramName
-                    , defaultVal.toString()
-                    , required
-                    , ultimateComment)
-            return
-        }
-
         if (request.method == HttpMethod.GET) {
             addParamAsQuery(param, typeObject, request, ultimateComment)
             return
         }
 
-        val paramType = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_WITHOUT_ANN_TYPE,
-                param)
+        if (paramType.isNullOrBlank()) {
+            paramType = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
+                    param)
+        }
+
         if (paramType.notNullOrBlank()) {
             when (paramType) {
                 "body" -> {
@@ -200,9 +216,17 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             }
         }
 
-
         if (typeObject.hasFile()) {
             addParamAsForm(param, request, typeObject, ultimateComment)
+            return
+        }
+
+        if (defaultVal != null) {
+            requestHelper!!.addParam(request,
+                    paramName
+                    , defaultVal.toString()
+                    , required
+                    , ultimateComment)
             return
         }
 
@@ -427,6 +451,10 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         return annotationHelper!!.findAnnMap(parameter, SpringClassName.PATH_VARIABLE_ANNOTATION)
     }
 
+    protected fun findCookieValue(parameter: PsiParameter): Map<String, Any?>? {
+        return annotationHelper!!.findAnnMap(parameter, SpringClassName.COOKIE_VALUE_ANNOTATION)
+    }
+
     protected fun findRequestParam(parameter: PsiParameter): Map<String, Any?>? {
         return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_PARAM_ANNOTATION)
     }
@@ -435,12 +463,22 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         return requestParamAnn.any("name", "value")?.toString()
     }
 
-    protected fun findParamRequired(requestParamAnn: Map<String, Any?>): Boolean {
-        val required = requestParamAnn["required"]?.toString()
+    protected fun findRequired(annMap: Map<String, Any?>): Boolean {
+        val required = annMap["required"]?.toString()
         return when {
             required?.contains("false") == true -> false
             else -> true
         }
+    }
+
+    protected fun findDefaultValue(annMap: Map<String, Any?>): String? {
+        val defaultValue = annMap["defaultValue"]?.toString()
+        if (defaultValue == null
+                || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+                || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
+            return null
+        }
+        return defaultValue
     }
 
     //endregion process spring annotation-------------------------------------------------------------------

@@ -37,6 +37,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
     override fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?) {
 
+        //RequestBody(json)
         if (isRequestBody(param.psi())) {
             requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
             requestHelper.addHeader(request, "Content-Type", "application/json")
@@ -48,15 +49,16 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             return
         }
 
+        //ModelAttr(form)
         if (isModelAttr(param.psi())) {
+            if (request.method == HttpMethod.NO_METHOD) {
+                requestHelper!!.setMethod(request,
+                        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
+                                ?: HttpMethod.POST)
+            }
             if (request.method == HttpMethod.GET) {
                 addParamAsQuery(param, typeObject, request)
             } else {
-                if (request.method == HttpMethod.NO_METHOD) {
-                    requestHelper!!.setMethod(request,
-                            ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
-                                    ?: HttpMethod.POST)
-                }
                 addParamAsForm(param, request, typeObject, paramDesc)
             }
             return
@@ -71,6 +73,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
         val demo = ruleComputer!!.computer(YapiClassExportRuleKeys.PARAM_DEMO, param)
 
+        //head
         val requestHeaderAnn = findRequestHeader(param.psi())
         if (requestHeaderAnn != null) {
 
@@ -79,19 +82,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                 headName = param.name()
             }
 
-            var required = findParamRequired(requestHeaderAnn)
+            var required = findRequired(requestHeaderAnn)
             if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
                 required = true
             }
 
 
-            var defaultValue = requestHeaderAnn["defaultValue"]
-
-            if (defaultValue == null
-                    || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                    || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
-                defaultValue = ""
-            }
+            val defaultValue = findDefaultValue(requestHeaderAnn) ?: ""
 
             val header = Header()
             header.name = headName?.toString()
@@ -105,6 +102,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             return
         }
 
+        //path
         val pathVariableAnn = findPathVariable(param.psi())
         if (pathVariableAnn != null) {
 
@@ -124,6 +122,38 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             return
         }
 
+        //cookie
+        val cookieValueAnn = findCookieValue(param.psi())
+        if (cookieValueAnn != null) {
+
+            var cookieName = cookieValueAnn["value"]?.toString()
+
+            if (cookieName == null) {
+                cookieName = param.name()
+            }
+
+            var required = findRequired(cookieValueAnn)
+            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+                required = true
+            }
+
+            requestHelper!!.appendDesc(request, if (required) {
+                "\nNeed cookie:$cookieName ($ultimateComment)"
+            } else {
+                val defaultValue = findDefaultValue(cookieValueAnn)
+                if (defaultValue.isNullOrBlank()) {
+                    "\nCookie:$cookieName ($ultimateComment)"
+                } else {
+                    "\nCookie:$cookieName=$defaultValue ($ultimateComment)"
+                }
+            })
+
+            return
+        }
+
+        //form/body/query
+        var paramType: String? = null
+
         var paramName: String? = null
         var required = false
         var defaultVal: Any? = null
@@ -132,14 +162,12 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
         if (requestParamAnn != null) {
             paramName = findParamName(requestParamAnn)
-            required = findParamRequired(requestParamAnn)
+            required = findRequired(requestParamAnn)
 
-            defaultVal = requestParamAnn["defaultValue"]
+            defaultVal = findDefaultValue(requestParamAnn) ?: ""
 
-            if (defaultVal == null
-                    || defaultVal == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                    || defaultVal == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
-                defaultVal = ""
+            if (request.method == "GET") {
+                paramType = "query"
             }
         }
 
@@ -157,27 +185,22 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             paramName = param.name()
         }
 
-        if (defaultVal != null) {
-            requestHelper!!.addParam(request,
-                    paramName
-                    , defaultVal.toString()
-                    , required
-                    , ultimateComment).setDemo(demo)
-            return
-        }
-
         if (request.method == HttpMethod.GET) {
             addParamAsQuery(param, typeObject, request, ultimateComment)
                     .trySetDemo(demo)
             return
         }
 
-        val paramType = ruleComputer.computer(ClassExportRuleKeys.PARAM_WITHOUT_ANN_TYPE,
-                param)
+        if (paramType.isNullOrBlank()) {
+            paramType = ruleComputer.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
+                    param)
+        }
+
         if (paramType.notNullOrBlank()) {
             when (paramType) {
                 "body" -> {
                     setRequestBody(request, typeObject, ultimateComment)
+                            .trySetDemo(demo)
                     return
                 }
                 "form" -> {
@@ -198,9 +221,18 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             }
         }
 
-
         if (typeObject.hasFile()) {
             addParamAsForm(param, request, typeObject, ultimateComment)
+                    .trySetDemo(demo)
+            return
+        }
+
+        if (defaultVal != null) {
+            requestHelper!!.addParam(request,
+                    paramName
+                    , defaultVal.toString()
+                    , required
+                    , ultimateComment)
                     .trySetDemo(demo)
             return
         }

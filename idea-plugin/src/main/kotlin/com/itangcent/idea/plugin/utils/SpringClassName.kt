@@ -20,6 +20,7 @@ class SpringClassName {
         const val REQUEST_PARAM_ANNOTATION = "org.springframework.web.bind.annotation.RequestParam"
         const val MODEL_ATTRIBUTE_ANNOTATION = "org.springframework.web.bind.annotation.ModelAttribute"
         const val PATH_VARIABLE_ANNOTATION = "org.springframework.web.bind.annotation.PathVariable"
+        const val COOKIE_VALUE_ANNOTATION = "org.springframework.web.bind.annotation.CookieValue"
 
         const val REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader"
 
