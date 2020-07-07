@@ -528,7 +528,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsQuery(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null): Any? {
+    protected open fun addParamAsQuery(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
@@ -596,7 +596,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null): Any? {
+    protected open fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
