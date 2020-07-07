@@ -10,7 +10,6 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.*
-import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
@@ -57,7 +56,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                                 ?: HttpMethod.POST)
             }
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, typeObject, request)
+                addParamAsQuery(param, request, typeObject)
             } else {
                 addParamAsForm(param, request, typeObject, paramDesc)
             }
@@ -155,7 +154,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         var paramType: String? = null
 
         var paramName: String? = null
-        var required = false
+        var required: Boolean? = null
         var defaultVal: Any? = null
 
         val requestParamAnn = findRequestParam(param.psi())
@@ -177,7 +176,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             defaultVal = readParamDefaultValue
         }
 
-        if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+        if (required == null && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
             required = true
         }
 
@@ -186,7 +185,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(param, typeObject, request, ultimateComment)
+            addParamAsQuery(param, request, typeObject, ultimateComment)
                     .trySetDemo(demo)
             return
         }
@@ -204,12 +203,12 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                     return
                 }
                 "form" -> {
-                    addParamAsForm(param, request, typeObject, ultimateComment)
+                    addParamAsForm(param, request, defaultVal ?: typeObject, ultimateComment, required)
                             .trySetDemo(demo)
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(param, typeObject, request, ultimateComment)
+                    addParamAsQuery(param, request, defaultVal ?: typeObject, ultimateComment, required)
                             .trySetDemo(demo)
                     return
                 }
@@ -231,7 +230,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             requestHelper!!.addParam(request,
                     paramName
                     , defaultVal.toString()
-                    , required
+                    , required ?: false
                     , ultimateComment)
                     .trySetDemo(demo)
             return
@@ -244,18 +243,19 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         //else
-        addParamAsQuery(param, typeObject, request, ultimateComment)
+        addParamAsQuery(param, request, typeObject, ultimateComment)
                 .trySetDemo(demo)
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun addParamAsQuery(parameter: ExplicitParameter, typeObject: Any?, request: Request, paramDesc: String?): Any? {
+    override fun addParamAsQuery(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String?, required: Boolean?): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 return requestHelper!!.addFormFileParam(
                         request, parameter.name(),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
                 if (request.hasBodyOrForm() && formExpanded() && typeObject.isComplex()
@@ -306,7 +306,8 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             } else {
                 return requestHelper!!.addParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        ?: false, paramDesc
                 )
             }
         } catch (e: Exception) {
@@ -316,13 +317,14 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String?): Any? {
+    override fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String?, required: Boolean?): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 return requestHelper!!.addFormFileParam(
                         request, parameter.name(),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false, paramDesc
+                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
                 if (formExpanded() && typeObject.isComplex()
@@ -371,7 +373,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             } else {
                 return requestHelper!!.addFormParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false,
+                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false,
                         paramDesc
                 )
             }
