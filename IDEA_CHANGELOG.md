@@ -129,3 +129,9 @@
     * feat: new tool `files` [(#289)](https://github.com/tangcent/easy-api/pull/289)
     
     * feat: `Debug` enhancement [(#290)](https://github.com/tangcent/easy-api/pull/290)
+    
+    * feat: support new rule `method.content.type` [(#292)](https://github.com/tangcent/easy-api/pull/292)
+   
+    * feat: support rule `param.http.type` for `RequestParam ` [(#298)](https://github.com/tangcent/easy-api/pull/298)
+    
+    * feat: handle annotation `CookieValue` [(#300)](https://github.com/tangcent/easy-api/pull/300)
