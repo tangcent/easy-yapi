@@ -53,7 +53,7 @@ open class PostmanFormatter {
         val pathInRequest = request.path ?: URL.nil()
         if (pathInRequest.single()) {
             val path = pathInRequest.url() ?: ""
-            url["path"] = path.trim().trim('/').split("/")
+            url["path"] = parsePath(path)
             url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
             return listOf(item)
         }
@@ -67,7 +67,7 @@ open class PostmanFormatter {
             return pathInRequest.urls().map {
                 val copyItem = copyItem(item)
                 val copyUrl: HashMap<String, Any?> = copyItem.getAs("request", "url")!!
-                copyUrl["path"] = it.trim().trim('/').split("/")
+                copyUrl["path"] = parsePath(it)
                 copyUrl["raw"] = RequestUtils.concatPath(host, it)
                 return@map copyItem
             }
@@ -88,7 +88,7 @@ open class PostmanFormatter {
                 else -> ""
             }
 
-            url["path"] = (path ?: "").trim().trim('/').split("/")
+            url["path"] = parsePath(path ?: "")
             url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
             return listOf(item)
         }
@@ -116,7 +116,7 @@ open class PostmanFormatter {
         val pathInRequest = request.path ?: URL.nil()
 
         val path = pathInRequest.url() ?: ""
-        url["path"] = path.trim().trim('/').split("/")
+        url["path"] = parsePath(path)
         url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
         return item
     }
@@ -432,6 +432,22 @@ open class PostmanFormatter {
         }
 
         return folderGroupedMap
+    }
+
+    private fun parsePath(path: String): List<String> {
+        val paths = path.trim().trim('/').split("/")
+        return paths.map {
+            if (it.contains('{')) {
+                val p = if (it.contains(':'))
+                    it.substring(0, it.indexOf(':')) else
+                    it
+                return@map p
+                        .replace("{", ":")
+                        .replace("}", "")
+            } else {
+                return@map it
+            }
+        }
     }
 
     companion object {
