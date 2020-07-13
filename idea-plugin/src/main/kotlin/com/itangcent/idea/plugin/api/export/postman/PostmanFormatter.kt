@@ -438,7 +438,10 @@ open class PostmanFormatter {
         val paths = path.trim().trim('/').split("/")
         return paths.map {
             if (it.contains('{')) {
-                return@map it
+                val p = if (it.contains(':'))
+                    it.substring(0, it.indexOf(':')) else
+                    it
+                return@map p
                         .replace("{", ":")
                         .replace("}", "")
             } else {
