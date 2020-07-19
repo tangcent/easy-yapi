@@ -135,3 +135,7 @@
     * feat: support rule `param.http.type` for `RequestParam ` [(#298)](https://github.com/tangcent/easy-api/pull/298)
     
     * feat: handle annotation `CookieValue` [(#300)](https://github.com/tangcent/easy-api/pull/300)
+     
+    * feat: Support Postman export "Path Variables"  [(#213)](https://github.com/tangcent/easy-yapi/pull/213)
+    
+    * opti: resolve relative path. [(#53)](https://github.com/Earth-1610/intellij-kotlin/pull/53)
