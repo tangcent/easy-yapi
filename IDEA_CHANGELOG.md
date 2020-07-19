@@ -140,7 +140,6 @@
     
     * opti: input new token if the old one be deleted. [(#192)](https://github.com/tangcent/easy-yapi/pull/192)
                                                           
-    
     * feat: support new rule `export.after` [(#287)](https://github.com/tangcent/easy-api/pull/287)
    
     * feat: new tool `files` [(#289)](https://github.com/tangcent/easy-api/pull/289)
@@ -152,3 +151,7 @@
     * feat: support rule `param.http.type` for `RequestParam ` [(#298)](https://github.com/tangcent/easy-api/pull/298)
     
     * feat: handle annotation `CookieValue` [(#300)](https://github.com/tangcent/easy-api/pull/300)
+     
+    * feat: Support Postman export "Path Variables"  [(#213)](https://github.com/tangcent/easy-yapi/pull/213)
+    
+    * opti: resolve relative path. [(#53)](https://github.com/Earth-1610/intellij-kotlin/pull/53)
