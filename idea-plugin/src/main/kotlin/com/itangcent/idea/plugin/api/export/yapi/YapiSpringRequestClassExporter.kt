@@ -185,7 +185,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(param, request, typeObject, ultimateComment)
+            addParamAsQuery(param, request, typeObject, ultimateComment, required)
                     .trySetDemo(demo)
             return
         }
