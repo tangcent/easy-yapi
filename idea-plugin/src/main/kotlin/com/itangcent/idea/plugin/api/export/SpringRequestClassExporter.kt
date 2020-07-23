@@ -188,7 +188,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(param, request, typeObject, ultimateComment)
+            addParamAsQuery(param, request, typeObject, ultimateComment, required)
             return
         }
 
