@@ -139,3 +139,10 @@
     * feat: Support Postman export "Path Variables"  [(#213)](https://github.com/tangcent/easy-yapi/pull/213)
     
     * opti: resolve relative path. [(#53)](https://github.com/Earth-1610/intellij-kotlin/pull/53)
+    
+    * fix: fix required for query with GET. [(#305)](https://github.com/tangcent/easy-api/pull/305)
+    
+    * fix: keep parameter info to query or form. [(#307)](https://github.com/tangcent/easy-api/pull/307)
+    
+    * chore: rename Action `Debug` -> `ScriptExecutor`. [(#308)](https://github.com/tangcent/easy-api/pull/308)
+    
