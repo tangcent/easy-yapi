@@ -162,3 +162,5 @@
     
     * chore: rename Action `Debug` -> `ScriptExecutor`. [(#308)](https://github.com/tangcent/easy-api/pull/308)
     
+    * feat: support property `api.tag.delimiter` [(#223)](https://github.com/tangcent/easy-yapi/pull/223)
+    
