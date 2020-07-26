@@ -16,7 +16,6 @@ import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
-import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.util.hasFile
 
 open class SpringRequestClassExporter : AbstractRequestClassExporter() {
@@ -54,47 +53,47 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
     }
 
-    override fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?) {
+    override fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, typeObject: Any?, paramDesc: String?) {
 
         //RequestBody(json)
-        if (isRequestBody(param.psi())) {
+        if (isRequestBody(parameter.psi())) {
             setRequestBody(request, typeObject, paramDesc)
             return
         }
 
         //ModelAttr(form)
-        if (isModelAttr(param.psi())) {
+        if (isModelAttr(parameter.psi())) {
             if (request.method == HttpMethod.NO_METHOD) {
                 requestHelper!!.setMethod(request,
-                        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
+                        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, parameter.containMethod())
                                 ?: HttpMethod.POST)
             }
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request, typeObject)
+                addParamAsQuery(parameter, request, typeObject)
             } else {
-                addParamAsForm(param, request, typeObject, paramDesc)
+                addParamAsForm(parameter, request, typeObject, paramDesc)
             }
             return
         }
 
         var ultimateComment = (paramDesc ?: "")
-        param.getType()?.let { duckType ->
-            commentResolver!!.resolveCommentForType(duckType, param.psi())?.let {
+        parameter.getType()?.let { duckType ->
+            commentResolver!!.resolveCommentForType(duckType, parameter.psi())?.let {
                 ultimateComment = "$ultimateComment $it"
             }
         }
 
         //head
-        val requestHeaderAnn = findRequestHeader(param.psi())
+        val requestHeaderAnn = findRequestHeader(parameter.psi())
         if (requestHeaderAnn != null) {
 
             var headName = requestHeaderAnn.any("value", "name")
             if (headName.anyIsNullOrEmpty()) {
-                headName = param.name()
+                headName = parameter.name()
             }
 
             var required = findRequired(requestHeaderAnn)
-            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) == true) {
                 required = true
             }
 
@@ -110,13 +109,13 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         //path
-        val pathVariableAnn = findPathVariable(param.psi())
+        val pathVariableAnn = findPathVariable(parameter.psi())
         if (pathVariableAnn != null) {
 
             var pathName = pathVariableAnn["value"]?.toString()
 
             if (pathName == null) {
-                pathName = param.name()
+                pathName = parameter.name()
             }
 
             requestHelper!!.addPathParam(request, pathName, ultimateComment)
@@ -124,17 +123,17 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         //cookie
-        val cookieValueAnn = findCookieValue(param.psi())
+        val cookieValueAnn = findCookieValue(parameter.psi())
         if (cookieValueAnn != null) {
 
             var cookieName = cookieValueAnn["value"]?.toString()
 
             if (cookieName == null) {
-                cookieName = param.name()
+                cookieName = parameter.name()
             }
 
             var required = findRequired(cookieValueAnn)
-            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+            if (!required && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) == true) {
                 required = true
             }
 
@@ -156,45 +155,36 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         //form/body/query
         var paramType: String? = null
 
-        var paramName: String? = null
-        var required: Boolean? = null
-        var defaultVal: Any? = null
-
-        val requestParamAnn = findRequestParam(param.psi())
+        val requestParamAnn = findRequestParam(parameter.psi())
 
         if (requestParamAnn != null) {
-            paramName = findParamName(requestParamAnn)
-            required = findRequired(requestParamAnn)
-
-            defaultVal = findDefaultValue(requestParamAnn)
+            parameter.paramName = findParamName(requestParamAnn)
+            parameter.required = findRequired(requestParamAnn)
+            parameter.defaultVal = findDefaultValue(requestParamAnn)
 
             if (request.method == "GET") {
                 paramType = "query"
             }
         }
 
-        val readParamDefaultValue = readParamDefaultValue(param)
+        val readParamDefaultValue = readParamDefaultValue(parameter)
 
         if (readParamDefaultValue.notNullOrBlank()) {
-            defaultVal = readParamDefaultValue
+            parameter.defaultVal = readParamDefaultValue
         }
 
-        if (required == null && ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
-            required = true
-        }
-
-        if (paramName.isNullOrBlank()) {
-            paramName = param.name()
+        if (parameter.required == null) {
+            parameter.required = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(param, request, typeObject, ultimateComment, required)
+            addParamAsQuery(parameter, request, typeObject, ultimateComment)
             return
         }
 
         if (paramType.isNullOrBlank()) {
             paramType = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
-                    param)
+                    parameter)
         }
 
         if (paramType.notNullOrBlank()) {
@@ -204,11 +194,11 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                     return
                 }
                 "form" -> {
-                    addParamAsForm(param, request, defaultVal ?: typeObject, ultimateComment, required)
+                    addParamAsForm(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(param, request, defaultVal ?: typeObject, ultimateComment, required)
+                    addParamAsQuery(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
                     return
                 }
                 else -> {
@@ -220,26 +210,26 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (typeObject.hasFile()) {
-            addParamAsForm(param, request, typeObject, ultimateComment)
+            addParamAsForm(parameter, request, typeObject, ultimateComment)
             return
         }
 
-        if (defaultVal != null) {
+        if (parameter.defaultVal != null) {
             requestHelper!!.addParam(request,
-                    paramName
-                    , defaultVal.toString()
-                    , required ?: false
+                    parameter.name()
+                    , parameter.defaultVal.toString()
+                    , parameter.required ?: false
                     , ultimateComment)
             return
         }
 
         if (request.canHasForm()) {
-            addParamAsForm(param, request, typeObject, ultimateComment)
+            addParamAsForm(parameter, request, typeObject, ultimateComment)
             return
         }
 
         //else
-        addParamAsQuery(param, request, typeObject, ultimateComment)
+        addParamAsQuery(parameter, request, typeObject, ultimateComment)
     }
 
     override fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {

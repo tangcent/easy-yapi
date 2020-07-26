@@ -30,6 +30,7 @@ import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.*
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 abstract class AbstractRequestClassExporter : ClassExporter, Worker {
@@ -495,9 +496,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                 processMethodParameter(
                         request,
-                        param,
+                        ExplicitParameterInfo(param),
                         typeObject,
-                        KVUtils.getUltimateComment(paramDocComment, param.psi().name).append(readParamDoc(param))
+                        KVUtils.getUltimateComment(paramDocComment, param.name()).append(readParamDoc(param))
                 )
             }
         }
@@ -514,7 +515,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     }
 
-    abstract fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?)
+    abstract fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, typeObject: Any?, paramDesc: String?)
 
     protected fun setRequestBody(request: Request, typeObject: Any?, paramDesc: String?) {
         requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
@@ -528,13 +529,13 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsQuery(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null) {
+    protected fun addParamAsQuery(parameter: ExplicitParameterInfo, request: Request, typeObject: Any?, paramDesc: String? = null) {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 requestHelper!!.addFormFileParam(
                         request, parameter.name(),
-                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        parameter.required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
                         ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
@@ -585,17 +586,17 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             } else {
                 requestHelper!!.addParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        parameter.required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
                         ?: false, paramDesc
                 )
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to parse[" + parameter.getType()?.canonicalText() + "] as Querys", e)
+            logger!!.traceError("error to parse [${parameter.getType()?.canonicalText()}] as Querys", e)
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    protected fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String? = null, required: Boolean? = null) {
+    protected fun addParamAsForm(parameter: ExplicitParameterInfo, request: Request, typeObject: Any?, paramDesc: String? = null) {
 
         try {
             if (typeObject == Magics.FILE_STR) {
@@ -649,7 +650,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             } else {
                 requestHelper!!.addFormParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        parameter.required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
                         ?: false, paramDesc
                 )
             }
@@ -702,5 +703,53 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     protected fun formExpanded(): Boolean {
         return settingBinder!!.read().formExpanded
+    }
+
+    /**
+     * ExplicitParameter with extra info.
+     *
+     * use extras instead of declare variables:
+     * var paramName: String? = null
+     * var required: Boolean? = null
+     * var defaultVal: Any? = null
+     */
+    class ExplicitParameterInfo(val parameter: ExplicitParameter) : ExplicitParameter by parameter {
+
+        private var extras: HashMap<Int, Any?>? = null
+
+        private fun extras(): HashMap<Int, Any?> {
+            if (extras == null) {
+                extras = HashMap()
+            }
+            return extras!!
+        }
+
+        var paramName: String?
+            get() {
+                return extras?.get(1) as? String
+            }
+            set(value) {
+                extras()[1] = value
+            }
+
+        var required: Boolean?
+            get() {
+                return extras?.get(2) as? Boolean
+            }
+            set(value) {
+                extras()[2] = value
+            }
+
+        var defaultVal: String?
+            get() {
+                return extras?.get(3) as? String
+            }
+            set(value) {
+                extras()[3] = value
+            }
+
+        override fun name(): String {
+            return paramName ?: parameter.name()
+        }
     }
 }
