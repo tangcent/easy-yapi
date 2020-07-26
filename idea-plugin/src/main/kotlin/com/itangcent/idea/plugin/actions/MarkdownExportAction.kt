@@ -11,7 +11,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import kotlin.reflect.KClass
 
 class MarkdownExportAction : ApiExportAction("Export Markdown") {
 

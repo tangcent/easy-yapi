@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.intellij.ide.util.ClassFilter
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ide.util.TreeClassChooserFactory
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
@@ -10,12 +9,8 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.highlighter.EditorHighlighterFactory
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
-import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.LightVirtualFile
@@ -42,7 +37,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Dimension
 import java.awt.EventQueue
 import java.awt.event.*
-import java.io.File
 import java.util.*
 import java.util.Timer
 import java.util.concurrent.atomic.AtomicLong

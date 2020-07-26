@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.kit.KVUtils

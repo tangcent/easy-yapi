@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.ImplementedBy
 import com.itangcent.common.model.*
-import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap.Companion.requestHelper
 
 @ImplementedBy(DefaultRequestHelper::class)
 interface RequestHelper {
