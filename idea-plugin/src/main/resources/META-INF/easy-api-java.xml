@@ -16,9 +16,9 @@
             <action id="com.itangcent.idea.easy_api.actions.codeMenu.FieldsJsonAction"
                     class="com.itangcent.idea.plugin.actions.FieldsToJsonAction" text="ToJson" description="ToJson"/>
 
-            <action id="com.itangcent.idea.easy_api.actions.DebugAction"
-                    class="com.itangcent.idea.plugin.actions.DebugAction" text="Debug"
-                    description="Debug"/>
+            <action id="com.itangcent.idea.easy_api.actions.ScriptExecutorAction"
+                    class="com.itangcent.idea.plugin.actions.ScriptExecutorAction" text="ScriptExecutor"
+                    description="ScriptExecutor"/>
 
         </group>
 

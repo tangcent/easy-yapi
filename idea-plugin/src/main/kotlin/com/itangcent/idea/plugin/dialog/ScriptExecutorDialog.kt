@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicLong
 import javax.script.ScriptEngineManager
 import javax.swing.*
 
-class DebugDialog : JDialog() {
+class ScriptExecutorDialog : JDialog() {
     private var contentPane: JPanel? = null
     private var consoleTextArea: JTextArea? = null
     private var contextTextField: JTextField? = null
