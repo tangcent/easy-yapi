@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.google.inject.Inject
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.KVUtils
@@ -10,18 +11,23 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.util.*
+import org.apache.commons.lang3.StringUtils
 
 open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
+
+    @Inject
+    private val configReader: ConfigReader? = null
 
     override fun processCompleted(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
         super.processCompleted(method, kv, request)
 
         val tags = ruleComputer!!.computer(YapiClassExportRuleKeys.TAG, method)
         if (tags.notNullOrEmpty()) {
-            request.setTags(tags!!.split("\n")
+            request.setTags(StringUtils.split(tags, configReader!!.first("api.tag.delimiter") ?: ",\n")
                     .map { it.trim() }
                     .filter { it.isNotBlank() })
         }
