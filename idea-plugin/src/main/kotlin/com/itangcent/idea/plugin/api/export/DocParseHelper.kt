@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.ImplementedBy
 import com.intellij.psi.PsiMember
-import com.itangcent.idea.plugin.api.export.RequestHelper
 
 @ImplementedBy(DefaultDocParseHelper::class)
 interface DocParseHelper {

@@ -20,7 +20,6 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.forEachValid
 import java.util.*

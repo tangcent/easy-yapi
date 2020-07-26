@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.actions
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
-import com.itangcent.idea.plugin.api.debug.Debugger
+import com.itangcent.idea.plugin.api.debug.ScriptExecutor
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
@@ -15,7 +15,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 
-class DebugAction : ApiExportAction("Debug") {
+class ScriptExecutorAction : ApiExportAction("ScriptExecutor") {
 
     override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
         super.afterBuildActionContext(event, builder)
@@ -32,13 +32,13 @@ class DebugAction : ApiExportAction("Debug") {
         builder.bindInstance("file.save.default", "script.txt")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.debug.loadOrSave.path")
 
-        builder.bind(Debugger::class) { it.singleton() }
+        builder.bind(ScriptExecutor::class) { it.singleton() }
 
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
         super.actionPerformed(actionContext, project, anActionEvent)
-        val debugger = actionContext.instance(Debugger::class)
+        val debugger = actionContext.instance(ScriptExecutor::class)
         debugger.showDebugWindow()
     }
 }

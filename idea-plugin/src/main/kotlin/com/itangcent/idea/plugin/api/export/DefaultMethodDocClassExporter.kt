@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.api.export
 
 import com.google.inject.Inject
-import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.kit.KVUtils

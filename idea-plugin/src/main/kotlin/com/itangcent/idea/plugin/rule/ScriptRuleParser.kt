@@ -23,7 +23,6 @@ import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitField
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
-import com.itangcent.intellij.jvm.standard.StandardJvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
 import com.itangcent.intellij.psi.JsonOption
