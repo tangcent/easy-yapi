@@ -12,7 +12,6 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.element.ExplicitMethod
-import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.util.*
 
 open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
@@ -34,10 +33,10 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         request.setOpen(open)
     }
 
-    override fun processMethodParameter(request: Request, param: ExplicitParameter, typeObject: Any?, paramDesc: String?) {
+    override fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, typeObject: Any?, paramDesc: String?) {
 
         //RequestBody(json)
-        if (isRequestBody(param.psi())) {
+        if (isRequestBody(parameter.psi())) {
             requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
             requestHelper.addHeader(request, "Content-Type", "application/json")
             requestHelper.setJsonBody(
@@ -49,40 +48,40 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         //ModelAttr(form)
-        if (isModelAttr(param.psi())) {
+        if (isModelAttr(parameter.psi())) {
             if (request.method == HttpMethod.NO_METHOD) {
                 requestHelper!!.setMethod(request,
-                        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, param.containMethod())
+                        ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD, parameter.containMethod())
                                 ?: HttpMethod.POST)
             }
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(param, request, typeObject)
+                addParamAsQuery(parameter, request, typeObject)
             } else {
-                addParamAsForm(param, request, typeObject, paramDesc)
+                addParamAsForm(parameter, request, typeObject, paramDesc)
             }
             return
         }
 
         var ultimateComment = (paramDesc ?: "")
-        param.getType()?.let { duckType ->
-            commentResolver!!.resolveCommentForType(duckType, param.psi())?.let {
+        parameter.getType()?.let { duckType ->
+            commentResolver!!.resolveCommentForType(duckType, parameter.psi())?.let {
                 ultimateComment = "$ultimateComment $it"
             }
         }
 
-        val demo = ruleComputer!!.computer(YapiClassExportRuleKeys.PARAM_DEMO, param)
+        val demo = ruleComputer!!.computer(YapiClassExportRuleKeys.PARAM_DEMO, parameter)
 
         //head
-        val requestHeaderAnn = findRequestHeader(param.psi())
+        val requestHeaderAnn = findRequestHeader(parameter.psi())
         if (requestHeaderAnn != null) {
 
             var headName = requestHeaderAnn.any("value", "name")
             if (headName.anyIsNullOrEmpty()) {
-                headName = param.name()
+                headName = parameter.name()
             }
 
             var required = findRequired(requestHeaderAnn)
-            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) == true) {
                 required = true
             }
 
@@ -102,13 +101,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         //path
-        val pathVariableAnn = findPathVariable(param.psi())
+        val pathVariableAnn = findPathVariable(parameter.psi())
         if (pathVariableAnn != null) {
 
             var pathName = pathVariableAnn["value"]?.toString()
 
             if (pathName == null) {
-                pathName = param.name()
+                pathName = parameter.name()
             }
 
             val pathParam = PathParam()
@@ -122,17 +121,17 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         //cookie
-        val cookieValueAnn = findCookieValue(param.psi())
+        val cookieValueAnn = findCookieValue(parameter.psi())
         if (cookieValueAnn != null) {
 
             var cookieName = cookieValueAnn["value"]?.toString()
 
             if (cookieName == null) {
-                cookieName = param.name()
+                cookieName = parameter.name()
             }
 
             var required = findRequired(cookieValueAnn)
-            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
+            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) == true) {
                 required = true
             }
 
@@ -153,46 +152,37 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         //form/body/query
         var paramType: String? = null
 
-        var paramName: String? = null
-        var required: Boolean? = null
-        var defaultVal: Any? = null
-
-        val requestParamAnn = findRequestParam(param.psi())
+        val requestParamAnn = findRequestParam(parameter.psi())
 
         if (requestParamAnn != null) {
-            paramName = findParamName(requestParamAnn)
-            required = findRequired(requestParamAnn)
-
-            defaultVal = findDefaultValue(requestParamAnn) ?: ""
+            parameter.paramName = findParamName(requestParamAnn)
+            parameter.required = findRequired(requestParamAnn)
+            parameter.defaultVal = findDefaultValue(requestParamAnn)
 
             if (request.method == "GET") {
                 paramType = "query"
             }
         }
 
-        val readParamDefaultValue = readParamDefaultValue(param)
+        val readParamDefaultValue = readParamDefaultValue(parameter)
 
         if (readParamDefaultValue.notNullOrBlank()) {
-            defaultVal = readParamDefaultValue
+            parameter.defaultVal = readParamDefaultValue
         }
 
-        if (required == null && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true) {
-            required = true
-        }
-
-        if (paramName.isNullOrBlank()) {
-            paramName = param.name()
+        if (parameter.required == null) {
+            parameter.required = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(param, request, typeObject, ultimateComment, required)
+            addParamAsQuery(parameter, request, typeObject, ultimateComment)
                     .trySetDemo(demo)
             return
         }
 
         if (paramType.isNullOrBlank()) {
             paramType = ruleComputer.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
-                    param)
+                    parameter)
         }
 
         if (paramType.notNullOrBlank()) {
@@ -203,12 +193,12 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                     return
                 }
                 "form" -> {
-                    addParamAsForm(param, request, defaultVal ?: typeObject, ultimateComment, required)
+                    addParamAsForm(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
                             .trySetDemo(demo)
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(param, request, defaultVal ?: typeObject, ultimateComment, required)
+                    addParamAsQuery(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
                             .trySetDemo(demo)
                     return
                 }
@@ -221,40 +211,40 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         if (typeObject.hasFile()) {
-            addParamAsForm(param, request, typeObject, ultimateComment)
+            addParamAsForm(parameter, request, typeObject, ultimateComment)
                     .trySetDemo(demo)
             return
         }
 
-        if (defaultVal != null) {
+        if (parameter.defaultVal != null) {
             requestHelper!!.addParam(request,
-                    paramName
-                    , defaultVal.toString()
-                    , required ?: false
+                    parameter.name()
+                    , parameter.defaultVal.toString()
+                    , parameter.required ?: false
                     , ultimateComment)
                     .trySetDemo(demo)
             return
         }
 
         if (request.canHasForm()) {
-            addParamAsForm(param, request, typeObject, ultimateComment)
+            addParamAsForm(parameter, request, typeObject, ultimateComment)
                     .trySetDemo(demo)
             return
         }
 
         //else
-        addParamAsQuery(param, request, typeObject, ultimateComment)
+        addParamAsQuery(parameter, request, typeObject, ultimateComment)
                 .trySetDemo(demo)
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun addParamAsQuery(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String?, required: Boolean?): Any? {
+    override fun addParamAsQuery(parameter: ExplicitParameterInfo, request: Request, typeObject: Any?, paramDesc: String?): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 return requestHelper!!.addFormFileParam(
                         request, parameter.name(),
-                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        parameter.required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
                         ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
@@ -306,7 +296,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             } else {
                 return requestHelper!!.addParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        parameter.required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
                         ?: false, paramDesc
                 )
             }
@@ -317,13 +307,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    override fun addParamAsForm(parameter: ExplicitParameter, request: Request, typeObject: Any?, paramDesc: String?, required: Boolean?): Any? {
+    override fun addParamAsForm(parameter: ExplicitParameterInfo, request: Request, typeObject: Any?, paramDesc: String?): Any? {
 
         try {
             if (typeObject == Magics.FILE_STR) {
                 return requestHelper!!.addFormFileParam(
                         request, parameter.name(),
-                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        parameter.required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
                         ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
@@ -373,7 +363,8 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             } else {
                 return requestHelper!!.addFormParam(
                         request, parameter.name(), tinyQueryParam(typeObject?.toString()),
-                        required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter) ?: false,
+                        parameter.required ?: ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+                        ?: false,
                         paramDesc
                 )
             }
