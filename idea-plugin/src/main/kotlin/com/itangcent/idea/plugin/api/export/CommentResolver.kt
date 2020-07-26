@@ -11,7 +11,6 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.duck.SingleUnresolvedDuckType

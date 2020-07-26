@@ -8,7 +8,6 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PropertyUtil
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.intellij.jvm.DocHelper
-import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.psi.PsiClassUtils
 
 @Singleton
@@ -16,8 +15,6 @@ open class DefaultLinkResolver : LinkResolver {
 
     @Inject
     private val docHelper: DocHelper? = null
-    @Inject
-    private val psiClassHelper: PsiClassHelper? = null
 
     override fun linkToClass(linkClass: Any): String? {
         if (linkClass !is PsiClass) {

@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.intellij.lang.jvm.JvmModifier
 import com.intellij.psi.*
 import com.intellij.psi.util.*
 import com.itangcent.common.kit.KVUtils
@@ -428,20 +427,20 @@ class DefaultMethodInferHelper : MethodInferHelper {
         actionContext!!.checkStatus()
 
         val argCount = args?.size ?: 0
-        when {
+        return when {
             argCount != method.parameterCount -> if (args != null) {
                 val fixArgs: Array<Any?> = Arrays.copyOf(args, method.parameterCount)
-                return method.invoke(caller, fixArgs)
+                method.invoke(caller, fixArgs)
             } else {
-                val fixArgs = Array<Any?>(method.parameterCount, { null })
-                return method.invoke(caller, fixArgs)
+                val fixArgs = Array<Any?>(method.parameterCount) { null }
+                method.invoke(caller, fixArgs)
             }
-            args == null || args.isEmpty() -> return method.invoke(caller)
-            args.size == 1 -> return method.invoke(caller, args[0])
-            args.size == 2 -> return method.invoke(caller, args[0], args[1])
-            args.size == 3 -> return method.invoke(caller, args[0], args[1], args[2])
-            args.size == 4 -> return method.invoke(caller, args[0], args[1], args[2], args[3])
-            else -> return method.invoke(caller, *args)
+            args == null || args.isEmpty() -> method.invoke(caller)
+            args.size == 1 -> method.invoke(caller, args[0])
+            args.size == 2 -> method.invoke(caller, args[0], args[1])
+            args.size == 3 -> method.invoke(caller, args[0], args[1], args[2])
+            args.size == 4 -> method.invoke(caller, args[0], args[1], args[2], args[3])
+            else -> method.invoke(caller, *args)
         }
     }
 
