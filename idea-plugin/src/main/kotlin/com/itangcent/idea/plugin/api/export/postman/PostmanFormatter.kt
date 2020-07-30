@@ -143,26 +143,7 @@ open class PostmanFormatter {
 
         item["name"] = request.name
 
-        if (request.hasAnyExt(ClassExportRuleKeys.POST_PRE_REQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
-            val events = ArrayList<Any>()
-            val preRequest = request.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name())
-            if (preRequest.notNullOrBlank()) {
-                events.add(KV.any().set("listen", "prerequest")
-                        .set("script", KV.any()
-                                .set("exec", preRequest!!.lines())
-                                .set("type", "text/javascript")
-                        ))
-            }
-            val test = request.getExt<String>(ClassExportRuleKeys.POST_TEST.name())
-            if (test.notNullOrBlank()) {
-                events.add(KV.any().set("listen", "test")
-                        .set("script", KV.any()
-                                .set("exec", test!!.lines())
-                                .set("type", "text/javascript")
-                        ))
-            }
-            item["event"] = events
-        }
+        parseScripts(request, item)
 
         val requestInfo: HashMap<String, Any?> = HashMap()
         item["request"] = requestInfo
@@ -318,12 +299,38 @@ open class PostmanFormatter {
         return item
     }
 
+    private fun parseScripts(extensible: Extensible, item: HashMap<String, Any?>) {
+        if (extensible.hasAnyExt(ClassExportRuleKeys.POST_PRE_REQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
+            val events = ArrayList<Any>()
+            val preRequest = extensible.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name())
+            if (preRequest.notNullOrBlank()) {
+                events.add(KV.any().set("listen", "prerequest")
+                        .set("script", KV.any()
+                                .set("exec", preRequest!!.lines())
+                                .set("type", "text/javascript")
+                        ))
+            }
+            val test = extensible.getExt<String>(ClassExportRuleKeys.POST_TEST.name())
+            if (test.notNullOrBlank()) {
+                events.add(KV.any().set("listen", "test")
+                        .set("script", KV.any()
+                                .set("exec", test!!.lines())
+                                .set("type", "text/javascript")
+                        ))
+            }
+            item["event"] = events
+        }
+    }
+
     fun wrapRootInfo(resource: Any, items: ArrayList<HashMap<String, Any?>>): HashMap<String, Any?> {
 
         val postman: HashMap<String, Any?> = HashMap()
         val info: HashMap<String, Any?> = HashMap()
         postman["info"] = info
         parseNameAndDesc(resource, info)
+        (resource as? Extensible)?.let {
+            parseScripts(it, postman)
+        }
         info["name"] = "${info["name"]}-${Date().formatDate("yyyyMMddHHmmss")}"
         info["schema"] = POSTMAN_SCHEMA_V2_1_0
         postman["item"] = items
@@ -333,6 +340,9 @@ open class PostmanFormatter {
     fun wrapInfo(resource: Any, items: ArrayList<HashMap<String, Any?>>): HashMap<String, Any?> {
         val postman: HashMap<String, Any?> = HashMap()
         parseNameAndDesc(resource, postman)
+        (resource as? Extensible)?.let {
+            parseScripts(it, postman)
+        }
         postman["item"] = items
         return postman
     }
@@ -353,6 +363,9 @@ open class PostmanFormatter {
                     info["description"] = attr
                 }
             }
+        } else if (resource is Folder) {
+            info["name"] = resource.name
+            info["description"] = resource.attr
         } else if (resource is Pair<*, *>) {
             info["name"] = resource.first
             info["description"] = resource.second

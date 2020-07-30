@@ -387,6 +387,8 @@ class SuvApiExporter {
 
             builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
 
+            builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
+
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 

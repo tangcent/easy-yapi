@@ -9,4 +9,3 @@ interface FormatFolderHelper {
 
 }
 
-typealias Folder = Pair<String, String>

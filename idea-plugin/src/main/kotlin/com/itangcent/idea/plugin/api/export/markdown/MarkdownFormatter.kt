@@ -394,6 +394,9 @@ class MarkdownFormatter {
                     info["description"] = attr
                 }
             }
+        } else if (resource is Folder) {
+            info["name"] = resource.name
+            info["description"] = resource.attr
         } else if (resource is Pair<*, *>) {
             info["name"] = resource.first
             info["description"] = resource.second
