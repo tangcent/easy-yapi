@@ -69,7 +69,7 @@ open class AbstractYapiApiExporter {
 
     protected open fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
 
-        val name: String = folder.first
+        val name: String = folder.name ?: "anonymous"
 
         var cartId: String?
 
@@ -83,7 +83,7 @@ open class AbstractYapiApiExporter {
 
         //create new cart.
         if (cartId == null) {
-            if (yapiApiHelper.addCart(privateToken, name, folder.second)) {
+            if (yapiApiHelper.addCart(privateToken, name, folder.attr ?: "")) {
                 cartId = yapiApiHelper.findCat(privateToken, name)
             } else {
                 //failed

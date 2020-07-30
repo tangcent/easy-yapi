@@ -522,12 +522,12 @@ class SuvApiExporter {
 
             @Synchronized
             override fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
-                var cartInfo = folderNameCartMap["$privateToken${folder.first}"]
+                var cartInfo = folderNameCartMap["$privateToken${folder.name}"]
                 if (cartInfo != null) return cartInfo
 
                 cartInfo = super.getCartForDoc(folder, privateToken)
                 if (cartInfo != null) {
-                    folderNameCartMap["$privateToken${folder.first}"] = cartInfo
+                    folderNameCartMap["$privateToken${folder.name}"] = cartInfo
                 }
                 return cartInfo
             }
