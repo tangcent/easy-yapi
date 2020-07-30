@@ -389,6 +389,8 @@ class SuvApiExporter {
 
             builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
 
+            builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
+
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
@@ -520,12 +522,12 @@ class SuvApiExporter {
 
             @Synchronized
             override fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
-                var cartInfo = folderNameCartMap["$privateToken${folder.first}"]
+                var cartInfo = folderNameCartMap["$privateToken${folder.name}"]
                 if (cartInfo != null) return cartInfo
 
                 cartInfo = super.getCartForDoc(folder, privateToken)
                 if (cartInfo != null) {
-                    folderNameCartMap["$privateToken${folder.first}"] = cartInfo
+                    folderNameCartMap["$privateToken${folder.name}"] = cartInfo
                 }
                 return cartInfo
             }

@@ -18,7 +18,7 @@ import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 
 @Singleton
-class DefaultFormatFolderHelper : FormatFolderHelper {
+open class DefaultFormatFolderHelper : FormatFolderHelper {
 
     @Inject
     private val ruleComputer: RuleComputer? = null
@@ -37,12 +37,14 @@ class DefaultFormatFolderHelper : FormatFolderHelper {
             .build()
 
     override fun resolveFolder(resource: Any): Folder {
-        return tryResolveFolder(resource) ?: resource.toString() to ""
+        return folderCache[resource, {
+            tryResolveFolder(resource) ?: Folder(resource.toString(), "")
+        }]
     }
 
     fun tryResolveFolder(resource: Any, resolveByContainClass: Boolean = true): Folder? {
         if (resource is String) {
-            return resource to ""
+            return Folder(resource, "")
         }
 
         if (resource is PsiResource) {
@@ -57,11 +59,15 @@ class DefaultFormatFolderHelper : FormatFolderHelper {
         }
 
         if (resource is PsiClass) {
-            return resolveFolderOfPsiClass(resource)
+            return folderCache[resource, {
+                resolveFolderOfPsiClass(resource)
+            }]
         }
 
         if (resource is ExplicitClass) {
-            return resolveFolderOfExplicitClass(resource)
+            return folderCache[resource, {
+                resolveFolderOfExplicitClass(resource)
+            }]
         }
 
         if (resource is PsiMethod) {
@@ -69,22 +75,23 @@ class DefaultFormatFolderHelper : FormatFolderHelper {
         }
 
         if (resource is ExplicitMethod) {
-            val folder = ruleComputer!!.computer(ClassExportRuleKeys.API_FOLDER, resource)
-            if (folder.notNullOrBlank()) {
-                return folder!! to ""
-            }
+            resolveFolderOfExplicitMethod(resource)?.let { return it }
         }
 
         if (resolveByContainClass) {
 
             if (resource is PsiMember) {
                 resource.containingClass?.let {
-                    return resolveFolderOfPsiClass(it)
+                    return folderCache[it, {
+                        resolveFolderOfPsiClass(it)
+                    }]
                 }
             }
 
             if (resource is ExplicitElement<*>) {
-                return resolveFolderOfExplicitClass(resource.containClass())
+                return folderCache[resource.containClass(), {
+                    resolveFolderOfExplicitClass(resource.containClass())
+                }]
             }
         }
 
@@ -93,40 +100,42 @@ class DefaultFormatFolderHelper : FormatFolderHelper {
 
     private fun resolveFolderOfPsiMethod(resource: PsiMethod): Folder? {
         val folder = ruleComputer!!.computer(ClassExportRuleKeys.API_FOLDER, resource)
-        if (folder.notNullOrBlank()) {
-            return folder!! to ""
-        }
-        return null
+        return if (folder.notNullOrBlank()) {
+            Folder(folder!!, "")
+        } else null
     }
 
-    private fun resolveFolderOfPsiClass(resource: PsiClass): Folder {
-        return folderCache.get(resource) {
-            var folder = ruleComputer!!.computer(ClassExportRuleKeys.API_FOLDER, resource)
-            val attr = findAttrOfClass(resource)
-            if (folder.isNullOrBlank()) {
-                folder = if (attr.isNullOrBlank()) {
-                    resource.name
-                } else {
-                    attr.headLine()
-                }
-            }
-            return@get (folder ?: resource.toString()) to (attr ?: "")
-        }
+    private fun resolveFolderOfExplicitMethod(resource: ExplicitMethod): Folder? {
+        val folder = ruleComputer!!.computer(ClassExportRuleKeys.API_FOLDER, resource)
+        return if (folder.notNullOrBlank()) {
+            Folder(folder!!, "")
+        } else null
     }
 
-    private fun resolveFolderOfExplicitClass(resource: ExplicitClass): Folder {
-        return folderCache.get(resource) {
-            var folder = ruleComputer!!.computer(ClassExportRuleKeys.API_FOLDER, resource)
-            val attr = findAttrOfClass(resource.psi())
-            if (folder.isNullOrBlank()) {
-                folder = if (attr.isNullOrBlank()) {
-                    resource.name()
-                } else {
-                    attr.headLine()
-                }
+    protected open fun resolveFolderOfPsiClass(resource: PsiClass): Folder {
+        var folder = ruleComputer!!.computer(ClassExportRuleKeys.API_FOLDER, resource)
+        val attr = findAttrOfClass(resource)
+        if (folder.isNullOrBlank()) {
+            folder = if (attr.isNullOrBlank()) {
+                resource.name
+            } else {
+                attr.headLine()
             }
-            return@get (folder ?: resource.toString()) to (attr ?: "")
         }
+        return Folder((folder ?: resource.toString()), (attr ?: ""))
+    }
+
+    protected open fun resolveFolderOfExplicitClass(resource: ExplicitClass): Folder {
+        var folder = ruleComputer!!.computer(ClassExportRuleKeys.API_FOLDER, resource)
+        val attr = findAttrOfClass(resource.psi())
+        if (folder.isNullOrBlank()) {
+            folder = if (attr.isNullOrBlank()) {
+                resource.name()
+            } else {
+                attr.headLine()
+            }
+        }
+        return Folder((folder ?: resource.toString()), (attr ?: ""))
     }
 
     private fun findAttrOfClass(cls: PsiClass): String? {

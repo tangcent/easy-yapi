@@ -78,8 +78,9 @@ abstract class ScriptRuleParser : RuleParser {
                 simpleScriptContext.setAttribute(it.key, it.value, ScriptContext.ENGINE_SCOPE)
             }
 
-            val contextForScript: RuleContext? = (context as? BaseScriptRuleContext) ?: contextOf(
-                    context.getCore() ?: context.getResource()!!, context.getResource()!!)
+            val contextForScript: RuleContext? = (context as? BaseScriptRuleContext)
+                    ?: context.getCore()?.let { contextOf(it, context.getResource()) }
+                    ?: context.getResource()?.let { contextOf(it, context.getResource()) }
             if (contextForScript != null) {
                 simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
             }
