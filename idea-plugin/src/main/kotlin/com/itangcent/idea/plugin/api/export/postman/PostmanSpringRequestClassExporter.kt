@@ -12,7 +12,7 @@ import com.itangcent.intellij.jvm.element.ExplicitMethod
  * 1.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_PRE_REQUEST]
  * 2.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_TEST]
  *
- * @see [https://learning.postman.com/docs/postman/launching-postman/introduction/]
+ * @see [https://learning.postman.com/docs/writing-scripts/intro-to-scripts/]
  */
 class PostmanSpringRequestClassExporter : SpringRequestClassExporter() {
 
