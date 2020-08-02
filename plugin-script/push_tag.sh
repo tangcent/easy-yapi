@@ -15,12 +15,22 @@ version=$(cat ${basedir}/build.gradle | grep -Eo '[0-9][0-9.]+')
 echo "version:"${version}
 export DEPLOY_VERSION=version
 export TRAVIS_TAG="${version}-patch"
-git push origin :refs/tags/$TRAVIS_TAG
+#curl \
+#  -X DELETE \
+#  -H "Accept: application/vnd.github.v3+json" \
+#  -H "authorization: Bearer ${GITHUB_TOKEN}" \
+#  https://api.github.com/repos/tangcent/easy-api/releases/$TRAVIS_TAG
+
 git tag -a $TRAVIS_TAG -m "Auto deployment"
-export TRAVIS_TAG_TITLE="Auto deployment ${version}-patch"
+export TRAVIS_TAG_TITLE="Auto deployment ${version}-SNAPSHOT"
 
 if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
   export TRAVIS_TAG_BODY="patch with [#${TRAVIS_PULL_REQUEST}](https://github.com/${TRAVIS_REPO_SLUG}/pull/${TRAVIS_PULL_REQUEST})"
 else
   export TRAVIS_TAG_BODY="patch with [#${TRAVIS_COMMIT_MESSAGE}](https://github.com/${TRAVIS_REPO_SLUG}/commit/${TRAVIS_COMMIT})"
 fi
+echo "title:"${TRAVIS_TAG_TITLE}
+echo "body:"${TRAVIS_TAG_BODY}
+echo ${TRAVIS_TAG} > tag.txt
+echo ${TRAVIS_TAG_TITLE} > title.txt
+echo ${TRAVIS_TAG_BODY} > body.txt

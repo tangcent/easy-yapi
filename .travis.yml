@@ -23,16 +23,20 @@ before_deploy:
   - git config --local user.email "pentatangcent@gmail.com"
   - echo jars- `ls plugin`
   - ./plugin-script/push_tag.sh
+  - export TRAVIS_TAG=`cat tag.txt`
+  - export TRAVIS_TAG_TITLE=`cat title.txt`
+  - export TRAVIS_TAG_BODY=`cat body.txt`
 
+# https://github.com/travis-ci/dpl#github-releases
 deploy:
   provider: releases
   api_key: $GITHUB_TOKEN
-  name: $TRAVIS_TAG_TITLE
-  body: $TRAVIS_TAG_BODY
+  name: ${TRAVIS_TAG_TITLE}
+  body: ${TRAVIS_TAG_BODY}
   file_glob: true
   file: plugin/*
   overwrite: true
   skip_cleanup: true
   on:
-    branch: master
+    branch: dev/travis
     repo: tangcent/easy-api
