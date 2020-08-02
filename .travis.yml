@@ -38,5 +38,5 @@ deploy:
   overwrite: true
   skip_cleanup: true
   on:
-    branch: dev/travis
+    branch: master
     repo: tangcent/easy-api
