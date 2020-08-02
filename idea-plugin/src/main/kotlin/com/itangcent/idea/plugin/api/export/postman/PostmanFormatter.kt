@@ -13,6 +13,7 @@ import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.idea.plugin.api.export.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.ResolveMultiPath
+import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
@@ -301,26 +302,39 @@ open class PostmanFormatter {
 
     private fun parseScripts(extensible: Extensible, item: HashMap<String, Any?>) {
         if (extensible.hasAnyExt(ClassExportRuleKeys.POST_PRE_REQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
-            val events = ArrayList<Any>()
-            val preRequest = extensible.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name())
-            if (preRequest.notNullOrBlank()) {
-                events.add(KV.any().set("listen", "prerequest")
-                        .set("script", KV.any()
-                                .set("exec", preRequest!!.lines())
-                                .set("type", "text/javascript")
-                        ))
-            }
-            val test = extensible.getExt<String>(ClassExportRuleKeys.POST_TEST.name())
-            if (test.notNullOrBlank()) {
-                events.add(KV.any().set("listen", "test")
-                        .set("script", KV.any()
-                                .set("exec", test!!.lines())
-                                .set("type", "text/javascript")
-                        ))
-            }
+            addScriptsToItem(item,
+                    { extensible.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()) },
+                    { extensible.getExt<String>(ClassExportRuleKeys.POST_TEST.name()) }
+            )
+        }
+    }
+
+    private fun addScriptsToItem(item: HashMap<String, Any?>, preRequest: () -> String?, test: () -> String?) {
+        var events: ArrayList<Any>? = null
+
+        preRequest()?.takeIf { it.notNullOrBlank() }?.let {
+            events = ArrayList()
+            events!!.add(KV.any().set("listen", "prerequest")
+                    .set("script", KV.any()
+                            .set("exec", it.lines())
+                            .set("type", "text/javascript")
+                    ))
+        }
+
+        test()?.takeIf { it.notNullOrBlank() }?.let {
+            events = events ?: ArrayList()
+            events!!.add(KV.any().set("listen", "test")
+                    .set("script", KV.any()
+                            .set("exec", it.lines())
+                            .set("type", "text/javascript")
+                    ))
+        }
+
+        if (events.notNullOrEmpty()) {
             item["event"] = events
         }
     }
+
 
     fun wrapRootInfo(resource: Any, items: ArrayList<HashMap<String, Any?>>): HashMap<String, Any?> {
 
@@ -328,9 +342,34 @@ open class PostmanFormatter {
         val info: HashMap<String, Any?> = HashMap()
         postman["info"] = info
         parseNameAndDesc(resource, info)
-        (resource as? Extensible)?.let {
-            parseScripts(it, postman)
+        val context = SuvRuleContext()
+        context.setExt("postman", postman)
+        if (resource is Extensible) {
+            addScriptsToItem(postman,
+                    {
+                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
+                                context, null)
+                                .append(resource.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()), "\n")
+                    },
+                    {
+                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_TEST,
+                                context, null)
+                                .append(resource.getExt<String>(ClassExportRuleKeys.POST_TEST.name()), "\n")
+                    }
+            )
+        } else {
+            addScriptsToItem(postman,
+                    {
+                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
+                                context, null)
+                    },
+                    {
+                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_TEST,
+                                context, null)
+                    }
+            )
         }
+
         info["name"] = "${info["name"]}-${Date().formatDate("yyyyMMddHHmmss")}"
         info["schema"] = POSTMAN_SCHEMA_V2_1_0
         postman["item"] = items
