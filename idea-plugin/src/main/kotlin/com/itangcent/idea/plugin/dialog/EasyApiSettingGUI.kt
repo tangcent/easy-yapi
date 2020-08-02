@@ -51,7 +51,7 @@ class EasyApiSettingGUI {
 
     private var wrapCollectionCheckBox: JCheckBox? = null
 
-    private var autoMergeCheckBox: JCheckBox? = null
+    private var autoMergeScriptCheckBox: JCheckBox? = null
 
     //endregion
 
@@ -135,8 +135,8 @@ class EasyApiSettingGUI {
         autoComputer.bind(wrapCollectionCheckBox!!)
                 .mutual(this, "settings.wrapCollection")
 
-        autoComputer.bind(autoMergeCheckBox!!)
-                .mutual(this, "settings.autoMerge")
+        autoComputer.bind(autoMergeScriptCheckBox!!)
+                .mutual(this, "settings.autoMergeScript")
 
         autoComputer.bind(this.globalCacheSizeLabel!!)
                 .with(this::globalCacheSize)
