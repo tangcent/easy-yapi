@@ -45,10 +45,20 @@ class EasyApiSettingGUI {
     private var exportButton: JButton? = null
     //endregion
 
-    //region general-----------------------------------------------------
-    private var pullNewestDataBeforeCheckBox: JCheckBox? = null
+    //region postman
 
     private var postmanTokenTextArea: JTextArea? = null
+
+    private var wrapCollectionCheckBox: JCheckBox? = null
+
+    private var autoMergeScriptCheckBox: JCheckBox? = null
+
+    //endregion
+
+    //region general-----------------------------------------------------
+
+    private var pullNewestDataBeforeCheckBox: JCheckBox? = null
+
 
     private var generalPanel: JPanel? = null
 
@@ -94,6 +104,7 @@ class EasyApiSettingGUI {
     private var recommendedCheckBox: JCheckBox? = null
 
     private var httpTimeOutTextField: JTextField? = null
+
     //endregion general-----------------------------------------------------
 
     //region recommend
@@ -127,6 +138,12 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(postmanTokenTextArea!!)
                 .mutual(this, "settings.postmanToken")
+
+        autoComputer.bind(wrapCollectionCheckBox!!)
+                .mutual(this, "settings.wrapCollection")
+
+        autoComputer.bind(autoMergeScriptCheckBox!!)
+                .mutual(this, "settings.autoMergeScript")
 
         autoComputer.bind(this.globalCacheSizeLabel!!)
                 .with(this::globalCacheSize)
