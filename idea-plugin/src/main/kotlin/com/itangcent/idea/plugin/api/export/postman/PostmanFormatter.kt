@@ -14,6 +14,7 @@ import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.idea.plugin.api.export.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.ResolveMultiPath
 import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
@@ -44,6 +45,9 @@ open class PostmanFormatter {
 
     @Inject
     private val ruleComputer: RuleComputer? = null
+
+    @Inject
+    private val settingBinder: SettingBinder? = null
 
     fun request2Items(request: Request): List<HashMap<String, Any?>> {
 
@@ -142,7 +146,7 @@ open class PostmanFormatter {
 
         val item: HashMap<String, Any?> = HashMap()
 
-        item["name"] = request.name
+        item[NAME] = request.name
 
         parseScripts(request, item)
 
@@ -150,7 +154,7 @@ open class PostmanFormatter {
         item["request"] = requestInfo
 
         requestInfo["method"] = request.method
-        requestInfo["description"] = request.desc
+        requestInfo[DESCRIPTION] = request.desc
 
         val url: HashMap<String, Any?> = HashMap()
         requestInfo["url"] = url
@@ -161,10 +165,10 @@ open class PostmanFormatter {
         requestInfo["header"] = headers
         request.headers?.forEach {
             headers.add(KV.create<String, Any?>()
-                    .set("key", it.name)
-                    .set("value", it.value)
-                    .set("type", "text")
-                    .set("description", it.desc ?: "")
+                    .set(KEY, it.name)
+                    .set(VALUE, it.value)
+                    .set(TYPE, "text")
+                    .set(DESCRIPTION, it.desc ?: "")
             )
         }
 
@@ -172,10 +176,10 @@ open class PostmanFormatter {
         url["query"] = queryList
         request.querys?.forEach {
             queryList.add(KV.create<String, Any?>()
-                    .set("key", it.name)
-                    .set("value", it.value)
+                    .set(KEY, it.name)
+                    .set(VALUE, it.value)
                     .set("equals", true)
-                    .set("description", it.desc)
+                    .set(DESCRIPTION, it.desc)
             )
         }
 
@@ -183,27 +187,27 @@ open class PostmanFormatter {
         if (request.formParams != null) {
             val contentType = request.getContentType()
             if (contentType?.contains("form-data") == true) {
-                body["mode"] = "formdata"
+                body[MODE] = "formdata"
                 val formdatas: ArrayList<HashMap<String, Any?>> = ArrayList()
                 request.formParams!!.forEach {
                     formdatas.add(KV.create<String, Any?>()
-                            .set("key", it.name)
-                            .set("value", it.value)
-                            .set("type", it.type)
-                            .set("description", it.desc)
+                            .set(KEY, it.name)
+                            .set(VALUE, it.value)
+                            .set(TYPE, it.type)
+                            .set(DESCRIPTION, it.desc)
                     )
                 }
                 body["formdata"] = formdatas
 
             } else {
-                body["mode"] = "urlencoded"
+                body[MODE] = "urlencoded"
                 val urlEncodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
                 request.formParams!!.forEach {
                     urlEncodeds.add(KV.create<String, Any?>()
-                            .set("key", it.name)
-                            .set("value", it.value)
-                            .set("type", it.type)
-                            .set("description", it.desc)
+                            .set(KEY, it.name)
+                            .set(VALUE, it.value)
+                            .set(TYPE, it.type)
+                            .set(DESCRIPTION, it.desc)
                     )
                 }
                 body["urlencoded"] = urlEncodeds
@@ -211,7 +215,7 @@ open class PostmanFormatter {
         }
 
         if (request.body != null) {
-            body["mode"] = "raw"
+            body[MODE] = "raw"
             body["raw"] = RequestUtils.parseRawBody(request.body!!)
             body["options"] = KV.by("raw", KV.by("language", "json"))
         }
@@ -228,9 +232,9 @@ open class PostmanFormatter {
             request.response!!.forEachIndexed { index, response ->
                 val responseInfo: HashMap<String, Any?> = HashMap()
                 if (index > 0) {
-                    responseInfo["name"] = exampleName + (index + 1)
+                    responseInfo[NAME] = exampleName + (index + 1)
                 } else {
-                    responseInfo["name"] = exampleName
+                    responseInfo[NAME] = exampleName
                 }
                 responseInfo["originalRequest"] = requestInfo//need clone?request.clone()?
                 responseInfo["status"] = "OK"
@@ -242,48 +246,48 @@ open class PostmanFormatter {
 
                 if (response.headers?.any { it.name.equals("content-type", true) } == false) {
                     responseHeader.add(KV.create<String, Any?>()
-                            .set("name", "content-type")
-                            .set("key", "content-type")
-                            .set("value", "application/json;charset=UTF-8")
-                            .set("description", "The mime type of this content")
+                            .set(NAME, "content-type")
+                            .set(KEY, "content-type")
+                            .set(VALUE, "application/json;charset=UTF-8")
+                            .set(DESCRIPTION, "The mime type of this content")
                     )
                 }
 
                 if (response.headers?.any { it.name.equals("date", true) } == false) {
 
                     responseHeader.add(KV.create<String, Any?>()
-                            .set("name", "date")
-                            .set("key", "date")
-                            .set("value", Date().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
-                            .set("description", "The date and time that the message was sent")
+                            .set(NAME, "date")
+                            .set(KEY, "date")
+                            .set(VALUE, Date().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
+                            .set(DESCRIPTION, "The date and time that the message was sent")
                     )
                 }
 
                 if (response.headers?.any { it.name.equals("server", true) } == false) {
                     responseHeader.add(KV.create<String, Any?>()
-                            .set("name", "server")
-                            .set("key", "server")
-                            .set("value", "Apache-Coyote/1.1")
-                            .set("description", "A name for the server")
+                            .set(NAME, "server")
+                            .set(KEY, "server")
+                            .set(VALUE, "Apache-Coyote/1.1")
+                            .set(DESCRIPTION, "A name for the server")
                     )
                 }
 
                 if (response.headers?.any { it.name.equals("transfer-encoding", true) } == false) {
 
                     responseHeader.add(KV.create<String, Any?>()
-                            .set("name", "transfer-encoding")
-                            .set("key", "transfer-encoding")
-                            .set("value", "chunked")
-                            .set("description", "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.")
+                            .set(NAME, "transfer-encoding")
+                            .set(KEY, "transfer-encoding")
+                            .set(VALUE, "chunked")
+                            .set(DESCRIPTION, "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.")
                     )
                 }
 
                 response.headers?.forEach {
                     responseHeader.add(KV.create<String, Any?>()
-                            .set("name", it.name)
-                            .set("key", it.name)
-                            .set("value", it.value)
-                            .set("description", it.desc)
+                            .set(NAME, it.name)
+                            .set(KEY, it.name)
+                            .set(VALUE, it.value)
+                            .set(DESCRIPTION, it.desc)
                     )
                 }
 
@@ -317,7 +321,7 @@ open class PostmanFormatter {
             events!!.add(KV.any().set("listen", "prerequest")
                     .set("script", KV.any()
                             .set("exec", it.lines())
-                            .set("type", "text/javascript")
+                            .set(TYPE, "text/javascript")
                     ))
         }
 
@@ -326,7 +330,7 @@ open class PostmanFormatter {
             events!!.add(KV.any().set("listen", "test")
                     .set("script", KV.any()
                             .set("exec", it.lines())
-                            .set("type", "text/javascript")
+                            .set(TYPE, "text/javascript")
                     ))
         }
 
@@ -334,7 +338,6 @@ open class PostmanFormatter {
             item["event"] = events
         }
     }
-
 
     fun wrapRootInfo(resource: Any, items: ArrayList<HashMap<String, Any?>>): HashMap<String, Any?> {
 
@@ -370,9 +373,9 @@ open class PostmanFormatter {
             )
         }
 
-        info["name"] = "${info["name"]}-${Date().formatDate("yyyyMMddHHmmss")}"
+        info[NAME] = "${info[NAME]}-${Date().formatDate("yyyyMMddHHmmss")}"
         info["schema"] = POSTMAN_SCHEMA_V2_1_0
-        postman["item"] = items
+        postman[ITEM] = items
         return postman
     }
 
@@ -382,7 +385,7 @@ open class PostmanFormatter {
         (resource as? Extensible)?.let {
             parseScripts(it, postman)
         }
-        postman["item"] = items
+        postman[ITEM] = items
         return postman
     }
 
@@ -390,31 +393,105 @@ open class PostmanFormatter {
         if (resource is PsiClass) {
             val attr = resourceHelper!!.findAttrOfClass(resource)
             if (attr.isNullOrBlank()) {
-                info["name"] = resource.name!!
-                info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
+                info[NAME] = resource.name!!
+                info[DESCRIPTION] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
             } else {
                 val lines = attr.lines()
                 if (lines.size == 1) {
-                    info["name"] = attr
-                    info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
+                    info[NAME] = attr
+                    info[DESCRIPTION] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
                 } else {
-                    info["name"] = lines[0]
-                    info["description"] = attr
+                    info[NAME] = lines[0]
+                    info[DESCRIPTION] = attr
                 }
             }
         } else if (resource is Folder) {
-            info["name"] = resource.name
-            info["description"] = resource.attr
+            info[NAME] = resource.name
+            info[DESCRIPTION] = resource.attr
         } else if (resource is Pair<*, *>) {
-            info["name"] = resource.first
-            info["description"] = resource.second
+            info[NAME] = resource.first
+            info[DESCRIPTION] = resource.second
         } else {
-            info["name"] = resource.toString()
-            info["description"] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
+            info[NAME] = resource.toString()
+            info[DESCRIPTION] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
         }
     }
 
     fun parseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
+        val postmanCollection = doParseRequests(requests)
+        if (settingBinder!!.read().autoMergeScript) {
+            autoMerge(postmanCollection)
+        }
+        return postmanCollection
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun autoMerge(item: HashMap<String, Any?>) {
+        val items = item[ITEM] as? List<*>
+        if (items.isNullOrEmpty()) {
+            return
+        }
+
+        items.forEach { autoMerge(it as HashMap<String, Any?>) }
+
+        val events: List<*>? = findCommonEvents(items)
+        if (events.isNullOrEmpty()) {
+            return
+        }
+
+        items.forEach { (it as HashMap<String, Any?>).remove(EVENT) }
+
+        mergeEvents(item, events)
+
+        return
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun mergeEvents(item: java.util.HashMap<String, Any?>, events: List<*>) {
+        val existedEvents = item[EVENT] as? List<*>
+        if (existedEvents == null) {
+            item[EVENT] = events
+            return
+        }
+
+        for (event in events) {
+            val listenType = (event as HashMap<*, *>)["listen"] as String
+            val existedEvent = existedEvents.firstOrNull { (it as HashMap<*, *>)["listen"] == listenType }
+            if (existedEvent == null) {
+                (existedEvents as MutableList<Any?>).add(event)
+            } else {
+                existedEvent as HashMap<*, *>
+                val script = (existedEvent["script"] as HashMap<String, Any?>)
+                val newLines = ArrayList(script["exec"] as List<*>)
+                event.getAs<List<Any?>>("script", "exec")?.let { newLines.addAll(it) }
+                script["exec"] = newLines
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun findCommonEvents(items: List<*>): List<*>? {
+        if (items.isNullOrEmpty()) {
+            return null
+        }
+
+        if (items.size == 1) {
+            return (items[0] as HashMap<String, Any?>)[EVENT] as? List<*>
+        }
+
+        val events = (items[0] as HashMap<String, Any?>)[EVENT] as? List<*>
+        var i = 1;
+        while (i < items.size) {
+            if ((items[i] as HashMap<String, Any?>)[EVENT] as? List<*> != events) {
+                return null
+            }
+            ++i;
+        }
+
+        return events
+    }
+
+    private fun doParseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
 
 
         //parse [request...] ->
@@ -434,24 +511,33 @@ open class PostmanFormatter {
                     .add(request)
         }
 
-        moduleGroupedMap.forEach { module, requestsInModule ->
+        moduleGroupedMap.forEach { (module, requestsInModule) ->
             moduleFolderApiMap[module] = parseRequestsToFolder(requestsInModule)
         }
 
-
         if (moduleFolderApiMap.size == 1) {
+            val wrapCollection = settingBinder!!.read().wrapCollection
+
             //single module
             val folderApiMap = moduleFolderApiMap.values.first()
             if (folderApiMap.size == 1) {
                 //single folder
                 folderApiMap.entries.first().let {
-                    return wrapRootInfo(it.key, it.value)
+                    return if (wrapCollection) {
+                        wrapCollection(arrayListOf(wrapInfo(it.key, it.value)))
+                    } else {
+                        wrapRootInfo(it.key, it.value)
+                    }
                 }
             } else {
                 moduleFolderApiMap.entries.first().let { moduleAndFolders ->
                     val items: ArrayList<HashMap<String, Any?>> = ArrayList()
                     moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
-                    return wrapRootInfo(moduleAndFolders.key, items)
+                    return if (wrapCollection) {
+                        wrapCollection(arrayListOf(wrapInfo(moduleAndFolders.key, items)))
+                    } else {
+                        wrapRootInfo(moduleAndFolders.key, items)
+                    }
                 }
             }
         }
@@ -465,6 +551,10 @@ open class PostmanFormatter {
                 }
                 .forEach { modules.add(it) }
 
+        return wrapCollection(modules)
+    }
+
+    private fun wrapCollection(modules: ArrayList<HashMap<String, Any?>>): HashMap<String, Any?> {
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
         return wrapRootInfo(rootModule, modules)
     }
@@ -508,3 +598,13 @@ open class PostmanFormatter {
         const val POSTMAN_SCHEMA_V2_1_0 = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     }
 }
+
+
+private const val NAME = "name"
+private const val KEY = "key"
+private const val VALUE = "value"
+private const val TYPE = "type"
+private const val MODE = "mode"
+private const val DESCRIPTION = "description"
+private const val EVENT = "event"
+private const val ITEM = "item"
