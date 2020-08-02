@@ -8,8 +8,7 @@ matrix:
       jdk: openjdk8
 
 script:
-  - ./plugin-script/build_plugin.sh
-
+  - ./plugin-script/package_plugin.sh
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/**
@@ -18,3 +17,22 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+
+before_deploy:
+  - git config --local user.name "tangcent"
+  - git config --local user.email "pentatangcent@gmail.com"
+  - echo jars- `ls plugin`
+  - ./plugin-script/push_tag.sh
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  name: $TRAVIS_TAG_TITLE
+  body: $TRAVIS_TAG_BODY
+  file_glob: true
+  file: plugin/*
+  overwrite: true
+  skip_cleanup: true
+  on:
+    branch: master
+    repo: tangcent/easy-api
