@@ -193,6 +193,17 @@ object ClassExportRuleKeys {
     )
 
     /**
+     * Add pre-request scripts to top collection.
+     * This script will execute before every request in this collection.
+     *
+     * @see [https://learning.postman.com/docs/writing-scripts/pre-request-scripts]
+     */
+    val COLLECTION_POST_PRE_REQUEST: RuleKey<String> = SimpleRuleKey(
+            "collection.postman.prerequest", StringRule::class,
+            StringRuleMode.MERGE
+    )
+
+    /**
      * The test scripts for Postman API requests in JavaScript.
      *
      * @see [https://learning.postman.com/docs/writing-scripts/test-scripts/]
@@ -202,7 +213,6 @@ object ClassExportRuleKeys {
             StringRuleMode.MERGE
     )
 
-
     /**
      * Add test scripts to entire collections as well as to folders within collections.
      * These tests will execute after every request in this collection.
@@ -211,6 +221,17 @@ object ClassExportRuleKeys {
      */
     val CLASS_POST_TEST: RuleKey<String> = SimpleRuleKey(
             "class.postman.test", StringRule::class,
+            StringRuleMode.MERGE
+    )
+
+    /**
+     * Add test scripts to top collection.
+     * These tests will execute after every request in this collection.
+     *
+     * @see [https://learning.postman.com/docs/writing-scripts/test-scripts/]
+     */
+    val COLLECTION_POST_TEST: RuleKey<String> = SimpleRuleKey(
+            "collection.postman.test", StringRule::class,
             StringRuleMode.MERGE
     )
 

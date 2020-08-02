@@ -10,7 +10,15 @@ class Settings {
 
     var methodDocEnable: Boolean = false
 
+    //postman
+
     var postmanToken: String? = null
+
+    var wrapCollection: Boolean = false
+
+    var autoMergeScript: Boolean = false
+
+    //intelligent
 
     var formExpanded: Boolean = true
 
@@ -45,6 +53,8 @@ class Settings {
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
+        newSetting.wrapCollection = this.wrapCollection
+        newSetting.autoMergeScript = this.autoMergeScript
         newSetting.pullNewestDataBefore = this.pullNewestDataBefore
         newSetting.methodDocEnable = this.methodDocEnable
         newSetting.formExpanded = this.formExpanded
@@ -73,6 +83,8 @@ class Settings {
         if (pullNewestDataBefore != other.pullNewestDataBefore) return false
         if (methodDocEnable != other.methodDocEnable) return false
         if (postmanToken != other.postmanToken) return false
+        if (wrapCollection != other.wrapCollection) return false
+        if (autoMergeScript != other.autoMergeScript) return false
         if (formExpanded != other.formExpanded) return false
         if (readGetter != other.readGetter) return false
         if (inferEnable != other.inferEnable) return false
@@ -95,6 +107,8 @@ class Settings {
         var result = pullNewestDataBefore.hashCode()
         result = 31 * result + methodDocEnable.hashCode()
         result = 31 * result + (postmanToken?.hashCode() ?: 0)
+        result = 31 * result + wrapCollection.hashCode()
+        result = 31 * result + autoMergeScript.hashCode()
         result = 31 * result + formExpanded.hashCode()
         result = 31 * result + readGetter.hashCode()
         result = 31 * result + inferEnable.hashCode()

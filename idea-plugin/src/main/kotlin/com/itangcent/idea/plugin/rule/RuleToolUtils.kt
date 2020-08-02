@@ -32,11 +32,11 @@ class RuleToolUtils {
     //region collections
 
     fun newSet(vararg items: Any): Set<*> {
-        return HashSet(Arrays.asList(*items))
+        return hashSetOf(*items)
     }
 
     fun newList(vararg items: Any): List<*> {
-        return ArrayList(Arrays.asList(*items))
+        return arrayListOf(*items)
     }
 
     fun newMap(): Map<*, *> {
@@ -384,7 +384,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringBefore(str: String?, separator: String): String {
+    fun substringBefore(str: String?, separator: String): String? {
         return StringUtils.substringBefore(str, separator)
     }
 
@@ -416,7 +416,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringAfter(str: String?, separator: String): String {
+    fun substringAfter(str: String?, separator: String): String? {
         return StringUtils.substringAfter(str, separator)
     }
 
@@ -447,7 +447,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringBeforeLast(str: String?, separator: String): String {
+    fun substringBeforeLast(str: String?, separator: String): String? {
         return StringUtils.substringBeforeLast(str, separator)
     }
 
@@ -480,7 +480,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringAfterLast(str: String?, separator: String): String {
+    fun substringAfterLast(str: String?, separator: String): String? {
         return StringUtils.substringAfterLast(str, separator)
     }
 
@@ -505,7 +505,7 @@ class RuleToolUtils {
      * @return the substring, {@code null} if no match
      * @since 2.0
      */
-    fun substringBetween(str: String?, tag: String): String {
+    fun substringBetween(str: String?, tag: String): String? {
         return StringUtils.substringBetween(str, tag)
     }
 
@@ -536,7 +536,7 @@ class RuleToolUtils {
      * @return the substring, {@code null} if no match
      * @since 2.0
      */
-    fun substringBetween(str: String?, open: String, close: String): String {
+    fun substringBetween(str: String?, open: String, close: String): String? {
         return StringUtils.substringBetween(str, open, close)
     }
 
@@ -740,7 +740,7 @@ class RuleToolUtils {
      * If this string starts with the given [prefix], returns a copy of this string
      * with the prefix removed. Otherwise, returns this string.
      */
-    fun removePrefix(str: String, prefix: String): String {
+    fun removePrefix(str: String, prefix: String): String? {
         return str.removePrefix(prefix)
     }
 
@@ -748,7 +748,7 @@ class RuleToolUtils {
      * If this string ends with the given [suffix], returns a copy of this string
      * with the suffix removed. Otherwise, returns this string.
      */
-    fun removeSuffix(str: String, suffix: String): String {
+    fun removeSuffix(str: String, suffix: String): String? {
         return str.removeSuffix(suffix)
     }
 
@@ -759,34 +759,34 @@ class RuleToolUtils {
     /**
      * current time as "yyyy-MM-dd HH:mm:ss"
      */
-    fun now(): String {
+    fun now(): String? {
         return now(null)
     }
 
     /**
      * current time as the special pattern
      */
-    fun now(pattern: String?): String {
+    fun now(pattern: String?): String? {
         return DateFormatUtils.format(Date(), pattern ?: "yyyy-MM-dd HH:mm:ss")
     }
 
     /**
      * current time as "yyyy-MM-dd"
      */
-    fun today(): String {
+    fun today(): String? {
         return now(null)
     }
 
     /**
      * format the time as the special pattern
      */
-    fun format(time: Long, pattern: String?): String {
+    fun format(time: Long, pattern: String?): String? {
         return DateFormatUtils.format(Date(time), pattern ?: "yyyy-MM-dd HH:mm:ss")
     }
 
     //endregion
 
-    fun debug(any: Any?): String {
+    fun debug(any: Any?): String? {
         if (any == null) {
             return "debug object is null"
         }
@@ -864,7 +864,7 @@ class RuleToolUtils {
         return sb.toString()
     }
 
-    private fun returnTypeOfFun(function: KFunction<*>): String {
+    private fun returnTypeOfFun(function: KFunction<*>): String? {
         val scriptReturn = function.findAnnotation<ScriptReturn>()
         if (scriptReturn != null) {
             return scriptReturn.name
@@ -872,7 +872,7 @@ class RuleToolUtils {
         return typeName(function.returnType)
     }
 
-    private fun typeName(kType: KType): String {
+    private fun typeName(kType: KType): String? {
         val arguments = kType.arguments
         val classifier = kType.classifier
         if (arguments.isEmpty()) {
@@ -900,14 +900,14 @@ class RuleToolUtils {
         }
     }
 
-    private fun typeName(kClass: KClass<*>): String {
+    private fun typeName(kClass: KClass<*>): String? {
         val annotation = kClass.findAnnotation<ScriptTypeName>()
         if (annotation != null) return annotation.name
         val qualifiedName = kClass.qualifiedName ?: return "object"
         return typeName(qualifiedName)
     }
 
-    private fun typeName(qualifiedName: String): String {
+    private fun typeName(qualifiedName: String): String? {
         return typeMapper[qualifiedName] ?: qualifiedName
     }
 
