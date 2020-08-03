@@ -4,12 +4,7 @@ daysUntilStale: 20
 daysUntilClose: 5
 # Issues with these labels will never be considered stale
 exemptLabels:
-  - bug
   - release
-  - enhancement
-  - new feature
-  - release
-  - work-in-progress
   - wait-for-release
 # Label to use when marking an issue as stale
 staleLabel: wontfix
