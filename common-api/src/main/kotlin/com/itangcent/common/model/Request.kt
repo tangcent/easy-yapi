@@ -47,11 +47,12 @@ fun Request.getContentType(): String? {
     return this.header("content-type")
 }
 
-fun Request.canHasForm(): Boolean {
-    if (this.method == "GET") {
+fun Request.hasForm(): Boolean {
+    if (this.method == "GET" || this.method == "ALL") {
         return false
     }
-    val contentType = this.getContentType() ?: return true
+
+    val contentType = this.getContentType() ?: return false
     return !contentType.contains("application/json")
 }
 

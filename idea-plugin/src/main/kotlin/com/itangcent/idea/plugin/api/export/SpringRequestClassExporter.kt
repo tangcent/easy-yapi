@@ -9,7 +9,6 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
-import com.itangcent.common.model.canHasForm
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.utils.SpringClassName
@@ -184,16 +183,18 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         if (paramType.isNullOrBlank()) {
             paramType = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
-                    parameter)
+                    parameter) ?: "query"
         }
 
         if (paramType.notNullOrBlank()) {
             when (paramType) {
                 "body" -> {
+                    requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
                     setRequestBody(request, typeObject, ultimateComment)
                     return
                 }
                 "form" -> {
+                    requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
                     addParamAsForm(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
                     return
                 }
@@ -223,10 +224,10 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             return
         }
 
-        if (request.canHasForm()) {
-            addParamAsForm(parameter, request, typeObject, ultimateComment)
-            return
-        }
+//        if (request.hasForm()) {
+//            addParamAsForm(parameter, request, typeObject, ultimateComment)
+//            return
+//        }
 
         //else
         addParamAsQuery(parameter, request, typeObject, ultimateComment)

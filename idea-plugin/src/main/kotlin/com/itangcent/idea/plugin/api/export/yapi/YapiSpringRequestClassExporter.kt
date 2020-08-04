@@ -194,11 +194,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         if (paramType.notNullOrBlank()) {
             when (paramType) {
                 "body" -> {
+                    requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
                     setRequestBody(request, typeObject, ultimateComment)
                             .trySetDemo(demo)
                     return
                 }
                 "form" -> {
+                    requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
                     addParamAsForm(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
                             .trySetDemo(demo)
                     return
@@ -232,11 +234,11 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             return
         }
 
-        if (request.canHasForm()) {
-            addParamAsForm(parameter, request, typeObject, ultimateComment)
-                    .trySetDemo(demo)
-            return
-        }
+//        if (request.canHasForm()) {
+//            addParamAsForm(parameter, request, typeObject, ultimateComment)
+//                    .trySetDemo(demo)
+//            return
+//        }
 
         //else
         addParamAsQuery(parameter, request, typeObject, ultimateComment)
