@@ -172,3 +172,9 @@
     
     * feat: new Setting [postman] wrapCollection & autoMergeScript [(#317)](https://github.com/tangcent/easy-api/pull/317)
     
+    * opti: parse param as query by default [(#229)](https://github.com/tangcent/easy-yapi/pull/229)
+    
+    * feat: [ScriptExecutor] support select field or method in the class. [(#231)](https://github.com/tangcent/easy-yapi/pull/231)
+    
+    * feat: add rule alias `param.doc`/`method.doc`/`class.doc` [(#232)](https://github.com/tangcent/easy-yapi/pull/232)
+    
