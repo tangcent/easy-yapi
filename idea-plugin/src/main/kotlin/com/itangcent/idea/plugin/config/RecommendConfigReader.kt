@@ -137,6 +137,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
         }
 
         private const val config_name = ".recommend.easy.api.config"
+
         //        private const val config_version = ".recommend.easy.api.config.version"
         private const val curr_version = "1.0.1.0"
         //$version$content

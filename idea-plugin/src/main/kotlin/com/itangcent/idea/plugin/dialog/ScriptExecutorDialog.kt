@@ -29,24 +29,32 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.jvm.DuckTypeHelper
+import com.itangcent.intellij.jvm.element.jvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
+import org.jetbrains.uast.getContainingClass
 import java.awt.Dimension
 import java.awt.EventQueue
-import java.awt.event.*
+import java.awt.event.KeyEvent
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import java.util.*
 import java.util.Timer
 import java.util.concurrent.atomic.AtomicLong
 import javax.script.ScriptEngineManager
 import javax.swing.*
+import javax.swing.event.ListDataEvent
+import javax.swing.event.ListDataListener
+import kotlin.collections.ArrayList
+
 
 class ScriptExecutorDialog : JDialog() {
     private var contentPane: JPanel? = null
     private var consoleTextArea: JTextArea? = null
-    private var contextTextField: JTextField? = null
+    private var contextComboBox: JComboBox<ScriptContext>? = null
     private var executeContextButton: JButton? = null
     private var scriptTextScrollPane: JScrollPane? = null
     private var scriptTextArea: JComponent? = null
@@ -61,7 +69,7 @@ class ScriptExecutorDialog : JDialog() {
 
     private val autoComputer: AutoComputer = AutoComputer()
 
-    private var context: PsiElement? = null
+    private var context: ScriptContext? = null
 
     @Inject
     val actionContext: ActionContext? = null
@@ -120,18 +128,6 @@ class ScriptExecutorDialog : JDialog() {
 
         this.scriptTypeComboBox!!.model = DefaultComboBoxModel(scriptSupports.filter { it.checkSupport() }.toTypedArray())
 
-        val dialog = this
-        this.contextTextField!!.addMouseListener(object : MouseAdapter() {
-            override fun mouseClicked(e: MouseEvent?) {
-                val chooser = TreeClassChooserFactory.getInstance(project)
-                        .createWithInnerClassesScopeChooser("Choose context", GlobalSearchScope.allScope(project!!),
-                                ClassFilter.ALL, null)
-                chooser.showDialog()
-                val selected = chooser.selected ?: return
-                autoComputer.value(dialog::context, selected)
-            }
-        })
-
         this.executeContextButton!!.addActionListener {
             autoComputer.value(this::consoleText, "script parsing...")
             this.scriptInfo?.let { info -> doEvalToConsole(info) }
@@ -145,7 +141,7 @@ class ScriptExecutorDialog : JDialog() {
 
         helpButton!!.addActionListener {
             scriptInfo?.scriptType?.let { scriptType ->
-                doEvalToConsole(ScriptInfo(scriptType.demoCode(), scriptType, context))
+                doEvalToConsole(ScriptInfo(scriptType.demoCode(), scriptType, context?.element()))
             }
         }
 
@@ -163,18 +159,11 @@ class ScriptExecutorDialog : JDialog() {
 
         autoComputer.listen(this::context)
                 .action { ele ->
-                    ele?.let {
-                        contextSwitchListener?.switchTo(it)
+                    if (ele == EMPTY_SCRIPT_CONTEXT) {
+                        return@action
                     }
-                }
-
-        autoComputer.bind(this.contextTextField!!)
-                .with(this::context)
-                .eval { context ->
-                    return@eval when (context) {
-                        is PsiClass -> context.qualifiedName
-                        is PsiElement -> PsiClassUtils.fullNameOfMember(context)
-                        else -> ""
+                    ele?.element()?.let {
+                        contextSwitchListener?.switchTo(it)
                     }
                 }
 
@@ -207,10 +196,10 @@ class ScriptExecutorDialog : JDialog() {
                 .with(this.scriptTypeComboBox!!)
                 .with(this::scriptText)
                 .eval { context, scriptType, script ->
-                    if (context == null) return@eval "please choose context"
+                    if (context?.element() == null) return@eval "please choose context"
                     if (script == null) return@eval "please input script"
                     if (scriptType == null) return@eval "please select script type"
-                    this.scriptInfo = ScriptInfo(script, scriptType, context)
+                    this.scriptInfo = ScriptInfo(script, scriptType, context.element())
                     return@eval if (this.autoExecute) {
                         "script parsing..."
                     } else {
@@ -225,6 +214,7 @@ class ScriptExecutorDialog : JDialog() {
 
         buildEditor(GroovyScriptSupport)
 
+        //try find selected class
         actionContext.runInReadUI {
             try {
                 val psiFile = actionContext.cacheOrCompute(CommonDataKeys.PSI_FILE.name) {
@@ -232,12 +222,82 @@ class ScriptExecutorDialog : JDialog() {
                 }
                 if (psiFile != null && psiFile is PsiClassOwner) {
                     psiFile.classes.firstOrNull()?.let {
-                        autoComputer.value(this::context, it)
+                        autoComputer.value(this::context, SimpleScriptContext(it))
                     }
                 }
+                refreshScriptContexts()
             } catch (e: Exception) {
                 logger!!.traceWarn("error handle class", e)
             }
+        }
+    }
+
+    private fun onContextSelected() {
+
+        val selectedContext: Any? = this.contextComboBox!!.model.selectedItem ?: return
+
+        if (selectedContext == EMPTY_SCRIPT_CONTEXT) {
+            selectClass()
+            return
+        }
+
+        autoComputer.value(this::context, selectedContext as SimpleScriptContext)
+    }
+
+    private fun selectClass() {
+        val dialog = this
+        val chooser = TreeClassChooserFactory.getInstance(project)
+                .createWithInnerClassesScopeChooser("Choose context", GlobalSearchScope.allScope(project!!),
+                        ClassFilter.ALL, null)
+        chooser.showDialog()
+        val selected = chooser.selected ?: return
+        autoComputer.value(dialog::context, SimpleScriptContext(selected))
+
+        refreshScriptContexts()
+
+        return
+    }
+
+    private fun refreshScriptContexts() {
+        val contexts: ArrayList<ScriptContext> = ArrayList()
+        contexts.add(EMPTY_SCRIPT_CONTEXT)
+        val context = this.context
+        context?.element()?.let { ele ->
+            val psiCls = if (ele is PsiClass) {
+                ele
+            } else {
+                ele.getContainingClass()
+            }
+            if (psiCls != null) {
+                actionContext!!.callInReadUI {
+                    contexts.add(SimpleScriptContext(psiCls, psiCls.qualifiedName))
+                    jvmClassHelper.getAllFields(psiCls)
+                            .forEach {
+                                contexts.add(SimpleScriptContext(it, PsiClassUtils.fullNameOfField(it)))
+                            }
+                    jvmClassHelper.getAllMethods(psiCls)
+                            .forEach {
+                                contexts.add(SimpleScriptContext(it, PsiClassUtils.fullNameOfMethod(it)))
+                            }
+                }
+            }
+        }
+
+        actionContext!!.runInSwingUI {
+            this.contextComboBox!!.model = DefaultComboBoxModel(contexts.toTypedArray())
+            this.contextComboBox!!.model
+                    .also { it.selectedItem = context }
+                    .addListDataListener(object : ListDataListener {
+                        override fun contentsChanged(e: ListDataEvent?) {
+                            onContextSelected()
+                        }
+
+                        override fun intervalRemoved(e: ListDataEvent?) {
+                        }
+
+                        override fun intervalAdded(e: ListDataEvent?) {
+                        }
+                    })
         }
     }
 
@@ -315,7 +375,8 @@ class ScriptExecutorDialog : JDialog() {
             EventQueue.invokeLater {
                 try {
                     val currScriptInfo = ScriptInfo(this.scriptText,
-                            this.scriptTypeComboBox!!.selectedItem!! as ScriptSupport, context)
+                            this.scriptTypeComboBox!!.selectedItem!! as ScriptSupport,
+                            context?.element())
 
                     if (this.scriptInfo != currScriptInfo) {
                         this.scriptInfo = currScriptInfo
@@ -576,9 +637,70 @@ class ScriptExecutorDialog : JDialog() {
         }
     }
 
+    inner class SimpleScriptContext : ScriptContext {
+
+        private var element: PsiElement?
+
+        private var name: String? = null
+
+        override fun element(): PsiElement? {
+            return this.element
+        }
+
+        override fun name(): String? {
+            return this.name
+        }
+
+        constructor(context: PsiElement?) {
+            this.element = context
+        }
+
+        constructor(context: PsiElement?, name: String?) {
+            this.element = context
+            this.name = name
+        }
+
+        override fun toString(): String {
+            if (name != null) {
+                return name!!
+            }
+            if (element == null) {
+                return "select context"
+            }
+            name = actionContext!!.callInReadUI {
+                PsiClassUtils.fullNameOfMember(element!!)
+            }
+            return name ?: ""
+        }
+    }
+
+
     companion object {
         val scriptSupports = arrayOf(GroovyScriptSupport, GeneralScriptSupport, JsScriptSupport)
+
         private const val DELAY: Long = 3000L
+
         const val script_path = "easy.api.script.path"
+
+        private val EMPTY_SCRIPT_CONTEXT = object : ScriptContext {
+            override fun element(): PsiElement? {
+                return null
+            }
+
+            override fun name(): String? {
+                return "select context"
+            }
+
+            override fun toString(): String {
+                return "select context"
+            }
+        }
     }
+}
+
+interface ScriptContext {
+
+    fun element(): PsiElement?
+
+    fun name(): String?
 }
