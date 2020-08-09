@@ -35,7 +35,6 @@ import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.jetbrains.uast.getContainingClass
 import java.awt.Dimension
 import java.awt.EventQueue
 import java.awt.event.KeyEvent
@@ -703,4 +702,12 @@ interface ScriptContext {
     fun element(): PsiElement?
 
     fun name(): String?
+}
+
+fun PsiElement?.getContainingClass(): PsiClass? {
+    return when (this) {
+        is PsiClass -> this
+        is PsiMember -> this.containingClass
+        else -> null
+    }
 }
