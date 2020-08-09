@@ -32,16 +32,24 @@ object ClassExportRuleKeys {
     val METHOD_DOC_METHOD: RuleKey<String> = SimpleRuleKey("mdoc.method.http.method", StringRule::class,
             StringRuleMode.SINGLE)
 
-    val PARAM_DOC: RuleKey<String> = SimpleRuleKey("doc.param", StringRule::class,
-            StringRuleMode.MERGE_DISTINCT)
+    val PARAM_DOC: RuleKey<String> = SimpleRuleKey(
+            "param.doc",
+            arrayOf("doc.param"),
+            StringRule::class,
+            StringRuleMode.MERGE_DISTINCT
+    )
 
     val METHOD_DOC: RuleKey<String> = SimpleRuleKey(
-            "doc.method", StringRule::class,
+            "method.doc",
+            arrayOf("doc.method"),
+            StringRule::class,
             StringRuleMode.MERGE_DISTINCT
     )
 
     val CLASS_DOC: RuleKey<String> = SimpleRuleKey(
-            "doc.class", StringRule::class,
+            "class.doc",
+            arrayOf("doc.class"),
+            StringRule::class,
             StringRuleMode.MERGE_DISTINCT
     )
 
