@@ -72,6 +72,7 @@ object GsonExUtils {
     class BeanWithClass {
         //class
         var c: String? = null
+
         //json
         var j: String? = null
     }
