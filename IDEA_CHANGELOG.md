@@ -178,3 +178,9 @@
     
     * feat: add rule alias `param.doc`/`method.doc`/`class.doc` [(#232)](https://github.com/tangcent/easy-yapi/pull/232)
     
+    * chore: fix recommend config for ignore serialVersionUID [(#237)](https://github.com/tangcent/easy-yapi/pull/237)
+    
+    * chore: remove cache of recommend config [(#238)](https://github.com/tangcent/easy-yapi/pull/238)
+    
+    * chore: update recommend config [(#239)](https://github.com/tangcent/easy-yapi/pull/239)
+    
