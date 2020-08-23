@@ -2,9 +2,7 @@ package com.itangcent.idea.plugin.config
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
-import com.intellij.ide.util.PropertiesComponent
 import com.itangcent.common.utils.invokeMethod
-import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
@@ -138,29 +136,11 @@ class RecommendConfigReader : ConfigReader, Initializable {
 
         private const val config_name = ".recommend.easy.api.config"
 
-        //        private const val config_version = ".recommend.easy.api.config.version"
-        private const val curr_version = "1.0.1.0"
-        //$version$content
-
         private fun loadRecommendConfig(): String {
-
-            val propertiesComponent = PropertiesComponent.getInstance()
-            val cachedValue = propertiesComponent.getValue(config_name)
-            if (cachedValue.notNullOrBlank()) {
-                val cachedVersion = cachedValue!!.substring(0, 10).trim()
-                if (cachedVersion == curr_version) {
-                    RECOMMEND_CONFIG_PLAINT = cachedValue.substring(10)
-                    return cachedValue
-                }
-            }
-
             val config = IOUtils.toString(RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
                     ?: RecommendConfigReader::class.java.getResourceAsStream(config_name),
                     Charsets.UTF_8)
-
             RECOMMEND_CONFIG_PLAINT = config
-            //the version always take 10 chars
-            propertiesComponent.setValue(config_name, curr_version.padEnd(10) + config)
             return config
         }
 
