@@ -3,8 +3,8 @@ package com.itangcent.idea.plugin.api.export
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
-import com.itangcent.common.kit.concat
 import com.itangcent.common.kit.headLine
+import com.itangcent.common.utils.append
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
@@ -46,7 +46,7 @@ open class ApiHelper {
 
         val docByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
 
-        return attrOfDocComment.concat(docByRule)
+        return attrOfDocComment.append(docByRule, "\n")
     }
 
     protected open fun findAttrOfMethod(method: PsiMethod): String? {
@@ -54,7 +54,7 @@ open class ApiHelper {
 
         val docByRule = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC, method)
 
-        return attrOfDocComment.concat(docByRule)
+        return attrOfDocComment.append(docByRule, "\n")
     }
 
     fun nameAndAttrOfApi(explicitMethod: ExplicitMethod): Pair<String?, String?> {
@@ -63,7 +63,7 @@ open class ApiHelper {
         nameAndAttrOfApi(explicitMethod, {
             name = it
         }, {
-            attr = attr.concat(it)
+            attr = attr.append(it, "\n")
         })
         return name to attr
     }
