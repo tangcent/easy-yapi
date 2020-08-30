@@ -59,14 +59,6 @@ fun Any?.toJson(): String? {
     return GsonUtils.toJson(this)
 }
 
-fun String?.concat(any: Any?, separator: CharSequence = "\n"): String? {
-    return when {
-        this == null -> any?.toString()
-        any == null -> this
-        else -> this + separator + any
-    }
-}
-
 fun String.headLine(): String? {
     if (this.isBlank()) return null
 
