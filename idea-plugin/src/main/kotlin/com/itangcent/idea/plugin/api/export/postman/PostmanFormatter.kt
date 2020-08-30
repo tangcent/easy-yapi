@@ -507,7 +507,7 @@ open class PostmanFormatter {
         val moduleGroupedMap: HashMap<String, MutableList<Request>> = HashMap()
         requests.forEach { request ->
             val module = request.resource?.let { moduleHelper!!.findModule(it) } ?: "easy-api"
-            moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
+            moduleGroupedMap.safeComputeIfAbsent(module) { ArrayList() }!!
                     .add(request)
         }
 
@@ -569,7 +569,7 @@ open class PostmanFormatter {
         val folderGroupedMap: HashMap<Folder, ArrayList<HashMap<String, Any?>>> = HashMap()
         requests.forEach { request ->
             val folder = formatFolderHelper!!.resolveFolder(request.resource ?: NULL_RESOURCE)
-            folderGroupedMap.computeIfAbsent(folder) { ArrayList() }
+            folderGroupedMap.safeComputeIfAbsent(folder) { ArrayList() }!!
                     .addAll(request2Items(request))
         }
 

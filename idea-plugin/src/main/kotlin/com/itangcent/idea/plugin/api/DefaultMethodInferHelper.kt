@@ -346,9 +346,11 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
     private fun tryInfer(infer: Infer): Any? {
         actionContext!!.checkStatus()
-        //find recursive call
-        methodStack.filter { it.callMethod() == infer.callMethod() }
-                .forEach { return it.possible() }
+        try {//find recursive call
+            methodStack.filter { it.callMethod() == infer.callMethod() }
+                    .forEach { return it.possible() }
+        } catch (ignore: Exception) {
+        }
         try {
             methodStack.push(infer)
             return infer.infer()

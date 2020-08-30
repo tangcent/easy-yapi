@@ -12,6 +12,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.idea.plugin.api.export.FormatFolderHelper
@@ -69,7 +70,7 @@ class MarkdownFormatter {
         val moduleGroupedMap: HashMap<String, MutableList<Doc>> = HashMap()
         requests.forEach { request ->
             val module = request.resource?.let { moduleHelper!!.findModule(it) } ?: "easy-api"
-            moduleGroupedMap.computeIfAbsent(module) { ArrayList() }
+            moduleGroupedMap.safeComputeIfAbsent(module) { ArrayList() }!!
                     .add(request)
         }
 
@@ -118,7 +119,7 @@ class MarkdownFormatter {
         val folderGroupedMap: HashMap<Folder, ArrayList<Doc>> = HashMap()
         requests.forEach { request ->
             val folder = formatFolderHelper!!.resolveFolder(request.resource ?: PostmanFormatter.NULL_RESOURCE)
-            folderGroupedMap.computeIfAbsent(folder) { ArrayList() }
+            folderGroupedMap.safeComputeIfAbsent(folder) { ArrayList() }!!
                     .add(request)
         }
 

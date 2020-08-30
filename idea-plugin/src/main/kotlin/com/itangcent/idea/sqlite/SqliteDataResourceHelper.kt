@@ -2,6 +2,7 @@ package com.itangcent.idea.sqlite
 
 import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.intellij.logger.Logger
 import org.sqlite.SQLiteConfig
 import org.sqlite.SQLiteDataSource
@@ -18,7 +19,7 @@ class SqliteDataResourceHelper {
     private val logger: Logger? = null
 
     private fun getSD(fileName: String): SQLiteDataSource {
-        return sdCache.computeIfAbsent(fileName) {
+        return sdCache.safeComputeIfAbsent(fileName) {
             val sqLiteConfig = SQLiteConfig()
             sqLiteConfig.setSynchronous(SQLiteConfig.SynchronousMode.OFF)
             sqLiteConfig.setCacheSize(1024 * 8)
@@ -27,8 +28,8 @@ class SqliteDataResourceHelper {
             sqLiteConfig.setBusyTimeout("60000")
             val sd = SQLiteConnectionPoolDataSource(sqLiteConfig)
             sd.url = "jdbc:sqlite:$fileName"
-            return@computeIfAbsent sd
-        }
+            sd
+        }!!
     }
 
     companion object {

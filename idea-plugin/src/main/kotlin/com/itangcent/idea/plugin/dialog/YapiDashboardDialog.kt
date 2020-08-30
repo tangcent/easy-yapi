@@ -10,10 +10,11 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.psi.*
 import com.itangcent.common.concurrent.AQSCountLatch
 import com.itangcent.common.concurrent.CountLatch
+import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
-import com.itangcent.common.kit.KitUtils
+import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
@@ -319,13 +320,13 @@ class YapiDashboardDialog : JDialog() {
                                 anyFound = true
                                 val resourceClass = resourceHelper!!.findResourceClass(doc.resource!!)
 
-                                val clsTreeNode = classNodeMap.computeIfAbsent(resourceClass!!) {
+                                val clsTreeNode = classNodeMap.safeComputeIfAbsent(resourceClass!!) {
                                     val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper.findAttrOfClass(resourceClass))
                                     val node = DefaultMutableTreeNode(classProjectNodeData)
                                     moduleNode.add(node)
                                     (moduleNode.userObject as ModuleProjectNodeData).addSubProjectNodeData(classProjectNodeData)
-                                    return@computeIfAbsent node
-                                }
+                                    return@safeComputeIfAbsent node
+                                }!!
 
                                 val apiProjectNodeData = ApiProjectNodeData(this, doc)
 

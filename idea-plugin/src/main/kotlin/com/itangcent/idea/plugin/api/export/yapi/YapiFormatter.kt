@@ -567,13 +567,13 @@ open class YapiFormatter {
     private val regexParseCache: HashMap<String, (String?) -> Boolean> = HashMap()
 
     private fun parseRegexOrConstant(str: String): (String?) -> Boolean {
-        return regexParseCache.computeIfAbsent(str) {
+        return regexParseCache.safeComputeIfAbsent(str) {
             if (str.isBlank()) {
-                return@computeIfAbsent { true }
+                return@safeComputeIfAbsent { true }
             }
             val tinyStr = str.trim()
             if (tinyStr == "*") {
-                return@computeIfAbsent { true }
+                return@safeComputeIfAbsent { true }
             }
 
             if (tinyStr.contains("*")) {
@@ -589,15 +589,15 @@ open class YapiFormatter {
                         }$"
                 )
 
-                return@computeIfAbsent {
+                return@safeComputeIfAbsent {
                     pattern.matcher(it).matches()
                 }
             }
 
-            return@computeIfAbsent {
+            return@safeComputeIfAbsent {
                 str == it
             }
-        }
+        }!!
     }
 
     class MockRule(val pathPredict: (String?) -> Boolean,
