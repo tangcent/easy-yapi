@@ -40,6 +40,15 @@ class SuvRuleParser : RuleParser {
         }
     }
 
+    override fun parseEventRule(rule: String): EventRule? {
+        return when {
+            rule.isBlank() -> null
+            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseEventRule(rule.removePrefix(JS_PREFIX))
+            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseEventRule(rule.removePrefix(GROOVY_PREFIX))
+            else -> getRuleParser(SimpleRuleParser::class).parseEventRule(rule)
+        }
+    }
+
     private val ruleParserCache: HashMap<KClass<*>, RuleParser> = LinkedHashMap()
 
     private fun getRuleParser(parserClass: KClass<*>): RuleParser {

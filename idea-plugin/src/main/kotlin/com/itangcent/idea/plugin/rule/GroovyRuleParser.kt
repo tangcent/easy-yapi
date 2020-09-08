@@ -8,5 +8,6 @@ class GroovyRuleParser : StandardJdkRuleParser() {
     override fun scriptType(): String {
         return "groovy"
     }
+
 }
 

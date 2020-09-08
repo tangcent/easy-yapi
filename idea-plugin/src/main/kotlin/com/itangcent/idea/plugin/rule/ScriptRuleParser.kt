@@ -69,6 +69,12 @@ abstract class ScriptRuleParser : RuleParser {
         }
     }
 
+    override fun parseEventRule(rule: String): EventRule? {
+        return EventRule.of {
+            eval(rule, it)
+        }
+    }
+
     private fun eval(ruleScript: String, context: RuleContext): Any? {
         return try {
             val simpleScriptContext = SimpleScriptContext()
