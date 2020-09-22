@@ -184,3 +184,9 @@
     
     * chore: update recommend config [(#239)](https://github.com/tangcent/easy-yapi/pull/239)
     
+    * feat: support DeferredResult by recommend [(#250)](https://github.com/tangcent/easy-yapi/pull/250)
+    
+    * feat: new recommend config \[support_enum_common] [(#251)](https://github.com/tangcent/easy-yapi/pull/251)
+    
+    * fix: fix class/type #isExtend [(#253)](https://github.com/tangcent/easy-yapi/pull/253)
+    
