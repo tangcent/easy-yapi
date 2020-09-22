@@ -309,14 +309,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun isExtend(superClass: String): Boolean {
-            var currClass: PsiClass? = psiClass
-            do {
-                if (superClass == currClass!!.qualifiedName) {
-                    return true
-                }
-                currClass = currClass.superClass
-            } while (currClass != null && currClass.name != "Object")
-            return false
+            return jvmClassHelper!!.isInheritor(psiClass, superClass)
         }
 
         override fun isMap(): Boolean {
@@ -744,16 +737,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun isExtend(superClass: String): Boolean {
-            return getResource()?.let { psiClass ->
-                var currClass: PsiClass? = psiClass as PsiClass
-                do {
-                    if (superClass == currClass!!.qualifiedName) {
-                        return true
-                    }
-                    currClass = currClass.superClass
-                } while (currClass != null && currClass.name != "Object")
-                return false
-            } ?: false
+            return jvmClassHelper!!.isInheritor(psiType, superClass)
         }
 
         override fun isMap(): Boolean {
@@ -876,16 +860,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun isExtend(superClass: String): Boolean {
-            return getResource()?.let { psiClass ->
-                var currClass: PsiClass? = psiClass as PsiClass
-                do {
-                    if (superClass == currClass!!.qualifiedName) {
-                        return true
-                    }
-                    currClass = currClass.superClass
-                } while (currClass != null && currClass.name != "Object")
-                return false
-            } ?: false
+            return jvmClassHelper!!.isInheritor(duckType, superClass)
         }
 
         override fun isMap(): Boolean {
