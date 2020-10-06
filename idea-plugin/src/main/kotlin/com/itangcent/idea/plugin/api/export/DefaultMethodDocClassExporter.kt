@@ -14,6 +14,7 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.group.JsonSetting
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
@@ -64,13 +65,13 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     protected val psiClassHelper: PsiClassHelper? = null
 
     @Inject
-    protected val docParseHelper: DocParseHelper? = null
-
-    @Inject
     protected val methodDocHelper: MethodDocHelper? = null
 
     @Inject
     protected val settingBinder: SettingBinder? = null
+
+    @Inject
+    protected val jsonSetting: JsonSetting? = null
 
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
@@ -360,7 +361,8 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
             param: PsiParameter,
             paramDesc: String?
     ) {
-        val typeObject = psiClassHelper!!.getTypeObject(param.type, method, JsonOption.READ_COMMENT)
+        val typeObject = psiClassHelper!!.getTypeObject(param.type, method,
+                jsonSetting!!.jsonOption(JsonOption.READ_COMMENT))
         methodDocHelper!!.addParam(methodDoc, param.name!!, typeObject, paramDesc)
     }
 
@@ -378,17 +380,13 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                 methodInferHelper.inferReturn(method)
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
-            readGetter() -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.ALL)
-            else -> psiClassHelper!!.getTypeObject(psiType, method, JsonOption.READ_COMMENT)
+            else -> psiClassHelper!!.getTypeObject(psiType, method,
+                    jsonSetting!!.jsonOption(JsonOption.READ_COMMENT))
         }
     }
 
     private fun methodDocEnable(): Boolean {
         return settingBinder!!.read().methodDocEnable
-    }
-
-    private fun readGetter(): Boolean {
-        return settingBinder!!.read().readGetter
     }
 
     private fun needInfer(): Boolean {
