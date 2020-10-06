@@ -14,6 +14,7 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.group.JsonSetting
 import com.itangcent.idea.plugin.utils.SpringClassName
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
@@ -70,6 +71,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     @Inject
     protected val settingBinder: SettingBinder? = null
+
+    @Inject
+    protected val jsonSetting: JsonSetting? = null
 
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
@@ -475,7 +479,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                     continue
                 }
 
-                parsedParams.add(param to psiClassHelper!!.getTypeObject(unboxType, param.psi(), JsonOption.READ_COMMENT))
+                parsedParams.add(param to psiClassHelper!!.getTypeObject(unboxType, param.psi(),
+                        jsonSetting!!.jsonOption(JsonOption.READ_COMMENT)
+                ))
             }
 
             val hasFile = parsedParams.any { it.second.hasFile() }
@@ -669,15 +675,16 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         }
 
         return when {
-            fromRule -> psiClassHelper!!.getTypeObject(psiType, method.psi(), JsonOption.READ_COMMENT)
+            fromRule -> psiClassHelper!!.getTypeObject(psiType, method.psi(),
+                    jsonSetting!!.jsonOption(JsonOption.READ_COMMENT))
             needInfer() && (!duckTypeHelper!!.isQualified(psiType) ||
                     jvmClassHelper!!.isInterface(psiType)) -> {
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
-            readGetter() -> psiClassHelper!!.getTypeObject(psiType, method.psi(), JsonOption.ALL)
-            else -> psiClassHelper!!.getTypeObject(psiType, method.psi(), JsonOption.READ_COMMENT)
+            else -> psiClassHelper!!.getTypeObject(psiType, method.psi(),
+                    jsonSetting!!.jsonOption(JsonOption.READ_COMMENT))
         }
     }
 
@@ -694,10 +701,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             return deepComponent(obj.first())
         }
         return obj
-    }
-
-    private fun readGetter(): Boolean {
-        return settingBinder!!.read().readGetter
     }
 
     private fun needInfer(): Boolean {
