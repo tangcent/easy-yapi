@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.rule
 
+import com.intellij.psi.PsiElement
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
@@ -9,6 +10,9 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.intellij.config.rule.RuleContext
+import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
@@ -861,6 +865,38 @@ class RuleToolUtils {
             }
         }
 
+        return sb.toString()
+    }
+
+    fun traversal(any: Any?): String? {
+        if (any == null) {
+            return "null"
+        }
+
+        if (any is RuleContext) {
+            return traversal(any.getPsiContext())
+        } else if (any is PsiElement) {
+            return traversal(any)
+        }
+
+        return "$any unable"
+    }
+
+    private fun traversal(any: PsiElement?): String? {
+        if (any == null) {
+            return null
+        }
+
+        val sb = StringBuilder()
+
+        ActionContext.instance(PsiResolver::class)
+                .visit(any) {
+                    if (it is PsiElement) {
+                        sb.append("[${it::class}]${it.text.replace("\n", "\\n")}\n")
+                    } else {
+                        sb.append("[${it::class}]${it.toString().replace("\n", "\\n")}\n")
+                    }
+                }
         return sb.toString()
     }
 
