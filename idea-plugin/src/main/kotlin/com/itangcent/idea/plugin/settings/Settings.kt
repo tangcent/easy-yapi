@@ -46,9 +46,13 @@ class Settings {
 
     var logLevel: Int = ConfigurableLogger.CoarseLogLevel.LOW.getLevel()
 
+    // markdown
+
     var outputDemo: Boolean = true
 
     var outputCharset: String = Charsets.UTF_8.displayName()
+
+    var markdownFormatType: String = MarkdownFormatType.SIMPLE.name
 
     fun copy(): Settings {
         val newSetting = Settings()
@@ -71,6 +75,7 @@ class Settings {
         newSetting.logLevel = this.logLevel
         newSetting.outputDemo = this.outputDemo
         newSetting.outputCharset = this.outputCharset
+        newSetting.markdownFormatType = this.markdownFormatType
         return newSetting
     }
 
@@ -99,6 +104,7 @@ class Settings {
         if (logLevel != other.logLevel) return false
         if (outputDemo != other.outputDemo) return false
         if (outputCharset != other.outputCharset) return false
+        if (markdownFormatType != other.markdownFormatType) return false
 
         return true
     }
@@ -123,6 +129,7 @@ class Settings {
         result = 31 * result + logLevel
         result = 31 * result + outputDemo.hashCode()
         result = 31 * result + outputCharset.hashCode()
+        result = 31 * result + markdownFormatType.hashCode()
         return result
     }
 

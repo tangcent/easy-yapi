@@ -613,7 +613,7 @@ class SuvApiExporter {
                     return
                 }
                 logger!!.info("Start parse apis")
-                val apiInfo = markdownFormatter!!.parseRequests(docs.toMutableList())
+                val apiInfo = markdownFormatter!!.parseRequests(docs)
                 docs.clear()
                 actionContext!!.runAsync {
                     try {

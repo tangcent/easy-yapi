@@ -1,7 +1,9 @@
 package com.itangcent.common.kit
 
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.utils.*
+import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.joinToString
+import com.itangcent.common.utils.notNullOrEmpty
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -165,7 +167,6 @@ object KVUtils {
         }
     }
 }
-
 
 @Suppress("UNCHECKED_CAST")
 fun <T> Map<*, *>.getAs(key: Any?): T? {

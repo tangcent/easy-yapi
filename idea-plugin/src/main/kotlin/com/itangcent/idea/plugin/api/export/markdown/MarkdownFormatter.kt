@@ -17,10 +17,12 @@ import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.idea.plugin.api.export.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
@@ -46,7 +48,7 @@ class MarkdownFormatter {
     @Inject
     private val formatFolderHelper: FormatFolderHelper? = null
 
-    fun parseRequests(requests: MutableList<Doc>): String {
+    fun parseRequests(requests: List<Doc>): String {
         val sb = StringBuilder()
         val groupedRequest = groupRequests(requests)
         parseApi(groupedRequest, 1) { sb.append(it) }
@@ -54,7 +56,7 @@ class MarkdownFormatter {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun groupRequests(requests: MutableList<Doc>): Any {
+    private fun groupRequests(requests: List<Doc>): Any {
 
 
         //parse [request...] ->
@@ -153,6 +155,8 @@ class MarkdownFormatter {
 
     private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, handle: (String) -> Unit) {
 
+        val objectFormatter = getObjectFormatter(handle)
+
         handle("\n---\n")
         handle("${hN(deep)} ${methodDoc.name}\n\n")
 
@@ -165,23 +169,26 @@ class MarkdownFormatter {
         if (methodDoc.params.isNullOrEmpty()) {
             handle("Non-Parameter\n")
         } else {
-            handle("| name  |  type  |  desc  |\n")
-            handle("| ------------ | ------------ | ------------ |\n")
-            methodDoc.params?.forEach { parseBody(1, it.name ?: "", it.desc ?: "", it.value, handle) }
+            objectFormatter.transaction {
+                methodDoc.params?.forEach {
+                    objectFormatter.writeObject(it.value, it.name ?: "", it.desc ?: "")
+                }
+            }
         }
 
         handle("\n**Return：**\n\n")
         if (methodDoc.ret == null) {
             handle("Non-Return\n")
         } else {
-            handle("| name  |  type  |  desc  |\n")
-            handle("| ------------ | ------------ | ------------ |\n")
-            methodDoc.ret?.let { parseBody(0, "", methodDoc.retDesc ?: "", it, handle) }
+            methodDoc.ret?.let {
+                objectFormatter.writeObject(it, methodDoc.retDesc ?: "")
+            }
         }
-
     }
 
     private fun parseRequest(request: Request, deep: Int, handle: (String) -> Unit) {
+
+        val objectFormatter = getObjectFormatter(handle)
 
         handle("\n---\n")
         handle("${hN(deep)} ${request.name}\n\n")
@@ -240,9 +247,7 @@ class MarkdownFormatter {
         if (request.body != null) {
 
             handle("\n**RequestBody**\n\n")
-            handle("| name  |  type  |  desc  |\n")
-            handle("| ------------ | ------------ | ------------ |\n")
-            parseBody(0, "", request.bodyAttr ?: "", request.body, handle)
+            objectFormatter.writeObject(request.body, request.bodyAttr ?: "")
 
             if (settingBinder!!.read().outputDemo) {
                 handle("\n**Request Demo：**\n\n")
@@ -257,7 +262,7 @@ class MarkdownFormatter {
             handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
             request.formParams!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
+                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
                                 " ${it.type} | ${escape(it.desc)} |\n"
                 )
             }
@@ -283,9 +288,9 @@ class MarkdownFormatter {
                 }
 
                 handle("\n**Body：**\n\n")
-                handle("| name  |  type  |  desc  |\n")
-                handle("| ------------ | ------------ | ------------ |\n")
-                response.body?.let { parseBody(0, "", response.bodyDesc ?: "", it, handle) }
+                response.body?.let {
+                    objectFormatter.writeObject(it, response.bodyDesc ?: "")
+                }
 
                 // handler json example
                 if (settingBinder!!.read().outputDemo) {
@@ -305,67 +310,6 @@ class MarkdownFormatter {
             }
         }
         handle("\n```\n")
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun parseBody(deep: Int, name: String, desc: String, obj: Any?, handle: (String) -> Unit) {
-
-        var type: String? = null
-        when (obj) {
-            null -> type = "object"
-            is String -> type = "string"
-            is Number -> type = if (obj is Int || obj is Long) {
-                "integer"
-            } else {
-                "number"
-            }
-            is Boolean -> type = "boolean"
-        }
-        if (type != null) {
-            addBodyProperty(deep, name, type, desc, handle)
-            return
-        }
-
-        if (obj is Array<*>) {
-            addBodyProperty(deep, name, "array", desc, handle)
-
-            if (obj.size > 0) {
-                parseBody(deep + 1, "", "", obj[0], handle)
-            } else {
-                parseBody(deep + 1, "", "", null, handle)
-            }
-        } else if (obj is List<*>) {
-            addBodyProperty(deep, name, "array", desc, handle)
-            if (obj.size > 0) {
-                parseBody(deep + 1, "", "", obj[0], handle)
-            } else {
-                parseBody(deep + 1, "", "", null, handle)
-            }
-        } else if (obj is Map<*, *>) {
-            if (deep > 0) {
-                addBodyProperty(deep, name, "object", desc, handle)
-            }
-            var comment: HashMap<String, Any?>? = null
-            try {
-                comment = obj[Attrs.COMMENT_ATTR] as HashMap<String, Any?>?
-            } catch (e: Throwable) {
-            }
-            obj.forEachValid { k, v ->
-                val propertyDesc: String? = KVUtils.getUltimateComment(comment, k)
-                parseBody(deep + 1, k.toString(), propertyDesc ?: "", v, handle)
-            }
-        } else {
-            addBodyProperty(deep, name, "object", desc, handle)
-        }
-    }
-
-    private fun addBodyProperty(deep: Int, name: String, type: String, desc: String, handle: (String) -> Unit) {
-        handle("| ")
-        if (deep > 1) {
-            handle("&ensp;&ensp;".repeat(deep - 1))
-            handle("&#124;─")
-        }
-        handle("$name | $type | ${escape(desc)} |\n")
     }
 
     private fun hN(n: Int): String {
@@ -407,15 +351,218 @@ class MarkdownFormatter {
         }
     }
 
-    private fun escape(str: String?): String {
-        if (str.isNullOrBlank()) return ""
-        return str.replace("\n", "<br>")
-    }
-
     companion object {
         private const val NAME = "name"
         private const val DESC = "desc"
         private const val ITEMS = "items"
-        private val NULL_RESOURCE = Any()
     }
+
+    private fun getObjectFormatter(handle: (String) -> Unit): ObjectFormatter {
+        val markdownFormatType = settingBinder!!.read().markdownFormatType
+        return if (markdownFormatType == MarkdownFormatType.ULTIMATE.name) {
+            UltimateObjectFormatter(handle)
+        } else {
+            SimpleObjectFormatter(handle)
+        }
+    }
+
+}
+
+private interface ObjectFormatter {
+
+    fun writeObject(obj: Any?, desc: String) {
+        writeObject(obj, "", desc)
+    }
+
+    fun writeObject(obj: Any?, name: String, desc: String)
+
+    fun transaction(action: (ObjectFormatter) -> Unit)
+}
+
+private abstract class AbstractObjectFormatter(val handle: (String) -> Unit) : ObjectFormatter {
+
+    private var inStream = -1
+
+    override fun writeObject(obj: Any?, name: String, desc: String) {
+        if (inStream == -1 || inStream++ == 0) {
+            writeHeader()
+        }
+        writeBody(obj, name, desc)
+    }
+
+    abstract fun writeHeader()
+
+    abstract fun writeBody(obj: Any?, name: String, desc: String)
+
+    protected fun writeHeaders(vararg headers: String) {
+        headers.forEach { handle("| $it ") }
+        handle("|\n")
+        repeat(headers.size) { handle("| ------------ ") }
+        handle("|\n")
+    }
+
+    protected fun addBodyProperty(deep: Int, vararg columns: Any?) {
+        handle("| ")
+        if (deep > 1) {
+            handle("&ensp;&ensp;".repeat(deep - 1))
+            handle("&#124;─")
+        }
+        columns.forEach { handle("${format(it)} | ") }
+        handle("\n")
+    }
+
+    fun format(any: Any?): String {
+        if (any == null) {
+            return ""
+        }
+        if (any is Boolean) {
+            return if (any) "YES" else "NO"
+        }
+
+        return escape(any.toPrettyString())
+    }
+
+    override fun transaction(action: (ObjectFormatter) -> Unit) {
+        inStream = 0
+        try {
+            action(this)
+        } catch (e: Throwable) {
+            inStream = -1
+        }
+    }
+}
+
+private class SimpleObjectFormatter(handle: (String) -> Unit) : AbstractObjectFormatter(handle) {
+
+    override fun writeHeader() {
+        writeHeaders("name", "type", "desc")
+    }
+
+    override fun writeBody(obj: Any?, name: String, desc: String) {
+        writeBody(obj, name, desc, 0)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun writeBody(obj: Any?, name: String, desc: String, deep: Int) {
+
+        var type: String? = null
+        when (obj) {
+            null -> type = "object"
+            is String -> type = "string"
+            is Number -> type = if (obj is Int || obj is Long) {
+                "integer"
+            } else {
+                "number"
+            }
+            is Boolean -> type = "boolean"
+        }
+        if (type != null) {
+            addBodyProperty(deep, name, type, desc)
+            return
+        }
+
+        if (obj is Array<*>) {
+            addBodyProperty(deep, name, "array", desc)
+
+            if (obj.size > 0) {
+                writeBody(obj[0], "", "", deep + 1)
+            } else {
+                writeBody(null, "", "", deep + 1)
+            }
+        } else if (obj is List<*>) {
+            addBodyProperty(deep, name, "array", desc)
+            if (obj.size > 0) {
+                writeBody(obj[0], "", "", deep + 1)
+            } else {
+                writeBody(null, "", "", deep + 1)
+            }
+        } else if (obj is Map<*, *>) {
+            if (deep > 0) {
+                addBodyProperty(deep, name, "object", desc)
+            }
+            var comment: HashMap<String, Any?>? = null
+            try {
+                comment = obj[Attrs.COMMENT_ATTR] as HashMap<String, Any?>?
+            } catch (e: Throwable) {
+            }
+            obj.forEachValid { k, v ->
+                val propertyDesc: String? = KVUtils.getUltimateComment(comment, k)
+                writeBody(v, k.toString(), propertyDesc ?: "", deep + 1)
+            }
+        } else {
+            addBodyProperty(deep, name, "object", desc)
+        }
+    }
+
+}
+
+private class UltimateObjectFormatter(handle: (String) -> Unit) : AbstractObjectFormatter(handle) {
+
+    override fun writeHeader() {
+        writeHeaders("name", "type", "required", "default", "desc")
+    }
+
+    override fun writeBody(obj: Any?, name: String, desc: String) {
+        writeBody(obj, name, null, null, desc, 0)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun writeBody(obj: Any?, name: String, required: Boolean?, default: String?, desc: String, deep: Int) {
+
+        var type: String? = null
+        when (obj) {
+            null -> type = "object"
+            is String -> type = "string"
+            is Number -> type = if (obj is Int || obj is Long) {
+                "integer"
+            } else {
+                "number"
+            }
+            is Boolean -> type = "boolean"
+        }
+        if (type != null) {
+            addBodyProperty(deep, name, type, required, default, desc)
+            return
+        }
+
+        if (obj is Array<*>) {
+            addBodyProperty(deep, name, "array", required, default, desc)
+            if (obj.size > 0) {
+                writeBody(obj[0], "", null, null, "", deep + 1)
+            } else {
+                writeBody(null, "", null, null, "", deep + 1)
+            }
+        } else if (obj is List<*>) {
+            addBodyProperty(deep, name, "array", desc)
+            if (obj.size > 0) {
+                writeBody(obj[0], "", null, null, "", deep + 1)
+            } else {
+                writeBody(null, "", null, null, "", deep + 1)
+            }
+        } else if (obj is Map<*, *>) {
+            if (deep > 0) {
+                addBodyProperty(deep, name, "object", required, default, desc)
+            }
+            val comments: HashMap<String, Any?>? = obj[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
+            val requireds: HashMap<String, Any?>? = obj[Attrs.REQUIRED_ATTR] as? HashMap<String, Any?>?
+            val defaults: HashMap<String, Any?>? = obj[Attrs.DEFAULT_VALUE_ATTR] as? HashMap<String, Any?>?
+            obj.forEachValid { k, v ->
+                val key = k.toString()
+                val propertyDesc: String? = KVUtils.getUltimateComment(comments, k)
+                writeBody(v, key,
+                        requireds?.get(key) as? Boolean,
+                        defaults?.get(key) as? String,
+                        propertyDesc ?: "",
+                        deep + 1)
+            }
+        } else {
+            addBodyProperty(deep, name, "object", required, default, desc)
+        }
+    }
+
+}
+
+private fun escape(str: String?): String {
+    if (str.isNullOrBlank()) return ""
+    return str.replace("\n", "<br>")
 }
