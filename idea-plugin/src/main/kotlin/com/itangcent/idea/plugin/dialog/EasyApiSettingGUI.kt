@@ -13,13 +13,11 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.CheckBoxList
-import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.SystemUtils
-import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.common.utils.truncate
+import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.ConfigurableLogger
@@ -84,6 +82,8 @@ class EasyApiSettingGUI {
     private var outputDemoCheckBox: JCheckBox? = null
 
     private var outputCharsetComboBox: JComboBox<Charsets>? = null
+
+    private var markdownFormatTypeComboBox: JComboBox<String>? = null
 
     private var inferEnableCheckBox: JCheckBox? = null
 
@@ -232,10 +232,17 @@ class EasyApiSettingGUI {
 
         outputCharsetComboBox!!.model = DefaultComboBoxModel(Charsets.SUPPORTED_CHARSETS)
 
+        markdownFormatTypeComboBox!!.model = DefaultComboBoxModel(MarkdownFormatType.values().mapToTypedArray { it.name })
+
         autoComputer.bind<String?>(this, "settings.outputCharset")
                 .with(this.outputCharsetComboBox!!)
                 .filter { throttleHelper.acquire("settings.outputCharset", 300) }
                 .eval { (it ?: Charsets.UTF_8).displayName() }
+
+        autoComputer.bind<String?>(this, "settings.markdownFormatType")
+                .with(this.markdownFormatTypeComboBox!!)
+                .filter { throttleHelper.acquire("settings.markdownFormatType", 300) }
+                .eval { (it ?: MarkdownFormatType.SIMPLE.name) }
 
         autoComputer.bind(this.previewTextArea!!)
                 .with<String>(this, "settings.recommendConfigs")

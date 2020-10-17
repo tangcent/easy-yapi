@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
-import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.sub
 import com.itangcent.common.utils.KV
@@ -12,16 +11,15 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
-import com.itangcent.intellij.extend.toPrettyString
-import com.itangcent.intellij.jvm.PsiUtils
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.psi.ContextSwitchListener
 
 /**
- * 1.support rule:["field.mock"]
- * 2.support rule:["field.default.value"]
+ * support rules:
+ * 1. field.mock
+ * 2. field.demo
  */
 class YapiPsiClassHelper : CustomizedPsiClassHelper() {
 
@@ -52,17 +50,6 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
                 ?.let { mockInfo ->
                     kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
                 }
-
-        //compute `field.default.value`
-        val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, fieldOrMethod)
-        if (defaultValue.isNullOrEmpty()) {
-            if (fieldOrMethod is PsiField) {
-                fieldOrMethod.initializer?.let { PsiUtils.resolveExpr(it) }?.toPrettyString()
-                        ?.let { kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = it }
-            }
-        } else {
-            kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
-        }
 
         //compute `field.demo`
         val demoValue = ruleComputer.computer(YapiClassExportRuleKeys.FIELD_DEMO,

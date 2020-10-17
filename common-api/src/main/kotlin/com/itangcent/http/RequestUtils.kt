@@ -21,10 +21,14 @@ object RequestUtils {
     fun toRawBody(body: Any?, copy: Boolean): Any? {
         if (body == null) return null
         if (body is Map<*, *>) {
-            val mutableBody = body.mutable(copy)
-            Attrs.ALL.forEach { mutableBody.remove(it) }
+            val mutableBody = body.filterKeys { !Attrs.ALL.contains(it) }.mutable(copy)
             for (mutableEntry in mutableBody) {
-                mutableEntry.value?.let { mutableEntry.setValue(toRawBody(it, copy)) }
+                mutableEntry.value?.let {
+                    val rawValue = toRawBody(it, copy)
+                    if (rawValue != it) {
+                        mutableEntry.setValue(rawValue)
+                    }
+                }
             }
             return mutableBody
         }
