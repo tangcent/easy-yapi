@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.itangcent.common.utils.invokeMethod
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.intellij.adaptor.ModuleAdaptor.file
+import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -75,13 +77,13 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 {
                     loading = true
                     configReader.reset()
-                    val moduleFile = module.moduleFile
-                    val modulePath: String = when {
-                        moduleFile == null -> module.moduleFilePath.substringBeforeLast(File.separator)
+                    val moduleFile = module.file()
+                    val modulePath = when {
+                        moduleFile == null -> module.filePath()?.substringBeforeLast(File.separator)
                         moduleFile.isDirectory -> moduleFile.path
                         else -> moduleFile.parent.path
                     }
-                    configReader.put("module_path", modulePath)
+                    modulePath?.let { configReader.put("module_path", it) }
                     initDelegateAndRecommend()
                     loading = false
                 }
