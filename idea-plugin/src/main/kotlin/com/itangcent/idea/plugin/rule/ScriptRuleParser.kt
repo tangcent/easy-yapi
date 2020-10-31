@@ -215,6 +215,20 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         /**
+         * it.ann("annotation_name"):Any?
+         */
+        fun annValue(name: String): Any? {
+            return annValue(name, "value")
+        }
+
+        /**
+         * it.ann("annotation_name","attr"):Any?
+         */
+        fun annValue(name: String, attr: String): Any? {
+            return annotationHelper!!.findAttr(getResource(), name, attr)
+        }
+
+        /**
          * it.doc():String
          */
         fun doc(): String? {
