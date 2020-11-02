@@ -5,8 +5,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMember
 import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.idea.plugin.utils.LocalStorageUtils
+import com.itangcent.idea.plugin.utils.LocalStorage
 import com.itangcent.idea.plugin.utils.RegexUtils
+import com.itangcent.idea.plugin.utils.SessionStorage
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.config.ConfigReader
@@ -25,7 +26,10 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
     private var httpClientProvider: HttpClientProvider? = null
 
     @Inject
-    protected val localStorageUtils: LocalStorageUtils? = null
+    protected val localStorage: LocalStorage? = null
+
+    @Inject
+    protected val sessionStorage: SessionStorage? = null
 
     @Inject
     protected val actionContext: ActionContext? = null
@@ -66,7 +70,8 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         val engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
         engineBindings.putAll(toolBindings)
         engineBindings["logger"] = logger
-        engineBindings["localStorage"] = localStorageUtils
+        engineBindings["localStorage"] = localStorage
+        engineBindings["session"] = sessionStorage
         engineBindings["helper"] = Helper(context.getPsiContext())
         engineBindings["httpClient"] = httpClientProvider!!.getHttpClient()
         engineBindings["files"] = actionContext!!.instance(Files::class)

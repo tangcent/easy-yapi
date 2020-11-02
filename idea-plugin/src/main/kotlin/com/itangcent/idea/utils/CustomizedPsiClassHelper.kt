@@ -12,14 +12,13 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitField
-import com.itangcent.intellij.psi.DefaultPsiClassHelper
 
 /**
  * support rules:
  * 1. field.required
  * 2. field.default.value
  */
-open class CustomizedPsiClassHelper : DefaultPsiClassHelper() {
+open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
 
     @Inject
     private val psiExpressionResolver: PsiExpressionResolver? = null
