@@ -24,8 +24,6 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     private val psiExpressionResolver: PsiExpressionResolver? = null
 
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
-
         //compute `field.required`
         ruleComputer!!.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
             kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = required
@@ -41,6 +39,8 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         } else {
             kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
         }
+
+        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
     }
 
 }

@@ -471,17 +471,23 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                     continue
                 }
 
-                val paramType = param.getType() ?: continue
-                val unboxType = paramType.unbox()
+                ruleComputer.computer(ClassExportRuleKeys.PARAM_BEFORE, param)
 
-                if (jvmClassHelper!!.isInheritor(unboxType, *SpringClassName.SPRING_REQUEST_RESPONSE)) {
-                    //ignore @HttpServletRequest and @HttpServletResponse
-                    continue
+                try {
+                    val paramType = param.getType() ?: continue
+                    val unboxType = paramType.unbox()
+
+                    if (jvmClassHelper!!.isInheritor(unboxType, *SpringClassName.SPRING_REQUEST_RESPONSE)) {
+                        //ignore @HttpServletRequest and @HttpServletResponse
+                        continue
+                    }
+
+                    parsedParams.add(param to psiClassHelper!!.getTypeObject(unboxType, param.psi(),
+                            jsonSetting!!.jsonOption(JsonOption.READ_COMMENT)
+                    ))
+                } finally {
+                    ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
                 }
-
-                parsedParams.add(param to psiClassHelper!!.getTypeObject(unboxType, param.psi(),
-                        jsonSetting!!.jsonOption(JsonOption.READ_COMMENT)
-                ))
             }
 
             val hasFile = parsedParams.any { it.second.hasFile() }
@@ -496,16 +502,19 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
             }
 
-            for (parsedParam in parsedParams) {
-                val param = parsedParam.first
-                val typeObject = parsedParam.second
+            for ((param, typeObject) in parsedParams) {
+                ruleComputer!!.computer(ClassExportRuleKeys.PARAM_BEFORE, param)
 
-                processMethodParameter(
-                        request,
-                        ExplicitParameterInfo(param),
-                        typeObject,
-                        KVUtils.getUltimateComment(paramDocComment, param.name()).append(readParamDoc(param))
-                )
+                try {
+                    processMethodParameter(
+                            request,
+                            ExplicitParameterInfo(param),
+                            typeObject,
+                            KVUtils.getUltimateComment(paramDocComment, param.name()).append(readParamDoc(param))
+                    )
+                } finally {
+                    ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
+                }
             }
         }
 

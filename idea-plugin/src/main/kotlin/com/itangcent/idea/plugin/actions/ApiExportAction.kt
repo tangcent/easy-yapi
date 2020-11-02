@@ -8,6 +8,8 @@ import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
+import com.itangcent.idea.utils.RuleComputeListenerRegistry
+import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -21,6 +23,7 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
         super.afterBuildActionContext(event, builder)
 
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
+        builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }

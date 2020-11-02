@@ -83,6 +83,16 @@ object ClassExportRuleKeys {
             StringRuleMode.MERGE_DISTINCT
     )
 
+    val PARAM_BEFORE: RuleKey<String> = SimpleRuleKey(
+            "param.before", EventRule::class,
+            EventRuleMode.IGNORE_ERROR
+    )
+
+    val PARAM_AFTER: RuleKey<String> = SimpleRuleKey(
+            "param.after", EventRule::class,
+            EventRuleMode.IGNORE_ERROR
+    )
+
     val FIELD_REQUIRED: RuleKey<Boolean> = SimpleRuleKey(
             "field.required", BooleanRule::class,
             BooleanRuleMode.ANY
@@ -249,12 +259,22 @@ object ClassExportRuleKeys {
     )
 
     val FIELD_PARSE_BEFORE: RuleKey<Boolean> = SimpleRuleKey(
-            "field.parse.before", StringRule::class,
+            "field.parse.before", EventRule::class,
             EventRuleMode.THROW_IN_ERROR
     )
 
     val FIELD_PARSE_AFTER: RuleKey<Boolean> = SimpleRuleKey(
-            "field.parse.after", StringRule::class,
+            "field.parse.after", EventRule::class,
+            EventRuleMode.THROW_IN_ERROR
+    )
+
+    val CLASS_PARSE_BEFORE: RuleKey<Boolean> = SimpleRuleKey(
+            "class.parse.before", EventRule::class,
+            EventRuleMode.THROW_IN_ERROR
+    )
+
+    val CLASS_PARSE_AFTER: RuleKey<Boolean> = SimpleRuleKey(
+            "class.parse.after", EventRule::class,
             EventRuleMode.THROW_IN_ERROR
     )
 }
