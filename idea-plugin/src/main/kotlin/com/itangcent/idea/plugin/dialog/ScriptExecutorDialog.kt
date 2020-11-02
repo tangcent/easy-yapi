@@ -557,7 +557,7 @@ class ScriptExecutorDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "var separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\nvar sb = \"\"\nvar variables = {\n    tool        : tool, it: it, regex: regex,\n    logger      : logger, helper: helper,httpClient: httpClient,\n    localStorage: localStorage, config: config, files: files\n}\nfor(variable in variables) {\n    sb += \"debug `\"+variable+\"`:\\n\"\n    sb += tool.debug(variables[variable])\n    sb += separator\n}\nsb"
+            return "var separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\nvar sb = \"\"\nvar variables = {\n    tool        : tool, it: it, regex: regex,\n    logger      : logger, helper: helper,httpClient: httpClient,\n    session: session, localStorage: localStorage, config: config, files: files\n}\nfor(variable in variables) {\n    sb += \"debug `\"+variable+\"`:\\n\"\n    sb += tool.debug(variables[variable])\n    sb += separator\n}\nsb"
         }
     }
 
@@ -580,7 +580,7 @@ class ScriptExecutorDialog : JDialog() {
         }
 
         override fun demoCode(): String {
-            return "def separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\ndef sb = \"\"\n[\n        \"tool\"        : tool, \"it\": it, \"regex\": regex,\n        \"logger\"      : logger, \"helper\": helper, \"httpClient\": httpClient,\n        \"localStorage\": localStorage, \"config\": config, \"files\": files\n].each {\n    sb += \"debug `\${it.key}`:\\n\"\n    sb += tool.debug(it.value)\n    sb += separator\n}\nreturn sb"
+            return "def separator = tool.repeat(\"-\", 35) + \"\\n\\n\"\ndef sb = \"\"\n[\n        \"tool\"        : tool, \"it\": it, \"regex\": regex,\n        \"logger\"      : logger, \"helper\": helper, \"httpClient\": httpClient,\n \"session\": session, \"localStorage\": localStorage, \"config\": config, \"files\": files\n].each {\n    sb += \"debug `\${it.key}`:\\n\"\n    sb += tool.debug(it.value)\n    sb += separator\n}\nreturn sb"
         }
     }
 

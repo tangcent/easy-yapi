@@ -247,4 +247,14 @@ object ClassExportRuleKeys {
             "export.after", StringRule::class,
             StringRuleMode.SINGLE
     )
+
+    val FIELD_PARSE_BEFORE: RuleKey<Boolean> = SimpleRuleKey(
+            "field.parse.before", StringRule::class,
+            EventRuleMode.THROW_IN_ERROR
+    )
+
+    val FIELD_PARSE_AFTER: RuleKey<Boolean> = SimpleRuleKey(
+            "field.parse.after", StringRule::class,
+            EventRuleMode.THROW_IN_ERROR
+    )
 }
