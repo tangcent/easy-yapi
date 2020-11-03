@@ -1,6 +1,6 @@
 package com.itangcent.idea.plugin.settings
 
-import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.config.RecommendConfigLoader
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.ConfigurableLogger
 
@@ -42,7 +42,7 @@ class Settings {
     //enable to use recommend config
     var useRecommendConfig: Boolean = true
 
-    var recommendConfigs: String = RecommendConfigReader.RECOMMEND_CONFIG_CODES.joinToString(",")
+    var recommendConfigs: String = RecommendConfigLoader.defaultCodes()
 
     var logLevel: Int = ConfigurableLogger.CoarseLogLevel.LOW.getLevel()
 

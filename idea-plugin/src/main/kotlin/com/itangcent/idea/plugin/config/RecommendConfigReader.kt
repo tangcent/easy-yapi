@@ -9,12 +9,11 @@ import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.utils.Initializable
-import org.apache.commons.io.IOUtils
 import java.io.File
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 
@@ -33,8 +32,11 @@ class RecommendConfigReader : ConfigReader, Initializable {
     @Inject
     val logger: Logger? = null
 
+    @Inject
+    private val devEnv: DevEnv? = null
+
     @Volatile
-    private var loading: Boolean = false
+    private var loading: Thread? = null
 
     override fun first(key: String): String? {
         checkStatus()
@@ -62,7 +64,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
     }
 
     private fun checkStatus() {
-        while (loading) {
+        while (loading != null && loading != Thread.currentThread()) {
             TimeUnit.MILLISECONDS.sleep(100)
         }
     }
@@ -75,7 +77,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
             contextSwitchListener.onModuleChange { module ->
                 synchronized(this)
                 {
-                    loading = true
+                    loading = Thread.currentThread()
                     configReader.reset()
                     val moduleFile = module.file()
                     val modulePath = when {
@@ -85,7 +87,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
                     }
                     modulePath?.let { configReader.put("module_path", it) }
                     initDelegateAndRecommend()
-                    loading = false
+                    loading = null
                 }
             }
         } else {
@@ -114,7 +116,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
             }
 
             if (configReader is MutableConfigReader) {
-                val recommendConfig = buildRecommendConfig(settingBinder.read().recommendConfigs.split(","))
+                val recommendConfig = RecommendConfigLoader.buildRecommendConfig(settingBinder.read().recommendConfigs)
 
                 if (recommendConfig.isEmpty()) {
                     logger!!.warn("No recommend config be selected!")
@@ -123,71 +125,12 @@ class RecommendConfigReader : ConfigReader, Initializable {
 
                 configReader.loadConfigInfoContent(recommendConfig)
                 logger!!.info("use recommend config")
+                devEnv!!.dev {
+                    logger.debug("----------------\n$recommendConfig\n----------------")
+                }
             } else {
                 logger!!.warn("failed to use recommend config")
             }
         }
-    }
-
-    companion object {
-
-        init {
-            loadRecommendConfig()
-            resolveRecommendConfig(RECOMMEND_CONFIG_PLAINT)
-        }
-
-        private const val config_name = ".recommend.easy.api.config"
-
-        private fun loadRecommendConfig(): String {
-            val config = IOUtils.toString(RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
-                    ?: RecommendConfigReader::class.java.getResourceAsStream(config_name),
-                    Charsets.UTF_8)
-            RECOMMEND_CONFIG_PLAINT = config
-            return config
-        }
-
-        private fun resolveRecommendConfig(config: String) {
-            val recommendConfig: MutableMap<String, String> = LinkedHashMap()
-            val recommendConfigCodes: MutableList<String> = LinkedList()
-            var code: String? = null
-            var content: String? = ""
-            for (line in config.lines()) {
-                if (line.startsWith("#[")) {
-                    if (code != null) {
-                        recommendConfigCodes.add(code)
-                        recommendConfig[code] = content ?: ""
-                        content = ""
-                    }
-                    code = line.removeSurrounding("#[", "]")
-                } else {
-                    if (content.isNullOrBlank()) {
-                        content = line
-                    } else {
-                        content += "\n"
-                        content += line
-                    }
-                }
-            }
-
-            if (code != null) {
-                recommendConfigCodes.add(code)
-                recommendConfig[code] = content ?: ""
-            }
-
-            RECOMMEND_CONFIG_CODES = recommendConfigCodes.toTypedArray()
-            RECOMMEND_CONFIG_MAP = recommendConfig
-        }
-
-        fun buildRecommendConfig(codes: List<String>): String {
-            return RECOMMEND_CONFIG_CODES
-                    .filter { codes.contains(it) }
-                    .map { RECOMMEND_CONFIG_MAP[it] }
-                    .joinToString("\n")
-
-        }
-
-        lateinit var RECOMMEND_CONFIG_PLAINT: String
-        lateinit var RECOMMEND_CONFIG_CODES: Array<String>
-        lateinit var RECOMMEND_CONFIG_MAP: Map<String, String>
     }
 }
