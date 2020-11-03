@@ -292,9 +292,9 @@ class EasyApiSettingGUI {
     private fun bindRecommendConfig() {
         recommendConfigList!!.setItems(RecommendConfigLoader.codes().toList())
         {
-            RecommendConfigLoader[it]?.truncate(100)
-                    ?.replace("\n", "     ")
-                    ?: ""
+            it.padEnd(30) + "    " +
+                    RecommendConfigLoader[it]?.truncate(100)
+                            ?.replace("\n", "    ")
         }
     }
 
