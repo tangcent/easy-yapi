@@ -1,6 +1,5 @@
 package com.itangcent.idea.plugin.utils
 
-import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.kit.sub
@@ -12,8 +11,12 @@ import java.util.*
 @ScriptTypeName("session")
 class SessionStorage : AbstractStorage() {
 
-    @Inject
-    private val kv = KV<String, Any?>()
+    private val localKV = ThreadLocal.withInitial {
+        KV.create<String, Any?>()
+    }
+
+    private val kv: KV<String, Any?>
+        get() = localKV.get()
 
     override fun get(group: String?, name: String?): Any? {
         return kv.sub(group ?: NULL)[name]

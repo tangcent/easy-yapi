@@ -33,7 +33,9 @@ import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
+import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
@@ -279,7 +281,9 @@ class SuvApiExporter {
 //            builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
 
             builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
+            builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
             builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
+
 
             builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
             builder.bind(LocalFileRepository::class, "projectCacheRepository") {

@@ -6,10 +6,7 @@ import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.common.kit.headLine
-import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.*
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.PsiResolver
@@ -24,6 +21,7 @@ import kotlin.reflect.*
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.functions
+import kotlin.text.appendln
 
 /**
  * <p>Util operations for rule.</p>
@@ -32,6 +30,67 @@ import kotlin.reflect.full.functions
  */
 @ScriptTypeName("tool")
 class RuleToolUtils {
+
+    //region any
+
+    fun isNullOrEmpty(any: Any?): Boolean {
+        return any.anyIsNullOrEmpty()
+    }
+
+    fun notNullOrEmpty(any: Any?): Boolean {
+        return !any.anyIsNullOrEmpty()
+    }
+
+    fun asArray(any: Any?): Array<*>? {
+        return when (any) {
+            null -> {
+                null
+            }
+            is Array<*> -> {
+                any
+            }
+            is Collection<*> -> {
+                any.toTypedArray()
+            }
+            else -> {
+                arrayOf(any)
+            }
+        }
+    }
+
+    fun asList(any: Any?): List<*>? {
+        return when (any) {
+            null -> {
+                null
+            }
+            is Array<*> -> {
+                any.toMutableList()
+            }
+            is List<*> -> {
+                any
+            }
+            is Collection<*> -> {
+                any.toMutableList()
+            }
+            else -> {
+                listOf(any)
+            }
+        }
+    }
+
+    fun intersect(any: Any?, other: Any?): Array<*>? {
+        val list = asList(other) ?: return asArray(any)
+        return asList(any)
+                ?.filter { list.contains(it) }
+                ?.toTypedArray()
+    }
+
+    fun anyIntersect(any: Any?, other: Any?): Boolean {
+        val list = asList(other) ?: return false
+        return asList(any)?.any { list.contains(it) } ?: false
+    }
+
+    //endregion
 
     //region collections
 
