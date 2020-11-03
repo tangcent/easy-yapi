@@ -16,7 +16,7 @@ import com.intellij.ui.CheckBoxList
 import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
-import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.config.RecommendConfigLoader
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.Charsets
@@ -29,7 +29,6 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import org.apache.commons.io.FileUtils
 import java.io.File
-import java.util.*
 import javax.swing.*
 
 
@@ -131,7 +130,7 @@ class EasyApiSettingGUI {
         SwingUtils.immersed(this.importButton!!)
 
         //region general-----------------------------------------------------
-        recommendedCheckBox!!.toolTipText = RecommendConfigReader.RECOMMEND_CONFIG_PLAINT
+        recommendedCheckBox!!.toolTipText = RecommendConfigLoader.plaint()
 
         autoComputer.bind(pullNewestDataBeforeCheckBox!!)
                 .mutual(this, "settings.pullNewestDataBefore")
@@ -246,27 +245,23 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(this.previewTextArea!!)
                 .with<String>(this, "settings.recommendConfigs")
-                .eval { configs -> RecommendConfigReader.buildRecommendConfig(configs.split(",")) }
+                .eval { configs -> RecommendConfigLoader.buildRecommendConfig(configs) }
 
         //endregion  general-----------------------------------------------------
 
-        bindRecommendConfig()
-
         refresh()
 
+        bindRecommendConfig()
+
         this.recommendConfigList!!.setCheckBoxListListener { index, value ->
-            val code = RecommendConfigReader.RECOMMEND_CONFIG_CODES[index]
-            val configs = settings!!.recommendConfigs.split(",")
+            val code = RecommendConfigLoader[index] ?: return@setCheckBoxListListener
+            val settings = this.settings!!
             if (value) {
-                if (!configs.contains(code)) {
-                    val newConfigs = LinkedList(configs)
-                    newConfigs.add(code)
-                    settings!!.recommendConfigs = newConfigs.joinToString(",")
-                }
+                settings.recommendConfigs = RecommendConfigLoader.addSelectedConfig(settings.recommendConfigs, code)
             } else {
-                settings!!.recommendConfigs = configs.filter { it != code }.joinToString(",")
+                settings.recommendConfigs = RecommendConfigLoader.removeSelectedConfig(settings.recommendConfigs, code)
             }
-            autoComputer.value(this, "settings.recommendConfigs", settings!!.recommendConfigs)
+            autoComputer.value(this, "settings.recommendConfigs", settings.recommendConfigs)
 //            this.previewTextArea!!.text =  RecommendConfigReader.buildRecommendConfig(settings!!.recommendConfigs)
         }
 
@@ -286,9 +281,8 @@ class EasyApiSettingGUI {
         this.logLevelComboBox!!.selectedItem = ConfigurableLogger.CoarseLogLevel.toLevel(settings.logLevel)
         this.outputCharsetComboBox!!.selectedItem = Charsets.forName(settings.outputCharset)
 
-        val configs = settings.recommendConfigs.split(",")
-        RecommendConfigReader.RECOMMEND_CONFIG_CODES.forEach {
-            this.recommendConfigList!!.setItemSelected(it, configs.contains(it))
+        RecommendConfigLoader.selectedCodes(settings.recommendConfigs).forEach {
+            this.recommendConfigList!!.setItemSelected(it, true)
         }
 //        this.recommendConfigList!!.selectedIndices = settings.recommendConfigs.map {
 //            RecommendConfigReader.RECOMMEND_CONFIG_CODES.indexOf(it)
@@ -296,9 +290,9 @@ class EasyApiSettingGUI {
     }
 
     private fun bindRecommendConfig() {
-        recommendConfigList!!.setItems(RecommendConfigReader.RECOMMEND_CONFIG_CODES.toList())
+        recommendConfigList!!.setItems(RecommendConfigLoader.codes().toList())
         {
-            RecommendConfigReader.RECOMMEND_CONFIG_MAP[it]?.truncate(100)
+            RecommendConfigLoader[it]?.truncate(100)
                     ?.replace("\n", "     ")
                     ?: ""
         }
