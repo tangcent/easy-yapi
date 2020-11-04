@@ -75,7 +75,8 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
     protected open fun tryInitParseContext() {
         if (parseContext.get() == null) {
-            initParseContext()
+            parseContext.set(LinkedList())
+            clearCachePotentially()
         }
     }
 
@@ -83,18 +84,21 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         val context = parseContext.get()
         if (context.isNullOrEmpty()) {
             parseContext.remove()
+            clearCachePotentially()
         }
     }
 
-    protected open fun initParseContext() {
+    private fun clearCachePotentially() {
         if (configReader!!.first("json.cache.disable").asBool() == true) {
+            devEnv?.dev {
+                logger!!.info("clear json cache")
+            }
             resolvedInfo.clear()
         }
-        parseContext.set(LinkedList())
     }
 
     override fun beforeParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>): Boolean {
-        parseContext.get().add(fieldName)
+        parseContext.get()?.add(fieldName)
         devEnv?.dev {
             logger!!.info("path -> ${parseScriptContext.path()}")
         }
@@ -116,7 +120,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     }
 
     private fun popField(fieldName: String) {
-        parseContext.get().removeLast()
+        parseContext.get()?.removeLast()
         devEnv?.dev {
             logger!!.info("path -> ${parseScriptContext.path()}")
         }

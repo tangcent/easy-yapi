@@ -90,6 +90,14 @@ class RuleToolUtils {
         return asList(any)?.any { list.contains(it) } ?: false
     }
 
+    fun equalOrIntersect(any: Any?, other: Any?): Boolean {
+        if (any == other) {
+            return true
+        }
+        val list = asList(other) ?: return false
+        return asList(any)?.any { list.contains(it) } ?: false
+    }
+
     //endregion
 
     //region collections
