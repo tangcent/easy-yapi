@@ -24,3 +24,20 @@
 * [使用](https://easyyapi.com/documents/use.html)
 * [配置](https://easyyapi.com/setting/index.html)
 * [demo](https://easyyapi.com/demo/index.html)
+
+## 贡献
+
+***您可以通过以下途径帮助easy-yapi变得更好***
+
+* 帮助维护文档: [easyyapi.com](https://github.com/easyyapi/easyyapi.github.io/tree/dev)
+  请将您的PR提交到dev分支
+  
+* 讨论 [新的功能](https://github.com/tangcent/easy-yapi/issues?q=label%3Aenhancement) or提交 [BUG](https://github.com/tangcent/easy-yapi/issues?q=label%3Abug): [Issues](https://github.com/tangcent/easy-yapi/issues)
+
+* 开发 [新的功能](https://github.com/tangcent/easy-yapi/pulls?q=+label%3Aenhancement) or修复 [BUG](https://github.com/tangcent/easy-yapi/pulls?q=label%3Abug): [PR](https://github.com/tangcent/easy-yapi/pulls)
+
+* 维护推荐配置: [.recommend.easy.api.config](https://github.com/tangcent/easy-yapi/blob/master/idea-plugin/src/main/resources/.recommend.easy.api.config)
+
+* 丰富demo: [spring-demo](https://github.com/Earth-1610/spring-demo)
+
+* 修复IDE兼容问题: [intellij-kotlin](https://github.com/Earth-1610/intellij-kotlin/pulls?q=label%3Acompatibility+)
