@@ -2,8 +2,8 @@ package com.itangcent.idea.utils
 
 import com.google.inject.Inject
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.kit.sub
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.toPrettyString

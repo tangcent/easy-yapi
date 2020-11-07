@@ -4,9 +4,9 @@ import com.google.inject.Inject
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.asKV
-import com.itangcent.common.kit.getAs
-import com.itangcent.common.kit.getAsKv
+import com.itangcent.common.utils.asKV
+import com.itangcent.common.utils.getAs
+import com.itangcent.common.utils.getAsKv
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*

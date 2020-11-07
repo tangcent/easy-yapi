@@ -4,10 +4,10 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.itangcent.common.kit.getAs
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.getAs
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.Worker

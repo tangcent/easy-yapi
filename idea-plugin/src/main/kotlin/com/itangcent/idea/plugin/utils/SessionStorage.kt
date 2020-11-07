@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.utils
 
 import com.google.inject.Singleton
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.common.kit.sub
+import com.itangcent.common.utils.sub
 import com.itangcent.common.utils.KV
 import com.itangcent.idea.plugin.utils.Storage.Companion.NULL
 import java.util.*
