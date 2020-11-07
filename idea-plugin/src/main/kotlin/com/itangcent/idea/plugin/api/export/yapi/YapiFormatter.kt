@@ -5,7 +5,6 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.getAs
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys

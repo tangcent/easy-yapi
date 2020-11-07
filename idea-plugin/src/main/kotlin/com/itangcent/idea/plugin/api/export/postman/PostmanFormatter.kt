@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
-import com.itangcent.common.kit.getAs
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.common.model.getContentType
