@@ -2,4 +2,3 @@ com.itangcent.intellij.spi.IdeaAutoInject
 com.itangcent.intellij.tip.OnlyOnceInContextTipSetup
 
 com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
-com.itangcent.intellij.jvm.scala.ScalaAutoInject
