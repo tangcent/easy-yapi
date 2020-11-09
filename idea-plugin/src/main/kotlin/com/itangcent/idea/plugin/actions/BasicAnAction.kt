@@ -16,7 +16,6 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
-import com.itangcent.intellij.jvm.scala.ScalaAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.spi.IdeaAutoInject
@@ -82,7 +81,6 @@ abstract class BasicAnAction : KotlinAnAction {
             Setup.setup(OnlyOnceInContextTipSetup::class)
             Setup.setup(IdeaAutoInject::class)
             Setup.setup(KotlinAutoInject::class)
-            Setup.setup(ScalaAutoInject::class)
         }
     }
 }
