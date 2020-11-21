@@ -18,6 +18,8 @@ class Settings {
 
     var autoMergeScript: Boolean = false
 
+    var postmanJson5FormatType: String = PostmanJson5FormatType.EXAMPLE_ONLY.name
+
     //intelligent
 
     var formExpanded: Boolean = true
@@ -59,6 +61,7 @@ class Settings {
         newSetting.postmanToken = this.postmanToken
         newSetting.wrapCollection = this.wrapCollection
         newSetting.autoMergeScript = this.autoMergeScript
+        newSetting.postmanJson5FormatType = this.postmanJson5FormatType
         newSetting.pullNewestDataBefore = this.pullNewestDataBefore
         newSetting.methodDocEnable = this.methodDocEnable
         newSetting.formExpanded = this.formExpanded
@@ -90,6 +93,7 @@ class Settings {
         if (postmanToken != other.postmanToken) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
+        if (postmanJson5FormatType != other.postmanJson5FormatType) return false
         if (formExpanded != other.formExpanded) return false
         if (readGetter != other.readGetter) return false
         if (inferEnable != other.inferEnable) return false
@@ -115,6 +119,7 @@ class Settings {
         result = 31 * result + (postmanToken?.hashCode() ?: 0)
         result = 31 * result + wrapCollection.hashCode()
         result = 31 * result + autoMergeScript.hashCode()
+        result = 31 * result + postmanJson5FormatType.hashCode()
         result = 31 * result + formExpanded.hashCode()
         result = 31 * result + readGetter.hashCode()
         result = 31 * result + inferEnable.hashCode()
