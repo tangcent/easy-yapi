@@ -18,6 +18,7 @@ import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.config.RecommendConfigLoader
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
+import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.ConfigurableLogger
@@ -49,6 +50,8 @@ class EasyApiSettingGUI {
     private var wrapCollectionCheckBox: JCheckBox? = null
 
     private var autoMergeScriptCheckBox: JCheckBox? = null
+
+    private var postmanJson5FormatTypeComboBox: JComboBox<String>? = null
 
     //endregion
 
@@ -143,6 +146,13 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(autoMergeScriptCheckBox!!)
                 .mutual(this, "settings.autoMergeScript")
+
+        postmanJson5FormatTypeComboBox!!.model = DefaultComboBoxModel(PostmanJson5FormatType.values().mapToTypedArray { it.name })
+
+        autoComputer.bind<String?>(this, "settings.postmanJson5FormatType")
+                .with(this.postmanJson5FormatTypeComboBox!!)
+                .filter { throttleHelper.acquire("settings.postmanJson5FormatType", 300) }
+                .eval { (it ?: PostmanJson5FormatType.EXAMPLE_ONLY.name) }
 
         autoComputer.bind(this.globalCacheSizeLabel!!)
                 .with(this::globalCacheSize)
@@ -280,6 +290,8 @@ class EasyApiSettingGUI {
 
         this.logLevelComboBox!!.selectedItem = ConfigurableLogger.CoarseLogLevel.toLevel(settings.logLevel)
         this.outputCharsetComboBox!!.selectedItem = Charsets.forName(settings.outputCharset)
+        this.postmanJson5FormatTypeComboBox!!.selectedItem = settings.postmanJson5FormatType
+        this.markdownFormatTypeComboBox!!.selectedItem = settings.markdownFormatType
 
         RecommendConfigLoader.selectedCodes(settings.recommendConfigs).forEach {
             this.recommendConfigList!!.setItemSelected(it, true)

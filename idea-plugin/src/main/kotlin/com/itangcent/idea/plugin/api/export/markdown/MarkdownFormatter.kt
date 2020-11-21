@@ -25,7 +25,6 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.forEachValid
-import java.util.*
 
 /**
  * format [com.itangcent.common.model.Doc] to `markdown`.
@@ -465,14 +464,18 @@ private class SimpleObjectFormatter(handle: (String) -> Unit) : AbstractObjectFo
             addBodyProperty(deep, name, "array", desc)
 
             if (obj.size > 0) {
-                writeBody(obj[0], "", "", deep + 1)
+                obj.forEach {
+                    writeBody(it, "", "", deep + 1)
+                }
             } else {
                 writeBody(null, "", "", deep + 1)
             }
-        } else if (obj is List<*>) {
+        } else if (obj is Collection<*>) {
             addBodyProperty(deep, name, "array", desc)
             if (obj.size > 0) {
-                writeBody(obj[0], "", "", deep + 1)
+                obj.forEach {
+                    writeBody(it, "", "", deep + 1)
+                }
             } else {
                 writeBody(null, "", "", deep + 1)
             }
@@ -480,9 +483,9 @@ private class SimpleObjectFormatter(handle: (String) -> Unit) : AbstractObjectFo
             if (deep > 0) {
                 addBodyProperty(deep, name, "object", desc)
             }
-            var comment: HashMap<String, Any?>? = null
+            var comment: Map<String, Any?>? = null
             try {
-                comment = obj[Attrs.COMMENT_ATTR] as HashMap<String, Any?>?
+                comment = obj[Attrs.COMMENT_ATTR] as Map<String, Any?>?
             } catch (e: Throwable) {
             }
             obj.forEachValid { k, v ->
@@ -528,14 +531,18 @@ private class UltimateObjectFormatter(handle: (String) -> Unit) : AbstractObject
         if (obj is Array<*>) {
             addBodyProperty(deep, name, "array", required, default, desc)
             if (obj.size > 0) {
-                writeBody(obj[0], "", null, null, "", deep + 1)
+                obj.forEach {
+                    writeBody(it, "", null, null, "", deep + 1)
+                }
             } else {
                 writeBody(null, "", null, null, "", deep + 1)
             }
-        } else if (obj is List<*>) {
+        } else if (obj is Collection<*>) {
             addBodyProperty(deep, name, "array", desc)
             if (obj.size > 0) {
-                writeBody(obj[0], "", null, null, "", deep + 1)
+                obj.forEach {
+                    writeBody(it, "", null, null, "", deep + 1)
+                }
             } else {
                 writeBody(null, "", null, null, "", deep + 1)
             }

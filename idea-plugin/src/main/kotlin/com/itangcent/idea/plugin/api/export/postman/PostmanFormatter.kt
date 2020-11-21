@@ -3,6 +3,8 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
+import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.common.model.getContentType
@@ -13,6 +15,7 @@ import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.idea.plugin.api.export.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.ResolveMultiPath
 import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
@@ -21,6 +24,8 @@ import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.forEachValid
+import com.itangcent.intellij.util.validSize
 import org.apache.commons.lang3.RandomUtils
 import java.util.*
 import kotlin.collections.ArrayList
@@ -125,6 +130,7 @@ open class PostmanFormatter {
         return item
     }
 
+    @Suppress("UNCHECKED_CAST")
     protected open fun formatRequest2Item(request: Request): HashMap<String, Any?> {
 
         var host = "{{host}}"
@@ -215,7 +221,7 @@ open class PostmanFormatter {
 
         if (request.body != null) {
             body[MODE] = "raw"
-            body["raw"] = RequestUtils.parseRawBody(request.body!!)
+            body["raw"] = getBodyFormatter(1).format(request.body)
             body["options"] = KV.by("raw", KV.by("language", "json"))
         }
 
@@ -235,7 +241,15 @@ open class PostmanFormatter {
                 } else {
                     responseInfo[NAME] = exampleName
                 }
-                responseInfo["originalRequest"] = requestInfo//need clone?request.clone()?
+
+                if (request.body != null) {
+                    val copyRequestInfo = GsonUtils.copy(requestInfo) as HashMap<String, Any?>
+                    val copyBody: HashMap<String, Any?> = copyRequestInfo.getAs("body")!!
+                    copyBody["raw"] = getBodyFormatter(4).format(request.body)
+                    responseInfo["originalRequest"] = copyRequestInfo
+                } else {
+                    responseInfo["originalRequest"] = requestInfo//need clone?request.clone()?
+                }
                 responseInfo["status"] = "OK"
                 responseInfo["code"] = 200
                 responseInfo["_postman_previewlanguage"] = "json"
@@ -293,7 +307,7 @@ open class PostmanFormatter {
 
                 responseInfo["responseTime"] = RandomUtils.nextInt(10, 100)
 
-                responseInfo["body"] = response.body?.let { RequestUtils.parseRawBody(it) }
+                responseInfo["body"] = getBodyFormatter(8).format(response.body)
 
                 responses.add(responseInfo)
             }
@@ -591,6 +605,16 @@ open class PostmanFormatter {
         }
     }
 
+    private fun getBodyFormatter(type: Int): BodyFormatter {
+        val settings = settingBinder!!.read()
+        val useJson5 = PostmanJson5FormatType.valueOf(settings.postmanJson5FormatType).needUseJson5(type)
+        return if (useJson5) {
+            Json5BodyFormatter()
+        } else {
+            SimpleJsonBodyFormatter()
+        }
+    }
+
     companion object {
         const val NULL_RESOURCE = "unknown"
 
@@ -598,6 +622,175 @@ open class PostmanFormatter {
     }
 }
 
+private interface BodyFormatter {
+    fun format(obj: Any?): String
+}
+
+private class SimpleJsonBodyFormatter : BodyFormatter {
+    override fun format(obj: Any?): String {
+        return obj?.let { RequestUtils.parseRawBody(it) } ?: ""
+    }
+}
+
+/**
+ * @see {@link https://github.com/json5/json5}
+ * @see {@link https://json5.org/}
+ */
+@Suppress("UNCHECKED_CAST")
+private class Json5BodyFormatter : BodyFormatter {
+    override fun format(obj: Any?): String {
+        val sb = StringBuilder()
+        format(obj, 0, true, null, sb)
+        return sb.toString()
+    }
+
+    fun format(obj: Any?, deep: Int, end: Boolean, desc: String?, sb: StringBuilder) {
+        when (obj) {
+            null -> {
+                sb.append("null")
+                sb.appendEnd(end)
+                sb.appendEndLineComment(desc)
+            }
+            is Array<*> -> {
+                if (obj.isEmpty()) {
+                    sb.append("[]")
+                    sb.appendEnd(end)
+                    sb.appendEndLineComment(desc)
+                    return
+                }
+                sb.append("[")
+                sb.appendEndLineComment(desc)
+                val endCounter = EndCounter(obj.size)
+                obj.forEach {
+                    sb.nextLine(deep + 1)
+                    format(it, deep + 1, endCounter.end(), null, sb)
+                }
+                sb.nextLine(deep)
+                sb.append("]")
+                sb.appendEnd(end)
+            }
+            is Collection<*> -> {
+                if (obj.isEmpty()) {
+                    sb.append("[]")
+                    sb.appendEnd(end)
+                    sb.appendEndLineComment(desc)
+                    return
+                }
+                sb.append("[")
+                sb.appendEndLineComment(desc)
+                val endCounter = EndCounter(obj.size)
+                obj.forEach {
+                    sb.nextLine(deep + 1)
+                    format(it, deep + 1, endCounter.end(), null, sb)
+                }
+                sb.nextLine(deep)
+                sb.append("]")
+                sb.appendEnd(end)
+            }
+            is Map<*, *> -> {
+                if (obj.isEmpty()) {
+                    sb.append("{}")
+                    sb.appendEnd(end)
+                    sb.appendEndLineComment(desc)
+                    return
+                }
+                var comment: Map<String, Any?>? = null
+                try {
+                    comment = obj[Attrs.COMMENT_ATTR] as Map<String, Any?>?
+                } catch (e: Throwable) {
+                }
+                sb.append("{")
+                sb.appendEndLineComment(desc)
+                val endCounter = EndCounter(obj.validSize())
+                obj.forEachValid { k, v ->
+                    val propertyDesc: String? = KVUtils.getUltimateComment(comment, k)
+                    sb.nextLine(deep + 1)
+                    format(k.toString(), v, deep + 1, propertyDesc ?: "", endCounter.end(), sb)
+                }
+                sb.nextLine(deep)
+                sb.append("}")
+                sb.appendEnd(end)
+            }
+            is String -> {
+                sb.appendString(obj)
+                sb.appendEnd(end)
+                sb.appendEndLineComment(desc)
+            }
+            else -> {
+                sb.append(obj)
+                sb.appendEnd(end)
+                sb.appendEndLineComment(desc)
+            }
+        }
+    }
+
+    fun format(name: String, obj: Any?, deep: Int, desc: String?, end: Boolean, sb: StringBuilder) {
+        if (desc.isNullOrBlank()) {
+            sb.appendString(name)
+            sb.append(": ")
+            format(obj, deep, end, desc, sb)
+            return
+        }
+        val lines = desc.lines()
+        if (lines.size == 1) {
+            sb.appendString(name)
+            sb.append(": ")
+            format(obj, deep, end, desc, sb)
+            return
+        } else {
+            sb.appendBlockComment(lines, deep)
+            sb.appendString(name)
+            sb.append(": ")
+            format(obj, deep, end, null, sb)
+            return
+        }
+    }
+
+    private fun StringBuilder.appendString(key: String) {
+        this.append('"')
+        this.append(key)
+        this.append('"')
+    }
+
+    private fun StringBuilder.appendEnd(end: Boolean) {
+        if (!end) {
+            this.append(',')
+        }
+    }
+
+    private fun StringBuilder.appendBlockComment(descs: List<String>, deep: Int) {
+        this.append("/**")
+        this.appendln()
+        descs.forEach {
+            this.append(TAB.repeat(deep))
+            this.append(" * ")
+            this.appendln(it)
+        }
+        this.append(TAB.repeat(deep))
+        this.append(" */")
+        this.appendln()
+        this.append(TAB.repeat(deep))
+    }
+
+    private fun StringBuilder.appendEndLineComment(desc: String?) {
+        if (desc.notNullOrBlank()) {
+            this.append(" //")
+            this.append(desc)
+        }
+    }
+
+    private fun StringBuilder.nextLine(deep: Int) {
+        this.appendln()
+        this.append(TAB.repeat(deep))
+    }
+}
+
+private class EndCounter(val size: Int) {
+    private var i = 0
+    fun end(): Boolean {
+        return ++i == size
+    }
+}
 
 private const val NAME = "name"
 private const val KEY = "key"
@@ -607,3 +800,19 @@ private const val MODE = "mode"
 private const val DESCRIPTION = "description"
 private const val EVENT = "event"
 private const val ITEM = "item"
+private const val TAB = "    "
+
+
+fun main() {
+    val json5BodyFormatter = Json5BodyFormatter()
+    println(json5BodyFormatter.format("aa"))
+    println(json5BodyFormatter.format(KV.by("aa", "bb")))
+    println(json5BodyFormatter.format(KV.by("aa", listOf("bb", KV.by("aa", "bb")))))
+    println(json5BodyFormatter.format(
+            KV.by<String, Any?>("aa", listOf("bb", KV.by("aa", "bb")))
+                    .set("bb", listOf("cc", KV.by("aa", "bb")))
+                    .set(Attrs.COMMENT_ATTR, KV.by("aa", "string - a")
+                            .set("bb", "bbb\nbbb\nbbb")
+                    )
+    ))
+}

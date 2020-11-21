@@ -28,7 +28,7 @@ fun <V> KV<String, V>.forEachValid(action: (String, V) -> Unit) {
 
 @Suppress("UNCHECKED_CAST")
 fun <K, V> Map<K, V>.forEachValid(action: (K, V) -> Unit) {
-    this.forEach { k, v ->
+    this.forEach { (k, v) ->
         if (k == null) {
             return@forEach
         } else if (k is String) {
@@ -44,6 +44,10 @@ fun <K, V> Map<K, V>.forEachValid(action: (K, V) -> Unit) {
         }
         action(k, v)
     }
+}
+
+fun <K, V> Map<K, V>.validSize(): Int {
+    return this.keys.count { it !is String || !it.startsWith('@') }
 }
 
 fun Map<*, *>.flatValid(consumer: FieldConsumer) {
