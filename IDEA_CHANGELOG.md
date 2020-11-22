@@ -45,6 +45,8 @@
     
     * fix: remove usage of Module.getModuleFilePath [(#267)](https://github.com/tangcent/easy-yapi/pull/267)
     
+    * feat: support json5 for postman [(#286)](https://github.com/tangcent/easy-yapi/pull/286)
+    
 * 1.9.0 ~
 
     * fix: support `java`/`kt`/`scala` in all action. [(#271)](https://github.com/tangcent/easy-api/pull/271
