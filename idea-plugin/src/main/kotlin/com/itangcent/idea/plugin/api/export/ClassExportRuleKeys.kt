@@ -14,6 +14,11 @@ object ClassExportRuleKeys {
             BooleanRuleMode.ANY
     )
 
+    val IS_CTRL: RuleKey<Boolean> = SimpleRuleKey(
+            "class.is.ctrl", BooleanRule::class,
+            BooleanRuleMode.ANY
+    )
+
     //filter class for methodDoc(rpc)
     val CLASS_FILTER: RuleKey<Boolean> = SimpleRuleKey(
             "mdoc.class.filter", BooleanRule::class,
