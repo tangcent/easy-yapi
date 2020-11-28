@@ -43,7 +43,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     override fun hasApi(psiClass: PsiClass): Boolean {
         return SpringClassName.SPRING_CONTROLLER_ANNOTATION.any {
             annotationHelper!!.hasAnn(psiClass, it)
-        }
+        } || (ruleComputer!!.computer(ClassExportRuleKeys.IS_CTRL, psiClass) ?: false)
     }
 
     override fun isApi(psiMethod: PsiMethod): Boolean {
