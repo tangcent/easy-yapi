@@ -47,6 +47,10 @@
     
     * feat: support json5 for postman [(#286)](https://github.com/tangcent/easy-yapi/pull/286)
     
+    * opti: support rule `class.is.ctrl` [(#293)](https://github.com/tangcent/easy-yapi/pull/293)
+    
+    * opti: remove log in recommend config [(#294)](https://github.com/tangcent/easy-yapi/pull/294)
+    
 * 1.9.0 ~
 
     * fix: support `java`/`kt`/`scala` in all action. [(#271)](https://github.com/tangcent/easy-api/pull/271
