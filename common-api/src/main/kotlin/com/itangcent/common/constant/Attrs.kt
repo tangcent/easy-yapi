@@ -12,5 +12,7 @@ object Attrs {
 
     const val DEMO_ATTR = "@demo"
 
-    val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, MOCK_ATTR, DEFAULT_VALUE_ATTR,DEMO_ATTR)
+    const val PREFIX = '@'
+
+    val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, MOCK_ATTR, DEFAULT_VALUE_ATTR, DEMO_ATTR)
 }

@@ -11,7 +11,9 @@ import com.itangcent.common.utils.asBool
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.plugin.json.Json5Formatter
 import com.itangcent.intellij.config.rule.*
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.*
@@ -355,11 +357,20 @@ abstract class ScriptRuleParser : RuleParser {
             return psiClass.name
         }
 
-        open fun toJson(readGetter: Boolean): String? {
+        override fun toJson(readGetter: Boolean): String? {
             val option = if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
             return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
                 psiClassHelper!!.getTypeObject(it, psiClass, option)
             } ?: psiClassHelper!!.getFields(psiClass)).let { RequestUtils.parseRawBody(it) }
+        }
+
+        override fun toJson5(readGetter: Boolean): String? {
+            val option = if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
+            return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
+                psiClassHelper!!.getTypeObject(it, psiClass, option)
+            } ?: psiClassHelper!!.getFields(psiClass)).let {
+                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+            }
         }
 
         override fun toString(): String {
@@ -386,6 +397,12 @@ abstract class ScriptRuleParser : RuleParser {
             val option = if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
             return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass, option)
                     ?.let { RequestUtils.parseRawBody(it) }
+        }
+
+        override fun toJson5(readGetter: Boolean): String? {
+            val option = if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
+            return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass, option)
+                    ?.let { ActionContext.getContext()!!.instance(Json5Formatter::class).format(it) }
         }
 
         @ScriptIgnore
@@ -693,6 +710,10 @@ abstract class ScriptRuleParser : RuleParser {
         fun fieldCnt(): Int
 
         fun methodCnt(): Int
+
+        fun toJson(readGetter: Boolean): String?
+
+        fun toJson5(readGetter: Boolean): String?
     }
 
     /**
@@ -784,10 +805,18 @@ abstract class ScriptRuleParser : RuleParser {
             }?.size ?: 0
         }
 
-        fun toJson(readGetter: Boolean): String? {
+        override fun toJson(readGetter: Boolean): String? {
             return psiClassHelper!!.getTypeObject(psiType, getResource()!!,
                     if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
             )?.let { RequestUtils.parseRawBody(it) }
+        }
+
+        override fun toJson5(readGetter: Boolean): String? {
+            return psiClassHelper!!.getTypeObject(psiType, getResource()!!,
+                    if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
+            )?.let {
+                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+            }
         }
 
         override fun toString(): String {
@@ -907,11 +936,20 @@ abstract class ScriptRuleParser : RuleParser {
             }?.size ?: 0
         }
 
-        fun toJson(readGetter: Boolean): String? {
+        override fun toJson(readGetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
             return psiClassHelper!!.getTypeObject(duckType, resource,
                     if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
             )?.let { RequestUtils.parseRawBody(it) }
+        }
+
+        override fun toJson5(readGetter: Boolean): String? {
+            val resource: PsiElement = getResource() ?: return null
+            return psiClassHelper!!.getTypeObject(duckType, resource,
+                    if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
+            )?.let {
+                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+            }
         }
 
         override fun toString(): String {
