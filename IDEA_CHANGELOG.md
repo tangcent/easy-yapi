@@ -51,6 +51,8 @@
     
     * opti: remove log in recommend config [(#294)](https://github.com/tangcent/easy-yapi/pull/294)
     
+    * feat: new action `ToJson5` [(#300)](https://github.com/tangcent/easy-yapi/pull/300)
+    
 * 1.9.0 ~
 
     * fix: support `java`/`kt`/`scala` in all action. [(#271)](https://github.com/tangcent/easy-api/pull/271
