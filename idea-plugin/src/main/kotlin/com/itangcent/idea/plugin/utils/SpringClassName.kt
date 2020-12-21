@@ -3,7 +3,10 @@ package com.itangcent.idea.plugin.utils
 
 object SpringClassName {
 
-    val SPRING_REQUEST_RESPONSE: Array<String> = arrayOf("HttpServletRequest", "HttpServletResponse")
+    val SPRING_REQUEST_RESPONSE: Array<String> = arrayOf(
+            "javax.servlet.http.HttpServletRequest",
+            "javax.servlet.http.HttpServletResponse"
+    )
 
     var SPRING_CONTROLLER_ANNOTATION: Set<String> =
             mutableSetOf("org.springframework.stereotype.Controller",

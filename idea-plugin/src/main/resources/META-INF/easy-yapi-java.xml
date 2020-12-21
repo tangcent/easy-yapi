@@ -22,6 +22,9 @@
             <action id="com.itangcent.idea.easy_api.actions.codeMenu.FieldsJsonAction"
                     class="com.itangcent.idea.plugin.actions.FieldsToJsonAction" text="ToJson" description="ToJson"/>
 
+            <action id="com.itangcent.idea.easy_api.actions.codeMenu.FieldsToJson5Action"
+                    class="com.itangcent.idea.plugin.actions.FieldsToJson5Action" text="ToJson5" description="ToJson5"/>
+
             <action id="com.itangcent.idea.easy_api.actions.ScriptExecutorAction"
                     class="com.itangcent.idea.plugin.actions.ScriptExecutorAction" text="ScriptExecutor"
                     description="ScriptExecutor"/>
@@ -65,6 +68,11 @@
             <action id="com.itangcent.idea.easy_api.actions.FieldsToJsonAction"
                     class="com.itangcent.idea.plugin.actions.FieldsToJsonAction"
                     text="_ToJson" description="ToJson">
+            </action>
+
+            <action id="com.itangcent.idea.easy_api.actions.FieldsToJson5Action"
+                    class="com.itangcent.idea.plugin.actions.FieldsToJson5Action"
+                    text="_ToJson5" description="ToJson5">
             </action>
         </group>
     </actions>
