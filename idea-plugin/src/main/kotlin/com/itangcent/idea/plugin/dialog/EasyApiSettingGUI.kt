@@ -255,7 +255,10 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(this.previewTextArea!!)
                 .with<String>(this, "settings.recommendConfigs")
-                .eval { configs -> RecommendConfigLoader.buildRecommendConfig(configs) }
+                .eval { configs ->
+                    RecommendConfigLoader.buildRecommendConfig(configs,
+                            "\n#${"-".repeat(20)}\n")
+                }
 
         //endregion  general-----------------------------------------------------
 
