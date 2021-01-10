@@ -349,10 +349,14 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                     continue
                 }
 
-                processMethodParameter(method, methodDoc, param, paramDocComment?.get(param.name!!)?.toString())
+                ruleComputer.computer(ClassExportRuleKeys.PARAM_BEFORE, param)
+                try {
+                    processMethodParameter(method, methodDoc, param, paramDocComment?.get(param.name!!)?.toString())
+                } finally {
+                    ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
+                }
             }
         }
-
     }
 
     protected fun processMethodParameter(
