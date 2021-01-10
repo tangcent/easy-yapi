@@ -19,11 +19,11 @@ object RecommendConfigLoader {
         return RECOMMEND_CONFIG_PLAINT
     }
 
-    fun buildRecommendConfig(codes: String): String {
+    fun buildRecommendConfig(codes: String, separator: CharSequence = "\n"): String {
         val set = codes.split(",").toSet()
         return RECOMMEND_CONFIGS
                 .filter { set.contains(it.code) || (it.default && !set.contains("-${it.code}")) }
-                .joinToString("\n") { it.content }
+                .joinToString(separator) { it.content }
     }
 
     fun addSelectedConfig(codes: String, code: String): String {
