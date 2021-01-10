@@ -53,6 +53,14 @@
     
     * feat: new action `ToJson5` [(#300)](https://github.com/tangcent/easy-yapi/pull/300)
     
+    * opti: support org.springframework.lang.NonNull by recommend [(#302)](https://github.com/tangcent/easy-yapi/pull/302)
+    
+    * opti: ignore org.springframework.validation.BindingResult by recommend [(#303)](https://github.com/tangcent/easy-yapi/pull/303)
+    
+    * opti: support param.before&param.after for methodDoc [(#307)](https://github.com/tangcent/easy-yapi/pull/307)
+    
+    * opti: preview recommendConfig with separator line [(#309)](https://github.com/tangcent/easy-yapi/pull/309)
+    
 * 1.9.0 ~
 
     * fix: support `java`/`kt`/`scala` in all action. [(#271)](https://github.com/tangcent/easy-api/pull/271
@@ -101,8 +109,7 @@
     
     * feat: support property `api.tag.delimiter` [(#223)](https://github.com/tangcent/easy-yapi/pull/223)
     
-    
-*   1.8.0 ~
+* 1.8.0 ~
 
     * enhance:support render yapi desc: [yapi render](http://easyyapi.com/documents/yapi_render.html)  [(#138)](https://github.com/tangcent/easy-api/pull/138)
 
@@ -128,20 +135,20 @@
     
     * new rule tool: localStorage [(#268)](https://github.com/tangcent/easy-api/pull/268)
 
-*   1.7.0 ~
+* 1.7.0 ~
 
     * enhance:new rule tool: helper  [(#242)](https://github.com/tangcent/easy-api/pull/242)
     
     * enhance:support rule: method.return  [(#240)](https://github.com/tangcent/easy-api/pull/240)
-   
 
-*   1.5.0 ~
+* 1.5.0 ~
+
     * enhance:support setting charset for export markdown  [(#211)](https://github.com/tangcent/easy-api/pull/211)
     * enhance:add new method `jsonType` for `method`&`field`  [(#213)](https://github.com/tangcent/easy-api/pull/213)
     * enhance:support scala project   [(#214)](https://github.com/tangcent/easy-api/pull/214)
     * bug-fix: preserving the order of field in infer   [(#216)](https://github.com/tangcent/easy-api/pull/216)
 
-*   1.4.0 ~
+* 1.4.0 ~
     * enhance:support new rule: `api.name`  [(#200)](https://github.com/tangcent/easy-api/pull/200)
     * enhance:new method `contextType` for rule  [(#201)](https://github.com/tangcent/easy-api/pull/201)
     * enhance:cache parsed additional `Header`/`Param`  [(#205)](https://github.com/tangcent/easy-api/pull/205)
@@ -150,29 +157,29 @@
     * enhance:provide recommend config for yapi mock [(#116)](https://github.com/tangcent/easy-yapi/pull/116)
     * enhance:new rule `field.mock` [(#113)](https://github.com/tangcent/easy-yapi/pull/113)
        
-*   1.3.0 ~
+* 1.3.0 ~
     * enhance:new rule:`[class.prefix.path]`  [(#181)](https://github.com/tangcent/easy-api/pull/181)
     * enhance:new rule:`[doc.class]`  [(#178)](https://github.com/tangcent/easy-api/pull/178)
     * enhance:new rule:`[param.ignore]`  [(#176)](https://github.com/tangcent/easy-api/pull/176)
     * enhance:import spring properties by recommend [(#181)](https://github.com/tangcent/easy-api/pull/181)
     * enhance:Auto reload the configuration while context switch [(#185)](https://github.com/tangcent/easy-api/pull/185)
    
-*   1.2.0 ~
+* 1.2.0 ~
     * enhance:provide more recommended configurations  [(#153)](https://github.com/tangcent/easy-api/issues/153)
     * enhance:support for export&import settings [(#167)](https://github.com/tangcent/easy-api/issues/167)
     * fix: Some icon maybe missing in Windows  [(#164)](https://github.com/tangcent/easy-api/issues/164)
   
-*   1.1.0 ~
+* 1.1.0 ~
     * enhance:support rule: `name[filter]=value`  [(#138)](https://github.com/tangcent/easy-api/pull/138)
     * enhance:parse kotlin files in ApiDashboard  [(#141)](https://github.com/tangcent/easy-api/pull/141)
     * fix: support Serializer for Enum  [(#134)](https://github.com/tangcent/easy-api/issues/134)
     * fix: fix error base path for APIs in super class  [(#137)](https://github.com/tangcent/easy-api/issues/137)
     * fix: ApiDashboard not show kotlin module&apis [(#140)](https://github.com/tangcent/easy-api/issues/140)
      
-*   1.0.0 ~
+* 1.0.0 ~
     * enhance:support kotlin  [(#125)](https://github.com/tangcent/easy-api/pull/125)
 
-*   0.9.0 ~
+* 0.9.0 ~
     * enhance:support groovy extension  [(#98)](https://github.com/tangcent/easy-api/pull/98)
     * enhance:update toolTip of ApiProjectNode in ApiDashBoard  [(#102)](https://github.com/tangcent/easy-api/pull/102)
     * fix:opti method Infer  [(#103)](https://github.com/tangcent/easy-api/pull/103)
@@ -182,17 +189,17 @@
     * Output path params in 'Export Markdown'[(#118)](https://github.com/tangcent/easy-api/pull/118)
     * fix:use json instead of form for add cart of yapi [(#44)](https://github.com/tangcent/easy-yapi/pull/44)
 
-*   0.8.0 ~
+* 0.8.0 ~
     * enhance:process key 'Tab' in request params  [(#85)](https://github.com/tangcent/easy-api/pull/85)
     * enhance:process Deprecated info on class in RecommendConfig  [(#86)](https://github.com/tangcent/easy-api/pull/86)
     * enhance:try parse linked option info for form params  [(#87)](https://github.com/tangcent/easy-api/pull/87)
 
-*   0.7.0 ~
+* 0.7.0 ~
     * enhance:provide logging level Settings  [(#68)](https://github.com/tangcent/easy-api/issues/68)
     * enhance:optimized action interrupt  [(#72)](https://github.com/tangcent/easy-api/pull/72)
     * fix:support org.springframework.http.HttpEntity/org.springframework.http.ResponseEntity  [(#71)](https://github.com/tangcent/easy-api/issues/71)
           
-*   0.6.0 ~
+* 0.6.0 ~
     * enhance:support ApiDashboard
     * enhance:optimized ui
     * enhance:auto fix postman collection info
@@ -211,12 +218,12 @@
     * enhance:support YapiDashBoard [(#66)](https://github.com/tangcent/easy-yapi/issues/5)
     * enhance:try resolve link to yapi [#2](https://github.com/tangcent/easy-yapi/issues/2)
 
-*   0.5.0 ~
+* 0.5.0 ~
     *  fix:auto format xml/html response
     *  fix:set prompt for json response
     *  fix:optimized the cache
     
-*   0.4.0 ~
+* 0.4.0 ~
     *  enhance:quick API requests from code`[Alt + Insert -> Call]`
     *  enhance:support request&response header
     *  enhance:support download response
@@ -225,8 +232,8 @@
     *  (beta)enhance:Export Api As Markdown\[Code -> ExportMarkdown]
     *  fix:support Post File In `[Call Api Action]`
     
-*   0.3.0
+* 0.3.0
     *  enhance:cache api export result
     
-*   0.2.0
+* 0.2.0
     *  enhance:support export api to postman`[Code -> ExportPostman]`
