@@ -367,7 +367,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     ) {
         val typeObject = psiClassHelper!!.getTypeObject(param.type, method,
                 jsonSetting!!.jsonOption(JsonOption.READ_COMMENT))
-        methodDocHelper!!.addParam(methodDoc, param.name!!, typeObject, paramDesc)
+        methodDocHelper!!.addParam(methodDoc, param.name!!, typeObject, paramDesc, ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true)
     }
 
     protected fun parseResponseBody(psiType: PsiType?, method: PsiMethod): Any? {
