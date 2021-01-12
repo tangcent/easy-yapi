@@ -9,11 +9,11 @@ class Folder : SimpleExtensible {
     var attr: String? = null
 
     constructor(name: String?) {
-        this.name = name
+        this.name = name?.trim()
     }
 
     constructor(name: String?, attr: String?) {
-        this.name = name
+        this.name = name?.trim()
         this.attr = attr
     }
 }
