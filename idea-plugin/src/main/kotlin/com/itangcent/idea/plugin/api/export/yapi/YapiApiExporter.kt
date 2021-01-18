@@ -9,7 +9,7 @@ import com.itangcent.idea.plugin.api.export.Folder
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType
-import java.util.HashMap
+import java.util.*
 import kotlin.collections.HashSet
 import kotlin.collections.set
 
@@ -100,20 +100,23 @@ class YapiApiExporter : AbstractYapiApiExporter() {
             return privateToken
         }
 
-        if (tryInputTokenOfModule.contains(module)) {
+        //ignore the processed module without input token
+        if (!tryInputTokenOfModule.add(module)) {
             return null
+        }
+
+        LOG!!.info("show dialog for input yapi token")
+        val modulePrivateToken = actionContext!!.callInSwingUI {
+            return@callInSwingUI Messages.showInputDialog(project, "Input Private Token Of Module:$module",
+                    "Yapi Private Token", Messages.getInformationIcon())
+        }
+        LOG.info("input yapi token:{$modulePrivateToken}")
+
+        return if (modulePrivateToken.isNullOrBlank()) {
+            null
         } else {
-            tryInputTokenOfModule.add(module)
-            val modulePrivateToken = actionContext!!.callInSwingUI {
-                return@callInSwingUI Messages.showInputDialog(project, "Input Private Token Of Module:$module",
-                        "Yapi Private Token", Messages.getInformationIcon())
-            }
-            return if (modulePrivateToken.isNullOrBlank()) {
-                null
-            } else {
-                yapiApiHelper!!.setToken(module, modulePrivateToken)
-                modulePrivateToken
-            }
+            yapiApiHelper!!.setToken(module, modulePrivateToken)
+            modulePrivateToken
         }
     }
 
@@ -129,3 +132,6 @@ class YapiApiExporter : AbstractYapiApiExporter() {
         return false
     }
 }
+
+//background idea log
+private val LOG = org.apache.log4j.Logger.getLogger(YapiApiExporter::class.java)
