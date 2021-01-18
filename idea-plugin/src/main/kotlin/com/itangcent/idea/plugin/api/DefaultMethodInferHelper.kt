@@ -87,11 +87,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
     private val emptyCallMethodCache: HashMap<PsiMethod, Any?> = HashMap()
 
     override fun inferReturn(psiMethod: PsiMethod, option: Int): Any? {
-        return cleanInvalidKeys(
-                emptyCallMethodCache.safeComputeIfAbsent(psiMethod) {
-                    return@safeComputeIfAbsent inferReturn(psiMethod, null, null, option)
-                }
-        )
+        return emptyCallMethodCache.safeComputeIfAbsent(psiMethod) {
+            return@safeComputeIfAbsent inferReturn(psiMethod, null, null, option)
+        }.cleanInvalidKeys()
     }
 
     override fun inferReturn(psiMethod: PsiMethod, caller: Any?, args: Array<Any?>?, option: Int): Any? {
@@ -141,43 +139,43 @@ class DefaultMethodInferHelper : MethodInferHelper {
         return DirectVariable { psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption) }
     }
 
-    private fun cleanInvalidKeys(obj: Any?): Any? {
-        when (obj) {
+    private fun Any?.cleanInvalidKeys(): Any? {
+        when (this) {
             null -> return null
             is Collection<*> -> {
-                if (obj.isEmpty() || obj.size == 1) {
-                    return obj
+                if (this.isEmpty() || this.size == 1) {
+                    return this
                 }
                 val copy: ArrayList<Any?> = ArrayList()
-                for (o in obj) {
+                for (o in this) {
                     if (isValidKey(o)) {
-                        copy.add(cleanInvalidKeys(o))
+                        copy.add(o.cleanInvalidKeys())
                     }
                 }
                 if (copy.isEmpty()) {
-                    copy.addAll(obj)
+                    copy.addAll(this)
                 }
                 copy.sortByDescending { pointOf(it) }
                 return copy
             }
             is Map<*, *> -> {
-                if (obj.isEmpty() || obj.size == 1) {
-                    return obj
+                if (this.isEmpty() || this.size == 1) {
+                    return this
                 }
                 val copy: HashMap<Any?, Any?> = LinkedHashMap()
-                obj.forEach { k, v ->
+                this.forEach { (k, v) ->
                     if (isValidKey(k) || isValidKey(v)) {
-                        copy[k] = cleanInvalidKeys(v)
+                        copy[k] = v.cleanInvalidKeys()
                     }
                 }
                 if (copy.isEmpty()) {
-                    copy.putAll(obj)
+                    copy.putAll(this)
                 }
                 return copy
             }
-            is Variable -> return cleanInvalidKeys(obj.getValue())
+            is Variable -> return this.getValue().cleanInvalidKeys()
         }
-        return obj
+        return this
 
     }
 
@@ -345,6 +343,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
     }
 
     private fun tryInfer(infer: Infer): Any? {
+        LOG.debug("tryInfer:$infer")
         actionContext!!.checkStatus()
         try {//find recursive call
             methodStack.filter { it.callMethod() == infer.callMethod() }
@@ -853,7 +852,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         override fun getComputedValue(): Any? = target[name]
 
         override fun setValue(value: Any?) {
-            //todo:meger?
+            //todo:merge?
             target[name] = value
         }
 
@@ -1651,13 +1650,8 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
 private typealias LazyAction = () -> Unit
 
-class DisposableLazyAction : LazyAction {
+class DisposableLazyAction(val delegate: LazyAction) : LazyAction {
     private var disposed = false
-    val delegate: LazyAction
-
-    constructor(delegate: LazyAction) {
-        this.delegate = delegate
-    }
 
     override fun invoke() {
         if (disposed) return
@@ -1669,3 +1663,5 @@ class DisposableLazyAction : LazyAction {
 fun LazyAction.disposable(): DisposableLazyAction {
     return DisposableLazyAction(this)
 }
+
+private val LOG = org.apache.log4j.Logger.getLogger(DefaultMethodInferHelper::class.java)
