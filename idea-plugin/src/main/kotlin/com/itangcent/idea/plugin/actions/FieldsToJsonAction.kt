@@ -33,7 +33,7 @@ class FieldsToJsonAction : ToJsonAction("To Json") {
     }
 
     override fun parseToJson(psiClass: PsiClass, type: PsiType?): String {
-        val obj = psiClassHelper!!.getTypeObject(type, psiClass, JsonOption.READ_GETTER)
+        val obj = psiClassHelper!!.getTypeObject(type, psiClass, JsonOption.READ_GETTER.or(JsonOption.READ_SETTER))
         return jsonFormatter!!.format(obj)
     }
 }

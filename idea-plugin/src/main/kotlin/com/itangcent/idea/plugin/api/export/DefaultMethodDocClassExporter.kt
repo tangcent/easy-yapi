@@ -366,7 +366,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
             paramDesc: String?
     ) {
         val typeObject = psiClassHelper!!.getTypeObject(param.type, method,
-                jsonSetting!!.jsonOption(JsonOption.READ_COMMENT))
+                jsonSetting!!.jsonOptionForInput(JsonOption.READ_COMMENT))
         methodDocHelper!!.addParam(methodDoc, param.name!!, typeObject, paramDesc, ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true)
     }
 
@@ -385,7 +385,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             else -> psiClassHelper!!.getTypeObject(psiType, method,
-                    jsonSetting!!.jsonOption(JsonOption.READ_COMMENT))
+                    jsonSetting!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
         }
     }
 
