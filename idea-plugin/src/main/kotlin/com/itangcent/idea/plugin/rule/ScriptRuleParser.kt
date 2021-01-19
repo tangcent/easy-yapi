@@ -357,17 +357,18 @@ abstract class ScriptRuleParser : RuleParser {
             return psiClass.name
         }
 
-        override fun toJson(readGetter: Boolean): String? {
-            val option = if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
+        override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
-                psiClassHelper!!.getTypeObject(it, psiClass, option)
+                psiClassHelper!!.getTypeObject(it, psiClass,
+                        JsonOption.NONE.or(readGetter, readSetter)
+                )
             } ?: psiClassHelper!!.getFields(psiClass)).let { RequestUtils.parseRawBody(it) }
         }
 
-        override fun toJson5(readGetter: Boolean): String? {
-            val option = if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
+        override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
-                psiClassHelper!!.getTypeObject(it, psiClass, option)
+                psiClassHelper!!.getTypeObject(it, psiClass,
+                        JsonOption.READ_COMMENT.or(readGetter, readSetter))
             } ?: psiClassHelper!!.getFields(psiClass)).let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
             }
@@ -393,16 +394,18 @@ abstract class ScriptRuleParser : RuleParser {
             return fields.mapToTypedArray { ScriptExplicitFieldContext(it) }
         }
 
-        override fun toJson(readGetter: Boolean): String? {
-            val option = if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
-            return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass, option)
-                    ?.let { RequestUtils.parseRawBody(it) }
+        override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
+            return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass,
+                    JsonOption.NONE.or(readGetter, readSetter)
+            )?.let { RequestUtils.parseRawBody(it) }
         }
 
-        override fun toJson5(readGetter: Boolean): String? {
-            val option = if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
-            return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass, option)
-                    ?.let { ActionContext.getContext()!!.instance(Json5Formatter::class).format(it) }
+        override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
+            return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass,
+                    JsonOption.READ_COMMENT.or(readGetter, readSetter)
+            )?.let {
+                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+            }
         }
 
         @ScriptIgnore
@@ -558,7 +561,8 @@ abstract class ScriptRuleParser : RuleParser {
                     ?.let { ScriptPsiTypeContext(it) }
         }
 
-        open fun returnJson(needInfer: Boolean = false, readGetter: Boolean = true): String? {
+        open fun returnJson(needInfer: Boolean = false, readGetter: Boolean = true,
+                            readSetter: Boolean = true): String? {
             val psiType = psiMethod.returnType ?: return null
             return when {
                 needInfer && (!duckTypeHelper!!.isQualified(psiType, psiMethod) ||
@@ -566,8 +570,8 @@ abstract class ScriptRuleParser : RuleParser {
                     logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper!!.inferReturn(psiMethod)
                 }
-                readGetter -> psiClassHelper!!.getTypeObject(psiType, psiMethod, JsonOption.READ_GETTER)
-                else -> psiClassHelper!!.getTypeObject(psiType, psiMethod, JsonOption.NONE)
+                else -> psiClassHelper!!.getTypeObject(psiType, psiMethod,
+                        JsonOption.NONE.or(readGetter, readSetter))
             }?.let { RequestUtils.parseRawBody(it) }
         }
 
@@ -583,7 +587,8 @@ abstract class ScriptRuleParser : RuleParser {
             return explicitMethod.getReturnType()?.let { ScriptDuckTypeContext(it) }
         }
 
-        override fun returnJson(needInfer: Boolean, readGetter: Boolean): String? {
+        override fun returnJson(needInfer: Boolean, readGetter: Boolean,
+                                readSetter: Boolean): String? {
             val duckType = explicitMethod.getReturnType() ?: return null
             return when {
                 needInfer && (!duckTypeHelper!!.isQualified(duckType) ||
@@ -591,8 +596,8 @@ abstract class ScriptRuleParser : RuleParser {
                     logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper!!.inferReturn(psiMethod)
                 }
-                readGetter -> psiClassHelper!!.getTypeObject(duckType, psiMethod, JsonOption.READ_GETTER)
-                else -> psiClassHelper!!.getTypeObject(duckType, psiMethod, JsonOption.NONE)
+                else -> psiClassHelper!!.getTypeObject(duckType, psiMethod, JsonOption.NONE
+                        .or(readGetter, readSetter))
             }?.let { RequestUtils.parseRawBody(it) }
         }
 
@@ -711,9 +716,9 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun methodCnt(): Int
 
-        fun toJson(readGetter: Boolean): String?
+        fun toJson(readGetter: Boolean, readSetter: Boolean): String?
 
-        fun toJson5(readGetter: Boolean): String?
+        fun toJson5(readGetter: Boolean, readSetter: Boolean): String?
     }
 
     /**
@@ -805,19 +810,22 @@ abstract class ScriptRuleParser : RuleParser {
             }?.size ?: 0
         }
 
-        override fun toJson(readGetter: Boolean): String? {
+        override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             return psiClassHelper!!.getTypeObject(psiType, getResource()!!,
-                    if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
-            )?.let { RequestUtils.parseRawBody(it) }
+                    JsonOption.NONE.or(readGetter, readSetter)
+            )?.let {
+                RequestUtils.parseRawBody(it)
+            }
         }
 
-        override fun toJson5(readGetter: Boolean): String? {
+        override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             return psiClassHelper!!.getTypeObject(psiType, getResource()!!,
-                    if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
+                    JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
             }
         }
+
 
         override fun toString(): String {
             return name()
@@ -936,17 +944,17 @@ abstract class ScriptRuleParser : RuleParser {
             }?.size ?: 0
         }
 
-        override fun toJson(readGetter: Boolean): String? {
+        override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
             return psiClassHelper!!.getTypeObject(duckType, resource,
-                    if (readGetter) JsonOption.READ_GETTER else JsonOption.NONE
+                    JsonOption.NONE.or(readGetter, readSetter)
             )?.let { RequestUtils.parseRawBody(it) }
         }
 
-        override fun toJson5(readGetter: Boolean): String? {
+        override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
             return psiClassHelper!!.getTypeObject(duckType, resource,
-                    if (readGetter) JsonOption.ALL else JsonOption.READ_COMMENT
+                    JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
             }
@@ -958,3 +966,14 @@ abstract class ScriptRuleParser : RuleParser {
     }
 }
 
+
+private fun Int.or(readGetter: Boolean, readSetter: Boolean): Int {
+    var option = this
+    if (readGetter) {
+        option = option or JsonOption.READ_GETTER
+    }
+    if (readSetter) {
+        option = option or JsonOption.READ_SETTER
+    }
+    return option
+}

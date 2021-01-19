@@ -12,10 +12,18 @@ class JsonSetting {
     private val settingBinder: SettingBinder? = null
 
     fun defaultJsonOption(): Int {
-        return jsonOption(0)
+        return jsonOptionForInput(0)
     }
 
-    fun jsonOption(jsonOption: Int): Int {
+    fun jsonOptionForInput(jsonOption: Int): Int {
+        return if (settingBinder!!.read().readSetter) {
+            jsonOption.or(JsonOption.READ_SETTER)
+        } else {
+            jsonOption
+        }
+    }
+
+    fun jsonOptionForOutput(jsonOption: Int): Int {
         return if (settingBinder!!.read().readGetter) {
             jsonOption.or(JsonOption.READ_GETTER)
         } else {
