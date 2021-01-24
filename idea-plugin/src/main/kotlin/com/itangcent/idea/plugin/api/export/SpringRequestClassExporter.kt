@@ -52,11 +52,11 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
     }
 
-    override fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, typeObject: Any?, paramDesc: String?) {
+    override fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, paramDesc: String?) {
 
         //RequestBody(json)
         if (isRequestBody(parameter.psi())) {
-            setRequestBody(request, typeObject, paramDesc)
+            setRequestBody(request, parameter.raw(), paramDesc)
             return
         }
 
@@ -68,9 +68,9 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
                                 ?: HttpMethod.POST)
             }
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(parameter, request, typeObject)
+                addParamAsQuery(parameter, request, parameter.unbox())
             } else {
-                addParamAsForm(parameter, request, typeObject, paramDesc)
+                addParamAsForm(parameter, request, parameter.unbox(), paramDesc)
             }
             return
         }
@@ -177,7 +177,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(parameter, request, typeObject, ultimateComment)
+            addParamAsQuery(parameter, request, parameter.unbox(), ultimateComment)
             return
         }
 
@@ -190,16 +190,16 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             when (paramType) {
                 "body" -> {
                     requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
-                    setRequestBody(request, typeObject, ultimateComment)
+                    setRequestBody(request, parameter.raw(), ultimateComment)
                     return
                 }
                 "form" -> {
                     requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
-                    addParamAsForm(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
+                    addParamAsForm(parameter, request, parameter.defaultVal ?: parameter.unbox(), ultimateComment)
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
+                    addParamAsQuery(parameter, request, parameter.defaultVal ?: parameter.unbox(), ultimateComment)
                     return
                 }
                 else -> {
@@ -210,8 +210,8 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
             }
         }
 
-        if (typeObject.hasFile()) {
-            addParamAsForm(parameter, request, typeObject, ultimateComment)
+        if (parameter.unbox().hasFile()) {
+            addParamAsForm(parameter, request, parameter.unbox(), ultimateComment)
             return
         }
 
@@ -230,7 +230,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 //        }
 
         //else
-        addParamAsQuery(parameter, request, typeObject, ultimateComment)
+        addParamAsQuery(parameter, request, parameter.unbox(), ultimateComment)
     }
 
     override fun processMethod(method: ExplicitMethod, kv: KV<String, Any?>, request: Request) {
