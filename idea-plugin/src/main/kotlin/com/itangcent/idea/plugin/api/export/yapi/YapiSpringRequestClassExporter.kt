@@ -4,9 +4,6 @@ import com.google.inject.Inject
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.utils.asKV
-import com.itangcent.common.utils.getAs
-import com.itangcent.common.utils.getAsKv
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
@@ -39,7 +36,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         request.setOpen(open)
     }
 
-    override fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, typeObject: Any?, paramDesc: String?) {
+    override fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, paramDesc: String?) {
 
         //RequestBody(json)
         if (isRequestBody(parameter.psi())) {
@@ -47,7 +44,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             requestHelper.addHeader(request, "Content-Type", "application/json")
             requestHelper.setJsonBody(
                     request,
-                    typeObject,
+                    parameter.raw(),
                     paramDesc
             )
             return
@@ -61,9 +58,9 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                                 ?: HttpMethod.POST)
             }
             if (request.method == HttpMethod.GET) {
-                addParamAsQuery(parameter, request, typeObject)
+                addParamAsQuery(parameter, request, parameter.unbox())
             } else {
-                addParamAsForm(parameter, request, typeObject, paramDesc)
+                addParamAsForm(parameter, request, parameter.unbox(), paramDesc)
             }
             return
         }
@@ -177,11 +174,11 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
         }
 
         if (parameter.required == null) {
-            parameter.required = ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
+            parameter.required = ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameter)
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(parameter, request, typeObject, ultimateComment)
+            addParamAsQuery(parameter, request, parameter.unbox(), ultimateComment)
                     .trySetDemo(demo)
             return
         }
@@ -195,18 +192,18 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             when (paramType) {
                 "body" -> {
                     requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
-                    setRequestBody(request, typeObject, ultimateComment)
+                    setRequestBody(request, parameter.raw(), ultimateComment)
                             .trySetDemo(demo)
                     return
                 }
                 "form" -> {
                     requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
-                    addParamAsForm(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
+                    addParamAsForm(parameter, request, parameter.defaultVal ?: parameter.unbox(), ultimateComment)
                             .trySetDemo(demo)
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(parameter, request, parameter.defaultVal ?: typeObject, ultimateComment)
+                    addParamAsQuery(parameter, request, parameter.defaultVal ?: parameter.unbox(), ultimateComment)
                             .trySetDemo(demo)
                     return
                 }
@@ -218,8 +215,8 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             }
         }
 
-        if (typeObject.hasFile()) {
-            addParamAsForm(parameter, request, typeObject, ultimateComment)
+        if (parameter.raw().hasFile()) {
+            addParamAsForm(parameter, request, parameter.unbox(), ultimateComment)
                     .trySetDemo(demo)
             return
         }
@@ -241,7 +238,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 //        }
 
         //else
-        addParamAsQuery(parameter, request, typeObject, ultimateComment)
+        addParamAsQuery(parameter, request, parameter.unbox(), ultimateComment)
                 .trySetDemo(demo)
     }
 

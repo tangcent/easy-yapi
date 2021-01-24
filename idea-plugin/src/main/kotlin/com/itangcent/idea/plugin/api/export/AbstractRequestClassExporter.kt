@@ -5,7 +5,8 @@ import com.intellij.psi.*
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
-import com.itangcent.common.kit.*
+import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
@@ -465,7 +466,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
             val paramDocComment = extractParamComment(method.psi())
 
-            val parsedParams: ArrayList<Pair<ExplicitParameter, Any?>> = ArrayList()
+            val parsedParams: ArrayList<ExplicitParameterInfo> = ArrayList()
             for (param in params) {
                 if (ruleComputer!!.computer(ClassExportRuleKeys.PARAM_IGNORE, param) == true) {
                     continue
@@ -482,15 +483,13 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         continue
                     }
 
-                    parsedParams.add(param to psiClassHelper!!.getTypeObject(unboxType, param.psi(),
-                            jsonSetting!!.jsonOptionForInput(JsonOption.READ_COMMENT)
-                    ))
+                    parsedParams.add(ExplicitParameterInfo(param))
                 } finally {
                     ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
                 }
             }
 
-            val hasFile = parsedParams.any { it.second.hasFile() }
+            val hasFile = parsedParams.any { it.raw().hasFile() }
 
             if (hasFile) {
                 if (request.method == HttpMethod.GET) {
@@ -502,15 +501,14 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 requestHelper!!.addHeader(request, "Content-Type", "multipart/form-data")
             }
 
-            for ((param, typeObject) in parsedParams) {
+            for (param in parsedParams) {
                 ruleComputer!!.computer(ClassExportRuleKeys.PARAM_BEFORE, param)
 
                 try {
                     processMethodParameter(
                             request,
-                            ExplicitParameterInfo(param),
-                            typeObject,
-                            KVUtils.getUltimateComment(paramDocComment, param.name()).append(readParamDoc(param))
+                            param,
+                            KVUtils.getUltimateComment(paramDocComment, param.name()).append(readParamDoc(param.parameter))
                     )
                 } finally {
                     ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
@@ -530,7 +528,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     }
 
-    abstract fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, typeObject: Any?, paramDesc: String?)
+    abstract fun processMethodParameter(request: Request, parameter: ExplicitParameterInfo, paramDesc: String?)
 
     protected fun setRequestBody(request: Request, typeObject: Any?, paramDesc: String?) {
         requestHelper!!.setMethodIfMissed(request, HttpMethod.POST)
@@ -728,7 +726,11 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
      * var required: Boolean? = null
      * var defaultVal: Any? = null
      */
-    class ExplicitParameterInfo(val parameter: ExplicitParameter) : ExplicitParameter by parameter {
+    inner class ExplicitParameterInfo(val parameter: ExplicitParameter) : ExplicitParameter by parameter {
+
+        init {
+            raw()
+        }
 
         private var extras: HashMap<Int, Any?>? = null
 
@@ -765,6 +767,35 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         override fun name(): String {
             return paramName ?: parameter.name()
+        }
+
+        fun raw(): Any? {
+            if (extras?.containsKey(4) == true) {
+                return extras()[4]
+            }
+            val paramType = parameter.getType() ?: return null
+            val typeObject = psiClassHelper!!.getTypeObject(paramType, parameter.psi(),
+                    jsonSetting!!.jsonOptionForInput(JsonOption.READ_COMMENT))
+            extras()[4] = typeObject
+            return typeObject
+        }
+
+        fun unbox(): Any? {
+            if (extras?.containsKey(5) == true) {
+                return extras()[5]
+            }
+            val raw = raw().unbox()
+            extras()[5] = raw
+            return raw
+        }
+
+        private fun Any?.unbox(): Any? {
+            if (this is Array<*>) {
+                return this.firstOrNull().unbox()
+            } else if (this is Collection<*>) {
+                return this.firstOrNull().unbox()
+            }
+            return this
         }
     }
 }
