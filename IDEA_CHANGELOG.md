@@ -1,3 +1,12 @@
+* 2.1.0~
+
+    * fix: always trim the name of folder [(#314)](https://github.com/tangcent/easy-yapi/pull/314)
+    
+    * support param.required for methodDoc [(#315)](https://github.com/tangcent/easy-yapi/pull/315)
+    
+    * opti: support `setter` for `toJson(5)` [(#318)](https://github.com/tangcent/easy-yapi/pull/318)
+    
+    * opti: use raw as body and use unbox for query/form [(#320)](https://github.com/tangcent/easy-yapi/pull/320)
 
 * 2.0.0~
 
