@@ -8,6 +8,12 @@
     
     * opti: use raw as body and use unbox for query/form [(#320)](https://github.com/tangcent/easy-yapi/pull/320)
 
+    * fix: resolve on-demand import [(#84)](https://github.com/Earth-1610/intellij-kotlin/pull/84)
+    
+    * opti: import default packages for `kotlin`&`scala` [(#85)](https://github.com/Earth-1610/intellij-kotlin/pull/85)
+    
+    * opti: log for method infer [(#325)](https://github.com/tangcent/easy-yapi/pull/325)
+    
 * 2.0.0~
 
     * feat: support rule util `session` [(#273)](https://github.com/tangcent/easy-yapi/pull/273)
