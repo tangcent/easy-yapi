@@ -379,9 +379,8 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
         return when {
             needInfer() && (!duckTypeHelper!!.isQualified(psiType, method) ||
                     PsiClassUtils.isInterface(psiType)) -> {
-                methodInferHelper!!.setMaxDeep(inferMaxDeep())
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method) + "]")
-                methodInferHelper.inferReturn(method)
+                methodInferHelper!!.inferReturn(method)
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             else -> psiClassHelper!!.getTypeObject(psiType, method,
