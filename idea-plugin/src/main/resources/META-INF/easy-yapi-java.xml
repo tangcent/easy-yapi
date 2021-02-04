@@ -8,17 +8,17 @@
                     class="com.itangcent.idea.plugin.actions.ApiDashBoardAction" text="ApiDashBoard"
                     description="ApiDashBoard"/>
             <action id="com.itangcent.idea.easy_api.actions.codeMenu.YApiDashBoardAction"
-                    class="com.itangcent.idea.plugin.actions.YapiDashBoardAction" text="YApiDashBoard(beta)"
+                    class="com.itangcent.idea.plugin.actions.YapiDashBoardAction" text="YApiDashBoard"
                     description="YApiDashBoard"/>
             <action id="com.itangcent.idea.easy_api.actions.codeMenu.PostmanExportAction"
                     class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportPostman"
-                    description="Export Postman"/>
+                    description="Export postman"/>
             <action id="com.itangcent.idea.easy_api.actions.codeMenu.YapiExportAction"
-                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi(beta)"
-                    description="Export Yapi"/>
+                    class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportYapi"
+                    description="Export yapi"/>
             <action id="com.itangcent.idea.easy_api.actions.codeMenu.MarkdownExportAction"
-                    class="com.itangcent.idea.plugin.actions.MarkdownExportAction" text="ExportMarkdown(beta)"
-                    description="Export Markdown"/>
+                    class="com.itangcent.idea.plugin.actions.MarkdownExportAction" text="ExportMarkdown"
+                    description="Export markdown"/>
             <action id="com.itangcent.idea.easy_api.actions.codeMenu.FieldsJsonAction"
                     class="com.itangcent.idea.plugin.actions.FieldsToJsonAction" text="ToJson" description="ToJson"/>
 
