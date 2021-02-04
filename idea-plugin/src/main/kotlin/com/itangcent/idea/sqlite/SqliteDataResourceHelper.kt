@@ -25,7 +25,8 @@ class SqliteDataResourceHelper {
             sqLiteConfig.setCacheSize(1024 * 8)
             sqLiteConfig.setTempStore(SQLiteConfig.TempStore.MEMORY)
             sqLiteConfig.setPageSize(1024 * 8)
-            sqLiteConfig.setBusyTimeout("60000")
+            //for https://github.com/xerial/sqlite-jdbc/commit/926e281c03c508d982193d09da6ea2824d5f7e81
+            sqLiteConfig.setPragma(SQLiteConfig.Pragma.BUSY_TIMEOUT, "60000")
             val sd = SQLiteConnectionPoolDataSource(sqLiteConfig)
             sd.url = "jdbc:sqlite:$fileName"
             sd
