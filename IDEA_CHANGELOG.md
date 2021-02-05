@@ -14,6 +14,12 @@
     
     * opti: log for method infer [(#325)](https://github.com/tangcent/easy-yapi/pull/325)
     
+    * opti: support spring.ui by recommend [(330)](https://github.com/tangcent/easy-yapi/pull/330)
+    
+    * opti: use `setPragma` instead of `setBusyTimeout` [(333)](https://github.com/tangcent/easy-yapi/pull/333)
+    
+    * opti: refactor ApiDashboard [(335)](https://github.com/tangcent/easy-yapi/pull/335)
+
 * 2.0.0~
 
     * feat: support rule util `session` [(#273)](https://github.com/tangcent/easy-yapi/pull/273)
