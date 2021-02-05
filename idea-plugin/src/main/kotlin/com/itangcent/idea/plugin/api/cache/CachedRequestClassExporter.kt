@@ -12,6 +12,7 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.CompletedHandle
 import com.itangcent.idea.plugin.api.export.DocHandle
 import com.itangcent.idea.plugin.api.export.requestOnly
 import com.itangcent.idea.psi.PsiMethodResource
@@ -74,10 +75,10 @@ class CachedRequestClassExporter : ClassExporter, Worker {
     //no use cache,no read,no write
     private var disabled: Boolean = false
 
-    override fun export(cls: Any, docHandle: DocHandle): Boolean {
+    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
 
         if (disabled || cls !is PsiClass) {
-            return delegateClassExporter!!.export(cls, docHandle)
+            return delegateClassExporter!!.export(cls, docHandle, completedHandle)
         }
 
         val psiFile = cls.containingFile
@@ -99,12 +100,13 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                             statusRecorder.newWork()
                             actionContext.runInReadUI {
                                 try {
-                                    readApiFromCache(cls, fileApiCache!!, docHandle)
+                                    readApiFromCache(cls, fileApiCache!!, docHandle, completedHandle)
                                 } finally {
                                     statusRecorder.endWork()
                                 }
                             }
                         }
+                        completedHandle(cls)
                         return@runAsync
                     }
                 }
@@ -136,7 +138,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                                     PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
                                     , tinyRequest
                             ))
-                        })
+                        }, completedHandle)
                         actionContext.runAsync {
                             fileApiCache.md5 = md5
                             fileApiCache.lastModified = System.currentTimeMillis()
@@ -148,6 +150,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                 }
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
+                completedHandle(cls)
             } catch (e: Exception) {
                 logger!!.traceError("error to cache api info", e)
 
@@ -156,7 +159,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                 statusRecorder.newWork()
                 actionContext.runInReadUI {
                     try {
-                        delegateClassExporter!!.export(cls, docHandle)
+                        delegateClassExporter!!.export(cls, docHandle, completedHandle)
                     } finally {
                         statusRecorder.endWork()
                     }
@@ -168,7 +171,8 @@ class CachedRequestClassExporter : ClassExporter, Worker {
         return true
     }
 
-    private fun readApiFromCache(cls: PsiClass, fileApiCache: FileApiCache, requestHandle: DocHandle) {
+    private fun readApiFromCache(cls: PsiClass, fileApiCache: FileApiCache, requestHandle: DocHandle,
+                                 completedHandle: CompletedHandle) {
         fileApiCache.requests?.forEach { request ->
             val method = request.key?.let { PsiClassUtils.findMethodFromFullName(it, cls as PsiElement) }
             if (method == null) {
@@ -178,6 +182,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
             request.request!!.resource = PsiMethodResource(method, cls)
             requestHandle(request.request!!)
         }
+        completedHandle(cls)
 
     }
 }

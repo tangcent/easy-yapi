@@ -4,7 +4,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.api.export.Folder
-import java.util.HashMap
+import java.util.*
 import kotlin.collections.HashSet
 import kotlin.collections.set
 
@@ -42,11 +42,11 @@ class YapiApiDashBoardExporter : AbstractYapiApiExporter() {
     private val folderNameCartMap: HashMap<String, CartInfo> = HashMap()
 
     @Synchronized
-    override fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
+    override fun getCartForFolder(folder: Folder, privateToken: String): CartInfo? {
         var cartInfo = folderNameCartMap["$privateToken${folder.name}"]
         if (cartInfo != null) return cartInfo
 
-        cartInfo = super.getCartForDoc(folder, privateToken)
+        cartInfo = super.getCartForFolder(folder, privateToken)
         if (cartInfo != null) {
             folderNameCartMap["$privateToken${folder.name}"] = cartInfo
         }
@@ -55,7 +55,7 @@ class YapiApiDashBoardExporter : AbstractYapiApiExporter() {
 
     fun exportDoc(doc: Doc, privateToken: String): Boolean {
         if (doc.resource == null) return false
-        val cartInfo = getCartForDoc(doc.resource!!) ?: return false
+        val cartInfo = getCartForResource(doc.resource!!, privateToken) ?: return false
         return exportDoc(doc, privateToken, cartInfo.cartId!!)
     }
 

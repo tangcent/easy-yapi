@@ -52,7 +52,7 @@ open class AbstractYapiApiExporter {
         return yapiApiHelper!!.getPrivateToken(module)
     }
 
-    protected open fun getCartForDoc(resource: Any): CartInfo? {
+    protected open fun getCartForResource(resource: Any): CartInfo? {
 
         //get token
         val module = actionContext!!.callInReadUI { moduleHelper!!.findModule(resource) } ?: return null
@@ -63,11 +63,15 @@ open class AbstractYapiApiExporter {
         }
 
         //get cart
-        val folder = formatFolderHelper!!.resolveFolder(resource)
-        return getCartForDoc(folder, privateToken)
+        return getCartForResource(resource, privateToken)
     }
 
-    protected open fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
+    protected fun getCartForResource(resource: Any, privateToken: String): CartInfo? {
+        val folder = formatFolderHelper!!.resolveFolder(resource)
+        return getCartForFolder(folder, privateToken)
+    }
+
+    protected open fun getCartForFolder(folder: Folder, privateToken: String): CartInfo? {
 
         val name: String = folder.name ?: "anonymous"
 
@@ -101,7 +105,7 @@ open class AbstractYapiApiExporter {
 
     fun exportDoc(doc: Doc): Boolean {
         if (doc.resource == null) return false
-        val cartInfo = getCartForDoc(doc.resource!!) ?: return false
+        val cartInfo = getCartForResource(doc.resource!!) ?: return false
         return exportDoc(doc, cartInfo.privateToken!!, cartInfo.cartId!!)
     }
 

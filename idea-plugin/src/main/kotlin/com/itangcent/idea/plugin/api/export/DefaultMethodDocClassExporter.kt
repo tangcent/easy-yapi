@@ -91,18 +91,26 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     @Inject
     protected var apiHelper: ApiHelper? = null
 
-    override fun export(cls: Any, docHandle: DocHandle): Boolean {
+    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
         if (!methodDocEnable()) {
+            completedHandle(cls)
             return false
         }
-        if (cls !is PsiClass) return false
+        if (cls !is PsiClass) {
+            completedHandle(cls)
+            return false
+        }
         actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
             when {
-                !hasApi(cls) -> return false
+                !hasApi(cls) -> {
+                    completedHandle(cls)
+                    return false
+                }
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
+                    completedHandle(cls)
                     return true
                 }
                 else -> {
@@ -124,6 +132,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
         } finally {
             statusRecorder.endWork()
         }
+        completedHandle(cls)
         return true
     }
 

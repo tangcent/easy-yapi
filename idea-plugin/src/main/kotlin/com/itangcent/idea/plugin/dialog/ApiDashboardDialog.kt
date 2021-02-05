@@ -1,53 +1,33 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
-import com.intellij.designer.clipboard.SimpleTransferable
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.ui.Messages
-import com.intellij.psi.*
-import com.itangcent.common.concurrent.AQSCountLatch
-import com.itangcent.common.concurrent.CountLatch
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.model.Doc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.utils.safeComputeIfAbsent
+import com.itangcent.common.utils.mapNotNull
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
-import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
-import com.itangcent.idea.plugin.api.export.requestOnly
-import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.psi.ResourceHelper
-import com.itangcent.idea.psi.resourceClass
-import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
-import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
-import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
-import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.intellij.util.FileType
 import org.apache.commons.lang3.exception.ExceptionUtils
-import java.awt.Cursor
-import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
-import java.awt.dnd.*
+import java.awt.dnd.DnDConstants
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetAdapter
+import java.awt.dnd.DropTargetDropEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.io.Serializable
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
@@ -56,16 +36,18 @@ import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashMap
 
 
-class ApiDashboardDialog : JDialog() {
-    private var contentPane: JPanel? = null
-    private var projectApiTree: JTree? = null
-    private var postmanApiTree: JTree? = null
-    private var projectApiPanel: JPanel? = null
-    private var postmanPanel: JPanel? = null
-    private var projectApModeButton: JButton? = null
-    private var projectCollapseButton: JButton? = null
+class ApiDashboardDialog : AbstractApiDashboardDialog() {
+
+    override var contentPane: JPanel? = null
+    override var projectApiTree: JTree? = null
+    var postmanApiTree: JTree? = null
+    override var projectApiPanel: JPanel? = null
+    var postmanPanel: JPanel? = null
+    override var projectApModeButton: JButton? = null
+    override var projectCollapseButton: JButton? = null
 
     private var postmanNewCollectionButton: JButton? = null
     private var postmanSyncButton: JButton? = null
@@ -73,35 +55,11 @@ class ApiDashboardDialog : JDialog() {
 
     var postmanPopMenu: JPopupMenu? = null
 
-    private var projectMode: ProjectMode = ProjectMode.Legible
-
-    @Inject
-    private val logger: Logger? = null
-
-    @Inject
-    var actionContext: ActionContext? = null
-
-    @Inject
-    private val classExporter: ClassExporter? = null
-
-    @Inject
-    private val resourceHelper: ResourceHelper? = null
-
     @Inject
     private val postmanCachedApiHelper: PostmanCachedApiHelper? = null
 
     @Inject
     private val postmanFormatter: PostmanFormatter? = null
-
-    @Volatile
-    private var disposed = false
-
-    private var autoComputer: AutoComputer = AutoComputer()
-
-    private var safeHashHelper = SafeHashHelper()
-
-    @Inject
-    var project: Project? = null
 
     init {
         setContentPane(contentPane)
@@ -201,185 +159,14 @@ class ApiDashboardDialog : JDialog() {
     fun init() {
         actionContext!!.hold()
 
+        LOG.info("init project apis")
         initProjectApiModule()
 
+        LOG.info("init postman collections")
         initPostmanInfo()
     }
 
-    private var apiLoadFuture: Future<*>? = null
-
     private var postmanLoadFuture: Future<*>? = null
-
-    //region project module-----------------------------------------------------
-    private fun initProjectApiModule() {
-
-        projectApiTree!!.model = null
-
-        projectApiTree!!.dragEnabled = true
-
-        projectApiTree!!.transferHandler = ApiTreeTransferHandler(this)
-
-        val dragSource = DragSource.getDefaultDragSource()
-
-        dragSource.createDefaultDragGestureRecognizer(projectApiTree, DnDConstants.ACTION_COPY_OR_MOVE
-        ) { dge ->
-            val lastSelectedPathComponent = projectApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
-
-            if (lastSelectedPathComponent != null) {
-                val projectNodeData = lastSelectedPathComponent.userObject
-                dge.startDrag(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR), SimpleTransferable(wrapData(projectNodeData), getWrapDataFlavor()))
-            }
-        }
-
-        actionContext!!.runAsync {
-            actionContext!!.runInReadUI {
-
-                val moduleManager = ModuleManager.getInstance(project!!)
-                val treeNode = DefaultMutableTreeNode()
-//            var moduleNodeMap: HashMap<Module, DefaultMutableTreeNode> = HashMap()
-                val modules = moduleManager.sortedModules.reversed()
-
-                val moduleNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
-                for (module in modules) {
-                    val moduleProjectNode = DefaultMutableTreeNode(ModuleProjectNodeData(module))
-                    treeNode.add(moduleProjectNode)
-                    moduleNodes.add(moduleProjectNode)
-                }
-
-                actionContext!!.runInSwingUI {
-                    val rootTreeModel = DefaultTreeModel(treeNode, true)
-                    projectApiTree!!.model = rootTreeModel
-                    apiLoadFuture = actionContext!!.runAsync {
-                        for (moduleNode in moduleNodes) {
-                            if (disposed) break
-                            loadApiInModule(moduleNode, rootTreeModel)
-                            rootTreeModel.reload(moduleNode)
-                        }
-                        apiLoadFuture = null
-                    }
-                }
-            }
-        }
-
-        this.projectCollapseButton!!.addActionListener {
-            try {
-                SwingUtils.expandOrCollapseNode(this.projectApiTree!!, false)
-            } catch (e: Exception) {
-                logger!!.error("try collapse project apis failed!")
-            }
-        }
-
-        autoComputer.bindText(this.projectApModeButton!!)
-                .with(this::projectMode)
-                .eval { it.next().desc }
-
-        autoComputer.value(this::projectMode, ProjectMode.Legible)
-        this.projectApModeButton!!.addActionListener {
-            autoComputer.value(this::projectMode, this.projectMode.next())
-            (this.projectApiTree!!.model as DefaultTreeModel).reload()
-        }
-    }
-
-    private fun loadApiInModule(moduleNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel) {
-        val moduleData = moduleNode.userObject as ModuleProjectNodeData
-
-        val sourceRoots = moduleData.module.rootManager.getSourceRoots(false)
-        if (sourceRoots.isNullOrEmpty()) {
-            moduleData.status = NodeStatus.Loaded
-            moduleNode.removeFromParent()
-            return
-        }
-
-        val countLatch: CountLatch = AQSCountLatch()
-        moduleData.status = NodeStatus.Loading
-        var anyFound = false
-        for (contentRoot in sourceRoots) {
-            if (disposed) return
-            countLatch.down()
-            val classNodeMap: ConcurrentHashMap<PsiClass, DefaultMutableTreeNode> = ConcurrentHashMap()
-            actionContext!!.runInReadUI {
-                try {
-                    if (disposed) return@runInReadUI
-                    val rootDirectory = PsiManager.getInstance(project!!).findDirectory(contentRoot)
-                    traversal(rootDirectory!!,
-                            { !disposed },
-                            {
-                                !disposed
-                                        && FileType.acceptable(it.name)
-                                        && (it is PsiClassOwner)
-                            }) { psiFile ->
-                        if (disposed) return@traversal
-                        for (psiClass in (psiFile as PsiClassOwner).classes) {
-
-                            if (disposed) return@traversal
-                            classExporter!!.export(psiClass, requestOnly { request ->
-                                if (disposed) return@requestOnly
-                                if (request.resource == null) return@requestOnly
-                                anyFound = true
-                                val resourceClass = request.resourceClass()
-
-                                val clsTreeNode = classNodeMap.safeComputeIfAbsent(resourceClass!!) {
-                                    val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper!!.findAttrOfClass(resourceClass))
-                                    val node = DefaultMutableTreeNode(classProjectNodeData)
-                                    moduleNode.add(node)
-                                    (moduleNode.userObject as ModuleProjectNodeData).addSubProjectNodeData(classProjectNodeData)
-                                    node
-                                }!!
-
-                                val apiProjectNodeData = ApiProjectNodeData(this, request)
-
-                                val apiTreeNode = DefaultMutableTreeNode(apiProjectNodeData)
-                                apiTreeNode.allowsChildren = false
-                                clsTreeNode.add(apiTreeNode)
-                                (clsTreeNode.userObject as ClassProjectNodeData).addSubProjectNodeData(apiProjectNodeData)
-                            })
-                        }
-                    }
-                } finally {
-                    countLatch.up()
-                }
-            }
-        }
-        actionContext!!.runAsync {
-            countLatch.waitFor(60000)//60s
-            if (anyFound) {
-                moduleData.status = NodeStatus.Loaded
-            } else {
-                moduleNode.removeFromParent()
-            }
-            rootTreeModel.reload(moduleNode)
-        }
-    }
-
-    private fun traversal(
-            psiDirectory: PsiDirectory,
-            keepRunning: () -> Boolean,
-            fileFilter: (PsiFile) -> Boolean,
-            fileHandle: (PsiFile) -> Unit
-    ) {
-        val dirStack: Stack<PsiDirectory> = Stack()
-        var dir: PsiDirectory? = psiDirectory
-        while (dir != null && keepRunning()) {
-            for (file in dir.files) {
-                if (!keepRunning()) {
-                    return
-                }
-                if (fileFilter(file)) {
-                    fileHandle(file)
-                }
-            }
-
-            if (keepRunning()) {
-                for (subdirectory in dir.subdirectories) {
-                    dirStack.push(subdirectory)
-                }
-            }
-            if (dirStack.isEmpty()) break
-            dir = dirStack.pop()
-            Thread.yield()
-        }
-    }
-    //endregion project module-----------------------------------------------------
 
     //region postman module-----------------------------------------------------
 
@@ -409,7 +196,6 @@ class ApiDashboardDialog : JDialog() {
 
             override fun drop(dtde: DropTargetDropEvent?) {
                 if (dtde == null) return
-
 
                 try {
                     dtde.acceptDrop(DnDConstants.ACTION_COPY_OR_MOVE)
@@ -795,193 +581,6 @@ class ApiDashboardDialog : JDialog() {
     }
     //endregion postman pop action---------------------------------------------------------
 
-    //region project Node Data--------------------------------------------------
-
-    abstract class ProjectNodeData<C> {
-
-        private var subProjectNodeData: ArrayList<C>? = null
-
-        fun addSubProjectNodeData(projectNodeData: C) {
-            if (subProjectNodeData == null) {
-                subProjectNodeData = ArrayList()
-            }
-            subProjectNodeData!!.add(projectNodeData)
-        }
-
-        fun getSubProjectNodeData(): ArrayList<C>? {
-            return this.subProjectNodeData
-        }
-
-    }
-
-    class ModuleProjectNodeData : ProjectNodeData<ClassProjectNodeData>, IconCustomized {
-        override fun icon(): Icon? {
-            return when (status) {
-                NodeStatus.Loading -> EasyIcons.Refresh
-                else -> null
-            } ?: EasyIcons.WebFolder
-        }
-
-        var module: Module
-
-        var status = NodeStatus.Unload
-
-        constructor(module: Module) {
-            this.module = module
-        }
-
-        override fun toString(): String {
-            return status.desc + module.name
-        }
-    }
-
-    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized, ToolTipAble {
-        override fun toolTip(): String? {
-            return cls.qualifiedName
-        }
-
-        override fun icon(): Icon? {
-            return EasyIcons.Class
-        }
-
-        var cls: PsiClass
-
-        var attr: String? = null
-
-        private val apiDashboardDialog: ApiDashboardDialog
-
-        constructor(apiDashboardDialog: ApiDashboardDialog, cls: PsiClass) {
-            this.cls = cls
-            this.apiDashboardDialog = apiDashboardDialog
-        }
-
-        constructor(apiDashboardDialog: ApiDashboardDialog, cls: PsiClass, attr: String?) {
-            this.cls = cls
-            this.attr = attr
-            this.apiDashboardDialog = apiDashboardDialog
-        }
-
-        override fun toString(): String {
-            return if (apiDashboardDialog.projectMode == ProjectMode.Legible) {
-                attr ?: cls.name ?: "anonymous"
-            } else {
-                cls.name ?: "anonymous"
-            }
-        }
-    }
-
-    enum class NodeStatus(var desc: String) {
-        Unload("(unload)"),
-        Loading("(loading)"),
-        Uploading("(uploading)"),
-        Loaded("")
-    }
-
-    enum class ProjectMode {
-        Original("original") {
-            override fun next(): ProjectMode {
-                return Legible
-            }
-        },
-        Legible("legible") {
-            override fun next(): ProjectMode {
-                return Original
-            }
-        };
-
-        var desc: String
-
-        constructor(desc: String) {
-            this.desc = desc
-        }
-
-        abstract fun next(): ProjectMode
-    }
-
-    class ApiProjectNodeData : IconCustomized, ToolTipAble {
-        override fun toolTip(): String? {
-            return "${PsiClassUtils.fullNameOfMethod(request.resourceClass()!!, request.resourceMethod()!!)}\n${request.method}:${request.path}"
-        }
-
-        private val apiDashboardDialog: ApiDashboardDialog
-
-        override fun icon(): Icon? {
-            return EasyIcons.Method
-        }
-
-        var request: Request
-
-        constructor(apiDashboardDialog: ApiDashboardDialog, request: Request) {
-            this.request = request
-            this.apiDashboardDialog = apiDashboardDialog
-        }
-
-        override fun toString(): String {
-            if (this.apiDashboardDialog.projectMode == ProjectMode.Original) {
-                return ((request.resource as PsiResource?)?.resource() as PsiMethod?)?.name ?: request.name
-                ?: "anonymous"
-            }
-            return request.name ?: "anonymous"
-
-        }
-    }
-
-    class WrapData : Serializable {
-
-        var wrapClass: String? = null
-
-        var wrapHash: Int? = null
-
-        var wrapString: String? = null
-
-        override fun toString(): String {
-            return wrapString ?: "null"
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as WrapData
-
-            if (wrapHash != other.wrapHash) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            return wrapHash ?: 0
-        }
-    }
-
-    private fun wrapData(data: Any): WrapData {
-
-        val wrapData = WrapData()
-
-        wrapData.wrapClass = data::class.qualifiedName
-        wrapData.wrapHash = safeHashHelper.hash(data)
-        wrapData.wrapString = data.toString()
-
-        return wrapData
-    }
-
-    private var wrapDataFlavor: DataFlavor? = null
-
-    private fun getWrapDataFlavor(): DataFlavor {
-        if (wrapDataFlavor != null) {
-            return wrapDataFlavor!!
-        }
-        try {
-            wrapDataFlavor = DataFlavor(WrapData::class.java, WrapData::class.java.simpleName)
-        } catch (e: Exception) {
-            return DataFlavor.stringFlavor
-        }
-
-        return wrapDataFlavor!!
-    }
-
-    //endregion project Node Data--------------------------------------------------
-
     //region postman Node Data--------------------------------------------------
 
     abstract class PostmanNodeData {
@@ -1249,25 +848,26 @@ class ApiDashboardDialog : JDialog() {
         }
 
         if (obj is Map<*, *>) {
-            val map: HashMap<String, Any?> = HashMap()
-            obj.forEach { k, v -> map[k.toString()] = v }
+            val map: HashMap<String, Any?> = LinkedHashMap()
+            obj.forEach { (k, v) -> map[k.toString()] = v }
             return map
         }
         return HashMap()
     }
 
     private fun formatPostmanInfo(projectNodeData: Any): HashMap<String, Any?>? {
-
+        LOG.info("format postman info:$projectNodeData")
         when (projectNodeData) {
-            is ApiProjectNodeData -> return postmanFormatter!!.request2Item(projectNodeData.request)
+            is ApiProjectNodeData -> return postmanFormatter!!.request2Item(projectNodeData.doc as Request)
             is ClassProjectNodeData -> {
                 val subProjectNodeData: ArrayList<ApiProjectNodeData>? = projectNodeData.getSubProjectNodeData()
                         ?: return null
 
                 val subItems: ArrayList<HashMap<String, Any?>> = ArrayList()
                 subProjectNodeData!!.stream()
-                        .map { it.request }
-                        .map { postmanFormatter!!.request2Item(it) }
+                        .mapNotNull { it.doc }
+                        .filter { it is Request }
+                        .map { postmanFormatter!!.request2Item(it as Request) }
                         .forEach { subItems.add(it) }
                 return postmanFormatter!!.wrapInfo(projectNodeData.cls, subItems)
 
@@ -1290,19 +890,8 @@ class ApiDashboardDialog : JDialog() {
 
     //endregion handle drop--------------------------------------------------------
 
-    class ApiTreeTransferHandler(private val apiDashboardDialog: ApiDashboardDialog) : TransferHandler() {
-
-        override fun canImport(comp: JComponent?, transferFlavors: Array<out DataFlavor>?): Boolean {
-            return super.canImport(comp, transferFlavors)
-        }
-
-        override fun importData(comp: JComponent?, t: Transferable?): Boolean {
-            return super.importData(comp, t)
-        }
-
-        override fun createTransferable(component: JComponent?): Transferable {
-            return super.createTransferable(component)
-        }
+    override fun filterDoc(doc: Doc): Doc? {
+        return doc.takeIf { it is Request }
     }
 
     private fun onCancel() {
@@ -1332,3 +921,4 @@ class ApiDashboardDialog : JDialog() {
 
 }
 
+private val LOG = org.apache.log4j.Logger.getLogger(ApiDashboardDialog::class.java)
