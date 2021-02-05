@@ -37,8 +37,12 @@ class ComboClassExporter : ClassExporter, Worker {
         return this.subClassExporters?.stream()?.map { it.support(docType) }?.anyMatch { it } ?: false
     }
 
-    override fun export(cls: Any, docHandle: DocHandle): Boolean {
-        return this.subClassExporters?.stream()?.map { it.export(cls, docHandle) }?.anyMatch { it } ?: false
+    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+        val ret = this.subClassExporters?.stream()?.map {
+            it.export(cls, docHandle)
+        }?.anyMatch { it } ?: false
+        completedHandle(cls)
+        return ret;
     }
 
     override fun status(): WorkerStatus {

@@ -106,16 +106,23 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     @Inject
     private val contextSwitchListener: ContextSwitchListener? = null
 
-    override fun export(cls: Any, docHandle: DocHandle): Boolean {
-        if (cls !is PsiClass) return false
+    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+        if (cls !is PsiClass) {
+            completedHandle(cls)
+            return false
+        }
         contextSwitchListener?.switchTo(cls)
         actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
             when {
-                !hasApi(cls) -> return false
+                !hasApi(cls) -> {
+                    completedHandle(cls)
+                    return false
+                }
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
+                    completedHandle(cls)
                     return true
                 }
                 else -> {
@@ -142,6 +149,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         } finally {
             statusRecorder.endWork()
         }
+        completedHandle(cls)
         return true
     }
 

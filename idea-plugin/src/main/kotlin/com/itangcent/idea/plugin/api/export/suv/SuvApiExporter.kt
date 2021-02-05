@@ -525,11 +525,11 @@ class SuvApiExporter {
             private val folderNameCartMap: HashMap<String, CartInfo> = HashMap()
 
             @Synchronized
-            override fun getCartForDoc(folder: Folder, privateToken: String): CartInfo? {
+            override fun getCartForFolder(folder: Folder, privateToken: String): CartInfo? {
                 var cartInfo = folderNameCartMap["$privateToken${folder.name}"]
                 if (cartInfo != null) return cartInfo
 
-                cartInfo = super.getCartForDoc(folder, privateToken)
+                cartInfo = super.getCartForFolder(folder, privateToken)
                 if (cartInfo != null) {
                     folderNameCartMap["$privateToken${folder.name}"] = cartInfo
                 }

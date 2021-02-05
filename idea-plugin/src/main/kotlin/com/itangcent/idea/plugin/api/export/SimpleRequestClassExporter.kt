@@ -67,19 +67,27 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
     @Inject
     protected var apiHelper: ApiHelper? = null
 
-    override fun export(cls: Any, docHandle: DocHandle): Boolean {
-        if (cls !is PsiClass) return false
+    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+        if (cls !is PsiClass) {
+            completedHandle(cls)
+            return false
+        }
         actionContext!!.checkStatus()
         statusRecorder.newWork()
         try {
             when {
-                !isCtrl(cls) -> return false
+                !isCtrl(cls) -> {
+                    completedHandle(cls)
+                    return false
+                }
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
+                    completedHandle(cls)
                     return true
                 }
                 else -> {
                     logger!!.info("search api from:${cls.qualifiedName}")
+                    completedHandle(cls)
 
                     foreachMethod(cls) { method ->
                         exportMethodApi(cls, method, docHandle)
@@ -91,6 +99,7 @@ open class SimpleRequestClassExporter : ClassExporter, Worker {
         } finally {
             statusRecorder.endWork()
         }
+        completedHandle(cls)
         return true
     }
 
