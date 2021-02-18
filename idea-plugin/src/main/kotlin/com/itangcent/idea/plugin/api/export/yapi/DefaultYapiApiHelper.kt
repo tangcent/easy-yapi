@@ -73,6 +73,11 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
     override fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
 
+        if (loginMode() && apiInfo.containsKey("token")) {
+            apiInfo["project_id"] = apiInfo["token"]
+            apiInfo.remove("token")
+        }
+
         try {
             val returnValue = httpClientProvide!!.getHttpClient()
                     .post(server + SAVE_API)
@@ -107,7 +112,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                             .set("desc", desc)
                             .set("project_id", projectId)
                             .set("name", name)
-                            .set("token", token))
+                            .set("token", rawToken(token)))
                     .call()
                     .string()
 

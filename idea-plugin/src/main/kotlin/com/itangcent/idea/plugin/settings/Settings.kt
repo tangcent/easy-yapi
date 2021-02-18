@@ -40,6 +40,8 @@ class Settings {
 
     var switchNotice: Boolean = true
 
+    var loginMode: Boolean = false
+
     //unit:s
     var httpTimeOut: Int = 5
 
@@ -75,6 +77,7 @@ class Settings {
         newSetting.yapiTokens = this.yapiTokens
         newSetting.enableUrlTemplating = this.enableUrlTemplating
         newSetting.switchNotice = this.switchNotice
+        newSetting.loginMode = this.loginMode
         newSetting.httpTimeOut = this.httpTimeOut
         newSetting.useRecommendConfig = this.useRecommendConfig
         newSetting.recommendConfigs = this.recommendConfigs
@@ -106,6 +109,7 @@ class Settings {
         if (yapiTokens != other.yapiTokens) return false
         if (enableUrlTemplating != other.enableUrlTemplating) return false
         if (switchNotice != other.switchNotice) return false
+        if (loginMode != other.loginMode) return false
         if (httpTimeOut != other.httpTimeOut) return false
         if (useRecommendConfig != other.useRecommendConfig) return false
         if (recommendConfigs != other.recommendConfigs) return false
@@ -133,6 +137,7 @@ class Settings {
         result = 31 * result + (yapiTokens?.hashCode() ?: 0)
         result = 31 * result + enableUrlTemplating.hashCode()
         result = 31 * result + switchNotice.hashCode()
+        result = 31 * result + loginMode.hashCode()
         result = 31 * result + httpTimeOut
         result = 31 * result + useRecommendConfig.hashCode()
         result = 31 * result + recommendConfigs.hashCode()

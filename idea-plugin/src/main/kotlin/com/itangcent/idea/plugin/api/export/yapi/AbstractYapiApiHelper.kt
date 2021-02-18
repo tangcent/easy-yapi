@@ -9,8 +9,10 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
+import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
@@ -35,10 +37,16 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     private val configReader: ConfigReader? = null
 
     @Inject
+    protected val ruleComputer: RuleComputer? = null
+
+    @Inject
     protected val httpClientProvide: HttpClientProvider? = null
 
     @Volatile
     var server: String? = null
+
+    @Volatile
+    var init: Boolean = false
 
     private var projectIdCache: HashMap<String, String> = HashMap()//token->id
 
@@ -72,7 +80,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         return "$server/project/$projectId/interface/api"
     }
 
-    open protected fun findErrorMsg(res: String?): String? {
+    protected open fun findErrorMsg(res: String?): String? {
         if (res == null) return "no response"
         if (StringUtils.isNotBlank(res) && res.contains("errmsg")) {
             val returnObj = GsonUtils.parseToJsonTree(res)
@@ -87,6 +95,9 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     }
 
     override fun getProjectIdByToken(token: String): String? {
+        if (loginMode()) {
+            return token.substringAfter('-')
+        }
         var projectId = cacheLock.readLock().withLock { projectIdCache[token] }
         if (projectId != null) return projectId
         try {
@@ -117,8 +128,13 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         }
 
         var url = "$server$GET_PROJECT_URL?token=$token"
-        if (projectId != null) {
-            url = "$url&id=$projectId"
+
+        var rawProjectId = projectId
+        if (loginMode() && rawProjectId == null) {
+            rawProjectId = getProjectIdByToken(token)
+        }
+        if (rawProjectId != null) {
+            url = "$url&id=$rawProjectId"
         }
 
         val ret = getByApi(url, false) ?: return null
@@ -147,31 +163,48 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     }
 
     open fun getByApi(url: String, dumb: Boolean = true): String? {
+        if (!init) {
+            synchronized(this)
+            {
+                if (!init) {
+                    ruleComputer!!.computer(YapiClassExportRuleKeys.BEFORE_EXPORT, SuvRuleContext(),
+                            null)
+                    init = true
+                }
+            }
+        }
+        var rawUrl = url
+        if (loginMode()) {
+            //token is insignificant in loginMode
+            if (rawUrl.contains("token=")) {
+                rawUrl = TOKEN_REGEX.replace(url) { "" }
+            }
+        }
         return try {
             httpClientProvide!!.getHttpClient()
-                    .get(url)
+                    .get(rawUrl)
                     .call()
                     .string()
         } catch (e: SocketTimeoutException) {
             if (!dumb) {
-                logger!!.trace("$url connect timeout")
+                logger!!.trace("$rawUrl connect timeout")
                 throw e
             }
-            logger!!.error("$url connect timeout")
+            logger!!.error("$rawUrl connect timeout")
             null
         } catch (e: SocketException) {
             if (!dumb) {
-                logger!!.trace("$url is unreachable (connect failed)")
+                logger!!.trace("$rawUrl is unreachable (connect failed)")
                 throw e
             }
-            logger!!.error("$url is unreachable (connect failed)")
+            logger!!.error("$rawUrl is unreachable (connect failed)")
             null
         } catch (e: Exception) {
             if (!dumb) {
-                logger!!.traceError("request $url failed", e)
+                logger!!.traceError("request $rawUrl failed", e)
                 throw e
             }
-            logger!!.traceError("request $url failed", e)
+            logger!!.traceError("request $rawUrl failed", e)
             null
         }
     }
@@ -280,8 +313,20 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         return HashMap(tokenMap!!.mapValues { it.value.first })
     }
 
+    fun rawToken(token: String): String {
+        if (loginMode()) {
+            return ""
+        }
+        return token
+    }
+
+    protected fun loginMode(): Boolean {
+        return settingBinder!!.read().loginMode
+    }
+
     companion object {
         const val GET_PROJECT_URL = "/api/project/get"
         val NULL_PROJECT: JsonElement = JsonNull.INSTANCE
+        val TOKEN_REGEX = Regex("(token=.*?)(?=&|$)")
     }
 }

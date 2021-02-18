@@ -102,6 +102,8 @@ class EasyApiSettingGUI {
 
     private var switchNoticeCheckBox: JCheckBox? = null
 
+    private var loginModeCheckBox: JCheckBox? = null
+
     private var formExpandedCheckBox: JCheckBox? = null
 
     private var recommendedCheckBox: JCheckBox? = null
@@ -221,6 +223,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(switchNoticeCheckBox!!)
                 .mutual(this, "settings.switchNotice")
+
+        autoComputer.bind(loginModeCheckBox!!)
+                .mutual(this, "settings.loginMode")
 
         autoComputer.bind(this.httpTimeOutTextField!!)
                 .with<Int?>(this, "settings.httpTimeOut")

@@ -360,6 +360,10 @@ class ApacheCookie : Cookie {
     override fun getVersion(): Int? {
         return cookie.version
     }
+
+    override fun toString(): String {
+        return cookie.toString()
+    }
 }
 
 fun Cookie.asApacheCookie(): org.apache.http.cookie.Cookie? {
