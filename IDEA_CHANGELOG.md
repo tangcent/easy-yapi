@@ -20,6 +20,10 @@
     
     * opti: refactor ApiDashboard [(335)](https://github.com/tangcent/easy-yapi/pull/335)
 
+    * opti: support login mode [(340)](https://github.com/tangcent/easy-yapi/pull/340)
+    
+    * opti: support built-in config [(341)](https://github.com/tangcent/easy-yapi/pull/341)
+
 * 2.0.0~
 
     * feat: support rule util `session` [(#273)](https://github.com/tangcent/easy-yapi/pull/273)
