@@ -14,15 +14,15 @@
     
     * opti: log for method infer [(#325)](https://github.com/tangcent/easy-yapi/pull/325)
     
-    * opti: support spring.ui by recommend [(330)](https://github.com/tangcent/easy-yapi/pull/330)
+    * opti: support spring.ui by recommend [(#330)](https://github.com/tangcent/easy-yapi/pull/330)
     
-    * opti: use `setPragma` instead of `setBusyTimeout` [(333)](https://github.com/tangcent/easy-yapi/pull/333)
+    * opti: use `setPragma` instead of `setBusyTimeout` [(#333)](https://github.com/tangcent/easy-yapi/pull/333)
     
-    * opti: refactor ApiDashboard [(335)](https://github.com/tangcent/easy-yapi/pull/335)
+    * opti: refactor ApiDashboard [(#335)](https://github.com/tangcent/easy-yapi/pull/335)
 
-    * opti: support login mode [(340)](https://github.com/tangcent/easy-yapi/pull/340)
+    * opti: support login mode [(#340)](https://github.com/tangcent/easy-yapi/pull/340)
     
-    * opti: support built-in config [(341)](https://github.com/tangcent/easy-yapi/pull/341)
+    * opti: support built-in config [(#341)](https://github.com/tangcent/easy-yapi/pull/341)
 
 * 2.0.0~
 
