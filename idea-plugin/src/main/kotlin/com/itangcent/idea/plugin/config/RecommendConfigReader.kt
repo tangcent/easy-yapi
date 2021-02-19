@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.config
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.itangcent.common.utils.invokeMethod
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.adaptor.ModuleAdaptor.file
 import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
@@ -104,6 +105,11 @@ class RecommendConfigReader : ConfigReader, Initializable {
             }
         } catch (e: Throwable) {
         }
+        tryLoadRecommend()
+        tryLoadBuiltIn()
+    }
+
+    private fun tryLoadRecommend() {
         if (settingBinder?.read()?.useRecommendConfig == true) {
             if (settingBinder.read().recommendConfigs.isEmpty()) {
                 logger!!.info(
@@ -127,6 +133,21 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 logger!!.info("use recommend config")
                 devEnv!!.dev {
                     logger.debug("----------------\n$recommendConfig\n----------------")
+                }
+            } else {
+                logger!!.warn("failed to use recommend config")
+            }
+        }
+    }
+
+    private fun tryLoadBuiltIn() {
+        val builtInConfig = settingBinder?.read()?.builtInConfig
+        if (builtInConfig.notNullOrBlank()) {
+            if (configReader is MutableConfigReader) {
+                configReader.loadConfigInfoContent(builtInConfig!!)
+                logger!!.info("use built-in config")
+                devEnv!!.dev {
+                    logger.debug("----------------\n$builtInConfig\n----------------")
                 }
             } else {
                 logger!!.warn("failed to use recommend config")
