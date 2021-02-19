@@ -94,6 +94,8 @@ class EasyApiSettingGUI {
 
     private var readSetterCheckBox: JCheckBox? = null
 
+    private var yapiTokenLabel: JLabel? = null
+
     private var yapiServerTextField: JTextField? = null
 
     private var yapiTokenTextArea: JTextArea? = null
@@ -117,6 +119,8 @@ class EasyApiSettingGUI {
 
     private var previewTextArea: JTextArea? = null
     //endregion
+
+    private var builtInConfigTextArea: JTextArea? = null
 
     private val throttleHelper = ThrottleHelper()
 
@@ -227,6 +231,16 @@ class EasyApiSettingGUI {
         autoComputer.bind(loginModeCheckBox!!)
                 .mutual(this, "settings.loginMode")
 
+        autoComputer.bind(yapiTokenLabel!!)
+                .with<Boolean?>(this, "settings.loginMode")
+                .eval {
+                    if (it == true) {
+                        "projectIds"
+                    } else {
+                        "tokens"
+                    }
+                }
+
         autoComputer.bind(this.httpTimeOutTextField!!)
                 .with<Int?>(this, "settings.httpTimeOut")
                 .eval { (it ?: ConfigurableHttpClientProvider.defaultHttpTimeOut).toString() }
@@ -268,6 +282,9 @@ class EasyApiSettingGUI {
                     RecommendConfigLoader.buildRecommendConfig(configs,
                             "\n#${"-".repeat(20)}\n")
                 }
+
+        autoComputer.bind(this.builtInConfigTextArea!!)
+                .mutual(this, "settings.builtInConfig")
 
         //endregion  general-----------------------------------------------------
 
