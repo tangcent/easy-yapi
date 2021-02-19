@@ -4,6 +4,10 @@ import com.itangcent.intellij.config.rule.*
 
 object YapiClassExportRuleKeys {
 
+    val BEFORE_EXPORT: RuleKey<String> = SimpleRuleKey(
+            "yapi.export.before", EventRule::class,
+            EventRuleMode.THROW_IN_ERROR)
+
     val TAG: RuleKey<String> = SimpleRuleKey(
             "api.tag", StringRule::class,
             StringRuleMode.MERGE_DISTINCT)

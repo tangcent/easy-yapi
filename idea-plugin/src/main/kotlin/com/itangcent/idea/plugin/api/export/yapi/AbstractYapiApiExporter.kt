@@ -22,6 +22,9 @@ open class AbstractYapiApiExporter {
     protected val yapiApiHelper: YapiApiHelper? = null
 
     @Inject
+    protected val yapiApiInputHelper: YapiApiInputHelper? = null
+
+    @Inject
     protected val actionContext: ActionContext? = null
 
     @Inject
@@ -49,7 +52,11 @@ open class AbstractYapiApiExporter {
      * see https://hellosean1025.github.io/yapi/openapi.html
      */
     protected open fun getTokenOfModule(module: String): String? {
-        return yapiApiHelper!!.getPrivateToken(module)
+        val privateToken = yapiApiHelper!!.getPrivateToken(module)
+        if (privateToken.isNullOrBlank()) {
+            return yapiApiInputHelper!!.inputToken(module)
+        }
+        return privateToken
     }
 
     protected open fun getCartForResource(resource: Any): CartInfo? {

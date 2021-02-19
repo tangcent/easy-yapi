@@ -10,6 +10,7 @@ import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
+import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.config.SocketConfig
 import org.apache.http.impl.client.HttpClients
@@ -40,6 +41,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
                         .setConnectionRequestTimeout(config.timeOut.toMill())
                         .setSocketTimeout(config.timeOut.toMill())
                         .build())
+                .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
 
         return HttpClientWrapper(ApacheHttpClient(httpClientBuilder.build()))
     }

@@ -8,6 +8,7 @@ import com.itangcent.common.spi.Setup
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.lazy
 import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.actions.ActionEventDataContextAdaptor
 import com.itangcent.intellij.actions.KotlinAnAction
@@ -37,7 +38,7 @@ abstract class BasicAnAction : KotlinAnAction {
         super.onBuildActionContext(event, builder)
         builder.bindInstance("plugin.name", "easy_api")
 
-        builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java)) }
+        builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java).lazy()) }
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
 

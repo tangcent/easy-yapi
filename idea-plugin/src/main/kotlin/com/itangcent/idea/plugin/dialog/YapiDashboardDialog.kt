@@ -1,52 +1,32 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
-import com.intellij.designer.clipboard.SimpleTransferable
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.ui.Messages
-import com.intellij.psi.*
-import com.itangcent.common.concurrent.AQSCountLatch
-import com.itangcent.common.concurrent.CountLatch
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.model.Doc
-import com.itangcent.common.model.MethodDoc
-import com.itangcent.common.model.Request
-import com.itangcent.common.utils.safeComputeIfAbsent
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.icons.EasyIcons
-import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
-import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.psi.ResourceHelper
-import com.itangcent.idea.psi.resourceMethod
+import com.itangcent.idea.plugin.api.export.yapi.YapiApiInputHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
-import com.itangcent.idea.swing.SafeHashHelper
 import com.itangcent.idea.swing.Tooltipable
 import com.itangcent.idea.utils.SwingUtils
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.PostConstruct
-import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.from
 import com.itangcent.intellij.extend.sub
-import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
-import java.awt.Cursor
-import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.Transferable
-import java.awt.dnd.*
+import java.awt.dnd.DnDConstants
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetAdapter
+import java.awt.dnd.DropTargetDropEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.io.Serializable
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
@@ -74,6 +54,9 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
     @Inject
     private val yapiApiHelper: YapiApiHelper? = null
+
+    @Inject
+    protected val yapiApiInputHelper: YapiApiInputHelper? = null
 
     @Inject
     private val yapiApiDashBoardExporter: YapiApiDashBoardExporter? = null
@@ -202,8 +185,12 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
         if (yapiApiHelper!!.findServer().isNullOrEmpty()) {
             autoComputer.value(this::yapiAvailable, false)
-
-            tryInputYapiServer()
+            yapiApiInputHelper!!.inputServer {
+                if (it.notNullOrBlank()) {
+                    autoComputer.value(this::yapiAvailable, true)
+                    loadYapiInfo()
+                }
+            }
         } else {
             loadYapiInfo()
         }
@@ -257,27 +244,6 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             importNewYapiProject()
         }
 
-    }
-
-    private fun tryInputYapiServer() {
-
-        actionContext!!.runAsync {
-
-            Thread.sleep(200)
-            actionContext!!.runInSwingUI {
-                val yapiServer = Messages.showInputDialog(this, "Input server of yapi",
-                        "server of yapi", Messages.getInformationIcon())
-                if (yapiServer.isNullOrBlank()) {
-                    logger!!.info("No yapi server")
-                    return@runInSwingUI
-                }
-
-                yapiApiHelper!!.setYapiServer(yapiServer)
-
-                autoComputer.value(this::yapiAvailable, true)
-                loadYapiInfo()
-            }
-        }
     }
 
     private fun loadYapiInfo() {
@@ -424,67 +390,61 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     @Suppress("UNCHECKED_CAST")
     private fun importNewYapiProject() {
 
-        //todo:input token and module at one dialog
-        actionContext!!.runInSwingUI {
-            val projectToken = Messages.showInputDialog(this,
-                    " InputProject Token",
-                    "Project Token",
-                    Messages.getInformationIcon())
-            if (projectToken.isNullOrBlank()) return@runInSwingUI
+        val projectToken = yapiApiInputHelper!!.inputToken()
 
-            actionContext!!.runAsync {
+        if (projectToken.isNullOrBlank()) return
 
-                val projectId = yapiApiHelper!!.getProjectIdByToken(projectToken)
+        actionContext!!.runAsync {
 
-                if (projectId.isNullOrEmpty()) {
-                    return@runAsync
-                }
+            val projectId = yapiApiHelper!!.getProjectIdByToken(projectToken)
 
-                val projectInfo = yapiApiHelper.getProjectInfo(projectToken, projectId)
-                        .sub("data")
-                        ?.asMap()
+            if (projectId.isNullOrEmpty()) {
+                return@runAsync
+            }
 
-                if (projectInfo.isNullOrEmpty()) {
-                    logger!!.error("invalid token:$projectToken")
-                    return@runAsync
-                }
+            val projectInfo = yapiApiHelper.getProjectInfo(projectToken, projectId)
+                    .sub("data")
+                    ?.asMap()
 
-                actionContext!!.runInSwingUI {
-                    val yapiProjectName = projectInfo["name"].toString()
-                    val moduleName = Messages.showInputDialog(this,
-                            "Input Module Name Of Project",
-                            "Module Name",
-                            Messages.getInformationIcon(),
-                            yapiProjectName,
-                            null)
+            if (projectInfo.isNullOrEmpty()) {
+                logger!!.error("invalid token:$projectToken")
+                return@runAsync
+            }
 
-                    @Suppress("LABEL_NAME_CLASH")
-                    if (moduleName.isNullOrBlank()) return@runInSwingUI
+            actionContext!!.runInSwingUI {
+                val yapiProjectName = projectInfo["name"].toString()
+                val moduleName = Messages.showInputDialog(this,
+                        "Input Module Name Of Project",
+                        "Module Name",
+                        Messages.getInformationIcon(),
+                        yapiProjectName,
+                        null)
 
-                    actionContext!!.runAsync {
+                @Suppress("LABEL_NAME_CLASH")
+                if (moduleName.isNullOrBlank()) return@runInSwingUI
 
-                        yapiApiHelper.setToken(moduleName, projectToken)
-                        actionContext!!.runInSwingUI {
-                            val projectTreeNode = YapiProjectNodeData(projectToken, projectInfo).asTreeNode()
-                            var model = yapiApiTree!!.model
-                            if (model == null) {
-                                val treeNode = DefaultMutableTreeNode()
-                                model = DefaultTreeModel(treeNode, true)
-                                yapiApiTree!!.model = model
-                            }
+                actionContext!!.runAsync {
 
-                            val yapiTreeModel = model as DefaultTreeModel
-
-                            (yapiTreeModel.root as DefaultMutableTreeNode).add(projectTreeNode)
-                            yapiTreeModel.reload()
-
-                            loadYapiProject(projectTreeNode)
+                    yapiApiHelper.setToken(moduleName, projectToken)
+                    actionContext!!.runInSwingUI {
+                        val projectTreeNode = YapiProjectNodeData(projectToken, projectInfo).asTreeNode()
+                        var model = yapiApiTree!!.model
+                        if (model == null) {
+                            val treeNode = DefaultMutableTreeNode()
+                            model = DefaultTreeModel(treeNode, true)
+                            yapiApiTree!!.model = model
                         }
+
+                        val yapiTreeModel = model as DefaultTreeModel
+
+                        (yapiTreeModel.root as DefaultMutableTreeNode).add(projectTreeNode)
+                        yapiTreeModel.reload()
+
+                        loadYapiProject(projectTreeNode)
                     }
                 }
             }
         }
-
     }
 
     //endregion yapi module-----------------------------------------------------

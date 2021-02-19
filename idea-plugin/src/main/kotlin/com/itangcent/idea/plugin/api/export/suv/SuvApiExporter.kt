@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
@@ -455,6 +454,9 @@ class SuvApiExporter {
         private val yapiApiHelper: YapiApiHelper? = null
 
         @Inject
+        protected val yapiApiInputHelper: YapiApiInputHelper? = null
+
+        @Inject
         private val project: Project? = null
 
         override fun actionName(): String {
@@ -486,22 +488,12 @@ class SuvApiExporter {
         }
 
         override fun beforeExport(next: () -> Unit) {
-            val serverFound = !yapiApiHelper!!.findServer().isNullOrBlank()
+            val serverFound = yapiApiHelper!!.findServer().notNullOrBlank()
             if (serverFound) {
                 next()
             } else {
-                actionContext!!.runAsync {
-                    Thread.sleep(200)
-                    actionContext.runInSwingUI {
-                        val yapiServer = Messages.showInputDialog(project, "Input server of yapi",
-                                "server of yapi", Messages.getInformationIcon())
-                        if (yapiServer.isNullOrBlank()) {
-                            logger!!.info("No yapi server")
-                            return@runInSwingUI
-                        }
-
-                        yapiApiHelper.setYapiServer(yapiServer)
-
+                yapiApiInputHelper!!.inputServer {
+                    if (it.notNullOrBlank()) {
                         next()
                     }
                 }
@@ -534,31 +526,6 @@ class SuvApiExporter {
                     folderNameCartMap["$privateToken${folder.name}"] = cartInfo
                 }
                 return cartInfo
-            }
-
-            private var tryInputTokenOfModule: HashSet<String> = HashSet()
-
-            override fun getTokenOfModule(module: String): String? {
-                val privateToken = super.getTokenOfModule(module)
-                if (!privateToken.isNullOrBlank()) {
-                    return privateToken
-                }
-
-                if (tryInputTokenOfModule.contains(module)) {
-                    return null
-                } else {
-                    tryInputTokenOfModule.add(module)
-                    val modulePrivateToken = actionContext!!.callInSwingUI {
-                        return@callInSwingUI Messages.showInputDialog(project, "Input Private Token Of Module:$module",
-                                "Yapi Private Token", Messages.getInformationIcon())
-                    }
-                    return if (modulePrivateToken.isNullOrBlank()) {
-                        null
-                    } else {
-                        yapiApiHelper!!.setToken(module, modulePrivateToken)
-                        modulePrivateToken
-                    }
-                }
             }
 
             private val successExportedCarts: MutableSet<String> = HashSet()

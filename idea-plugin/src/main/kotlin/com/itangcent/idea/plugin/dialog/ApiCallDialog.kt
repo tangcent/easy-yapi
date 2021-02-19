@@ -22,7 +22,6 @@ import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
-import com.itangcent.intellij.extend.lazy
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.from
@@ -30,6 +29,7 @@ import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.file.lazy
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.exception.ExceptionUtils

@@ -111,7 +111,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         logger!!.error("Error Response:$returnValue")
     }
 
-    open protected fun getHttpClient(): HttpClient {
+    protected open fun getHttpClient(): HttpClient {
         return httpClientProvider!!.getHttpClient()
     }
 
