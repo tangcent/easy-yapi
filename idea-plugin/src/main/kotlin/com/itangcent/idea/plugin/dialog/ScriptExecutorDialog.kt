@@ -438,7 +438,7 @@ class ScriptExecutorDialog : JDialog() {
 
     private fun onLoad() {
         fileSelectHelper!!.selectFile({ file ->
-            var path = file.path
+            val path = file.path
             val suffix = path.substringAfterLast('.', "")
             scriptSupports.firstOrNull { it.suffix() == suffix }
                     ?.let { scriptType ->
@@ -446,11 +446,9 @@ class ScriptExecutorDialog : JDialog() {
                             this.scriptTypeComboBox!!.selectedItem = scriptType
                         }
                     }
-            val script = com.itangcent.common.utils.FileUtils.read(file, kotlin.text.Charsets.UTF_8)
-            if (script != null) {
-                actionContext!!.runInSwingUI {
-                    editor?.document?.setText(script)
-                }
+            val script = file.readText(kotlin.text.Charsets.UTF_8)
+            actionContext!!.runInSwingUI {
+                editor?.document?.setText(script)
             }
         }, {
         })

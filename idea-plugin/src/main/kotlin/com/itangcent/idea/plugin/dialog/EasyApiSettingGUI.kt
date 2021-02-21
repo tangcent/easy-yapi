@@ -28,7 +28,6 @@ import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import org.apache.commons.io.FileUtils
 import java.io.File
 import javax.swing.*
 
@@ -395,10 +394,7 @@ class EasyApiSettingGUI {
     private fun computeFolderSize(path: String): Long {
         val file = File(path)
         if (file.exists()) {
-            when {
-                file.isFile -> return FileUtils.sizeOf(file)
-                file.isDirectory -> return FileUtils.sizeOfDirectory(file)
-            }
+            return FileSizeUtils.sizeOf(file)
         }
         return 0
     }
@@ -491,7 +487,7 @@ class EasyApiSettingGUI {
         val files = chooser.choose(null, toSelect)
         if (files.notNullOrEmpty()) {
             val virtualFile = files[0]
-            val read = com.itangcent.common.utils.FileUtils.read(File(virtualFile.path), kotlin.text.Charsets.UTF_8)
+            val read = FileUtils.read(File(virtualFile.path), kotlin.text.Charsets.UTF_8)
             if (read.notNullOrEmpty()) {
                 setSettings(GsonUtils.fromJson(read!!, Settings::class))
             }
