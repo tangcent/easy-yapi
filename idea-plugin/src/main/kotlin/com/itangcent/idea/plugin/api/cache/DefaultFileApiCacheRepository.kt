@@ -42,6 +42,6 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
     }
 
     companion object {
-        val NULL_FILE_API_CACHE = com.itangcent.idea.plugin.api.cache.FileApiCache()
+        val NULL_FILE_API_CACHE = FileApiCache()
     }
 }

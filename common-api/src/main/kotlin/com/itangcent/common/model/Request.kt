@@ -41,6 +41,41 @@ open class Request : Doc() {
     var bodyAttr: String? = null
 
     var response: MutableList<Response>? = null
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Request
+
+        if (path != other.path) return false
+        if (method != other.method) return false
+        if (headers != other.headers) return false
+        if (paths != other.paths) return false
+        if (querys != other.querys) return false
+        if (formParams != other.formParams) return false
+        if (bodyType != other.bodyType) return false
+        if (body != other.body) return false
+        if (bodyAttr != other.bodyAttr) return false
+        if (response != other.response) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = path?.hashCode() ?: 0
+        result = 31 * result + (method?.hashCode() ?: 0)
+        result = 31 * result + (headers?.hashCode() ?: 0)
+        result = 31 * result + (paths?.hashCode() ?: 0)
+        result = 31 * result + (querys?.hashCode() ?: 0)
+        result = 31 * result + (formParams?.hashCode() ?: 0)
+        result = 31 * result + (bodyType?.hashCode() ?: 0)
+        result = 31 * result + (body?.hashCode() ?: 0)
+        result = 31 * result + (bodyAttr?.hashCode() ?: 0)
+        result = 31 * result + (response?.hashCode() ?: 0)
+        return result
+    }
+
+
 }
 
 fun Request.getContentType(): String? {

@@ -22,6 +22,29 @@ class FileApiCache {
      * request in file
      */
     var requests: List<RequestWithKey>? = null
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FileApiCache
+
+        if (file != other.file) return false
+        if (lastModified != other.lastModified) return false
+        if (md5 != other.md5) return false
+        if (requests != other.requests) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = file?.hashCode() ?: 0
+        result = 31 * result + (lastModified?.hashCode() ?: 0)
+        result = 31 * result + (md5?.hashCode() ?: 0)
+        result = 31 * result + (requests?.hashCode() ?: 0)
+        return result
+    }
+
+
 }
 
 class RequestWithKey {
@@ -44,4 +67,24 @@ class RequestWithKey {
      * resource of request was excluded
      */
     var request: Request? = null
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as RequestWithKey
+
+        if (key != other.key) return false
+        if (request != other.request) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = key?.hashCode() ?: 0
+        result = 31 * result + (request?.hashCode() ?: 0)
+        return result
+    }
+
+
 }

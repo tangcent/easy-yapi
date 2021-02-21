@@ -14,6 +14,7 @@ import com.itangcent.common.utils.filterAs
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.debug.LoggerCollector
+import com.itangcent.idea.config.MyResourceResolver
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
@@ -34,6 +35,7 @@ import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.constant.EventKey
@@ -283,7 +285,7 @@ class SuvApiExporter {
             builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
             builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
 
-
+            builder.bind(ResourceResolver::class) { it.with(MyResourceResolver::class).singleton() }
             builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
             builder.bind(LocalFileRepository::class, "projectCacheRepository") {
                 it.with(ProjectCacheRepository::class).singleton()
