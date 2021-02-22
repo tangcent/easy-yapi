@@ -3,6 +3,7 @@ package com.itangcent.idea.config
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
 import com.itangcent.intellij.config.resource.DefaultResourceResolver
 import com.itangcent.intellij.config.resource.URLResource
@@ -11,10 +12,11 @@ import com.itangcent.intellij.file.LocalFileRepository
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.net.URL
+import java.net.URLConnection
 import java.util.concurrent.TimeUnit
 
 @Singleton
-open class MyResourceResolver : DefaultResourceResolver() {
+open class CachedResourceResolver : DefaultResourceResolver() {
 
     @Inject
     @Named("projectCacheRepository")
@@ -54,5 +56,12 @@ open class MyResourceResolver : DefaultResourceResolver() {
 
         override val content: String?
             get() = loadCache()?.let { String(it, Charsets.UTF_8) }
+
+        override fun onConnection(connection: URLConnection) {
+            ActionContext.getContext()?.instance(SettingBinder::class)
+                    ?.tryRead()?.httpTimeOut?.let {
+                        connection.connectTimeout = it * 1000
+                    }
+        }
     }
 }
