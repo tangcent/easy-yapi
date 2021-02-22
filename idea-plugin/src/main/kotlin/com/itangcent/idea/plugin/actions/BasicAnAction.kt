@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.itangcent.common.spi.Setup
-import com.itangcent.idea.config.MyResourceResolver
+import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -43,7 +43,7 @@ abstract class BasicAnAction : KotlinAnAction {
         builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java).lazy()) }
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
-        builder.bind(ResourceResolver::class) { it.with(MyResourceResolver::class).singleton() }
+        builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }
 
         afterBuildActionContext(event, builder)
 

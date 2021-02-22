@@ -13,6 +13,7 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
+import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.group.JsonSetting
@@ -23,7 +24,6 @@ import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.DuckType
-import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
@@ -106,6 +106,9 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     @Inject
     private val contextSwitchListener: ContextSwitchListener? = null
 
+    @Inject
+    private lateinit var classApiExporterHelper: ClassApiExporterHelper
+
     override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
         if (cls !is PsiClass) {
             completedHandle(cls)
@@ -132,7 +135,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
                     processClass(cls, kv)
 
-                    foreachMethod(cls) { explicitMethod ->
+                    classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
                         val method = explicitMethod.psi()
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
                             try {
@@ -161,10 +164,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
     open protected fun shouldIgnore(psiElement: PsiElement): Boolean {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
-    }
-
-    open protected fun shouldIgnore(explicitElement: ExplicitElement<*>): Boolean {
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, explicitElement) ?: false
     }
 
     private fun exportMethodApi(
@@ -401,78 +400,13 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return docHelper!!.getAttrOfDocComment(method)
     }
 
-    private fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
-        val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
-
-        var methodParamComment: KV<String, Any>? = null
-        subTagMap.entries.forEach { entry ->
-            val name: String = entry.key
-            val value: String? = entry.value
-            if (methodParamComment == null) methodParamComment = KV.create()
-            if (value.notNullOrBlank()) {
-
-                val options: ArrayList<HashMap<String, Any?>> = ArrayList()
-                val comment = linkExtractor!!.extract(value, psiMethod, object : AbstractLinkResolve() {
-
-                    override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
-
-                        psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name)
-                                ?.let { options.addAll(it) }
-
-                        return super.linkToPsiElement(plainText, linkTo)
-                    }
-
-                    override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
-                        return linkResolver!!.linkToClass(linkClass)
-                    }
-
-                    override fun linkToType(plainText: String, linkType: PsiType): String? {
-                        return jvmClassHelper!!.resolveClassInType(linkType)?.let {
-                            linkResolver!!.linkToClass(it)
-                        }
-                    }
-
-                    override fun linkToField(plainText: String, linkField: PsiField): String? {
-                        return linkResolver!!.linkToProperty(linkField)
-                    }
-
-                    override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
-                        return linkResolver!!.linkToMethod(linkMethod)
-                    }
-
-                    override fun linkToUnresolved(plainText: String): String? {
-                        return plainText
-                    }
-                })
-
-                methodParamComment!![name] = comment ?: ""
-                if (options.notNullOrEmpty()) {
-                    methodParamComment!!["$name@options"] = options
-                }
-            }
-
-        }
-        return methodParamComment
-    }
-
-    private fun foreachMethod(cls: PsiClass, handle: (ExplicitMethod) -> Unit) {
-        duckTypeHelper!!.explicit(cls)
-                .methods()
-                .stream()
-                .filter { !jvmClassHelper!!.isBasicMethod(it.psi().name) }
-                .filter { !it.psi().hasModifierProperty("static") }
-                .filter { !it.psi().isConstructor }
-                .filter { !shouldIgnore(it) }
-                .forEach(handle)
-    }
-
     private fun processMethodParameters(method: ExplicitMethod, request: Request) {
 
         val params = method.getParameters()
 
         if (params.isNotEmpty()) {
 
-            val paramDocComment = extractParamComment(method.psi())
+            val paramDocComment = classApiExporterHelper.extractParamComment(method.psi())
 
             val parsedParams: ArrayList<ExplicitParameterInfo> = ArrayList()
             for (param in params) {
@@ -683,22 +617,22 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return null
     }
 
-    protected fun parseResponseBody(psiType: DuckType?, fromRule: Boolean, method: ExplicitMethod): Any? {
+    protected fun parseResponseBody(duckType: DuckType?, fromRule: Boolean, method: ExplicitMethod): Any? {
 
-        if (psiType == null) {
+        if (duckType == null) {
             return null
         }
 
         return when {
-            fromRule -> psiClassHelper!!.getTypeObject(psiType, method.psi(),
+            fromRule -> psiClassHelper!!.getTypeObject(duckType, method.psi(),
                     jsonSetting!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
-            needInfer() && (!duckTypeHelper!!.isQualified(psiType) ||
-                    jvmClassHelper!!.isInterface(psiType)) -> {
+            needInfer() && (!duckTypeHelper!!.isQualified(duckType) ||
+                    jvmClassHelper!!.isInterface(duckType)) -> {
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
-            else -> psiClassHelper!!.getTypeObject(psiType, method.psi(),
+            else -> psiClassHelper!!.getTypeObject(duckType, method.psi(),
                     jsonSetting!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
         }
     }
