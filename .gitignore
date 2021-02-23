@@ -38,3 +38,5 @@ common-api/build/
 src/main/resources/META-INF/services/com.itangcent.common.spi.SetupAble
 
 /src
+
+*.iml
