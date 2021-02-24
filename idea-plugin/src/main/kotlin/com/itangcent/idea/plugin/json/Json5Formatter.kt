@@ -17,6 +17,7 @@ class Json5Formatter : JsonFormatter {
         return sb.toString()
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun format(obj: Any?, deep: Int, end: Boolean, desc: String?, sb: StringBuilder) {
         when (obj) {
             null -> {
