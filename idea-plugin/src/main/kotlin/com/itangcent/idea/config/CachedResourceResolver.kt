@@ -3,8 +3,10 @@ package com.itangcent.idea.config
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
+import com.itangcent.common.utils.TimeSpanUtils
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.resource.DefaultResourceResolver
 import com.itangcent.intellij.config.resource.URLResource
 import com.itangcent.intellij.context.ActionContext
@@ -21,6 +23,9 @@ open class CachedResourceResolver : DefaultResourceResolver() {
     @Inject
     @Named("projectCacheRepository")
     private lateinit var projectCacheRepository: LocalFileRepository
+
+    @Inject
+    private lateinit var configReader: ConfigReader
 
     private val beanDAO: SqliteDataResourceHelper.ExpiredBeanDAO by lazy {
         val context = ActionContext.getContext()
@@ -39,8 +44,13 @@ open class CachedResourceResolver : DefaultResourceResolver() {
             val key = url.toString().toByteArray(Charsets.UTF_8)
             var valueBytes = beanDAO.get(key)
             if (valueBytes == null) {
-                valueBytes = super.inputStream?.readBytes()
-                valueBytes?.let { beanDAO.set(key, it, System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5)) }
+                LOG.debug("read:$url")
+                valueBytes = super.inputStream?.use { it.readBytes() }
+                valueBytes?.let {
+                    beanDAO.set(key, it, System.currentTimeMillis() +
+                            (configReader.first(URL_CACHE_EXPIRE)?.let { str -> TimeSpanUtils.parse(str) }
+                                    ?: TimeUnit.HOURS.toMillis(2)))
+                }
             }
             return valueBytes
         }
@@ -65,3 +75,6 @@ open class CachedResourceResolver : DefaultResourceResolver() {
         }
     }
 }
+
+private const val URL_CACHE_EXPIRE = "url.cache.expire"
+private val LOG = org.apache.log4j.Logger.getLogger(CachedResourceResolver::class.java)

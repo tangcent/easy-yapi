@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.ui.components.JBCheckBox
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
@@ -173,7 +174,7 @@ class SuvApiExportDialog : JDialog() {
 
     private fun onOK() {
         val selectedChannel = this.channelComboBox!!.selectedItem
-        val selectedApis = psiClassHelper!!.copy(this.apiList!!.selectedValuesList!!) as List<*>
+        val selectedApis = GsonUtils.copy(this.apiList!!.selectedValuesList!!) as List<*>
         actionContext!!.runAsync {
             try {
                 this.apisHandle!!(selectedChannel, selectedApis)
@@ -184,7 +185,7 @@ class SuvApiExportDialog : JDialog() {
                 actionContext!!.unHold()
             }
         }
-        PropertiesComponent.getInstance().setValue(LAST_USED_CHANNEL, selectedChannel.toString())
+        PropertiesComponent.getInstance().setValue(LAST_USED_CHANNEL, selectedChannel?.toString())
         onCancel(false)
     }
 
