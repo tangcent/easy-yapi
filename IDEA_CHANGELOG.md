@@ -24,6 +24,14 @@
     
     * opti: support built-in config [(#341)](https://github.com/tangcent/easy-yapi/pull/341)
 
+    * opti: `properties.additional` support url [(#345)](https://github.com/tangcent/easy-yapi/pull/345)
+    
+    * opti: support `param.doc` for export methodDoc [(#347)](https://github.com/tangcent/easy-yapi/pull/347)
+    
+    * fix:change the action name from Debug to ScriptExecutor [(#348)](https://github.com/tangcent/easy-yapi/pull/348)
+    
+    * opti: support `url.cache.expire` [(#349)](https://github.com/tangcent/easy-yapi/pull/349)
+
 * 2.0.0~
 
     * feat: support rule util `session` [(#273)](https://github.com/tangcent/easy-yapi/pull/273)
