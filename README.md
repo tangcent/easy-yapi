@@ -39,6 +39,8 @@
 
 * 维护推荐配置: [.recommend.easy.api.config](https://github.com/tangcent/easy-yapi/blob/master/idea-plugin/src/main/resources/.recommend.easy.api.config)
 
+* 丰富支持的三方配置: [third](https://github.com/tangcent/easy-yapi/tree/master/third)
+
 * 丰富demo: [spring-demo](https://github.com/Earth-1610/spring-demo)
 
 * 修复IDE兼容问题: [intellij-kotlin](https://github.com/Earth-1610/intellij-kotlin/pulls?q=label%3Acompatibility+)
