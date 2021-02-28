@@ -31,7 +31,11 @@
     * fix:change the action name from Debug to ScriptExecutor [(#348)](https://github.com/tangcent/easy-yapi/pull/348)
     
     * opti: support `url.cache.expire` [(#349)](https://github.com/tangcent/easy-yapi/pull/349)
-
+    
+    * opti: add recommend third config [(#351)](https://github.com/tangcent/easy-yapi/pull/351)
+    
+    * opti: show default built-in config in setting [(#353)](https://github.com/tangcent/easy-yapi/pull/353)
+    
 * 2.0.0~
 
     * feat: support rule util `session` [(#273)](https://github.com/tangcent/easy-yapi/pull/273)
