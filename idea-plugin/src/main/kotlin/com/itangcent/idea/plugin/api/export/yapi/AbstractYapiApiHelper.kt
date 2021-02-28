@@ -96,7 +96,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
 
     override fun getProjectIdByToken(token: String): String? {
         if (loginMode()) {
-            return token.substringAfter('-')
+            return token
         }
         var projectId = cacheLock.readLock().withLock { projectIdCache[token] }
         if (projectId != null) return projectId
