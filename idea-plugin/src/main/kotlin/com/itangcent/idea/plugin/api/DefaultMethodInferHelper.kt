@@ -267,7 +267,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                             asMap(realCaller)?.put(it, valueOf(args[1]))
                             val attr = findAttrFromContext(context)
                             if (attr.notNullOrBlank()) {
-                                KVUtils.addComment(asMap(realCaller)!!, it, attr)
+                                KVUtils.addComment(asMap(realCaller)!!, it.toString(), attr)
                             }
                         }
                     }

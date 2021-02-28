@@ -28,6 +28,7 @@ import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
+import com.itangcent.utils.ResourceUtils
 import java.io.File
 import javax.swing.*
 
@@ -283,7 +284,12 @@ class EasyApiSettingGUI {
                 }
 
         autoComputer.bind(this.builtInConfigTextArea!!)
-                .mutual(this, "settings.builtInConfig")
+                .with<String>(this, "settings.builtInConfig")
+                .eval { it.takeIf { it.notNullOrBlank() } ?: DEFAULT_BUILT_IN_CONFIG }
+
+        autoComputer.bind<String>(this, "settings.builtInConfig")
+                .with(builtInConfigTextArea!!)
+                .eval { it.takeIf { it != DEFAULT_BUILT_IN_CONFIG } ?: "" }
 
         //endregion  general-----------------------------------------------------
 
@@ -498,5 +504,9 @@ class EasyApiSettingGUI {
         const val basePath = ".easy_api"
 
         const val setting_path = "easy.api.setting.path"
+
+        private const val built_in_config_name = ".default.built.in.easy.api.config"
+
+        val DEFAULT_BUILT_IN_CONFIG = ResourceUtils.readResource(built_in_config_name)
     }
 }

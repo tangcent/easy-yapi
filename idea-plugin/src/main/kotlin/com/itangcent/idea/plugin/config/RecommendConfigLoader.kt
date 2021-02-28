@@ -4,8 +4,8 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.common.utils.appendln
 import com.itangcent.common.utils.mapToTypedArray
-import com.itangcent.common.utils.readString
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.utils.ResourceUtils
 import java.util.*
 
 
@@ -66,8 +66,7 @@ object RecommendConfigLoader {
     private const val config_name = ".recommend.easy.api.config"
 
     private fun loadRecommendConfig(): String {
-        val config = (RecommendConfigReader::class.java.classLoader.getResourceAsStream(config_name)
-                ?: RecommendConfigReader::class.java.getResourceAsStream(config_name)).readString(Charsets.UTF_8)
+        val config = ResourceUtils.readResource(config_name)
         RECOMMEND_CONFIG_PLAINT = config
         return config
     }
@@ -112,7 +111,6 @@ object RecommendConfigLoader {
 
     private lateinit var RECOMMEND_CONFIG_PLAINT: String
     private lateinit var RECOMMEND_CONFIGS: Array<RecommendConfig>
-
 
     data class RecommendConfig(val code: String,
                                val default: Boolean,
