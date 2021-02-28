@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
 import com.itangcent.idea.binder.DbBeanBinderFactory
+import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.file.LocalFileRepository
 
 /**
@@ -26,7 +27,7 @@ open class YapiCachedApiHelper : DefaultYapiApiHelper() {
     }
 
     override fun getProjectIdByToken(token: String): String? {
-        val tokenBeanBinder = getDbBeanBinderFactory().getBeanBinder("yapi:token:$token")
+        val tokenBeanBinder = getDbBeanBinderFactory().getBeanBinder("yapi:token-${loginMode().toInt()}:$token")
         val projectIdInCache = tokenBeanBinder.read()
         if (!projectIdInCache.isBlank()) {
             return projectIdInCache

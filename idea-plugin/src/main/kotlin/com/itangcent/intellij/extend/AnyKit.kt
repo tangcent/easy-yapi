@@ -1,5 +1,9 @@
 package com.itangcent.intellij.extend
 
+fun Boolean.toInt(): Int {
+    return if (this) 1 else 0
+}
+
 fun <K, V> Map<K, V>.asHashMap(): HashMap<K, V> {
     if (this is HashMap<K, V>) {
         return this
