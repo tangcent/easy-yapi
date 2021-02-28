@@ -249,19 +249,13 @@ private class SQLiteDataSourceHandle(private val fileName: String) {
 
     fun <T> read(action: (SQLiteDataSource) -> T): T {
         return readWriteLock.read {
-            try {
-                LOG.info("start read sqlite:$fileName")
-                action(getSqliteDataSource())
-            } finally {
-                LOG.info("end read sqlite:$fileName")
-            }
+            action(getSqliteDataSource())
         }
     }
 
     fun <T> write(action: (SQLiteDataSource) -> T): T {
         readWriteLock.write {
             try {
-                LOG.info("start write sqlite:$fileName")
                 return action(getSqliteDataSource())
             } catch (e: SQLiteException) {
                 if (e.resultCode == SQLiteErrorCode.SQLITE_BUSY) {
@@ -272,8 +266,6 @@ private class SQLiteDataSourceHandle(private val fileName: String) {
                     }
                 }
                 throw e
-            } finally {
-                LOG.info("end write sqlite:$fileName")
             }
         }
     }

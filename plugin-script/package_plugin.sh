@@ -14,7 +14,7 @@ echo "baseDir:"${basedir}
 cd ${basedir}/idea-plugin
 ../gradlew clean buildPlugin --stacktrace
 
-version=`cat ${basedir}/build.gradle | grep -Eo '[0-9][0-9.]+'`
+version=`cat ${basedir}/build.gradle | grep -Eo '[0-9][0-9.]+(-rc)?'`
 echo "version:"${version}
 
 

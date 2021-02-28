@@ -85,14 +85,13 @@ object KVUtils {
         }
 
         if (typedResponse is Map<*, *>) {
-            if (key.contains(".")) {
+            return if (key.contains(".")) {
                 val headerKey = key.substringBefore('.')
                 val restKey = key.substringBefore('.')
-                return addKeyComment(typedResponse[headerKey], restKey, comment)
-
+                addKeyComment(typedResponse[headerKey], restKey, comment)
             } else {
                 addComment(typedResponse as (HashMap<Any, Any?>), key, comment)
-                return true
+                true
             }
         }
 
@@ -100,12 +99,12 @@ object KVUtils {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun addComment(info: HashMap<Any, Any?>, field: Any, comment: String?) {
+    fun addComment(info: HashMap<Any, Any?>, field: String, comment: String?) {
         var comments = info[Attrs.COMMENT_ATTR]
         if (comments == null) {
-            comments = HashMap<String, String>()
+            comments = KV<String, Any?>()
             info[Attrs.COMMENT_ATTR] = comments
-            (comments as HashMap<Any?, Any?>)[field] = comment
+            comments[field] = comment
         } else {
             val oldComment = (comments as HashMap<Any?, Any?>)[field]
             if (oldComment == null) {
@@ -152,15 +151,15 @@ object KVUtils {
     fun addOptions(info: HashMap<Any, Any?>, field: String, options: ArrayList<HashMap<String, Any?>>) {
         var comments = info[Attrs.COMMENT_ATTR]
         if (comments == null) {
-            comments = HashMap<String, String>()
+            comments = KV<String, Any?>()
             info[Attrs.COMMENT_ATTR] = comments
-            (comments as HashMap<Any?, Any?>)["$field@options"] = options
+            comments["$field@options"] = options
         } else {
             val oldOptions = (comments as HashMap<Any?, Any?>)["$field@options"]
             if (oldOptions == null) {
                 comments["$field@options"] = options
             } else {
-                val mergeOptions: ArrayList<HashMap<String, Any?>> = ArrayList(oldOptions as ArrayList<HashMap<String, Any?>>)
+                val mergeOptions: ArrayList<Any?> = ArrayList(oldOptions as ArrayList<*>)
                 mergeOptions.addAll(options)
                 comments["$field@options"] = mergeOptions
             }
