@@ -36,6 +36,8 @@
     
     * opti: show default built-in config in setting [(#353)](https://github.com/tangcent/easy-yapi/pull/353)
     
+    * fix: bind `settings.builtInConfig` as nullable [(#358)](https://github.com/tangcent/easy-yapi/pull/358)
+    
 * 2.0.0~
 
     * feat: support rule util `session` [(#273)](https://github.com/tangcent/easy-yapi/pull/273)
