@@ -284,10 +284,10 @@ class EasyApiSettingGUI {
                 }
 
         autoComputer.bind(this.builtInConfigTextArea!!)
-                .with<String>(this, "settings.builtInConfig")
+                .with<String?>(this, "settings.builtInConfig")
                 .eval { it.takeIf { it.notNullOrBlank() } ?: DEFAULT_BUILT_IN_CONFIG }
 
-        autoComputer.bind<String>(this, "settings.builtInConfig")
+        autoComputer.bind<String?>(this, "settings.builtInConfig")
                 .with(builtInConfigTextArea!!)
                 .eval { it.takeIf { it != DEFAULT_BUILT_IN_CONFIG } ?: "" }
 
