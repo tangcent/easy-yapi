@@ -515,7 +515,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         }
                     })
                 } else {
-                    val fields = typeObject as KV<String, Any?>
+                    val fields = typeObject.asKV()
                     val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
                     val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
                     fields.forEachValid { filedName, fieldVal ->

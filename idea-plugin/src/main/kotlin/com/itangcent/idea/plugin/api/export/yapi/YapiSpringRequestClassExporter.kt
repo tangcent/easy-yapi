@@ -274,7 +274,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                         }
                     })
                 } else {
-                    val fields = typeObject as KV<String, Any?>
+                    val fields = typeObject.asKV()
                     val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
                     val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
                     val demo = fields.getAsKv(Attrs.DEMO_ATTR)
