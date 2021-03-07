@@ -1,3 +1,237 @@
+* 2.1.7
+
+	* release v2.1.6 [(#359)](https://github.com/tangcent/easy-yapi/pull/359)
+
+	* fix: bind `settings.builtInConfig` as nullable [(#358)](https://github.com/tangcent/easy-yapi/pull/358)
+
+	* release v2.1.5 [(#356)](https://github.com/tangcent/easy-yapi/pull/356)
+
+	* opti: cache yapi info with loginmode [(#355)](https://github.com/tangcent/easy-yapi/pull/355)
+
+	* fix: swagger.config [(#354)](https://github.com/tangcent/easy-yapi/pull/354)
+
+	* opti: show default built-in config in setting [(#353)](https://github.com/tangcent/easy-yapi/pull/353)
+
+	* opti: add recommend third config [(#351)](https://github.com/tangcent/easy-yapi/pull/351)
+
+	* release v2.1.5-rc [(#350)](https://github.com/tangcent/easy-yapi/pull/350)
+
+	* opti: support `url.cache.expire` [(#349)](https://github.com/tangcent/easy-yapi/pull/349)
+
+	* fix:change the action name from Debug to ScriptExecutor [(#348)](https://github.com/tangcent/easy-yapi/pull/348)
+
+	* opti: support `param.doc` for export methodDoc [(#347)](https://github.com/tangcent/easy-yapi/pull/347)
+
+	* chore: use github actions [(#346)](https://github.com/tangcent/easy-yapi/pull/346)
+
+	* opti: `properties.additional` support url [(#345)](https://github.com/tangcent/easy-yapi/pull/345)
+
+	* chore: fix changelog [(#343)](https://github.com/tangcent/easy-yapi/pull/343)
+
+	* release v2.1.4 [(#342)](https://github.com/tangcent/easy-yapi/pull/342)
+
+	* opti: support built-in config [(#341)](https://github.com/tangcent/easy-yapi/pull/341)
+
+	* opti: support login mode [(#340)](https://github.com/tangcent/easy-yapi/pull/340)
+
+	* release v2.1.3 [(#336)](https://github.com/tangcent/easy-yapi/pull/336)
+
+	* opti: refactor ApiDashboards [(#335)](https://github.com/tangcent/easy-yapi/pull/335)
+
+	* chore: remove (bate) from action text or description [(#334)](https://github.com/tangcent/easy-yapi/pull/334)
+
+	* opti: use `setPragma` instead of  `setBusyTimeout` [(#333)](https://github.com/tangcent/easy-yapi/pull/333)
+
+	* opti: support spring.ui by recommend [(#330)](https://github.com/tangcent/easy-yapi/pull/330)
+
+	* fix：make yapi params ordered [(#327)](https://github.com/tangcent/easy-yapi/pull/327)
+
+	* release v2.1.2 [(#326)](https://github.com/tangcent/easy-yapi/pull/326)
+
+	* opti: log for method infer [(#325)](https://github.com/tangcent/easy-yapi/pull/325)
+
+	* release v2.1.1 [(#321)](https://github.com/tangcent/easy-yapi/pull/321)
+
+	* opti: use raw as body and use unbox for query/form [(#320)](https://github.com/tangcent/easy-yapi/pull/320)
+
+	* opti: support `setter` for `toJson(5)` [(#318)](https://github.com/tangcent/easy-yapi/pull/318)
+
+	* chore: add logs [(#317)](https://github.com/tangcent/easy-yapi/pull/317)
+
+	* opti: support param.required for methodDoc [(#315)](https://github.com/tangcent/easy-yapi/pull/315)
+
+	* fix: always trim the name of folder [(#314)](https://github.com/tangcent/easy-yapi/pull/314)
+
+	* release v2.1.0 [(#310)](https://github.com/tangcent/easy-yapi/pull/310)
+
+	* opti: preview recommendConfig with separator line [(#309)](https://github.com/tangcent/easy-yapi/pull/309)
+
+	* chore: reword to 'use json5' [(#308)](https://github.com/tangcent/easy-yapi/pull/308)
+
+	* opti: support param.before&param.after for methodDoc [(#307)](https://github.com/tangcent/easy-yapi/pull/307)
+
+	* opti: ignore org.springframework.validation.BindingResult by recommend [(#303)](https://github.com/tangcent/easy-yapi/pull/303)
+
+	* opti: support org.springframework.lang.NonNull by recommend [(#302)](https://github.com/tangcent/easy-yapi/pull/302)
+
+	* release v2.0.9 [(#301)](https://github.com/tangcent/easy-yapi/pull/301)
+
+	* feat: new action `ToJson5` [(#300)](https://github.com/tangcent/easy-yapi/pull/300)
+
+	* release v2.0.8 [(#295)](https://github.com/tangcent/easy-yapi/pull/295)
+
+	* opti: remove log in recommend config [(#294)](https://github.com/tangcent/easy-yapi/pull/294)
+
+	* opti: support rule `class.is.ctrl` [(#293)](https://github.com/tangcent/easy-yapi/pull/293)
+
+	* release v2.0.7 [(#287)](https://github.com/tangcent/easy-yapi/pull/287)
+
+	* feat: support json5 for postman [(#286)](https://github.com/tangcent/easy-yapi/pull/286)
+
+	* scala will not be supported by default [(#282)](https://github.com/tangcent/easy-yapi/pull/282)
+
+	* release v2.0.6 [(#281)](https://github.com/tangcent/easy-yapi/pull/281)
+
+	* chore: update version of intellij-kotlin to 0.8.3-SNAPSHOT [(#280)](https://github.com/tangcent/easy-yapi/pull/280)
+
+	* chore: update README.md [(#279)](https://github.com/tangcent/easy-yapi/pull/279)
+
+	* opti: support repeat validation annotation [(#278)](https://github.com/tangcent/easy-yapi/pull/278)
+
+	* feat: new recommend configs [(#277)](https://github.com/tangcent/easy-yapi/pull/277)
+
+	* opti: several recommended configs is not selected by default any longer [(#276)](https://github.com/tangcent/easy-yapi/pull/276)
+
+	* opti: support rule `param.before`&`param.after` [(#275)](https://github.com/tangcent/easy-yapi/pull/275)
+
+	* feat: support new method `annValue` for rule elements [(#274)](https://github.com/tangcent/easy-yapi/pull/274)
+
+	* feat: support rule util `session` [(#273)](https://github.com/tangcent/easy-yapi/pull/273)
+
+	* release v2.0.5 [(#271)](https://github.com/tangcent/easy-yapi/pull/271)
+
+	* fix: fix setting GUI [(#270)](https://github.com/tangcent/easy-yapi/pull/270)
+
+	* release v2.0.4 [(#268)](https://github.com/tangcent/easy-yapi/pull/268)
+
+	* fix: remove usage of Module.getModuleFilePath [(#267)](https://github.com/tangcent/easy-yapi/pull/267)
+
+	* opti: support tow markdown format type [(#266)](https://github.com/tangcent/easy-yapi/pull/266)
+
+	* opti: new func: tool.traversal [(#265)](https://github.com/tangcent/easy-yapi/pull/265)
+
+	* fix: always use json settings [(#261)](https://github.com/tangcent/easy-yapi/pull/261)
+
+	* release v2.0.3.0 [(#254)](https://github.com/tangcent/easy-yapi/pull/254)
+
+	* fix: fix class/type #isExtend [(#253)](https://github.com/tangcent/easy-yapi/pull/253)
+
+	* feat: new recommend config [support_enum_common] [(#251)](https://github.com/tangcent/easy-yapi/pull/251)
+
+	* feat: support DeferredResult by recommend [(#250)](https://github.com/tangcent/easy-yapi/pull/250)
+
+	* chore: update version of intellij-kotlin to 0.7.8-SNAPSHOT [(#246)](https://github.com/tangcent/easy-yapi/pull/246)
+
+	* chore: remove Kit.concat [(#244)](https://github.com/tangcent/easy-yapi/pull/244)
+
+	* opti: use safeComputeIfAbsent instead of computeIfAbsent [(#243)](https://github.com/tangcent/easy-yapi/pull/243)
+
+	* release v2.0.2.0.183.0 [(#240)](https://github.com/tangcent/easy-yapi/pull/240)
+
+	* chore: update recommend config [(#239)](https://github.com/tangcent/easy-yapi/pull/239)
+
+	* chore: remove cache of recommend config. [(#238)](https://github.com/tangcent/easy-yapi/pull/238)
+
+	* chore: fix recommend config for ignore serialVersionUID [(#237)](https://github.com/tangcent/easy-yapi/pull/237)
+
+	* fix: remove usage of org.jetbrains.uast.getContainingClass [(#234)](https://github.com/tangcent/easy-yapi/pull/234)
+
+	* release v2.0.1.0.183.0 [(#233)](https://github.com/tangcent/easy-yapi/pull/233)
+
+	* feat: add rule alias `param.doc`/`method.doc`/`class.doc` [(#232)](https://github.com/tangcent/easy-yapi/pull/232)
+
+	* feat: [ScriptExecutor] support select field or method in the class. [(#231)](https://github.com/tangcent/easy-yapi/pull/231)
+
+	* opti: parse param as query by default [(#229)](https://github.com/tangcent/easy-yapi/pull/229)
+
+	* release v2.0.0.183.0 [(#319)](https://github.com/tangcent/easy-yapi/pull/319)
+
+	* chore: polish `tool` [(#318)](https://github.com/tangcent/easy-yapi/pull/318)
+
+	* feat: new Setting [postman] wrapCollection & autoMergeScript [(#317)](https://github.com/tangcent/easy-yapi/pull/317)
+
+	* feat: new rule `collection.postman.prerequest`&`collection.postman.test` [(#314)](https://github.com/tangcent/easy-yapi/pull/314)
+
+	* travis: auto deploy for patch pr [(#316)](https://github.com/tangcent/easy-yapi/pull/316)
+
+	* travis: auto deploy for patch pr. [(#315)](https://github.com/tangcent/easy-yapi/pull/315)
+
+	* feat: support new rules `class.postman.prerequest`&`class.postman.test` [(#312)](https://github.com/tangcent/easy-yapi/pull/312)
+
+	* fix: context.getResource() maybe null. [(#311)](https://github.com/tangcent/easy-yapi/pull/311)
+
+	* release v1.9.9.0 [(#224)](https://github.com/tangcent/easy-yapi/pull/224)
+
+	* release v1.9.9.183.0 [(#310)](https://github.com/tangcent/easy-yapi/pull/310)
+
+	* feat: support property `api.tag.delimiter` [(#223)](https://github.com/tangcent/easy-yapi/pull/223)
+
+	* chore: format code [(#309)](https://github.com/tangcent/easy-yapi/pull/309)
+
+	* chore: rename Action `Debug` -> `ScriptExecutor` [(#308)](https://github.com/tangcent/easy-yapi/pull/308)
+
+	* fix: keep parameter info to query or form. [(#307)](https://github.com/tangcent/easy-yapi/pull/307)
+
+	* chore: update ui of [Debug]. [(#306)](https://github.com/tangcent/easy-yapi/pull/306)
+
+	* fix: fix required for query with GET(yapi) [(#219)](https://github.com/tangcent/easy-yapi/pull/219)
+
+	* fix: fix required for query with GET. [(#305)](https://github.com/tangcent/easy-yapi/pull/305)
+
+	* release v1.9.8.0.183.0 [(#216)](https://github.com/tangcent/easy-yapi/pull/216)
+
+	* release v1.9.8.183.0 [(#304)](https://github.com/tangcent/easy-yapi/pull/304)
+
+	* update version of intellij-kotlin to 0.7.4-SNAPSHOT [(#303)](https://github.com/tangcent/easy-yapi/pull/303)
+
+	* Support Path Variable with Regex for Postman [(#213)](https://github.com/tangcent/easy-yapi/pull/213)
+
+	* Support Path Variable with Regex for Postman [(#213)](https://github.com/tangcent/easy-yapi/pull/213)
+
+	* release v1.9.7.183.0 [(#302)](https://github.com/tangcent/easy-yapi/pull/302)
+
+	* fix: keep required from RequestParam. [(#301)](https://github.com/tangcent/easy-yapi/pull/301)
+
+	* feat: handle annotation `org.springframework.web.bind.annotation.CookieValue` [(#300)](https://github.com/tangcent/easy-yapi/pull/300)
+
+	* feat: support rule `param.http.type` for `RequestParam ` [(#298)](https://github.com/tangcent/easy-yapi/pull/298)
+
+	* chore: use hasModifierProperty instead of hasModifier [(#296)](https://github.com/tangcent/easy-yapi/pull/296)
+
+	* chore: opti canHasForm [(#295)](https://github.com/tangcent/easy-yapi/pull/295)
+
+	* feat: new rule `param.without.ann.type` [(#294)](https://github.com/tangcent/easy-yapi/pull/294)
+
+	* feat: new method `isNormalType` for rule type `class` [(#293)](https://github.com/tangcent/easy-yapi/pull/293)
+
+	* feat: support new rule `method.content.type` [(#292)](https://github.com/tangcent/easy-yapi/pull/292)
+
+	* release v1.9.6 [(#291)](https://github.com/tangcent/easy-yapi/pull/291)
+
+	* feat:  `Debug` enhancement [(#290)](https://github.com/tangcent/easy-yapi/pull/290)
+
+	* fix: yapi formatPath allow `?`&`=` [(#200)](https://github.com/tangcent/easy-yapi/pull/200)
+
+	* feat: new tool `files` [(#289)](https://github.com/tangcent/easy-yapi/pull/289)
+
+	* feat: add methods to RequestRuleWrap [(#288)](https://github.com/tangcent/easy-yapi/pull/288)
+
+	* feat: support new rule `export.after` [(#198)](https://github.com/tangcent/easy-yapi/pull/198)
+
+	* feat: support new rule `export.after` [(#287)](https://github.com/tangcent/easy-yapi/pull/287)
+
+	* chore: polish GsonKit [(#195)](https://github.com/tangcent/easy-yapi/pull/195)
+
 * 2.1.0~
 
     * fix: always trim the name of folder [(#314)](https://github.com/tangcent/easy-yapi/pull/314)
