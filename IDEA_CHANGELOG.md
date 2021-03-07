@@ -1,3 +1,7 @@
+* 2.1.8
+
+	* fix: use `asKV` instead of `as KV<>` [(#364)](https://github.com/tangcent/easy-yapi/pull/364)
+
 * 2.1.0~
 
     * fix: always trim the name of folder [(#314)](https://github.com/tangcent/easy-yapi/pull/314)
