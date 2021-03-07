@@ -1,2 +1,217 @@
 group 'com.itangcent'
-version '2.1.6.183.0'
+version '2.1.7.183.0'
+
+@SuppressWarnings("GroovyAssignabilityCheck")
+static def majorVersion(version) {
+    return version[0..4]
+}
+
+@SuppressWarnings("GroovyAssignabilityCheck")
+static def nextVersion(version) {
+    if (version.endsWith("-rc")) {
+        return version[0..-3]
+    }
+    def majorVersion = majorVersion(version)
+    def next = ((majorVersion[0, 2, 4] as Integer) + 1).toString()
+    return next[0] + "." + next[1] + "." + next[2]
+}
+
+task patchUpdate {
+    doLast {
+        def majorVersion = majorVersion(version)
+        println "current version:" + majorVersion
+        def nextVersion = nextVersion(version)
+        def nextVersionFull = nextVersion + ".183.0"
+        println "next version:" + nextVersion
+
+        //patch IDEA_CHANGELOG.md
+        def changelogFile = new File("IDEA_CHANGELOG.md")
+        def oldChangelogFile = new File("IDEA_CHANGELOG.md.old")
+        changelogFile.renameTo(new File("IDEA_CHANGELOG.md.old"))
+
+        changelogFile.newOutputStream().withCloseable {
+            it.write("* ${nextVersion}\n\n".getBytes(StandardCharsets.UTF_8))
+            def commitsFile = new File("plugin-script/commits.txt")
+            for (line in commitsFile.readLines()) {
+                try {
+                    def (_, msg, id) = (line =~ /(.*?)\s*\(#(\d+)\)/)[0]
+                    it.write("\t* ${msg} [(#${id})](https://github.com/tangcent/easy-yapi/pull/${id})\n\n".getBytes(StandardCharsets.UTF_8))
+                } catch (ignore) {
+                }
+            }
+            it.write(oldChangelogFile.readBytes())
+        }
+        oldChangelogFile.delete()
+
+        //patch pluginChanges.html
+        def pluginChangesFile = new File("idea-plugin/parts/pluginChanges.html")
+        pluginChangesFile.delete()
+        pluginChangesFile.createNewFile()
+        pluginChangesFile.newOutputStream().withCloseable {
+            it.write("<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${nextVersion}\">v${nextVersion}.183.0(${new Date().format("yyyy-MM-dd")})</a>\n".getBytes(StandardCharsets.UTF_8))
+            it.write("<br/>\n".getBytes(StandardCharsets.UTF_8))
+            it.write("<a href=\"https://github.com/tangcent/easy-yapi/blob/master/IDEA_CHANGELOG.md\">Full Changelog</a>\n".getBytes(StandardCharsets.UTF_8))
+            def enhancements = []
+            def fixes = []
+            def commitsFile = new File("plugin-script/commits.txt")
+            for (line in commitsFile.readLines()) {
+                try {
+                    def (_, msg, id) = (line =~ /(.*?)\s*\(#(\d+)\)/)[0]
+                    def li = "\t<li> ${msg} <a\n" +
+                            "\t\t\thref=\"https://github.com/tangcent/easy-yapi/pull/${id}\">(#${id})</a>\n" +
+                            "\t</li>"
+                    if (line.startsWith("fix")) {
+                        fixes.add(li)
+                    } else {
+                        enhancements.add(li)
+                    }
+                } catch (ignore) {
+                }
+            }
+            if (!enhancements.isEmpty()) {
+                it.write("<ul>enhancement:\n".getBytes(StandardCharsets.UTF_8))
+                for (enhancement in enhancements) {
+                    it.write("${enhancement}\n".getBytes(StandardCharsets.UTF_8))
+                }
+                it.write("</ul>\n".getBytes(StandardCharsets.UTF_8))
+            }
+            if (!fixes.isEmpty()) {
+                it.write("<ul>fix:\n".getBytes(StandardCharsets.UTF_8))
+                for (fix in fixes) {
+                    it.write("${fix}\n".getBytes(StandardCharsets.UTF_8))
+                }
+                it.write("</ul>\n".getBytes(StandardCharsets.UTF_8))
+            }
+        }
+
+        //update build.gradle
+        ant.replace(file: "build.gradle", token: version, value: nextVersionFull)
+        //update gradle.properties
+        ant.replace(file: "gradle.properties", token: version, value: nextVersionFull)
+        //update plugin.xml
+        ant.replace(file: "idea-plugin/src/main/resources/META-INF/plugin.xml", token: version, value: nextVersionFull)
+
+        //set env
+        def envDir = new File("envs")
+        if (envDir.exists()) {
+            envDir.deleteDir()
+        }
+        envDir.mkdir()
+        new File("envs/EASY_YAPI_PR_TITLE").newOutputStream().withCloseable {
+            it.write("release v${nextVersion}".getBytes(StandardCharsets.UTF_8))
+        }
+
+        def prBody = ""
+        def commitsFile = new File("plugin-script/commits.txt")
+        for (line in commitsFile.readLines()) {
+            try {
+                def (_, msg, id) = (line =~ /(.*?)\s*\(#(\d+)\)/)[0]
+                prBody += "* ${msg} [(#${id})](https://github.com/tangcent/easy-yapi/pull/${id})\n\n"
+            } catch (ignore) {
+            }
+        }
+        new File("envs/EASY_YAPI_PR_BODY").newOutputStream().withCloseable {
+            it.write(prBody.getBytes(StandardCharsets.UTF_8))
+        }
+    }
+}
+
+task patchUpdateRc {
+    doLast {
+        def majorVersion = majorVersion(version)
+        println "current version:" + majorVersion
+        def nextVersion = nextVersion(version)
+        def nextVersionShort = nextVersion + "-rc"
+        def nextVersionFull = nextVersion + ".183.0-rc"
+        println "next version: ${nextVersionShort}"
+
+        //patch IDEA_CHANGELOG.md
+        def changelogFile = new File("IDEA_CHANGELOG.md")
+        def oldChangelogFile = new File("IDEA_CHANGELOG.md.old")
+        changelogFile.renameTo(new File("IDEA_CHANGELOG.md.old"))
+
+        changelogFile.newOutputStream().withCloseable {
+            it.write("* ${nextVersion}\n\n".getBytes(StandardCharsets.UTF_8))
+            def commitsFile = new File("plugin-script/commits.txt")
+            for (line in commitsFile.readLines()) {
+                try {
+                    def (_, msg, id) = (line =~ /(.*?)\s*\(#(\d+)\)/)[0]
+                    it.write("\t* ${msg} [(#${id})](https://github.com/tangcent/easy-yapi/pull/${id})\n\n".getBytes(StandardCharsets.UTF_8))
+                } catch (ignore) {
+                }
+            }
+            it.write(oldChangelogFile.readBytes())
+        }
+        oldChangelogFile.delete()
+
+        //patch pluginChanges.html
+        def pluginChangesFile = new File("idea-plugin/parts/pluginChanges.html")
+        pluginChangesFile.delete()
+        pluginChangesFile.createNewFile()
+        pluginChangesFile.newOutputStream().withCloseable {
+            it.write("<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${nextVersionShort}\">v${nextVersionFull}(${new Date().format("yyyy-MM-dd")})</a>\n".getBytes(StandardCharsets.UTF_8))
+            it.write("<br/>\n".getBytes(StandardCharsets.UTF_8))
+            it.write("<a href=\"https://github.com/tangcent/easy-yapi/blob/master/IDEA_CHANGELOG.md\">Full Changelog</a>\n".getBytes(StandardCharsets.UTF_8))
+            def enhancements = []
+            def fixes = []
+            def commitsFile = new File("plugin-script/commits.txt")
+            for (line in commitsFile.readLines()) {
+                try {
+                    def (_, msg, id) = (line =~ /(.*?)\s*\(#(\d+)\)/)[0]
+                    def li = "\t<li> ${msg} <a\n" +
+                            "\t\t\thref=\"https://github.com/tangcent/easy-yapi/pull/${id}\">(#${id})</a>\n" +
+                            "\t</li>"
+                    if (line.startsWith("fix")) {
+                        fixes.add(li)
+                    } else {
+                        enhancements.add(li)
+                    }
+                } catch (ignore) {
+                }
+            }
+            if (!enhancements.isEmpty()) {
+                it.write("<ul>enhancement:\n".getBytes(StandardCharsets.UTF_8))
+                for (enhancement in enhancements) {
+                    it.write("${enhancement}\n".getBytes(StandardCharsets.UTF_8))
+                }
+                it.write("</ul>\n".getBytes(StandardCharsets.UTF_8))
+            }
+            if (!fixes.isEmpty()) {
+                it.write("<ul>fix:\n".getBytes(StandardCharsets.UTF_8))
+                for (fix in fixes) {
+                    it.write("${fix}\n".getBytes(StandardCharsets.UTF_8))
+                }
+                it.write("</ul>\n".getBytes(StandardCharsets.UTF_8))
+            }
+        }
+
+        //update build.gradle
+        ant.replace(file: "build.gradle", token: version, value: nextVersionFull)
+        //update gradle.properties
+        ant.replace(file: "gradle.properties", token: version, value: nextVersionFull)
+        //update plugin.xml
+        ant.replace(file: "idea-plugin/src/main/resources/META-INF/plugin.xml", token: version, value: nextVersionFull)
+
+        //set env
+        def envDir = new File("envs")
+        if (!envDir.exists()) {
+            envDir.mkdir()
+        }
+        new File("envs/EASY_YAPI_PR_TITLE").newOutputStream().withCloseable {
+            it.write("release v${nextVersion}".getBytes(StandardCharsets.UTF_8))
+        }
+
+        def prBody = ""
+        def commitsFile = new File("plugin-script/commits.txt")
+        for (line in commitsFile.readLines()) {
+            try {
+                def (_, msg, id) = (line =~ /(.*?)\s*\(#(\d+)\)/)[0]
+                prBody += "* ${msg} [(#${id})](https://github.com/tangcent/easy-yapi/pull/${id})\n\n"
+            } catch (ignore) {
+            }
+        }
+        new File("envs/EASY_YAPI_PR_BODY").newOutputStream().withCloseable {
+            it.write(prBody.getBytes(StandardCharsets.UTF_8))
+        }
+    }
+}
