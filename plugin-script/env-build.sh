@@ -11,14 +11,11 @@ scriptDir="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 basedir=${scriptDir%/*}
 echo "baseDir:"${basedir}
 
-cd ${basedir}/idea-plugin
-../gradlew clean buildPlugin --stacktrace
-
-version=`cat ${basedir}/build.gradle | grep -Eo -m1 '[0-9][0-9.]+(-rc)?'`
-echo "version:"${version}
-
-
-if [[ ! -d "$basedir/plugin" ]];then
-mkdir ${basedir}/plugin
-fi
-mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-yapi.${version}.jar
+rm env.sh
+echo -e "#!/usr/bin/env bash\n#\n" >> env.sh
+echo -e "#\n" >> env.sh
+echo -e "basedir=\"${basedir}\"" >> env.sh
+cat env.sh.base >> env.sh
+chmod +x env.sh
+mv env.sh ${basedir}/envs
+#source ${basedir}/envs/env.sh

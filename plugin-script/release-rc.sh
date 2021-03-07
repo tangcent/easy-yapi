@@ -11,14 +11,19 @@ scriptDir="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
 basedir=${scriptDir%/*}
 echo "baseDir:"${basedir}
 
-cd ${basedir}/idea-plugin
-../gradlew clean buildPlugin --stacktrace
+bash $scriptDir/collect_commits.sh
+./gradlew patchUpdateRc --stacktrace
+rm $scriptDir/commits.txt
 
-version=`cat ${basedir}/build.gradle | grep -Eo -m1 '[0-9][0-9.]+(-rc)?'`
-echo "version:"${version}
+cd $scriptDir
+./env-build.sh
 
+cd ${basedir}
+echo "swith to"`pwd`
 
-if [[ ! -d "$basedir/plugin" ]];then
-mkdir ${basedir}/plugin
-fi
-mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-yapi.${version}.jar
+git add .
+version=`cat ${basedir}/build.gradle | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
+echo "version:${version}-rc"
+git config user.name tangcent
+git config user.email pentatangcent@gmail.com
+git commit -m "release v${version}-rc"
