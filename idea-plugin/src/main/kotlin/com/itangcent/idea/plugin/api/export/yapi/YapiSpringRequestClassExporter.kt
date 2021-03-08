@@ -97,7 +97,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             header.desc = ultimateComment
             header.required = required
             if (demo.notNullOrBlank()) {
-                header.setDemo(demo)
+                header.setExample(demo)
             }
             requestHelper!!.addHeader(request, header)
             return
@@ -117,7 +117,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             pathParam.name = pathName
             pathParam.desc = ultimateComment
             if (demo.notNullOrBlank()) {
-                pathParam.setDemo(demo)
+                pathParam.setExample(demo)
             }
             requestHelper!!.addPathParam(request, pathParam)
             return
@@ -263,13 +263,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                                         request, path,
                                         parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                         KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
-                                ).setDemo(parent?.getAs(Attrs.DEMO_ATTR, key))
+                                ).setExample(parent?.getAs(Attrs.EXAMPLE_ATTR, key))
                             } else {
                                 requestHelper.addFormParam(
                                         request, path, tinyQueryParam(value.toString()),
                                         parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                         KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
-                                ).setDemo(parent?.getAs(Attrs.DEMO_ATTR, key))
+                                ).setExample(parent?.getAs(Attrs.EXAMPLE_ATTR, key))
                             }
                         }
                     })
@@ -277,7 +277,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                     val fields = typeObject.asKV()
                     val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
                     val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
-                    val demo = fields.getAsKv(Attrs.DEMO_ATTR)
+                    val examples = fields.getAsKv(Attrs.EXAMPLE_ATTR)
                     fields.forEachValid { filedName, fieldVal ->
                         val fv = deepComponent(fieldVal)
                         if (fv == Magics.FILE_STR) {
@@ -288,13 +288,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                                     request, filedName,
                                     required?.getAs(filedName) ?: false,
                                     KVUtils.getUltimateComment(comment, filedName)
-                            ).setDemo(demo?.getAs(filedName))
+                            ).setExample(examples?.getAs(filedName))
                         } else {
                             requestHelper!!.addParam(
                                     request, filedName, null,
                                     required?.getAs(filedName) ?: false,
                                     KVUtils.getUltimateComment(comment, filedName)
-                            ).setDemo(demo?.getAs(filedName))
+                            ).setExample(examples?.getAs(filedName))
                         }
                     }
                 }
@@ -346,7 +346,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                     val fields = typeObject.asKV()
                     val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
                     val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
-                    val demo = fields.getAsKv(Attrs.DEMO_ATTR)
+                    val demo = fields.getAsKv(Attrs.EXAMPLE_ATTR)
                     requestHelper!!.addHeaderIfMissed(request, "Content-Type", "application/x-www-form-urlencoded")
                     fields.forEachValid { filedName, fieldVal ->
                         val fv = deepComponent(fieldVal)
@@ -355,13 +355,13 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                                     request, filedName,
                                     required?.getAs(filedName) ?: false,
                                     KVUtils.getUltimateComment(comment, filedName)
-                            ).setDemo(demo?.getAs(filedName))
+                            ).setExample(demo?.getAs(filedName))
                         } else {
                             requestHelper.addFormParam(
                                     request, filedName, null,
                                     required?.getAs(filedName) ?: false,
                                     KVUtils.getUltimateComment(comment, filedName)
-                            ).setDemo(demo?.getAs(filedName))
+                            ).setExample(demo?.getAs(filedName))
                         }
                     }
                 }
@@ -450,6 +450,6 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
     }
 
     private fun Any?.trySetDemo(demo: String?) {
-        (this as? Extensible)?.setDemo(demo)
+        (this as? Extensible)?.setExample(demo)
     }
 }

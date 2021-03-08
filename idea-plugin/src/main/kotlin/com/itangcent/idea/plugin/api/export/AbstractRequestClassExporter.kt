@@ -31,6 +31,7 @@ import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.*
+import com.itangcent.utils.ExtensibleKit.fromJson
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.reflect.KClass
@@ -219,7 +220,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val additionalHeaders = additionalHeader!!.lines()
             for (headerStr in additionalHeaders) {
                 cacheAble!!.cache("header" to headerStr) {
-                    val header = KitUtils.safe { GsonUtils.fromJson(headerStr, Header::class) }
+                    val header = KitUtils.safe { Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR) }
                     when {
                         header == null -> {
                             logger!!.error("error to parse additional header: $headerStr")
@@ -243,7 +244,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val additionalParams = additionalParam!!.lines()
             for (paramStr in additionalParams) {
                 cacheAble!!.cache("param" to paramStr) {
-                    val param = KitUtils.safe { GsonUtils.fromJson(paramStr, Param::class) }
+                    val param = KitUtils.safe { Param::class.fromJson(paramStr, Attrs.EXAMPLE_ATTR) }
                     when {
                         param == null -> {
                             logger!!.error("error to parse additional param: $paramStr")
@@ -269,7 +270,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val additionalHeaders = additionalResponseHeader!!.lines()
                 for (headerStr in additionalHeaders) {
                     cacheAble!!.cache("header" to headerStr) {
-                        val header = KitUtils.safe { GsonUtils.fromJson(headerStr, Header::class) }
+                        val header = KitUtils.safe { Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR) }
                         when {
                             header == null -> {
                                 logger!!.error("error to parse additional response header: $headerStr")
