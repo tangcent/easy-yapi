@@ -275,7 +275,7 @@ open class YapiFormatter {
                     .set("name", it.name)
                     .set("value", it.value)
                     .set("desc", it.desc)
-                    .set("example", it.getDemo() ?: it.value)
+                    .set("example", it.getExample() ?: it.value)
                     .set("required", it.required.asInt())
             )
         }
@@ -286,7 +286,7 @@ open class YapiFormatter {
             queryList.add(KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
-                    .set("example", it.getDemo() ?: it.value)
+                    .set("example", it.getExample() ?: it.value)
                     .set("desc", it.desc)
                     .set("required", it.required.asInt())
             )
@@ -299,7 +299,7 @@ open class YapiFormatter {
             request.formParams!!.forEach {
                 urlencodeds.add(KV.create<String, Any?>()
                         .set("name", it.name)
-                        .set("example", it.getDemo() ?: it.value)
+                        .set("example", it.getExample() ?: it.value)
                         .set("type", it.type)
                         .set("required", it.required.asInt())
                         .set("desc", it.desc)
@@ -313,7 +313,7 @@ open class YapiFormatter {
             request.paths!!.forEach {
                 pathParmas.add(KV.create<String, Any?>()
                         .set("name", it.name)
-                        .set("example", it.getDemo() ?: it.value)
+                        .set("example", it.getExample() ?: it.value)
                         .set("desc", it.desc)
                 )
             }

@@ -53,7 +53,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         val demoValue = ruleComputer.computer(YapiClassExportRuleKeys.FIELD_DEMO,
                 fieldOrMethod)
         if (demoValue.notNullOrBlank()) {
-            kv.sub(Attrs.DEMO_ATTR)[fieldName] = demoValue
+            kv.sub(Attrs.EXAMPLE_ATTR)[fieldName] = demoValue
         }
 
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)

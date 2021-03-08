@@ -7,7 +7,7 @@ import java.util.*
 
 
 fun Extensible.getStatus(): String {
-    val status = this.getExt<String?>("status") ?: return "done"
+    val status = this.getExt<String?>("@status") ?: return "done"
 
     return when (status) {
         "undone" -> "undone"
@@ -17,37 +17,37 @@ fun Extensible.getStatus(): String {
 
 fun Extensible.setStatus(status: String?) {
     if (!status.isNullOrBlank()) {
-        this.setExt("status", status)
+        this.setExt("@status", status)
     }
 }
 
 fun Extensible.getTags(): List<String>? {
-    return this.getExt("tags") ?: EMPTY_TAGS
+    return this.getExt("@tags") ?: EMPTY_TAGS
 }
 
 fun Extensible.setTags(tags: List<String>?) {
     if (!tags.isNullOrEmpty()) {
-        this.setExt("tags", tags)
+        this.setExt("@tags", tags)
     }
 }
 
 fun Extensible.isOpen(): Boolean {
-    return this.getExt("open") ?: false
+    return this.getExt("@open") ?: false
 }
 
 fun Extensible.setOpen(open: Boolean?) {
     if (open != null) {
-        this.setExt("open", open)
+        this.setExt("@open", open)
     }
 }
 
-fun Extensible.getDemo(): String? {
-    return this.getExt(Attrs.DEMO_ATTR)
+fun Extensible.getExample(): String? {
+    return this.getExt(Attrs.EXAMPLE_ATTR)
 }
 
-fun Extensible.setDemo(demo: String?) {
-    if (demo.notNullOrBlank()) {
-        this.setExt(Attrs.DEMO_ATTR, demo)
+fun Extensible.setExample(example: String?) {
+    if (example.notNullOrBlank()) {
+        this.setExt(Attrs.EXAMPLE_ATTR, example)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.itangcent.intellij.util
 
+import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.intellij.extend.toPrettyString
@@ -13,7 +14,7 @@ fun <V> KV<String, V>.forEachValid(action: BiConsumer<String, V>) {
 
 fun <V> KV<String, V>.forEachValid(action: (String, V) -> Unit) {
     this.forEach { k, v ->
-        if (k.startsWith("@")) {
+        if (k.startsWith(Attrs.PREFIX)) {
             return@forEach
         }
         if (k.isBlank()) {
@@ -32,7 +33,7 @@ fun <K, V> Map<K, V>.forEachValid(action: (K, V) -> Unit) {
         if (k == null) {
             return@forEach
         } else if (k is String) {
-            if (k.startsWith("@")) {
+            if (k.startsWith(Attrs.PREFIX)) {
                 return@forEach
             }
             if (k.isBlank()) {
@@ -97,7 +98,7 @@ fun Any?.isComplex(root: Boolean = true): Boolean {
             if (!root) return true
             for (entry in this.entries) {
                 val key = entry.key
-                if (key != null && key is String && key.startsWith("@")) {
+                if (key != null && key is String && key.startsWith(Attrs.PREFIX)) {
                     continue
                 }
                 if (entry.value.isComplex(false)) {
@@ -119,7 +120,7 @@ fun Any?.hasFile(): Boolean {
         this is Map<*, *> -> {
             for (entry in this.entries) {
                 val key = entry.key
-                if (key != null && key is String && key.startsWith("@")) {
+                if (key != null && key is String && key.startsWith(Attrs.PREFIX)) {
                     continue
                 }
                 if (entry.value.hasFile()) {
