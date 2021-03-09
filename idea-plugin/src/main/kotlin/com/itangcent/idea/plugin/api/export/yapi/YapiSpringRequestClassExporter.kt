@@ -12,6 +12,7 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.util.*
+import com.itangcent.utils.ExtensibleKit.fromJson
 import org.apache.commons.lang3.StringUtils
 
 open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
@@ -444,6 +445,10 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             "$path?$paramName=$value"
         }
     }
+
+    override fun parseHeaderFromJson(headerStr: String) = Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR)
+
+    override fun parseParamFromJson(paramStr: String) = Param::class.fromJson(paramStr, Attrs.EXAMPLE_ATTR)
 
     protected fun enableUrlTemplating(): Boolean {
         return settingBinder!!.read().enableUrlTemplating
