@@ -62,7 +62,9 @@ task patchUpdate {
                     def li = "\t<li> ${msg} <a\n" +
                             "\t\t\thref=\"https://github.com/tangcent/easy-yapi/pull/${id}\">(#${id})</a>\n" +
                             "\t</li>"
-                    if (line.startsWith("fix")) {
+                    if (line.startsWith("chore")) {
+                        continue
+                    } else if (line.startsWith("fix")) {
                         fixes.add(li)
                     } else {
                         enhancements.add(li)
@@ -163,7 +165,9 @@ task patchUpdateRc {
                     def li = "\t<li> ${msg} <a\n" +
                             "\t\t\thref=\"https://github.com/tangcent/easy-yapi/pull/${id}\">(#${id})</a>\n" +
                             "\t</li>"
-                    if (line.startsWith("fix")) {
+                    if (line.startsWith("chore")) {
+                        continue
+                    } else if (line.startsWith("fix")) {
                         fixes.add(li)
                     } else {
                         enhancements.add(li)
