@@ -220,7 +220,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val additionalHeaders = additionalHeader!!.lines()
             for (headerStr in additionalHeaders) {
                 cacheAble!!.cache("header" to headerStr) {
-                    val header = KitUtils.safe { Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR) }
+                    val header = KitUtils.safe { parseHeaderFromJson(headerStr) }
                     when {
                         header == null -> {
                             logger!!.error("error to parse additional header: $headerStr")
@@ -244,7 +244,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             val additionalParams = additionalParam!!.lines()
             for (paramStr in additionalParams) {
                 cacheAble!!.cache("param" to paramStr) {
-                    val param = KitUtils.safe { Param::class.fromJson(paramStr, Attrs.EXAMPLE_ATTR) }
+                    val param = KitUtils.safe { parseParamFromJson(paramStr) }
                     when {
                         param == null -> {
                             logger!!.error("error to parse additional param: $paramStr")
@@ -270,7 +270,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                 val additionalHeaders = additionalResponseHeader!!.lines()
                 for (headerStr in additionalHeaders) {
                     cacheAble!!.cache("header" to headerStr) {
-                        val header = KitUtils.safe { Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR) }
+                        val header = KitUtils.safe { parseHeaderFromJson(headerStr) }
                         when {
                             header == null -> {
                                 logger!!.error("error to parse additional response header: $headerStr")
@@ -291,6 +291,10 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             }
         }
     }
+
+    protected open fun parseHeaderFromJson(headerStr: String) = Header::class.fromJson(headerStr)
+
+    protected open fun parseParamFromJson(paramStr: String) = Param::class.fromJson(paramStr)
 
     protected open fun processResponse(method: ExplicitMethod, request: Request) {
 
