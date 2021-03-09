@@ -49,7 +49,7 @@ object KitUtils {
 
 fun Any?.toJson(): String? {
     if (this == null) {
-        return "null"
+        return null
     }
 
     if (this is String) {
@@ -63,7 +63,8 @@ fun String.headLine(): String? {
     if (this.isBlank()) return null
 
     var index = -1
-    for ((i, c) in this.trim().withIndex()) {
+    val trimStr = this.trim()
+    for ((i, c) in trimStr.withIndex()) {
         if (c == '\r' || c == '\n') {
             index = i
             break
@@ -72,7 +73,7 @@ fun String.headLine(): String? {
     if (index == -1) {
         return this
     }
-    return substring(0, index)
+    return trimStr.substring(0, index)
 }
 
 fun String?.equalIgnoreCase(str: String?): Boolean {
