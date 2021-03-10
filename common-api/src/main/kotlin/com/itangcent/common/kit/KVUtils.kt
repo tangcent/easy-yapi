@@ -18,7 +18,7 @@ object KVUtils {
     @Suppress("UNCHECKED_CAST")
     fun getUltimateComment(comment: Map<*, *>?, field: Any?): String {
         if (comment == null || field == null) return ""
-        var desc = comment[field] as String?
+        var desc = comment[field] as? String
         val options = comment["$field@options"]
         if (options != null) {
             val optionList = options as List<Map<String, Any?>>
@@ -67,34 +67,33 @@ object KVUtils {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun addKeyComment(typedResponse: Any?, key: String, comment: String): Boolean {
+    fun addKeyComment(model: Any?, key: String, comment: String): Boolean {
 
-        if (typedResponse is Collection<*>) {
-            if (typedResponse.isEmpty()) {
+        if (model is Collection<*>) {
+            if (model.isEmpty()) {
                 return false
             }
-            return addKeyComment(typedResponse.first(), key, comment)
+            return addKeyComment(model.first(), key, comment)
 
         }
 
-        if (typedResponse is Array<*>) {
-            if (typedResponse.isEmpty()) {
+        if (model is Array<*>) {
+            if (model.isEmpty()) {
                 return false
             }
-            return addKeyComment(typedResponse.first(), key, comment)
+            return addKeyComment(model.first(), key, comment)
         }
 
-        if (typedResponse is Map<*, *>) {
+        if (model is Map<*, *>) {
             return if (key.contains(".")) {
                 val headerKey = key.substringBefore('.')
-                val restKey = key.substringBefore('.')
-                addKeyComment(typedResponse[headerKey], restKey, comment)
+                val restKey = key.substringAfter('.')
+                addKeyComment(model[headerKey], restKey, comment)
             } else {
-                addComment(typedResponse as (HashMap<Any, Any?>), key, comment)
+                addComment(model as (HashMap<Any, Any?>), key, comment)
                 true
             }
         }
-
         return false
     }
 
@@ -116,30 +115,30 @@ object KVUtils {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun addKeyOptions(typedResponse: Any?, key: String, options: ArrayList<HashMap<String, Any?>>): Boolean {
+    fun addKeyOptions(model: Any?, key: String, options: ArrayList<HashMap<String, Any?>>): Boolean {
 
-        if (typedResponse is Collection<*>) {
-            if (typedResponse.isEmpty()) {
+        if (model is Collection<*>) {
+            if (model.isEmpty()) {
                 return false
             }
-            return addKeyOptions(typedResponse.first(), key, options)
+            return addKeyOptions(model.first(), key, options)
         }
 
-        if (typedResponse is Array<*>) {
-            if (typedResponse.isEmpty()) {
+        if (model is Array<*>) {
+            if (model.isEmpty()) {
                 return false
             }
-            return addKeyOptions(typedResponse.first(), key, options)
+            return addKeyOptions(model.first(), key, options)
         }
 
-        if (typedResponse is Map<*, *>) {
-            if (key.contains(".")) {
+        if (model is Map<*, *>) {
+            return if (key.contains(".")) {
                 val headerKey = key.substringBefore('.')
-                val restKey = key.substringBefore('.')
-                return addKeyOptions(typedResponse[headerKey], restKey, options)
+                val restKey = key.substringAfter('.')
+                addKeyOptions(model[headerKey], restKey, options)
             } else {
-                addOptions(typedResponse as HashMap<Any, Any?>, key, options)
-                return true
+                addOptions(model as HashMap<Any, Any?>, key, options)
+                true
             }
         }
 
