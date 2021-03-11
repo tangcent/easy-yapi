@@ -7,14 +7,13 @@ import com.itangcent.common.utils.asHashMap
 import com.itangcent.common.utils.getAs
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.extension.ExtendWith
 import java.util.*
 
 /**
  * Test case for [KitUtils]
  */
-@RunWith(JUnit4::class)
+@ExtendWith
 class KVUtilsTest {
 
     private fun options(): List<Map<String, Any?>> = listOf(
