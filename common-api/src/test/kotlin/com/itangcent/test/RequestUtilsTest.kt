@@ -8,7 +8,6 @@ import com.itangcent.http.RequestUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.converter.ConvertWith
 import org.junit.jupiter.params.provider.CsvSource
 import java.util.*
 
@@ -53,8 +52,8 @@ class RequestUtilsTest {
             value = ["a,null", "null,a"],
             nullValues = ["null"]
     )
-    fun testConcatPathToA( pre: String?,
-                         after: String?) {
+    fun testConcatPathToA(pre: String?,
+                          after: String?) {
         assertEquals("a", RequestUtils.concatPath(pre, after))
     }
 }
