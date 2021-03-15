@@ -8,13 +8,13 @@ import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.SimpleExtensible
 import com.itangcent.common.utils.asBool
+import com.itangcent.common.utils.getPropertyValue
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.json.Json5Formatter
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.getPropertyValue
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.ArrayDuckType

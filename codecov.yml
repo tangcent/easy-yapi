@@ -1,0 +1,34 @@
+codecov:
+  require_ci_to_pass: yes
+
+coverage:
+  precision: 3
+  round: nearest
+  range: "60...80"
+  status:
+    patch: off
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: no
+
+ignore:
+  - ".github"
+  - "gradle"
+  - "script"
+  - "**/*.sh"
+  - "**/*.yml"
+  - "**/*.gradle"
+  - "**/*.md"
+  - "**/*.properties"
+  - "gradlew"
+  - "gradlew.bat"
