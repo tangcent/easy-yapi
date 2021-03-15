@@ -562,25 +562,30 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
 
         fun valueOf(obj: Any?): Any? {
-            return when {
-                !needCompute(obj) -> obj
-                obj is Variable -> valueOf(obj.getValue())
-                obj is MutableMap<*, *> -> {
-                    val copy = KV.create<Any?, Any?>()
-                    obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }
-                    return copy
+            try {
+                return when {
+                    !needCompute(obj) -> obj
+                    obj is Variable -> valueOf(obj.getValue())
+                    obj is MutableMap<*, *> -> {
+                        val copy = KV.create<Any?, Any?>()
+                        obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }
+                        return copy
+                    }
+                    obj is Array<*> -> {
+                        val copy = LinkedList<Any?>()
+                        obj.any { copy.add(valueOf(it)) }
+                        return copy.toArray()
+                    }
+                    obj is Collection<*> -> {
+                        val copy = LinkedList<Any?>()
+                        obj.any { copy.add(valueOf(it)) }
+                        return copy
+                    }
+                    else -> obj
                 }
-                obj is Array<*> -> {
-                    val copy = LinkedList<Any?>()
-                    obj.any { copy.add(valueOf(it)) }
-                    return copy.toArray()
-                }
-                obj is Collection<*> -> {
-                    val copy = LinkedList<Any?>()
-                    obj.any { copy.add(valueOf(it)) }
-                    return copy
-                }
-                else -> obj
+            } catch (e: Exception) {
+                LOG.error("failed compute valueOf $obj", e)
+                return null
             }
         }
 
@@ -814,7 +819,12 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 computer = true
                 compute()
             }
-            return getComputedValue()
+            val computedValue = getComputedValue()
+            if (computedValue == this) {
+                LOG.error("recursive call getValue")
+                return null
+            }
+            return computedValue
         }
 
         abstract fun getComputedValue(): Any?
