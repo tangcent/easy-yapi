@@ -39,6 +39,14 @@ class GsonExUtilsTest {
         assertEquals(point, GsonExUtils.fromJson(GsonExUtils.toJson(point)))
     }
 
+    @Test
+    fun prettyJson() {
+        assertEquals("{\n  \"a\": 1\n}", GsonExUtils.prettyJson("{a:1}"))
+        assertEquals("{\n" +
+                "  \"a\": 1.0,\n" +
+                "  \"b\": \"1.1f\"\n" +
+                "}", GsonExUtils.prettyJson("{a:1.0,b:1.1f}"))
+    }
 }
 
 data class Point(var x: Int, var y: Int)

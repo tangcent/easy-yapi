@@ -8,7 +8,7 @@ import com.google.gson.internal.bind.ObjectTypeAdapter
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.RegisterExclusionStrategy
 import com.itangcent.common.utils.Visional
-import com.itangcent.intellij.extend.getPropertyValue
+import com.itangcent.common.utils.getPropertyValue
 
 object GsonExUtils {
 

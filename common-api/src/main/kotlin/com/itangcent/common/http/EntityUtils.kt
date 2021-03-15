@@ -2,7 +2,7 @@ package com.itangcent.common.http
 
 import java.util.*
 
-object EntityUtils{
+object EntityUtils {
 
     /**
      * The pool of ASCII chars to be used for generating a multipart boundary.

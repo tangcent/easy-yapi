@@ -19,7 +19,7 @@ interface MethodDocHelper {
 }
 
 //region utils------------------------------------------------------------------
-fun MethodDocHelper.addParam(methodDoc: MethodDoc, paramName: String, value: Any?, desc: String?,required: Boolean) {
+fun MethodDocHelper.addParam(methodDoc: MethodDoc, paramName: String, value: Any?, desc: String?, required: Boolean) {
     addParam(methodDoc, paramName, value, required, desc)
 }
 

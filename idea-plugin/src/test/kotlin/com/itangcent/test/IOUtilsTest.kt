@@ -2,7 +2,6 @@ package com.itangcent.test
 
 import com.itangcent.idea.utils.IOUtils
 import org.junit.Test
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
