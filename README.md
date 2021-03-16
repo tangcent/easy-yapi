@@ -8,7 +8,6 @@
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/tangcent/easy-yapi.svg)](http://isitmaintained.com/project/tangcent/easy-yapi "Average time to resolve an issue")
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/tangcent/easy-yapi.svg)](http://isitmaintained.com/project/tangcent/easy-yapi "Percentage of issues still open")
 
-
 ## 功能特性
 - [导出API文档到`Postman`](https://easyyapi.com/documents/export2postman.html)
 - [导出API文档到`Yapi`](https://easyyapi.com/documents/export2yapi.html)
@@ -30,14 +29,16 @@
 ## 贡献
 
 ***您可以通过以下途径帮助easy-yapi变得更好***
-
-* 帮助维护文档: [easyyapi.com](https://github.com/easyyapi/easyyapi.github.io/tree/dev)
-  请将您的PR提交到dev分支
   
 * 讨论 [新的功能](https://github.com/tangcent/easy-yapi/issues?q=label%3Aenhancement) or提交 [BUG](https://github.com/tangcent/easy-yapi/issues?q=label%3Abug): [Issues](https://github.com/tangcent/easy-yapi/issues)
 
 * 开发 [新的功能](https://github.com/tangcent/easy-yapi/pulls?q=+label%3Aenhancement) or修复 [BUG](https://github.com/tangcent/easy-yapi/pulls?q=label%3Abug): [PR](https://github.com/tangcent/easy-yapi/pulls)
 
+* 完善测试 [codecov](https://codecov.io/gh/tangcent/easy-yapi)
+
+* 帮助维护文档: [easyyapi.com](https://github.com/easyyapi/easyyapi.github.io/tree/dev)
+  请将您的PR提交到dev分支
+  
 * 维护推荐配置: [.recommend.easy.api.config](https://github.com/tangcent/easy-yapi/blob/master/idea-plugin/src/main/resources/.recommend.easy.api.config)
 
 * 丰富支持的三方配置: [third](https://github.com/tangcent/easy-yapi/tree/master/third)
