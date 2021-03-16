@@ -12,7 +12,7 @@ basedir=${scriptDir%/*}
 echo "baseDir:"${basedir}
 
 cd ${basedir}/idea-plugin
-../gradlew clean buildPlugin --stacktrace
+../gradlew clean buildPlugin -x test --stacktrace
 
 version=`cat ${basedir}/build.gradle | grep -Eo -m1 '[0-9][0-9.]+(-rc)?'`
 echo "version:"${version}

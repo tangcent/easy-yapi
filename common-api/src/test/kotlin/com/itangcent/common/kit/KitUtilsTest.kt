@@ -1,9 +1,5 @@
-package com.itangcent.test
+package com.itangcent.common.kit
 
-import com.itangcent.common.kit.KitUtils
-import com.itangcent.common.kit.equalIgnoreCase
-import com.itangcent.common.kit.headLine
-import com.itangcent.common.kit.toJson
 import com.itangcent.common.utils.KV
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

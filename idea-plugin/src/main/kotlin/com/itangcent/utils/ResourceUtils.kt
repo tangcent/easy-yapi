@@ -11,7 +11,8 @@ object ResourceUtils {
     fun readResource(configName: String): String {
         return resourceCache.safeComputeIfAbsent(configName) {
             (ResourceUtils::class.java.classLoader.getResourceAsStream(configName)
-                    ?: ResourceUtils::class.java.getResourceAsStream(configName)).readString(Charsets.UTF_8)
+                    ?: ResourceUtils::class.java.getResourceAsStream(configName))
+                    ?.readString(Charsets.UTF_8) ?: ""
         } ?: ""
     }
 }

@@ -42,3 +42,4 @@ src/main/resources/META-INF/services/com.itangcent.common.spi.SetupAble
 *.iml
 
 /envs
+out/

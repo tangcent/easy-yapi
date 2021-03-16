@@ -1,4 +1,4 @@
-package com.itangcent.test
+package com.itangcent.intellij.util
 
 import com.itangcent.intellij.util.CacheAble
 import com.itangcent.intellij.util.DefaultCacheAle

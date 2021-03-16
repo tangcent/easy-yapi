@@ -1,6 +1,5 @@
-package com.itangcent.test
+package com.itangcent.idea.utils
 
-import com.itangcent.idea.utils.GsonExUtils
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.runner.RunWith

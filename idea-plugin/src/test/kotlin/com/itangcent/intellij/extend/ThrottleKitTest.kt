@@ -1,4 +1,4 @@
-package com.itangcent.test
+package com.itangcent.intellij.extend
 
 import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.rx.ThrottleHelper

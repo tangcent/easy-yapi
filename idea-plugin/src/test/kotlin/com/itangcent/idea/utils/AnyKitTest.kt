@@ -1,4 +1,4 @@
-package com.itangcent.test
+package com.itangcent.idea.utils
 
 import com.itangcent.intellij.extend.asArrayList
 import com.itangcent.intellij.extend.asHashMap
