@@ -61,7 +61,7 @@ object FileSizeUtils {
      *
      * @since 2.4
      */
-    fun sizeOfAsBigInteger(file: File): BigInteger? {
+    fun sizeOfAsBigInteger(file: File): BigInteger {
         if (!file.exists()) {
             val message = "$file does not exist"
             throw IllegalArgumentException(message)
@@ -157,7 +157,7 @@ object FileSizeUtils {
      * @param directory The directory
      * @return the size
      */
-    private fun sizeOfDirectoryBig0(directory: File): BigInteger? {
+    private fun sizeOfDirectoryBig0(directory: File): BigInteger {
         val files = directory.listFiles()
                 ?: // null if security restricted
                 return BigInteger.ZERO

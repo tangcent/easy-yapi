@@ -1,5 +1,19 @@
 import java.nio.charset.StandardCharsets
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+plugins {
+    //https://mvnrepository.com/artifact/org.jetbrains.kotlin.jvm/org.jetbrains.kotlin.jvm.gradle.plugin
+    id 'org.jetbrains.kotlin.jvm' version '1.3.71'
+}
+
 group 'com.itangcent'
 version '2.1.8.183.0'
 
@@ -222,10 +236,10 @@ task patchUpdateRc {
     }
 }
 
-
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'maven'
+    apply plugin: 'kotlin'
+    apply plugin: 'maven-publish'
     apply plugin: 'jacoco'
 
     sourceCompatibility = 1.8
@@ -235,9 +249,20 @@ allprojects {
         mavenLocal()
         mavenCentral()
         jcenter()
+
+        maven {
+            url("https://oss.sonatype.org/content/repositories/snapshots/")
+        }
+    }
+
+    compileKotlin {
+        kotlinOptions.jvmTarget = "1.8"
+    }
+
+    compileTestKotlin {
+        kotlinOptions.jvmTarget = "1.8"
     }
 }
-
 
 task codeCoverageReport(type: JacocoReport) {
     executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")

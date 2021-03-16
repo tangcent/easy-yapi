@@ -1,4 +1,4 @@
-package com.itangcent.test
+package com.itangcent.idea.utils
 
 import com.itangcent.common.utils.KV
 import com.itangcent.intellij.util.*

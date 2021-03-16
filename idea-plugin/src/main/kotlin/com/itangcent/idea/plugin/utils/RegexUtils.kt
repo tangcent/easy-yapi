@@ -4,6 +4,7 @@ import com.itangcent.annotation.script.ScriptTypeName
 import org.apache.commons.lang3.StringUtils
 import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 /**
@@ -32,18 +33,6 @@ class RegexUtils {
     }
 
     /**
-     * Removes all of the cached [Pattern]
-     */
-    private fun clear() {
-        writeLock.lock()
-        try {
-            cache.clear()
-        } finally {
-            writeLock.unlock()
-        }
-    }
-
-    /**
      * return the group 0 value($0) if matched
      * otherwise null if not matched
      */
@@ -68,30 +57,10 @@ class RegexUtils {
             return null
         }
         val pattern = getPattern(regex, Pattern.DOTALL)
-        return get(pattern, content, groupIndex)
+        return get(pattern!!, content, groupIndex)
     }
 
-    /**
-     * return the group 0 value($0) if matched
-     * otherwise null if not matched
-     */
-    private fun getGroup0(pattern: Pattern, content: String): String? {
-        return get(pattern, content, 0)
-    }
-
-    /**
-     * return the group 1 value($1) if matched
-     * otherwise null if not matched
-     */
-    private fun getGroup1(pattern: Pattern, content: String): String? {
-        return get(pattern, content, 1)
-    }
-
-    private fun get(pattern: Pattern?, content: String?, groupIndex: Int): String? {
-        if (null == content || null == pattern) {
-            return null
-        }
-
+    private fun get(pattern: Pattern, content: String, groupIndex: Int): String? {
         val matcher = pattern.matcher(content)
         return if (matcher.find()) {
             matcher.group(groupIndex)
@@ -115,7 +84,7 @@ class RegexUtils {
         val matcher = pattern.matcher(content)
         if (matcher.find()) {
             val groupCount = matcher.groupCount()
-            for (i in 0 until groupCount) {
+            for (i in 1..groupCount) {
                 result.add(matcher.group(i))
             }
         }
@@ -127,35 +96,41 @@ class RegexUtils {
             return null
         }
         val pattern = getPattern(regex, Pattern.DOTALL)
-        return extract(pattern, content, template)
+        return extract(pattern!!, content, template)
     }
 
-    private fun extract(pattern: Pattern?, content: String?, template: String?): String? {
-
-        if (null == content || null == pattern || null == template) {
-            return null
+    private fun extract(pattern: Pattern, content: String, template: String): String? {
+        return if (template.contains("$")) {
+            extract(pattern, content) { template }
+        } else {
+            extract(pattern, content) { matcher ->
+                extract(GROUP_VAR, template) {
+                    matcher.group(it.group(0).toInt())
+                }
+            }
         }
+    }
 
+    private fun extract(pattern: Pattern, content: String, handle: (Matcher) -> String): String {
         val matcher = pattern.matcher(content)
-        if (matcher.find()) {
-            val sb = StringBuffer()
-            matcher.appendReplacement(sb, template)
-            return sb.toString()
+        val sb = StringBuffer()
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, handle(matcher))
         }
-        return null
+        matcher.appendTail(sb)
+        return sb.toString()
     }
 
     /**
      * Remove the first subString of the input String that matches the
      * pattern with the given replacement string.
      */
-    fun delFirst(pattern: String?, content: String): String? {
-        if (pattern == null) return null
-        return getPattern(pattern)?.let { delFirst(it, content) }
+    fun delFirst(pattern: String, content: String): String? {
+        return delFirst(getPattern(pattern)!!, content)
     }
 
-    private fun delFirst(pattern: Pattern?, content: String): String {
-        return if (null == pattern || content.isNullOrBlank()) {
+    private fun delFirst(pattern: Pattern, content: String): String {
+        return if (content.isBlank()) {
             content
         } else {
             pattern.matcher(content).replaceFirst("")
@@ -174,7 +149,7 @@ class RegexUtils {
 
         // RegEx pattern = RegEx.compile(regex, RegEx.DOTALL);
         val pattern = getPattern(regex, Pattern.DOTALL)
-        return delAll(pattern, content)
+        return delAll(pattern!!, content)
     }
 
     /**
@@ -182,21 +157,18 @@ class RegexUtils {
      * Replaces every subString of the input String that matches the
      * pattern
      */
-    private fun delAll(pattern: Pattern?, content: String): String {
-        return if (null == pattern || content.isNullOrBlank()) {
+    private fun delAll(pattern: Pattern, content: String): String {
+        return if (content.isBlank()) {
             content
         } else pattern.matcher(content).replaceAll("")
 
     }
 
-    fun delBefore(regex: String?, content: String?): String? {
-        if (null == content || null == regex) {
-            return content
-        }
-        val pattern = getPattern(regex, Pattern.DOTALL) ?: return null
+    fun delBefore(regex: String, content: String): String? {
+        val pattern = getPattern(regex, Pattern.DOTALL)!!
         val matcher = pattern.matcher(content)
         return if (matcher.find()) {
-            StringUtils.substring(content, matcher.end(), content.length)
+            StringUtils.substring(content, matcher.end() - 1, content.length)
         } else {
             content
         }
@@ -214,11 +186,7 @@ class RegexUtils {
         return findAll(regex, content, group, ArrayList())
     }
 
-    private fun <T : MutableCollection<String>> findAll(regex: String?, content: String, group: Int, collection: T): T? {
-        if (null == regex) {
-            return null
-        }
-
+    private fun <T : MutableCollection<String>> findAll(regex: String, content: String, group: Int, collection: T): T? {
         val pattern = getPattern(regex, Pattern.DOTALL)
         return findAll(pattern, content, group, collection)
     }
@@ -244,14 +212,10 @@ class RegexUtils {
             return 0
         }
         val pattern = getPattern(regex, Pattern.DOTALL)
-        return count(pattern, content)
+        return count(pattern!!, content)
     }
 
-    private fun count(pattern: Pattern?, content: String?): Int {
-        if (null == pattern || null == content) {
-            return 0
-        }
-
+    private fun count(pattern: Pattern, content: String): Int {
         var count = 0
         val matcher = pattern.matcher(content)
         while (matcher.find()) {
@@ -266,47 +230,19 @@ class RegexUtils {
             return false
         }
         val pattern = getPattern(regex, Pattern.DOTALL)
-        return contains(pattern, content)
-    }
-
-    private fun contains(pattern: Pattern?, content: String?): Boolean {
-        return if (null == pattern || null == content) {
-            false
-        } else pattern.matcher(content).find()
+        return pattern!!.matcher(content).find()
     }
 
     fun isMatch(regex: String?, content: String?): Boolean {
-        if (content == null) {
+        if (content == null || regex.isNullOrBlank()) {
             return false
         }
-
-        if (regex.isNullOrBlank()) {
-            return true
-        }
         val pattern = getPattern(regex, Pattern.DOTALL)
-        return isMatch(pattern, content)
-    }
-
-    private fun isMatch(pattern: Pattern?, content: String?): Boolean {
-        return if (content == null || pattern == null) {
-            false
-        } else {
-            pattern.matcher(content).matches()
-        }
+        return pattern!!.matcher(content).matches()
     }
 
     fun replaceAll(content: String, regex: String, replacementTemplate: String): String? {
-        val pattern = getPattern(regex, Pattern.DOTALL) ?: return null
-        return replaceAll(content, pattern, replacementTemplate)
-    }
-
-    private fun replaceAll(content: String, pattern: Pattern, replacementTemplate: String): String {
-        if (StringUtils.isEmpty(content)) {
-            return content
-        }
-
-        val matcher = pattern.matcher(content)
-        return matcher.replaceAll(replacementTemplate)
+        return extract(regex, content, replacementTemplate)
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.itangcent.test
+package com.itangcent.idea.utils
 
 import com.itangcent.idea.utils.IOUtils
 import org.junit.Test

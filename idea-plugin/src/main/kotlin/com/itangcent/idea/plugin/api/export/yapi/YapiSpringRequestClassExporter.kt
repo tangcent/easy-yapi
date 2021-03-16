@@ -224,10 +224,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
         if (parameter.defaultVal != null) {
             requestHelper!!.addParam(request,
-                    parameter.name()
-                    , parameter.defaultVal.toString()
-                    , parameter.required ?: false
-                    , ultimateComment)
+                    parameter.name(), parameter.defaultVal.toString(), parameter.required ?: false, ultimateComment)
                     .trySetDemo(demo)
             return
         }
@@ -435,14 +432,17 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                                       paramName: String,
                                       value: String) {
         request.path = (request.path ?: URL.nil()).map { path ->
-            if (path != null) {
-                if (path.endsWith('?')) {
+            when {
+                path.endsWith('?') -> {
                     return@map "$path$paramName=$value"
-                } else if (path.contains('?')) {
+                }
+                path.contains('?') -> {
                     return@map "$path&$paramName=$value"
                 }
+                else -> {
+                    return@map "$path?$paramName=$value"
+                }
             }
-            "$path?$paramName=$value"
         }
     }
 

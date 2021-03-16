@@ -260,7 +260,7 @@ interface HttpRequest {
      * @param headerName the header name to find
      * @return {@code true} if at least one header with the name be found, {@code false} otherwise
      */
-    fun containsHeader(headerName: String): Boolean?
+    fun containsHeader(headerName: String): Boolean
 
     /**
      * Gets the value of the first header with the given name.
@@ -398,7 +398,7 @@ interface HttpRequest {
      * @param paramName the param name to find
      * @return {@code true} if at least one param with the name be found, {@code false} otherwise
      */
-    fun containsParam(paramName: String): Boolean?
+    fun containsParam(paramName: String): Boolean
 
     /**
      * Gets all of the params with the given name.  The returned array
@@ -549,7 +549,7 @@ abstract class AbstractHttpRequest : HttpRequest {
      * @param headerName the header name to find
      * @return {@code true} if at least one header with the name be found, {@code false} otherwise
      */
-    override fun containsHeader(headerName: String): Boolean? {
+    override fun containsHeader(headerName: String): Boolean {
         return headers?.any { it.name().equalIgnoreCase(headerName) } ?: false
     }
 
@@ -566,9 +566,7 @@ abstract class AbstractHttpRequest : HttpRequest {
     override fun headers(headerName: String): Array<String>? {
         return headers
                 ?.filter { it.name().equalIgnoreCase(headerName) }
-                ?.map { it.value() }
-                ?.filter { it != null }
-                ?.map { it as String }
+                ?.mapNotNull { it.value() }
                 ?.toTypedArray()
     }
 
@@ -788,7 +786,7 @@ abstract class AbstractHttpRequest : HttpRequest {
      * @param paramName the param name to find
      * @return {@code true} if at least one param with the name be found, {@code false} otherwise
      */
-    override fun containsParam(paramName: String): Boolean? {
+    override fun containsParam(paramName: String): Boolean {
         return form?.any { it.name() == paramName } ?: false
     }
 
@@ -1208,6 +1206,7 @@ class BasicHttpParam : HttpParam {
     constructor(name: String?, value: String?) {
         this.name = name
         this.value = value
+        this.type = "text"
     }
 
     constructor(name: String?, value: String?, type: String?) {

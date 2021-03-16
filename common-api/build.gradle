@@ -10,7 +10,7 @@ buildscript {
 group 'com.itangcent'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'kotlin'
+sourceCompatibility = 1.8
 
 repositories {
 
@@ -22,11 +22,11 @@ repositories {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
-    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
-    compile('com.itangcent:commons:0.9.3-SNAPSHOT') {
+    implementation('com.itangcent:commons:0.9.3-SNAPSHOT') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
@@ -39,23 +39,21 @@ dependencies {
 
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
-    testCompile "org.junit.jupiter:junit-jupiter-api:${junit_version}"
-    testCompile "org.junit.jupiter:junit-jupiter-engine:${junit_version}"
-    testCompile "org.junit.jupiter:junit-jupiter-params:${junit_version}"
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_version"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:${junit_version}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${junit_version}"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_version"
 
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
-    testCompile group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+    testImplementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
+    testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'
+
+
 }
 
 
 test {
     useJUnitPlatform()
-}
-
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
 }

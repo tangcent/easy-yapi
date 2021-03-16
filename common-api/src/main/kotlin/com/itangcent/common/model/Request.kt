@@ -41,6 +41,7 @@ open class Request : Doc() {
     var bodyAttr: String? = null
 
     var response: MutableList<Response>? = null
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -74,8 +75,6 @@ open class Request : Doc() {
         result = 31 * result + (response?.hashCode() ?: 0)
         return result
     }
-
-
 }
 
 fun Request.getContentType(): String? {
