@@ -1,21 +1,18 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CO
 
-# Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
 
 jobs:
-  run:
+  coverage:
+    name: "Generate coverage On ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
     env:
       OS: ${{ matrix.os }}
 
