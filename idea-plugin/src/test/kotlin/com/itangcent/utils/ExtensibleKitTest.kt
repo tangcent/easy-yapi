@@ -4,17 +4,14 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Header
 import com.itangcent.idea.plugin.api.export.yapi.setExample
 import com.itangcent.utils.ExtensibleKit.fromJson
-import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 
 
 /**
  * Test case for [ExtensibleKit]
  */
-@RunWith(JUnit4::class)
 class ExtensibleKitTest {
 
     @Test

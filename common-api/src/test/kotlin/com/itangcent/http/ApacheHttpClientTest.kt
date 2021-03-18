@@ -242,7 +242,7 @@ class ApacheHttpClientTest {
                             .setSocketTimeout(30 * 1000)
                             .build()).build())
             val httpResponse = httpClient
-                    .post("https://www.apple.com/")
+                    .post("https://www.apache.org/licenses/LICENSE-2.0")
                     .body("hello")
                     .call()
             if (500 == httpResponse.code()) {

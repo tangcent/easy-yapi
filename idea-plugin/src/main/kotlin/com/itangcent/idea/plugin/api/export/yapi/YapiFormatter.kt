@@ -578,12 +578,12 @@ open class YapiFormatter {
             if (tinyStr.contains("*")) {
                 val pattern = Pattern.compile(
                         "^${
-                        tinyStr.replace("*.", SimpleRuleParser.STAR_DOT)
-                                .replace("*", SimpleRuleParser.STAR)
-                                .replace(SimpleRuleParser.STAR_DOT, ".*?(?<=^|\\.)")
-                                .replace(SimpleRuleParser.STAR, ".*?")
-                                .replace("[", "\\[")
-                                .replace("]", "\\]")
+                            tinyStr.replace("*.", SimpleRuleParser.STAR_DOT)
+                                    .replace("*", SimpleRuleParser.STAR)
+                                    .replace(SimpleRuleParser.STAR_DOT, ".*?(?<=^|\\.)")
+                                    .replace(SimpleRuleParser.STAR, ".*?")
+                                    .replace("[", "\\[")
+                                    .replace("]", "\\]")
 
                         }$"
                 )

@@ -126,6 +126,8 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-params:${junit_version}"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_version"
 
+    // https://mvnrepository.com/artifact/com.nhaarman.mockitokotlin2/mockito-kotlin
+    testImplementation group: 'com.nhaarman.mockitokotlin2', name: 'mockito-kotlin', version: '2.2.0'
 
 }
 
@@ -196,4 +198,8 @@ task findSpi {
             println("error to find spi:" + e)
         }
     }
+}
+
+test {
+    useJUnitPlatform()
 }

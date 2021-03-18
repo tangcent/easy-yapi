@@ -224,8 +224,10 @@ class MarkdownFormatter {
             handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.headers!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required
-                                ?: false, "YES", "NO")} | ${escape(it.desc)} |\n"
+                        "| ${it.name} | ${it.value ?: ""} | ${
+                            KitUtils.fromBool(it.required
+                                    ?: false, "YES", "NO")
+                        } | ${escape(it.desc)} |\n"
                 )
             }
         }
@@ -279,10 +281,12 @@ class MarkdownFormatter {
                 handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
                 response.headers!!.forEach {
                     handle(
-                            "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(
-                                    it.required
-                                            ?: false, "YES", "NO"
-                            )} |  ${escape(it.desc)} |\n"
+                            "| ${it.name} | ${it.value ?: ""} | ${
+                                KitUtils.fromBool(
+                                        it.required
+                                                ?: false, "YES", "NO"
+                                )
+                            } |  ${escape(it.desc)} |\n"
                     )
                 }
 

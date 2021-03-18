@@ -1,17 +1,14 @@
 package com.itangcent.idea.utils
 
 import com.itangcent.intellij.extend.*
-import org.junit.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
 
 /**
  * Test case for [GsonKit]
  */
-@RunWith(JUnit4::class)
 class GsonKitTest {
 
     @Test

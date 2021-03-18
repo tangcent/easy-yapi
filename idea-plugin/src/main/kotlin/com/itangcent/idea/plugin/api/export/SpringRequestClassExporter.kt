@@ -217,10 +217,7 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
 
         if (parameter.defaultVal != null) {
             requestHelper!!.addParam(request,
-                    parameter.name()
-                    , parameter.defaultVal.toString()
-                    , parameter.required ?: false
-                    , ultimateComment)
+                    parameter.name(), parameter.defaultVal.toString(), parameter.required ?: false, ultimateComment)
             return
         }
 

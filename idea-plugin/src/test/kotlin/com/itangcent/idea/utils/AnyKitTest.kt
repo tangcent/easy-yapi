@@ -4,16 +4,13 @@ import com.itangcent.intellij.extend.asArrayList
 import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.toInt
 import com.itangcent.intellij.extend.toPrettyString
-import org.junit.Test
 import org.junit.jupiter.api.Assertions.*
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 
 
 /**
  * Test case for [AnyKit]
  */
-@RunWith(JUnit4::class)
 class AnyKitTest {
 
     @Test
@@ -29,7 +26,18 @@ class AnyKitTest {
         assertEquals(HashMap::class, hashMap::class)
         assertFalse(map === hashMap)
         assertEquals(map, hashMap)
-        assertTrue(hashMap === hashMap.asHashMap())
+        assertSame(hashMap, hashMap.asHashMap())
+    }
+
+    @Test
+    fun testAnyAsHashMap() {
+        val map: Any = mapOf("x" to 1)
+        val hashMap: Any = map.asHashMap()
+        assertEquals(HashMap::class, hashMap::class)
+        assertFalse(map === hashMap)
+        assertEquals(map, hashMap)
+        assertSame(hashMap, hashMap.asHashMap())
+        assertTrue(0.asHashMap().isEmpty())
     }
 
     @Test

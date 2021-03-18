@@ -295,4 +295,28 @@ fun ByteArray.encodeBase64(): String? {
 
 fun String.decodeBase64(): ByteArray = Base64.getDecoder().decode(this)
 
+fun SqliteDataResourceHelper.SimpleBeanDAO.get(str: String): String? {
+    return this.get(str.toByteArray(Charsets.UTF_8))?.let { String(it, Charsets.UTF_8) }
+}
+
+fun SqliteDataResourceHelper.SimpleBeanDAO.set(key: String, value: String) {
+    this.set(key.toByteArray(Charsets.UTF_8), value.toByteArray(Charsets.UTF_8))
+}
+
+fun SqliteDataResourceHelper.SimpleBeanDAO.delete(str: String) {
+    this.delete(str.toByteArray(Charsets.UTF_8))
+}
+
+fun SqliteDataResourceHelper.ExpiredBeanDAO.get(str: String): String? {
+    return this.get(str.toByteArray(Charsets.UTF_8))?.let { String(it, Charsets.UTF_8) }
+}
+
+fun SqliteDataResourceHelper.ExpiredBeanDAO.set(key: String, value: String, expired: Long) {
+    this.set(key.toByteArray(Charsets.UTF_8), value.toByteArray(Charsets.UTF_8), expired)
+}
+
+fun SqliteDataResourceHelper.ExpiredBeanDAO.delete(str: String) {
+    this.delete(str.toByteArray(Charsets.UTF_8))
+}
+
 private val LOG = org.apache.log4j.Logger.getLogger(SqliteDataResourceHelper::class.java)

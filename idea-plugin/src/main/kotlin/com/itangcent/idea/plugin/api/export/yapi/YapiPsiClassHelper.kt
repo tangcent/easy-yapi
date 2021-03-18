@@ -2,9 +2,9 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.utils.sub
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.intellij.config.ConfigReader

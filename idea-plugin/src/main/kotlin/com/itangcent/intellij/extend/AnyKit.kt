@@ -34,14 +34,14 @@ fun Any?.toPrettyString(): String? {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun Any.asHashMap(obj: Any?): HashMap<String, Any?> {
-    if (obj is HashMap<*, *>) {
-        return obj as HashMap<String, Any?>
+fun Any.asHashMap(): HashMap<String, Any?> {
+    if (this is HashMap<*, *>) {
+        return this as HashMap<String, Any?>
     }
 
-    if (obj is Map<*, *>) {
+    if (this is Map<*, *>) {
         val map: HashMap<String, Any?> = HashMap()
-        obj.forEach { (k, v) -> map[k.toString()] = v }
+        this.forEach { (k, v) -> map[k.toString()] = v }
         return map
     }
     return HashMap()

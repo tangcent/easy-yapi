@@ -7,7 +7,7 @@ import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.file.BeanBinder
 
-class DbBeanBinderFactory<T : kotlin.Any> {
+class DbBeanBinderFactory<T : Any> {
 
     private val file: String
 

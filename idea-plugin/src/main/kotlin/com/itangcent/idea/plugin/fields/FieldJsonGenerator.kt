@@ -18,6 +18,7 @@ class FieldJsonGenerator {
         val currentClass = ActionUtils.findCurrentClass()
         if (currentClass == null) {
             logger.info("no class be selected!")
+            return ""
         }
         val kv = ActionContext.getContext()!!.instance(PsiClassHelper::class).getFields(currentClass)
         return GsonUtils.prettyJson(kv)
