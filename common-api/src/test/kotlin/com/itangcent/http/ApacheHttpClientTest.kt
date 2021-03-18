@@ -1,7 +1,11 @@
 package com.itangcent.http
 
 import com.itangcent.common.utils.DateUtils
+import org.apache.http.client.config.RequestConfig
+import org.apache.http.config.SocketConfig
 import org.apache.http.conn.ConnectTimeoutException
+import org.apache.http.entity.ContentType
+import org.apache.http.impl.client.HttpClients
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -148,6 +152,9 @@ class ApacheHttpClientTest {
         request.contentType("application/json")
         assertEquals("application/json", request.contentType())
         assertEquals("application/json", request.firstHeader("content-type"))
+        request.contentType(ContentType.IMAGE_PNG)
+        assertEquals("image/png", request.contentType())
+        assertEquals("image/png", request.firstHeader("content-type"))
     }
 
     @Test
@@ -218,15 +225,29 @@ class ApacheHttpClientTest {
 
         cookieStore.clear()
         assertTrue(cookieStore.cookies().isEmpty())
+        cookieStore.addCookies(cookies.toTypedArray())
+        assertEquals(1, cookies.size)
     }
 
     @Test
     fun testCall() {
         try {
-            val httpResponse = ApacheHttpClient().request()
-                    .url("https://github.com/tangcent/easy-yapi/pulls")
+            val httpClient = ApacheHttpClient(HttpClients.custom()
+                    .setDefaultSocketConfig(SocketConfig.custom()
+                            .setSoTimeout(30 * 1000)
+                            .build())
+                    .setDefaultRequestConfig(RequestConfig.custom()
+                            .setConnectTimeout(30 * 1000)
+                            .setConnectionRequestTimeout(30 * 1000)
+                            .setSocketTimeout(30 * 1000)
+                            .build()).build())
+            val httpResponse = httpClient
+                    .post("https://www.apple.com/")
+                    .body("hello")
                     .call()
-            assertEquals(200, httpResponse.code())
+            if (500 == httpResponse.code()) {
+                assertTrue(httpResponse.string()!!.contains("Internal Server Error"))
+            }
         } catch (e: ConnectTimeoutException) {
             //skip test if connect timed out
         }
