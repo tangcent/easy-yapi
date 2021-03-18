@@ -37,9 +37,9 @@ open class ApacheHttpClient : HttpClient {
 
     constructor() {
         val basicCookieStore = BasicCookieStore()
-        apacheCookieStore = ApacheCookieStore(basicCookieStore)
-        httpClientContext!!.cookieStore = basicCookieStore
-        httpClient = HttpClients.custom()
+        this.apacheCookieStore = ApacheCookieStore(basicCookieStore)
+        this.httpClientContext!!.cookieStore = basicCookieStore
+        this.httpClient = HttpClients.custom()
                 .setDefaultSocketConfig(SocketConfig.custom()
                         .setSoTimeout(30 * 1000)
                         .build())
@@ -52,8 +52,8 @@ open class ApacheHttpClient : HttpClient {
 
     constructor(httpClient: org.apache.http.client.HttpClient) {
         val basicCookieStore = BasicCookieStore()
-        apacheCookieStore = ApacheCookieStore(basicCookieStore)
-        httpClientContext!!.cookieStore = basicCookieStore
+        this.apacheCookieStore = ApacheCookieStore(basicCookieStore)
+        this.httpClientContext!!.cookieStore = basicCookieStore
         this.httpClient = httpClient
     }
 
