@@ -3,16 +3,13 @@ package com.itangcent.idea.utils
 import com.itangcent.common.utils.KV
 import com.itangcent.intellij.util.*
 import org.junit.Assert.*
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 import java.util.function.BiConsumer
 
 
 /**
  * Test case for [KVKit]
  */
-@RunWith(JUnit4::class)
 class KVKitTest {
 
     @Test

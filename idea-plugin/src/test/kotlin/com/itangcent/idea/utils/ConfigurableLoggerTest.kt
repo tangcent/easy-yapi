@@ -1,0 +1,46 @@
+package com.itangcent.idea.utils
+
+import com.itangcent.BaseContextTest
+import com.itangcent.SettingBinderAdaptor
+import com.itangcent.common.utils.SystemUtils
+import com.itangcent.debug.LoggerCollector
+import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.guice.singleton
+import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.logger.Logger
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import kotlin.test.assertEquals
+
+internal class ConfigurableLoggerTest : BaseContextTest() {
+
+    private val settings = Settings()
+
+    override fun bind(builder: ActionContext.ActionContextBuilder) {
+        super.bind(builder)
+        builder.bind(Logger::class) { it.with(ConfigurableLogger::class) }
+        builder.bind(Logger::class, "delegate.logger") { it.with(LoggerCollector::class).singleton() }
+        builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+            "EMPTY,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+            "LOW,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+            "MEDIUM,[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+            "HIGH,[ERROR]\terrorlog",
+    )
+    fun testLog(level: ConfigurableLogger.CoarseLogLevel, output: String) {
+        settings.logLevel = level.getLevel()
+        (logger as ConfigurableLogger).init()
+        logger.trace("trace")
+        logger.debug("debug")
+        logger.info("info")
+        logger.warn("warn")
+        logger.error("error")
+        logger.log("log")
+        assertEquals(output, LoggerCollector.getLog().replace(SystemUtils.newLine(), ""))
+    }
+}

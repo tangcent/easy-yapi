@@ -135,8 +135,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                             tinyRequest.response = request.response
 
                             requests.add(RequestWithKey(
-                                    PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
-                                    , tinyRequest
+                                    PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!), tinyRequest
                             ))
                         }, completedHandle)
                         actionContext.runAsync {

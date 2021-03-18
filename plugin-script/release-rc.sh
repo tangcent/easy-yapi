@@ -22,7 +22,7 @@ cd ${basedir}
 echo "swith to"`pwd`
 
 git add .
-version=`cat ${basedir}/build.gradle | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
+version=`cat ${basedir}/gradle.properties | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
 echo "version:${version}-rc"
 git config user.name tangcent
 git config user.email pentatangcent@gmail.com

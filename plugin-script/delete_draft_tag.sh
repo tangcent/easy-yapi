@@ -11,7 +11,7 @@ scriptDir="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 basedir=${scriptDir%/*}
 echo "baseDir:"${basedir}
 
-version=$(cat ${basedir}/build.gradle | grep -Eo -m1 '[0-9][0-9.]+')
+version=$(cat ${basedir}/gradle.properties | grep -Eo -m1 '[0-9][0-9.]+')
 echo "version:"${version}
 export DEPLOY_VERSION=version
 export TRAVIS_TAG="${version}-patch"

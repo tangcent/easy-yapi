@@ -1,17 +1,12 @@
 package com.itangcent.intellij.util
 
-import com.itangcent.intellij.util.CacheAble
-import com.itangcent.intellij.util.DefaultCacheAle
-import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 
 
 /**
  * Test case for [CacheAble]
  */
-@RunWith(JUnit4::class)
 class CacheAbleTest {
 
     @Test

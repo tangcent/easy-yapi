@@ -21,7 +21,7 @@ import org.apache.http.impl.client.HttpClients
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.apache.http.impl.cookie.BasicClientCookie2
 import org.apache.http.message.BasicNameValuePair
-import org.apache.http.util.EntityUtils
+import org.apache.http.util.toByteArray
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.*
@@ -287,7 +287,7 @@ class ApacheHttpResponse(
             {
                 if (bytes == null) {
                     val entity = response.entity
-                    bytes = EntityUtils.toByteArray(entity)
+                    bytes = entity.toByteArray()
                 }
             }
         }

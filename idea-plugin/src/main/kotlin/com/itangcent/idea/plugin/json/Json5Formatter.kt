@@ -68,11 +68,7 @@ class Json5Formatter : JsonFormatter {
                     sb.appendEndLineComment(desc)
                     return
                 }
-                var comment: Map<String, Any?>? = null
-                try {
-                    comment = obj[Attrs.COMMENT_ATTR] as Map<String, Any?>?
-                } catch (e: Throwable) {
-                }
+                val comment = obj[Attrs.COMMENT_ATTR] as? Map<String, Any?>
                 sb.append("{")
                 sb.appendEndLineComment(desc)
                 val endCounter = EndCounter(obj.validSize())

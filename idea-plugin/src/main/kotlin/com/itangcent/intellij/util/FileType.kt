@@ -28,7 +28,7 @@ enum class FileType(private val suffix: String) {
             if (fileName.endsWith("scala")) {
                 ActionContext.instance(TipsHelper::class).showTips(SUPPORT_SUPPORT_TIP)
             }
-            return FileType.values().any { fileName.endsWith(it.suffix()) }
+            return values().any { fileName.endsWith(it.suffix()) }
         }
     }
 }

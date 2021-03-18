@@ -1,16 +1,13 @@
 package com.itangcent.idea.utils
 
-import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 
 
 /**
  * Test case for [GsonExUtils]
  */
 @Suppress("CAST_NEVER_SUCCEEDS")
-@RunWith(JUnit4::class)
 class GsonExUtilsTest {
 
     @Test

@@ -1,20 +1,16 @@
 package com.itangcent.intellij.extend
 
-import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.rx.ThrottleHelper
-import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertTimeout
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 import java.time.Duration
 
 
 /**
  * Test case for [ThrottleKit]
  */
-@RunWith(JUnit4::class)
 class ThrottleKitTest {
 
     @Test

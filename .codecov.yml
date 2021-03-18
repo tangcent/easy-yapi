@@ -9,14 +9,6 @@ coverage:
     patch: off
     project: off
 
-parsers:
-  gcov:
-    branch_detection:
-      conditional: yes
-      loop: yes
-      method: no
-      macro: no
-
 comment:
   layout: "reach,diff,flags,files,footer"
   behavior: default
@@ -24,12 +16,12 @@ comment:
   require_base: no        # [yes :: must have a base report to post]
   require_head: no       # [yes :: must have a head report to post]
 
-
 ignore:
   - ".github"
   - "gradle"
   - "script"
   - "**/*.sh"
+  - "**/*.png"
   - "**/*.yml"
   - "**/*.gradle"
   - "**/*.md"

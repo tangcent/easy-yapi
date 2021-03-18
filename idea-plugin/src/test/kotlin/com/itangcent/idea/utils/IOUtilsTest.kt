@@ -1,15 +1,11 @@
 package com.itangcent.idea.utils
 
-import com.itangcent.idea.utils.IOUtils
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.Test
 
 
 /**
  * Test case for [IOUtils]
  */
-@RunWith(JUnit4::class)
 class IOUtilsTest {
 
     @Test

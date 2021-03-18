@@ -14,7 +14,7 @@ echo "baseDir:"${basedir}
 #last_tag_commit=`git rev-list --tags --max-count=1`
 #pre_tag=`git describe --tags $last_tag_commit`
 #echo "pre tag:" $pre_tag
-version=`cat ${basedir}/build.gradle | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
+version=`cat ${basedir}/gradle.properties | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
 echo "version:"${version}
 git fetch origin tag v${version}
 git fetch origin master
