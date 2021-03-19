@@ -366,7 +366,7 @@ class ApacheCookie : Cookie {
     }
 }
 
-fun Cookie.asApacheCookie(): org.apache.http.cookie.Cookie? {
+fun Cookie.asApacheCookie(): org.apache.http.cookie.Cookie {
     if (this is ApacheCookie) {
         return this.getWrapper()
     }
@@ -382,7 +382,10 @@ fun Cookie.asApacheCookie(): org.apache.http.cookie.Cookie? {
     this.getVersion()?.let { cookie.version = it }
     cookie.isSecure = this.isSecure()
     this.getExpiryDate()?.let { Date(it) }?.let { cookie.expiryDate = it }
-    this.getPorts()?.let { (cookie as BasicClientCookie2).ports = it }
-    this.getCommentURL()?.let { (cookie as BasicClientCookie2).commentURL = it }
+
+    if (cookie is BasicClientCookie2) {
+        this.getPorts()?.let { cookie.ports = it }
+        this.getCommentURL()?.let { cookie.commentURL = it }
+    }
     return cookie
 }

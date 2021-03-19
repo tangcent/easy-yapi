@@ -14,6 +14,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/**
+ * Test case of [ApacheHttpClient]
+ */
 class ApacheHttpClientTest {
 
     @Test
@@ -200,9 +203,13 @@ class ApacheHttpClientTest {
         token.setValue("111111")
         token.setExpiryDate(DateUtils.parse("2021-01-01").time)
         token.setDomain("github.com")
+        token.setPorts(intArrayOf(9999))
+        token.setComment("for auth")
+        token.setCommentURL("http://www.apache.org/licenses/LICENSE-2.0")
         token.setSecure(false)
         token.setPath("/")
         token.setVersion(100)
+        assertTrue(token.isPersistent())
 
         //add cookie which is expired
         cookieStore.addCookie(token)
@@ -217,16 +224,48 @@ class ApacheHttpClientTest {
             assertEquals("token", it.getName())
             assertEquals("111111", it.getValue())
             assertEquals("github.com", it.getDomain())
+            assertEquals("for auth", it.getComment())
+            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", it.getCommentURL())
             assertEquals("/", it.getPath())
             assertEquals(100, it.getVersion())
             assertEquals(false, it.isSecure())
             assertEquals(DateUtils.parse("2099-01-01").time, it.getExpiryDate())
+
+            val fromJson = BasicCookie.fromJson(it.json())
+            assertEquals("token", fromJson.getName())
+            assertEquals("111111", fromJson.getValue())
+            assertEquals("github.com", fromJson.getDomain())
+            assertEquals("for auth", fromJson.getComment())
+            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", fromJson.getCommentURL())
+            assertEquals("/", fromJson.getPath())
+            assertEquals(100, fromJson.getVersion())
+            assertEquals(false, fromJson.isSecure())
+            assertEquals(DateUtils.parse("2099-01-01").time, fromJson.getExpiryDate())
+
+            val mutable = it.mutable()
+            assertEquals("token", mutable.getName())
+            assertEquals("111111", mutable.getValue())
+            assertEquals("github.com", mutable.getDomain())
+            assertEquals("for auth", mutable.getComment())
+            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", mutable.getCommentURL())
+            assertEquals("/", mutable.getPath())
+            assertEquals(100, mutable.getVersion())
+            assertEquals(false, mutable.isSecure())
+            assertEquals(DateUtils.parse("2099-01-01").time, mutable.getExpiryDate())
+
+            val str = it.toString()
+            assertTrue(str.contains("token"))
+            assertTrue(str.contains("111111"))
+            assertTrue(str.contains("github.com"))
         }
 
         cookieStore.clear()
         assertTrue(cookieStore.cookies().isEmpty())
         cookieStore.addCookies(cookies.toTypedArray())
         assertEquals(1, cookies.size)
+
+        token.setPorts(null)
+        assertNull(token.asApacheCookie().commentURL)
     }
 
     @Test
@@ -243,6 +282,7 @@ class ApacheHttpClientTest {
                             .build()).build())
             val httpResponse = httpClient
                     .post("https://www.apache.org/licenses/LICENSE-2.0")
+                    .param("hello", "hello")
                     .body("hello")
                     .call()
             if (500 == httpResponse.code()) {
