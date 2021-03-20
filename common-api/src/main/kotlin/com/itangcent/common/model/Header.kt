@@ -39,4 +39,8 @@ class Header : SimpleExtensible(), Serializable {
         return result
     }
 
+    override fun toString(): String {
+        return "Header(name=$name, value=$value, desc=$desc, required=$required)"
+    }
+
 }

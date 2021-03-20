@@ -27,11 +27,11 @@ class SessionStorage : AbstractStorage() {
     }
 
     override fun pop(group: String?, name: String?): Any? {
-        return queue(group, name).removeLast()
+        return tryQueue(group, name)?.pollLast()
     }
 
     override fun peek(group: String?, name: String?): Any? {
-        return queue(group, name).peekLast()
+        return tryQueue(group, name)?.peekLast()
     }
 
     override fun push(group: String?, name: String?, value: Any?) {
@@ -47,6 +47,12 @@ class SessionStorage : AbstractStorage() {
             sub[name ?: NULL] = queue
         }
         return queue as LinkedList<Any?>
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun tryQueue(group: String?, name: String?): LinkedList<Any?>? {
+        val sub = kv.sub(group ?: NULL)
+        return sub[name ?: NULL] as? LinkedList<Any?>
     }
 
     override fun remove(group: String?, name: String) {

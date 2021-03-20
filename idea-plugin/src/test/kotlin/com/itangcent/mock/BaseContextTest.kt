@@ -1,4 +1,4 @@
-package com.itangcent
+package com.itangcent.mock
 
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
@@ -16,7 +16,7 @@ import org.mockito.Mockito
  * Test case with [ActionContext]
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal abstract class BaseContextTest {
+abstract class BaseContextTest {
 
     @Inject
     protected lateinit var actionContext: ActionContext

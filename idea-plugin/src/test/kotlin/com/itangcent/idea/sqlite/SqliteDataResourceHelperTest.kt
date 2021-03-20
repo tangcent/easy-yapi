@@ -1,7 +1,7 @@
 package com.itangcent.idea.sqlite
 
 import com.google.inject.Inject
-import com.itangcent.AdvancedContextTest
+import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS

@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.*
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
@@ -14,6 +15,7 @@ import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import java.util.*
 
+@Singleton
 open class ClassApiExporterHelper {
 
     @Inject

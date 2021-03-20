@@ -1,7 +1,9 @@
 package com.itangcent.idea.swing
 
+import com.google.inject.Singleton
 import java.lang.ref.WeakReference
 
+@Singleton
 class SafeHashHelper {
 
     private var hashCache: HashMap<Int, WeakReference<Any>> = HashMap()

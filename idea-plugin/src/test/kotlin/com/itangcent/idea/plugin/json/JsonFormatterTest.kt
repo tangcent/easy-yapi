@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.json
 
 import com.google.inject.Inject
-import com.itangcent.BaseContextTest
+import com.itangcent.mock.BaseContextTest
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with

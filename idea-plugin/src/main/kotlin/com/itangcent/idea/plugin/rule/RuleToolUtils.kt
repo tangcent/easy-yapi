@@ -79,9 +79,10 @@ class RuleToolUtils {
     }
 
     fun intersect(any: Any?, other: Any?): Array<*>? {
-        val list = asList(other) ?: return asArray(any)
+        val list = asList(other) ?: return null
         return asList(any)
                 ?.filter { list.contains(it) }
+                ?.takeIf { it.isNotEmpty() }
                 ?.toTypedArray()
     }
 
@@ -199,7 +200,7 @@ class RuleToolUtils {
      * @see #uncapitalize(String)
      * @since 2.0
      */
-    fun capitalize(str: String?): String {
+    fun capitalize(str: String?): String? {
         return StringUtils.capitalize(str)
     }
 
@@ -455,7 +456,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringBefore(str: String?, separator: String): String? {
+    fun substringBefore(str: String?, separator: String?): String? {
         return StringUtils.substringBefore(str, separator)
     }
 
@@ -487,7 +488,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringAfter(str: String?, separator: String): String? {
+    fun substringAfter(str: String?, separator: String?): String? {
         return StringUtils.substringAfter(str, separator)
     }
 
@@ -518,7 +519,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringBeforeLast(str: String?, separator: String): String? {
+    fun substringBeforeLast(str: String?, separator: String?): String? {
         return StringUtils.substringBeforeLast(str, separator)
     }
 
@@ -551,7 +552,7 @@ class RuleToolUtils {
      *  {@code null} if null String input
      * @since 2.0
      */
-    fun substringAfterLast(str: String?, separator: String): String? {
+    fun substringAfterLast(str: String?, separator: String?): String? {
         return StringUtils.substringAfterLast(str, separator)
     }
 
@@ -576,7 +577,7 @@ class RuleToolUtils {
      * @return the substring, {@code null} if no match
      * @since 2.0
      */
-    fun substringBetween(str: String?, tag: String): String? {
+    fun substringBetween(str: String?, tag: String?): String? {
         return StringUtils.substringBetween(str, tag)
     }
 
@@ -607,7 +608,7 @@ class RuleToolUtils {
      * @return the substring, {@code null} if no match
      * @since 2.0
      */
-    fun substringBetween(str: String?, open: String, close: String): String? {
+    fun substringBetween(str: String?, open: String?, close: String?): String? {
         return StringUtils.substringBetween(str, open, close)
     }
 
@@ -633,7 +634,7 @@ class RuleToolUtils {
      * @return a String Array of substrings, or {@code null} if no match
      * @since 2.3
      */
-    fun substringsBetween(str: String?, open: String, close: String): Array<String>? {
+    fun substringsBetween(str: String?, open: String?, close: String?): Array<String>? {
         return StringUtils.substringsBetween(str, open, close)
     }
 
@@ -688,7 +689,7 @@ class RuleToolUtils {
      *  {@code null} splits on whitespace
      * @return an array of parsed Strings, {@code null} if null String input
      */
-    fun split(str: String?, separatorChars: String): Array<String>? {
+    fun split(str: String?, separatorChars: String?): Array<String>? {
         return StringUtils.split(str, separatorChars)
     }
 
@@ -811,16 +812,16 @@ class RuleToolUtils {
      * If this string starts with the given [prefix], returns a copy of this string
      * with the prefix removed. Otherwise, returns this string.
      */
-    fun removePrefix(str: String, prefix: String): String? {
-        return str.removePrefix(prefix)
+    fun removePrefix(str: String?, prefix: String?): String? {
+        return prefix?.let { str?.removePrefix(it) }
     }
 
     /**
      * If this string ends with the given [suffix], returns a copy of this string
      * with the suffix removed. Otherwise, returns this string.
      */
-    fun removeSuffix(str: String, suffix: String): String? {
-        return str.removeSuffix(suffix)
+    fun removeSuffix(str: String?, suffix: String?): String? {
+        return suffix?.let { str?.removeSuffix(it) }
     }
 
     //endregion
@@ -830,22 +831,22 @@ class RuleToolUtils {
     /**
      * current time as "yyyy-MM-dd HH:mm:ss"
      */
-    fun now(): String? {
+    fun now(): String {
         return now(null)
     }
 
     /**
      * current time as the special pattern
      */
-    fun now(pattern: String?): String? {
+    fun now(pattern: String?): String {
         return DateFormatUtils.format(Date(), pattern ?: "yyyy-MM-dd HH:mm:ss")
     }
 
     /**
      * current time as "yyyy-MM-dd"
      */
-    fun today(): String? {
-        return now(null)
+    fun today(): String {
+        return now("yyyy-MM-dd")
     }
 
     /**
@@ -857,7 +858,7 @@ class RuleToolUtils {
 
     //endregion
 
-    fun debug(any: Any?): String? {
+    fun debug(any: Any?): String {
         if (any == null) {
             return "debug object is null"
         }
@@ -875,9 +876,8 @@ class RuleToolUtils {
 
         val ignoreMethods: ArrayList<String> = ArrayList()
         kClass.findAnnotation<ScriptIgnore>()?.let { ignoreMethods.addAll(it.name) }
-        kClass.allSuperclasses.map { it.findAnnotation<ScriptIgnore>() }
-                .filter { it != null }
-                .map { it!!.name }
+        kClass.allSuperclasses.mapNotNull { it.findAnnotation<ScriptIgnore>() }
+                .map { it.name }
                 .forEach { ignoreMethods.addAll(it) }
 
         val functions = kClass.functions
@@ -946,7 +946,7 @@ class RuleToolUtils {
             return traversal(any)
         }
 
-        return "$any unable"
+        return "unable traversal $any"
     }
 
     private fun traversal(any: PsiElement?): String? {

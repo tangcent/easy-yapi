@@ -75,6 +75,10 @@ open class Request : Doc() {
         result = 31 * result + (response?.hashCode() ?: 0)
         return result
     }
+
+    override fun toString(): String {
+        return "Request(path=$path, method=$method, headers=$headers, paths=$paths, querys=$querys, formParams=$formParams, bodyType=$bodyType, body=$body, bodyAttr=$bodyAttr, response=$response)"
+    }
 }
 
 fun Request.getContentType(): String? {

@@ -15,8 +15,7 @@ interface PsiResource {
 
 fun Doc?.resourceClass(): PsiClass? {
     if (this?.resource == null) return null
-    val res = this.resource
-    return when (res) {
+    return when (val res = this.resource) {
         is PsiResource -> res.resourceClass()
         is PsiClass -> res
         is PsiMethod -> res.containingClass
@@ -26,8 +25,7 @@ fun Doc?.resourceClass(): PsiClass? {
 
 fun Doc?.resource(): PsiElement? {
     if (this?.resource == null) return null
-    val res = this.resource
-    return when (res) {
+    return when (val res = this.resource) {
         is PsiResource -> res.resource()
         is PsiElement -> res
         else -> null
@@ -35,8 +33,7 @@ fun Doc?.resource(): PsiElement? {
 }
 
 fun Doc?.resourceMethod(): PsiMethod? {
-    val res = this.resource()
-    return when (res) {
+    return when (val res = this.resource()) {
         is PsiMethod -> res
         else -> null
     }

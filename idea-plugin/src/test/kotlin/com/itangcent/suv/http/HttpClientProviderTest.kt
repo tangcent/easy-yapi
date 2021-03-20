@@ -1,7 +1,7 @@
 package com.itangcent.suv.http
 
 import com.google.inject.Inject
-import com.itangcent.AdvancedContextTest
+import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import org.junit.jupiter.api.Test
