@@ -1,10 +1,13 @@
 package com.itangcent.idea.config
 
 import com.google.inject.Inject
+import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
+import com.itangcent.mock.SettingBinderAdaptor
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
@@ -22,6 +25,11 @@ internal class CachedResourceResolverTest : AdvancedContextTest() {
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
+        builder.bind(SettingBinder::class) {
+            it.toInstance(SettingBinderAdaptor(Settings().also { setting ->
+                setting.httpTimeOut = 5
+            }))
+        }
         builder.bind(ResourceResolver::class) {
             it.with(CachedResourceResolver::class)
         }

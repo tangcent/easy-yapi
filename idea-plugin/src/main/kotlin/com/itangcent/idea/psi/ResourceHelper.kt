@@ -26,7 +26,6 @@ class ResourceHelper {
     @Inject
     protected val ruleComputer: RuleComputer? = null
 
-
     fun findResourceClass(resource: Any): PsiClass? {
         return when (resource) {
             is PsiResource -> resource.resourceClass()

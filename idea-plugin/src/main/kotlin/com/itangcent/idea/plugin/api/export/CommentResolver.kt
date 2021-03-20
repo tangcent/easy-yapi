@@ -35,12 +35,10 @@ class CommentResolver {
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
 
-
     fun resolveCommentForType(duckType: DuckType, context: PsiElement): String? {
 
         if (!duckType.isSingle()) {
             return null
-
         }
 
         if (jvmClassHelper!!.isEnum(duckType)) {
