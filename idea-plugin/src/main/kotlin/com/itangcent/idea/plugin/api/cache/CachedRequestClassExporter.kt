@@ -6,7 +6,6 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.model.Request
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
@@ -121,21 +120,8 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                     try {
                         delegateClassExporter!!.export(cls, requestOnly { request ->
                             docHandle(request)
-                            val tinyRequest = Request()
-                            tinyRequest.name = request.name
-                            tinyRequest.path = request.path
-                            tinyRequest.method = request.method
-                            tinyRequest.desc = request.desc
-                            tinyRequest.headers = request.headers
-                            tinyRequest.paths = request.paths
-                            tinyRequest.querys = request.querys
-                            tinyRequest.formParams = request.formParams
-                            tinyRequest.bodyType = request.bodyType
-                            tinyRequest.body = request.body
-                            tinyRequest.response = request.response
-
                             requests.add(RequestWithKey(
-                                    PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!), tinyRequest
+                                    PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!), request
                             ))
                         }, completedHandle)
                         actionContext.runAsync {
@@ -178,8 +164,10 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                 logger?.warn("${request.key} not be found")
                 return@forEach
             }
-            request.request!!.resource = PsiMethodResource(method, cls)
-            requestHandle(request.request!!)
+            request.request().let {
+                it.resource = PsiMethodResource(method, cls)
+                requestHandle(it)
+            }
         }
         completedHandle(cls)
 

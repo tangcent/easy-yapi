@@ -1,10 +1,12 @@
 package com.itangcent.idea.plugin.api.cache
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.google.inject.name.Named
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.intellij.file.LocalFileRepository
 
+@Singleton
 class DefaultFileApiCacheRepository : FileApiCacheRepository {
 
     @Inject

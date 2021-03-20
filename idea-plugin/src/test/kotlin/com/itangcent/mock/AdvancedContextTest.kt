@@ -1,4 +1,4 @@
-package com.itangcent
+package com.itangcent.mock
 
 import com.itangcent.common.spi.Setup
 import com.itangcent.idea.plugin.rule.SuvRuleParser
@@ -22,7 +22,7 @@ import java.nio.file.Path
 /**
  * BaseContextTest with [tempDir]
  */
-internal abstract class AdvancedContextTest : BaseContextTest() {
+abstract class AdvancedContextTest : BaseContextTest() {
 
     @JvmField
     @TempDir
@@ -38,6 +38,7 @@ internal abstract class AdvancedContextTest : BaseContextTest() {
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
+        builder.bindInstance("plugin.name", "easy_api")
         builder.bind(LocalFileRepository::class) {
             it.toInstance(TempFileRepository())
         }
@@ -71,4 +72,7 @@ internal abstract class AdvancedContextTest : BaseContextTest() {
             return listOf("$tempDir${File.separator}temp_config.properties")
         }
     }
+
+    protected val n = System.getProperty("line.separator")
+    protected val s = File.separator
 }

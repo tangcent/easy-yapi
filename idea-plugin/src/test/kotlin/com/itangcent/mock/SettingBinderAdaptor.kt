@@ -1,4 +1,4 @@
-package com.itangcent
+package com.itangcent.mock
 
 import com.google.inject.Singleton
 import com.itangcent.idea.plugin.settings.SettingBinder

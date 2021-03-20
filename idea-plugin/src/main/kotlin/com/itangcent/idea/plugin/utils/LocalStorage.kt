@@ -47,17 +47,17 @@ class LocalStorage : AbstractStorage() {
     override fun pop(group: String?, name: String?): Any? {
         val beanBinder = getDbBeanBinderFactory().getBeanBinder(group ?: DEFAULT_GROUP)
         val kv = beanBinder.read()
-        val queue = queue(kv, name)
-        val last = queue.removeLast()
-        beanBinder.save(kv)
-        return last
+        return tryQueue(kv, name)?.let {
+            val last = it.pollLast()
+            beanBinder.save(kv)
+            last
+        }
     }
 
     override fun peek(group: String?, name: String?): Any? {
         val beanBinder = getDbBeanBinderFactory().getBeanBinder(group ?: DEFAULT_GROUP)
         val kv = beanBinder.read()
-        val queue = queue(kv, name)
-        return queue.peekLast()
+        return tryQueue(kv, name)?.peekLast()
     }
 
     override fun push(group: String?, name: String?, value: Any?) {
@@ -71,11 +71,40 @@ class LocalStorage : AbstractStorage() {
     @Suppress("UNCHECKED_CAST")
     private fun queue(kv: KV<Any?, Any?>, name: String?): LinkedList<Any?> {
         var queue = kv[name]
-        if (queue == null || queue !is LinkedList<*>) {
-            queue = LinkedList<Any>()
-            kv[name ?: Storage.NULL] = queue
+        return when (queue) {
+            is LinkedList<*> -> {
+                queue as LinkedList<Any?>
+            }
+            //convert to linkedList
+            is List<*> -> {
+                val list = LinkedList(queue)
+                kv[name] = list
+                list
+            }
+            else -> {
+                queue = LinkedList<Any>()
+                kv[name ?: Storage.NULL] = queue
+                queue as LinkedList<Any?>
+            }
         }
-        return queue as LinkedList<Any?>
+    }
+
+
+    @Suppress("UNCHECKED_CAST")
+    private fun tryQueue(kv: KV<Any?, Any?>, name: String?): LinkedList<Any?>? {
+        val v = kv[name] ?: return null
+        return when (v) {
+            is LinkedList<*> -> {
+                v as LinkedList<Any?>
+            }
+            //convert to linkedList
+            is List<*> -> {
+                val list = LinkedList(v)
+                kv[name] = list
+                list
+            }
+            else -> null
+        }
     }
 
 

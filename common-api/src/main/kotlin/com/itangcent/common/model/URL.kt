@@ -129,6 +129,16 @@ private class NullURL : URL {
     override fun toString(): String {
         return ""
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return 0
+    }
 }
 
 /**
@@ -170,6 +180,22 @@ private class SingleURL(private val url: String) : URL {
     override fun toString(): String {
         return url
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as SingleURL
+
+        if (url != other.url) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return url.hashCode()
+    }
+
 }
 
 /**
@@ -220,5 +246,20 @@ private class MultiURL : URL {
 
     override fun toString(): String {
         return urls.joinToString(",")
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as MultiURL
+
+        if (!urls.contentEquals(other.urls)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return urls.contentHashCode()
     }
 }

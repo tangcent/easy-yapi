@@ -5,7 +5,7 @@ import com.itangcent.http.HttpClient
 
 abstract class AbstractHttpClientProvider : HttpClientProvider {
 
-    var httpClientInstance: HttpClient? = null
+    protected var httpClientInstance: HttpClient? = null
 
     override fun getHttpClient(): HttpClient {
         if (httpClientInstance == null) {

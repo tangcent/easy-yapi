@@ -1,7 +1,7 @@
 package com.itangcent.idea.utils
 
-import com.itangcent.BaseContextTest
-import com.itangcent.SettingBinderAdaptor
+import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.common.utils.SystemUtils
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.settings.SettingBinder

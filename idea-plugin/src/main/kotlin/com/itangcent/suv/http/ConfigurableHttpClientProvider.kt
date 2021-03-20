@@ -19,13 +19,13 @@ import org.apache.http.impl.client.HttpClients
 class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
     @Inject(optional = true)
-    val settingBinder: SettingBinder? = null
+    protected val settingBinder: SettingBinder? = null
 
     @Inject(optional = true)
-    val configReader: ConfigReader? = null
+    protected val configReader: ConfigReader? = null
 
     @Inject(optional = true)
-    val ruleComputer: RuleComputer? = null
+    protected val ruleComputer: RuleComputer? = null
 
     override fun buildHttpClient(): HttpClient {
         val httpClientBuilder = HttpClients.custom()
