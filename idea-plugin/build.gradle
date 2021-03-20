@@ -124,6 +124,7 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"
     testImplementation "org.junit.jupiter:junit-jupiter-engine:${junit_version}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${junit_version}"
+    testRuntime("org.junit.vintage:junit-vintage-engine:5.7.1")
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit5:$kotlin_version"
 
     // https://mvnrepository.com/artifact/com.nhaarman.mockitokotlin2/mockito-kotlin

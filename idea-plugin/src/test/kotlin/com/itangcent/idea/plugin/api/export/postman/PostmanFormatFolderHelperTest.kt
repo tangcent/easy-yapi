@@ -11,6 +11,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.testFramework.ContextLightCodeInsightFixtureTestCase
+import org.junit.jupiter.api.condition.OS
 
 /**
  * Test case of [PostmanFormatFolderHelper]
@@ -44,8 +45,12 @@ internal class PostmanFormatFolderHelperTest : ContextLightCodeInsightFixtureTes
         }
     }
 
-    fun testResolveFolder() {
+    override fun shouldRunTest(): Boolean {
+        //not run in windows
+        return !OS.WINDOWS.isCurrentOs
+    }
 
+    fun testResolveFolder() {
         //test of PsiClass & PsiMethod
         formatFolderHelper.resolveFolder(userCtrlPsiClass).let {
             assertEquals(Folder("apis about user", "apis about user\n" +

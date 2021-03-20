@@ -25,6 +25,7 @@ internal class DefaultFormatFolderHelperTest : ContextLightCodeInsightFixtureTes
     private lateinit var userCtrlPsiClass: PsiClass
 
     override fun customConfig(): String {
+        //language=Properties
         return "# read folder name from tag `folder`\nfolder.name=#folder"
     }
 

@@ -33,6 +33,7 @@ internal class CommentResolverTest : ContextLightCodeInsightFixtureTestCase() {
     }
 
     override fun customConfig(): String {
+        //language=Properties
         return "json.rule.enum.convert[org.apache.commons.lang3.JavaVersion]=~#name"
     }
 
