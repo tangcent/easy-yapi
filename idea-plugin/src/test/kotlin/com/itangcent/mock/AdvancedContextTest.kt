@@ -28,12 +28,8 @@ abstract class AdvancedContextTest : BaseContextTest() {
     @TempDir
     var tempDir: Path? = null
 
-    @BeforeAll
-    fun load() {
-        Setup.load()
-    }
-
-    open fun initConfig(file: File) {
+    open fun customConfig(): String? {
+        return null
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -45,14 +41,16 @@ abstract class AdvancedContextTest : BaseContextTest() {
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {
             it.toInstance(TempFileRepository())
         }
-        builder.bind(ConfigReader::class) {
-            it.toInstance(ConfigReaderAdaptor())
-        }
+
+        customConfig()?.takeIf { it.isNotBlank() }
+                ?.let { config ->
+                    builder.bind(ConfigReader::class) {
+                        it.toInstance(ConfigReaderAdaptor(config))
+                    }
+                }
+
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(DefaultPsiClassHelper::class).singleton() }
-        File("$tempDir${File.separator}temp_config.properties")
-                .also { it.createNewFile() }
-                .let { initConfig(it) }
     }
 
     private inner class TempFileRepository : AbstractLocalFileRepository() {
@@ -61,18 +59,26 @@ abstract class AdvancedContextTest : BaseContextTest() {
         }
     }
 
-    private inner class ConfigReaderAdaptor : AbstractConfigReader() {
+    private inner class ConfigReaderAdaptor(val config: String) : AbstractConfigReader() {
 
         @PostConstruct
         fun init() {
-            loadConfigInfo()
+            loadConfigInfoContent(config, "properties")
         }
 
         override fun findConfigFiles(): List<String>? {
-            return listOf("$tempDir${File.separator}temp_config.properties")
+            return null
         }
     }
 
     protected val n = System.getProperty("line.separator")
     protected val s = File.separator
+
+    companion object {
+        @JvmStatic
+        @BeforeAll
+        fun load() {
+            Setup.load()
+        }
+    }
 }

@@ -33,16 +33,20 @@ open class DefaultFormatFolderHelper : FormatFolderHelper {
      * cache class -> folder
      */
     private val folderCache: Cache<Any, Folder> = CacheBuilder.newBuilder()
-            .maximumSize(10)
+            .maximumSize(20)
             .build()
 
     override fun resolveFolder(resource: Any): Folder {
-        return folderCache[resource, {
-            tryResolveFolder(resource) ?: Folder(resource.toString(), "")
-        }]
+        var folder = folderCache.getIfPresent(resource)
+        if (folder != null) {
+            return folder
+        }
+        folder = tryResolveFolder(resource) ?: Folder(resource.toString(), "")
+        folderCache.put(resource, folder)
+        return folder
     }
 
-    fun tryResolveFolder(resource: Any, resolveByContainClass: Boolean = true): Folder? {
+    private fun tryResolveFolder(resource: Any, resolveByContainClass: Boolean = true): Folder? {
         if (resource is String) {
             return Folder(resource, "")
         }

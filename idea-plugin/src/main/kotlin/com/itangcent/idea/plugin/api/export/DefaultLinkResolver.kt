@@ -32,7 +32,7 @@ open class DefaultLinkResolver : LinkResolver {
             return "[$linkMethod]"
         }
         val attrOfMethod = docHelper!!.getAttrOfDocComment(linkMethod)
-                ?.lines()?.first { !it.isBlank() }
+                ?.lines()?.first { it.isNotBlank() }
         if (attrOfMethod.notNullOrBlank()) {
             return "[$attrOfMethod]"
         }
