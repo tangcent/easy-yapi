@@ -11,7 +11,11 @@ open class DefaultMethodDocHelper : MethodDocHelper {
     }
 
     override fun appendDesc(methodDoc: MethodDoc, desc: String?) {
-        methodDoc.desc = desc
+        if (methodDoc.desc == null) {
+            methodDoc.desc = desc
+        } else {
+            methodDoc.desc = "${methodDoc.desc}$desc"
+        }
     }
 
     override fun addParam(methodDoc: MethodDoc, param: Param) {
