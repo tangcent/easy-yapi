@@ -31,7 +31,6 @@ import com.itangcent.mock.ConstantModuleHelper
 import com.itangcent.mock.PrintLogger
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.utils.ResourceUtils
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Path
@@ -152,9 +151,8 @@ abstract class ContextLightCodeInsightFixtureTestCase : LightCodeInsightFixtureT
     }
 
     companion object {
-        @JvmStatic
-        @BeforeAll
-        fun load() {
+        init {
+            print("load Setup")
             Setup.load()
         }
     }
