@@ -1,10 +1,10 @@
 package com.itangcent.idea.plugin.json
 
 import com.google.inject.Inject
-import com.itangcent.mock.BaseContextTest
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.BeforeEach
 import kotlin.reflect.KClass
 
@@ -19,7 +19,7 @@ internal abstract class JsonFormatterTest : BaseContextTest() {
     @Inject
     lateinit var model: Any
 
-    abstract val formatClass: KClass<out JsonFormatter>
+    protected abstract val formatClass: KClass<out JsonFormatter>
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         builder.bind(JsonFormatter::class) { it.with(formatClass) }

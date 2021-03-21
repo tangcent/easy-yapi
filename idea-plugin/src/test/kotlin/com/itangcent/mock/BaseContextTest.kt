@@ -11,6 +11,7 @@ import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.logger.Logger
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.fail
 import org.mockito.Mockito
 
 /**
@@ -34,7 +35,17 @@ abstract class BaseContextTest {
         builder.bind(DevEnv::class) { it.toInstance(mockDevEnv) }
         builder.bind(ModuleHelper::class) { it.toInstance(ConstantModuleHelper.INSTANCE) }
         bind(builder)
-        builder.build().init(this)
+        val actionContext = builder.build()
+        try {
+            actionContext.init(this)
+            afterBind()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            fail("buildContext failed")
+        }
+    }
+
+    protected open fun afterBind() {
     }
 
     @AfterEach
