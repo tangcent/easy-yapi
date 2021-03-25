@@ -5,14 +5,14 @@ import com.intellij.psi.PsiClass
 import com.itangcent.idea.plugin.api.export.LinkResolver
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.testFramework.ContextLightCodeInsightFixtureTestCase
+import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import junit.framework.Assert
 import org.mockito.Mockito
 
 /**
  * Test case of [YapiLinkResolver]
  */
-internal class YapiLinkResolverTest : ContextLightCodeInsightFixtureTestCase() {
+internal class YapiLinkResolverTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     private lateinit var linkResolver: LinkResolver

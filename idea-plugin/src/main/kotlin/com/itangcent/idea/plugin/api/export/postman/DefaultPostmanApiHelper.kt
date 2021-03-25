@@ -66,7 +66,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         settingBinder.save(settings)
     }
 
-    open protected fun beforeRequest(request: HttpRequest) {
+    protected open fun beforeRequest(request: HttpRequest) {
         apiThrottle.acquireGreedy(LIMIT_PERIOD_PRE_REQUEST)
     }
 

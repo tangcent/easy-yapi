@@ -1,4 +1,4 @@
-package com.itangcent.common.constant;
+package com.itangcent.constant;
 
 /**
  * type of user
