@@ -21,4 +21,4 @@ echo "version:"${version}
 if [[ ! -d "$basedir/plugin" ]];then
 mkdir ${basedir}/plugin
 fi
-mv ${basedir}/idea-plugin/build/libs/*.jar ${basedir}/plugin/easy-yapi.${version}.jar
+mv ${basedir}/idea-plugin/build/distributions/*.zip ${basedir}/plugin/easy-yapi-${version}.zip

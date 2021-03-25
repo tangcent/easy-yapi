@@ -1,8 +1,12 @@
 package com.itangcent.api;
 
 import com.itangcent.common.annotation.Public;
-import com.itangcent.model.*;
-import org.springframework.web.bind.annotation.*;
+import com.itangcent.model.IResult;
+import com.itangcent.model.Result;
+import com.itangcent.model.UserInfo;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * apis about user

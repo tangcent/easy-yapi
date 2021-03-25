@@ -55,7 +55,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
     }
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     @Named("delegate_classExporter")
@@ -137,7 +137,7 @@ class CachedRequestClassExporter : ClassExporter, Worker {
                 //ignore cancel
                 completedHandle(cls)
             } catch (e: Exception) {
-                logger!!.traceError("error to cache api info", e)
+                logger.traceError("error to cache api info", e)
 
                 disabled = true
 
