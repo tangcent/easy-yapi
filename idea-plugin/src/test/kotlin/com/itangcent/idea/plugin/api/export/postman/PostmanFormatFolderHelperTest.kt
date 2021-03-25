@@ -10,7 +10,7 @@ import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.DuckTypeHelper
-import com.itangcent.testFramework.ContextLightCodeInsightFixtureTestCase
+import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import org.junit.jupiter.api.condition.OS
 
 /**
@@ -18,7 +18,7 @@ import org.junit.jupiter.api.condition.OS
  * Test case of rule: [com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.CLASS_POST_PRE_REQUEST]
  * Test case of rule: [com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.CLASS_POST_TEST]
  */
-internal class PostmanFormatFolderHelperTest : ContextLightCodeInsightFixtureTestCase() {
+internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     private lateinit var formatFolderHelper: FormatFolderHelper

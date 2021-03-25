@@ -7,14 +7,14 @@ import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.DuckTypeHelper
-import com.itangcent.testFramework.ContextLightCodeInsightFixtureTestCase
+import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import junit.framework.Assert
 
 /**
  * Test case of [DefaultFormatFolderHelper]
  * Test case of rule: [com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.API_FOLDER]
  */
-internal class DefaultFormatFolderHelperTest : ContextLightCodeInsightFixtureTestCase() {
+internal class DefaultFormatFolderHelperTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     private lateinit var formatFolderHelper: FormatFolderHelper

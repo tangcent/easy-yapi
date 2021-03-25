@@ -15,9 +15,7 @@ import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.ClassRuleKeys
-import com.itangcent.intellij.psi.JsonOption
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.psi.*
 import com.itangcent.intellij.util.Magics
 import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
@@ -566,6 +564,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 return when {
                     !needCompute(obj) -> obj
                     obj is Variable -> valueOf(obj.getValue())
+                    obj is Delay -> valueOf(obj.unwrapped {  })
                     obj is MutableMap<*, *> -> {
                         val copy = KV.create<Any?, Any?>()
                         obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }
@@ -593,6 +592,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             return when (obj) {
                 null -> false
                 is Variable -> true
+                is Delay -> true
                 is MutableMap<*, *> -> {
                     obj.entries.any { needCompute(it.key) || needCompute(it.value) }
                 }

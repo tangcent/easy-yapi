@@ -1,7 +1,6 @@
-package com.itangcent.springboot.demo.controller;
+package com.itangcent.api;
 
-
-import com.itangcent.common.dto.*;
+import com.itangcent.model.*;
 import org.springframework.web.bind.annotation.*;
 
 

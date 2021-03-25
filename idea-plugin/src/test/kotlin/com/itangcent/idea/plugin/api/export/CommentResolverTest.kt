@@ -4,14 +4,14 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.jvm.duck.SingleDuckType
-import com.itangcent.testFramework.ContextLightCodeInsightFixtureTestCase
+import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import junit.framework.Assert
 
 /**
  * Test case of [CommentResolver]
  * test case of rule: [com.itangcent.intellij.psi.ClassRuleKeys.ENUM_CONVERT]
  */
-internal class CommentResolverTest : ContextLightCodeInsightFixtureTestCase() {
+internal class CommentResolverTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     private lateinit var commentResolver: CommentResolver
@@ -34,7 +34,7 @@ internal class CommentResolverTest : ContextLightCodeInsightFixtureTestCase() {
 
     override fun customConfig(): String {
         //language=Properties
-        return "json.rule.enum.convert[org.apache.commons.lang3.JavaVersion]=~#name"
+        return "json.rule.enum.convert[com.itangcent.constant.JavaVersion]=~#name"
     }
 
     fun testResolveCommentForType() {

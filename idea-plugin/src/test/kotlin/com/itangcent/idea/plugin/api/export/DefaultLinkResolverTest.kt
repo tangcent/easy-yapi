@@ -4,12 +4,12 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.testFramework.ContextLightCodeInsightFixtureTestCase
+import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 
 /**
  * Test case of [DefaultLinkResolver]
  */
-internal class DefaultLinkResolverTest : ContextLightCodeInsightFixtureTestCase() {
+internal class DefaultLinkResolverTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     private lateinit var linkResolver: LinkResolver
