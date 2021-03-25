@@ -1,5 +1,7 @@
 package com.itangcent.model;
 
+import com.itangcent.model.IResult;
+
 public class Result<T> implements IResult {
 
     private Integer code;//response code

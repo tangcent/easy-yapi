@@ -4,6 +4,7 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
 import com.itangcent.idea.utils.GsonExUtils
+import com.itangcent.idea.utils.JacksonUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.file.BeanBinder
 
@@ -51,12 +52,12 @@ class DbBeanBinderFactory<T : Any> {
 
         override fun tryRead(): T? {
             return getDAO().get(beanBindName.toByteArray())
-                    ?.let { GsonExUtils.fromJson<T>(String(it)) }
+                    ?.let { JacksonUtils.fromJson<T>(String(it)) }
         }
 
         override fun read(): T {
             return getDAO().get(beanBindName.toByteArray())
-                    ?.let { GsonExUtils.fromJson<T>(String(it)) }
+                    ?.let { JacksonUtils.fromJson<T>(String(it)) }
                     ?: return init()
         }
 
@@ -64,7 +65,7 @@ class DbBeanBinderFactory<T : Any> {
             if (t == null) {
                 getDAO().delete(beanBindName.toByteArray())
             } else {
-                getDAO().set(beanBindName.toByteArray(), GsonExUtils.toJson(t).toByteArray())
+                getDAO().set(beanBindName.toByteArray(), JacksonUtils.toJson(t).toByteArray())
             }
         }
     }

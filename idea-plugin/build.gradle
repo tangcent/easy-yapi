@@ -54,21 +54,6 @@ patchPluginXml {
     changeNotes(file(changesFile).text)
 }
 
-jar {
-    excludes = ["com/google/common/**"
-                , "org/checkerframework/checker/**"
-                , "afu/org/checkerframework/checker/**"
-                , "afu/org/plume/**"
-                , "kotlin/**"
-                , "org/jetbrains/annotations/**"
-                , "org/intellij/langannotations/**"
-    ]
-//    excludes = ["com/google/common/**"]
-//    excludes = ["com/google/common/**", "org/apache/http/util/**"]
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-//    from { configurations.runtime }
-}
-
 artifacts {
     archives jar
     archives javadocJar
@@ -119,6 +104,9 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.jsoup/jsoup
     implementation group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
+
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.2'
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"

@@ -52,6 +52,7 @@ object GsonExUtils {
         (factories as MutableList<TypeAdapterFactory>).remove(ObjectTypeAdapter.FACTORY)
     }
 
+    @Deprecated(message = "use JacksonUtils.toJson")
     fun toJson(bean: Any?): String {
         val beanWithClass = BeanWithClass()
         if (bean != null) {
@@ -61,6 +62,7 @@ object GsonExUtils {
         return gson.toJson(beanWithClass)
     }
 
+    @Deprecated(message = "use JacksonUtils.fromJson")
     @Suppress("UNCHECKED_CAST")
     fun <T> fromJson(json: String): T? {
         val beanWithClass = gson.fromJson(json, BeanWithClass::class.java)
