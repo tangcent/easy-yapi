@@ -1,7 +1,8 @@
 package com.itangcent.api;
 
-import com.itangcent.model.*;
-import org.springframework.web.bind.annotation.*;
+import com.itangcent.model.Result;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 
 /**
@@ -16,6 +17,7 @@ public class TestCtrl extends BaseController {
      *
      * @param token input token
      * @return token output
+     * @module test-only
      * @real_return {@link Result<UserDto>}
      */
     @RequestMapping("/header")

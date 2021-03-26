@@ -31,7 +31,7 @@ class GsonExUtilsTest {
         assertEquals("hello world", GsonExUtils.fromJson(GsonExUtils.toJson("hello world")))
 
         //custom data
-        val point = Point(1, 2)
+        val point = GsonExUtilsTestPoint(1, 2)
         assertEquals(point, GsonExUtils.fromJson(GsonExUtils.toJson(point)))
     }
 
@@ -45,4 +45,4 @@ class GsonExUtilsTest {
     }
 }
 
-data class Point(var x: Int, var y: Int)
+data class GsonExUtilsTestPoint(var x: Int, var y: Int)

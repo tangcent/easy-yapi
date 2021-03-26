@@ -101,6 +101,9 @@ class DefaultModuleHelper : ModuleHelper {
         var module: String? = null
         try {
             var currentPath = path
+            if (File.separatorChar != '/' && currentPath.contains(File.separatorChar)) {
+                currentPath = currentPath.replace(File.separatorChar, '/')
+            }
             when {
                 currentPath.contains(src) -> currentPath = StringUtils.substringBefore(currentPath, src)
                 currentPath.contains(main) -> currentPath = StringUtils.substringBefore(currentPath, main)
@@ -108,7 +111,7 @@ class DefaultModuleHelper : ModuleHelper {
                 currentPath.contains(kotlin) -> currentPath = StringUtils.substringBefore(currentPath, kotlin)
                 currentPath.contains(scala) -> currentPath = StringUtils.substringBefore(currentPath, scala)
             }
-            module = StringUtils.substringAfterLast(currentPath, File.separator)
+            module = StringUtils.substringAfterLast(currentPath, "/")
         } catch (e: Exception) {
             logger!!.traceError("error in findCurrentPath", e)
 
@@ -119,11 +122,11 @@ class DefaultModuleHelper : ModuleHelper {
     //endregion
 
     companion object {
-        private val src = "${File.separator}src${File.separator}"
-        private val main = "${File.separator}main${File.separator}"
-        private val java = "${File.separator}java${File.separator}"
-        private val kotlin = "${File.separator}kotlin${File.separator}"
-        private val scala = "${File.separator}scala${File.separator}"
+        private const val src = "/src/"
+        private const val main = "/main/"
+        private const val java = "/java/"
+        private const val kotlin = "/kotlin/"
+        private const val scala = "/scala/"
 
     }
 }
