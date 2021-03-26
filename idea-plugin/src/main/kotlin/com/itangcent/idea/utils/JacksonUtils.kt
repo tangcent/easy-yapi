@@ -2,17 +2,13 @@ package com.itangcent.idea.utils
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor
-import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
-import com.fasterxml.jackson.databind.type.TypeFactory
 
 
 object JacksonUtils {
 
     private val objectMapper: ObjectMapper = ObjectMapper()
-
-    private val javaType: JavaType = TypeFactory.defaultInstance().constructType(Any::class.java)
 
     init {
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
