@@ -24,7 +24,7 @@ jobs:
           java-version: 1.8
       - name: Generate coverage report
         run: |
-          ./gradlew check
+          ./gradlew check --stacktrace
           ./gradlew codeCoverageReport
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
