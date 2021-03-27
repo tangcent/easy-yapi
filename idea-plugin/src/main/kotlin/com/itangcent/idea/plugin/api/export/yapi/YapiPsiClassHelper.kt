@@ -43,7 +43,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
         //compute `field.mock`
         ruleComputer!!.computer(ClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
-                ?.takeIf { !it.isBlank() }
+                ?.takeIf { it.isNotBlank() }
                 ?.let { if (resolveProperty) configReader!!.resolveProperty(it) else it }
                 ?.let { mockInfo ->
                     kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo

@@ -5,7 +5,6 @@ import com.intellij.psi.PsiClass
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
-import junit.framework.Assert
 
 /**
  * Test case of [CommentResolver]
@@ -42,12 +41,12 @@ internal class CommentResolverTest : PluginContextLightCodeInsightFixtureTestCas
         val userInfoDuckType = SingleDuckType(userInfoPsiClass)
         val userCtrlDuckType = SingleDuckType(userCtrlPsiClass)
         val javaVersionDuckType = SingleDuckType(javaVersionPsiClass)
-        Assert.assertEquals("ADMIN :administration\n" +
+        assertEquals("ADMIN :administration\n" +
                 "MEM :a person, an animal or a plant\n" +
                 "GUEST :Anonymous visitor", commentResolver.resolveCommentForType(userTypeDuckType, userTypePsiClass))
-        Assert.assertEquals(null, commentResolver.resolveCommentForType(userInfoDuckType, userInfoPsiClass))
-        Assert.assertEquals(null, commentResolver.resolveCommentForType(userCtrlDuckType, userCtrlPsiClass))
-        Assert.assertEquals("0.9 :The Java version reported by Android. This is not an official Java version number.\n" +
+        assertEquals(null, commentResolver.resolveCommentForType(userInfoDuckType, userInfoPsiClass))
+        assertEquals(null, commentResolver.resolveCommentForType(userCtrlDuckType, userCtrlPsiClass))
+        assertEquals("0.9 :The Java version reported by Android. This is not an official Java version number.\n" +
                 "1.1 :Java 1.1.\n" +
                 "1.2 :Java 1.2.\n" +
                 "1.3 :Java 1.3.\n" +
@@ -67,12 +66,12 @@ internal class CommentResolverTest : PluginContextLightCodeInsightFixtureTestCas
         val userInfoPsiType = jvmClassHelper.resolveClassToType(userInfoPsiClass)!!
         val userCtrlPsiType = jvmClassHelper.resolveClassToType(userCtrlPsiClass)!!
         val javaVersionPsiType = jvmClassHelper.resolveClassToType(javaVersionPsiClass)!!
-        Assert.assertEquals("ADMIN :administration\n" +
+        assertEquals("ADMIN :administration\n" +
                 "MEM :a person, an animal or a plant\n" +
                 "GUEST :Anonymous visitor", commentResolver.resolveCommentForType(userTypePsiType, userTypePsiClass))
-        Assert.assertEquals(null, commentResolver.resolveCommentForType(userInfoPsiType, userInfoPsiClass))
-        Assert.assertEquals(null, commentResolver.resolveCommentForType(userCtrlPsiType, userCtrlPsiClass))
-        Assert.assertEquals("0.9 :The Java version reported by Android. This is not an official Java version number.\n" +
+        assertEquals(null, commentResolver.resolveCommentForType(userInfoPsiType, userInfoPsiClass))
+        assertEquals(null, commentResolver.resolveCommentForType(userCtrlPsiType, userCtrlPsiClass))
+        assertEquals("0.9 :The Java version reported by Android. This is not an official Java version number.\n" +
                 "1.1 :Java 1.1.\n" +
                 "1.2 :Java 1.2.\n" +
                 "1.3 :Java 1.3.\n" +

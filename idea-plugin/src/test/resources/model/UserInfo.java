@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  */
 public class UserInfo {
 
-    private Long id;//user id
+    private Long id = 0;//user id
 
     /**
      * @see com.itangcent.common.constant.UserType
@@ -18,6 +18,7 @@ public class UserInfo {
     private int type;//user type
 
     /**
+     * @default tangcent
      * @mock tangcent
      */
     @NotBlank
@@ -32,6 +33,7 @@ public class UserInfo {
     private Integer age;
 
     /**
+     * @demo 1
      * @deprecated It's a secret
      */
     private Integer sex;
