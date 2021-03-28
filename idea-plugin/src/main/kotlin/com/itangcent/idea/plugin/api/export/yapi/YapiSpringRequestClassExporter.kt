@@ -15,6 +15,12 @@ import com.itangcent.intellij.util.*
 import com.itangcent.utils.ExtensibleKit.fromJson
 import org.apache.commons.lang3.StringUtils
 
+/**
+ *
+ * 1.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.TAG]
+ * 2.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.STATUS]
+ * 3.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.OPEN]
+ */
 open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
 
     @Inject

@@ -30,7 +30,7 @@ internal class YapiPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
         builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class) }
     }
 
-    fun testGetTypeObject() {
+    fun testYapiPsiClassHelper() {
 
         //getTypeObject from psiType without option-------------------------------------------------
 
@@ -427,9 +427,9 @@ internal class YapiPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
                         )
                 )
         )
-    }
 
-    fun testGetFields() {
+        //testGetFields------------------------------------------------------------------------------------------------------------
+
         assertEquals(
                 "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0]}",
                 GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass))
@@ -462,9 +462,9 @@ internal class YapiPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
                 "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"@mock\":{\"name\":\"tangcent\",\"age\":\"1\"},\"age\":0,\"sex\":0,\"@example\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}",
                 GsonUtils.toJson(psiClassHelper.getFields(userInfoPsiClass, userInfoPsiClass, JsonOption.ALL))
         )
-    }
 
-    fun testIsNormalType() {
+        //testIsNormalType---------------------------------------------------------------------------------
+
         //check isNormalType from PsiClass
         assertTrue(psiClassHelper.isNormalType(objectPsiClass))
         assertTrue(psiClassHelper.isNormalType(integerPsiClass))
@@ -488,16 +488,15 @@ internal class YapiPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
         assertFalse(psiClassHelper.isNormalType(PsiTypesUtil.getClassType(linkedListPsiClass)))
         assertFalse(psiClassHelper.isNormalType(PsiTypesUtil.getClassType(modelPsiClass)))
         assertFalse(psiClassHelper.isNormalType(PsiTypesUtil.getClassType(userInfoPsiClass)))
-    }
 
-    fun testUnboxArrayOrList() {
+        //testUnboxArrayOrList---------------------------------------------------------------------------------
+
         assertEquals("java.lang.String", psiClassHelper.unboxArrayOrList(modelPsiClass.fields[0].type).canonicalText)
         assertEquals("java.lang.Integer", psiClassHelper.unboxArrayOrList(modelPsiClass.fields[1].type).canonicalText)
         assertEquals("java.lang.String", psiClassHelper.unboxArrayOrList(modelPsiClass.fields[2].type).canonicalText)
         assertEquals("java.lang.Integer", psiClassHelper.unboxArrayOrList(modelPsiClass.fields[3].type).canonicalText)
-    }
 
-    fun testGetDefaultValue() {
+        //testGetDefaultValue---------------------------------------------------------------------------------
 
         //check getDefaultValue of PsiClass
         assertEquals(emptyMap<Any, Any>(), psiClassHelper.getDefaultValue(objectPsiClass))
@@ -522,28 +521,28 @@ internal class YapiPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
         assertEquals(null, psiClassHelper.getDefaultValue(PsiTypesUtil.getClassType(linkedListPsiClass)))
         assertEquals(null, psiClassHelper.getDefaultValue(PsiTypesUtil.getClassType(modelPsiClass)))
         assertEquals(null, psiClassHelper.getDefaultValue(PsiTypesUtil.getClassType(userInfoPsiClass)))
-    }
 
-    fun testGetJsonFieldName() {
+        //testGetJsonFieldName---------------------------------------------------------------------------------
+
         assertEquals("s", psiClassHelper.getJsonFieldName(modelPsiClass.fields[0]))
         assertEquals("integer", psiClassHelper.getJsonFieldName(modelPsiClass.fields[1]))
-    }
 
-    fun testParseStaticFields() {
+        //testParseStaticFields------------------------------------------------------------------------------------------------------------
+
         assertEquals(
                 "[{\"name\":\"ONE\",\"value\":\"1\",\"desc\":\"one\"},{\"name\":\"TWO\",\"value\":\"2\",\"desc\":\"two\"},{\"name\":\"THREE\",\"value\":\"3\",\"desc\":\"three\"},{\"name\":\"FOUR\",\"value\":\"4\",\"desc\":\"four\"}]",
                 GsonUtils.toJson(psiClassHelper.parseStaticFields(numbersPsiClass))
         )
-    }
 
-    fun testParseEnumConstant() {
+        //testParseEnumConstant------------------------------------------------------
+
         assertEquals(
                 "[{\"params\":{\"name\":\"0.9\",\"value\":1.5},\"name\":\"JAVA_0_9\",\"ordinal\":0,\"desc\":\"The Java version reported by Android. This is not an official Java version number.\"},{\"params\":{\"name\":\"1.1\",\"value\":1.1},\"name\":\"JAVA_1_1\",\"ordinal\":1,\"desc\":\"Java 1.1.\"},{\"params\":{\"name\":\"1.2\",\"value\":1.2},\"name\":\"JAVA_1_2\",\"ordinal\":2,\"desc\":\"Java 1.2.\"},{\"params\":{\"name\":\"1.3\",\"value\":1.3},\"name\":\"JAVA_1_3\",\"ordinal\":3,\"desc\":\"Java 1.3.\"},{\"params\":{\"name\":\"1.4\",\"value\":1.4},\"name\":\"JAVA_1_4\",\"ordinal\":4,\"desc\":\"Java 1.4.\"},{\"params\":{\"name\":\"1.5\",\"value\":1.5},\"name\":\"JAVA_1_5\",\"ordinal\":5,\"desc\":\"Java 1.5.\"},{\"params\":{\"name\":\"1.6\",\"value\":1.6},\"name\":\"JAVA_1_6\",\"ordinal\":6,\"desc\":\"Java 1.6.\"},{\"params\":{\"name\":\"1.7\",\"value\":1.7},\"name\":\"JAVA_1_7\",\"ordinal\":7,\"desc\":\"Java 1.7.\"},{\"params\":{\"name\":\"1.8\",\"value\":1.8},\"name\":\"JAVA_1_8\",\"ordinal\":8,\"desc\":\"Java 1.8.\"},{\"params\":{\"name\":\"9\",\"value\":9.0},\"name\":\"JAVA_1_9\",\"ordinal\":9,\"desc\":\"Java 1.9.\"},{\"params\":{\"name\":\"9\",\"value\":9.0},\"name\":\"JAVA_9\",\"ordinal\":10,\"desc\":\"Java 9\"},{\"params\":{\"name\":\"10\",\"value\":10.0},\"name\":\"JAVA_10\",\"ordinal\":11,\"desc\":\"Java 10\"},{\"params\":{\"name\":\"11\",\"value\":11.0},\"name\":\"JAVA_11\",\"ordinal\":12,\"desc\":\"Java 11\"},{\"params\":{\"name\":\"12\",\"value\":12.0},\"name\":\"JAVA_12\",\"ordinal\":13,\"desc\":\"Java 12\"},{\"params\":{\"name\":\"13\",\"value\":13.0},\"name\":\"JAVA_13\",\"ordinal\":14,\"desc\":\"Java 13\"}]",
                 GsonUtils.toJson(psiClassHelper.parseEnumConstant(javaVersionPsiClass))
         )
-    }
 
-    fun testResolveEnumOrStatic() {
+        //testResolveEnumOrStatic---------------------------------------------------------------------------------
+
         assertEquals(
                 "[]",
                 GsonUtils.toJson(
