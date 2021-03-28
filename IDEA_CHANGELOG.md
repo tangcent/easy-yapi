@@ -1,3 +1,57 @@
+* 2.1.9
+
+	* chore: add test case of [*RequestClassExporter] [(#412)](https://github.com/tangcent/easy-yapi/pull/412)
+
+	* chore: add test case of [CustomizedPsiClassHelper] [(#411)](https://github.com/tangcent/easy-yapi/pull/411)
+
+	* chore: add test case of [DefaultModuleHelper] [(#410)](https://github.com/tangcent/easy-yapi/pull/410)
+
+	* chore: add test case of [MarkdownApiExporter] [(#409)](https://github.com/tangcent/easy-yapi/pull/409)
+
+	* chore: add test case of  [DefaultMethodInferHelper] [(#408)](https://github.com/tangcent/easy-yapi/pull/408)
+
+	* chore: add test case of implements of AutoSearchConfigReader [(#407)](https://github.com/tangcent/easy-yapi/pull/407)
+
+	* fix: DefaultMethodDocHelper#appendDesc [(#406)](https://github.com/tangcent/easy-yapi/pull/406)
+
+	* chore: add test case of [DefaultRequestHelper] [(#405)](https://github.com/tangcent/easy-yapi/pull/405)
+
+	* chore: add test cases [(#404)](https://github.com/tangcent/easy-yapi/pull/404)
+
+	* chore: add test cases [(#403)](https://github.com/tangcent/easy-yapi/pull/403)
+
+	* chore: update ApacheHttpClientTest [(#402)](https://github.com/tangcent/easy-yapi/pull/402)
+
+	* chore: add test cases [(#401)](https://github.com/tangcent/easy-yapi/pull/401)
+
+	* chore: update ApacheHttpClientTest [(#400)](https://github.com/tangcent/easy-yapi/pull/400)
+
+	* chore: update workflows [(#399)](https://github.com/tangcent/easy-yapi/pull/399)
+
+	* chore: update KVUtilsTest [(#398)](https://github.com/tangcent/easy-yapi/pull/398)
+
+	* chore: update README.md [(#397)](https://github.com/tangcent/easy-yapi/pull/397)
+
+	* chore: add test cases [(#396)](https://github.com/tangcent/easy-yapi/pull/396)
+
+	* fix: block recursive call getValue [(#395)](https://github.com/tangcent/easy-yapi/pull/395)
+
+	* chore: add test case of [KVKit] [(#393)](https://github.com/tangcent/easy-yapi/pull/393)
+
+	* chore: support co [(#391)](https://github.com/tangcent/easy-yapi/pull/391)
+
+	* chore: add test cases [(#390)](https://github.com/tangcent/easy-yapi/pull/390)
+
+	* chore: add test case for [KVUtils] [(#389)](https://github.com/tangcent/easy-yapi/pull/389)
+
+	* chore: add test case for [KitUtils] [(#387)](https://github.com/tangcent/easy-yapi/pull/387)
+
+	* chore: ignore `chore` for patch release [(#386)](https://github.com/tangcent/easy-yapi/pull/386)
+
+	* chore: add test case for [ExtensibleKit] [(#385)](https://github.com/tangcent/easy-yapi/pull/385)
+
+	* fix: parse `Header`&`Param` by `ExtensibleKit.fromJson` [(#384)](https://github.com/tangcent/easy-yapi/pull/384)
+
 * 2.1.8
 
 	* fix: use `asKV` instead of `as KV<>` [(#364)](https://github.com/tangcent/easy-yapi/pull/364)
