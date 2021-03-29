@@ -124,7 +124,7 @@ open class SimpleMethodDocClassExporter : ClassExporter, Worker {
         return true
     }
 
-    open protected fun shouldIgnore(psiElement: PsiElement): Boolean {
+    protected open fun shouldIgnore(psiElement: PsiElement): Boolean {
 
         if (ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) == true) {
             return true
