@@ -29,7 +29,7 @@ open class YapiCachedApiHelper : DefaultYapiApiHelper() {
     override fun getProjectIdByToken(token: String): String? {
         val tokenBeanBinder = getDbBeanBinderFactory().getBeanBinder("yapi:token-${loginMode().toInt()}:$token")
         val projectIdInCache = tokenBeanBinder.read()
-        if (!projectIdInCache.isBlank()) {
+        if (projectIdInCache.isNotBlank()) {
             return projectIdInCache
         }
         val projectIdByApi = super.getProjectIdByToken(token)

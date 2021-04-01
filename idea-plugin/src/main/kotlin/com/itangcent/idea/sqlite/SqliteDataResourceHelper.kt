@@ -28,7 +28,7 @@ class SqliteDataResourceHelper {
     private val sdCache: ConcurrentHashMap<String, SQLiteDataSourceHandle> = ConcurrentHashMap()
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     private lateinit var actionContext: ActionContext
@@ -48,6 +48,7 @@ class SqliteDataResourceHelper {
         return try {
             sqlLiteDataSource.read { it.execute(sql) { result -> result.getInt("count") == 1 } ?: false }
         } catch (e: Exception) {
+            logger.error("failed checkTableExisted: [$sql]")
             false
         }
     }
@@ -107,7 +108,7 @@ class SqliteDataResourceHelper {
                     it.execute("INSERT INTO $cacheName (HASH,NAME,VALUE) values ('$hash','$base64Name','${value.encodeBase64()}')") {}
                 }
             } catch (e: Exception) {
-                logger!!.traceError(e)
+                logger.traceError(e)
             }
         }
 
@@ -119,7 +120,7 @@ class SqliteDataResourceHelper {
                     it.execute("DELETE FROM $cacheName WHERE HASH = $hash AND NAME = '$base64Name'") {}
                 }
             } catch (e: Exception) {
-                logger!!.traceError(e)
+                logger.traceError(e)
             }
         }
     }
@@ -178,7 +179,7 @@ class SqliteDataResourceHelper {
                             ) {}
                         }
                     } catch (e: Exception) {
-                        logger!!.traceError(e)
+                        logger.traceError(e)
                     }
                 }
                 return value
@@ -199,7 +200,7 @@ class SqliteDataResourceHelper {
                     it.execute("INSERT INTO $cacheName (HASH,NAME,VALUE,EXPIRED) values ('$hash','$base64Name','${value.encodeBase64()}','${expired - TIMESTAMP_OFFSET}')") {}
                 }
             } catch (e: Exception) {
-                logger!!.traceError(e)
+                logger.traceError(e)
             }
         }
 
@@ -212,7 +213,7 @@ class SqliteDataResourceHelper {
                     it.execute("DELETE FROM $cacheName WHERE HASH = $hash AND NAME = '$base64Name'") {}
                 }
             } catch (e: Exception) {
-                logger!!.traceError(e)
+                logger.traceError(e)
             }
         }
     }
