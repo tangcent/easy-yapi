@@ -1,6 +1,7 @@
 package com.itangcent.idea.utils
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 /**
@@ -35,6 +36,8 @@ internal class JacksonUtilsTest {
         //with generic list
         point.list = listOf(1, "2", mapOf<String, Any?>("x" to 1))
         assertEquals(point, JacksonUtils.fromJson(JacksonUtils.toJson(point)))
+
+        assertNull(JacksonUtils.fromJson<Any>("{\"c\":\"java.lang.String\""))
     }
 }
 
