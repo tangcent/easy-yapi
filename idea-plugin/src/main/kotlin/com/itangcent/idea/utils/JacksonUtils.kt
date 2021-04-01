@@ -24,13 +24,23 @@ object JacksonUtils {
 
     @Suppress("UNCHECKED_CAST")
     fun <T> fromJson(json: String): T? {
+        if (json.startsWith("{\"c\":")) {
+            //old version cache
+            return null
+        }
         if (json == "null") {
             return null
         }
         val split = json.indexOf(',')
-        return objectMapper.readValue(
-                json.substring(split + 1),
-                Class.forName(json.substring(0, split)) as Class<T>)
+        return try {
+            objectMapper.readValue(
+                    json.substring(split + 1),
+                    Class.forName(json.substring(0, split)) as Class<T>)
+        } catch (e: Exception) {
+            LOG.error("failed parse json: [$json]")
+            null
+        }
     }
 }
 
+private val LOG = org.apache.log4j.Logger.getLogger(JacksonUtils::class.java)
