@@ -108,6 +108,9 @@ dependencies {
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.2'
 
+    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.34.0'
+
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"
     testImplementation "org.junit.jupiter:junit-jupiter-engine:${junit_version}"
@@ -117,7 +120,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/com.nhaarman.mockitokotlin2/mockito-kotlin
     testImplementation group: 'com.nhaarman.mockitokotlin2', name: 'mockito-kotlin', version: '2.2.0'
-
 
     testImplementation('com.itangcent:intellij-idea-test:0.9.4-SNAPSHOT')
 }
