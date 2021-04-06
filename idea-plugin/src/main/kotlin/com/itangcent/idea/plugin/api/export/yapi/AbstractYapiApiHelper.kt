@@ -31,7 +31,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     private val settingBinder: SettingBinder? = null
 
     @Inject
-    protected val logger: Logger? = null
+    protected lateinit var logger: Logger
 
     @Inject
     private val configReader: ConfigReader? = null
@@ -106,7 +106,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
                     ?.sub("_id")
                     ?.asString
         } catch (e: IllegalStateException) {
-            logger!!.error("invalid token:$token")
+            logger.error("invalid token:$token")
         }
         if (projectId != null) {
             cacheLock.writeLock().withLock {
@@ -142,13 +142,13 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         try {
             projectInfo = GsonUtils.parseToJsonTree(ret) as? JsonObject
         } catch (e: Exception) {
-            logger!!.error("error to parse project [$projectId] info:$ret")
+            logger.error("error to parse project [$projectId] info:$ret")
         }
 
         if (projectId != null && projectInfo != null) {
             if (projectInfo.has("errcode")) {
                 if (projectInfo.get("errcode").asInt == 40011) {
-                    logger!!.warn("project:$projectId may be deleted.")
+                    logger.warn("project:$projectId may be deleted.")
                     cacheLock.writeLock().withLock { projectInfoCache[projectId] = NULL_PROJECT }
                     return null
                 }
@@ -187,24 +187,24 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
                     .string()
         } catch (e: SocketTimeoutException) {
             if (!dumb) {
-                logger!!.trace("$rawUrl connect timeout")
+                logger.trace("$rawUrl connect timeout")
                 throw e
             }
-            logger!!.error("$rawUrl connect timeout")
+            logger.error("$rawUrl connect timeout")
             null
         } catch (e: SocketException) {
             if (!dumb) {
-                logger!!.trace("$rawUrl is unreachable (connect failed)")
+                logger.trace("$rawUrl is unreachable (connect failed)")
                 throw e
             }
-            logger!!.error("$rawUrl is unreachable (connect failed)")
+            logger.error("$rawUrl is unreachable (connect failed)")
             null
         } catch (e: Exception) {
             if (!dumb) {
-                logger!!.traceError("request $rawUrl failed", e)
+                logger.traceError("request $rawUrl failed", e)
                 throw e
             }
-            logger!!.traceError("request $rawUrl failed", e)
+            logger.traceError("request $rawUrl failed", e)
             null
         }
     }

@@ -66,7 +66,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to find cat. projectId:$projectId, info: ${projectInfo?.toString()}", e)
+            logger.traceError("error to find cat. projectId:$projectId, info: ${projectInfo?.toString()}", e)
         }
         return null
     }
@@ -87,13 +87,13 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                     .string()
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
-                logger!!.info("Post failed:$errMsg")
+                logger.info("Post failed:$errMsg")
                 logger.info("api info:${GsonUtils.toJson(apiInfo)}")
                 return false
             }
             return true
         } catch (e: Throwable) {
-            logger!!.error("Post failed:" + ExceptionUtils.getStackTrace(e))
+            logger.error("Post failed:" + ExceptionUtils.getStackTrace(e))
             return false
         }
     }
@@ -118,7 +118,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
-                logger!!.info("Post failed:$errMsg")
+                logger.info("Post failed:$errMsg")
                 return false
             }
             val resObj = returnValue?.asJsonElement()
@@ -129,14 +129,14 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 cacheLock.writeLock().withLock {
                     cartIdCache["$projectId$name"] = addCartId
                 }
-                logger!!.info("Add new cart:$server/project/$projectId/interface/api/cat_$addCartId")
+                logger.info("Add new cart:$server/project/$projectId/interface/api/cat_$addCartId")
             } else {
-                logger!!.info("Add cart failed,response is:$returnValue")
+                logger.info("Add cart failed,response is:$returnValue")
             }
             cacheLock.writeLock().withLock { projectInfoCache.remove(projectId) }
             return true
         } catch (e: Throwable) {
-            logger!!.error("Post failed:" + ExceptionUtils.getStackTrace(e))
+            logger.error("Post failed:" + ExceptionUtils.getStackTrace(e))
             return false
         }
     }
