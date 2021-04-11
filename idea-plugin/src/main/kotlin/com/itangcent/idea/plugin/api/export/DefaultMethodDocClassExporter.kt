@@ -240,7 +240,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                             }
 
                             override fun linkToType(plainText: String, linkType: PsiType): String? {
-                                return jvmClassHelper!!.resolveClassInType(linkType)?.let {
+                                return jvmClassHelper.resolveClassInType(linkType)?.let {
                                     linkResolver!!.linkToClass(it)
                                 }
                             }
