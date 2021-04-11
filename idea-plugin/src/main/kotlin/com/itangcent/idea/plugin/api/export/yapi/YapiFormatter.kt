@@ -98,7 +98,8 @@ open class YapiFormatter {
         addTimeAttr(item)
         item["__v"] = 0
 
-        item["method"] = actionContext.callInReadUI { getHttpMethodOfMethodDoc(methodDoc) }
+        val httpMethod = actionContext.callInReadUI { getHttpMethodOfMethodDoc(methodDoc) }
+        item["method"] = httpMethod
 
         val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
         item["req_headers"] = headers
@@ -107,12 +108,26 @@ open class YapiFormatter {
         item["req_query"] = emptyArray<Any>()
 
         if (!methodDoc.params.isNullOrEmpty()) {
-            item["req_body_is_json_schema"] = true
-            item["req_body_type"] = "json"
-            item["req_body_form"] = EMPTY_ARR
+            if (httpMethod == "GET") {
+                val queryList: MutableList<HashMap<String, Any?>> = LinkedList()
+                item["req_query"] = queryList
+                methodDoc.params?.forEach {
+                    queryList.add(KV.create<String, Any?>()
+                            .set("name", it.name)
+                            .set("value", parseQueryValueAsJson5(it.value))
+                            .set("example", parseQueryValueAsJson5(it.getExample() ?: it.value))
+                            .set("desc", it.desc)
+                            .set("required", it.required.asInt())
+                    )
+                }
+            } else {
+                item["req_body_is_json_schema"] = true
+                item["req_body_type"] = "json"
+                item["req_body_form"] = EMPTY_ARR
 
-            //todo:need desc of body
-            item["req_body_other"] = parseParamsBySchema(methodDoc.params, "")
+                //todo:need desc of body
+                item["req_body_other"] = parseParamsBySchema(methodDoc.params, "")
+            }
         }
 
         if (methodDoc.ret != null) {
@@ -136,6 +151,26 @@ open class YapiFormatter {
         }
 
         return item
+    }
+
+    private fun parseQueryValueAsJson5(value: Any?): String? {
+        when (value) {
+            is Array<*> -> {
+                return actionContext.instance(Json5Formatter::class)
+                        .format(value)
+            }
+            is Collection<*> -> {
+                return actionContext.instance(Json5Formatter::class)
+                        .format(value)
+            }
+            is Map<*, *> -> {
+                return actionContext.instance(Json5Formatter::class)
+                        .format(value)
+            }
+            else -> {
+                return value?.toString()
+            }
+        }
     }
 
     private fun getPathOfMethodDoc(methodDoc: MethodDoc): String {
@@ -295,7 +330,7 @@ open class YapiFormatter {
             queryList.add(KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
-                    .set("example", it.getExample() ?: it.value)
+                    .set("example", it.getExample() ?: it.value?.toString())
                     .set("desc", it.desc)
                     .set("required", it.required.asInt())
             )
