@@ -9,9 +9,13 @@ import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.ResolveMultiPath
+import com.itangcent.idea.plugin.json.Json5Formatter
 import com.itangcent.idea.plugin.render.MarkdownRender
+import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceMethod
+import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.SimpleRuleParser
@@ -39,13 +43,21 @@ open class YapiFormatter {
     private val configReader: ConfigReader? = null
 
     @Inject
-    private val actionContext: ActionContext? = null
+    private lateinit var actionContext: ActionContext
 
     @Inject
     protected val docHelper: DocHelper? = null
 
     @Inject
     protected val markdownRender: MarkdownRender? = null
+
+    @Inject
+    protected lateinit var systemProvider: SystemProvider
+
+    @Inject
+    protected lateinit var settingBinder: SettingBinder
+
+    private val setting: Settings by lazy { settingBinder.read() }
 
     fun doc2Item(doc: Doc): List<HashMap<String, Any?>> {
         if (doc is Request) {
@@ -79,7 +91,7 @@ open class YapiFormatter {
         item["query_path"] = queryPath
         queryPath["params"] = EMPTY_PARAMS
 
-        val path = actionContext!!.callInReadUI { formatPath(getPathOfMethodDoc(methodDoc)) }
+        val path = actionContext.callInReadUI { formatPath(getPathOfMethodDoc(methodDoc)) }
         queryPath["path"] = path
         item["path"] = path
 
@@ -104,14 +116,19 @@ open class YapiFormatter {
         }
 
         if (methodDoc.ret != null) {
-
             item["res_body_type"] = "json"
-
-
-            item["res_body"] = parseBySchema(methodDoc.ret,
-                    methodDoc.resourceMethod()?.let {
-                        findReturnOfMethod(it)
-                    })
+            if (setting.yapiResBodyJson5) {
+                item["res_body_is_json_schema"] = false
+                item["res_body"] = parseByJson5(methodDoc.ret,
+                        methodDoc.resourceMethod()?.let {
+                            findReturnOfMethod(it)
+                        })
+            } else {
+                item["res_body"] = parseBySchema(methodDoc.ret,
+                        methodDoc.resourceMethod()?.let {
+                            findReturnOfMethod(it)
+                        })
+            }
         } else {
             item["res_body_type"] = "json"
 
@@ -165,18 +182,10 @@ open class YapiFormatter {
             result["required"] = requireds!!.toTypedArray()
         }
 
-        return toJson(result, rootDesc)
+        return toJsonWithSchema(result, rootDesc)
     }
 
     //endregion methodDoc----------------------------------------------------------
-
-    private fun toJson(result: HashMap<String, Any?>, rootDesc: String?): String {
-        result["\$schema"] = "http://json-schema.org/draft-04/schema#"
-        if (rootDesc != null) {
-            result["description"] = rootDesc
-        }
-        return GsonUtils.toJson(result)
-    }
 
     fun request2Items(request: Request): List<HashMap<String, Any?>> {
 
@@ -320,22 +329,32 @@ open class YapiFormatter {
         }
 
         if (request.body != null) {
-            item["req_body_is_json_schema"] = true
             item["req_body_type"] = "json"
             item["req_body_form"] = EMPTY_ARR
 
-            //todo:need desc of body
-            item["req_body_other"] = parseBySchema(request.body, request.bodyAttr)
+            if (setting.yapiResBodyJson5) {
+                item["req_body_is_json_schema"] = false
+                item["req_body_other"] = parseByJson5(request.body, request.bodyAttr)
+            } else {
+                item["req_body_is_json_schema"] = true
+                item["req_body_other"] = parseBySchema(request.body, request.bodyAttr)
+            }
         }
 
         if (!request.response.isNullOrEmpty()) {
 
             val response = request.response!![0]
             item["res_body_type"] = "json"
-
-            item["res_body"] = parseBySchema(response.body, request.resourceMethod()?.let {
-                findReturnOfMethod(it)
-            })
+            if (setting.yapiResBodyJson5) {
+                item["res_body_is_json_schema"] = false
+                item["res_body"] = parseByJson5(response.body, request.resourceMethod()?.let {
+                    findReturnOfMethod(it)
+                })
+            } else {
+                item["res_body"] = parseBySchema(response.body, request.resourceMethod()?.let {
+                    findReturnOfMethod(it)
+                })
+            }
         } else {
             item["res_body_type"] = "json"
 
@@ -368,42 +387,70 @@ open class YapiFormatter {
         return docHelper!!.findDocByTag(method, "return")
     }
 
+    private fun jsonTypeOf(typedObject: Any?): String {
+        when (typedObject) {
+            null -> {
+                return "null"
+            }
+            is String -> {
+                return "string"
+            }
+            is Number -> {
+                return if (typedObject is Int || typedObject is Long) {
+                    "integer"
+                } else {
+                    "number"
+                }
+            }
+            is Boolean -> {
+                return "boolean"
+            }
+            is Array<*> -> {
+                return "array"
+            }
+            is List<*> -> {
+                return "array"
+            }
+            is Map<*, *> -> {
+                return "object"
+            }
+            else -> return "object"
+        }
+    }
+
+    //region parse-schema
     private fun parseBySchema(typedObject: Any?, rootDesc: String?): String? {
         if (typedObject == null) return null
         val result = parseObject("", typedObject)
-        return toJson(result, rootDesc)
+        return toJsonWithSchema(result, rootDesc)
+    }
+
+    private fun toJsonWithSchema(result: HashMap<String, Any?>, rootDesc: String?): String {
+        result["\$schema"] = "http://json-schema.org/draft-04/schema#"
+        if (rootDesc != null) {
+            result["description"] = rootDesc
+        }
+        return GsonUtils.toJson(result)
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun parseObject(path: String?, typedObject: Any?): HashMap<String, Any?> {
         if (typedObject == null) return nullObject()
         val item: HashMap<String, Any?> = LinkedHashMap()
-        if (typedObject is String) {
-            item["type"] = "string"
-        } else if (typedObject is Number) {
-            if (typedObject is Int || typedObject is Long) {
-                item["type"] = "integer"
-            } else {
-                item["type"] = "number"
-            }
-        } else if (typedObject is Boolean) {
-            item["type"] = "boolean"
-        } else if (typedObject is Array<*>) {
-            item["type"] = "array"
+        item["type"] = jsonTypeOf(typedObject)
+        if (typedObject is Array<*>) {
             if (typedObject.size > 0) {
                 item["items"] = parseObject(contactPath(path, "[]"), typedObject[0])
             } else {
                 item["items"] = unknownObject()
             }
         } else if (typedObject is List<*>) {
-            item["type"] = "array"
             if (typedObject.size > 0) {
                 item["items"] = parseObject(contactPath(path, "[]"), typedObject[0])
             } else {
                 item["items"] = unknownObject()
             }
         } else if (typedObject is Map<*, *>) {
-            item["type"] = "object"
             val properties: HashMap<String, Any?> = LinkedHashMap()
             val comment: HashMap<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
             val required: HashMap<String, Any?>? = typedObject[Attrs.REQUIRED_ATTR] as? HashMap<String, Any?>?
@@ -482,9 +529,157 @@ open class YapiFormatter {
             }
         }
 
-
         return item
     }
+    //endregion
+
+    //region parse-json5
+    private fun parseByJson5(typedObject: Any?, rootDesc: String?): String {
+        //try read mock rules
+        val mockRules = readMockRules()
+        if (mockRules.isNotEmpty()) {
+            addMockAsProperty("", typedObject)
+        }
+        val json5Formatter = actionContext.instance(Json5Formatter::class)
+        return json5Formatter.format(typedObject, rootDesc)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun addMockAsProperty(path: String, typedObject: Any?): Any? {
+        var ret = typedObject
+        addMockAsProperty(path, typedObject) {
+            ret = it
+        }
+        return ret
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun addMockAsProperty(path: String, typedObject: Any?, retSet: (Any?) -> Unit) {
+        when (typedObject) {
+            null -> {
+                return
+            }
+            is MutableMap<*, *> -> {
+                typedObject as MutableMap<Any?, Any?>
+                val mocks: HashMap<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? HashMap<String, Any?>?
+                val comment: HashMap<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
+                val keys = ArrayList(typedObject.keys)
+                for (key in keys) {
+                    if (key is String && key.startsWith("@")) {
+                        continue
+                    }
+                    val subPath = contactPath(path, key.toString())
+
+                    val mockStr = mocks?.get(key)
+                    if (mockStr != null) {
+                        setMock(typedObject, key, mockStr.asMockString())
+                        continue
+                    }
+                    val options = comment?.get("$key@options")
+                    if (options != null) {
+                        val optionList = options as List<Map<String, Any?>>
+                        val optionVals = optionList.stream()
+                                .map { it["value"] }
+                                .collect(Collectors.toList())
+                        setMock(typedObject, key, "@pick(${GsonUtils.toJson(optionVals).asMockString()})")
+                        continue
+                    }
+                    val value = typedObject[key]
+                    addMockAsProperty(subPath, value) {
+                        typedObject[key] = it
+                    }
+                }
+            }
+            is List<*> -> {
+                for ((index, item) in typedObject.withIndex()) {
+                    addMockAsProperty(contactPath(path, "[]"), item) {
+                        (typedObject as MutableList<Any?>)[index] = it
+                    }
+                }
+            }
+            is Collection<*> -> {
+                val ret = typedObject::class.newInstance() as? MutableCollection<Any?> ?: return
+                typedObject.forEach {
+                    ret.add(addMockAsProperty(contactPath(path, "[]"), it))
+                }
+                retSet(ret)
+            }
+            is Array<*> -> {
+                for ((index, item) in typedObject.withIndex()) {
+                    addMockAsProperty(contactPath(path, "[]"), item) {
+                        (typedObject as Array<Any?>)[index] = it
+                    }
+                }
+            }
+            else -> {
+                val jsonType = jsonTypeOf(typedObject)
+                if (jsonType != "object" && jsonType != "array") {
+                    for (mockRule in readMockRules()) {
+                        if (mockRule.pathPredict(path) &&
+                                mockRule.typePredict(jsonType)) {
+                            retSet(mockRule.mockStr.asMockString())
+                            break
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun Any?.asMockString(): Any? {
+        return (this as? String)?.replace("\"", "\\\"") ?: this
+    }
+
+    private fun setMock(typedObject: MutableMap<Any?, Any?>, key: Any?, mockStr: Any?) {
+        when (val value = typedObject[key]) {
+            is Map<*, *> -> {
+                logger?.warn("should not set mock to map!!")
+                return
+            }
+            is Array<*> -> {
+                setMock(value, mockStr) {
+                    typedObject[key] = it
+                }
+            }
+            is Collection<*> -> {
+                setMock(value, mockStr) {
+                    typedObject[key] = it
+                }
+            }
+            else -> {
+                typedObject[key] = mockStr
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun setMock(typedObject: Any?, mockStr: Any?, retSet: (Any?) -> Unit) {
+        when (typedObject) {
+            is Array<*> -> {
+                if (typedObject.size == 0) {
+                    retSet(arrayOf(mockStr))
+                    return
+                }
+                (typedObject as? Array<Any?>)?.set(0, mockStr)
+            }
+            is Collection<*> -> {
+                if (typedObject.size == 0) {
+                    retSet(arrayListOf(mockStr))
+                    return
+                }
+                if (typedObject is MutableList<*>) {
+                    (typedObject as? MutableList<Any?>)?.set(0, mockStr)
+                } else {
+                    retSet(arrayListOf(mockStr))
+                }
+            }
+            else -> {
+                retSet(mockStr)
+            }
+        }
+    }
+
+    //endregion
 
     private fun contactPath(path: String?, subPath: String): String {
         return when {
@@ -515,8 +710,8 @@ open class YapiFormatter {
     }
 
     private fun addTimeAttr(item: HashMap<String, Any?>) {
-        item["add_time"] = System.currentTimeMillis() / 1000
-        item["up_time"] = System.currentTimeMillis() / 1000
+        item["add_time"] = systemProvider.currentTimeMillis() / 1000
+        item["up_time"] = systemProvider.currentTimeMillis() / 1000
     }
 
     private fun appendDescToApiItem(item: HashMap<String, Any?>, desc: String?) {
