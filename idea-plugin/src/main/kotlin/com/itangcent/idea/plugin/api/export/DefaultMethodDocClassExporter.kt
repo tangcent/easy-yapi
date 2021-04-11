@@ -64,7 +64,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
     }
 
     @Inject
-    protected val logger: Logger? = null
+    protected lateinit var logger: Logger
 
     @Inject
     protected val psiClassHelper: PsiClassHelper? = null
@@ -117,12 +117,12 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class:" + cls.qualifiedName)
+                    logger.info("ignore class:" + cls.qualifiedName)
                     completedHandle(cls)
                     return true
                 }
                 else -> {
-                    logger!!.info("search api from:${cls.qualifiedName}")
+                    logger.info("search api from:${cls.qualifiedName}")
 
                     val kv = KV.create<String, Any?>()
 
@@ -137,7 +137,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError(e)
+            logger.traceError(e)
         } finally {
             statusRecorder.endWork()
         }
@@ -278,7 +278,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Throwable) {
-                logger!!.traceError("error to parse body", e)
+                logger.traceError("error to parse body", e)
 
             }
         }
@@ -330,7 +330,7 @@ open class DefaultMethodDocClassExporter : ClassExporter, Worker {
         return when {
             needInfer() && (!duckTypeHelper!!.isQualified(duckType) ||
                     jvmClassHelper.isInterface(duckType)) -> {
-                logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
+                logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }

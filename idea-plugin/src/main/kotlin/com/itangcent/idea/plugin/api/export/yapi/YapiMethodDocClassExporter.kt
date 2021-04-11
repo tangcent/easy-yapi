@@ -18,7 +18,8 @@ class YapiMethodDocClassExporter : DefaultMethodDocClassExporter() {
 
         val tags = ruleComputer!!.computer(YapiClassExportRuleKeys.TAG, method)
         if (!tags.isNullOrBlank()) {
-            methodDoc.setTags(StringUtils.split(tags, configReader!!.first("api.tag.delimiter") ?: ",\n")
+            methodDoc.setTags(StringUtils.split(tags, configReader!!.first("api.tag.delimiter")?.let { it + "\n" }
+                    ?: ",\n")
                     .map { it.trim() }
                     .filter { it.isNotBlank() })
         }
