@@ -32,6 +32,8 @@ class Settings {
 
     var inferMaxDeep: Int = DEFAULT_INFER_MAX_DEEP
 
+    //yapi
+
     var yapiServer: String? = null
 
     var yapiTokens: String? = null
@@ -41,6 +43,10 @@ class Settings {
     var switchNotice: Boolean = true
 
     var loginMode: Boolean = false
+
+    var yapiReqBodyJson5: Boolean = false
+
+    var yapiResBodyJson5: Boolean = false
 
     //unit:s
     var httpTimeOut: Int = 5
@@ -80,6 +86,8 @@ class Settings {
         newSetting.enableUrlTemplating = this.enableUrlTemplating
         newSetting.switchNotice = this.switchNotice
         newSetting.loginMode = this.loginMode
+        newSetting.yapiReqBodyJson5 = this.yapiReqBodyJson5
+        newSetting.yapiResBodyJson5 = this.yapiResBodyJson5
         newSetting.httpTimeOut = this.httpTimeOut
         newSetting.useRecommendConfig = this.useRecommendConfig
         newSetting.recommendConfigs = this.recommendConfigs
@@ -113,6 +121,8 @@ class Settings {
         if (enableUrlTemplating != other.enableUrlTemplating) return false
         if (switchNotice != other.switchNotice) return false
         if (loginMode != other.loginMode) return false
+        if (yapiReqBodyJson5 != other.yapiReqBodyJson5) return false
+        if (yapiResBodyJson5 != other.yapiResBodyJson5) return false
         if (httpTimeOut != other.httpTimeOut) return false
         if (useRecommendConfig != other.useRecommendConfig) return false
         if (recommendConfigs != other.recommendConfigs) return false
@@ -142,6 +152,8 @@ class Settings {
         result = 31 * result + enableUrlTemplating.hashCode()
         result = 31 * result + switchNotice.hashCode()
         result = 31 * result + loginMode.hashCode()
+        result = 31 * result + yapiReqBodyJson5.hashCode()
+        result = 31 * result + yapiResBodyJson5.hashCode()
         result = 31 * result + httpTimeOut
         result = 31 * result + useRecommendConfig.hashCode()
         result = 31 * result + recommendConfigs.hashCode()

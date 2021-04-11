@@ -64,6 +64,7 @@ class EasyApiSettingGUI {
     private var logLevelComboBox: JComboBox<Logger.Level>? = null
 
     private var methodDocEnableCheckBox: JCheckBox? = null
+
     private var globalCacheSizeLabel: JLabel? = null
 
     private var projectCacheSizeLabel: JLabel? = null
@@ -105,6 +106,10 @@ class EasyApiSettingGUI {
     private var switchNoticeCheckBox: JCheckBox? = null
 
     private var loginModeCheckBox: JCheckBox? = null
+
+    private var yapiReqBodyJson5CheckBox: JCheckBox? = null
+
+    private var yapiResBodyJson5CheckBox: JCheckBox? = null
 
     private var formExpandedCheckBox: JCheckBox? = null
 
@@ -230,6 +235,12 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(loginModeCheckBox!!)
                 .mutual(this, "settings.loginMode")
+
+        autoComputer.bind(yapiReqBodyJson5CheckBox!!)
+                .mutual(this, "settings.yapiReqBodyJson5")
+
+        autoComputer.bind(yapiResBodyJson5CheckBox!!)
+                .mutual(this, "settings.yapiResBodyJson5")
 
         autoComputer.bind(yapiTokenLabel!!)
                 .with<Boolean?>(this, "settings.loginMode")

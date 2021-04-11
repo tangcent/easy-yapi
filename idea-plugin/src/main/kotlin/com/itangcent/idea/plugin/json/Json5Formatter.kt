@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.json
 import com.google.inject.Singleton
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.utils.appendln
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.intellij.util.forEachValid
 import com.itangcent.intellij.util.validSize
@@ -11,9 +10,9 @@ import com.itangcent.intellij.util.validSize
 @Singleton
 class Json5Formatter : JsonFormatter {
 
-    override fun format(obj: Any?): String {
+    override fun format(obj: Any?, desc: String?): String {
         val sb = StringBuilder()
-        format(obj, 0, true, null, sb)
+        format(obj, 0, true, desc, sb)
         return sb.toString()
     }
 
@@ -163,3 +162,5 @@ private class EndCounter(val size: Int) {
 }
 
 private const val TAB = "    "
+
+private fun StringBuilder.appendln(): StringBuilder = append("\n")

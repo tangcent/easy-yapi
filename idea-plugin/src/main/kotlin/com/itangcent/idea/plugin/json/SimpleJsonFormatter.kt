@@ -5,7 +5,7 @@ import com.itangcent.http.RequestUtils
 
 @Singleton
 class SimpleJsonFormatter : JsonFormatter {
-    override fun format(obj: Any?): String {
+    override fun format(obj: Any?, desc: String?): String {
         return obj?.let { RequestUtils.parseRawBody(it) } ?: ""
     }
 }
