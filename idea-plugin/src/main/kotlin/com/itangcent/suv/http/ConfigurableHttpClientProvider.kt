@@ -14,6 +14,7 @@ import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.config.SocketConfig
 import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 
 @Singleton
 class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
@@ -33,6 +34,10 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
         val config = readHttpConfig()
 
         httpClientBuilder
+                .setConnectionManager(PoolingHttpClientConnectionManager().also {
+                    it.maxTotal = 50
+                    it.defaultMaxPerRoute = 20
+                })
                 .setDefaultSocketConfig(SocketConfig.custom()
                         .setSoTimeout(config.timeOut.toMill())
                         .build())
@@ -40,8 +45,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
                         .setConnectTimeout(config.timeOut.toMill())
                         .setConnectionRequestTimeout(config.timeOut.toMill())
                         .setSocketTimeout(config.timeOut.toMill())
-                        .build())
-                .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+                        .setCookieSpec(CookieSpecs.STANDARD).build())
 
         return HttpClientWrapper(ApacheHttpClient(httpClientBuilder.build()))
     }
