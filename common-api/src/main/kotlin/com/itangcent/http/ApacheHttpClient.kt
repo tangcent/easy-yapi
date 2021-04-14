@@ -8,6 +8,7 @@ import com.itangcent.common.spi.SpiUtils
 import com.itangcent.common.utils.notNullOrEmpty
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
+import org.apache.http.client.config.CookieSpecs
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.RequestBuilder
@@ -18,6 +19,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.entity.mime.MultipartEntityBuilder
 import org.apache.http.impl.client.BasicCookieStore
 import org.apache.http.impl.client.HttpClients
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.apache.http.impl.cookie.BasicClientCookie2
 import org.apache.http.message.BasicNameValuePair
@@ -40,6 +42,10 @@ open class ApacheHttpClient : HttpClient {
         this.apacheCookieStore = ApacheCookieStore(basicCookieStore)
         this.httpClientContext!!.cookieStore = basicCookieStore
         this.httpClient = HttpClients.custom()
+                .setConnectionManager(PoolingHttpClientConnectionManager().also {
+                    it.maxTotal = 50
+                    it.defaultMaxPerRoute = 20
+                })
                 .setDefaultSocketConfig(SocketConfig.custom()
                         .setSoTimeout(30 * 1000)
                         .build())
@@ -47,7 +53,8 @@ open class ApacheHttpClient : HttpClient {
                         .setConnectTimeout(30 * 1000)
                         .setConnectionRequestTimeout(30 * 1000)
                         .setSocketTimeout(30 * 1000)
-                        .build()).build()
+                        .setCookieSpec(CookieSpecs.STANDARD).build())
+                .build()
     }
 
     constructor(httpClient: org.apache.http.client.HttpClient) {
