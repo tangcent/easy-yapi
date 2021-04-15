@@ -13,7 +13,7 @@ public class UserInfo {
     private Long id = 0;//user id
 
     /**
-     * @see com.itangcent.common.constant.UserType
+     * @see com.itangcent.constant.UserType
      */
     private int type;//user type
 

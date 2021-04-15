@@ -1,25 +1,12 @@
 package com.itangcent.idea.plugin.api.export.postman
 
-import com.google.inject.Inject
-import com.intellij.psi.PsiClass
+import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.api.export.requestOnly
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.singleton
-import com.itangcent.intellij.extend.guice.with
-import com.itangcent.mock.SettingBinderAdaptor
-import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import org.junit.jupiter.api.condition.OS
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * Test case of [PostmanSpringRequestClassExporter]
@@ -27,67 +14,7 @@ import kotlin.collections.ArrayList
  * 2.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_TEST]
  *
  */
-internal class PostmanSpringRequestClassExporterTest : PluginContextLightCodeInsightFixtureTestCase() {
-
-    @Inject
-    private lateinit var classExporter: ClassExporter
-
-    private lateinit var userCtrlPsiClass: PsiClass
-
-    override fun beforeBind() {
-        super.beforeBind()
-        loadSource(Object::class)
-        loadSource(java.lang.String::class)
-        loadSource(java.lang.Integer::class)
-        loadSource(java.lang.Long::class)
-        loadSource(Collection::class)
-        loadSource(Map::class)
-        loadSource(List::class)
-        loadSource(LinkedList::class)
-        loadSource(LocalDate::class)
-        loadSource(LocalDateTime::class)
-        loadSource(HashMap::class)
-        loadFile("annotation/Public.java")
-        loadFile("model/IResult.java")
-        loadFile("model/Result.java")
-        loadFile("model/UserInfo.java")
-        loadFile("spring/GetMapping.java")
-        loadFile("spring/RequestMapping.java")
-        loadFile("spring/RestController.java")
-        loadFile("api/BaseController.java")
-        userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
-    }
-
-    override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.common.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
-                "#[converts]*\n" +
-                "#The ObjectId and Date are parsed as strings\n" +
-                "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
-                "json.rule.convert[java.util.Date]=java.lang.String\n" +
-                "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
-                "# read folder name from tag `folder`\n" +
-                "postman.prerequest=```\n" +
-                "pm.environment.set(\"token\", \"123456\");\n" +
-                "```\n" +
-                "postman.test=```\n" +
-                "pm.test(\"Successful POST request\", function () {\n" +
-                "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
-                "});\n" +
-                "```"
-    }
-
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
-        super.bind(builder)
-
-        builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
-        builder.bind(SettingBinder::class) {
-            it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
-                settings.inferEnable = true
-            }))
-        }
-    }
+internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporterBaseTest() {
 
     override fun shouldRunTest(): Boolean {
         return !OS.WINDOWS.isCurrentOs
@@ -110,6 +37,8 @@ internal class PostmanSpringRequestClassExporterTest : PluginContextLightCodeIns
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
                     "});", request.getExt(ClassExportRuleKeys.POST_TEST.name()))
+            assertNull(request.body)
+            assertEquals("", request.response!!.first().body.toJson())
         }
         requests[1].let { request ->
             assertEquals("get user info", request.name)
@@ -121,7 +50,24 @@ internal class PostmanSpringRequestClassExporterTest : PluginContextLightCodeIns
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
                     "});", request.getExt(ClassExportRuleKeys.POST_TEST.name()))
+            assertNull(request.body.toJson())
+            assertEquals("{\"code\":0,\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"success\",\"data\":{\"id\":0,\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"Tony Stark\",\"age\":45,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}}",
+                    request.response!!.first().body.toJson())
         }
+        requests[2].let { request ->
+            assertEquals("create new use", request.name)
+            assertEquals("create new use", request.desc)
+            assertEquals("POST", request.method)
+            assertEquals(userCtrlPsiClass.methods[2], (request.resource as PsiResource).resource())
 
+            assertEquals("pm.environment.set(\"token\", \"123456\");", request.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name()))
+            assertEquals("pm.test(\"Successful POST request\", function () {\n" +
+                    "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
+                    "});", request.getExt(ClassExportRuleKeys.POST_TEST.name()))
+            assertEquals("{\"id\":0,\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+                    request.body.toJson())
+            assertEquals("{\"code\":0,\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":{\"id\":0,\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}}",
+                    request.response!!.first().body.toJson())
+        }
     }
 }

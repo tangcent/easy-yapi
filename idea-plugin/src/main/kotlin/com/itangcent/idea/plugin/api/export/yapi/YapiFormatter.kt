@@ -27,8 +27,6 @@ import com.itangcent.intellij.util.forEachValid
 import java.util.*
 import java.util.regex.Pattern
 import java.util.stream.Collectors
-import kotlin.collections.ArrayList
-import kotlin.collections.LinkedHashMap
 
 @Singleton
 open class YapiFormatter {
@@ -570,11 +568,7 @@ open class YapiFormatter {
 
     //region parse-json5
     private fun parseByJson5(typedObject: Any?, rootDesc: String?): String {
-        //try read mock rules
-        val mockRules = readMockRules()
-        if (mockRules.isNotEmpty()) {
-            addMockAsProperty("", typedObject)
-        }
+        addMockAsProperty("", typedObject)
         val json5Formatter = actionContext.instance(Json5Formatter::class)
         return json5Formatter.format(typedObject, rootDesc)
     }

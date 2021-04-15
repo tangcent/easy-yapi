@@ -44,6 +44,7 @@ internal class DefaultMethodDocClassExporterTest
         loadSource(LocalDateTime::class)
         loadSource(HashMap::class)
         loadFile("annotation/Public.java")
+        loadFile("constant/UserType.java")
         loadFile("model/IResult.java")
         loadFile("model/Result.java")
         loadFile("model/UserInfo.java")

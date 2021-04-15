@@ -1,12 +1,10 @@
-package com.itangcent.idea.plugin.api.export
+package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.common.model.Request
-import com.itangcent.idea.plugin.Worker
+import com.itangcent.idea.plugin.api.export.ClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -15,17 +13,13 @@ import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.collections.ArrayList
 
-/**
- * Test case of [SpringRequestClassExporter]
- */
-internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFixtureTestCase() {
+internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
-    private lateinit var classExporter: ClassExporter
+    internal lateinit var classExporter: ClassExporter
 
-    private lateinit var userCtrlPsiClass: PsiClass
+    internal lateinit var userCtrlPsiClass: PsiClass
 
     override fun beforeBind() {
         super.beforeBind()
@@ -62,42 +56,26 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 "json.rule.convert[java.util.Date]=java.lang.String\n" +
                 "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDate]=java.lang.String"
+                "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
+                "# read folder name from tag `folder`\n" +
+                "postman.prerequest=```\n" +
+                "pm.environment.set(\"token\", \"123456\");\n" +
+                "```\n" +
+                "postman.test=```\n" +
+                "pm.test(\"Successful POST request\", function () {\n" +
+                "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
+                "});\n" +
+                "```"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
 
-        builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                 settings.inferEnable = true
             }))
-        }
-    }
-
-    override fun afterBind() {
-        super.afterBind()
-    }
-
-    fun testExport() {
-        val requests = ArrayList<Request>()
-        classExporter.export(userCtrlPsiClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
-        requests[0].let { request ->
-            assertEquals("say hello", request.name)
-            assertEquals("say hello\n" +
-                    " not update anything", request.desc)
-            assertEquals("GET", request.method)
-            assertEquals(userCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
-        }
-        requests[1].let { request ->
-            assertEquals("get user info", request.name)
-            assertEquals("get user info", request.desc)
-            assertEquals("GET", request.method)
-            assertEquals(userCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
         }
     }
 }
