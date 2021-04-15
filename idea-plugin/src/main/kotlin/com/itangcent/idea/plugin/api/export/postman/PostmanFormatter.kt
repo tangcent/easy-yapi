@@ -22,13 +22,12 @@ import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils
 import org.apache.commons.lang3.RandomUtils
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.collections.set
 
 @Singleton
@@ -51,6 +50,13 @@ open class PostmanFormatter {
 
     @Inject
     private val settingBinder: SettingBinder? = null
+
+    @Inject
+    protected lateinit var systemProvider: SystemProvider
+
+    internal var responseTimeGenerator: () -> Int = {
+        RandomUtils.nextInt(10, 100)
+    }
 
     fun request2Items(request: Request): List<HashMap<String, Any?>> {
 
@@ -270,7 +276,7 @@ open class PostmanFormatter {
                     responseHeader.add(KV.create<String, Any?>()
                             .set(NAME, "date")
                             .set(KEY, "date")
-                            .set(VALUE, Date().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
+                            .set(VALUE, systemProvider.currentTimeMillis().asDate().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
                             .set(DESCRIPTION, "The date and time that the message was sent")
                     )
                 }
@@ -304,7 +310,7 @@ open class PostmanFormatter {
                 }
 
 
-                responseInfo["responseTime"] = RandomUtils.nextInt(10, 100)
+                responseInfo["responseTime"] = this.responseTimeGenerator()
 
                 responseInfo["body"] = getBodyFormatter(8).format(response.body)
 
