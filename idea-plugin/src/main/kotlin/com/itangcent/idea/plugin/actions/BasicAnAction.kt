@@ -81,7 +81,7 @@ abstract class BasicAnAction : KotlinAnAction {
 
     companion object {
         init {
-            Setup.load(ApiExportAction::class.java.classLoader)
+            Setup.load(BasicAnAction::class.java.classLoader)
             Setup.setup(OnlyOnceInContextTipSetup::class)
             Setup.setup(IdeaAutoInject::class)
             Setup.setup(KotlinAutoInject::class)
