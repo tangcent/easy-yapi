@@ -5,7 +5,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.asBool
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleContext

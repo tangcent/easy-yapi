@@ -12,7 +12,7 @@ import com.itangcent.http.HttpRequest
 import com.itangcent.http.HttpResponse
 import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
-import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.extend.*
@@ -142,8 +142,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
             return null
         } catch (e: Throwable) {
-            logger!!.traceError("Post failed", e)
-
+            logger!!.traceError("Post to $COLLECTION failed", e)
             return null
         }
     }
@@ -226,7 +225,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             onErrorResponse(response)
             return false
         } catch (e: Throwable) {
-            logger!!.traceError("Post failed", e)
+            logger!!.traceError("Post to $COLLECTION failed", e)
 
             return false
         }

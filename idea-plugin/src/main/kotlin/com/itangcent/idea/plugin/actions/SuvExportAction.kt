@@ -5,7 +5,11 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.DataEventCollector
-import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.ComboClassExporter
+import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
+import com.itangcent.idea.plugin.api.export.generic.SimpleGenericMethodDocClassExporter
+import com.itangcent.idea.plugin.api.export.spring.SimpleSpringRequestClassExporter
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
@@ -37,7 +41,7 @@ class SuvExportAction : ApiExportAction("Export Api") {
         builder.bind(DataContext::class) { it.toInstance(copyDataEventCollector) }
 
         builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SimpleRequestClassExporter::class, SimpleMethodDocClassExporter::class))
+        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SimpleSpringRequestClassExporter::class, SimpleGenericMethodDocClassExporter::class))
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 

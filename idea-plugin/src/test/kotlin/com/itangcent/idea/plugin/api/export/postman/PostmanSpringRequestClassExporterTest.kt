@@ -3,13 +3,13 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
 import org.junit.jupiter.api.condition.OS
 
 /**
- * Test case of [PostmanSpringRequestClassExporter]
+ * Test case of export spring apis with [PostmanRequestBuilderListener]
  * 1.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_PRE_REQUEST]
  * 2.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_TEST]
  *

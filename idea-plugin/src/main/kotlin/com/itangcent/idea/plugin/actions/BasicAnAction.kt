@@ -18,6 +18,8 @@ import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.file.DefaultLocalFileRepository
+import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
 import com.itangcent.intellij.logger.Logger

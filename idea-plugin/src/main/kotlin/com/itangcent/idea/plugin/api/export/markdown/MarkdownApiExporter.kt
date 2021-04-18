@@ -7,7 +7,7 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.FileSaveHelper

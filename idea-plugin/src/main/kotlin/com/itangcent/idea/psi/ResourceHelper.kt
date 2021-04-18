@@ -5,8 +5,8 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.utils.append
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.DocParseHelper
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.DocParseHelper
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper

@@ -4,9 +4,13 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.ComponentRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
+import com.itangcent.idea.plugin.api.export.postman.PostmanRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -32,7 +36,8 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
-
+        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
+        builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class))
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

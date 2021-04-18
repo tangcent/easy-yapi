@@ -3,10 +3,10 @@ package com.itangcent.idea.plugin.api.export.markdown
 import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.psi.PsiFile
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.ComboClassExporter
-import com.itangcent.idea.plugin.api.export.DefaultMethodDocClassExporter
-import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.ComboClassExporter
+import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
+import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.FileSaveHelper
@@ -64,7 +64,7 @@ internal class MarkdownApiExporterTest : PluginContextLightCodeInsightFixtureTes
         super.bind(builder)
 
         builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
+        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, GenericMethodDocClassExporter::class))
 
         builder.bind(FileSaveHelper::class) { it.with(FileSaveHelperAdaptor::class) }
         builder.bind(SettingBinder::class) {

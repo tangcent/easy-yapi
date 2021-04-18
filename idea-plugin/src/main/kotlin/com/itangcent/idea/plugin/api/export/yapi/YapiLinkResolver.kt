@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.itangcent.idea.plugin.api.export.DefaultLinkResolver
+import com.itangcent.idea.plugin.api.export.core.DefaultLinkResolver
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger

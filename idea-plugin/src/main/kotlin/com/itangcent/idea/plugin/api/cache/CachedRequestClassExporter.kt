@@ -10,10 +10,10 @@ import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.CompletedHandle
-import com.itangcent.idea.plugin.api.export.DocHandle
-import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.CompletedHandle
+import com.itangcent.idea.plugin.api.export.core.DocHandle
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.intellij.context.ActionContext

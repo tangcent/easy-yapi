@@ -2,8 +2,12 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.ComboClassExporter
+import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
+import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownApiExporter
+import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -23,7 +27,7 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
+        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, GenericMethodDocClassExporter::class))
 
         //always not read api from cache
         builder.bindInstance("class.exporter.read.cache", false)

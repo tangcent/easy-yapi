@@ -2,7 +2,11 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.idea.plugin.api.export.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.ComponentRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
+import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.intellij.context.ActionContext
@@ -71,7 +75,11 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
 
-        builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
+
+        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
+        builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class))
+
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                 settings.inferEnable = true

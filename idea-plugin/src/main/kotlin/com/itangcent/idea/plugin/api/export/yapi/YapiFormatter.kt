@@ -7,8 +7,8 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.ResolveMultiPath
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
 import com.itangcent.idea.plugin.json.Json5Formatter
 import com.itangcent.idea.plugin.render.MarkdownRender
 import com.itangcent.idea.plugin.settings.SettingBinder
