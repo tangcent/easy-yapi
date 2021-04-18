@@ -6,7 +6,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.asDate
 import com.itangcent.common.utils.formatDate
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings

@@ -11,8 +11,8 @@ import com.itangcent.common.utils.getAs
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -20,7 +20,6 @@ import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType
 import java.util.*
-import kotlin.collections.ArrayList
 
 
 @Singleton

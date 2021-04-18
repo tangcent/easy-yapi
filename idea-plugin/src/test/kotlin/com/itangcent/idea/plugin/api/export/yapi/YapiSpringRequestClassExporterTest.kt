@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
 
 /**

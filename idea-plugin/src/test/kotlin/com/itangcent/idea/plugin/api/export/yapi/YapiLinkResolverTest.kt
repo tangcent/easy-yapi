@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.idea.plugin.api.export.LinkResolver
+import com.itangcent.idea.plugin.api.export.core.LinkResolver
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase

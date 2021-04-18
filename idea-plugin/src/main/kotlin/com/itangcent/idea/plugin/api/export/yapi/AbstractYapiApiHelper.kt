@@ -7,7 +7,7 @@ import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
-import com.itangcent.idea.plugin.api.export.StringResponseHandler
+import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.SettingBinder

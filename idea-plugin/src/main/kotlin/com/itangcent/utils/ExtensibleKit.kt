@@ -30,7 +30,6 @@ object ExtensibleKit {
         return t
     }
 
-
     /**
      * If this string not starts with the given [prefix], returns a copy of this string
      * with the prefix. Otherwise, returns this string.

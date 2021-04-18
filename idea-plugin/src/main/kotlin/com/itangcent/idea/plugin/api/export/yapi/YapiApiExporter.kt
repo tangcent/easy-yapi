@@ -6,7 +6,7 @@ import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.Folder
+import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType

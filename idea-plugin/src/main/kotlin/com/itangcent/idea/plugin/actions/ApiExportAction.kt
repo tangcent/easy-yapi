@@ -4,8 +4,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.SpringRequestClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry

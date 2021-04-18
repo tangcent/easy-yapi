@@ -5,8 +5,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.requestOnly
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.dialog.ApiCallDialog
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.constant.EventKey

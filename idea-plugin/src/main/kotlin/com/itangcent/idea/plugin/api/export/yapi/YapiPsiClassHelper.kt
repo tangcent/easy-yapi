@@ -5,7 +5,7 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.sub
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.computer
@@ -35,7 +35,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         contextSwitchListener!!.onModuleChange {
             val resolveProperty = configReader!!.first("field.mock.resolveProperty")
             if (!resolveProperty.isNullOrBlank()) {
-                this.resolveProperty = resolveProperty.toBoolean() ?: true
+                this.resolveProperty = resolveProperty.toBoolean()
             }
         }
     }

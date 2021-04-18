@@ -20,9 +20,12 @@ import java.util.concurrent.TimeUnit
 @Singleton
 open class CachedResourceResolver : DefaultResourceResolver() {
 
-    @Inject
+    @Inject(optional = true)
     @Named("projectCacheRepository")
-    private lateinit var projectCacheRepository: LocalFileRepository
+    private val projectCacheRepository: LocalFileRepository? = null
+
+    @Inject(optional = true)
+    private val localFileRepository: LocalFileRepository? = null
 
     @Inject
     private lateinit var configReader: ConfigReader
@@ -31,7 +34,8 @@ open class CachedResourceResolver : DefaultResourceResolver() {
         val context = ActionContext.getContext()
         val sqliteDataResourceHelper = context!!.instance(SqliteDataResourceHelper::class)
         sqliteDataResourceHelper.getExpiredBeanDAO(
-                projectCacheRepository.getOrCreateFile(".url.cache.v2.1.db").path, "DB_BEAN_BINDER")
+                (projectCacheRepository
+                        ?: localFileRepository)!!.getOrCreateFile(".url.cache.v2.1.db").path, "DB_BEAN_BINDER")
     }
 
     override fun createUrlResource(url: String): URLResource {

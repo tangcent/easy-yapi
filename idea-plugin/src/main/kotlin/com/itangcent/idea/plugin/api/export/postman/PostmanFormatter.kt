@@ -8,10 +8,10 @@ import com.itangcent.common.model.URL
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.Folder
-import com.itangcent.idea.plugin.api.export.FormatFolderHelper
-import com.itangcent.idea.plugin.api.export.ResolveMultiPath
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.Folder
+import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
 import com.itangcent.idea.plugin.json.Json5Formatter
 import com.itangcent.idea.plugin.json.JsonFormatter
 import com.itangcent.idea.plugin.json.SimpleJsonFormatter

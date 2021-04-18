@@ -19,9 +19,12 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
-import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.idea.plugin.api.export.MethodFilter
+import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
 import com.itangcent.idea.plugin.api.export.postman.*
+import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
@@ -392,12 +395,15 @@ class SuvApiExporter {
             builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
-            builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
-
             builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
 
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
+
+            builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
+
+            builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
+            builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class))
 
             //always not read api from cache
             builder.bindInstance("class.exporter.read.cache", false)
@@ -480,7 +486,13 @@ class SuvApiExporter {
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(YapiSpringRequestClassExporter::class, YapiMethodDocClassExporter::class))
+            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(YapiSpringRequestClassExporter::class, GenericMethodDocClassExporter::class))
+
+            builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
+            builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class))
+
+            builder.bind(MethodDocBuilderListener::class) { it.with(ComponentMethodDocBuilderListener::class).singleton() }
+            builder.bindInstance("AVAILABLE_METHOD_DOC_BUILDER_LISTENER", arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class))
 
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
@@ -567,7 +579,7 @@ class SuvApiExporter {
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, DefaultMethodDocClassExporter::class))
+            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, GenericMethodDocClassExporter::class))
 
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }

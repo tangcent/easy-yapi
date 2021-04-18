@@ -2,9 +2,9 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.Folder
-import com.itangcent.idea.plugin.api.export.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.Folder
+import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.psi.PsiClassResource
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.context.ActionContext

@@ -4,9 +4,9 @@ import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.Folder
-import com.itangcent.idea.plugin.api.export.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.Folder
+import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext

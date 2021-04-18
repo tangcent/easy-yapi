@@ -5,7 +5,7 @@ import com.google.inject.Singleton
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.http.*
-import com.itangcent.idea.plugin.api.export.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader

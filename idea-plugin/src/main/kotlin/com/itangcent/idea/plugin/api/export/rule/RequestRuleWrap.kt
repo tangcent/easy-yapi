@@ -6,6 +6,7 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.utils.setExts
 import com.itangcent.intellij.context.ActionContext
@@ -14,7 +15,7 @@ import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.JsonOption
 
-class RequestRuleWrap(private val request: Request) {
+class RequestRuleWrap(private val methodExportContext: MethodExportContext, private val request: Request) {
 
     //region request
 
@@ -23,7 +24,7 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun setName(name: String) {
-        requestHelper.setName(request, name)
+        requestBuilderListener.setName(methodExportContext, request, name)
     }
 
     /**
@@ -36,11 +37,11 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun setMethod(method: String) {
-        requestHelper.setMethod(request, method)
+        requestBuilderListener.setMethod(methodExportContext, request, method)
     }
 
     fun setMethodIfMissed(method: String) {
-        return requestHelper.setMethodIfMissed(request, method)
+        return requestBuilderListener.setMethodIfMissed(methodExportContext, request, method)
     }
 
     fun path(): String? {
@@ -52,7 +53,7 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun setPath(path: URL) {
-        requestHelper.setPath(request, path)
+        requestBuilderListener.setPath(methodExportContext, request, path)
     }
 
     /**
@@ -74,7 +75,7 @@ class RequestRuleWrap(private val request: Request) {
      * otherwise addAsForm
      */
     fun setBody(model: Any) {
-        requestHelper.setModelAsBody(request, model)
+        requestBuilderListener.setModelAsBody(methodExportContext, request, model)
     }
 
     fun setBodyClass(bodyClass: String?) {
@@ -89,11 +90,11 @@ class RequestRuleWrap(private val request: Request) {
         }
         val responseType = context.instance(DuckTypeHelper::class).findType(bodyClass, resource)
         val res = context.instance(PsiClassHelper::class).getTypeObject(responseType, resource, JsonOption.ALL)
-        res?.let { requestHelper.setModelAsBody(this.request, it) }
+        res?.let { requestBuilderListener.setModelAsBody(methodExportContext, this.request, it) }
     }
 
     fun addModelAsParam(model: Any) {
-        requestHelper.addModelAsParam(request, model)
+        requestBuilderListener.addModelAsParam(methodExportContext, request, model)
     }
 
     fun addModelClass(modelClass: String?) {
@@ -108,41 +109,41 @@ class RequestRuleWrap(private val request: Request) {
         }
         val responseType = context.instance(DuckTypeHelper::class).findType(modelClass, resource)
         val res = context.instance(PsiClassHelper::class).getTypeObject(responseType, resource, JsonOption.ALL)
-        res?.let { requestHelper.addModelAsParam(this.request, it) }
+        res?.let { requestBuilderListener.addModelAsParam(methodExportContext, this.request, it) }
     }
 
     fun addFormParam(formParam: FormParam) {
-        requestHelper.addFormParam(request, formParam)
+        requestBuilderListener.addFormParam(methodExportContext, request, formParam)
     }
 
     fun addParam(param: Param) {
-        requestHelper.addParam(request, param)
+        requestBuilderListener.addParam(methodExportContext, request, param)
     }
 
     fun addPathParam(pathParam: PathParam) {
-        requestHelper.addPathParam(request, pathParam)
+        requestBuilderListener.addPathParam(methodExportContext, request, pathParam)
     }
 
     fun setJsonBody(body: Any?, bodyAttr: String?) {
-        requestHelper.setJsonBody(request, body, bodyAttr)
+        requestBuilderListener.setJsonBody(methodExportContext, request, body, bodyAttr)
     }
 
     fun appendDesc(desc: String?) {
-        requestHelper.appendDesc(request, desc)
+        requestBuilderListener.appendDesc(methodExportContext, request, desc)
     }
 
     fun addParam(paramName: String, defaultVal: String?, desc: String?) {
-        requestHelper.addParam(request, paramName, defaultVal, desc)
+        requestBuilderListener.addParam(methodExportContext, request, paramName, defaultVal, desc)
     }
 
     fun addParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
-        requestHelper.addParam(request, paramName, defaultVal, required ?: true, desc)
+        requestBuilderListener.addParam(methodExportContext, request, paramName, defaultVal, required ?: true, desc)
     }
 
     fun setParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
         val param = request.querys?.firstOrNull { it.name == paramName }
         if (param == null) {
-            requestHelper.addParam(request, paramName, defaultVal, required ?: true, desc)
+            requestBuilderListener.addParam(methodExportContext, request, paramName, defaultVal, required ?: true, desc)
         } else {
             if (param.value.anyIsNullOrBlank() && defaultVal.notNullOrBlank()) {
                 param.value = defaultVal
@@ -153,17 +154,18 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun addFormParam(paramName: String, defaultVal: String?, desc: String?) {
-        requestHelper.addFormParam(request, paramName, defaultVal, desc)
+        requestBuilderListener.addFormParam(methodExportContext, request, paramName, defaultVal, desc)
     }
 
     fun addFormParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
-        requestHelper.addFormParam(request, paramName, defaultVal, required ?: true, desc)
+        requestBuilderListener.addFormParam(methodExportContext, request, paramName, defaultVal, required ?: true, desc)
     }
 
     fun setFormParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
         val param = request.formParams?.firstOrNull { it.name == paramName }
         if (param == null) {
-            requestHelper.addFormParam(request, paramName, defaultVal, required ?: true, desc)
+            requestBuilderListener.addFormParam(methodExportContext, request, paramName, defaultVal, required
+                    ?: true, desc)
         } else {
             if (param.value.anyIsNullOrBlank() && defaultVal.notNullOrBlank()) {
                 param.value = defaultVal
@@ -174,13 +176,13 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun addFormFileParam(paramName: String, required: Boolean?, desc: String?) {
-        requestHelper.addFormFileParam(request, paramName, required ?: true, desc)
+        requestBuilderListener.addFormFileParam(methodExportContext, request, paramName, required ?: true, desc)
     }
 
     fun setFormFileParam(paramName: String, required: Boolean?, desc: String?) {
         val param = request.formParams?.firstOrNull { it.name == paramName }
         if (param == null) {
-            requestHelper.addFormFileParam(request, paramName, required ?: true, desc)
+            requestBuilderListener.addFormFileParam(methodExportContext, request, paramName, required ?: true, desc)
         } else {
             param.desc = param.desc.append(desc)
             param.required = required
@@ -209,11 +211,11 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun addHeader(name: String, value: String) {
-        requestHelper.addHeader(request, name, value)
+        requestBuilderListener.addHeader(methodExportContext, request, name, value)
     }
 
     fun addHeaderIfMissed(name: String, value: String): Boolean {
-        return requestHelper.addHeaderIfMissed(request, name, value)
+        return requestBuilderListener.addHeaderIfMissed(methodExportContext, request, name, value)
     }
 
     fun addHeader(name: String, value: String?, required: Boolean?, desc: String?) {
@@ -222,7 +224,7 @@ class RequestRuleWrap(private val request: Request) {
         header.value = value
         header.required = required
         header.desc = desc
-        requestHelper.addHeader(request, header)
+        requestBuilderListener.addHeader(methodExportContext, request, header)
     }
 
     fun setHeader(name: String, value: String?, required: Boolean?, desc: String?) {
@@ -239,7 +241,7 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun addPathParam(name: String, desc: String) {
-        requestHelper.addPathParam(request, name, desc)
+        requestBuilderListener.addPathParam(methodExportContext, request, name, desc)
     }
 
     fun addPathParam(name: String, value: String, desc: String) {
@@ -247,7 +249,7 @@ class RequestRuleWrap(private val request: Request) {
         pathParam.name = name
         pathParam.value = value
         pathParam.desc = desc
-        requestHelper.addPathParam(request, pathParam)
+        requestBuilderListener.addPathParam(methodExportContext, request, pathParam)
     }
 
     fun setPathParam(name: String, value: String, desc: String) {
@@ -272,15 +274,15 @@ class RequestRuleWrap(private val request: Request) {
     }
 
     fun addResponseHeader(header: Header) {
-        response()?.let { requestHelper.addResponseHeader(it, header) }
+        response()?.let { requestBuilderListener.addResponseHeader(methodExportContext, it, header) }
     }
 
     fun setResponseBody(bodyType: String, body: Any?) {
-        response()?.let { requestHelper.setResponseBody(it, bodyType, body) }
+        response()?.let { requestBuilderListener.setResponseBody(methodExportContext, it, bodyType, body) }
     }
 
     fun setResponseBody(body: Any?) {
-        response()?.let { requestHelper.setResponseBody(it, "raw", body) }
+        response()?.let { requestBuilderListener.setResponseBody(methodExportContext, it, "raw", body) }
     }
 
     fun setResponseBodyClass(bodyClass: String?) {
@@ -296,7 +298,7 @@ class RequestRuleWrap(private val request: Request) {
             }
             val responseType = context.instance(DuckTypeHelper::class).findType(bodyClass, resource)
             val res = context.instance(PsiClassHelper::class).getTypeObject(responseType, resource, JsonOption.ALL)
-            requestHelper.setResponseBody(it, "raw", res)
+            requestBuilderListener.setResponseBody(methodExportContext, it, "raw", res)
         }
     }
 
@@ -313,21 +315,21 @@ class RequestRuleWrap(private val request: Request) {
             }
             val responseType = context.instance(DuckTypeHelper::class).findType(bodyClass, resource)
             val res = context.instance(PsiClassHelper::class).getTypeObject(responseType, resource, JsonOption.ALL)
-            requestHelper.setResponseBody(it, bodyType, res)
+            requestBuilderListener.setResponseBody(methodExportContext, it, bodyType, res)
         }
     }
 
     fun setResponseCode(code: Any?) {
         val codeInt = code.asInt() ?: return
-        response()?.let { requestHelper.setResponseCode(it, codeInt) }
+        response()?.let { requestBuilderListener.setResponseCode(methodExportContext, it, codeInt) }
     }
 
     fun appendResponseBodyDesc(bodyDesc: String?) {
-        response()?.let { requestHelper.appendResponseBodyDesc(it, bodyDesc) }
+        response()?.let { requestBuilderListener.appendResponseBodyDesc(methodExportContext, it, bodyDesc) }
     }
 
     fun addResponseHeader(name: String, value: String) {
-        response()?.let { requestHelper.addResponseHeader(it, name, value) }
+        response()?.let { requestBuilderListener.addResponseHeader(methodExportContext, it, name, value) }
     }
 
     fun addResponseHeader(name: String, value: String?, required: Boolean?, desc: String?) {
@@ -337,7 +339,7 @@ class RequestRuleWrap(private val request: Request) {
         header.value = value
         header.required = required
         header.desc = desc
-        requestHelper.addResponseHeader(response, header)
+        requestBuilderListener.addResponseHeader(methodExportContext, response, header)
     }
 
     fun setResponseHeader(name: String, value: String?, required: Boolean?, desc: String?) {
@@ -357,7 +359,7 @@ class RequestRuleWrap(private val request: Request) {
     //endregion response
 
     companion object {
-        val requestHelper: RequestHelper = ActionContext.local()
+        val requestBuilderListener: RequestBuilderListener = ActionContext.local()
     }
 }
 

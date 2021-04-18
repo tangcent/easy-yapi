@@ -15,8 +15,8 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.idea.icons.EasyIcons
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.docs
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.docs
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resourceClass
@@ -44,7 +44,6 @@ import java.util.concurrent.TimeUnit
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
-import kotlin.collections.ArrayList
 
 
 abstract class AbstractApiDashboardDialog : JDialog() {

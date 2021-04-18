@@ -2,9 +2,12 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.idea.plugin.api.export.ClassExporter
-import com.itangcent.idea.plugin.api.export.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.core.ComponentRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
+import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.postman.*
+import com.itangcent.idea.plugin.api.export.yapi.YapiRequestBuilderListener
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -22,8 +25,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-        builder.bind(ClassExporter::class) { it.with(PostmanSpringRequestClassExporter::class).singleton() }
-
         builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
 
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
@@ -31,6 +32,9 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
+
+        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
+        builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class))
 
         //always not read api from cache
         builder.bindInstance("class.exporter.read.cache", false)
