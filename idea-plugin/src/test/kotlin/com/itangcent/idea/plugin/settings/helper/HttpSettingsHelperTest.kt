@@ -1,13 +1,12 @@
 package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.Settings
+import com.intellij.openapi.ui.Messages
+import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.mock.AdvancedContextTest
-import com.itangcent.mock.SettingBinderAdaptor
 import org.junit.Assert.assertArrayEquals
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,15 +19,37 @@ internal class HttpSettingsHelperTest : SettingsHelperTest() {
 
     @Inject
     private lateinit var httpSettingsHelper: HttpSettingsHelper
+    override fun bind(builder: ActionContext.ActionContextBuilder) {
+        super.bind(builder)
+
+        val messagesHelper = Mockito.mock(MessagesHelper::class.java)
+        Mockito.`when`(messagesHelper.showYesNoDialog(
+                Mockito.eq("Do you trust [http://itangcent.com]?"),
+                Mockito.anyString(),
+                Mockito.any()))
+                .thenReturn(Messages.YES)
+        Mockito.`when`(messagesHelper.showYesNoDialog(
+                Mockito.eq("Do you trust [http://tangcent.com]?"),
+                Mockito.anyString(),
+                Mockito.any()))
+                .thenReturn(Messages.NO)
+        builder.bindInstance(MessagesHelper::class, messagesHelper)
+    }
 
     @Test
     fun testCheckTrustUrl() {
+        settings.yapiServer = "http://127.0.0.1:3000"
         settings.trustHosts = arrayOf(
                 "https://raw.githubusercontent.com",
                 "!https://raw.githubusercontent.com/itangcent",
                 "!http://192.168.1.1",
                 "!http://localhost",
                 "https://api.getpostman.com")
+
+        //trust yapi server
+        assertTrue(httpSettingsHelper.checkTrustUrl("http://127.0.0.1:3000"))
+        assertTrue(httpSettingsHelper.checkTrustUrl("http://127.0.0.1:3000/api"))
+
         assertTrue(httpSettingsHelper.checkTrustUrl("https://raw.githubusercontent.com"))
         assertTrue(httpSettingsHelper.checkTrustUrl("https://raw.githubusercontent.com/tangcent"))
         assertTrue(httpSettingsHelper.checkTrustUrl("https://raw.githubusercontent.com/tangcent/easy-yapi/master/third/swagger.config"))
@@ -40,22 +61,36 @@ internal class HttpSettingsHelperTest : SettingsHelperTest() {
         assertFalse(httpSettingsHelper.checkTrustUrl("http://localhost/a"))
         assertTrue(httpSettingsHelper.checkTrustUrl("https://api.getpostman.com"))
         assertTrue(httpSettingsHelper.checkTrustUrl("https://api.getpostman.com/collections"))
+
+        //check without dumb
+        assertFalse(httpSettingsHelper.checkTrustUrl("http://tangcent.com/index", false))
+        assertTrue(httpSettingsHelper.checkTrustUrl("http://itangcent.com/index", false))
     }
 
     @Test
     fun testCheckTrustHost() {
+        settings.yapiServer = "http://127.0.0.1:3000"
         settings.trustHosts = arrayOf(
                 "https://raw.githubusercontent.com",
                 "!https://raw.githubusercontent.com/itangcent",
                 "!http://192.168.1.1",
                 "!http://localhost",
                 "https://api.getpostman.com")
+
+        //trust yapi server
+        assertTrue(httpSettingsHelper.checkTrustHost("http://127.0.0.1:3000"))
+
         assertTrue(httpSettingsHelper.checkTrustHost("https://raw.githubusercontent.com"))
         assertFalse(httpSettingsHelper.checkTrustHost("https://raw.githubusercontent.com/tangcent"))
         assertFalse(httpSettingsHelper.checkTrustHost("https://raw.githubusercontent.com/itangcent"))
         assertFalse(httpSettingsHelper.checkTrustHost("http://192.168.1.1"))
         assertFalse(httpSettingsHelper.checkTrustHost("http://localhost"))
         assertTrue(httpSettingsHelper.checkTrustHost("https://api.getpostman.com"))
+
+        //check without dumb
+        assertFalse(httpSettingsHelper.checkTrustHost("http://tangcent.com", false))
+        assertTrue(httpSettingsHelper.checkTrustHost("http://itangcent.com", false))
+
     }
 
     @Test
@@ -77,6 +112,8 @@ internal class HttpSettingsHelperTest : SettingsHelperTest() {
         assertEquals("https://raw.githubusercontent.com/tangcent",
                 httpSettingsHelper.resolveHost("https://raw.githubusercontent.com/tangcent"))
         assertEquals("https://raw.githubusercontent.com/tangcent",
+                httpSettingsHelper.resolveHost("https://raw.githubusercontent.com/tangcent/"))
+        assertEquals("https://raw.githubusercontent.com/tangcent",
                 httpSettingsHelper.resolveHost("https://raw.githubusercontent.com/tangcent/easy-yapi/master/third/swagger.config"))
         assertEquals("https://api.getpostman.com",
                 httpSettingsHelper.resolveHost("https://api.getpostman.com/collections"))
@@ -84,6 +121,8 @@ internal class HttpSettingsHelperTest : SettingsHelperTest() {
                 httpSettingsHelper.resolveHost("http://127.0.0.1/a/b/c"))
         assertEquals("https://127.0.0.1",
                 httpSettingsHelper.resolveHost("https://127.0.0.1/a/b/c"))
+        assertEquals("unknown host",
+                httpSettingsHelper.resolveHost("unknown host"))
     }
 
     @Test
