@@ -12,6 +12,8 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.swing.ActiveWindowProvider
+import com.itangcent.idea.swing.SimpleActiveWindowProvider
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -38,6 +40,8 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
 
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
         builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class))
+
+        builder.bind(ActiveWindowProvider::class) { it.with(SimpleActiveWindowProvider::class) }
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

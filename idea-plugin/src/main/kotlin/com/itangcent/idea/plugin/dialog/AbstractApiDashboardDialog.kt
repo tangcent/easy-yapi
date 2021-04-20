@@ -21,10 +21,7 @@ import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.psi.resourceMethod
-import com.itangcent.idea.swing.IconCustomized
-import com.itangcent.idea.swing.SafeHashHelper
-import com.itangcent.idea.swing.ToolTipAble
-import com.itangcent.idea.swing.Tooltipable
+import com.itangcent.idea.swing.*
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.rx.AutoComputer
@@ -59,7 +56,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     protected val logger: Logger? = null
 
     @Inject
-    protected var actionContext: ActionContext? = null
+    protected lateinit var actionContext: ActionContext
 
     @Inject
     protected val classExporter: ClassExporter? = null
@@ -77,10 +74,15 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     @Inject
     var project: Project? = null
 
+    @Inject(optional = true)
+    private var activeWindowProvider: ActiveWindowProvider? = null
+
     protected var apiLoadFuture: Future<*>? = null
 
     //region project module-----------------------------------------------------
     protected fun initProjectApiModule() {
+
+        (activeWindowProvider as? MutableActiveWindowProvider)?.setActiveWindow(this)
 
         projectApiTree!!.model = null
 
@@ -100,8 +102,8 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             }
         }
 
-        actionContext!!.runAsync {
-            actionContext!!.runInReadUI {
+        actionContext.runAsync {
+            actionContext.runInReadUI {
 
                 val moduleManager = ModuleManager.getInstance(project!!)
                 val treeNode = DefaultMutableTreeNode()
@@ -115,10 +117,10 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                     moduleNodes.add(moduleProjectNode)
                 }
 
-                actionContext!!.runInSwingUI {
+                actionContext.runInSwingUI {
                     val rootTreeModel = DefaultTreeModel(treeNode, true)
                     projectApiTree!!.model = rootTreeModel
-                    apiLoadFuture = actionContext!!.runAsync {
+                    apiLoadFuture = actionContext.runAsync {
                         for (moduleNode in moduleNodes) {
                             if (disposed) break
                             loadApiInModule(moduleNode, rootTreeModel)
@@ -169,7 +171,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             }
             countLatch.down()
             val classNodeMap: ConcurrentHashMap<PsiClass, DefaultMutableTreeNode> = ConcurrentHashMap()
-            actionContext!!.runInReadUI {
+            actionContext.runInReadUI {
                 try {
                     if (disposed) {
                         LOG.info("interrupt parsing api from ${contentRoot.path} because the action ApiDashBoard was disposed")
@@ -230,7 +232,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                 }
             }
         }
-        actionContext!!.runAsync {
+        actionContext.runAsync {
             TimeUnit.MILLISECONDS.sleep(2000)//wait 2s
             countLatch.waitFor(60000)//60s
             if (anyFound) {

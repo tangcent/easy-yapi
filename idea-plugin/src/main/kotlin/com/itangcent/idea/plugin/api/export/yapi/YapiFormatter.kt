@@ -11,8 +11,7 @@ import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
 import com.itangcent.idea.plugin.json.Json5Formatter
 import com.itangcent.idea.plugin.render.MarkdownRender
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.utils.SystemProvider
@@ -53,9 +52,7 @@ open class YapiFormatter {
     protected lateinit var systemProvider: SystemProvider
 
     @Inject
-    protected lateinit var settingBinder: SettingBinder
-
-    private val setting: Settings by lazy { settingBinder.read() }
+    protected lateinit var yapiSettingsHelper: YapiSettingsHelper
 
     fun doc2Item(doc: Doc): List<HashMap<String, Any?>> {
         if (doc is Request) {
@@ -130,7 +127,7 @@ open class YapiFormatter {
 
         if (methodDoc.ret != null) {
             item["res_body_type"] = "json"
-            if (setting.yapiResBodyJson5) {
+            if (yapiSettingsHelper.yapiResBodyJson5()) {
                 item["res_body_is_json_schema"] = false
                 item["res_body"] = parseByJson5(methodDoc.ret,
                         methodDoc.resourceMethod()?.let {
@@ -144,7 +141,6 @@ open class YapiFormatter {
             }
         } else {
             item["res_body_type"] = "json"
-
             item["res_body"] = ""
         }
 
@@ -365,7 +361,7 @@ open class YapiFormatter {
             item["req_body_type"] = "json"
             item["req_body_form"] = EMPTY_ARR
 
-            if (setting.yapiResBodyJson5) {
+            if (yapiSettingsHelper.yapiReqBodyJson5()) {
                 item["req_body_is_json_schema"] = false
                 item["req_body_other"] = parseByJson5(request.body, request.bodyAttr)
             } else {
@@ -378,7 +374,7 @@ open class YapiFormatter {
 
             val response = request.response!![0]
             item["res_body_type"] = "json"
-            if (setting.yapiResBodyJson5) {
+            if (yapiSettingsHelper.yapiResBodyJson5()) {
                 item["res_body_is_json_schema"] = false
                 item["res_body"] = parseByJson5(response.body, request.resourceMethod()?.let {
                     findReturnOfMethod(it)
@@ -813,7 +809,7 @@ open class YapiFormatter {
                 )
 
                 return@safeComputeIfAbsent {
-                    pattern.matcher(it).matches()
+                    pattern.matcher(it ?: "").matches()
                 }
             }
 

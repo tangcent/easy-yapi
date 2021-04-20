@@ -8,6 +8,7 @@ import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DuckTypeHelper
@@ -21,10 +22,6 @@ import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
-import kotlin.collections.LinkedHashMap
 
 /**
  *1.Try infer the return type of method
@@ -56,6 +53,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
     @Inject
     protected val settingBinder: SettingBinder? = null
 
+    @Inject
+    protected lateinit var intelligentSettingsHelper: IntelligentSettingsHelper
+
     private val staticMethodCache: HashMap<Pair<PsiMethod, Array<Any?>?>, Any?> = HashMap()
 
     private val methodStack: Stack<Infer> = Stack()
@@ -64,16 +64,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
     private var simpleJsonOption: Int = jsonOption and JsonOption.READ_GETTER.inv()
 
-    private var maxDeep: Int? = null
-
     private var maxObjectDeep: Int = 4
-
-    private fun inferMaxDeep(): Int {
-        if (this.maxDeep == null) {
-            this.maxDeep = settingBinder!!.read().inferMaxDeep
-        }
-        return maxDeep!!
-    }
 
     private val emptyCallMethodCache: HashMap<PsiMethod, Any?> = HashMap()
 
@@ -95,7 +86,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             option: Int = DEFAULT_OPTION
     ): Any? {
         actionContext!!.checkStatus()
-        if (methodStack.size < inferMaxDeep()) {
+        if (methodStack.size < intelligentSettingsHelper.inferMaxDeep()) {
             try {
                 var inferRet: Any?
                 inferRet = callSimpleMethod(context, psiMethod, caller, args)
@@ -564,7 +555,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 return when {
                     !needCompute(obj) -> obj
                     obj is Variable -> valueOf(obj.getValue())
-                    obj is Delay -> valueOf(obj.unwrapped {  })
+                    obj is Delay -> valueOf(obj.unwrapped { })
                     obj is MutableMap<*, *> -> {
                         val copy = KV.create<Any?, Any?>()
                         obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }

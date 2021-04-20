@@ -29,23 +29,9 @@ interface YapiApiHelper {
 
     fun findCarts(project_id: String, token: String): ArrayList<Any?>?
 
-    fun findServer(): String?
-
-    fun setYapiServer(yapiServer: String)
-
-    fun setToken(module: String, token: String)
-
     fun getProjectIdByToken(token: String): String?
 
     fun getProjectInfo(token: String, projectId: String?): JsonElement?
 
     fun getProjectInfo(token: String): JsonObject?
-
-    fun readTokens(): HashMap<String, String>
-
-    fun removeToken(token: String)
-
-    fun removeTokenByModule(module: String)
-
-    fun getPrivateToken(module: String): String?
 }

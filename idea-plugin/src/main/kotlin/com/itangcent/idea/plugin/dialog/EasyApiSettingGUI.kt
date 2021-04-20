@@ -16,12 +16,12 @@ import com.intellij.ui.CheckBoxList
 import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
-import com.itangcent.idea.plugin.config.RecommendConfigLoader
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
 import com.itangcent.idea.utils.Charsets
-import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
@@ -116,6 +116,8 @@ class EasyApiSettingGUI {
     private var recommendedCheckBox: JCheckBox? = null
 
     private var httpTimeOutTextField: JTextField? = null
+
+    private var trustHostsTextArea: JTextArea? = null
 
     //endregion general-----------------------------------------------------
 
@@ -266,12 +268,12 @@ class EasyApiSettingGUI {
                     }
                 }
 
-        logLevelComboBox!!.model = DefaultComboBoxModel(ConfigurableLogger.CoarseLogLevel.editableValues())
+        logLevelComboBox!!.model = DefaultComboBoxModel(CommonSettingsHelper.CoarseLogLevel.editableValues())
 
         autoComputer.bind<Int?>(this, "settings.logLevel")
                 .with(this.logLevelComboBox!!)
                 .filter { throttleHelper.acquire("settings.logLevel", 300) }
-                .eval { (it ?: ConfigurableLogger.CoarseLogLevel.LOW).getLevel() }
+                .eval { (it ?: CommonSettingsHelper.CoarseLogLevel.LOW).getLevel() }
 
         outputCharsetComboBox!!.model = DefaultComboBoxModel(Charsets.SUPPORTED_CHARSETS)
 
@@ -302,6 +304,14 @@ class EasyApiSettingGUI {
                 .with(builtInConfigTextArea!!)
                 .eval { it.takeIf { it != DEFAULT_BUILT_IN_CONFIG } ?: "" }
 
+        autoComputer.bind<Array<String>>(this, "settings.trustHosts")
+                .with(trustHostsTextArea!!)
+                .eval { trustHosts -> trustHosts?.lines()?.toTypedArray() ?: emptyArray() }
+
+        autoComputer.bind(trustHostsTextArea!!)
+                .with<Array<String>>(this, "settings.trustHosts")
+                .eval { trustHosts -> trustHosts.joinToString(separator = "\n") }
+
         //endregion  general-----------------------------------------------------
 
         refresh()
@@ -309,7 +319,7 @@ class EasyApiSettingGUI {
         bindRecommendConfig()
 
         this.recommendConfigList!!.setCheckBoxListListener { index, value ->
-            val code = RecommendConfigLoader[index] ?: return@setCheckBoxListListener
+            val code = RecommendConfigLoader[index]
             val settings = this.settings!!
             if (value) {
                 settings.recommendConfigs = RecommendConfigLoader.addSelectedConfig(settings.recommendConfigs, code)
@@ -333,7 +343,7 @@ class EasyApiSettingGUI {
 
         autoComputer.value(this::settings, settings.copy())
 
-        this.logLevelComboBox!!.selectedItem = ConfigurableLogger.CoarseLogLevel.toLevel(settings.logLevel)
+        this.logLevelComboBox!!.selectedItem = CommonSettingsHelper.CoarseLogLevel.toLevel(settings.logLevel)
         this.outputCharsetComboBox!!.selectedItem = Charsets.forName(settings.outputCharset)
         this.postmanJson5FormatTypeComboBox!!.selectedItem = settings.postmanJson5FormatType
         this.markdownFormatTypeComboBox!!.selectedItem = settings.markdownFormatType

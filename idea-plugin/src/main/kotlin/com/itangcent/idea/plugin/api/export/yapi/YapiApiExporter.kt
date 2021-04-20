@@ -10,22 +10,15 @@ import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType
-import java.util.*
 import kotlin.collections.set
 
 
 class YapiApiExporter : AbstractYapiApiExporter() {
 
     fun export() {
-        val serverFound = yapiApiHelper!!.findServer().notNullOrBlank()
+        val serverFound = yapiSettingsHelper.getServer(false).notNullOrBlank()
         if (serverFound) {
             doExport()
-        } else {
-            yapiApiInputHelper!!.inputServer {
-                if (it.notNullOrBlank()) {
-                    doExport()
-                }
-            }
         }
     }
 
@@ -40,7 +33,7 @@ class YapiApiExporter : AbstractYapiApiExporter() {
                             val project = actionContext.instance(Project::class)
                             val yes = Messages.showYesNoDialog(project,
                                     "Export the model in directory [${ActionUtils.findCurrentPath(dir)}]?",
-                                    "Are you sure",
+                                    "Please Confirm",
                                     Messages.getQuestionIcon())
                             if (yes == Messages.YES) {
                                 callBack(true)

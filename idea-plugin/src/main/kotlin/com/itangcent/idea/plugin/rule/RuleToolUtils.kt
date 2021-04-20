@@ -15,8 +15,6 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
 import java.util.regex.Pattern
-import kotlin.collections.ArrayList
-import kotlin.collections.HashSet
 import kotlin.reflect.*
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.findAnnotation
@@ -1019,6 +1017,9 @@ class RuleToolUtils {
     }
 
     companion object {
+
+        val INSTANCE = RuleToolUtils()
+
         private val excludedMethods = Arrays.asList("hashCode", "toString", "equals", "getClass", "clone", "notify", "notifyAll", "wait", "finalize")
 
         private val TO_LINE_PATTERN = Pattern.compile("[A-Z]+")

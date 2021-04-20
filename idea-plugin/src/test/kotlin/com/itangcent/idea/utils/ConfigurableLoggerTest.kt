@@ -1,19 +1,24 @@
 package com.itangcent.idea.utils
 
-import com.itangcent.mock.BaseContextTest
-import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.common.utils.SystemUtils
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.SettingBinderAdaptor
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import kotlin.test.assertEquals
 
+/**
+ * Test case of [ConfigurableLogger]
+ */
 internal class ConfigurableLoggerTest : BaseContextTest() {
 
     private val settings = Settings()
@@ -32,7 +37,7 @@ internal class ConfigurableLoggerTest : BaseContextTest() {
             "MEDIUM,[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
             "HIGH,[ERROR]\terrorlog",
     )
-    fun testLog(level: ConfigurableLogger.CoarseLogLevel, output: String) {
+    fun testLog(level: CommonSettingsHelper.CoarseLogLevel, output: String) {
         settings.logLevel = level.getLevel()
         (logger as ConfigurableLogger).init()
         logger.trace("trace")

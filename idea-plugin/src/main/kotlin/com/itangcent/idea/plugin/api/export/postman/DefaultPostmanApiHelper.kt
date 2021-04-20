@@ -14,7 +14,7 @@ import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
-import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.intellij.extend.*
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
@@ -42,7 +42,7 @@ import kotlin.streams.toList
 open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     @Inject
-    private val settingBinder: SettingBinder? = null
+    private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
     @Inject
     private val logger: Logger? = null
@@ -51,20 +51,6 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private val httpClientProvider: HttpClientProvider? = null
 
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
-
-    override fun hasPrivateToken(): Boolean {
-        return getPrivateToken().notNullOrEmpty()
-    }
-
-    override fun getPrivateToken(): String? {
-        return settingBinder!!.read().postmanToken?.trim()
-    }
-
-    override fun setPrivateToken(postmanPrivateToken: String) {
-        val settings = settingBinder!!.read()
-        settings.postmanToken = postmanPrivateToken
-        settingBinder.save(settings)
-    }
 
     protected open fun beforeRequest(request: HttpRequest) {
         apiThrottle.acquireGreedy(LIMIT_PERIOD_PRE_REQUEST)
@@ -123,7 +109,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         val request = getHttpClient()
                 .post(COLLECTION)
                 .contentType(ContentType.APPLICATION_JSON)
-                .header("x-api-key", getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
                 .body(KV.by("collection", collection))
 
         try {
@@ -203,7 +189,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
         val request = getHttpClient().put("$COLLECTION/$collectionId")
                 .contentType(ContentType.APPLICATION_JSON)
-                .header("x-api-key", getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
                 .body(KV.by("collection", apiInfo))
 
         try {
@@ -233,7 +219,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun getAllCollection(): ArrayList<HashMap<String, Any?>>? {
         val request = getHttpClient().get(COLLECTION)
-                .header("x-api-key", getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
         try {
             beforeRequest(request)
@@ -260,7 +246,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().get("$COLLECTION/$collectionId")
-                .header("x-api-key", getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
             val response = call(request)
@@ -285,7 +271,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().delete("$COLLECTION/$collectionId")
-                .header("x-api-key", getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
             val result = call(request)

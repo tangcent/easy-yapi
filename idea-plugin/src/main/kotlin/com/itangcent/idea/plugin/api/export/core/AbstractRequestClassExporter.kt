@@ -17,8 +17,7 @@ import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.spring.SpringClassName
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.group.JsonSetting
+import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
@@ -71,10 +70,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
     protected lateinit var requestBuilderListener: RequestBuilderListener
 
     @Inject
-    protected val settingBinder: SettingBinder? = null
-
-    @Inject
-    protected val jsonSetting: JsonSetting? = null
+    protected lateinit var intelligentSettingsHelper: IntelligentSettingsHelper
 
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
@@ -519,7 +515,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                                 ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
-                if (request.hasBodyOrForm() && formExpanded() && typeObject.isComplex()
+                if (request.hasBodyOrForm() && this.intelligentSettingsHelper.formExpanded() && typeObject.isComplex()
                         && requestBuilderListener.addHeaderIfMissed(parameterExportContext,
                                 request, "Content-Type", "multipart/form-data")) {
                     typeObject.flatValid(object : FieldConsumer {
@@ -601,7 +597,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                                 ?: false, paramDesc
                 )
             } else if (typeObject != null && typeObject is Map<*, *>) {
-                if (formExpanded() && typeObject.isComplex()
+                if (this.intelligentSettingsHelper.formExpanded() && typeObject.isComplex()
                         && requestBuilderListener.addHeaderIfMissed(parameterExportContext,
                                 request, "Content-Type", "multipart/form-data")) {
                     typeObject.flatValid(object : FieldConsumer {
@@ -673,15 +669,15 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
 
         return when {
             fromRule -> psiClassHelper!!.getTypeObject(duckType, method.psi(),
-                    jsonSetting!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
-            needInfer() && (!duckTypeHelper!!.isQualified(duckType) ||
+                    this.intelligentSettingsHelper!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
+            this.intelligentSettingsHelper.inferEnable() && (!duckTypeHelper!!.isQualified(duckType) ||
                     jvmClassHelper!!.isInterface(duckType)) -> {
                 logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             else -> psiClassHelper!!.getTypeObject(duckType, method.psi(),
-                    jsonSetting!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
+                    this.intelligentSettingsHelper!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
         }
     }
 
@@ -698,14 +694,6 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
             return deepComponent(obj.first())
         }
         return obj
-    }
-
-    private fun needInfer(): Boolean {
-        return settingBinder!!.read().inferEnable
-    }
-
-    protected fun formExpanded(): Boolean {
-        return settingBinder!!.read().formExpanded
     }
 
     //region extent of ParameterExportContext
@@ -737,7 +725,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
         return this.cache("raw") {
             val paramType = this.parameter.getType() ?: return@cache null
             val typeObject = psiClassHelper!!.getTypeObject(paramType, parameter.psi(),
-                    jsonSetting!!.jsonOptionForInput(JsonOption.READ_COMMENT))
+                    this@AbstractRequestClassExporter.intelligentSettingsHelper!!.jsonOptionForInput(JsonOption.READ_COMMENT))
             this.setExt("raw", typeObject)
             return@cache typeObject
         }

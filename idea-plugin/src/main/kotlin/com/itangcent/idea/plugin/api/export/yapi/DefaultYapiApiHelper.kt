@@ -12,7 +12,6 @@ import com.itangcent.intellij.extend.sub
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
-import java.util.*
 import kotlin.collections.set
 import kotlin.concurrent.withLock
 
@@ -23,26 +22,26 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     private var cartIdCache: HashMap<String, String> = HashMap()
 
     override fun findCartWeb(module: String, cartName: String): String? {
-        val token = getPrivateToken(module)
+        val token = yapiSettingsHelper.getPrivateToken(module)
         val projectId = getProjectIdByToken(token!!) ?: return null
         val catId = findCat(token, cartName) ?: return null
         return getCartWeb(projectId, catId)
     }
 
     override fun getCartWeb(projectId: String, catId: String): String? {
-        return "$server/project/$projectId/interface/api/cat_$catId"
+        return "${yapiSettingsHelper.getServer()}/project/$projectId/interface/api/cat_$catId"
     }
 
     override fun getApiWeb(module: String, cartName: String, apiName: String): String? {
-        val token = getPrivateToken(module)
+        val token = yapiSettingsHelper.getPrivateToken(module)
         val projectId = getProjectIdByToken(token!!) ?: return null
         val catId = findCat(token, cartName) ?: return null
         val apiId = findApi(token, catId, apiName)
-        return "$server/project/$projectId/interface/api/$apiId"
+        return "${yapiSettingsHelper.getServer()}/project/$projectId/interface/api/$apiId"
     }
 
     override fun findCat(token: String, name: String): String? {
-        val projectId: String? = getProjectIdByToken(token) ?: return null
+        val projectId: String = getProjectIdByToken(token) ?: return null
         val key = "$projectId$name"
         var cachedCartId = cacheLock.readLock().withLock { cartIdCache[key] }
         if (cachedCartId != null) return cachedCartId
@@ -73,14 +72,14 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
     override fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
 
-        if (loginMode() && apiInfo.containsKey("token")) {
+        if (yapiSettingsHelper.loginMode() && apiInfo.containsKey("token")) {
             apiInfo["project_id"] = apiInfo["token"]
             apiInfo.remove("token")
         }
 
         try {
             val returnValue = httpClientProvide!!.getHttpClient()
-                    .post(server + SAVE_API)
+                    .post(yapiSettingsHelper.getServer(false) + SAVE_API)
                     .contentType(ContentType.APPLICATION_JSON)
                     .body(apiInfo)
                     .call()
@@ -106,13 +105,13 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     override fun addCart(projectId: String, token: String, name: String, desc: String): Boolean {
         try {
             val returnValue = httpClientProvide!!.getHttpClient()
-                    .post(server + ADD_CART)
+                    .post(yapiSettingsHelper.getServer(false) + ADD_CART)
                     .contentType(ContentType.APPLICATION_JSON)
                     .body(KV.create<Any?, Any?>()
                             .set("desc", desc)
                             .set("project_id", projectId)
                             .set("name", name)
-                            .set("token", rawToken(token)))
+                            .set("token", yapiSettingsHelper.rawToken(token)))
                     .call()
                     .string()
 
@@ -129,7 +128,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 cacheLock.writeLock().withLock {
                     cartIdCache["$projectId$name"] = addCartId
                 }
-                logger.info("Add new cart:$server/project/$projectId/interface/api/cat_$addCartId")
+                logger.info("Add new cart:${yapiSettingsHelper.getServer()}/project/$projectId/interface/api/cat_$addCartId")
             } else {
                 logger.info("Add cart failed,response is:$returnValue")
             }
@@ -142,7 +141,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun findApi(token: String, catId: String, apiName: String): String? {
-        val url = "$server$GET_CAT?token=$token&catid=$catId&limit=1000"
+        val url = "${yapiSettingsHelper.getServer()}$GET_CAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.sub("data")
                 ?.sub("list")
@@ -153,7 +152,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun findApis(token: String, catId: String): ArrayList<Any?>? {
-        val url = "$server$GET_CAT?token=$token&catid=$catId&limit=1000"
+        val url = "${yapiSettingsHelper.getServer()}$GET_CAT?token=$token&catid=$catId&limit=1000"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.sub("data")
                 ?.sub("list")
@@ -161,7 +160,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
-        val url = "$server$GET_CAT_MENU?project_id=$project_id&token=$token"
+        val url = "${yapiSettingsHelper.getServer()}$GET_CAT_MENU?project_id=$project_id&token=$token"
         return GsonUtils.parseToJsonTree(getByApi(url))
                 ?.sub("data")
                 ?.asList()

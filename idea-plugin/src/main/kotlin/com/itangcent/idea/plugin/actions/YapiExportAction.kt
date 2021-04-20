@@ -6,6 +6,7 @@ import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -43,6 +44,8 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bindInstance("file.save.last.location.key", "com.itangcent.yapi.export.path")
 
         builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
+
+        builder.bind(YapiTokenChecker::class) { it.with(YapiTokenCheckerSupport::class).singleton() }
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

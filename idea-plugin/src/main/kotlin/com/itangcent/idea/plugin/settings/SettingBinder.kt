@@ -6,6 +6,10 @@ import com.itangcent.intellij.file.CachedBeanBinder
 interface SettingBinder : BeanBinder<Settings> {
 }
 
+fun SettingBinder.update(updater: (Settings) -> Unit) {
+    this.read().also(updater).let { this.save(it) }
+}
+
 fun SettingBinder.lazy(): SettingBinder {
     return CachedSettingBinder(this)
 }

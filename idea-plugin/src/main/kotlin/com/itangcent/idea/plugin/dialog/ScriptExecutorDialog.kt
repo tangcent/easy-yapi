@@ -18,8 +18,7 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.logger.traceWarn
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.rule.contextOf
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.utils.Charsets
+import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.FileSelectHelper
 import com.itangcent.intellij.config.rule.RuleParser
@@ -47,7 +46,6 @@ import javax.script.ScriptEngineManager
 import javax.swing.*
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
-import kotlin.collections.ArrayList
 
 
 class ScriptExecutorDialog : JDialog() {
@@ -446,7 +444,7 @@ class ScriptExecutorDialog : JDialog() {
                             this.scriptTypeComboBox!!.selectedItem = scriptType
                         }
                     }
-            val script = file.readText(kotlin.text.Charsets.UTF_8)
+            val script = file.readText(Charsets.UTF_8)
             actionContext!!.runInSwingUI {
                 editor?.document?.setText(script)
             }
@@ -455,8 +453,8 @@ class ScriptExecutorDialog : JDialog() {
     }
 
     private fun onSave() {
-        val charset = ActionContext.getContext()?.instance(SettingBinder::class)?.read()
-                ?.outputCharset?.let { Charsets.forName(it) }?.charset() ?: kotlin.text.Charsets.UTF_8
+        val charset = ActionContext.getContext()?.instance(CommonSettingsHelper::class)?.outputCharset()
+                ?: Charsets.UTF_8
         fileSaveHelper!!.saveBytes({
             (scriptInfo?.script ?: "").toByteArray(charset)
         }, {

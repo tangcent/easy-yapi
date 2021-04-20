@@ -17,8 +17,8 @@ import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.core.LinkResolver
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.group.JsonSetting
+import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
@@ -74,10 +74,10 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     protected lateinit var methodDocBuilderListener: MethodDocBuilderListener
 
     @Inject
-    protected val settingBinder: SettingBinder? = null
+    protected lateinit var supportSettingsHelper: SupportSettingsHelper
 
     @Inject
-    protected val jsonSetting: JsonSetting? = null
+    protected lateinit var intelligentSettingsHelper: IntelligentSettingsHelper
 
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
@@ -329,7 +329,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     ) {
         val paramType = param.getType() ?: return
         val typeObject = psiClassHelper!!.getTypeObject(paramType, param.psi(),
-                jsonSetting!!.jsonOptionForInput(JsonOption.READ_COMMENT))
+                intelligentSettingsHelper.jsonOptionForInput(JsonOption.READ_COMMENT))
         methodDocBuilderListener.addParam(methodExportContext, methodDoc, param.name(), typeObject, paramDesc, ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true)
     }
 
@@ -347,7 +347,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             else -> psiClassHelper!!.getTypeObject(duckType, methodExportContext.psi(),
-                    jsonSetting!!.jsonOptionForOutput(JsonOption.READ_COMMENT))
+                    intelligentSettingsHelper.jsonOptionForOutput(JsonOption.READ_COMMENT))
         }
     }
 
@@ -356,10 +356,10 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     }
 
     private fun methodDocEnable(): Boolean {
-        return settingBinder!!.read().methodDocEnable
+        return supportSettingsHelper.methodDocEnable()
     }
 
     private fun needInfer(): Boolean {
-        return settingBinder!!.read().inferEnable
+        return intelligentSettingsHelper.inferEnable()
     }
 }
