@@ -2,6 +2,7 @@ package com.itangcent.mock
 
 import com.itangcent.common.spi.Setup
 import com.itangcent.idea.plugin.rule.SuvRuleParser
+import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.AbstractConfigReader
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleParser
@@ -51,6 +52,7 @@ abstract class AdvancedContextTest : BaseContextTest() {
 
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(DefaultPsiClassHelper::class).singleton() }
+        builder.bind(MessagesHelper::class) { it.with(EmptyMessagesHelper::class).singleton() }
     }
 
     private inner class TempFileRepository : AbstractLocalFileRepository() {

@@ -220,8 +220,8 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
 
         init {
             val bindings: Bindings = SimpleBindings()
-            bindings["tool"] = RuleToolUtils()
-            bindings["regex"] = RegexUtils()
+            bindings["tool"] = RuleToolUtils.INSTANCE
+            bindings["regex"] = RegexUtils.INSTANCE
             toolBindings = bindings
         }
     }

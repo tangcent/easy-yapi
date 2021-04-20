@@ -32,8 +32,11 @@ import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
@@ -48,7 +51,6 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.tip.TipsHelper
@@ -177,9 +179,6 @@ class SuvApiExporter {
 
         @Inject
         protected val actionContext: ActionContext? = null
-
-        @Inject
-        private val psiResolver: PsiResolver? = null
 
         private var suvApiExporter: SuvApiExporter? = null
 
@@ -375,7 +374,10 @@ class SuvApiExporter {
     class PostmanApiExporterAdapter : ApiExporterAdapter() {
 
         @Inject
-        private val postmanApiHelper: PostmanApiHelper? = null
+        private lateinit var postmanApiHelper: PostmanApiHelper
+
+        @Inject
+        private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
         @Inject
         private val fileSaveHelper: FileSaveHelper? = null
@@ -418,7 +420,7 @@ class SuvApiExporter {
             try {
                 val postman = postmanFormatter!!.parseRequests(docs.filterAs())
                 docs.clear()
-                if (postmanApiHelper!!.hasPrivateToken()) {
+                if (postmanSettingsHelper.hasPrivateToken()) {
                     logger!!.info("PrivateToken of postman be found")
                     val createdCollection = postmanApiHelper.createCollection(postman)
 
@@ -459,13 +461,7 @@ class SuvApiExporter {
     class YapiApiExporterAdapter : ApiExporterAdapter() {
 
         @Inject
-        private val yapiApiHelper: YapiApiHelper? = null
-
-        @Inject
-        protected val yapiApiInputHelper: YapiApiInputHelper? = null
-
-        @Inject
-        private val project: Project? = null
+        protected val yapiSettingsHelper: YapiSettingsHelper? = null
 
         override fun actionName(): String {
             return "YapiExportAction"
@@ -499,18 +495,13 @@ class SuvApiExporter {
 
             builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
 
+            builder.bind(YapiTokenChecker::class) { it.with(YapiTokenCheckerSupport::class).singleton() }
         }
 
         override fun beforeExport(next: () -> Unit) {
-            val serverFound = yapiApiHelper!!.findServer().notNullOrBlank()
+            val serverFound = yapiSettingsHelper!!.getServer(false).notNullOrBlank()
             if (serverFound) {
                 next()
-            } else {
-                yapiApiInputHelper!!.inputServer {
-                    if (it.notNullOrBlank()) {
-                        next()
-                    }
-                }
             }
         }
 
@@ -567,7 +558,7 @@ class SuvApiExporter {
         private val markdownFormatter: MarkdownFormatter? = null
 
         @Inject
-        private val settingBinder: SettingBinder? = null
+        private lateinit var markdownSettingsHelper: MarkdownSettingsHelper
 
         override fun actionName(): String {
             return "MarkdownExportAction"
@@ -602,8 +593,7 @@ class SuvApiExporter {
                 docs.clear()
                 actionContext!!.runAsync {
                     try {
-                        fileSaveHelper!!.saveOrCopy(apiInfo, Charsets.forName(settingBinder!!.read().outputCharset)?.charset()
-                                ?: kotlin.text.Charsets.UTF_8, {
+                        fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
                             logger!!.info("Exported data are copied to clipboard,you can paste to a md file now")
                         }, {
                             logger!!.info("Apis save success: $it")

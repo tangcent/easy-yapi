@@ -7,6 +7,8 @@ import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.swing.ActiveWindowProvider
+import com.itangcent.idea.swing.SimpleActiveWindowProvider
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -41,6 +43,7 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(MethodDocBuilderListener::class) { it.with(ComponentMethodDocBuilderListener::class).singleton() }
         builder.bindInstance("AVAILABLE_METHOD_DOC_BUILDER_LISTENER", arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class))
 
+        builder.bind(ActiveWindowProvider::class) { it.with(SimpleActiveWindowProvider::class) }
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

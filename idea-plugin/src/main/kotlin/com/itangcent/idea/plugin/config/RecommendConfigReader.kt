@@ -4,7 +4,8 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.itangcent.common.utils.invokeMethod
 import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.BuiltInConfigSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.RecommendConfigSettingsHelper
 import com.itangcent.intellij.adaptor.ModuleAdaptor.file
 import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
 import com.itangcent.intellij.config.ConfigReader
@@ -22,16 +23,19 @@ class RecommendConfigReader : ConfigReader, Initializable {
 
     @Inject
     @Named("delegate_config_reader")
-    val configReader: ConfigReader? = null
+    private val configReader: ConfigReader? = null
 
     @Inject(optional = true)
-    val settingBinder: SettingBinder? = null
+    private val builtInConfigSettingsHelper: BuiltInConfigSettingsHelper? = null
+
+    @Inject(optional = true)
+    private val recommendConfigSettingsHelper: RecommendConfigSettingsHelper? = null
 
     @Inject
-    val contextSwitchListener: ContextSwitchListener? = null
+    private val contextSwitchListener: ContextSwitchListener? = null
 
     @Inject
-    val logger: Logger? = null
+    private val logger: Logger? = null
 
     @Inject
     private val devEnv: DevEnv? = null
@@ -110,22 +114,18 @@ class RecommendConfigReader : ConfigReader, Initializable {
     }
 
     private fun tryLoadRecommend() {
-        if (settingBinder?.read()?.useRecommendConfig == true) {
-            if (settingBinder.read().recommendConfigs.isEmpty()) {
-                logger!!.info(
-                        "Even useRecommendConfig was true, but no recommend config be selected!\n" +
-                                "\n" +
-                                "If you need to enable the built-in recommended configuration." +
-                                "Go to [Preference -> Other Setting -> EasyApi -> Recommend]"
-                )
-                return
-            }
-
+        if (recommendConfigSettingsHelper?.useRecommendConfig() == true) {
             if (configReader is MutableConfigReader) {
-                val recommendConfig = RecommendConfigLoader.buildRecommendConfig(settingBinder.read().recommendConfigs)
+                val recommendConfig = recommendConfigSettingsHelper.loadRecommendConfig()
 
                 if (recommendConfig.isEmpty()) {
-                    logger!!.warn("No recommend config be selected!")
+                    logger!!.info(
+                            "Even useRecommendConfig was true, but no recommend config be selected!\n" +
+                                    "\n" +
+                                    "If you need to enable the built-in recommended configuration." +
+                                    "Go to [Preference -> Other Setting -> EasyApi -> Recommend]"
+                    )
+
                     return
                 }
 
@@ -141,7 +141,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
     }
 
     private fun tryLoadBuiltIn() {
-        val builtInConfig = settingBinder?.read()?.builtInConfig
+        val builtInConfig = builtInConfigSettingsHelper?.builtInConfig()
         if (builtInConfig.notNullOrBlank()) {
             if (configReader is MutableConfigReader) {
                 configReader.loadConfigInfoContent(builtInConfig!!)

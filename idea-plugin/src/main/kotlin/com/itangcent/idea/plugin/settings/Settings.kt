@@ -1,16 +1,15 @@
 package com.itangcent.idea.plugin.settings
 
-import com.itangcent.idea.plugin.config.RecommendConfigLoader
+import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
 import com.itangcent.idea.utils.Charsets
-import com.itangcent.idea.utils.ConfigurableLogger
 
 class Settings {
-
-    var pullNewestDataBefore: Boolean = false
 
     var methodDocEnable: Boolean = false
 
     //postman
+
+    var pullNewestDataBefore: Boolean = false
 
     var postmanToken: String? = null
 
@@ -20,7 +19,7 @@ class Settings {
 
     var postmanJson5FormatType: String = PostmanJson5FormatType.EXAMPLE_ONLY.name
 
-    //intelligent
+    //region intelligent
 
     var formExpanded: Boolean = true
 
@@ -31,6 +30,8 @@ class Settings {
     var inferEnable: Boolean = true
 
     var inferMaxDeep: Int = DEFAULT_INFER_MAX_DEEP
+
+    //endregion
 
     //yapi
 
@@ -48,15 +49,21 @@ class Settings {
 
     var yapiResBodyJson5: Boolean = false
 
+    //region http--------------------------
+
     //unit:s
     var httpTimeOut: Int = 5
+
+    var trustHosts: Array<String> = DEFAULT_TRUST_HOSTS
+
+    //endregion
 
     //enable to use recommend config
     var useRecommendConfig: Boolean = true
 
     var recommendConfigs: String = RecommendConfigLoader.defaultCodes()
 
-    var logLevel: Int = ConfigurableLogger.CoarseLogLevel.LOW.getLevel()
+    var logLevel: Int = 50
 
     // markdown
 
@@ -67,6 +74,7 @@ class Settings {
     var markdownFormatType: String = MarkdownFormatType.SIMPLE.name
 
     var builtInConfig: String? = null
+
 
     fun copy(): Settings {
         val newSetting = Settings()
@@ -96,6 +104,7 @@ class Settings {
         newSetting.outputCharset = this.outputCharset
         newSetting.markdownFormatType = this.markdownFormatType
         newSetting.builtInConfig = this.builtInConfig
+        newSetting.trustHosts = this.trustHosts
         return newSetting
     }
 
@@ -131,6 +140,7 @@ class Settings {
         if (outputCharset != other.outputCharset) return false
         if (markdownFormatType != other.markdownFormatType) return false
         if (builtInConfig != other.builtInConfig) return false
+        if (!trustHosts.contentEquals(other.trustHosts)) return false
 
         return true
     }
@@ -162,11 +172,15 @@ class Settings {
         result = 31 * result + outputCharset.hashCode()
         result = 31 * result + markdownFormatType.hashCode()
         result = 31 * result + builtInConfig.hashCode()
+        result = 31 * result + trustHosts.hashCode()
         return result
     }
 
-
     companion object {
         const val DEFAULT_INFER_MAX_DEEP = 4
+
+        val DEFAULT_TRUST_HOSTS: Array<String> =
+                arrayOf("https://raw.githubusercontent.com/tangcent",
+                        "https://api.getpostman.com")
     }
 }

@@ -301,6 +301,7 @@ class RegexUtils {
         val REGEX_KEYWORD = setOf('$', '(', ')', '*', '+', '.',
                 '[', ']', '?', '\\', '^', '{', '}', '|')
 
+        val INSTANCE = RegexUtils()
     }
 
     private class RegexWithFlag(private val regex: String?, private val flag: Int) {

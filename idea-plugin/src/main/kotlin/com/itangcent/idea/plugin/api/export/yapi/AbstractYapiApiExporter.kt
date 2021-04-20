@@ -8,6 +8,7 @@ import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -22,7 +23,7 @@ open class AbstractYapiApiExporter {
     protected val yapiApiHelper: YapiApiHelper? = null
 
     @Inject
-    protected val yapiApiInputHelper: YapiApiInputHelper? = null
+    protected lateinit var yapiSettingsHelper: YapiSettingsHelper
 
     @Inject
     protected val actionContext: ActionContext? = null
@@ -52,11 +53,7 @@ open class AbstractYapiApiExporter {
      * see https://hellosean1025.github.io/yapi/openapi.html
      */
     protected open fun getTokenOfModule(module: String): String? {
-        val privateToken = yapiApiHelper!!.getPrivateToken(module)
-        if (privateToken.isNullOrBlank()) {
-            return yapiApiInputHelper!!.inputToken(module)
-        }
-        return privateToken
+        return yapiSettingsHelper.getPrivateToken(module, false)
     }
 
     protected open fun getCartForResource(resource: Any): CartInfo? {
@@ -122,19 +119,9 @@ open class AbstractYapiApiExporter {
         apiInfos.forEach { apiInfo ->
             apiInfo["token"] = privateToken
             apiInfo["catid"] = cartId
-            apiInfo["switch_notice"] = switchNotice()
+            apiInfo["switch_notice"] = yapiSettingsHelper.switchNotice()
             ret = ret or yapiApiHelper!!.saveApiInfo(apiInfo)
         }
         return ret
     }
-
-
-    protected fun switchNotice(): Boolean {
-        return settingBinder!!.read().switchNotice
-    }
-
-    companion object {
-        const val NULL_RESOURCE = "unknown"
-    }
-
 }

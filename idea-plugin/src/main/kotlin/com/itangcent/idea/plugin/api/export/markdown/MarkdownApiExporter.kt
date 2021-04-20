@@ -9,6 +9,7 @@ import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
@@ -37,7 +38,7 @@ class MarkdownApiExporter {
     private val markdownFormatter: MarkdownFormatter? = null
 
     @Inject
-    private val settingBinder: SettingBinder? = null
+    private lateinit var markdownSettingsHelper: MarkdownSettingsHelper
 
     fun export() {
 
@@ -51,7 +52,7 @@ class MarkdownApiExporter {
                             val project = actionContext.instance(Project::class)
                             val yes = Messages.showYesNoDialog(project,
                                     "Export the api in directory [${ActionUtils.findCurrentPath(dir)}]?",
-                                    "Are you sure",
+                                    "Please Confirm",
                                     Messages.getQuestionIcon())
                             if (yes == Messages.YES) {
                                 callBack(true)
@@ -83,8 +84,7 @@ class MarkdownApiExporter {
                         docs.clear()
                         actionContext!!.runAsync {
                             try {
-                                fileSaveHelper!!.saveOrCopy(apiInfo, Charsets.forName(settingBinder!!.read().outputCharset)?.charset()
-                                        ?: kotlin.text.Charsets.UTF_8, {
+                                fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
                                     logger.info("Exported data are copied to clipboard,you can paste to a md file now")
                                 }, {
                                     logger.info("Apis save success: $it")

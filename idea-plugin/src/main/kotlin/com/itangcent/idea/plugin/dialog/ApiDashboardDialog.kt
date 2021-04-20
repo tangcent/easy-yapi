@@ -8,10 +8,12 @@ import com.itangcent.common.model.Doc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.mapNotNull
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.ToolTipAble
@@ -34,9 +36,6 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashMap
 
 
 class ApiDashboardDialog : AbstractApiDashboardDialog() {
@@ -56,7 +55,10 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     var postmanPopMenu: JPopupMenu? = null
 
     @Inject
-    private val postmanCachedApiHelper: PostmanCachedApiHelper? = null
+    private lateinit var postmanCachedApiHelper: PostmanCachedApiHelper
+
+    @Inject
+    private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
     @Inject
     private val postmanFormatter: PostmanFormatter? = null
@@ -183,9 +185,8 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         autoComputer.bindEnable(this.postmanNewCollectionButton!!)
                 .from(this::postmanAvailable)
 
-        if (!postmanCachedApiHelper!!.hasPrivateToken()) {
+        if (!postmanSettingsHelper.hasPrivateToken()) {
             autoComputer.value(this::postmanAvailable, false)
-
             tryInputPostmanPrivateToken()
         } else {
             loadPostmanInfo(true)
@@ -245,12 +246,8 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     private fun tryInputPostmanPrivateToken() {
         actionContext!!.runAsync {
             Thread.sleep(200)
-            actionContext!!.runInSwingUI {
-                val postmanPrivateToken = Messages.showInputDialog(this, "Input Postman Private Token",
-                        "Postman Private Token", Messages.getInformationIcon())
-                if (postmanPrivateToken.isNullOrBlank()) return@runInSwingUI
-
-                postmanCachedApiHelper!!.setPrivateToken(postmanPrivateToken)
+            val postmanPrivateToken = postmanSettingsHelper.getPrivateToken(false)
+            if (postmanPrivateToken.notNullOrBlank()) {
                 autoComputer.value(this::postmanAvailable, true)
                 loadPostmanInfo(true)
             }
@@ -259,7 +256,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
     private fun loadPostmanInfo(useCache: Boolean) {
 
-        if (!postmanCachedApiHelper!!.hasPrivateToken()) {
+        if (!postmanSettingsHelper.hasPrivateToken()) {
             actionContext!!.runInSwingUI {
                 Messages.showErrorDialog(this,
                         "load postman info failed,no token be found", "Error")

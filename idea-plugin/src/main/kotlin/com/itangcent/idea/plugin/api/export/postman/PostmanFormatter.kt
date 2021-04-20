@@ -16,8 +16,7 @@ import com.itangcent.idea.plugin.json.Json5Formatter
 import com.itangcent.idea.plugin.json.JsonFormatter
 import com.itangcent.idea.plugin.json.SimpleJsonFormatter
 import com.itangcent.idea.plugin.rule.SuvRuleContext
-import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
-import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
@@ -49,7 +48,7 @@ open class PostmanFormatter {
     private val ruleComputer: RuleComputer? = null
 
     @Inject
-    private val settingBinder: SettingBinder? = null
+    private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
     @Inject
     protected lateinit var systemProvider: SystemProvider
@@ -437,7 +436,7 @@ open class PostmanFormatter {
 
     fun parseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
         val postmanCollection = doParseRequests(requests)
-        if (settingBinder!!.read().autoMergeScript) {
+        if (postmanSettingsHelper.autoMergeScript()) {
             autoMerge(postmanCollection)
         }
         return postmanCollection
@@ -534,7 +533,7 @@ open class PostmanFormatter {
         }
 
         if (moduleFolderApiMap.size == 1) {
-            val wrapCollection = settingBinder!!.read().wrapCollection
+            val wrapCollection = postmanSettingsHelper.wrapCollection()
 
             //single module
             val folderApiMap = moduleFolderApiMap.values.first()
@@ -611,8 +610,7 @@ open class PostmanFormatter {
     }
 
     private fun getBodyFormatter(type: Int): JsonFormatter {
-        val settings = settingBinder!!.read()
-        val useJson5 = PostmanJson5FormatType.valueOf(settings.postmanJson5FormatType).needUseJson5(type)
+        val useJson5 = postmanSettingsHelper.postmanJson5FormatType().needUseJson5(type)
         return if (useJson5) {
             actionContext!!.instance(Json5Formatter::class)
         } else {

@@ -1,5 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.Param
@@ -10,13 +12,18 @@ import com.itangcent.idea.plugin.api.export.core.MethodExportContext
 import com.itangcent.idea.plugin.api.export.core.addParam
 import com.itangcent.idea.plugin.api.export.core.addPathParam
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
+import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.utils.ExtensibleKit.fromJson
 
 /**
  *
  * 1.support enableUrlTemplating
  */
+@Singleton
 open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
+
+    @Inject
+    private lateinit var yapiSettingsHelper: YapiSettingsHelper
 
     override fun resolveParamStr(methodExportContext: MethodExportContext,
                                  request: Request, params: String) {
@@ -39,7 +46,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             }
             !params.contains('=') -> {
                 val param = request.querys?.find { it.name == params }
-                if (enableUrlTemplating()) {
+                if (yapiSettingsHelper.enableUrlTemplating()) {
                     addParamToPath(request, params, "{$params}")
                     requestBuilderListener.addPathParam(methodExportContext,
                             request, params, "", param?.desc)
@@ -61,7 +68,7 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
                 val value = params.substringAfter("=").trim()
                 val param = request.querys?.find { it.name == name }
 
-                if (enableUrlTemplating()) {
+                if (yapiSettingsHelper.enableUrlTemplating()) {
                     addParamToPath(request, name, value)
                     requestBuilderListener.addPathParam(methodExportContext,
                             request, name, value, param?.desc)
@@ -100,8 +107,4 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
     override fun parseHeaderFromJson(headerStr: String) = Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR)
 
     override fun parseParamFromJson(paramStr: String) = Param::class.fromJson(paramStr, Attrs.EXAMPLE_ATTR)
-
-    protected fun enableUrlTemplating(): Boolean {
-        return settingBinder!!.read().enableUrlTemplating
-    }
 }

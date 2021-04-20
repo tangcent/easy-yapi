@@ -1,19 +1,30 @@
-package com.itangcent.idea.plugin.config
+package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.common.utils.appendln
 import com.itangcent.common.utils.mapToTypedArray
-import com.itangcent.intellij.logger.Logger
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.utils.ResourceUtils
 import java.util.*
 
+@Singleton
+class RecommendConfigSettingsHelper {
+
+    @Inject
+    private lateinit var settingBinder: SettingBinder
+
+    fun useRecommendConfig(): Boolean {
+        return settingBinder.read().useRecommendConfig
+    }
+
+    fun loadRecommendConfig(): String {
+        return RecommendConfigLoader.buildRecommendConfig(settingBinder.read().recommendConfigs)
+    }
+}
 
 @Singleton
 object RecommendConfigLoader {
-
-    @Inject
-    val logger: Logger? = null
 
     fun plaint(): String {
         return RECOMMEND_CONFIG_PLAINT
@@ -101,11 +112,22 @@ object RecommendConfigLoader {
         RECOMMEND_CONFIGS = recommendConfigCodes.toTypedArray()
     }
 
+    /**
+     * Get the content of the specified code
+     *
+     * @param key the specified code
+     * @return the content of the specified code
+     */
     operator fun get(key: String?): String? {
-        return RECOMMEND_CONFIGS.first { it.code == key }.content
+        return RECOMMEND_CONFIGS.firstOrNull { it.code == key }?.content
     }
 
-    operator fun get(index: Int): String? {
+    /**
+     * Returns the code at the specified index
+     *
+     * @return the code at the specified index
+     */
+    operator fun get(index: Int): String {
         return RECOMMEND_CONFIGS[index].code
     }
 

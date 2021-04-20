@@ -4,13 +4,14 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
 import com.itangcent.common.utils.TimeSpanUtils
-import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelper
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.resource.DefaultResourceResolver
 import com.itangcent.intellij.config.resource.URLResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.logger.Logger
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.net.URL
@@ -29,6 +30,12 @@ open class CachedResourceResolver : DefaultResourceResolver() {
 
     @Inject
     private lateinit var configReader: ConfigReader
+
+    @Inject
+    private lateinit var httpSettingsHelper: HttpSettingsHelper
+
+    @Inject
+    protected val logger: Logger? = null
 
     private val beanDAO: SqliteDataResourceHelper.ExpiredBeanDAO by lazy {
         val context = ActionContext.getContext()
@@ -49,6 +56,10 @@ open class CachedResourceResolver : DefaultResourceResolver() {
             var valueBytes = beanDAO.get(key)
             if (valueBytes == null) {
                 LOG.debug("read:$url")
+                if (!httpSettingsHelper.checkTrustUrl(url.toString(), false)) {
+                    logger?.warn("[access forbidden] read:$url")
+                    return byteArrayOf()
+                }
                 valueBytes = super.inputStream?.use { it.readBytes() }
                 valueBytes?.let {
                     beanDAO.set(key, it, System.currentTimeMillis() +
@@ -72,9 +83,9 @@ open class CachedResourceResolver : DefaultResourceResolver() {
             get() = loadCache()?.let { String(it, Charsets.UTF_8) }
 
         override fun onConnection(connection: URLConnection) {
-            ActionContext.getContext()?.instance(SettingBinder::class)
-                    ?.tryRead()?.httpTimeOut?.let {
-                        connection.connectTimeout = it * 1000
+            ActionContext.getContext()?.instance(HttpSettingsHelper::class)
+                    ?.let {
+                        connection.connectTimeout = it.httpTimeOut(TimeUnit.MILLISECONDS)
                     }
         }
     }

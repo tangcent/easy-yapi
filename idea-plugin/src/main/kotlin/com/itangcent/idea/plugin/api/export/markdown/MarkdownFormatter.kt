@@ -18,7 +18,7 @@ import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
-import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
@@ -39,7 +39,7 @@ class MarkdownFormatter {
     private val moduleHelper: ModuleHelper? = null
 
     @Inject
-    protected val settingBinder: SettingBinder? = null
+    protected lateinit var markdownSettingsHelper: MarkdownSettingsHelper
 
     @Inject
     protected val resourceHelper: ResourceHelper? = null
@@ -250,7 +250,7 @@ class MarkdownFormatter {
             handle("\n**RequestBody**\n\n")
             objectFormatter.writeObject(request.body, request.bodyAttr ?: "")
 
-            if (settingBinder!!.read().outputDemo) {
+            if (markdownSettingsHelper.outputDemo()) {
                 handle("\n**Request Demo：**\n\n")
                 parseToJson(handle, request.body)
             }
@@ -296,7 +296,7 @@ class MarkdownFormatter {
                 }
 
                 // handler json example
-                if (settingBinder!!.read().outputDemo) {
+                if (markdownSettingsHelper.outputDemo()) {
                     handle("\n**Response Demo：**\n\n")
                     parseToJson(handle, response.body)
                 }
@@ -361,8 +361,8 @@ class MarkdownFormatter {
     }
 
     private fun getObjectFormatter(handle: (String) -> Unit): ObjectFormatter {
-        val markdownFormatType = settingBinder!!.read().markdownFormatType
-        return if (markdownFormatType == MarkdownFormatType.ULTIMATE.name) {
+        val markdownFormatType = markdownSettingsHelper.markdownFormatType()
+        return if (markdownFormatType == MarkdownFormatType.ULTIMATE) {
             UltimateObjectFormatter(handle)
         } else {
             SimpleObjectFormatter(handle)

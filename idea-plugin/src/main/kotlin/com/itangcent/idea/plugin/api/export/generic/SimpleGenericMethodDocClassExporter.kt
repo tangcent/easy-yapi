@@ -13,6 +13,7 @@ import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
@@ -27,6 +28,9 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
 
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
+
+    @Inject
+    protected lateinit var supportSettingsHelper: SupportSettingsHelper
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class && methodDocEnable()
@@ -170,6 +174,6 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
     }
 
     private fun methodDocEnable(): Boolean {
-        return settingBinder!!.read().methodDocEnable
+        return supportSettingsHelper.methodDocEnable()
     }
 }

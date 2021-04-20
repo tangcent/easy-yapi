@@ -22,7 +22,7 @@ open class YapiCachedApiHelper : DefaultYapiApiHelper() {
 
     override fun getProjectIdByToken(token: String): String? {
         try {
-            val tokenBeanBinder = dbBeanBinderFactory.getBeanBinder("yapi:token-${loginMode().toInt()}:$token")
+            val tokenBeanBinder = dbBeanBinderFactory.getBeanBinder("yapi:token-${yapiSettingsHelper.loginMode().toInt()}:$token")
             val projectIdInCache = tokenBeanBinder.read()
             if (projectIdInCache.isNotBlank()) {
                 return projectIdInCache

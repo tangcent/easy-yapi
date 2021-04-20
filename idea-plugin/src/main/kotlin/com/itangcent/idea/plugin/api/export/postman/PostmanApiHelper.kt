@@ -1,12 +1,6 @@
 package com.itangcent.idea.plugin.api.export.postman
 
 interface PostmanApiHelper {
-    fun hasPrivateToken(): Boolean
-
-    fun getPrivateToken(): String?
-
-    fun setPrivateToken(postmanPrivateToken: String)
-
     /**
      * @return collection id
      */

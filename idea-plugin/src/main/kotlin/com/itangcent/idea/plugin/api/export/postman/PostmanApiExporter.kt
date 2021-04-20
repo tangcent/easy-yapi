@@ -13,6 +13,7 @@ import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
+import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -29,7 +30,10 @@ class PostmanApiExporter {
     private val logger: Logger? = null
 
     @Inject
-    private val postmanApiHelper: PostmanApiHelper? = null
+    private lateinit var postmanApiHelper: PostmanApiHelper
+
+    @Inject
+    private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
     @Inject
     private val actionContext: ActionContext? = null
@@ -84,7 +88,7 @@ class PostmanApiExporter {
                         requests.clear()
                         actionContext!!.runAsync {
                             try {
-                                if (postmanApiHelper!!.hasPrivateToken()) {
+                                if (postmanSettingsHelper.hasPrivateToken()) {
                                     logger.info("PrivateToken of postman be found")
                                     val createdCollection = postmanApiHelper.createCollection(postman)
 
