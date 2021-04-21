@@ -25,7 +25,7 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
                 Mockito.eq("Postman Private Token"), Mockito.any()))
-                .thenReturn("123")
+                .thenReturn(null, "123")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
     }
 
@@ -40,6 +40,7 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
     fun testGetPrivateToken() {
         assertNull(postmanSettingsHelper.getPrivateToken())
         assertNull(settings.postmanToken)
+        assertNull(postmanSettingsHelper.getPrivateToken(false))
         assertEquals("123", postmanSettingsHelper.getPrivateToken(false))
         assertEquals("123", settings.postmanToken)
         assertEquals("123", postmanSettingsHelper.getPrivateToken())

@@ -47,10 +47,18 @@ class YapiSettingsHelper {
 
     fun getServer(dumb: Boolean = true): String? {
         if (server.notNullOrBlank()) return server
-        server = configReader!!.first("yapi.server")?.trim()?.removeSuffix("/")
-        if (server.notNullOrBlank()) return server
-        server = settingBinder.read().yapiServer?.trim()?.removeSuffix("/")
-        if (server.notNullOrBlank()) return server
+        configReader!!.first("yapi.server")?.trim()?.removeSuffix("/")
+                ?.takeIf { it.notNullOrBlank() }
+                ?.let {
+                    server = it
+                    return server
+                }
+        settingBinder.read().yapiServer?.trim()?.removeSuffix("/")
+                ?.takeIf { it.notNullOrBlank() }
+                ?.let {
+                    server = it
+                    return server
+                }
         if (!dumb) {
             val yapiServer =
                     messagesHelper.showInputDialog("Input server of yapi",
@@ -174,9 +182,7 @@ class YapiSettingsHelper {
             }
             handle(properties)
 
-            val byteOutputStream = ByteArrayOutputStream()
-            properties.store(byteOutputStream, "")
-            settings.yapiTokens = byteOutputStream.toString()
+            settings.yapiTokens = ByteArrayOutputStream().also { properties.store(it, "") }.toString()
             settingBinder.save(settings)
             if (tokenMap == null) {
                 tokenMap = HashMap()
@@ -191,7 +197,7 @@ class YapiSettingsHelper {
         updateTokens { properties ->
             properties[module] = token
         }
-        tokenMap?.put(module,token to null)
+        tokenMap?.put(module, token to null)
     }
 
     fun removeTokenByModule(module: String) {
