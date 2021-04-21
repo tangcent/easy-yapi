@@ -19,6 +19,9 @@ internal class MarkdownSettingsHelperTest : SettingsHelperTest() {
             settings.outputCharset = charset.displayName()
             kotlin.test.assertEquals(charset.charset(), markdownSettingsHelper.outputCharset())
         }
+
+        settings.outputCharset = "invalid charset"
+        kotlin.test.assertEquals(kotlin.text.Charsets.UTF_8, markdownSettingsHelper.outputCharset())
     }
 
     @Test

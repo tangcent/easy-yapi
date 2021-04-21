@@ -5,6 +5,7 @@ import com.itangcent.idea.utils.Charsets
 import com.itangcent.intellij.logger.Logger
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 /**
  * Test case of [CommonSettingsHelper]
@@ -41,5 +42,14 @@ internal class CommonSettingsHelperTest : SettingsHelperTest() {
             settings.logLevel = level.getLevel()
             assertEquals(level, commonSettingsHelper.currentLogLevel())
         }
+    }
+
+    @Test
+    fun testCoarseLogLevel() {
+        val editableValues = CommonSettingsHelper.CoarseLogLevel.editableValues()
+        assertFalse(editableValues.contains(CommonSettingsHelper.CoarseLogLevel.EMPTY))
+
+        val helper: CommonSettingsHelper? = null
+        assertEquals(CommonSettingsHelper.CoarseLogLevel.LOW, helper.currentLogLevel())
     }
 }

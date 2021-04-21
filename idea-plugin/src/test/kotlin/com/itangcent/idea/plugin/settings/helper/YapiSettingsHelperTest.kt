@@ -6,6 +6,8 @@ import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
+import java.io.ByteArrayOutputStream
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -25,13 +27,13 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
                 Mockito.eq("Server Of Yapi"), Mockito.any()))
-                .thenReturn("http://127.0.0.1:3000")
+                .thenReturn(null, "http://127.0.0.1:3000")
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
                 Mockito.eq("Yapi ProjectId"), Mockito.any()))
-                .thenReturn("66")
+                .thenReturn(null, "66")
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
                 Mockito.eq("Yapi Private Token"), Mockito.any()))
-                .thenReturn("123456789")
+                .thenReturn(null, "123456789")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
     }
 
@@ -45,21 +47,47 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
     @Test
     fun testGetServer() {
         assertNull(yapiSettingsHelper.getServer())
-        assertNull(settings.postmanToken)
+        assertNull(settings.yapiServer)
+        assertNull(yapiSettingsHelper.getServer(false))
         assertEquals("http://127.0.0.1:3000", yapiSettingsHelper.getServer(false))
         assertEquals("http://127.0.0.1:3000", settings.yapiServer)
         assertEquals("http://127.0.0.1:3000", yapiSettingsHelper.getServer())
     }
 
     @Test
+    fun testGetServerWithExistingSetting() {
+        settings.yapiServer = "http://127.0.0.1:3000"
+        assertEquals("http://127.0.0.1:3000", yapiSettingsHelper.getServer())
+        assertEquals("http://127.0.0.1:3000", yapiSettingsHelper.getServer(false))
+    }
+
+    @Test
     fun testGetPrivateToken() {
         settings.loginMode = false
         assertNull(yapiSettingsHelper.getPrivateToken("demo"))
-        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo", false))
-        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo"))
+        assertNull(yapiSettingsHelper.getPrivateToken("demo", false))
+        assertNull(yapiSettingsHelper.getPrivateToken("demo", false))
+        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo2", false))
+        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo2"))
 
         settings.loginMode = true
         assertNull(yapiSettingsHelper.getPrivateToken("login-demo"))
+        assertNull(yapiSettingsHelper.getPrivateToken("login-demo", false))
+        assertNull(yapiSettingsHelper.getPrivateToken("login-demo", false))
+        assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo2", false))
+        assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo2"))
+    }
+
+    @Test
+    fun testGetPrivateTokenWithExistingTokens() {
+        val properties = Properties()
+        properties["demo"] = "123456789"
+        properties["login-demo"] = "66"
+
+        settings.yapiTokens = ByteArrayOutputStream().also { properties.store(it, "") }.toString()
+
+        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo"))
+        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo", false))
         assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo", false))
         assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo"))
     }
@@ -67,8 +95,10 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
     @Test
     fun testInputNewToken() {
         settings.loginMode = false
+        assertEquals(null, yapiSettingsHelper.inputNewToken())
         assertEquals("123456789", yapiSettingsHelper.inputNewToken())
         settings.loginMode = true
+        assertEquals(null, yapiSettingsHelper.inputNewToken())
         assertEquals("66", yapiSettingsHelper.inputNewToken())
     }
 
@@ -130,6 +160,18 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
 
     @Test
     fun testReadTokens() {
+        val properties = Properties()
+        properties["demo"] = "123456789"
+        properties["demo2"] = "123456789"
+        properties["demo3"] = "987654321"
+
+        settings.yapiTokens = ByteArrayOutputStream().also { properties.store(it, "") }.toString()
+
+        assertEquals("{\"demo3\":\"987654321\",\"demo\":\"123456789\",\"demo2\":\"123456789\"}", yapiSettingsHelper.readTokens().toJson())
+    }
+
+    @Test
+    fun testReadTokensWithExistingTokens() {
         settings.loginMode = false
         assertNull(yapiSettingsHelper.getPrivateToken("demo"))
         yapiSettingsHelper.setToken("demo", "123456789")
@@ -139,7 +181,6 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
         assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo2"))
         assertEquals("987654321", yapiSettingsHelper.getPrivateToken("demo3"))
         assertEquals("{\"demo3\":\"987654321\",\"demo\":\"123456789\",\"demo2\":\"123456789\"}", yapiSettingsHelper.readTokens().toJson())
-
     }
 
     @Test

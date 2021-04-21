@@ -23,7 +23,7 @@ class CommonSettingsHelper {
 
     fun currentLogLevel(): Logger.Level {
         val logLevel: Int = logLevel()
-        return logLevel.let { CoarseLogLevel.toLevel(it, CoarseLogLevel.LOW) }
+        return logLevel.let { CoarseLogLevel.toLevel(it) }
     }
 
     enum class CoarseLogLevel : Logger.Level {
