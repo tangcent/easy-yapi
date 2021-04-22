@@ -63,7 +63,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
         actionContext!!.runInSwingUI {
             val descriptor = FileChooserDescriptorFactory
                     .createSingleFileOrFolderDescriptor()
-                    .withTitle("Export location")
+                    .withTitle("Export Location")
                     .withDescription("Choose directory to export api to")
                     .withHideIgnored(false)
             val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
@@ -115,7 +115,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
         actionContext!!.runInSwingUI {
             val descriptor = FileChooserDescriptorFactory
                     .createSingleFileOrFolderDescriptor()
-                    .withTitle("Select location")
+                    .withTitle("Select Location")
                     .withDescription("Choose folder/file to save")
                     .withHideIgnored(false)
             val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)

@@ -81,7 +81,6 @@ abstract class ScriptRuleParser : RuleParser {
         return try {
             val simpleScriptContext = SimpleScriptContext()
 
-
             context.exts()?.forEach {
                 simpleScriptContext.setAttribute(it.key, it.value, ScriptContext.ENGINE_SCOPE)
             }

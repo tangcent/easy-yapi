@@ -152,6 +152,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         @Inject
         private val fileSaveHelper: FileSaveHelper? = null
 
+        /**
+         * @param content provide file content with file path.
+         */
         fun saveWithUI(content: (String) -> String,
                        defaultFileName: String?,
                        onSaveSuccess: () -> Unit,
@@ -165,6 +168,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
                     onSaveCancel)
         }
 
+        /**
+         * @param content provide file content with file path.
+         */
         fun saveWithUI(content: (String) -> String,
                        charset: String,
                        defaultFileName: String?,
@@ -180,6 +186,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
 
         }
 
+        /**
+         * @param content provide file content with file path.
+         */
         private fun saveWithUI(content: (String) -> String,
                                charset: Charset,
                                defaultFileName: String?,

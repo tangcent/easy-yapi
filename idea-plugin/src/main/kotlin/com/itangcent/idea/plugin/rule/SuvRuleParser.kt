@@ -6,16 +6,16 @@ import com.itangcent.intellij.context.ActionContext
 import kotlin.reflect.KClass
 
 /**
- * [js:] -> jsRule
- * [groovy:] -> groovyRule
- * [@]|[#] ->  simpleRule
+ * [js:] -> [JsRuleParser]
+ * [groovy:] -> [GroovyRuleParser]
+ * [@]|[#] ->  [SimpleRuleParser]
  */
 class SuvRuleParser : RuleParser {
 
     @Inject
     private val actionContext: ActionContext? = null
 
-    override fun contextOf(target: kotlin.Any, context: com.intellij.psi.PsiElement?): RuleContext {
+    override fun contextOf(target: Any, context: com.intellij.psi.PsiElement?): RuleContext {
         if (target is RuleContext) {
             return target
         }

@@ -35,6 +35,10 @@ class FileSaveHelperAdaptor : FileSaveHelper {
         return this.content
     }
 
+    fun bytes(): ByteArray? {
+        return this.bytes
+    }
+
     private fun log(content: String?) {
         this.content = content
         logger.info("[content]:$content")
