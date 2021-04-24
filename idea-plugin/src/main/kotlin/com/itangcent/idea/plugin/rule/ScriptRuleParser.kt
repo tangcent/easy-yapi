@@ -269,8 +269,8 @@ abstract class ScriptRuleParser : RuleParser {
             return asPsiModifierListOwner()?.hasModifierProperty(modifier) ?: false
         }
 
-        fun modifiers(): List<String>? {
-            return psiElement?.let { jvmClassHelper!!.extractModifiers(it) }
+        fun modifiers(): List<String> {
+            return psiElement?.let { jvmClassHelper!!.extractModifiers(it) }?:emptyList()
         }
 
         fun sourceCode(): String? {
@@ -408,7 +408,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         @ScriptIgnore
-        override fun getCore(): Any? {
+        override fun getCore(): Any {
             return explicitClass
         }
     }
