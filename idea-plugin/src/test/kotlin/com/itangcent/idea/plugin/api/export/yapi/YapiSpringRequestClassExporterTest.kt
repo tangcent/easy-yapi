@@ -22,7 +22,7 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
         requests[0].let { request ->
             assertEquals("say hello", request.name)
             assertEquals("say hello\n" +
-                    " not update anything", request.desc)
+                    "not update anything", request.desc)
             assertEquals("GET", request.method)
             assertEquals(userCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
 

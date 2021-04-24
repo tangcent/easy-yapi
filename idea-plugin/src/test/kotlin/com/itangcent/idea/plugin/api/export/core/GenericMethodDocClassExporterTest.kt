@@ -76,7 +76,7 @@ internal class GenericMethodDocClassExporterTest
         methodDocs[0].let { methodDoc ->
             assertEquals("say hello", methodDoc.name)
             assertEquals("say hello\n" +
-                    " not update anything", methodDoc.desc)
+                    "not update anything", methodDoc.desc)
             assertEquals(userCtrlPsiClass.methods[0], (methodDoc.resource as PsiResource).resource())
         }
         methodDocs[1].let { methodDoc ->

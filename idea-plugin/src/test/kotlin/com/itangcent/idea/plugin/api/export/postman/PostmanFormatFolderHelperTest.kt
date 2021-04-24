@@ -54,7 +54,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
         //test of PsiClass & PsiMethod
         formatFolderHelper.resolveFolder(userCtrlPsiClass).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
-                    " access user info"), it)
+                    "access user info"), it)
             assertEquals("pm.environment.set(\"token\", \"123456\");", it.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name()))
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
@@ -62,7 +62,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
         }
         formatFolderHelper.resolveFolder(userCtrlPsiClass.methods[0]).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
-                    " access user info"), it)
+                    "access user info"), it)
             assertEquals("pm.environment.set(\"token\", \"123456\");", it.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name()))
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
@@ -78,7 +78,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
         val explicitClass = duckTypeHelper.explicit(userCtrlPsiClass)
         formatFolderHelper.resolveFolder(explicitClass).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
-                    " access user info"), it)
+                    "access user info"), it)
             assertEquals("pm.environment.set(\"token\", \"123456\");", it.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name()))
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
@@ -86,7 +86,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
         }
         formatFolderHelper.resolveFolder(explicitClass.methods()[0]).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
-                    " access user info"), it)
+                    "access user info"), it)
             assertEquals("pm.environment.set(\"token\", \"123456\");", it.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name()))
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
@@ -101,7 +101,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
         //test of PsiClassResource & PsiMethodResource
         formatFolderHelper.resolveFolder(PsiClassResource(userCtrlPsiClass)).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
-                    " access user info"), it)
+                    "access user info"), it)
             assertEquals("pm.environment.set(\"token\", \"123456\");", it.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name()))
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
@@ -109,7 +109,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
         }
         formatFolderHelper.resolveFolder(PsiMethodResource(userCtrlPsiClass.methods[0], userCtrlPsiClass)).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
-                    " access user info"), it)
+                    "access user info"), it)
             assertEquals("pm.environment.set(\"token\", \"123456\");", it.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name()))
             assertEquals("pm.test(\"Successful POST request\", function () {\n" +
                     "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
