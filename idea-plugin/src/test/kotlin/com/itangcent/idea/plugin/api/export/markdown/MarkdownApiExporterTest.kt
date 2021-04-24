@@ -104,7 +104,7 @@ internal class MarkdownApiExporterTest : PluginContextLightCodeInsightFixtureTes
                 "**Desc：**\n" +
                 "\n" +
                 "say hello\n" +
-                " not update anything\n" +
+                "not update anything\n" +
                 "\n" +
                 "### REQUEST\n" +
                 "\n" +
@@ -158,7 +158,7 @@ internal class MarkdownApiExporterTest : PluginContextLightCodeInsightFixtureTes
                 "\n" +
                 "| name  |  value  |  required | desc  |\n" +
                 "| ------------ | ------------ | ------------ | ------------ |\n" +
-                "| id | 0 | NO | user id  |\n" +
+                "| id | 0 | NO | user id |\n" +
                 "\n" +
                 "\n" +
                 "### RESPONSE\n" +
