@@ -270,7 +270,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun modifiers(): List<String> {
-            return psiElement?.let { jvmClassHelper!!.extractModifiers(it) }?:emptyList()
+            return psiElement?.let { jvmClassHelper!!.extractModifiers(it) } ?: emptyList()
         }
 
         fun sourceCode(): String? {
@@ -339,6 +339,24 @@ abstract class ScriptRuleParser : RuleParser {
             return psiClass.qualifiedName?.endsWith("[]") ?: false
         }
 
+        /**
+         * Returns whether this class is a primitive
+         */
+        override fun isPrimitive(): Boolean {
+            return jvmClassHelper!!.isPrimitive(name())
+        }
+
+        /**
+         * Returns whether this class is a primitive wrapper
+         */
+        override fun isPrimitiveWrapper(): Boolean {
+            return jvmClassHelper!!.isPrimitiveWrapper(name())
+        }
+
+        /**
+         * Returns whether the given {@code type} is a primitive or primitive wrapper
+         * or {@code String}、{@code Object}
+         */
         override fun isNormalType(): Boolean {
             return jvmClassHelper!!.isNormalType(name())
         }
@@ -709,6 +727,20 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun isArray(): Boolean
 
+        /**
+         * Returns whether this class is a primitive
+         */
+        fun isPrimitive(): Boolean
+
+        /**
+         * Returns whether this class is a primitive wrapper
+         */
+        fun isPrimitiveWrapper(): Boolean
+
+        /**
+         * Returns whether the given {@code type} is a primitive or primitive wrapper
+         * or {@code String}、{@code Object}
+         */
         fun isNormalType(): Boolean
 
         fun fieldCnt(): Int
@@ -791,8 +823,26 @@ abstract class ScriptRuleParser : RuleParser {
             return duckType is ArrayDuckType
         }
 
+        /**
+         * Returns whether the given {@code type} is a primitive or primitive wrapper
+         * or {@code String}、{@code Object}
+         */
         override fun isNormalType(): Boolean {
             return jvmClassHelper!!.isNormalType(name())
+        }
+
+        /**
+         * Returns whether this class is a primitive
+         */
+        override fun isPrimitive(): Boolean {
+            return jvmClassHelper!!.isPrimitive(name())
+        }
+
+        /**
+         * Returns whether this class is a primitive wrapper
+         */
+        override fun isPrimitiveWrapper(): Boolean {
+            return jvmClassHelper!!.isPrimitiveWrapper(name())
         }
 
         override fun fieldCnt(): Int {
@@ -925,8 +975,26 @@ abstract class ScriptRuleParser : RuleParser {
             return duckType is ArrayDuckType
         }
 
+        /**
+         * Returns whether the given {@code type} is a primitive or primitive wrapper
+         * or {@code String}、{@code Object}
+         */
         override fun isNormalType(): Boolean {
             return jvmClassHelper!!.isNormalType(name())
+        }
+
+        /**
+         * Returns whether this class is a primitive
+         */
+        override fun isPrimitive(): Boolean {
+            return jvmClassHelper!!.isPrimitive(name())
+        }
+
+        /**
+         * Returns whether this class is a primitive wrapper
+         */
+        override fun isPrimitiveWrapper(): Boolean {
+            return jvmClassHelper!!.isPrimitiveWrapper(name())
         }
 
         override fun fieldCnt(): Int {
