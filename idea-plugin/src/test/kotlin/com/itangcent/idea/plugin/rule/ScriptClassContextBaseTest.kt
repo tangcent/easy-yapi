@@ -10,6 +10,7 @@ import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.test.assertEquals as assertEquals1
 
 /**
  * Base test case of [ScriptClassContext]
@@ -69,19 +70,19 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     //region tests of BaseScriptRuleContext
 
     fun testString() {
-        assertEquals("java.lang.Object", objectPsiClass.asScriptContext().toString())
-        assertEquals("java.lang.Integer", integerPsiClass.asScriptContext().toString())
-        assertEquals("java.util.Collection", collectionPsiClass.asScriptContext().toString())
-        assertEquals("com.itangcent.model.Model", modelPsiClass.asScriptContext().toString())
-        assertEquals("com.itangcent.model.Result", resultPsiClass.asScriptContext().toString())
+        assertEquals1("java.lang.Object", objectPsiClass.asScriptContext().toString())
+        assertEquals1("java.lang.Integer", integerPsiClass.asScriptContext().toString())
+        assertEquals1("java.util.Collection", collectionPsiClass.asScriptContext().toString())
+        assertEquals1("com.itangcent.model.Model", modelPsiClass.asScriptContext().toString())
+        assertEquals1("com.itangcent.model.Result", resultPsiClass.asScriptContext().toString())
     }
 
     fun testName() {
-        assertEquals("java.lang.Object", objectPsiClass.asScriptContext().name())
-        assertEquals("java.lang.Integer", integerPsiClass.asScriptContext().name())
-        assertEquals("java.util.Collection", collectionPsiClass.asScriptContext().name())
-        assertEquals("com.itangcent.model.Model", modelPsiClass.asScriptContext().name())
-        assertEquals("com.itangcent.model.Result", resultPsiClass.asScriptContext().name())
+        assertEquals1("java.lang.Object", objectPsiClass.asScriptContext().name())
+        assertEquals1("java.lang.Integer", integerPsiClass.asScriptContext().name())
+        assertEquals1("java.util.Collection", collectionPsiClass.asScriptContext().name())
+        assertEquals1("com.itangcent.model.Model", modelPsiClass.asScriptContext().name())
+        assertEquals1("com.itangcent.model.Result", resultPsiClass.asScriptContext().name())
     }
 
     /**
@@ -100,7 +101,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnn() {
         assertNull(objectPsiClass.asScriptContext().ann("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals("user", userCtrlPsiClass.asScriptContext().ann("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals1("user", userCtrlPsiClass.asScriptContext().ann("org.springframework.web.bind.annotation.RequestMapping"))
     }
 
     /**
@@ -108,7 +109,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnnMap() {
         assertNull(objectPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals(mapOf("value" to "user"), userCtrlPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals1(mapOf("value" to "user"), userCtrlPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping"))
     }
 
     /**
@@ -116,7 +117,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnnMaps() {
         assertNull(objectPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals(listOf(mapOf("value" to "user")), userCtrlPsiClass.asScriptContext().annMaps("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals1(listOf(mapOf("value" to "user")), userCtrlPsiClass.asScriptContext().annMaps("org.springframework.web.bind.annotation.RequestMapping"))
     }
 
     /**
@@ -124,7 +125,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnnValue() {
         assertNull(objectPsiClass.asScriptContext().annValue("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals("user", userCtrlPsiClass.asScriptContext().annValue("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals1("user", userCtrlPsiClass.asScriptContext().annValue("org.springframework.web.bind.annotation.RequestMapping"))
     }
 
     /**
@@ -133,8 +134,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testDoc() {
         assertNull(modelPsiClass.asScriptContext().doc())
-        assertEquals("A demo class for test comments", commentDemoPsiClass.asScriptContext().doc())
-        assertEquals("tangcent", commentDemoPsiClass.asScriptContext().doc("author"))
+        assertEquals1("A demo class for test comments", commentDemoPsiClass.asScriptContext().doc())
+        assertEquals1("tangcent", commentDemoPsiClass.asScriptContext().doc("author"))
     }
 
     /**
@@ -142,7 +143,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testDocs() {
         assertNull(modelPsiClass.asScriptContext().docs("author"))
-        assertEquals(listOf("tangcent"), commentDemoPsiClass.asScriptContext().docs("author"))
+        assertEquals1(listOf("tangcent"), commentDemoPsiClass.asScriptContext().docs("author"))
     }
 
     /**
@@ -159,12 +160,12 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     }
 
     fun testModifiers() {
-        assertEquals(emptyList<String>(), modelPsiClass.asScriptContext().modifiers())
-        assertEquals(listOf("public"), commentDemoPsiClass.asScriptContext().modifiers())
+        assertEquals1(emptyList<String>(), modelPsiClass.asScriptContext().modifiers())
+        assertEquals1(listOf("public"), commentDemoPsiClass.asScriptContext().modifiers())
     }
 
     fun testSourceCode() {
-        assertEquals("class Model {\n" +
+        assertEquals1("class Model {\n" +
                 "\n" +
                 "    /**\n" +
                 "     * string field\n" +
@@ -227,7 +228,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "\n" +
                 "    }\n" +
                 "}", modelPsiClass.asScriptContext().sourceCode())
-        assertEquals("/**\n" +
+        assertEquals1("/**\n" +
                 " * A demo class for test comments\n" +
                 " *\n" +
                 " * @author tangcent\n" +
@@ -306,14 +307,14 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     }
 
     fun testDefineCode() {
-        assertEquals("class Model;", modelPsiClass.asScriptContext().defineCode())
-        assertEquals("public class CommentDemo;", commentDemoPsiClass.asScriptContext().defineCode())
-        assertEquals("public abstract interface IResult;", iResultPsiClass.asScriptContext().defineCode())
+        assertEquals1("class Model;", modelPsiClass.asScriptContext().defineCode())
+        assertEquals1("public class CommentDemo;", commentDemoPsiClass.asScriptContext().defineCode())
+        assertEquals1("public interface IResult;", iResultPsiClass.asScriptContext().defineCode())
     }
 
     fun testContextType() {
-        assertEquals("class", modelPsiClass.asScriptContext().contextType())
-        assertEquals("class", commentDemoPsiClass.asScriptContext().contextType())
+        assertEquals1("class", modelPsiClass.asScriptContext().contextType())
+        assertEquals1("class", commentDemoPsiClass.asScriptContext().contextType())
     }
 
     //endregion
@@ -381,24 +382,51 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         assertFalse(resultPsiClass.asClassContext().isNormalType())
     }
 
+    fun testIsPrimitive() {
+        assertFalse(objectPsiClass.asClassContext().isPrimitive())
+        assertFalse(integerPsiClass.asClassContext().isPrimitive())
+        assertFalse(longPsiClass.asClassContext().isPrimitive())
+        assertFalse(mapPsiClass.asClassContext().isPrimitive())
+        assertFalse(hashMapPsiClass.asClassContext().isPrimitive())
+        assertFalse(collectionPsiClass.asClassContext().isPrimitive())
+        assertFalse(listPsiClass.asClassContext().isPrimitive())
+        assertFalse(iResultPsiClass.asClassContext().isPrimitive())
+        assertFalse(modelPsiClass.asClassContext().isPrimitive())
+        assertFalse(resultPsiClass.asClassContext().isPrimitive())
+    }
+
+
+    fun testIsPrimitiveWrapper() {
+        assertFalse(objectPsiClass.asClassContext().isPrimitiveWrapper())
+        assertTrue(integerPsiClass.asClassContext().isPrimitiveWrapper())
+        assertTrue(longPsiClass.asClassContext().isPrimitiveWrapper())
+        assertFalse(mapPsiClass.asClassContext().isPrimitiveWrapper())
+        assertFalse(hashMapPsiClass.asClassContext().isPrimitiveWrapper())
+        assertFalse(collectionPsiClass.asClassContext().isPrimitiveWrapper())
+        assertFalse(listPsiClass.asClassContext().isPrimitiveWrapper())
+        assertFalse(iResultPsiClass.asClassContext().isPrimitiveWrapper())
+        assertFalse(modelPsiClass.asClassContext().isPrimitiveWrapper())
+        assertFalse(resultPsiClass.asClassContext().isPrimitiveWrapper())
+    }
+
     fun testFieldCnt() {
-        assertEquals(0, objectPsiClass.asClassContext().fieldCnt())
-        assertEquals(4, modelPsiClass.asClassContext().fieldCnt())
-        assertEquals(3, resultPsiClass.asClassContext().fieldCnt())
-        assertEquals(0, iResultPsiClass.asClassContext().fieldCnt())
+        assertEquals1(0, objectPsiClass.asClassContext().fieldCnt())
+        assertEquals1(4, modelPsiClass.asClassContext().fieldCnt())
+        assertEquals1(3, resultPsiClass.asClassContext().fieldCnt())
+        assertEquals1(0, iResultPsiClass.asClassContext().fieldCnt())
     }
 
     fun testMethodCnt() {
-        assertEquals(12, objectPsiClass.asClassContext().methodCnt())
-        assertEquals(22, modelPsiClass.asClassContext().methodCnt())
-        assertEquals(23, resultPsiClass.asClassContext().methodCnt())
-        assertEquals(14, iResultPsiClass.asClassContext().methodCnt())
+        assertEquals1(12, objectPsiClass.asClassContext().methodCnt())
+        assertEquals1(22, modelPsiClass.asClassContext().methodCnt())
+        assertEquals1(23, resultPsiClass.asClassContext().methodCnt())
+        assertEquals1(14, iResultPsiClass.asClassContext().methodCnt())
     }
 
     fun testToJson() {
-        assertEquals("{}", objectPsiClass.asClassContext().toJson(true, true))
+        assertEquals1("{}", objectPsiClass.asClassContext().toJson(true, true))
 
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"str\": \"\",\n" +
                 "  \"integer\": 0,\n" +
                 "  \"stringList\": [\n" +
@@ -410,7 +438,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "  \"onlySet\": \"\",\n" +
                 "  \"onlyGet\": \"\"\n" +
                 "}", modelPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"str\": \"\",\n" +
                 "  \"integer\": 0,\n" +
                 "  \"stringList\": [\n" +
@@ -421,7 +449,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "  ],\n" +
                 "  \"onlyGet\": \"\"\n" +
                 "}", modelPsiClass.asClassContext().toJson(true, false))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"str\": \"\",\n" +
                 "  \"integer\": 0,\n" +
                 "  \"stringList\": [\n" +
@@ -432,7 +460,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "  ],\n" +
                 "  \"onlySet\": \"\"\n" +
                 "}", modelPsiClass.asClassContext().toJson(false, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"str\": \"\",\n" +
                 "  \"integer\": 0,\n" +
                 "  \"stringList\": [\n" +
@@ -443,53 +471,53 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "  ]\n" +
                 "}", modelPsiClass.asClassContext().toJson(false, false))
 
-        assertEquals("{}", mapPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{}", mapPsiClass.asClassContext().toJson(true, false))
-        assertEquals("{}", mapPsiClass.asClassContext().toJson(false, true))
-        assertEquals("{}", mapPsiClass.asClassContext().toJson(false, false))
+        assertEquals1("{}", mapPsiClass.asClassContext().toJson(true, true))
+        assertEquals1("{}", mapPsiClass.asClassContext().toJson(true, false))
+        assertEquals1("{}", mapPsiClass.asClassContext().toJson(false, true))
+        assertEquals1("{}", mapPsiClass.asClassContext().toJson(false, false))
 
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(true, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(true, false))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(false, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(false, false))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson(true, true))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson(true, false))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson(false, true))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson(false, false))
 
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"code\": 0,\n" +
                 "  \"msg\": \"\",\n" +
                 "  \"data\": {}\n" +
                 "}", resultPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"code\": 0,\n" +
                 "  \"msg\": \"\",\n" +
                 "  \"data\": {}\n" +
                 "}", resultPsiClass.asClassContext().toJson(true, false))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"code\": 0,\n" +
                 "  \"msg\": \"\",\n" +
                 "  \"data\": {}\n" +
                 "}", resultPsiClass.asClassContext().toJson(false, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"code\": 0,\n" +
                 "  \"msg\": \"\",\n" +
                 "  \"data\": {}\n" +
                 "}", resultPsiClass.asClassContext().toJson(false, false))
 
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"code\": 0,\n" +
                 "  \"msg\": \"\"\n" +
                 "}", iResultPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "  \"code\": 0,\n" +
                 "  \"msg\": \"\"\n" +
                 "}", iResultPsiClass.asClassContext().toJson(true, false))
-        assertEquals("{}", iResultPsiClass.asClassContext().toJson(false, true))
-        assertEquals("{}", iResultPsiClass.asClassContext().toJson(false, false))
+        assertEquals1("{}", iResultPsiClass.asClassContext().toJson(false, true))
+        assertEquals1("{}", iResultPsiClass.asClassContext().toJson(false, false))
     }
 
     fun testToJson5() {
-        assertEquals("{}", objectPsiClass.asClassContext().toJson5(true, true))
+        assertEquals1("{}", objectPsiClass.asClassContext().toJson5(true, true))
 
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"str\": \"\", //string field\n" +
                 "    \"integer\": 0, //integer field\n" +
                 "    \"stringList\": [ //stringList field\n" +
@@ -501,7 +529,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "    \"onlySet\": \"\",\n" +
                 "    \"onlyGet\": \"\"\n" +
                 "}", modelPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"str\": \"\", //string field\n" +
                 "    \"integer\": 0, //integer field\n" +
                 "    \"stringList\": [ //stringList field\n" +
@@ -512,7 +540,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "    ],\n" +
                 "    \"onlyGet\": \"\"\n" +
                 "}", modelPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"str\": \"\", //string field\n" +
                 "    \"integer\": 0, //integer field\n" +
                 "    \"stringList\": [ //stringList field\n" +
@@ -523,7 +551,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "    ],\n" +
                 "    \"onlySet\": \"\"\n" +
                 "}", modelPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"str\": \"\", //string field\n" +
                 "    \"integer\": 0, //integer field\n" +
                 "    \"stringList\": [ //stringList field\n" +
@@ -534,55 +562,55 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "    ]\n" +
                 "}", modelPsiClass.asClassContext().toJson5(false, false))
 
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"key\": null\n" +
                 "}", mapPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"key\": null\n" +
                 "}", mapPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"key\": null\n" +
                 "}", mapPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"key\": null\n" +
                 "}", mapPsiClass.asClassContext().toJson5(false, false))
 
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(false, false))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson5(true, true))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson5(true, false))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson5(false, true))
+        assertEquals1("[]", collectionPsiClass.asClassContext().toJson5(false, false))
 
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"code\": 0, //response code\n" +
                 "    \"msg\": \"\", //message\n" +
                 "    \"data\": {} //response data\n" +
                 "}", resultPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"code\": 0, //response code\n" +
                 "    \"msg\": \"\", //message\n" +
                 "    \"data\": {} //response data\n" +
                 "}", resultPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"code\": 0, //response code\n" +
                 "    \"msg\": \"\", //message\n" +
                 "    \"data\": {} //response data\n" +
                 "}", resultPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"code\": 0, //response code\n" +
                 "    \"msg\": \"\", //message\n" +
                 "    \"data\": {} //response data\n" +
                 "}", resultPsiClass.asClassContext().toJson5(false, false))
 
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"code\": 0,\n" +
                 "    \"msg\": \"\"\n" +
                 "}", iResultPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
+        assertEquals1("{\n" +
                 "    \"code\": 0,\n" +
                 "    \"msg\": \"\"\n" +
                 "}", iResultPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("{}", iResultPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("{}", iResultPsiClass.asClassContext().toJson5(false, false))
+        assertEquals1("{}", iResultPsiClass.asClassContext().toJson5(false, true))
+        assertEquals1("{}", iResultPsiClass.asClassContext().toJson5(false, false))
     }
 
     //endregion
