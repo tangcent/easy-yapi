@@ -8,9 +8,12 @@ import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.utils.RuleComputeListenerRegistry
+import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
@@ -70,7 +73,8 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
         super.bind(builder)
 
         builder.bind(ClassExporter::class) { it.with(YapiSpringRequestClassExporter::class).singleton() }
-
+        builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
+        builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
         builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class))
 

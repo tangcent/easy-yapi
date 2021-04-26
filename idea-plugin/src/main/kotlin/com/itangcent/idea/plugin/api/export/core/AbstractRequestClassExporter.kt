@@ -438,7 +438,7 @@ abstract class AbstractRequestClassExporter : ClassExporter, Worker {
                         continue
                     }
 
-                    parsedParams.add(ParameterExportContext(methodExportContext, param))
+                    parsedParams.add(ParameterExportContext(methodExportContext, param).also { it.raw() })
                 } finally {
                     ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
                 }
