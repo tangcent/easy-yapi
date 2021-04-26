@@ -1,3 +1,31 @@
+* 2.2.1
+
+	* fix: compute param type info between PARAM_BEFORE&PARAM_AFTER [(#455)](https://github.com/tangcent/easy-yapi/pull/455)
+
+	* feat: it(class) isPrimitive/isPrimitiveWrapper [(#452)](https://github.com/tangcent/easy-yapi/pull/452)
+
+	* chore: add test case of [ScriptClassContext] [(#449)](https://github.com/tangcent/easy-yapi/pull/449)
+
+	* chore: update version of intellij-kotlin to 0.9.9-SNAPSHOT [(#450)](https://github.com/tangcent/easy-yapi/pull/450)
+
+	* chore: add test case of rules [(#447)](https://github.com/tangcent/easy-yapi/pull/447)
+
+	* chore: update test case of [*SettingHelper] [(#444)](https://github.com/tangcent/easy-yapi/pull/444)
+
+	* chore: add test case of [Settings] [(#443)](https://github.com/tangcent/easy-yapi/pull/443)
+
+	* chore: update HttpSettingsHelperTest [(#442)](https://github.com/tangcent/easy-yapi/pull/442)
+
+	* feat: forbidden http access to distrust hosts [(#441)](https://github.com/tangcent/easy-yapi/pull/441)
+
+	* feat: separate RequestBuilderListener from ClassExporter [(#438)](https://github.com/tangcent/easy-yapi/pull/438)
+
+	* chore: remove deprecated usage [(#437)](https://github.com/tangcent/easy-yapi/pull/437)
+
+	* fix: always try addMock in parseByJson5 [(#436)](https://github.com/tangcent/easy-yapi/pull/436)
+
+	* opti: custom ConnectionManager for build httpClient [(#434)](https://github.com/tangcent/easy-yapi/pull/434)
+
 * 2.2.0
 
 	* feat: [methodDoc-yapi] parse params as query for `GET` [(#432)](https://github.com/tangcent/easy-yapi/pull/432)
