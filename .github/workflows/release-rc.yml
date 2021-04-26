@@ -30,7 +30,7 @@ jobs:
           java-version: 1.8
 
       - name: release commit
-        run: ./plugin-script/release-rc.shs
+        run: ./plugin-script/release-rc.sh
 
       - name: patch envs
         run: |
