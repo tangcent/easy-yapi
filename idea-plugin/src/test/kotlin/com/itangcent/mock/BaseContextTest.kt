@@ -50,8 +50,10 @@ abstract class BaseContextTest {
 
     @AfterEach
     fun tearDown() {
-        actionContext.waitComplete()
-        actionContext.stop(true)
+        if (this::actionContext.isInitialized) {
+            actionContext.waitComplete()
+            actionContext.stop(true)
+        }
     }
 
     protected open fun bind(builder: ActionContext.ActionContextBuilder) {}

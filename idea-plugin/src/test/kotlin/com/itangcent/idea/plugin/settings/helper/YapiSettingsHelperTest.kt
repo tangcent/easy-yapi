@@ -2,8 +2,11 @@ package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
 import com.itangcent.common.kit.toJson
+import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.logger.Logger
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import java.io.ByteArrayOutputStream
@@ -24,6 +27,8 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
 
+        builder.bind(Logger::class) { it.with(LoggerCollector::class) }
+
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
                 Mockito.eq("Server Of Yapi"), Mockito.any()))
@@ -35,6 +40,13 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
                 Mockito.eq("Yapi Private Token"), Mockito.any()))
                 .thenReturn(null, "123456789")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
+
+        val yapiTokenChecker = object : YapiTokenChecker {
+            override fun checkToken(token: String): Boolean {
+                return !token.startsWith("abcd")
+            }
+        }
+        builder.bindInstance(YapiTokenChecker::class, yapiTokenChecker)
     }
 
     @Test
@@ -63,6 +75,7 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
 
     @Test
     fun testGetPrivateToken() {
+        //test normal mode
         settings.loginMode = false
         assertNull(yapiSettingsHelper.getPrivateToken("demo"))
         assertNull(yapiSettingsHelper.getPrivateToken("demo", false))
@@ -70,12 +83,28 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
         assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo2", false))
         assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo2"))
 
+        //test login mode
         settings.loginMode = true
         assertNull(yapiSettingsHelper.getPrivateToken("login-demo"))
         assertNull(yapiSettingsHelper.getPrivateToken("login-demo", false))
         assertNull(yapiSettingsHelper.getPrivateToken("login-demo", false))
         assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo2", false))
         assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo2"))
+
+        //test normal mode & illegal token
+        settings.loginMode = false
+        yapiSettingsHelper.setToken("demo-illegal", "abcdefghijklmnopqrst")
+        assertNull(yapiSettingsHelper.getPrivateToken("demo-illegal"))
+        LoggerCollector.getLog().let { log ->
+            assertTrue(log.contains("Please switch to loginModel if the version of yapi is before 1.6.0"))
+            assertTrue(log.contains("For more details see: http://easyyapi.com/documents/login_mode_yapi.html"))
+        }
+        yapiSettingsHelper.setToken("demo-illegal2", "dcbaefghijklmnopqrst")
+        assertEquals("dcbaefghijklmnopqrst", yapiSettingsHelper.getPrivateToken("demo-illegal2"))
+        LoggerCollector.getLog().let { log ->
+            assertFalse(log.contains("Please switch to loginModel if the version of yapi is before 1.6.0"))
+            assertFalse(log.contains("For more details see: http://easyyapi.com/documents/login_mode_yapi.html"))
+        }
     }
 
     @Test
