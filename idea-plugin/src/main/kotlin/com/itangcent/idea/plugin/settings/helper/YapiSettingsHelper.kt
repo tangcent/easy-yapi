@@ -130,6 +130,10 @@ class YapiSettingsHelper {
                 updateTokenStatus(this.first, status)
                 if (!status) {
                     logger.warn("token:${this.first} may be invalid.")
+                    if (!settingBinder.read().loginMode && this.first.length != 64) {
+                        logger.info("Please switch to loginModel if the version of yapi is before 1.6.0")
+                        logger.info("For more details see: http://easyyapi.com/documents/login_mode_yapi.html")
+                    }
                 }
                 return if (status) this.first else null
             }
@@ -146,7 +150,6 @@ class YapiSettingsHelper {
      * disable this token temporarily
      */
     fun disableTemp(token: String) {
-
         cacheLock.writeLock().withLock {
             if (tokenMap == null) {
                 initToken()
