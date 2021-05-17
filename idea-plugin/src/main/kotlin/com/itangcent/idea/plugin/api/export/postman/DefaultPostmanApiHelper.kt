@@ -23,7 +23,6 @@ import com.itangcent.suv.http.HttpClientProvider
 import org.apache.http.entity.ContentType
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.streams.toList
 
 /**
@@ -114,19 +113,20 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
         try {
             beforeRequest(request)
-            val response = call(request)
-            val returnValue = response.string()
-            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = returnValue.asJsonElement()
-                val collectionInfo = returnObj.sub("collection")?.asMap()
-                if (collectionInfo.notNullOrEmpty()) {
-                    return collectionInfo
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                    val returnObj = returnValue.asJsonElement()
+                    val collectionInfo = returnObj.sub("collection")?.asMap()
+                    if (collectionInfo.notNullOrEmpty()) {
+                        return collectionInfo
+                    }
                 }
+
+                onErrorResponse(response)
+
+                return null
             }
-
-            onErrorResponse(response)
-
-            return null
         } catch (e: Throwable) {
             logger!!.traceError("Post to $COLLECTION failed", e)
             return null
@@ -195,21 +195,22 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         try {
             beforeRequest(request)
 
-            val response = call(request)
-            val returnValue = response.string()
-            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = returnValue.asJsonElement()
-                val collectionName = returnObj
-                        .sub("collection")
-                        .sub("name")
-                        ?.asString
-                if (collectionName.notNullOrBlank()) {
-                    return true
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                    val returnObj = returnValue.asJsonElement()
+                    val collectionName = returnObj
+                            .sub("collection")
+                            .sub("name")
+                            ?.asString
+                    if (collectionName.notNullOrBlank()) {
+                        return true
+                    }
                 }
-            }
 
-            onErrorResponse(response)
-            return false
+                onErrorResponse(response)
+                return false
+            }
         } catch (e: Throwable) {
             logger!!.traceError("Post to $COLLECTION failed", e)
 
@@ -223,20 +224,21 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
         try {
             beforeRequest(request)
-            val response = call(request)
-            val returnValue = response.string()
-            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collections")) {
-                val returnObj = returnValue.asJsonElement()
-                val collections = returnObj.sub("collections")
-                        ?.asJsonArray ?: return null
-                val collectionList: ArrayList<HashMap<String, Any?>> = ArrayList()
-                collections.forEach { collectionList.add(it.asMap()) }
-                return collectionList
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collections")) {
+                    val returnObj = returnValue.asJsonElement()
+                    val collections = returnObj.sub("collections")
+                            ?.asJsonArray ?: return null
+                    val collectionList: ArrayList<HashMap<String, Any?>> = ArrayList()
+                    collections.forEach { collectionList.add(it.asMap()) }
+                    return collectionList
+                }
+
+                onErrorResponse(response)
+
+                return null
             }
-
-            onErrorResponse(response)
-
-            return null
         } catch (e: Throwable) {
             logger!!.traceError("Load collections failed", e)
 
@@ -249,19 +251,20 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
-            val response = call(request)
-            val returnValue = response.string()
+            call(request).use { response ->
+                val returnValue = response.string()
 
-            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = returnValue.asJsonElement()
-                return returnObj
-                        .sub("collection")
-                        ?.asMap()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                    val returnObj = returnValue.asJsonElement()
+                    return returnObj
+                            .sub("collection")
+                            ?.asMap()
+                }
+
+                onErrorResponse(response)
+
+                return null
             }
-
-            onErrorResponse(response)
-
-            return null
         } catch (e: Throwable) {
             logger!!.traceError("Load collection info  failed", e)
 
@@ -274,43 +277,34 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
-            val result = call(request)
-            val returnValue = result.string()
+            call(request).use { response ->
+                val returnValue = response.string()
 
-            if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
-                val returnObj = returnValue.asJsonElement()
-                return returnObj
-                        .sub("collection")
-                        ?.asMap()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                    val returnObj = returnValue.asJsonElement()
+                    return returnObj
+                            .sub("collection")
+                            ?.asMap()
+                }
+
+                onErrorResponse(response)
+
+                return null
             }
-
-            onErrorResponse(result)
-
-            return null
         } catch (e: Throwable) {
             logger!!.traceError("delete collection failed", e)
             return null
         }
     }
 
-    private val semaphore = Semaphore(3)
-
-    private val cnt = AtomicInteger(0)
+    private val semaphore = Semaphore(5)
 
     protected fun call(request: HttpRequest): HttpResponse {
-        return try {
-            if (cnt.incrementAndGet() > 2) {
-                semaphore.acquire()
-                try {
-                    request.call()
-                } finally {
-                    semaphore.release()
-                }
-            } else {
-                request.call()
-            }
+        semaphore.acquire()
+        try {
+            return request.call()
         } finally {
-            cnt.decrementAndGet()
+            semaphore.release()
         }
     }
 

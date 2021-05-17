@@ -161,7 +161,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             httpClientProvide!!.getHttpClient()
                     .get(rawUrl)
                     .call()
-                    .string()
+                    .use { it.string() }
         } catch (e: SocketTimeoutException) {
             if (!dumb) {
                 logger.trace("$rawUrl connect timeout")

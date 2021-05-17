@@ -224,6 +224,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
                 suvRuleContext.setExt("response", response)
                 ruleComputer.computer(ClassExportRuleKeys.HTTP_CLIENT_AFTER_CALL, suvRuleContext, null)
                 if (response.isDiscarded() && i < 3) {
+                    response.close()
                     ++i
                     continue
                 }
@@ -281,6 +282,10 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             return this.request
         }
 
+        override fun close() {
+            //NOP
+        }
+
     }
 
     @ScriptTypeName("response")
@@ -309,6 +314,6 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
     }
 
     companion object {
-        val defaultHttpTimeOut: Int = TimeUnit.SECONDS.toMillis(10).toInt()
+        const val defaultHttpTimeOut: Int = 10
     }
 }
