@@ -3,6 +3,7 @@ package com.itangcent.intellij.util
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.resolveCycle
 import com.itangcent.intellij.extend.toPrettyString
 import java.util.function.BiConsumer
 
@@ -113,6 +114,13 @@ fun Any?.isComplex(root: Boolean = true): Boolean {
 }
 
 fun Any?.hasFile(): Boolean {
+    return when {
+        this == null -> false
+        else -> this.resolveCycle().checkHasFile()
+    }
+}
+
+private fun Any?.checkHasFile(): Boolean {
     when {
         this == null -> return false
         this is Collection<*> -> return this.any { it.hasFile() }

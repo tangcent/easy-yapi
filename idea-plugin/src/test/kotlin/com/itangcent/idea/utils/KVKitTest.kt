@@ -173,5 +173,10 @@ class KVKitTest {
         assertTrue(mapOf("a" to Magics.FILE_STR).hasFile())
         assertTrue(listOf(mapOf("@x" to 1, "a" to Magics.FILE_STR)).hasFile())
 
+        val map = hashMapOf<Any?, Any?>("@x" to 1)
+        map["a"] = map
+        assertFalse(map.hasFile())
+        map["b"] = Magics.FILE_STR
+        assertTrue(map.hasFile())
     }
 }
