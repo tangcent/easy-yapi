@@ -6,6 +6,7 @@ import com.itangcent.common.kit.equalIgnoreCase
 import org.apache.http.Consts
 import org.apache.http.entity.ContentType
 import java.io.ByteArrayInputStream
+import java.io.Closeable
 import java.io.InputStream
 import java.nio.charset.Charset
 import java.util.*
@@ -881,7 +882,7 @@ abstract class AbstractHttpRequest : HttpRequest {
 }
 
 @ScriptTypeName("response")
-interface HttpResponse {
+interface HttpResponse : Closeable {
 
     /**
      * Obtains the status of this response.

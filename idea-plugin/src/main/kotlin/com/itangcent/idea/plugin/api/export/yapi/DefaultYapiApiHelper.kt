@@ -83,7 +83,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                     .contentType(ContentType.APPLICATION_JSON)
                     .body(apiInfo)
                     .call()
-                    .string()
+                    .use { it.string() }
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
                 logger.info("Post failed:$errMsg")
@@ -113,7 +113,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                             .set("name", name)
                             .set("token", yapiSettingsHelper.rawToken(token)))
                     .call()
-                    .string()
+                    .use { it.string() }
 
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {

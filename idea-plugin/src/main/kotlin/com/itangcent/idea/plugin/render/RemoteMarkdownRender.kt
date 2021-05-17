@@ -56,14 +56,16 @@ open class RemoteMarkdownRender : MarkdownRender {
 
         val server = configReader!!.first("markdown.render.server") ?: return null
         try {
-            val httpResponse = httpClientProvide!!.getHttpClient().post(server)
+            httpClientProvide!!.getHttpClient().post(server)
                     .contentType(ContentType.TEXT_PLAIN)
                     .body(markdown)
                     .call()
-            if (httpResponse.code() == 200) {
-                return httpResponse.string()
-            }
-            logger!!.warn(" try render markdown with $server,but response code is ${httpResponse.code()}, response is:${httpResponse.string()}")
+                    .use { httpResponse ->
+                        if (httpResponse.code() == 200) {
+                            return httpResponse.string()
+                        }
+                        logger!!.warn(" try render markdown with $server,but response code is ${httpResponse.code()}, response is:${httpResponse.string()}")
+                    }
         } catch (e: Exception) {
             logger!!.traceError(" try render markdown with $server failed", e)
         }

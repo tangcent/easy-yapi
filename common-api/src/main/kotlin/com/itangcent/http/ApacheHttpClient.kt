@@ -24,6 +24,7 @@ import org.apache.http.impl.cookie.BasicClientCookie
 import org.apache.http.impl.cookie.BasicClientCookie2
 import org.apache.http.message.BasicNameValuePair
 import org.apache.http.util.toByteArray
+import java.io.Closeable
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.*
@@ -158,7 +159,6 @@ class ApacheHttpRequest : AbstractHttpRequest {
     constructor(apacheHttpClient: ApacheHttpClient) : super() {
         this.apacheHttpClient = apacheHttpClient
     }
-
 
     /**
      * Executes HTTP request using the [apacheHttpClient].
@@ -306,6 +306,10 @@ class ApacheHttpResponse(
      */
     override fun request(): HttpRequest {
         return request
+    }
+
+    override fun close() {
+        (this.response as? Closeable)?.close()
     }
 }
 
