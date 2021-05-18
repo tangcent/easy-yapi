@@ -8,14 +8,13 @@ import org.apache.http.HttpEntity
 import java.nio.charset.Charset
 
 fun HttpEntity.toByteArray(): ByteArray {
-    return this.content.readBytes()
+    return this.content.use { it.readBytes() }
 }
 
 fun HttpEntity.consume() {
-    if (this.isStreaming) {
-        val inputStream = this.content
-        inputStream?.close()
-    }
+    this.takeIf { it.isStreaming }
+            ?.content
+            ?.close()
 }
 
 fun HttpEntity.getContentCharSet(): String? {
@@ -50,7 +49,7 @@ fun HttpEntity.getContentMimeType(): String? {
 fun HttpEntity.readString(defaultCharset: Charset? = null): String {
     val charset = getContentCharSet()?.let { Charset.forName(it) }
             ?: defaultCharset ?: Charsets.UTF_8
-    return this.content.readString(charset)
+    return this.content.use { it.readString(charset) }
 }
 
 fun HttpEntity.readString(defaultCharset: String?): String {
