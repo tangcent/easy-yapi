@@ -180,13 +180,13 @@ object ClassExportRuleKeys {
     )
 
     val HTTP_CLIENT_BEFORE_CALL: RuleKey<Boolean> = SimpleRuleKey(
-            "http.call.before", StringRule::class,
-            StringRuleMode.SINGLE
+            "http.call.before", EventRule::class,
+            EventRuleMode.IGNORE_ERROR
     )
 
     val HTTP_CLIENT_AFTER_CALL: RuleKey<Boolean> = SimpleRuleKey(
-            "http.call.after", StringRule::class,
-            StringRuleMode.SINGLE
+            "http.call.after", EventRule::class,
+            EventRuleMode.IGNORE_ERROR
     )
 
     val PATH_MULTI: RuleKey<String> = SimpleRuleKey(
@@ -259,8 +259,8 @@ object ClassExportRuleKeys {
     )
 
     val AFTER_EXPORT: RuleKey<String> = SimpleRuleKey(
-            "export.after", StringRule::class,
-            StringRuleMode.SINGLE
+            "export.after", EventRule::class,
+            EventRuleMode.IGNORE_ERROR
     )
 
     val FIELD_PARSE_BEFORE: RuleKey<Boolean> = SimpleRuleKey(
