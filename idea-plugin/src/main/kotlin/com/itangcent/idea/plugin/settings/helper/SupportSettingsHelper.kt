@@ -13,4 +13,8 @@ class SupportSettingsHelper {
     fun methodDocEnable(): Boolean {
         return settingBinder.read().methodDocEnable
     }
+
+    fun genericEnable(): Boolean {
+        return settingBinder.read().genericEnable
+    }
 }

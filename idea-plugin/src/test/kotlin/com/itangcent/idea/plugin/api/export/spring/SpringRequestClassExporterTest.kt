@@ -1,10 +1,11 @@
-package com.itangcent.idea.plugin.api.export.core
+package com.itangcent.idea.plugin.api.export.spring
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource

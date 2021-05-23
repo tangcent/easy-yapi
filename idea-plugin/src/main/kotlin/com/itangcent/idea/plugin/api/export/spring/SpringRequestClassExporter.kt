@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.spring
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
@@ -11,12 +12,12 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.core.*
-import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.util.hasFile
 
-open class SpringRequestClassExporter : AbstractRequestClassExporter() {
+@Singleton
+open class SpringRequestClassExporter : RequestClassExporter() {
 
     @Inject
     private val annotationHelper: AnnotationHelper? = null
@@ -258,17 +259,13 @@ open class SpringRequestClassExporter : AbstractRequestClassExporter() {
     }
 
     override fun processCompleted(methodExportContext: MethodExportContext, request: Request) {
-        super.processCompleted(methodExportContext, request)
-
         val requestMapping: Pair<Map<String, Any?>, String>? = methodExportContext.getExt("requestMapping")
         requestMapping?.let {
             resolveParamInRequestMapping(methodExportContext, request, it)
             resolveHeaderInRequestMapping(methodExportContext, request, it)
         }
 
-        ruleComputer.computer(ClassExportRuleKeys.AFTER_EXPORT, methodExportContext.method) {
-            it.setExt("api", RequestRuleWrap(methodExportContext, request))
-        }
+        super.processCompleted(methodExportContext, request)
     }
 
     //region process spring annotation-------------------------------------------------------------------

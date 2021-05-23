@@ -7,6 +7,8 @@ class Settings {
 
     var methodDocEnable: Boolean = false
 
+    var genericEnable: Boolean = false
+
     //postman
 
     var pullNewestDataBefore: Boolean = false
@@ -84,6 +86,7 @@ class Settings {
         newSetting.postmanJson5FormatType = this.postmanJson5FormatType
         newSetting.pullNewestDataBefore = this.pullNewestDataBefore
         newSetting.methodDocEnable = this.methodDocEnable
+        newSetting.genericEnable = this.genericEnable
         newSetting.formExpanded = this.formExpanded
         newSetting.readGetter = this.readGetter
         newSetting.readSetter = this.readSetter
@@ -116,6 +119,7 @@ class Settings {
 
         if (pullNewestDataBefore != other.pullNewestDataBefore) return false
         if (methodDocEnable != other.methodDocEnable) return false
+        if (genericEnable != other.genericEnable) return false
         if (postmanToken != other.postmanToken) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
@@ -148,6 +152,7 @@ class Settings {
     override fun hashCode(): Int {
         var result = pullNewestDataBefore.hashCode()
         result = 31 * result + methodDocEnable.hashCode()
+        result = 31 * result + genericEnable.hashCode()
         result = 31 * result + (postmanToken?.hashCode() ?: 0)
         result = 31 * result + wrapCollection.hashCode()
         result = 31 * result + autoMergeScript.hashCode()

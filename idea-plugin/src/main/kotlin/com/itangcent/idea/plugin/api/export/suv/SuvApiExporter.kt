@@ -22,6 +22,7 @@ import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
+import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
 import com.itangcent.idea.plugin.api.export.postman.*
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
@@ -481,8 +482,8 @@ class SuvApiExporter {
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
-            builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(YapiSpringRequestClassExporter::class, GenericMethodDocClassExporter::class))
+            builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
+            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(YapiSpringRequestClassExporter::class, GenericRequestClassExporter::class, GenericMethodDocClassExporter::class))
 
             builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
             builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class))
@@ -496,6 +497,8 @@ class SuvApiExporter {
             builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
 
             builder.bind(YapiTokenChecker::class) { it.with(YapiTokenCheckerSupport::class).singleton() }
+
+            builder.bind(AdditionalParseHelper::class) { it.with(YapiAdditionalParseHelper::class).singleton() }
         }
 
         override fun beforeExport(next: () -> Unit) {
@@ -569,8 +572,8 @@ class SuvApiExporter {
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-            builder.bind(ClassExporter::class) { it.with(ComboClassExporter::class).singleton() }
-            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, GenericMethodDocClassExporter::class))
+            builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
+            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, GenericRequestClassExporter::class, GenericMethodDocClassExporter::class))
 
             builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }

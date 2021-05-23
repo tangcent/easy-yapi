@@ -2,10 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.ComponentRequestBuilderListener
-import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
-import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
@@ -76,8 +73,12 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class))
+        builder.bindInstance(
+            "AVAILABLE_REQUEST_BUILDER_LISTENER",
+            arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class)
+        )
 
+        builder.bind(AdditionalParseHelper::class) { it.with(YapiAdditionalParseHelper::class).singleton() }
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                 settings.inferEnable = true

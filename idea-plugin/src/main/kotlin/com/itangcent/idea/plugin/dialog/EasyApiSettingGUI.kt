@@ -65,6 +65,8 @@ class EasyApiSettingGUI {
 
     private var methodDocEnableCheckBox: JCheckBox? = null
 
+    private var genericEnableCheckBox: JCheckBox? = null
+
     private var globalCacheSizeLabel: JLabel? = null
 
     private var projectCacheSizeLabel: JLabel? = null
@@ -190,6 +192,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(methodDocEnableCheckBox!!)
                 .mutual(this, "settings.methodDocEnable")
+
+        autoComputer.bind(genericEnableCheckBox!!)
+                .mutual(this, "settings.genericEnable")
 
         autoComputer.bind(inferEnableCheckBox!!)
                 .mutual(this, "settings.inferEnable")

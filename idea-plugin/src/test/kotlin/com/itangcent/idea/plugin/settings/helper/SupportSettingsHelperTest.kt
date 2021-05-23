@@ -20,4 +20,12 @@ internal class SupportSettingsHelperTest : SettingsHelperTest() {
         settings.methodDocEnable = false
         assertFalse(supportSettingsHelper.methodDocEnable())
     }
+
+    @Test
+    fun testGenericEnable() {
+        settings.genericEnable = true
+        assertTrue(supportSettingsHelper.genericEnable())
+        settings.genericEnable = false
+        assertFalse(supportSettingsHelper.genericEnable())
+    }
 }
