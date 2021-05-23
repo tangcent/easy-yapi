@@ -1,10 +1,11 @@
-package com.itangcent.idea.plugin.api.export.core
+package com.itangcent.idea.plugin.api.export.generic
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.common.model.MethodDoc
+import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.generic.SimpleGenericMethodDocClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
@@ -18,15 +19,15 @@ import java.time.LocalDateTime
 import java.util.*
 
 /**
- * Test case of [SimpleGenericMethodDocClassExporter]
+ * Test case of [SimpleGenericRequestClassExporter]
  */
-internal class SimpleMethodDocClassExporterTest
+internal class SimpleGenericRequestClassExporterTest
     : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     private lateinit var classExporter: ClassExporter
 
-    private lateinit var userCtrlPsiClass: PsiClass
+    private lateinit var userClientClass: PsiClass
 
     private val settings = Settings()
 
@@ -49,39 +50,44 @@ internal class SimpleMethodDocClassExporterTest
         loadFile("model/Result.java")
         loadFile("model/UserInfo.java")
         loadFile("api/BaseController.java")
-        userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
+        userClientClass = loadClass("client/UserClient.java")!!
+    }
+
+    override fun customConfig(): String {
+        return "generic.class.has.api=groovy:it.name().endsWith(\"Client\")\n" +
+                "generic.method.has.api=true"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
-        builder.bind(ClassExporter::class) { it.with(SimpleGenericMethodDocClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(SimpleGenericRequestClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
     }
 
     fun testExport() {
-        val methodDocs = ArrayList<MethodDoc>()
-        settings.methodDocEnable = false
-        classExporter.export(userCtrlPsiClass, methodDocOnly {
-            methodDocs.add(it)
+        val requests = ArrayList<Request>()
+        settings.genericEnable = false
+        classExporter.export(userClientClass, requestOnly {
+            requests.add(it)
         })
         (classExporter as Worker).waitCompleted()
-        assertTrue(methodDocs.isEmpty())
+        assertTrue(requests.isEmpty())
 
         //enable export method doc
-        settings.methodDocEnable = true
-        classExporter.export(userCtrlPsiClass, methodDocOnly {
-            methodDocs.add(it)
+        settings.genericEnable = true
+        classExporter.export(userClientClass, requestOnly {
+            requests.add(it)
         })
         (classExporter as Worker).waitCompleted()
-        methodDocs[0].let { methodDoc ->
-            assertEquals("say hello", methodDoc.name)
-            assertNull(methodDoc.desc)
-            assertEquals(userCtrlPsiClass.methods[0], (methodDoc.resource as PsiResource).resource())
+        requests[0].let { request ->
+            assertEquals("say hello", request.name)
+            assertNull(request.desc)
+            assertEquals(userClientClass.methods[0], (request.resource as PsiResource).resource())
         }
-        methodDocs[1].let { methodDoc ->
-            assertEquals("get user info", methodDoc.name)
-            assertNull(methodDoc.desc)
-            assertEquals(userCtrlPsiClass.methods[1], (methodDoc.resource as PsiResource).resource())
+        requests[1].let { request ->
+            assertEquals("update username", request.name)
+            assertNull(request.desc)
+            assertEquals(userClientClass.methods[1], (request.resource as PsiResource).resource())
         }
     }
 }

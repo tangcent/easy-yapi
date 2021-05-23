@@ -16,7 +16,6 @@ import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.utils.ExtensibleKit.fromJson
 
 /**
- *
  * 1.support enableUrlTemplating
  */
 @Singleton
@@ -103,8 +102,4 @@ open class YapiSpringRequestClassExporter : SpringRequestClassExporter() {
             }
         }
     }
-
-    override fun parseHeaderFromJson(headerStr: String) = Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR)
-
-    override fun parseParamFromJson(paramStr: String) = Param::class.fromJson(paramStr, Attrs.EXAMPLE_ATTR)
 }

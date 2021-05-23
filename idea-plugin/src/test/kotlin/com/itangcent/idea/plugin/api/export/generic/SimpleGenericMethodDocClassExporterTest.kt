@@ -1,10 +1,11 @@
-package com.itangcent.idea.plugin.api.export.core
+package com.itangcent.idea.plugin.api.export.generic
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.methodDocOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
@@ -18,9 +19,9 @@ import java.time.LocalDateTime
 import java.util.*
 
 /**
- * Test case of [GenericMethodDocClassExporter]
+ * Test case of [SimpleGenericMethodDocClassExporter]
  */
-internal class GenericMethodDocClassExporterTest
+internal class SimpleGenericMethodDocClassExporterTest
     : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
@@ -54,7 +55,7 @@ internal class GenericMethodDocClassExporterTest
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
-        builder.bind(ClassExporter::class) { it.with(GenericMethodDocClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(SimpleGenericMethodDocClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
     }
 
@@ -75,13 +76,12 @@ internal class GenericMethodDocClassExporterTest
         (classExporter as Worker).waitCompleted()
         methodDocs[0].let { methodDoc ->
             assertEquals("say hello", methodDoc.name)
-            assertEquals("say hello\n" +
-                    "not update anything", methodDoc.desc)
+            assertNull(methodDoc.desc)
             assertEquals(userCtrlPsiClass.methods[0], (methodDoc.resource as PsiResource).resource())
         }
         methodDocs[1].let { methodDoc ->
             assertEquals("get user info", methodDoc.name)
-            assertEquals("get user info", methodDoc.desc)
+            assertNull(methodDoc.desc)
             assertEquals(userCtrlPsiClass.methods[1], (methodDoc.resource as PsiResource).resource())
         }
     }

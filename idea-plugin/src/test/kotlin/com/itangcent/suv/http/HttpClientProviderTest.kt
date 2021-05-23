@@ -21,7 +21,6 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) { it.with(httpClientProviderClass) }
-
     }
 
     @Test

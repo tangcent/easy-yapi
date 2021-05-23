@@ -30,7 +30,6 @@ public class UserCtrl extends BaseController {
         return "hello world";
     }
 
-
     /**
      * get user info
      *

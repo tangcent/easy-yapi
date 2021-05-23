@@ -15,7 +15,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import kotlin.reflect.KClass
 
-class ComboClassExporter : ClassExporter, Worker {
+class CompositeClassExporter : ClassExporter, Worker {
 
     @Inject
     @Named("AVAILABLE_CLASS_EXPORTER")
