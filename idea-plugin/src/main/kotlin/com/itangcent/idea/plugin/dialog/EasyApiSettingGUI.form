@@ -3,7 +3,7 @@
   <grid id="b08f8" binding="rootPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="504" height="1190"/>
+      <xy x="20" y="20" width="450" height="1340"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -56,7 +56,7 @@
       <tabbedpane id="9108c">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-            <maximum-size width="-1" height="1200"/>
+            <maximum-size width="-1" height="1350"/>
           </grid>
         </constraints>
         <properties/>
@@ -74,7 +74,7 @@
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                    <maximum-size width="-1" height="1100"/>
+                    <maximum-size width="-1" height="1350"/>
                   </grid>
                 </constraints>
                 <properties/>
@@ -330,7 +330,11 @@
                             <children>
                               <component id="8a533" class="javax.swing.JComboBox" binding="postmanJson5FormatTypeComboBox">
                                 <constraints>
-                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                                    <minimum-size width="50" height="-1"/>
+                                    <preferred-size width="120" height="-1"/>
+                                    <maximum-size width="160" height="-1"/>
+                                  </grid>
                                 </constraints>
                                 <properties/>
                               </component>
@@ -912,7 +916,8 @@
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="1" fill="1" indent="0" use-parent-layout="false">
-                        <maximum-size width="-1" height="120"/>
+                        <preferred-size width="-1" height="130"/>
+                        <maximum-size width="-1" height="160"/>
                       </grid>
                     </constraints>
                     <properties/>
@@ -921,7 +926,9 @@
                       <grid id="eb6fe" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                         <margin top="0" left="0" bottom="0" right="0"/>
                         <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                            <preferred-size width="-1" height="30"/>
+                          </grid>
                         </constraints>
                         <properties/>
                         <border type="none"/>
@@ -953,32 +960,16 @@
                       <grid id="3f49d" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                         <margin top="0" left="0" bottom="0" right="0"/>
                         <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                            <preferred-size width="-1" height="90"/>
+                          </grid>
                         </constraints>
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <grid id="15447" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                            <margin top="0" left="0" bottom="0" right="0"/>
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties/>
-                            <border type="none"/>
-                            <children>
-                              <component id="70e0f" class="javax.swing.JTextArea" binding="trustHostsTextArea">
-                                <constraints>
-                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
-                                    <preferred-size width="150" height="50"/>
-                                  </grid>
-                                </constraints>
-                                <properties/>
-                              </component>
-                            </children>
-                          </grid>
                           <component id="a37b0" class="javax.swing.JLabel">
                             <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false">
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false">
                                 <minimum-size width="90" height="-1"/>
                                 <preferred-size width="90" height="-1"/>
                                 <maximum-size width="90" height="-1"/>
@@ -988,6 +979,22 @@
                               <text value="trust hosts:"/>
                             </properties>
                           </component>
+                          <scrollpane id="b55c4">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                                <minimum-size width="-1" height="80"/>
+                                <preferred-size width="-1" height="90"/>
+                              </grid>
+                            </constraints>
+                            <properties/>
+                            <border type="none"/>
+                            <children>
+                              <component id="70e0f" class="javax.swing.JTextArea" binding="trustHostsTextArea">
+                                <constraints/>
+                                <properties/>
+                              </component>
+                            </children>
+                          </scrollpane>
                         </children>
                       </grid>
                     </children>
