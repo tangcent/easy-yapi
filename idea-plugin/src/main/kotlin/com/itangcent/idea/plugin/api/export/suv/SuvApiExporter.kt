@@ -86,55 +86,55 @@ class SuvApiExporter {
         val docs: MutableList<DocWrapper> = Collections.synchronizedList(ArrayList<DocWrapper>())
 
         SelectedHelper.Builder()
-                .fileFilter { FileType.acceptable(it.name) }
-                .classHandle {
-                    actionContext!!.checkStatus()
-                    classExporter!!.export(it) { doc ->
-                        docs.add(DocWrapper(doc))
-                    }
+            .fileFilter { FileType.acceptable(it.name) }
+            .classHandle {
+                actionContext!!.checkStatus()
+                classExporter!!.export(it) { doc ->
+                    docs.add(DocWrapper(doc))
                 }
-                .onCompleted {
-                    try {
-                        if (classExporter is Worker) {
-                            classExporter.waitCompleted()
-                        }
-                        if (docs.isEmpty()) {
-                            logger.info("No api be found!")
-                            return@onCompleted
-                        }
+            }
+            .onCompleted {
+                try {
+                    if (classExporter is Worker) {
+                        classExporter.waitCompleted()
+                    }
+                    if (docs.isEmpty()) {
+                        logger.info("No api be found!")
+                        return@onCompleted
+                    }
 
-                        val multipleApiExportDialog = actionContext!!.instance { SuvApiExportDialog() }
+                    val multipleApiExportDialog = actionContext!!.instance { SuvApiExportDialog() }
 
-                        UIUtils.show(multipleApiExportDialog)
+                    UIUtils.show(multipleApiExportDialog)
 
-                        actionContext.runInSwingUI {
+                    actionContext.runInSwingUI {
 
-                            multipleApiExportDialog.setOnChannelChanged { channel ->
-                                if (channel == null) {
-                                    multipleApiExportDialog.updateRequestList(docs)
-                                    return@setOnChannelChanged
-                                }
-                                val apiExporterAdapter = channel as ApiExporterWrapper
-                                multipleApiExportDialog.updateRequestList(docs
-                                        .filter { apiExporterAdapter.support(it.docType) }
-                                        .toList())
+                        multipleApiExportDialog.setOnChannelChanged { channel ->
+                            if (channel == null) {
+                                multipleApiExportDialog.updateRequestList(docs)
+                                return@setOnChannelChanged
                             }
+                            val apiExporterAdapter = channel as ApiExporterWrapper
+                            multipleApiExportDialog.updateRequestList(docs
+                                .filter { apiExporterAdapter.support(it.docType) }
+                                .toList())
+                        }
 
 //                            multipleApiExportDialog.updateRequestList(docs)
 
-                            multipleApiExportDialog.setChannels(EXPORTER_CHANNELS)
+                        multipleApiExportDialog.setChannels(EXPORTER_CHANNELS)
 
-                            multipleApiExportDialog.setApisHandle { channel, requests ->
-                                doExport(channel as ApiExporterWrapper, requests as List<DocWrapper>)
-                            }
-
-
+                        multipleApiExportDialog.setApisHandle { channel, requests ->
+                            doExport(channel as ApiExporterWrapper, requests as List<DocWrapper>)
                         }
-                    } catch (e: Exception) {
-                        logger.error("Apis find failed" + ExceptionUtils.getStackTrace(e))
+
+
                     }
+                } catch (e: Exception) {
+                    logger.error("Apis find failed" + ExceptionUtils.getStackTrace(e))
                 }
-                .traversal()
+            }
+            .traversal()
     }
 
     private var customActionExtLoader: ((String, ActionContext.ActionContextBuilder) -> Unit)? = null
@@ -198,15 +198,15 @@ class SuvApiExporter {
             actionContextBuilder.bindInstance(DataContext::class, actionContext.instance(DataContext::class))
 
             val resources = requests
-                    .stream()
-                    .filter { it != null }
-                    .map { it.resource }
-                    .filter { it != null }
-                    .map { it as PsiResource }
-                    .map { it.resource() }
-                    .filter { it is PsiMethod }
-                    .map { it as PsiMethod }
-                    .toList()
+                .stream()
+                .filter { it != null }
+                .map { it.resource }
+                .filter { it != null }
+                .map { it as PsiResource }
+                .map { it.resource() }
+                .filter { it is PsiMethod }
+                .map { it as PsiMethod }
+                .toList()
 
             actionContextBuilder.bindInstance(MethodFilter::class, ExplicitMethodFilter(resources))
 
@@ -257,7 +257,8 @@ class SuvApiExporter {
         protected open fun actionPerformed(actionContext: ActionContext) {
             val loggerBuffer: LoggerBuffer? = actionContext.getCache<LoggerBuffer>("LOGGER_BUF")
             loggerBuffer?.drainTo(actionContext.instance(Logger::class))
-            val actionExtLoader: GroovyActionExtLoader? = actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
+            val actionExtLoader: GroovyActionExtLoader? =
+                actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
             actionExtLoader?.let { extLoader ->
                 actionContext.on(EventKey.ON_COMPLETED) {
                     extLoader.close()
@@ -269,7 +270,10 @@ class SuvApiExporter {
             next()
         }
 
-        protected open fun onBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+        protected open fun onBuildActionContext(
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
+        ) {
 
             builder.bindInstance("plugin.name", "easy_api")
 
@@ -303,22 +307,25 @@ class SuvApiExporter {
             return "Basic"
         }
 
-        protected open fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+        protected open fun afterBuildActionContext(
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
+        ) {
 
         }
 
         private fun doExportApisFromMethod(requestWrappers: List<DocWrapper>) {
 
             val classes = requestWrappers
-                    .stream()
-                    .filter { it != null }
-                    .map { it.resource }
-                    .filter { it is PsiResource }
-                    .map { it as PsiResource }
-                    .map { it.resourceClass() }
-                    .filter { it != null }
-                    .distinct()
-                    .toList()
+                .stream()
+                .filter { it != null }
+                .map { it.resource }
+                .filter { it is PsiResource }
+                .map { it as PsiResource }
+                .map { it.resourceClass() }
+                .filter { it != null }
+                .distinct()
+                .toList()
 
             val docs: MutableList<Doc> = ArrayList()
             for (cls in classes) {
@@ -390,7 +397,10 @@ class SuvApiExporter {
             return "PostmanExportAction"
         }
 
-        override fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+        override fun afterBuildActionContext(
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
+        ) {
             super.afterBuildActionContext(actionContext, builder)
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
@@ -400,13 +410,25 @@ class SuvApiExporter {
 
             builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
 
-            builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
+            builder.bind(ConfigReader::class, "delegate_config_reader") {
+                it.with(PostmanConfigReader::class).singleton()
+            }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
-            builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
+            builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
+            builder.bindInstance(
+                "AVAILABLE_CLASS_EXPORTER",
+                arrayOf<Any>(
+                    SpringRequestClassExporter::class,
+                    GenericRequestClassExporter::class
+                )
+            )
 
             builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-            builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class))
+            builder.bindInstance(
+                "AVAILABLE_REQUEST_BUILDER_LISTENER",
+                arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class)
+            )
 
             //always not read api from cache
             builder.bindInstance("class.exporter.read.cache", false)
@@ -433,16 +455,22 @@ class SuvApiExporter {
                         }
                     }
 
-                    logger!!.error("Export to postman failed,You could check below:" +
-                            "1.the network " +
-                            "2.the privateToken")
+                    logger!!.error(
+                        "Export to postman failed,You could check below:" +
+                                "1.the network " +
+                                "2.the privateToken"
+                    )
 
                 } else {
                     logger!!.info("PrivateToken of postman not be setting")
-                    logger!!.info("To enable automatically import to postman you could set privateToken of postman " +
-                            "in \"Preference -> Other Setting -> EasyApi\"")
-                    logger!!.info("If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
-                            " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api].")
+                    logger!!.info(
+                        "To enable automatically import to postman you could set privateToken of postman " +
+                                "in \"Preference -> Other Setting -> EasyApi\""
+                    )
+                    logger!!.info(
+                        "If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
+                                " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api]."
+                    )
                 }
                 fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
                     logger!!.info("Exported data are copied to clipboard,you can paste to postman now")
@@ -468,7 +496,10 @@ class SuvApiExporter {
             return "YapiExportAction"
         }
 
-        override fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+        override fun afterBuildActionContext(
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
+        ) {
             super.afterBuildActionContext(actionContext, builder)
 
             builder.inheritFrom(actionContext, Project::class)
@@ -483,13 +514,28 @@ class SuvApiExporter {
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(YapiSpringRequestClassExporter::class, GenericRequestClassExporter::class, GenericMethodDocClassExporter::class))
+            builder.bindInstance(
+                "AVAILABLE_CLASS_EXPORTER",
+                arrayOf<Any>(
+                    YapiSpringRequestClassExporter::class,
+                    GenericRequestClassExporter::class,
+                    GenericMethodDocClassExporter::class
+                )
+            )
 
             builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-            builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class))
+            builder.bindInstance(
+                "AVAILABLE_REQUEST_BUILDER_LISTENER",
+                arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class)
+            )
 
-            builder.bind(MethodDocBuilderListener::class) { it.with(ComponentMethodDocBuilderListener::class).singleton() }
-            builder.bindInstance("AVAILABLE_METHOD_DOC_BUILDER_LISTENER", arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class))
+            builder.bind(MethodDocBuilderListener::class) {
+                it.with(ComponentMethodDocBuilderListener::class).singleton()
+            }
+            builder.bindInstance(
+                "AVAILABLE_METHOD_DOC_BUILDER_LISTENER",
+                arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class)
+            )
 
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
@@ -542,7 +588,15 @@ class SuvApiExporter {
                 if (super.exportDoc(doc, privateToken, cartId)) {
                     synchronized(successExportedCarts) {
                         if (successExportedCarts.add(cartId)) {
-                            logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
+                            logger!!.info(
+                                "Export to ${
+                                    yapiApiHelper!!.getCartWeb(
+                                        yapiApiHelper.getProjectIdByToken(
+                                            privateToken
+                                        )!!, cartId
+                                    )
+                                } success"
+                            )
                         }
                     }
                     return true
@@ -567,15 +621,27 @@ class SuvApiExporter {
             return "MarkdownExportAction"
         }
 
-        override fun afterBuildActionContext(actionContext: ActionContext, builder: ActionContext.ActionContextBuilder) {
+        override fun afterBuildActionContext(
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
+        ) {
             super.afterBuildActionContext(actionContext, builder)
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-            builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(SpringRequestClassExporter::class, GenericRequestClassExporter::class, GenericMethodDocClassExporter::class))
+            builder.bindInstance(
+                "AVAILABLE_CLASS_EXPORTER",
+                arrayOf<Any>(
+                    SpringRequestClassExporter::class,
+                    GenericRequestClassExporter::class,
+                    GenericMethodDocClassExporter::class
+                )
+            )
 
-            builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
+            builder.bind(ConfigReader::class, "delegate_config_reader") {
+                it.with(EasyApiConfigReader::class).singleton()
+            }
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
             //always not read api from cache
@@ -628,9 +694,9 @@ class SuvApiExporter {
     companion object {
 
         private val EXPORTER_CHANNELS: List<*> = listOf(
-                ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi", Request::class, MethodDoc::class),
-                ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
-                ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class)
+            ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi", Request::class, MethodDoc::class),
+            ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
+            ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class)
         )
 
     }

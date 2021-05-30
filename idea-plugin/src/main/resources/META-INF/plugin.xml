@@ -9,13 +9,13 @@
     <category>Web</category>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-<!--    <idea-version since-build="183.0"/>-->
+    <idea-version since-build="183.0"/>
 
     <!--for compatible-->
     <!--<idea-version since-build="173.0" until-build="183.0"/>-->
 
     <!--for dev-->
-    <idea-version since-build="173.0"/>
+    <!--<idea-version since-build="173.0"/>-->
 
 
     <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
