@@ -80,17 +80,17 @@ dependencies {
 //    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 
-    implementation('com.itangcent:intellij-idea:1.0.0-SNAPSHOT') {
+    implementation('com.itangcent:intellij-idea:1.0.1') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
 
-    implementation('com.itangcent:intellij-kotlin-support:1.0.0-SNAPSHOT') {
+    implementation('com.itangcent:intellij-kotlin-support:1.0.1') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
 
-//    implementation('com.itangcent:intellij-scala-support:1.0.0-SNAPSHOT') {
+//    implementation('com.itangcent:intellij-scala-support:1.0.1') {
 //        exclude group: 'com.google.inject'
 //        exclude group: 'com.google.code.gson'
 //    }
@@ -121,7 +121,7 @@ dependencies {
     // https://mvnrepository.com/artifact/com.nhaarman.mockitokotlin2/mockito-kotlin
     testImplementation group: 'com.nhaarman.mockitokotlin2', name: 'mockito-kotlin', version: '2.2.0'
 
-    testImplementation('com.itangcent:intellij-idea-test:1.0.0-SNAPSHOT')
+    testImplementation('com.itangcent:intellij-idea-test:1.0.1')
 }
 
 compileKotlin {

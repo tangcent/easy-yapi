@@ -5,7 +5,9 @@ import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.call.ApiCaller
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
+import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.intellij.config.ConfigReader
@@ -25,7 +27,16 @@ class ApiCallAction : ApiExportAction("Call Api") {
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
         //allow cache api
-        builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringRequestClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class, "delegate_classExporter") {
+            it.with(CompositeClassExporter::class).singleton()
+        }
+        builder.bindInstance(
+            "AVAILABLE_CLASS_EXPORTER",
+            arrayOf<Any>(
+                SpringRequestClassExporter::class,
+                GenericRequestClassExporter::class
+            )
+        )
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }

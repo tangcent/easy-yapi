@@ -4,10 +4,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.ComponentRequestBuilderListener
-import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
-import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
 import com.itangcent.idea.plugin.api.export.postman.PostmanRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
@@ -31,7 +29,16 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
         //allow cache api
-        builder.bind(ClassExporter::class, "delegate_classExporter") { it.with(SpringRequestClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class, "delegate_classExporter") {
+            it.with(CompositeClassExporter::class).singleton()
+        }
+        builder.bindInstance(
+            "AVAILABLE_CLASS_EXPORTER",
+            arrayOf<Any>(
+                SpringRequestClassExporter::class,
+                GenericRequestClassExporter::class
+            )
+        )
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }

@@ -36,13 +36,25 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(YapiSpringRequestClassExporter::class, GenericRequestClassExporter::class, GenericMethodDocClassExporter::class))
+        builder.bindInstance(
+            "AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(
+                YapiSpringRequestClassExporter::class,
+                GenericRequestClassExporter::class,
+                GenericMethodDocClassExporter::class
+            )
+        )
 
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class))
+        builder.bindInstance(
+            "AVAILABLE_REQUEST_BUILDER_LISTENER",
+            arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class)
+        )
 
         builder.bind(MethodDocBuilderListener::class) { it.with(ComponentMethodDocBuilderListener::class).singleton() }
-        builder.bindInstance("AVAILABLE_METHOD_DOC_BUILDER_LISTENER", arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class))
+        builder.bindInstance(
+            "AVAILABLE_METHOD_DOC_BUILDER_LISTENER",
+            arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class)
+        )
 
         builder.bind(ActiveWindowProvider::class) { it.with(SimpleActiveWindowProvider::class) }
 
