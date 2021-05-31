@@ -1,6 +1,8 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
+import com.intellij.ide.browsers.BrowserLauncher
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.model.Doc
@@ -153,6 +155,19 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                     yapiApiTree!!.selectionPath = path
                 }
             }
+
+            override fun mouseClicked(e: MouseEvent?) {
+                if (e == null || e.isConsumed) return
+
+                if (e.isPopupTrigger) return
+                if (e.clickCount == 1 && e.isControlDown) {
+                    goToYapi()
+                    e.consume()
+                } else if (e.clickCount == 2 && e.button == MouseEvent.BUTTON1) {
+                    goToYapi()
+                    e.consume()
+                }
+            }
         })
     }
 
@@ -176,11 +191,11 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         yapiApiTree!!.model = null
 
         autoComputer.bindEnable(this.yapiCollapseButton!!)
-                .from(this::yapiAvailable)
+            .from(this::yapiAvailable)
         autoComputer.bindEnable(this.yapiSyncButton!!)
-                .from(this::yapiAvailable)
+            .from(this::yapiAvailable)
         autoComputer.bindEnable(this.yapiNewProjectButton!!)
-                .from(this::yapiAvailable)
+            .from(this::yapiAvailable)
 
         if (yapiSettingsHelper.hasServer()) {
             loadYapiInfo()
@@ -214,7 +229,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                     val transferData = transferable.getTransferData(wrapDataFlavor)
 
                     val projectNodeData = (transferData as WrapData).wrapHash?.let { safeHashHelper.getBean(it) }
-                            ?: return
+                        ?: return
 
                     handleDropEvent(projectNodeData, yapiNodeData)
 
@@ -249,8 +264,10 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
         if (!yapiSettingsHelper.hasServer()) {
             actionContext.runInSwingUI {
-                Messages.showErrorDialog(this,
-                        "load yapi info failed,no server be found", "Error")
+                Messages.showErrorDialog(
+                    this,
+                    "load yapi info failed,no server be found", "Error"
+                )
             }
             return
         }
@@ -268,8 +285,10 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
                     if (yapiTokens.isNullOrEmpty()) {
                         actionContext.runInSwingUI {
-                            Messages.showErrorDialog(actionContext.instance(Project::class),
-                                    "No token be found", "Error")
+                            Messages.showErrorDialog(
+                                actionContext.instance(Project::class),
+                                "No token be found", "Error"
+                            )
                         }
                         return@runAsync
                     }
@@ -285,8 +304,8 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                         }
 
                         val projectInfo = yapiApiHelper.getProjectInfo(token, projectId)
-                                .sub("data")
-                                ?.asMap()
+                            .sub("data")
+                            ?.asMap()
 
                         if (projectInfo.isNullOrEmpty()) {
                             logger.info("invalid token:$token")
@@ -365,8 +384,10 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             parentNode.add(yapiCartNode)
             val cartInfo = yapiCartNodeData.info
 
-            val apis = yapiApiHelper.findApis(parentNodeData.getProjectToken()!!,
-                    cartInfo["_id"].toString())
+            val apis = yapiApiHelper.findApis(
+                parentNodeData.getProjectToken()!!,
+                cartInfo["_id"].toString()
+            )
             if (apis.isNullOrEmpty()) return@runInSwingUI
             for (api in apis) {
                 loadYapiApi(yapiCartNode, api as HashMap<String, Any?>)
@@ -402,8 +423,8 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             }
 
             val projectInfo = yapiApiHelper.getProjectInfo(projectToken, projectId)
-                    .sub("data")
-                    ?.asMap()
+                .sub("data")
+                ?.asMap()
 
             if (projectInfo.isNullOrEmpty()) {
                 logger!!.error("invalid token:$projectToken")
@@ -412,12 +433,14 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
             actionContext.runInSwingUI {
                 val yapiProjectName = projectInfo["name"].toString()
-                val moduleName = Messages.showInputDialog(this,
-                        "Input Module Name Of Project",
-                        "Module Name",
-                        Messages.getInformationIcon(),
-                        yapiProjectName,
-                        null)
+                val moduleName = Messages.showInputDialog(
+                    this,
+                    "Input Module Name Of Project",
+                    "Module Name",
+                    Messages.getInformationIcon(),
+                    yapiProjectName,
+                    null
+                )
 
                 @Suppress("LABEL_NAME_CLASH")
                 if (moduleName.isNullOrBlank()) return@runInSwingUI
@@ -457,10 +480,12 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             val yapiNodeData = lastSelectedPathComponent.userObject as YapiNodeData
 
             actionContext.runInSwingUI {
-                val cartName = Messages.showInputDialog(this,
-                        "Input Cart Name",
-                        "Cart Name",
-                        Messages.getInformationIcon())
+                val cartName = Messages.showInputDialog(
+                    this,
+                    "Input Cart Name",
+                    "Cart Name",
+                    Messages.getInformationIcon()
+                )
                 if (cartName.isNullOrBlank()) return@runInSwingUI
 
                 yapiApiHelper.addCart(yapiNodeData.getProjectToken()!!, cartName, "")
@@ -480,7 +505,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
             val treeModel = yapiApiTree!!.model as DefaultTreeModel
             (treeModel.root as DefaultMutableTreeNode)
-                    .remove(yapiNodeData.getRootNodeData()!!.asTreeNode())
+                .remove(yapiNodeData.getRootNodeData()!!.asTreeNode())
             treeModel.reload()
         }
 
@@ -519,6 +544,24 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             }
         }
     }
+
+    private fun goToYapi() {
+        val lastSelectedPathComponent = yapiApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+
+        if (lastSelectedPathComponent != null) {
+            val yapiNodeData = lastSelectedPathComponent.userObject
+            LOG!!.trace("go to:[$yapiNodeData]")
+            goToYapi(yapiNodeData as YapiNodeData)
+        }
+    }
+
+    private fun goToYapi(yapiNodeData: YapiNodeData) {
+        yapiNodeData.getUrl(this)?.let {
+            ServiceManager.getService(BrowserLauncher::class.java)
+                .open(it)
+        }
+    }
+
     //endregion yapi pop action---------------------------------------------------------
 
     //region yapi Node Data--------------------------------------------------
@@ -547,6 +590,8 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         abstract fun getProjectId(): String?
 
         abstract fun getProjectToken(): String?
+
+        abstract fun getUrl(yapiDashboardDialog: YapiDashboardDialog): String?
     }
 
     class YapiProjectNodeData : YapiNodeData, IconCustomized {
@@ -581,6 +626,14 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return projectToken
         }
 
+        override fun getUrl(yapiDashboardDialog: YapiDashboardDialog): String? {
+            if (!yapiDashboardDialog.yapiSettingsHelper.hasServer()) {
+                return null
+            }
+            val projectId = getProjectId() ?: return null
+            return "${yapiDashboardDialog.yapiSettingsHelper.getServer(true)}/project/${projectId}/interface/api"
+        }
+
         constructor(projectToken: String, projectInfo: HashMap<String, Any?>) {
             this.projectToken = projectToken
             this.projectInfo = projectInfo
@@ -601,7 +654,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return info
         }
 
-        override fun getParentNodeData(): YapiProjectNodeData? {
+        override fun getParentNodeData(): YapiProjectNodeData {
             return parentNode
         }
 
@@ -611,6 +664,15 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
         override fun getProjectToken(): String? {
             return parentNode.getProjectToken()
+        }
+
+        override fun getUrl(yapiDashboardDialog: YapiDashboardDialog): String? {
+            if (!yapiDashboardDialog.yapiSettingsHelper.hasServer()) {
+                return null
+            }
+            val projectId = getProjectId() ?: return null
+            val cartId = info["_id"]?.toString() ?: return null
+            return "${yapiDashboardDialog.yapiSettingsHelper.getServer(true)}/project/${projectId}/interface/api/cat_${cartId}"
         }
 
         private var parentNode: YapiProjectNodeData
@@ -678,6 +740,16 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             }
             return sb.toString()
         }
+
+        override fun getUrl(yapiDashboardDialog: YapiDashboardDialog): String? {
+            if (!yapiDashboardDialog.yapiSettingsHelper.hasServer()) {
+                return null
+            }
+            val projectId = getProjectId() ?: return null
+            val apiId = info["_id"]?.toString() ?: return null
+            return "${yapiDashboardDialog.yapiSettingsHelper.getServer(true)}/project/${projectId}/interface/api/${apiId}"
+        }
+
     }
 
     //endregion yapi Node Data--------------------------------------------------
@@ -718,8 +790,10 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                         syncYapiNode(targetNodeData)
                     } else {
                         actionContext.runInSwingUI {
-                            val yesNoCancel = Messages.showYesNoCancelDialog(project!!, "Add as new cart?",
-                                    "Export", "New", "Not", "Cancel", Messages.getInformationIcon())
+                            val yesNoCancel = Messages.showYesNoCancelDialog(
+                                project!!, "Add as new cart?",
+                                "Export", "New", "Not", "Cancel", Messages.getInformationIcon()
+                            )
                             actionContext.runAsync {
                                 when (yesNoCancel) {
                                     Messages.CANCEL -> return@runAsync
@@ -748,8 +822,10 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    private fun export(fromProjectData: Any, targetNodeData: YapiNodeData,
-                       cartId: String?) {
+    private fun export(
+        fromProjectData: Any, targetNodeData: YapiNodeData,
+        cartId: String?
+    ) {
 
         val privateToken = targetNodeData.getProjectToken()
         if (privateToken == null) {
@@ -773,8 +849,8 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             docHandle(fromProjectData.doc)
         } else if (fromProjectData is ProjectNodeData<*>) {
             fromProjectData.getSubProjectNodeData()
-                    ?.filterNotNull()
-                    ?.forEach { export(it, docHandle) }
+                ?.filterNotNull()
+                ?.forEach { export(it, docHandle) }
         }
     }
 
@@ -788,8 +864,10 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 apiLoadFuture.cancel(true)
             }
         } catch (e: Throwable) {
-            logger!!.error("error to cancel api load:" +
-                    ExceptionUtils.getStackTrace(e))
+            logger!!.error(
+                "error to cancel api load:" +
+                        ExceptionUtils.getStackTrace(e)
+            )
         }
         try {
             val yapiLoadFuture = this.yapiLoadFuture
@@ -797,11 +875,15 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 yapiLoadFuture.cancel(true)
             }
         } catch (e: Throwable) {
-            logger!!.error("error to cancel yapi load:" +
-                    ExceptionUtils.getStackTrace(e))
+            logger!!.error(
+                "error to cancel yapi load:" +
+                        ExceptionUtils.getStackTrace(e)
+            )
         }
         actionContext.unHold()
         dispose()
     }
 
 }
+
+private val LOG = org.apache.log4j.Logger.getLogger(YapiDashboardDialog::class.java)
