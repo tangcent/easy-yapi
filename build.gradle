@@ -15,7 +15,7 @@ plugins {
 }
 
 group 'com.itangcent'
-version '2.2.1.183.0-rc'
+version '2.2.1.183.0'
 
 @SuppressWarnings("GroovyAssignabilityCheck")
 static def majorVersion(version) {
@@ -25,7 +25,7 @@ static def majorVersion(version) {
 @SuppressWarnings("GroovyAssignabilityCheck")
 static def nextVersion(version) {
     if (version.endsWith("-rc")) {
-        return version[0..-3]
+        return version[0..4]
     }
     def majorVersion = majorVersion(version)
     def next = ((majorVersion[0, 2, 4] as Integer) + 1).toString()
@@ -46,7 +46,8 @@ task patchUpdate {
         changelogFile.renameTo(new File("IDEA_CHANGELOG.md.old"))
 
         changelogFile.newOutputStream().withCloseable {
-            it.write("* ${nextVersion}\n\n".getBytes(StandardCharsets.UTF_8))
+            def versionNote = "* ${nextVersion}\n\n"
+            it.write(versionNote.getBytes(StandardCharsets.UTF_8))
             def commitsFile = new File("plugin-script/commits.txt")
             for (line in commitsFile.readLines()) {
                 try {
@@ -55,7 +56,12 @@ task patchUpdate {
                 } catch (ignore) {
                 }
             }
-            it.write(oldChangelogFile.readBytes())
+            def oldFile = oldChangelogFile.getText("UTF-8")
+            if(oldFile.startsWith(versionNote)){
+                it.write(oldFile.substring(versionNote.size()).getBytes(StandardCharsets.UTF_8))
+            }else{
+                it.write(oldFile.getBytes(StandardCharsets.UTF_8))
+            }
         }
         oldChangelogFile.delete()
 

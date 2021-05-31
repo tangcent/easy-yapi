@@ -1,5 +1,25 @@
 * 2.2.1
 
+	* feat: double click yapi node in YapiDashboardDialog to open yapi url [(#480)](https://github.com/tangcent/easy-yapi/pull/480)
+
+	* feat: support generic export for several actions [(#478)](https://github.com/tangcent/easy-yapi/pull/478)
+
+	* opti: trustHostsTextArea scrollable [(#477)](https://github.com/tangcent/easy-yapi/pull/477)
+
+	* feat: support generic export [(#476)](https://github.com/tangcent/easy-yapi/pull/476)
+
+	* opti: change some rule type to `Event` [(#473)](https://github.com/tangcent/easy-yapi/pull/473)
+
+	* opti: close http response stream [(#472)](https://github.com/tangcent/easy-yapi/pull/472)
+
+	* fix: resolveCycle in KVKit [(#471)](https://github.com/tangcent/easy-yapi/pull/471)
+
+	* feat: always try close http response [(#470)](https://github.com/tangcent/easy-yapi/pull/470)
+
+	* feat: remind to use login mode for yapi before 1.6.0 [(#465)](https://github.com/tangcent/easy-yapi/pull/465)
+
+	* chore: fix release-rc [(#457)](https://github.com/tangcent/easy-yapi/pull/457)
+
 	* fix: compute param type info between PARAM_BEFORE&PARAM_AFTER [(#455)](https://github.com/tangcent/easy-yapi/pull/455)
 
 	* feat: it(class) isPrimitive/isPrimitiveWrapper [(#452)](https://github.com/tangcent/easy-yapi/pull/452)
