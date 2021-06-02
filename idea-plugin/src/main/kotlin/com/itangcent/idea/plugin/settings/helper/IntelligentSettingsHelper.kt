@@ -11,6 +11,10 @@ class IntelligentSettingsHelper {
     @Inject
     private lateinit var settingBinder: SettingBinder
 
+    fun queryExpanded(): Boolean {
+        return settingBinder.read().queryExpanded
+    }
+
     fun formExpanded(): Boolean {
         return settingBinder.read().formExpanded
     }

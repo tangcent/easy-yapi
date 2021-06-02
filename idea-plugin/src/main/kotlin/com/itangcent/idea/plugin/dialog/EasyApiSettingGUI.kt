@@ -115,6 +115,8 @@ class EasyApiSettingGUI {
 
     private var formExpandedCheckBox: JCheckBox? = null
 
+    private var queryExpandedCheckBox: JCheckBox? = null
+
     private var recommendedCheckBox: JCheckBox? = null
 
     private var httpTimeOutTextField: JTextField? = null
@@ -207,6 +209,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(formExpandedCheckBox!!)
                 .mutual(this, "settings.formExpanded")
+
+        autoComputer.bind(queryExpandedCheckBox!!)
+                .mutual(this, "settings.queryExpanded")
 
         autoComputer.bind(recommendedCheckBox!!)
                 .mutual(this, "settings.useRecommendConfig")

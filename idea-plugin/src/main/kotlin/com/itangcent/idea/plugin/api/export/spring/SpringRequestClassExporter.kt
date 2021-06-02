@@ -52,24 +52,32 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         }
     }
 
-    override fun processMethodParameter(request: Request,
-                                        parameterExportContext: ParameterExportContext,
-                                        paramDesc: String?) {
+    override fun processMethodParameter(
+        request: Request,
+        parameterExportContext: ParameterExportContext,
+        paramDesc: String?
+    ) {
 
         //RequestBody(json)
         if (isRequestBody(parameterExportContext.psi())) {
-            setRequestBody(parameterExportContext,
-                    request, parameterExportContext.raw(), paramDesc)
+            setRequestBody(
+                parameterExportContext,
+                request, parameterExportContext.raw(), paramDesc
+            )
             return
         }
 
         //ModelAttr(form)
         if (isModelAttr(parameterExportContext.psi())) {
             if (request.method == HttpMethod.NO_METHOD) {
-                requestBuilderListener.setMethod(parameterExportContext, request,
-                        ruleComputer.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD,
-                                parameterExportContext.parameter.containMethod())
-                                ?: HttpMethod.POST)
+                requestBuilderListener.setMethod(
+                    parameterExportContext, request,
+                    ruleComputer.computer(
+                        ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD,
+                        parameterExportContext.parameter.containMethod()
+                    )
+                        ?: HttpMethod.POST
+                )
             }
             if (request.method == HttpMethod.GET) {
                 addParamAsQuery(parameterExportContext, request, parameterExportContext.unbox())
@@ -96,7 +104,11 @@ open class SpringRequestClassExporter : RequestClassExporter() {
             }
 
             var required = findRequired(requestHeaderAnn)
-            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.parameter) == true) {
+            if (!required && ruleComputer.computer(
+                    ClassExportRuleKeys.PARAM_REQUIRED,
+                    parameterExportContext.parameter
+                ) == true
+            ) {
                 required = true
             }
 
@@ -136,21 +148,27 @@ open class SpringRequestClassExporter : RequestClassExporter() {
             }
 
             var required = findRequired(cookieValueAnn)
-            if (!required && ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.parameter) == true) {
+            if (!required && ruleComputer.computer(
+                    ClassExportRuleKeys.PARAM_REQUIRED,
+                    parameterExportContext.parameter
+                ) == true
+            ) {
                 required = true
             }
 
-            requestBuilderListener.appendDesc(parameterExportContext,
-                    request, if (required) {
-                "\nNeed cookie:$cookieName ($ultimateComment)"
-            } else {
-                val defaultValue = findDefaultValue(cookieValueAnn)
-                if (defaultValue.isNullOrBlank()) {
-                    "\nCookie:$cookieName ($ultimateComment)"
+            requestBuilderListener.appendDesc(
+                parameterExportContext,
+                request, if (required) {
+                    "\nNeed cookie:$cookieName ($ultimateComment)"
                 } else {
-                    "\nCookie:$cookieName=$defaultValue ($ultimateComment)"
+                    val defaultValue = findDefaultValue(cookieValueAnn)
+                    if (defaultValue.isNullOrBlank()) {
+                        "\nCookie:$cookieName ($ultimateComment)"
+                    } else {
+                        "\nCookie:$cookieName=$defaultValue ($ultimateComment)"
+                    }
                 }
-            })
+            )
 
             return
         }
@@ -189,8 +207,10 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         }
 
         if (paramType.isNullOrBlank()) {
-            paramType = ruleComputer.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
-                    parameterExportContext.parameter) ?: "query"
+            paramType = ruleComputer.computer(
+                ClassExportRuleKeys.PARAM_HTTP_TYPE,
+                parameterExportContext.parameter
+            ) ?: "query"
         }
 
         if (paramType.notNullOrBlank()) {
@@ -202,19 +222,25 @@ open class SpringRequestClassExporter : RequestClassExporter() {
                 }
                 "form" -> {
                     requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
-                    addParamAsForm(parameterExportContext, request, parameterExportContext.defaultVal()
-                            ?: parameterExportContext.unbox(), ultimateComment)
+                    addParamAsForm(
+                        parameterExportContext, request, parameterExportContext.defaultVal()
+                            ?: parameterExportContext.unbox(), ultimateComment
+                    )
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(parameterExportContext, request, parameterExportContext.defaultVal()
-                            ?: parameterExportContext.unbox(), ultimateComment)
+                    addParamAsQuery(
+                        parameterExportContext, request, parameterExportContext.defaultVal()
+                            ?: parameterExportContext.unbox(), ultimateComment
+                    )
                     return
                 }
                 else -> {
-                    logger!!.warn("Unknown param type:$paramType." +
-                            "Return of rule `param.without.ann.type`" +
-                            "should be `body/form/query`")
+                    logger.warn(
+                        "Unknown param type:$paramType." +
+                                "Return of rule `param.without.ann.type`" +
+                                "should be `body/form/query`"
+                    )
                 }
             }
         }
@@ -225,9 +251,15 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         }
 
         if (parameterExportContext.defaultVal() != null) {
-            requestBuilderListener.addParam(parameterExportContext, request,
-                    parameterExportContext.name(), parameterExportContext.defaultVal().toString(), parameterExportContext.required()
-                    ?: false, ultimateComment)
+            requestBuilderListener.addParam(
+                parameterExportContext,
+                request,
+                parameterExportContext.name(),
+                parameterExportContext.defaultVal().toString(),
+                parameterExportContext.required()
+                    ?: false,
+                ultimateComment
+            )
             return
         }
 
@@ -279,36 +311,44 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         }
     }
 
-    protected open fun resolveParamInRequestMapping(methodExportContext: MethodExportContext,
-                                                    request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>) {
+    protected open fun resolveParamInRequestMapping(
+        methodExportContext: MethodExportContext,
+        request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>
+    ) {
         val params = requestMappingAnn.first["params"] ?: return
         if (params is Array<*>) {
             params.stream()
-                    .map { it.tinyString() }
-                    .filter { it.notNullOrEmpty() }
-                    .forEach { resolveParamStr(methodExportContext, request, it!!) }
+                .map { it.tinyString() }
+                .filter { it.notNullOrEmpty() }
+                .forEach { resolveParamStr(methodExportContext, request, it!!) }
         } else {
             params.tinyString()
-                    ?.takeIf { it.notNullOrEmpty() }
-                    ?.let { resolveParamStr(methodExportContext, request, it) }
+                ?.takeIf { it.notNullOrEmpty() }
+                ?.let { resolveParamStr(methodExportContext, request, it) }
         }
     }
 
-    protected open fun resolveParamStr(methodExportContext: MethodExportContext,
-                                       request: Request, params: String) {
+    protected open fun resolveParamStr(
+        methodExportContext: MethodExportContext,
+        request: Request, params: String
+    ) {
         when {
             params.startsWith("!") -> {
-                requestBuilderListener.appendDesc(methodExportContext,
-                        request, "parameter [${params.removeSuffix("!")}] should not be present")
+                requestBuilderListener.appendDesc(
+                    methodExportContext,
+                    request, "parameter [${params.removeSuffix("!")}] should not be present"
+                )
             }
             params.contains("!=") -> {
                 val name = params.substringBefore("!=").trim()
                 val value = params.substringAfter("!=").trim()
                 val param = request.querys?.find { it.name == name }
                 if (param == null) {
-                    requestBuilderListener.appendDesc(methodExportContext,
-                            request, "parameter [$name] " +
-                            "should not equal to [$value]")
+                    requestBuilderListener.appendDesc(
+                        methodExportContext,
+                        request, "parameter [$name] " +
+                                "should not equal to [$value]"
+                    )
                 } else {
                     param.desc = param.desc.append("should not equal to [$value]", "\n")
                 }
@@ -316,8 +356,10 @@ open class SpringRequestClassExporter : RequestClassExporter() {
             !params.contains('=') -> {
                 val param = request.querys?.find { it.name == params }
                 if (param == null) {
-                    requestBuilderListener.addParam(methodExportContext,
-                            request, params, null, true, null)
+                    requestBuilderListener.addParam(
+                        methodExportContext,
+                        request, params, null, true, null
+                    )
                 } else {
                     param.required = true
                 }
@@ -327,8 +369,10 @@ open class SpringRequestClassExporter : RequestClassExporter() {
                 val value = params.substringAfter("=").trim()
                 val param = request.querys?.find { it.name == name }
                 if (param == null) {
-                    requestBuilderListener.addParam(methodExportContext,
-                            request, name, value, true, null)
+                    requestBuilderListener.addParam(
+                        methodExportContext,
+                        request, name, value, true, null
+                    )
                 } else {
                     param.required = true
                     param.value = value
@@ -337,25 +381,31 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         }
     }
 
-    protected open fun resolveHeaderInRequestMapping(methodExportContext: MethodExportContext,
-                                                     request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>) {
+    protected open fun resolveHeaderInRequestMapping(
+        methodExportContext: MethodExportContext,
+        request: Request, requestMappingAnn: Pair<Map<String, Any?>, String>
+    ) {
         val headers = requestMappingAnn.first["headers"] ?: return
         if (headers is Array<*>) {
             headers.stream()
-                    .map { it.tinyString() }
-                    .filter { it.notNullOrEmpty() }
-                    .forEach { resolveHeaderStr(methodExportContext, request, it!!) }
+                .map { it.tinyString() }
+                .filter { it.notNullOrEmpty() }
+                .forEach { resolveHeaderStr(methodExportContext, request, it!!) }
         } else {
             headers.tinyString()
-                    ?.takeIf { it.notNullOrEmpty() }
-                    ?.let { resolveHeaderStr(methodExportContext, request, it) }
+                ?.takeIf { it.notNullOrEmpty() }
+                ?.let { resolveHeaderStr(methodExportContext, request, it) }
         }
     }
 
     protected open fun resolveHeaderStr(methodExportContext: MethodExportContext, request: Request, headers: String) {
         when {
             headers.startsWith("!") -> {
-                requestBuilderListener.appendDesc(methodExportContext, request, "header [${headers.removeSuffix("!")}] should not be present")
+                requestBuilderListener.appendDesc(
+                    methodExportContext,
+                    request,
+                    "header [${headers.removeSuffix("!")}] should not be present"
+                )
             }
             headers.contains("!=") -> {
                 val name = headers.substringBefore("!=").trim()
@@ -363,9 +413,10 @@ open class SpringRequestClassExporter : RequestClassExporter() {
                 val header = request.querys?.find { it.name == name }
                 if (header == null) {
                     requestBuilderListener.appendDesc(
-                            methodExportContext,
-                            request, "\nheader [$name] " +
-                            "should not equal to [$value]")
+                        methodExportContext,
+                        request, "\nheader [$name] " +
+                                "should not equal to [$value]"
+                    )
                 } else {
                     header.desc = header.desc.append("should not equal to [$value]", "\n")
                 }
@@ -437,9 +488,9 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Pair<Map<String, Any?>, String>? {
         return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
-                .stream()
-                .map { ann -> annotationHelper!!.findAnnMap(ele, ann)?.to(ann) }
-                .firstOrNull { it != null }
+            .stream()
+            .map { ann -> annotationHelper!!.findAnnMap(ele, ann)?.to(ann) }
+            .firstOrNull { it != null }
     }
 
     protected fun isRequestBody(parameter: PsiParameter): Boolean {
@@ -481,8 +532,9 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     protected fun findDefaultValue(annMap: Map<String, Any?>): String? {
         val defaultValue = annMap["defaultValue"]?.toString()
         if (defaultValue == null
-                || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
-                || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE) {
+            || defaultValue == SpringClassName.ESCAPE_REQUEST_HEADER_DEFAULT_NONE
+            || defaultValue == SpringClassName.REQUEST_HEADER_DEFAULT_NONE
+        ) {
             return null
         }
         return defaultValue
