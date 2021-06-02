@@ -127,7 +127,7 @@ class KVKitTest {
         assertFalse(1L.isComplex(false))
         assertFalse(1.0.isComplex(false))
         assertFalse(1.0f.isComplex(false))
-        assertFalse(Magics.FILE_STR.isComplex(false))
+        assertTrue(Magics.FILE_STR.isComplex(false))
 
         assertFalse(emptyArray<String>().isComplex(false))
         assertFalse(emptyList<String>().isComplex(false))

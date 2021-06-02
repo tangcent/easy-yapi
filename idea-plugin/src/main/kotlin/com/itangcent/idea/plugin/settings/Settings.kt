@@ -23,6 +23,8 @@ class Settings {
 
     //region intelligent
 
+    var queryExpanded: Boolean = true
+
     var formExpanded: Boolean = true
 
     var readGetter: Boolean = false
@@ -87,6 +89,7 @@ class Settings {
         newSetting.pullNewestDataBefore = this.pullNewestDataBefore
         newSetting.methodDocEnable = this.methodDocEnable
         newSetting.genericEnable = this.genericEnable
+        newSetting.queryExpanded = this.queryExpanded
         newSetting.formExpanded = this.formExpanded
         newSetting.readGetter = this.readGetter
         newSetting.readSetter = this.readSetter
@@ -124,6 +127,7 @@ class Settings {
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
         if (postmanJson5FormatType != other.postmanJson5FormatType) return false
+        if (queryExpanded != other.queryExpanded) return false
         if (formExpanded != other.formExpanded) return false
         if (readGetter != other.readGetter) return false
         if (readSetter != other.readSetter) return false
@@ -157,6 +161,7 @@ class Settings {
         result = 31 * result + wrapCollection.hashCode()
         result = 31 * result + autoMergeScript.hashCode()
         result = 31 * result + postmanJson5FormatType.hashCode()
+        result = 31 * result + queryExpanded.hashCode()
         result = 31 * result + formExpanded.hashCode()
         result = 31 * result + readGetter.hashCode()
         result = 31 * result + readSetter.hashCode()

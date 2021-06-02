@@ -108,7 +108,7 @@ fun Any?.isComplex(root: Boolean = true): Boolean {
             }
             return false
         }
-        this == Magics.FILE_STR -> return false
+        this == Magics.FILE_STR -> return !root
         else -> return false
     }
 }

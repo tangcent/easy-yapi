@@ -22,6 +22,14 @@ internal class IntelligentSettingsHelperTest : SettingsHelperTest() {
         settings.formExpanded = true
         assertTrue(intelligentSettingsHelper.formExpanded())
     }
+    
+    @Test
+    fun testQueryExpanded() {
+        settings.queryExpanded = false
+        assertFalse(intelligentSettingsHelper.queryExpanded())
+        settings.queryExpanded = true
+        assertTrue(intelligentSettingsHelper.queryExpanded())
+    }
 
     @Test
     fun testReadGetter() {

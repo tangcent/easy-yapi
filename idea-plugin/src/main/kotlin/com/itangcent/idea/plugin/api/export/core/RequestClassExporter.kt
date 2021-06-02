@@ -65,7 +65,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
     }
 
     @Inject
-    protected val logger: Logger? = null
+    protected lateinit var logger: Logger
 
     @Inject
     private val docHelper: DocHelper? = null
@@ -554,10 +554,10 @@ abstract class RequestClassExporter : ClassExporter, Worker {
     protected open fun addParamAsQuery(
         parameterExportContext: ParameterExportContext,
         request: Request, typeObject: Any?, paramDesc: String? = null
-    ): Any? {
-
+    ) {
         try {
             parameterExportContext.setExt("paramTypeObject", typeObject)
+
             if (typeObject == Magics.FILE_STR) {
                 requestBuilderListener.addFormFileParam(
                     parameterExportContext,
@@ -566,64 +566,10 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.parameter)
                         ?: false, paramDesc
                 )
-            } else if (typeObject != null && typeObject is Map<*, *>) {
-                if (request.hasBodyOrForm() && this.intelligentSettingsHelper.formExpanded() && typeObject.isComplex()
-                    && requestBuilderListener.addHeaderIfMissed(
-                        parameterExportContext,
-                        request, "Content-Type", "multipart/form-data"
-                    )
-                ) {
-                    typeObject.flatValid(object : FieldConsumer {
-                        override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
-                            parameterExportContext.setExt("parent", parent)
-                            parameterExportContext.setExt("key", key)
-                            val fv = deepComponent(value)
-                            if (fv == Magics.FILE_STR) {
-                                requestBuilderListener.addFormFileParam(
-                                    parameterExportContext,
-                                    request, path,
-                                    parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
-                                    KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
-                                )
-                            } else {
-                                requestBuilderListener.addFormParam(
-                                    parameterExportContext,
-                                    request, path, tinyQueryParam(value.toString()),
-                                    parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
-                                    KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
-                                )
-                            }
-                        }
-                    })
-                } else {
-                    val fields = typeObject.asKV()
-                    val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
-                    val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
-                    parameterExportContext.setExt("parent", fields)
-                    fields.forEachValid { filedName, fieldVal ->
-                        parameterExportContext.setExt("key", filedName)
-                        val fv = deepComponent(fieldVal)
-                        if (fv == Magics.FILE_STR) {
-                            if (request.method == HttpMethod.GET) {
-                                logger!!.warn("try upload file at `GET:`${request.path}")
-                            }
-                            requestBuilderListener.addFormFileParam(
-                                parameterExportContext,
-                                request, filedName,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName)
-                            )
-                        } else {
-                            requestBuilderListener.addParam(
-                                parameterExportContext,
-                                request, filedName, null,
-                                required?.getAs(filedName) ?: false,
-                                KVUtils.getUltimateComment(comment, filedName)
-                            )
-                        }
-                    }
-                }
-            } else {
+                return
+            }
+
+            if (typeObject == null || typeObject !is Map<*, *>) {
                 requestBuilderListener.addParam(
                     parameterExportContext,
                     request, parameterExportContext.name(), tinyQueryParam(typeObject?.toString()),
@@ -631,22 +577,68 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.parameter)
                         ?: false, paramDesc
                 )
+                return
+            }
+
+            if (request.hasBodyOrForm()
+                && request.formParams.isNullOrEmpty()
+                && typeObject.isComplex()
+            ) {
+                requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
+                addParamAsForm(parameterExportContext, request, typeObject, paramDesc)
+                return
+            }
+
+            if (this.intelligentSettingsHelper.queryExpanded()) {
+                (typeObject as Map<*, *>).flatValid(object : FieldConsumer {
+                    override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
+                        parameterExportContext.setExt("parent", parent)
+                        parameterExportContext.setExt("key", key)
+                        val fv = deepComponent(value)
+                        if (fv == Magics.FILE_STR) {
+                            logger.warn("confused file param [$path] for [GET]")
+                        }
+                        requestBuilderListener.addParam(
+                            parameterExportContext,
+                            request, path, tinyQueryParam(value.toString()),
+                            parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
+                            KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
+                        )
+                    }
+                })
+            } else {
+                val fields = typeObject.asKV()
+                val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
+                val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
+                parameterExportContext.setExt("parent", fields)
+                fields.forEachValid { filedName, fieldVal ->
+                    parameterExportContext.setExt("key", filedName)
+                    val fv = deepComponent(fieldVal)
+                    if (fv == Magics.FILE_STR && request.method == HttpMethod.GET) {
+                        logger.warn("try upload file at `GET:`${request.path}")
+                    }
+                    requestBuilderListener.addParam(
+                        parameterExportContext,
+                        request, filedName, null,
+                        required?.getAs(filedName) ?: false,
+                        KVUtils.getUltimateComment(comment, filedName)
+                    )
+                }
             }
         } catch (e: Exception) {
-            logger!!.traceError(
+            logger.traceError(
                 "error to parse [${
                     parameterExportContext.parameter.getType()?.canonicalText()
                 }] as Querys", e
             )
         }
-        return null
     }
 
     @Suppress("UNCHECKED_CAST")
     protected open fun addParamAsForm(
         parameterExportContext: ParameterExportContext,
         request: Request, typeObject: Any?, paramDesc: String? = null
-    ): Any? {
+    ) {
 
         try {
             if (typeObject == Magics.FILE_STR) {
@@ -659,12 +651,16 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     )
                         ?: false, paramDesc
                 )
-            } else if (typeObject != null && typeObject is Map<*, *>) {
+                return
+            }
+
+            if (typeObject != null && typeObject is Map<*, *>) {
+                requestBuilderListener.addHeaderIfMissed(
+                    parameterExportContext,
+                    request, "Content-Type", "multipart/form-data"
+                )
                 if (this.intelligentSettingsHelper.formExpanded() && typeObject.isComplex()
-                    && requestBuilderListener.addHeaderIfMissed(
-                        parameterExportContext,
-                        request, "Content-Type", "multipart/form-data"
-                    )
+                    && request.getContentType() == "multipart/form-data"
                 ) {
                     typeObject.flatValid(object : FieldConsumer {
                         override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
@@ -723,13 +719,13 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                 )
             }
         } catch (e: Exception) {
-            logger!!.traceError(
+            logger.traceError(
                 "error to parse[" + parameterExportContext.parameter.getType()?.canonicalText() + "] as ModelAttribute",
                 e
             )
         }
 
-        return null
+        return
     }
 
     protected fun parseResponseBody(duckType: DuckType?, fromRule: Boolean, method: ExplicitMethod): Any? {
