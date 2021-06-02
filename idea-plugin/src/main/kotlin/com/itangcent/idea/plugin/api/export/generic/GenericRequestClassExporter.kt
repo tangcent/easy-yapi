@@ -74,38 +74,39 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         return (ruleComputer.computer(GenericClassExportRuleKeys.METHOD_HAS_API, psiMethod) ?: false)
     }
 
-    override fun processMethodParameter(request: Request,
-                                        parameterExportContext: ParameterExportContext,
-                                        paramDesc: String?) {
+    override fun processMethodParameter(
+        request: Request,
+        parameterExportContext: ParameterExportContext,
+        paramDesc: String?
+    ) {
 
         //RequestBody(json)
         if (isJsonBody(parameterExportContext.psi())) {
-            setRequestBody(parameterExportContext,
-                request, parameterExportContext.raw(), paramDesc)
+            if (request.method == "GET") {
+                logger.warn("Request Body is not supported for GET method, please check the rule [generic.param.as.json.body]")
+                addParamAsQuery(
+                    parameterExportContext, request, parameterExportContext.defaultVal()
+                        ?: parameterExportContext.unbox(), getUltimateComment(paramDesc, parameterExportContext)
+                )
+                return
+            }
+            setRequestBody(
+                parameterExportContext,
+                request, parameterExportContext.raw(), paramDesc
+            )
             return
         }
 
         //ModelAttr(form)
         if (isFormBody(parameterExportContext.psi())) {
-            if (request.method == HttpMethod.NO_METHOD) {
-                requestBuilderListener.setMethod(parameterExportContext, request,
-                    ruleComputer.computer(ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD,
-                        parameterExportContext.parameter.containMethod())
-                        ?: HttpMethod.POST)
-            }
+            requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
             if (request.method == HttpMethod.GET) {
+                logger.warn("Form is not supported for GET method, it will be resolved as query.")
                 addParamAsQuery(parameterExportContext, request, parameterExportContext.unbox())
             } else {
                 addParamAsForm(parameterExportContext, request, parameterExportContext.unbox(), paramDesc)
             }
             return
-        }
-
-        var ultimateComment = (paramDesc ?: "")
-        parameterExportContext.parameter.getType()?.let { duckType ->
-            commentResolver!!.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
-                ultimateComment = "$ultimateComment $it"
-            }
         }
 
         //head
@@ -115,11 +116,11 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 val header = KitUtils.safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                 when {
                     header == null -> {
-                        logger!!.error("error to parse additional header: $headerStr")
+                        logger.error("error to parse additional header: $headerStr")
                         return@cache null
                     }
                     header.name.isNullOrBlank() -> {
-                        logger!!.error("no name had be found in: $headerStr")
+                        logger.error("no name had be found in: $headerStr")
                         return@cache null
                     }
                     else -> return@cache header
@@ -129,6 +130,8 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             }
             return
         }
+
+        val ultimateComment = getUltimateComment(paramDesc, parameterExportContext)
 
         //path
         if (isPathVariable(parameterExportContext.psi())) {
@@ -155,7 +158,8 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 cookieName = parameterExportContext.name()
             }
 
-            requestBuilderListener.appendDesc(parameterExportContext,
+            requestBuilderListener.appendDesc(
+                parameterExportContext,
                 request, if (parameterExportContext.required() == true) {
                     "\nNeed cookie:$cookieName ($ultimateComment)"
                 } else {
@@ -165,11 +169,11 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                     } else {
                         "\nCookie:$cookieName=$defaultValue ($ultimateComment)"
                     }
-                })
+                }
+            )
 
             return
         }
-
 
         //form/body/query
         var paramType: String? = null
@@ -192,8 +196,10 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         }
 
         if (paramType.isNullOrBlank()) {
-            paramType = ruleComputer.computer(ClassExportRuleKeys.PARAM_HTTP_TYPE,
-                parameterExportContext.parameter) ?: "query"
+            paramType = ruleComputer.computer(
+                ClassExportRuleKeys.PARAM_HTTP_TYPE,
+                parameterExportContext.parameter
+            ) ?: "query"
         }
 
         if (paramType.notNullOrBlank()) {
@@ -205,19 +211,25 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 }
                 "form" -> {
                     requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
-                    addParamAsForm(parameterExportContext, request, parameterExportContext.defaultVal()
-                        ?: parameterExportContext.unbox(), ultimateComment)
+                    addParamAsForm(
+                        parameterExportContext, request, parameterExportContext.defaultVal()
+                            ?: parameterExportContext.unbox(), ultimateComment
+                    )
                     return
                 }
                 "query" -> {
-                    addParamAsQuery(parameterExportContext, request, parameterExportContext.defaultVal()
-                        ?: parameterExportContext.unbox(), ultimateComment)
+                    addParamAsQuery(
+                        parameterExportContext, request, parameterExportContext.defaultVal()
+                            ?: parameterExportContext.unbox(), ultimateComment
+                    )
                     return
                 }
                 else -> {
-                    logger!!.warn("Unknown param type:$paramType." +
-                            "Return of rule `param.without.ann.type`" +
-                            "should be `body/form/query`")
+                    logger.warn(
+                        "Unknown param type:$paramType." +
+                                "Return of rule `param.without.ann.type`" +
+                                "should be `body/form/query`"
+                    )
                 }
             }
         }
@@ -228,9 +240,15 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         }
 
         if (parameterExportContext.defaultVal() != null) {
-            requestBuilderListener.addParam(parameterExportContext, request,
-                parameterExportContext.name(), parameterExportContext.defaultVal().toString(), parameterExportContext.required()
-                    ?: false, ultimateComment)
+            requestBuilderListener.addParam(
+                parameterExportContext,
+                request,
+                parameterExportContext.name(),
+                parameterExportContext.defaultVal().toString(),
+                parameterExportContext.required()
+                    ?: false,
+                ultimateComment
+            )
             return
         }
 
@@ -241,6 +259,19 @@ open class GenericRequestClassExporter : RequestClassExporter() {
 
         //else
         addParamAsQuery(parameterExportContext, request, parameterExportContext.unbox(), ultimateComment)
+    }
+
+    private fun getUltimateComment(
+        paramDesc: String?,
+        parameterExportContext: ParameterExportContext
+    ): String {
+        var ultimateComment = (paramDesc ?: "")
+        parameterExportContext.parameter.getType()?.let { duckType ->
+            commentResolver!!.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
+                ultimateComment = "$ultimateComment $it"
+            }
+        }
+        return ultimateComment
     }
 
     override fun processMethod(methodExportContext: MethodExportContext, request: Request) {
