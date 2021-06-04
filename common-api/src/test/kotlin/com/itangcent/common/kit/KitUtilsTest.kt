@@ -22,7 +22,19 @@ class KitUtilsTest {
         assertDoesNotThrow { KitUtils.safe(RuntimeException::class) { throw RuntimeException() } }
         assertThrows(RuntimeException::class.java) { KitUtils.safe(IllegalArgumentException::class) { throw RuntimeException() } }
         assertDoesNotThrow { KitUtils.safe(RuntimeException::class) { throw IllegalArgumentException() } }
-        assertDoesNotThrow { KitUtils.safe(RuntimeException::class, IllegalArgumentException::class) { throw IllegalArgumentException() } }
+        assertDoesNotThrow {
+            KitUtils.safe(
+                RuntimeException::class,
+                IllegalArgumentException::class
+            ) { throw IllegalArgumentException() }
+        }
+        assertThrows(RuntimeException::class.java) {
+            KitUtils.safe(
+                IllegalStateException::class,
+                IllegalArgumentException::class
+            ) { throw RuntimeException() }
+        }
+
     }
 
     @Test
@@ -39,6 +51,8 @@ class KitUtilsTest {
         assertEquals("str", "str".headLine())
         assertEquals("first", "first\nsecond".headLine())
         assertEquals("first", "\nfirst\nsecond".headLine())
+        assertEquals("first", "first\rsecond".headLine())
+        assertEquals("first", "\rfirst\rsecond".headLine())
     }
 
     @Test

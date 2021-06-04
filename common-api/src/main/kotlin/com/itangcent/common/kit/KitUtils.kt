@@ -42,7 +42,7 @@ object KitUtils {
                     return null
                 }
             }
-            null
+            throw e
         }
     }
 }
@@ -77,10 +77,5 @@ fun String.headLine(): String? {
 }
 
 fun String?.equalIgnoreCase(str: String?): Boolean {
-    if (this == null) {
-        return str == null
-    } else if (str == null) {
-        return false
-    }
-    return this.toLowerCase() == str.toLowerCase()
+    return this.equals(str, ignoreCase = true)
 }
