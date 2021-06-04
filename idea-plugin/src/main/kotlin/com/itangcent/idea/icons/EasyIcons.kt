@@ -2,6 +2,7 @@ package com.itangcent.idea.icons
 
 import com.intellij.openapi.util.IconLoader
 import com.intellij.util.ReflectionUtil
+import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.utils.invokeMethod
 import org.jetbrains.annotations.NonNls
 import java.awt.Component
@@ -28,8 +29,10 @@ object EasyIcons {
 
     val Link = tryLoad("/ide/link.png") // 12x12
 
-    val Run = tryLoad("/general/run.png",
-            "/runConfigurations/testState/run.png") // 7x10
+    val Run = tryLoad(
+        "/general/run.png",
+        "/runConfigurations/testState/run.png"
+    ) // 7x10
 
     val Module = tryLoad("/nodes/Module.png") // 16x16
 
@@ -37,26 +40,30 @@ object EasyIcons {
 
     val UpFolder = tryLoad("/nodes/upFolder.png") // 16x16
 
-    val Close = tryLoad("/notification/close.png",
-            "/actions/close.png")
-            ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/close.png"))
+    val Close = tryLoad(
+        "/notification/close.png",
+        "/actions/close.png"
+    )
+        ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/close.png"))
 
-    val OK = tryLoad("/general/inspectionsOK.png",
-            "/process/state/GreenOK.png")
-            ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/ok.png"))
+    val OK = tryLoad(
+        "/general/inspectionsOK.png",
+        "/process/state/GreenOK.png"
+    )
+        ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/ok.png"))
 
     val Export = tryLoad(
-            "/actions/export.png",
-            "/graph/export.png",
-            "/general/ExportSettings.png"
+        "/actions/export.png",
+        "/graph/export.png",
+        "/general/ExportSettings.png"
 
     )
 
     val Import = tryLoad(
-            "/css/import.png",
-            "/toolbarDecorator/import.png",
-            "/welcome/importProject.png",
-            "/general/ImportSettings.png"
+        "/css/import.png",
+        "/toolbarDecorator/import.png",
+        "/welcome/importProject.png",
+        "/general/ImportSettings.png"
     )
 
     private fun tryLoad(vararg paths: String): Icon? {
@@ -91,20 +98,14 @@ fun Icon?.iconOnly(component: Component?) {
     if (this == null || component == null) {
         return
     }
-    try {
-        component.invokeMethod("setIcon", this)
-        component.invokeMethod("setText", "")
-    } catch (ignore: Exception) {
-    }
+    KitUtils.safe { component.invokeMethod("setIcon", this) }
+    KitUtils.safe { component.invokeMethod("setText", "") }
 }
 
 fun Icon?.iconOnly(component: AbstractButton?) {
     if (this == null || component == null) {
         return
     }
-    try {
-        component.icon = this
-        component.text = ""
-    } catch (ignore: Exception) {
-    }
+    KitUtils.safe { component.icon = this }
+    KitUtils.safe { component.text = "" }
 }
