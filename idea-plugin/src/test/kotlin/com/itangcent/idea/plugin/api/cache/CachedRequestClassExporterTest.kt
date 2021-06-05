@@ -15,9 +15,9 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.times
 import org.mockito.Mockito
+import org.mockito.kotlin.any
+import org.mockito.kotlin.times
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*

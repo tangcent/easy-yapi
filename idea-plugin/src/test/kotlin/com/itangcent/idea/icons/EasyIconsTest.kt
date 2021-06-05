@@ -3,7 +3,9 @@ package com.itangcent.idea.icons
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import org.mockito.Mockito.*
+import org.mockito.Mockito
+import org.mockito.Mockito.`when`
+import org.mockito.kotlin.*
 import java.awt.Component
 import javax.swing.AbstractButton
 import javax.swing.Icon
@@ -31,7 +33,7 @@ internal class EasyIconsTest {
 
     @Test
     fun testIconOnly() {
-        val iconSupportOnly = mock(
+        val iconSupportOnly = Mockito.mock(
             Component::class.java,
             withSettings().extraInterfaces(
                 SetIconSupport::class.java
@@ -51,9 +53,9 @@ internal class EasyIconsTest {
         (verify(iconSupportOnly, times(1)) as SetIconSupport)
             .setIcon(same(EasyIcons.OK))
         (verify(iconSupportOnly, times(0)) as SetIconSupport)
-            .setIcon(argThat { it != EasyIcons.OK })
+            .setIcon(argThat { this != EasyIcons.OK })
 
-        val textSupportOnly = mock(
+        val textSupportOnly = Mockito.mock(
             Component::class.java,
             withSettings().extraInterfaces(
                 SetTextSupport::class.java
@@ -73,9 +75,9 @@ internal class EasyIconsTest {
         (verify(textSupportOnly, times(1)) as SetTextSupport)
             .setText(eq(""))
         (verify(textSupportOnly, times(0)) as SetTextSupport)
-            .setText(argThat { it != "" })
+            .setText(argThat { this != "" })
 
-        val suvComponent = mock(
+        val suvComponent = Mockito.mock(
             Component::class.java,
             withSettings().extraInterfaces(
                 SetIconSupport::class.java,
@@ -102,13 +104,13 @@ internal class EasyIconsTest {
         (verify(suvComponent, times(1)) as SetIconSupport)
             .setIcon(same(EasyIcons.OK))
         (verify(suvComponent, times(0)) as SetIconSupport)
-            .setIcon(argThat { it != EasyIcons.OK })
+            .setIcon(argThat { this != EasyIcons.OK })
         (verify(suvComponent, times(1)) as SetTextSupport)
             .setText(eq(""))
         (verify(suvComponent, times(0)) as SetTextSupport)
-            .setText(argThat { it != "" })
+            .setText(argThat { this != "" })
 
-        val button = mock(
+        val button = Mockito.mock(
             AbstractButton::class.java
         )
         `when`(button.setIcon(any()))
@@ -127,9 +129,9 @@ internal class EasyIconsTest {
         //icon.iconOnly(button)
         EasyIcons.OK.iconOnly(button)
         verify(button, times(1)).icon = same(EasyIcons.OK)
-        verify(button, times(0)).icon = argThat { it != EasyIcons.OK }
+        verify(button, times(0)).icon = argThat { this != EasyIcons.OK }
         verify(button, times(1)).text = eq("")
-        verify(button, times(0)).text = argThat { it != "" }
+        verify(button, times(0)).text = argThat { this != "" }
     }
 }
 

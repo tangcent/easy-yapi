@@ -36,19 +36,22 @@ abstract class AdvancedContextTest : BaseContextTest() {
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
         builder.bindInstance("plugin.name", "easy_api")
-        builder.bind(LocalFileRepository::class) {
-            it.toInstance(TempFileRepository())
-        }
-        builder.bind(LocalFileRepository::class, "projectCacheRepository") {
-            it.toInstance(TempFileRepository())
+
+        TempFileRepository().let { rep ->
+            builder.bind(LocalFileRepository::class) {
+                it.toInstance(rep)
+            }
+            builder.bind(LocalFileRepository::class, "projectCacheRepository") {
+                it.toInstance(rep)
+            }
         }
 
         customConfig()?.takeIf { it.isNotBlank() }
-                ?.let { config ->
-                    builder.bind(ConfigReader::class) {
-                        it.toInstance(ConfigReaderAdaptor(config))
-                    }
+            ?.let { config ->
+                builder.bind(ConfigReader::class) {
+                    it.toInstance(ConfigReaderAdaptor(config))
                 }
+            }
 
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(DefaultPsiClassHelper::class).singleton() }
