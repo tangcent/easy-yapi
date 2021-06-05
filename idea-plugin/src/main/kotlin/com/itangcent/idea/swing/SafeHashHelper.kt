@@ -33,8 +33,7 @@ class SafeHashHelper {
     /**
      * rehash,copy from HashMap
      */
-    private fun rehash(key: Any?): Int {
-        if (key == null) return 0
+    private fun rehash(key: Any): Int {
         val h: Int = key.hashCode()
         return h xor h.ushr(16)
     }
