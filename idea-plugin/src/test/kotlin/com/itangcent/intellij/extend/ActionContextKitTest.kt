@@ -31,7 +31,7 @@ internal class ActionContextKitTest : BaseContextTest() {
     fun callWithTimeout() {
         assertThrows<TimeoutException> {
             actionContext.callWithTimeout(500) {
-                Thread.sleep(1000)
+                Thread.sleep(2000)
                 logger.info("timeout")
                 x = 1
             }
@@ -41,7 +41,7 @@ internal class ActionContextKitTest : BaseContextTest() {
                 throw IllegalArgumentException()
             }
         }
-        assertEquals(2, actionContext.callWithTimeout(1000) {
+        assertEquals(2, actionContext.callWithTimeout(2000) {
             Thread.sleep(500)
             x = 2
             x
