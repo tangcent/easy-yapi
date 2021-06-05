@@ -23,8 +23,8 @@ internal abstract class AutoSearchConfigReaderTest : AdvancedContextTest() {
 
     protected abstract val configReaderClass: KClass<out ConfigReader>
 
-    override fun afterBind() {
-        super.afterBind()
+    override fun afterBind(actionContext: ActionContext) {
+        super.afterBind(actionContext)
         //load configs from resource to tempDir as files in module
         for (file in loadConfigs()) {
             File("$tempDir${s}$file")
