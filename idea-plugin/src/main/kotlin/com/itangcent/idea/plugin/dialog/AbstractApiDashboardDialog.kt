@@ -387,7 +387,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         abstract fun next(): ProjectMode
     }
 
-    class ApiProjectNodeData : IconCustomized, Tooltipable {
+    class ApiProjectNodeData : IconCustomized, ToolTipAble {
         override fun toolTip(): String? {
             val psiResource = (doc.resource ?: return "") as PsiResource
             return when (doc) {

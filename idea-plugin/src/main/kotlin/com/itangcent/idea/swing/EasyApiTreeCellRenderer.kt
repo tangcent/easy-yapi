@@ -17,11 +17,13 @@ class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
      * is set based on the `leaf` and `expanded`
      * parameters.
      */
-    override fun getTreeCellRendererComponent(tree: JTree, value: Any,
-                                              sel: Boolean,
-                                              expanded: Boolean,
-                                              leaf: Boolean, row: Int,
-                                              hasFocus: Boolean): Component {
+    override fun getTreeCellRendererComponent(
+        tree: JTree, value: Any,
+        sel: Boolean,
+        expanded: Boolean,
+        leaf: Boolean, row: Int,
+        hasFocus: Boolean
+    ): Component {
         super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus)
 
         findIcon(value, expanded, leaf)?.let { icon = it }
@@ -35,21 +37,26 @@ class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
     /**
      * Find the icon this component will display.
      */
-    private fun findIcon(value: Any,
-                         expanded: Boolean,
-                         leaf: Boolean): Icon? {
+    private fun findIcon(
+        value: Any,
+        expanded: Boolean,
+        leaf: Boolean
+    ): Icon? {
 
         var icon: Icon? = null
 
-        if (value is DefaultMutableTreeNode) {
-            val userObject = value.userObject
-            if (userObject is IconCustomized) {
-                icon = userObject.icon()
+        try {
+            if (value is DefaultMutableTreeNode) {
+                val userObject = value.userObject
+                if (userObject is IconCustomized) {
+                    icon = userObject.icon()
+                }
             }
-        }
 
-        if (icon == null && value is IconCustomized) {
-            icon = value.icon()
+            if (icon == null && value is IconCustomized) {
+                icon = value.icon()
+            }
+        } catch (ignore: Exception) {
         }
 
         if (icon == null) {

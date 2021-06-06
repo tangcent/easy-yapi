@@ -13,7 +13,7 @@ import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
-import com.itangcent.idea.swing.Tooltipable
+import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -644,7 +644,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    class YapiCartNodeData : YapiNodeData, IconCustomized, Tooltipable {
+    class YapiCartNodeData : YapiNodeData, IconCustomized, ToolTipAble {
 
         override fun icon(): Icon? {
             return EasyIcons.Module
@@ -693,7 +693,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    class YapiApiNodeData : YapiNodeData, IconCustomized, Tooltipable {
+    class YapiApiNodeData : YapiNodeData, IconCustomized, ToolTipAble {
 
         override fun icon(): Icon? {
             return EasyIcons.Link
