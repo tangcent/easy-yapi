@@ -5,6 +5,9 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 
+/**
+ * Test case of [SafeHashHelper]
+ */
 internal class SafeHashHelperTest {
 
     @Test

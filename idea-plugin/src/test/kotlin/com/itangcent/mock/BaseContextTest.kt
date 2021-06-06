@@ -45,6 +45,8 @@ abstract class BaseContextTest {
         }
     }
 
+    protected open fun bind(builder: ActionContext.ActionContextBuilder) {}
+
     protected open fun afterBind(actionContext: ActionContext) {
     }
 
@@ -55,8 +57,6 @@ abstract class BaseContextTest {
             actionContext.stop(true)
         }
     }
-
-    protected open fun bind(builder: ActionContext.ActionContextBuilder) {}
 
     companion object {
         val mockProject = Mockito.mock(Project::class.java)
