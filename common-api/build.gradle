@@ -37,6 +37,11 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
     compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'
 
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime
+    testImplementation group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.10'
+
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
+    testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"
@@ -50,7 +55,12 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.10'
 
+    // https://search.maven.org/artifact/org.mockito.kotlin/mockito-kotlin/3.2.0/jar
+    testImplementation 'org.mockito.kotlin:mockito-kotlin:3.2.0'
 
+    // https://mvnrepository.com/artifact/org.mockito/mockito-inline
+    testImplementation group: 'org.mockito', name: 'mockito-inline', version: '3.11.0'
+    
 }
 
 

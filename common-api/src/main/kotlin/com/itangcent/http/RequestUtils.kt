@@ -107,9 +107,9 @@ object RequestUtils {
 
         fun url(): String {
             val sb = StringBuilder()
-                    .append(this.protocol ?: "http")
-                    .append("://")
-                    .append(host!!.removeSuffix("?/"))
+                .append(this.protocol ?: "http")
+                .append("://")
+                .append(host!!.removeSuffix("?/"))
             if (path.notNullOrBlank()) {
                 sb.append("/")
                 sb.append(path!!.removePrefix("/").removeSuffix("?"))

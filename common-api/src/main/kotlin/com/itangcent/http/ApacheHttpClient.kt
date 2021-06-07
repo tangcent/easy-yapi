@@ -43,19 +43,23 @@ open class ApacheHttpClient : HttpClient {
         this.apacheCookieStore = ApacheCookieStore(basicCookieStore)
         this.httpClientContext!!.cookieStore = basicCookieStore
         this.httpClient = HttpClients.custom()
-                .setConnectionManager(PoolingHttpClientConnectionManager().also {
-                    it.maxTotal = 50
-                    it.defaultMaxPerRoute = 20
-                })
-                .setDefaultSocketConfig(SocketConfig.custom()
-                        .setSoTimeout(30 * 1000)
-                        .build())
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setConnectTimeout(30 * 1000)
-                        .setConnectionRequestTimeout(30 * 1000)
-                        .setSocketTimeout(30 * 1000)
-                        .setCookieSpec(CookieSpecs.STANDARD).build())
-                .build()
+            .setConnectionManager(PoolingHttpClientConnectionManager().also {
+                it.maxTotal = 50
+                it.defaultMaxPerRoute = 20
+            })
+            .setDefaultSocketConfig(
+                SocketConfig.custom()
+                    .setSoTimeout(30 * 1000)
+                    .build()
+            )
+            .setDefaultRequestConfig(
+                RequestConfig.custom()
+                    .setConnectTimeout(30 * 1000)
+                    .setConnectionRequestTimeout(30 * 1000)
+                    .setSocketTimeout(30 * 1000)
+                    .setCookieSpec(CookieSpecs.STANDARD).build()
+            )
+            .build()
     }
 
     constructor(httpClient: org.apache.http.client.HttpClient) {
@@ -92,54 +96,54 @@ open class ApacheHttpClient : HttpClient {
         }
 
         val requestBuilder = RequestBuilder.create(request.method())
-                .setUri(url)
+            .setUri(url)
 
         request.headers()?.forEach {
             requestBuilder.addHeader(it.name(), it.value())
         }
 
         if (request.method().toUpperCase() != "GET") {
-
             var requestEntity: HttpEntity? = null
             if (request.params().notNullOrEmpty()) {
-                if (request.contentType()?.startsWith("application/x-www-form-urlencoded") != true) {
-                    if (request.contentType()?.startsWith("multipart/form-data") == true) {
-                        val entityBuilder = MultipartEntityBuilder.create()
-                        for (param in request.params()!!) {
-                            if (param.type() == "file") {
-                                val filePath = param.value()
-                                if (filePath.isNullOrBlank()) {
-                                    continue
-                                }
-                                val file = File(filePath)
-                                if (!file.exists() || !file.isFile) {
-                                    throw FileNotFoundException("[$filePath] not exist")
-                                }
-                                entityBuilder.addBinaryBody(param.name(), file)
-                            } else {
-                                entityBuilder.addTextBody(param.name(), param.value())
-                            }
-                        }
-                        val boundary = com.itangcent.common.http.EntityUtils.generateBoundary()
-                        entityBuilder.setBoundary(boundary)
-                        //set boundary to header
-                        requestBuilder.setHeader("Content-type", "multipart/form-data; boundary=$boundary")
-                        requestEntity = entityBuilder.build()
-                    }
-                } else {
+                if (request.contentType()?.startsWith("application/x-www-form-urlencoded") == true) {
                     val nameValuePairs: ArrayList<NameValuePair> = ArrayList()
                     for (param in request.params()!!) {
                         nameValuePairs.add(BasicNameValuePair(param.name(), param.value()))
                     }
                     requestEntity = UrlEncodedFormEntity(nameValuePairs)
+                } else if (request.contentType()?.startsWith("multipart/form-data") == true) {
+                    val entityBuilder = MultipartEntityBuilder.create()
+                    for (param in request.params()!!) {
+                        if (param.type() == "file") {
+                            val filePath = param.value()
+                            if (filePath.isNullOrBlank()) {
+                                continue
+                            }
+                            val file = File(filePath)
+                            if (!file.exists() || !file.isFile) {
+                                throw FileNotFoundException("[$filePath] not exist")
+                            }
+                            entityBuilder.addBinaryBody(param.name(), file)
+                        } else {
+                            entityBuilder.addTextBody(param.name(), param.value())
+                        }
+                    }
+                    val boundary = com.itangcent.common.http.EntityUtils.generateBoundary()
+                    entityBuilder.setBoundary(boundary)
+                    //set boundary to header
+                    requestBuilder.setHeader("Content-type", "multipart/form-data; boundary=$boundary")
+                    requestEntity = entityBuilder.build()
                 }
             }
             if (request.body() != null) {
                 if (requestEntity != null) {
-                    SpiUtils.loadService(ILogger::class)?.warn("The request with a body should not set content-type:${request.contentType()}")
+                    SpiUtils.loadService(ILogger::class)
+                        ?.warn("The request with a body should not set content-type:${request.contentType()}")
                 }
-                requestEntity = StringEntity(request.body().toJson(),
-                        ContentType.APPLICATION_JSON)
+                requestEntity = StringEntity(
+                    request.body().toJson(),
+                    ContentType.APPLICATION_JSON
+                )
             }
             if (requestEntity != null) {
                 requestBuilder.entity = requestEntity
@@ -207,8 +211,8 @@ class ApacheCookieStore : CookieStore {
      * @param cookies the [Cookie]s to be added
      */
     override fun addCookies(cookies: Array<Cookie>?) {
-        cookies?.mapNotNull { cookie -> cookie.asApacheCookie() }
-                ?.forEach { cookieStore.addCookie(it) }
+        cookies?.map { cookie -> cookie.asApacheCookie() }
+            ?.forEach { cookieStore.addCookie(it) }
     }
 
     /**
@@ -237,8 +241,9 @@ class ApacheCookieStore : CookieStore {
  */
 @ScriptTypeName("response")
 class ApacheHttpResponse(
-        val request: HttpRequest,
-        val response: org.apache.http.HttpResponse) : AbstractHttpResponse() {
+    private val request: HttpRequest,
+    private val response: org.apache.http.HttpResponse
+) : AbstractHttpResponse() {
 
     /**
      * Obtains the status of this response.
@@ -382,11 +387,11 @@ fun Cookie.asApacheCookie(): org.apache.http.cookie.Cookie {
         return this.getWrapper()
     }
     val cookie =
-            if (this.getPorts() == null || this.getCommentURL() == null) {
-                BasicClientCookie(this.getName(), this.getValue())
-            } else {
-                BasicClientCookie2(this.getName(), this.getValue())
-            }
+        if (this.getPorts() == null || this.getCommentURL() == null) {
+            BasicClientCookie(this.getName(), this.getValue())
+        } else {
+            BasicClientCookie2(this.getName(), this.getValue())
+        }
     cookie.comment = this.getComment()
     cookie.domain = this.getDomain()
     cookie.path = this.getPath()
