@@ -568,6 +568,7 @@ abstract class AbstractHttpRequest : HttpRequest {
         return headers
             ?.filter { it.name().equalIgnoreCase(headerName) }
             ?.mapNotNull { it.value() }
+            ?.takeIf { it.isNotEmpty() }
             ?.toTypedArray()
     }
 
@@ -583,7 +584,7 @@ abstract class AbstractHttpRequest : HttpRequest {
         return headers
             ?.filter { it.name().equalIgnoreCase(headerName) }
             ?.map { it.value() }
-            ?.first { it != null }
+            ?.firstOrNull { it != null }
     }
 
     /**
@@ -598,7 +599,7 @@ abstract class AbstractHttpRequest : HttpRequest {
         return headers
             ?.filter { it.name().equalIgnoreCase(headerName) }
             ?.map { it.value() }
-            ?.last { it != null }
+            ?.lastOrNull { it != null }
     }
 
     /**

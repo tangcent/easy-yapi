@@ -130,6 +130,15 @@ class ApacheHttpClientTest {
     fun testHeaders() {
         val httpClient: HttpClient = ApacheHttpClient()
         val request = httpClient.request()
+
+        assertFalse(request.containsHeader("x-token"))
+        assertNull(request.headers("x-token"))
+        assertNull(request.firstHeader("x-token"))
+        assertNull(request.lastHeader("x-token"))
+
+        assertDoesNotThrow { request.removeHeaders("x-token") }
+        assertDoesNotThrow { request.removeHeader("x-token", "222222") }
+
         assertFalse(request.containsHeader("x-token"))
         assertNull(request.headers("x-token"))
         assertNull(request.firstHeader("x-token"))
@@ -141,17 +150,18 @@ class ApacheHttpClientTest {
         assertEquals("111111", request.firstHeader("x-token"))
         assertEquals("111111", request.lastHeader("x-token"))
 
+        request.header(BasicHttpHeader("x-token", null))
         request.header(BasicHttpHeader("x-token", "222222"))
         assertTrue(request.containsHeader("x-token"))
         assertArrayEquals(arrayOf("111111", "222222"), request.headers("x-token"))
         assertEquals("111111", request.firstHeader("x-token"))
         assertEquals("222222", request.lastHeader("x-token"))
 
-        request.removeHeader("x-token", "111111")
+        request.removeHeader("x-token", "222222")
         assertTrue(request.containsHeader("x-token"))
-        assertArrayEquals(arrayOf("222222"), request.headers("x-token"))
-        assertEquals("222222", request.firstHeader("x-token"))
-        assertEquals("222222", request.lastHeader("x-token"))
+        assertArrayEquals(arrayOf("111111"), request.headers("x-token"))
+        assertEquals("111111", request.firstHeader("x-token"))
+        assertEquals("111111", request.lastHeader("x-token"))
 
         request.removeHeaders("x-token")
         assertFalse(request.containsHeader("x-token"))
@@ -210,6 +220,8 @@ class ApacheHttpClientTest {
             assertEquals("text", it.type())
         }
 
+        request.param("token", "xxxxx")
+        request.param("auth", null)
         request.fileParam("auth", "222222")
         assertTrue(request.containsParam("auth"))
         assertArrayEquals(arrayOf("111111", "222222"), request.paramValues("auth"))
@@ -339,7 +351,7 @@ class ApacheHttpClientTest {
         }
     }
 
-    open class CallTest {
+    open class AbstractCallTest {
 
         protected lateinit var httpClient: org.apache.http.client.HttpClient
         protected lateinit var httpResponse: HttpResponse
@@ -399,6 +411,9 @@ class ApacheHttpClientTest {
                     .doAnswer { responseBody.byteInputStream(responseCharset) }
             }
         }
+    }
+
+    open class CallTest : AbstractCallTest() {
 
         @Test
         fun testCallPostJson() {
@@ -595,7 +610,7 @@ class ApacheHttpClientTest {
         }
     }
 
-    class PostFileTest : CallTest() {
+    class PostFileTest : AbstractCallTest() {
 
         @JvmField
         @TempDir
