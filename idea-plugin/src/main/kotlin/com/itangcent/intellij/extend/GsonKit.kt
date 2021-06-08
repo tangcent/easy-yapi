@@ -46,7 +46,6 @@ fun JsonElement.unbox(): Any? {
 
 fun JsonPrimitive.unbox(): Any? {
     return when {
-        this.isJsonNull -> null
         this.isBoolean -> this.asBoolean
         this.isNumber -> this.asNumber
         this.isString -> this.asString

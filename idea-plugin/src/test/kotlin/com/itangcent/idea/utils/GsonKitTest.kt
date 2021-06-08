@@ -1,5 +1,7 @@
 package com.itangcent.idea.utils
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonPrimitive
 import com.itangcent.intellij.extend.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -67,16 +69,22 @@ class GsonKitTest {
 
     @Test
     fun testUnbox() {
+        assertNull("null".asJsonElement()!!.unbox())
         assertEquals(1, ("1".asJsonElement()!!.unbox() as Number).toInt())
         assertEquals(true, "true".asJsonElement()!!.unbox())
         assertEquals("hello world", "\"hello world\"".asJsonElement()!!.unbox())
 
         assertEquals(hashMapOf("x" to "1"), "{x:\"1\"}".asJsonElement()!!.unbox())
         assertEquals(arrayListOf("1"), "[\"1\"]".asJsonElement()!!.unbox())
+
+        assertEquals(1, (("1".asJsonElement() as JsonPrimitive)!!.unbox() as Number).toInt())
+        assertEquals(true, ("true".asJsonElement() as JsonPrimitive)!!.unbox())
+        assertEquals("hello world", ("\"hello world\"".asJsonElement() as JsonPrimitive)!!.unbox())
     }
 
     @Test
     fun testSub() {
+        assertNull((null as JsonElement?).sub("x"))
         assertNull("1".asJsonElement()!!.sub("x"))
         assertNull("true".asJsonElement()!!.sub("x"))
         assertNull("\"hello world\"".asJsonElement()!!.sub("x"))
