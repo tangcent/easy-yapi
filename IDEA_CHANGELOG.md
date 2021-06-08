@@ -1,3 +1,13 @@
+* 2.2.2
+
+	* feat: update CachedResourceResolverTest [(#494)](https://github.com/tangcent/easy-yapi/pull/494)
+
+	* chore: update dubbo.config [(#490)](https://github.com/tangcent/easy-yapi/pull/490)
+
+	* fix: process the body as query if the httpMethod is GET [(#489)](https://github.com/tangcent/easy-yapi/pull/489)
+
+	* feat: support queryExpanded [(#488)](https://github.com/tangcent/easy-yapi/pull/488)
+
 * 2.2.1
 
 	* feat: double click yapi node in YapiDashboardDialog to open yapi url [(#480)](https://github.com/tangcent/easy-yapi/pull/480)
