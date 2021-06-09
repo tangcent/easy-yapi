@@ -42,7 +42,6 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           title: "${{env.EASY_YAPI_PR_TITLE}}"
-          body: "${{env.EASY_YAPI_PR_BODY}}"
           base: master
           labels: release
 

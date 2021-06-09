@@ -82,11 +82,9 @@ task patchUpdate {
                     def li = "\t<li> ${msg} <a\n" +
                             "\t\t\thref=\"https://github.com/tangcent/easy-yapi/pull/${id}\">(#${id})</a>\n" +
                             "\t</li>"
-                    if (line.startsWith("chore")) {
-                        continue
-                    } else if (line.startsWith("fix")) {
+                    if (line.startsWith("fix")) {
                         fixes.add(li)
-                    } else {
+                    } else if(line.startsWith("feat")||line.startsWith("opti")||line.startsWith("perf")){
                         enhancements.add(li)
                     }
                 } catch (ignore) {
@@ -185,11 +183,9 @@ task patchUpdateRc {
                     def li = "\t<li> ${msg} <a\n" +
                             "\t\t\thref=\"https://github.com/tangcent/easy-yapi/pull/${id}\">(#${id})</a>\n" +
                             "\t</li>"
-                    if (line.startsWith("chore")) {
-                        continue
-                    } else if (line.startsWith("fix")) {
+                    if (line.startsWith("fix")) {
                         fixes.add(li)
-                    } else {
+                    } else if(line.startsWith("feat")||line.startsWith("opti")||line.startsWith("perf")){
                         enhancements.add(li)
                     }
                 } catch (ignore) {
@@ -224,7 +220,7 @@ task patchUpdateRc {
             envDir.mkdir()
         }
         new File("envs/EASY_YAPI_PR_TITLE").newOutputStream().withCloseable {
-            it.write("release v${nextVersion}".getBytes(StandardCharsets.UTF_8))
+            it.write("release v${nextVersionShort}".getBytes(StandardCharsets.UTF_8))
         }
 
         def prBody = ""
