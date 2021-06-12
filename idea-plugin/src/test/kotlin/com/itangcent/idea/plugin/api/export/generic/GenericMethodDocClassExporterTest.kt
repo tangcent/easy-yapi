@@ -76,13 +76,12 @@ internal class GenericMethodDocClassExporterTest
         (classExporter as Worker).waitCompleted()
         methodDocs[0].let { methodDoc ->
             assertEquals("say hello", methodDoc.name)
-            assertEquals("say hello\n" +
-                    "not update anything", methodDoc.desc)
+            assertEquals("not update anything", methodDoc.desc)
             assertEquals(userCtrlPsiClass.methods[0], (methodDoc.resource as PsiResource).resource())
         }
         methodDocs[1].let { methodDoc ->
             assertEquals("get user info", methodDoc.name)
-            assertEquals("get user info", methodDoc.desc)
+            assertTrue(methodDoc.desc.isNullOrEmpty())
             assertEquals(userCtrlPsiClass.methods[1], (methodDoc.resource as PsiResource).resource())
         }
     }
