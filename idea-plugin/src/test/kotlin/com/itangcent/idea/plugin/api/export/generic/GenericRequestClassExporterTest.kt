@@ -105,10 +105,7 @@ internal class GenericRequestClassExporterTest
             assertEquals("GET", request.method)
             assertEquals(URL.of("/com/itangcent/client/user_client/greeting"), request.path)
             assertEquals("say hello", request.name)
-            assertEquals(
-                "say hello\n" +
-                        "not update anything", request.desc
-            )
+            assertEquals("not update anything", request.desc)
             assertEquals(userClientClass.methods[0], (request.resource as PsiResource).resource())
             checkHeader(request)
             checkParam(request)
@@ -117,7 +114,7 @@ internal class GenericRequestClassExporterTest
             assertEquals("GET", request.method)
             assertEquals(URL.of("/com/itangcent/client/user_client/set"), request.path)
             assertEquals("update username", request.name)
-            assertEquals("update username", request.desc)
+            assertTrue(request.desc.isNullOrEmpty())
             assertEquals(userClientClass.methods[1], (request.resource as PsiResource).resource())
             checkHeader(request)
             checkParam(request)
@@ -126,7 +123,7 @@ internal class GenericRequestClassExporterTest
             assertEquals("GET", request.method)
             assertEquals(URL.of("/com/itangcent/client/user_client/user/get"), request.path)
             assertEquals("get user info", request.name)
-            assertEquals("get user info", request.desc)
+            assertTrue(request.desc.isNullOrEmpty())
             assertEquals(userClientClass.methods[2], (request.resource as PsiResource).resource())
             checkHeader(request)
             checkParam(request)
@@ -135,7 +132,7 @@ internal class GenericRequestClassExporterTest
             assertEquals("POST", request.method)
             assertEquals(URL.of("/com/itangcent/client/user_client/add"), request.path)
             assertEquals("create new use", request.name)
-            assertEquals("create new use", request.desc)
+            assertTrue(request.desc.isNullOrEmpty())
             assertEquals(userClientClass.methods[3], (request.resource as PsiResource).resource())
             checkHeader(request)
             checkParam(request)

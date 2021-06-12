@@ -104,7 +104,6 @@ internal class MarkdownApiExporterTest : PluginContextLightCodeInsightFixtureTes
                 "\n" +
                 "**Desc：**\n" +
                 "\n" +
-                "say hello\n" +
                 "not update anything\n" +
                 "\n" +
                 "### REQUEST\n" +
@@ -141,10 +140,6 @@ internal class MarkdownApiExporterTest : PluginContextLightCodeInsightFixtureTes
                 "**Path：** user/get/{id}\n" +
                 "\n" +
                 "**Method：** GET\n" +
-                "\n" +
-                "**Desc：**\n" +
-                "\n" +
-                "get user info\n" +
                 "\n" +
                 "### REQUEST\n" +
                 "\n" +
@@ -213,10 +208,6 @@ internal class MarkdownApiExporterTest : PluginContextLightCodeInsightFixtureTes
                 "**Path：** user/add\n" +
                 "\n" +
                 "**Method：** POST\n" +
-                "\n" +
-                "**Desc：**\n" +
-                "\n" +
-                "create new use\n" +
                 "\n" +
                 "### REQUEST\n" +
                 "\n" +

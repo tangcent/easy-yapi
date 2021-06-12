@@ -68,10 +68,10 @@ open class ApiHelper {
         return name to attr
     }
 
-    fun nameAndAttrOfApi(explicitMethod: ExplicitMethod, nameHandle: (String) -> Unit,
-                         attrHandle: (String) -> Unit) {
-
-
+    fun nameAndAttrOfApi(
+        explicitMethod: ExplicitMethod, nameHandle: (String) -> Unit,
+        attrHandle: (String) -> Unit
+    ) {
         var named = false
         val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, explicitMethod)
         if (nameByRule.notNullOrEmpty()) {
@@ -81,14 +81,17 @@ open class ApiHelper {
 
         var attrOfMethod = findAttrOfMethod(explicitMethod)
 
-        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, explicitMethod.psi())
+        attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, explicitMethod.psi())?.trim()
 
         if (attrOfMethod.notNullOrEmpty()) {
-            attrHandle(attrOfMethod!!)
-
-            if (!named) {
-                nameHandle(attrOfMethod.headLine().takeIf { it.notNullOrEmpty() } ?: explicitMethod.name())
+            attrOfMethod!!
+            if (named) {
+                attrHandle(attrOfMethod)
+            } else {
+                val headLine = attrOfMethod.headLine()
+                nameHandle(headLine!!)
                 named = true
+                attrHandle(attrOfMethod.removePrefix(headLine).trimStart())
             }
         }
 
@@ -97,10 +100,10 @@ open class ApiHelper {
         }
     }
 
-    fun nameAndAttrOfApi(explicitMethod: PsiMethod, nameHandle: (String) -> Unit,
-                         attrHandle: (String) -> Unit) {
-
-
+    fun nameAndAttrOfApi(
+        explicitMethod: PsiMethod, nameHandle: (String) -> Unit,
+        attrHandle: (String) -> Unit
+    ) {
         var named = false
         val nameByRule = ruleComputer!!.computer(ClassExportRuleKeys.API_NAME, explicitMethod)
         if (nameByRule.notNullOrEmpty()) {
@@ -113,11 +116,14 @@ open class ApiHelper {
         attrOfMethod = docParseHelper!!.resolveLinkInAttr(attrOfMethod, explicitMethod)
 
         if (attrOfMethod.notNullOrEmpty()) {
-            attrHandle(attrOfMethod!!)
-
-            if (!named) {
-                nameHandle(attrOfMethod.headLine() ?: explicitMethod.name)
+            attrOfMethod!!
+            if (named) {
+                attrHandle(attrOfMethod)
+            } else {
+                val headLine = attrOfMethod.headLine()
+                nameHandle(headLine!!)
                 named = true
+                attrHandle(attrOfMethod.removePrefix(headLine).trimStart())
             }
         }
 

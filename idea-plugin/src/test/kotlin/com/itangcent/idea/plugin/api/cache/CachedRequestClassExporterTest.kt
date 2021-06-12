@@ -103,19 +103,18 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         (classExporter as Worker).waitCompleted()
         requests[0].let { request ->
             assertEquals("say hello", request.name)
-            assertEquals("say hello\n" +
-                    "not update anything", request.desc)
+            assertEquals("not update anything", request.desc)
             assertEquals("GET", request.method)
             assertEquals(userCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
         }
         requests[1].let { request ->
             assertEquals("get user info", request.name)
-            assertEquals("get user info", request.desc)
+            assertTrue(request.desc.isNullOrEmpty())
             assertEquals("GET", request.method)
             assertEquals(userCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
         }
         Mockito.verify(delegateClassExporter, times(1))
-                .export(any(), any(), any())
+            .export(any(), any(), any())
 
         TimeUnit.SECONDS.sleep(5)//wait 5s to save cache
         (classExporter as Worker).waitCompleted()
@@ -128,6 +127,6 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         (classExporter as Worker).waitCompleted()
         assertEquals(requests, requestsAgain)
         Mockito.verify(delegateClassExporter, times(1))
-                .export(any(), any(), any())
+            .export(any(), any(), any())
     }
 }
