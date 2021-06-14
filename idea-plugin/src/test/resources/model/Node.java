@@ -4,33 +4,65 @@ import java.util.List;
 
 public class Node {
 
-    private Integer value;
+    /**
+     * primary key
+     */
+    private String id;
+
+    /**
+     * node code
+     */
+    private String code;
 
     private Node parent;
 
-    private List<Node> children;
+    /**
+     * sub nodes
+     */
+    private List<Node> sub;
 
-    public Integer getValue() {
-        return value;
+    /**
+     * siblings nodes
+     */
+    private List<Node> siblings;
+
+    public String getId() {
+        return id;
     }
 
-    public void setValue(Integer value) {
-        this.value = value;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public Node getParent() {
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public com.itangcent.model.Node getParent() {
         return parent;
     }
 
-    public void setParent(Node parent) {
+    public void setParent(com.itangcent.model.Node parent) {
         this.parent = parent;
     }
 
-    public List<Node> getChildren() {
-        return children;
+    public List<com.itangcent.model.Node> getSub() {
+        return sub;
     }
 
-    public void setChildren(List<Node> children) {
-        this.children = children;
+    public void setSub(List<com.itangcent.model.Node> sub) {
+        this.sub = sub;
+    }
+
+    public List<com.itangcent.model.Node> getSiblings() {
+        return siblings;
+    }
+
+    public void setSiblings(List<com.itangcent.model.Node> siblings) {
+        this.siblings = siblings;
     }
 }

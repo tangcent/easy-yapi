@@ -6,8 +6,14 @@ import java.util.List;
 
 public class Root {
 
-    private Integer value;
+    /**
+     * primary key
+     */
+    private String id;
 
+    /**
+     * sub nodes
+     */
     private List<Node> children;
 
     public Integer getValue() {
