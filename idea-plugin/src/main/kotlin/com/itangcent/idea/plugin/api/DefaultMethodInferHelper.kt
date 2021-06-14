@@ -555,7 +555,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 return when {
                     !needCompute(obj) -> obj
                     obj is Variable -> valueOf(obj.getValue())
-                    obj is Delay -> valueOf(obj.unwrapped { })
+                    obj is Delay -> valueOf(obj.unwrapped())
                     obj is MutableMap<*, *> -> {
                         val copy = KV.create<Any?, Any?>()
                         obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }
