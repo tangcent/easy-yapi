@@ -1,5 +1,13 @@
-* 2.2.2
+* 2.2.3
+  
+	* perf: add several methods of RequestRuleWrap [(#509)](https://github.com/tangcent/easy-yapi/pull/509)
 
+	* opti: remove api name from the prefix of attr [(#508)](https://github.com/tangcent/easy-yapi/pull/508)
+
+	* build: collect feat/opti/perf as enhancements [(#504)](https://github.com/tangcent/easy-yapi/pull/504)
+
+* 2.2.2
+  
 	* feat: update CachedResourceResolverTest [(#494)](https://github.com/tangcent/easy-yapi/pull/494)
 
 	* chore: update dubbo.config [(#490)](https://github.com/tangcent/easy-yapi/pull/490)
