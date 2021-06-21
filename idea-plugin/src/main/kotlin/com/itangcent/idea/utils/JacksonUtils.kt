@@ -3,6 +3,7 @@ package com.itangcent.idea.utils
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
 
 
@@ -13,6 +14,7 @@ object JacksonUtils {
     init {
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
         objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL)
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     }
 
     fun toJson(bean: Any?): String {
@@ -34,8 +36,9 @@ object JacksonUtils {
         val split = json.indexOf(',')
         return try {
             objectMapper.readValue(
-                    json.substring(split + 1),
-                    Class.forName(json.substring(0, split)) as Class<T>)
+                json.substring(split + 1),
+                Class.forName(json.substring(0, split)) as Class<T>
+            )
         } catch (e: Exception) {
             LOG.error("failed parse json: [$json]")
             null
