@@ -31,7 +31,7 @@ class Settings {
 
     var readSetter: Boolean = false
 
-    var inferEnable: Boolean = true
+    var inferEnable: Boolean = false
 
     var inferMaxDeep: Int = DEFAULT_INFER_MAX_DEEP
 
