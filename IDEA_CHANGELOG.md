@@ -1,5 +1,9 @@
 * 2.2.3
   
+    * fix: not infer methods that return an interface type [(#518)](https://github.com/tangcent/easy-yapi/pull/518)
+      
+	* fix: configure FAIL_ON_EMPTY_BEANS as false [(#517)](https://github.com/tangcent/easy-yapi/pull/517)
+      
 	* perf: add several methods of RequestRuleWrap [(#509)](https://github.com/tangcent/easy-yapi/pull/509)
 
 	* opti: remove api name from the prefix of attr [(#508)](https://github.com/tangcent/easy-yapi/pull/508)
