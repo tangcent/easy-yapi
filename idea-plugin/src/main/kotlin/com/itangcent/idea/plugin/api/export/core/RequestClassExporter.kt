@@ -127,12 +127,12 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class:" + cls.qualifiedName)
+                    logger.info("ignore class:" + cls.qualifiedName)
                     completedHandle(cls)
                     return true
                 }
                 else -> {
-                    logger!!.info("search api from:${cls.qualifiedName}")
+                    logger.info("search api from:${cls.qualifiedName}")
 
                     val classExportContext = ClassExportContext(cls)
 
@@ -151,7 +151,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError("error to export api from class:" + cls.name, e)
+            logger.traceError("error to export api from class:" + cls.name, e)
         } finally {
             statusRecorder.endWork()
             completedHandle(cls)
@@ -238,11 +238,11 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     val header = KitUtils.safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                     when {
                         header == null -> {
-                            logger!!.error("error to parse additional header: $headerStr")
+                            logger.error("error to parse additional header: $headerStr")
                             return@cache null
                         }
                         header.name.isNullOrBlank() -> {
-                            logger!!.error("no name had be found in: $headerStr")
+                            logger.error("no name had be found in: $headerStr")
                             return@cache null
                         }
                         else -> return@cache header
@@ -263,11 +263,11 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     val param = KitUtils.safe { additionalParseHelper.parseParamFromJson(paramStr) }
                     when {
                         param == null -> {
-                            logger!!.error("error to parse additional param: $paramStr")
+                            logger.error("error to parse additional param: $paramStr")
                             return@cache null
                         }
                         param.name.isNullOrBlank() -> {
-                            logger!!.error("no name had be found in: $paramStr")
+                            logger.error("no name had be found in: $paramStr")
                             return@cache null
                         }
                         else -> return@cache param
@@ -289,11 +289,11 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                         val header = KitUtils.safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                         when {
                             header == null -> {
-                                logger!!.error("error to parse additional response header: $headerStr")
+                                logger.error("error to parse additional response header: $headerStr")
                                 return@cache null
                             }
                             header.name.isNullOrBlank() -> {
-                                logger!!.error("no name had be found in: $headerStr")
+                                logger.error("no name had be found in: $headerStr")
                                 return@cache null
                             }
                             else -> return@cache header
@@ -421,7 +421,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
             } catch (e: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Throwable) {
-                logger!!.traceError("error to parse body", e)
+                logger.traceError("error to parse body", e)
 
             }
         }
@@ -480,7 +480,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
 
             if (hasFile) {
                 if (request.method == HttpMethod.GET) {
-                    logger?.warn("file param in `GET` API [${request.path}]")
+                    logger.warn("file param in `GET` API [${request.path}]")
                 } else if (request.method == null || request.method == HttpMethod.NO_METHOD) {
                     request.method = ruleComputer.computer(
                         ClassExportRuleKeys.METHOD_DEFAULT_HTTP_METHOD,
@@ -737,17 +737,17 @@ abstract class RequestClassExporter : ClassExporter, Worker {
         return when {
             fromRule -> psiClassHelper!!.getTypeObject(
                 duckType, method.psi(),
-                this.intelligentSettingsHelper!!.jsonOptionForOutput(JsonOption.READ_COMMENT)
+                this.intelligentSettingsHelper.jsonOptionForOutput(JsonOption.READ_COMMENT)
             )
-            this.intelligentSettingsHelper.inferEnable() && (!duckTypeHelper!!.isQualified(duckType) ||
-                    jvmClassHelper!!.isInterface(duckType)) -> {
-                logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
+            this.intelligentSettingsHelper.inferEnable() && !duckTypeHelper!!.isQualified(duckType)
+            -> {
+                logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
             else -> psiClassHelper!!.getTypeObject(
                 duckType, method.psi(),
-                this.intelligentSettingsHelper!!.jsonOptionForOutput(JsonOption.READ_COMMENT)
+                this.intelligentSettingsHelper.jsonOptionForOutput(JsonOption.READ_COMMENT)
             )
         }
     }

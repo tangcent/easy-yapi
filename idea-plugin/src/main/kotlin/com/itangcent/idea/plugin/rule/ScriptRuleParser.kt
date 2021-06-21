@@ -608,8 +608,7 @@ abstract class ScriptRuleParser : RuleParser {
                                 readSetter: Boolean): String? {
             val duckType = explicitMethod.getReturnType() ?: return null
             return when {
-                needInfer && (!duckTypeHelper!!.isQualified(duckType) ||
-                        jvmClassHelper!!.isInterface(duckType)) -> {
+                needInfer && !duckTypeHelper!!.isQualified(duckType) -> {
                     logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper!!.inferReturn(psiMethod)
                 }
