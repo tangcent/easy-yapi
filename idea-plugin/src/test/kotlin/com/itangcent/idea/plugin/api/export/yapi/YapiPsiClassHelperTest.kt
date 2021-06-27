@@ -544,7 +544,7 @@ internal class YapiPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
         //testResolveEnumOrStatic---------------------------------------------------------------------------------
 
         assertEquals(
-                "[]",
+                "[{\"value\":\"JAVA_0_9\",\"desc\":\"The Java version reported by Android. This is not an official Java version number.\"},{\"value\":\"JAVA_1_1\",\"desc\":\"Java 1.1.\"},{\"value\":\"JAVA_1_2\",\"desc\":\"Java 1.2.\"},{\"value\":\"JAVA_1_3\",\"desc\":\"Java 1.3.\"},{\"value\":\"JAVA_1_4\",\"desc\":\"Java 1.4.\"},{\"value\":\"JAVA_1_5\",\"desc\":\"Java 1.5.\"},{\"value\":\"JAVA_1_6\",\"desc\":\"Java 1.6.\"},{\"value\":\"JAVA_1_7\",\"desc\":\"Java 1.7.\"},{\"value\":\"JAVA_1_8\",\"desc\":\"Java 1.8.\"},{\"value\":\"JAVA_1_9\",\"desc\":\"Java 1.9.\"},{\"value\":\"JAVA_9\",\"desc\":\"Java 9\"},{\"value\":\"JAVA_10\",\"desc\":\"Java 10\"},{\"value\":\"JAVA_11\",\"desc\":\"Java 11\"},{\"value\":\"JAVA_12\",\"desc\":\"Java 12\"},{\"value\":\"JAVA_13\",\"desc\":\"Java 13\"}]",
                 GsonUtils.toJson(
                         psiClassHelper.resolveEnumOrStatic(
                                 "com.itangcent.constant.JavaVersion",
