@@ -1,3 +1,7 @@
+* 2.2.4
+
+	* feat: remove recommend config of enum [(#521)](https://github.com/tangcent/easy-yapi/pull/521)
+
 * 2.2.3
   
     * fix: not infer methods that return an interface type [(#518)](https://github.com/tangcent/easy-yapi/pull/518)
