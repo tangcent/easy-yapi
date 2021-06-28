@@ -50,4 +50,16 @@ class DefaultMessagesHelper : MessagesHelper {
             }
         }
     }
+
+    override fun showEditableChooseDialog(
+        message: String?,
+        @Nls(capitalization = Nls.Capitalization.Title) title: String?,
+        icon: Icon?,
+        values: Array<String>,
+        initialValue: String?
+    ): String? {
+        return actionContext.callInSwingUI {
+            Messages.showEditableChooseDialog(message, title, icon, values, initialValue ?: "", null)
+        }
+    }
 }
