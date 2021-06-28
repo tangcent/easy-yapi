@@ -18,4 +18,12 @@ interface MessagesHelper {
      * @return trimmed input string or `null` if user cancelled dialog.
      */
     fun showInputDialog(message: String?, @Nls(capitalization = Nls.Capitalization.Title) title: String?, icon: Icon?): String?
+
+    fun showEditableChooseDialog(
+        message: String?,
+        @Nls(capitalization = Nls.Capitalization.Title) title: String?,
+        icon: Icon?,
+        values: Array<String>,
+        initialValue: String? = null
+    ): String?
 }
