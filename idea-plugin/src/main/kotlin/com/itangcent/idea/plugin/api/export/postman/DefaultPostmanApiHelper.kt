@@ -352,8 +352,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Load workspaces failed", e)
-
+            logger!!.traceError("Load workspace $workspaceId failed", e)
             return null
         }
     }
