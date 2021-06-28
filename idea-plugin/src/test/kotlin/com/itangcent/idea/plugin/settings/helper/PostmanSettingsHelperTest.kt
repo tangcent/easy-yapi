@@ -1,11 +1,14 @@
 package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
+import com.itangcent.common.kit.toJson
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
+import java.io.ByteArrayOutputStream
+import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -23,9 +26,13 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
         super.bind(builder)
 
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)
-        Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
-                Mockito.eq("Postman Private Token"), Mockito.any()))
-                .thenReturn(null, "123")
+        Mockito.`when`(
+            messagesHelper.showInputDialog(
+                Mockito.anyString(),
+                Mockito.eq("Postman Private Token"), Mockito.any()
+            )
+        )
+            .thenReturn(null, "123")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
     }
 
@@ -69,4 +76,62 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
             assertEquals(formatType, postmanSettingsHelper.postmanJson5FormatType())
         }
     }
+
+    @Test
+    fun testGetWorkspace() {
+        val properties = Properties()
+        properties["demo"] = "123456789"
+        properties["workspace-demo"] = "7788"
+
+        settings.postmanWorkspaces = ByteArrayOutputStream().also { properties.store(it, "") }.toString()
+
+        assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo"))
+        assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo", false))
+        assertEquals("7788", postmanSettingsHelper.getWorkspace("workspace-demo", false))
+        assertEquals("7788", postmanSettingsHelper.getWorkspace("workspace-demo"))
+    }
+
+    @Test
+    fun testSetWorkspace() {
+        assertNull(postmanSettingsHelper.getWorkspace("demo"))
+        postmanSettingsHelper.setWorkspace("demo", "123456789")
+        assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo"))
+    }
+
+    @Test
+    fun testRemoveWorkspaceByModule() {
+        assertNull(postmanSettingsHelper.getWorkspace("demo"))
+        postmanSettingsHelper.setWorkspace("demo", "123456789")
+        assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo"))
+        postmanSettingsHelper.removeWorkspaceByModule("demo")
+        assertNull(postmanSettingsHelper.getWorkspace("demo"))
+    }
+
+    @Test
+    fun testRemoveWorkspace() {
+        assertNull(postmanSettingsHelper.getWorkspace("demo"))
+        postmanSettingsHelper.setWorkspace("demo", "123456789")
+        postmanSettingsHelper.setWorkspace("demo2", "123456789")
+        postmanSettingsHelper.setWorkspace("demo3", "987654321")
+        assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo"))
+        assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo2"))
+        assertEquals("987654321", postmanSettingsHelper.getWorkspace("demo3"))
+        postmanSettingsHelper.removeWorkspace("123456789")
+        assertNull(postmanSettingsHelper.getWorkspace("demo"))
+        assertNull(postmanSettingsHelper.getWorkspace("demo2"))
+        assertEquals("987654321", postmanSettingsHelper.getWorkspace("demo3"))
+    }
+
+    @Test
+    fun testReadWorkspaces() {
+        val properties = Properties()
+        properties["demo"] = "123456789"
+        properties["demo2"] = "123456789"
+        properties["demo3"] = "987654321"
+
+        settings.postmanWorkspaces = ByteArrayOutputStream().also { properties.store(it, "") }.toString()
+
+        assertEquals("{\"demo3\":\"987654321\",\"demo\":\"123456789\",\"demo2\":\"123456789\"}", postmanSettingsHelper.readWorkspaces().toJson())
+    }
+
 }
