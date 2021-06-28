@@ -10,6 +10,7 @@ import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.update
 import com.itangcent.idea.swing.MessagesHelper
+import com.itangcent.intellij.logger.Logger
 import java.io.ByteArrayOutputStream
 import java.util.*
 import java.util.concurrent.locks.ReadWriteLock
@@ -27,6 +28,12 @@ class PostmanSettingsHelper {
 
     @Inject
     private lateinit var postmanApiHelper: PostmanApiHelper
+
+    @Inject
+    private lateinit var postmanWorkspaceChecker: PostmanWorkspaceChecker
+
+    @Inject
+    private lateinit var logger: Logger
 
     //region privateToken----------------------------------------------------
 
@@ -104,7 +111,14 @@ class PostmanSettingsHelper {
         if (settings.postmanWorkspaces != null) {
             val properties = Properties()
             properties.load(settings.postmanWorkspaces!!.byteInputStream())
-            properties.forEach { k, v -> workspaceMap!![k.toString()] = v.toString() }
+            properties.forEach { k, v ->
+                if (postmanWorkspaceChecker.checkWorkspace(v.toString())) {
+                    workspaceMap!![k.toString()] = v.toString()
+                } else {
+                    logger.warn("workspace $v is not valid, will be removed.")
+                    removeWorkspaceByModule(k.toString())
+                }
+            }
         }
     }
 
@@ -124,15 +138,20 @@ class PostmanSettingsHelper {
             } else {
                 workspaceMap!!.clear()
             }
-            properties.forEach { t, u -> workspaceMap!![t.toString()] = u.toString() }
+            // 已经在[setWorkspace]校验过workspace
+            properties.forEach { k, v -> workspaceMap!![k.toString()] = v.toString() }
         }
     }
 
     fun setWorkspace(module: String, workspace: String) {
-        updateWorkspaces {
-            it[module] = workspace
+        if (postmanWorkspaceChecker.checkWorkspace(workspace)) {
+            updateWorkspaces {
+                it[module] = workspace
+            }
+            workspaceMap?.put(module, workspace)
+        } else {
+            logger.warn("workspace $workspace is not valid")
         }
-        workspaceMap?.put(module, workspace)
     }
 
     fun removeWorkspaceByModule(module: String) {
@@ -176,4 +195,8 @@ class PostmanSettingsHelper {
         return PostmanJson5FormatType.valueOf(settingBinder.read().postmanJson5FormatType)
     }
 
+}
+
+interface PostmanWorkspaceChecker {
+    fun checkWorkspace(workspace: String): Boolean
 }

@@ -18,10 +18,12 @@ interface PostmanApiHelper {
     fun getCollectionInfo(collectionId: String): HashMap<String, Any?>?
 
     fun getAllWorkspaces(): List<PostmanWorkspace>?
+
+    fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace?
 }
 
 data class PostmanWorkspace(
     var id: String,
     var name: String,
-    var type: String,
+    var type: String
 )

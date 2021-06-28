@@ -7,8 +7,8 @@ import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.postman.*
-import com.itangcent.idea.plugin.api.export.yapi.YapiRequestBuilderListener
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.settings.helper.PostmanWorkspaceChecker
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -29,6 +29,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
 
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
+        builder.bind(PostmanWorkspaceChecker::class) { it.with(PostmanWorkspaceCheckerSupport::class).singleton() }
 
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }

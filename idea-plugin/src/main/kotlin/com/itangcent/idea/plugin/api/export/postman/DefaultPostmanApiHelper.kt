@@ -326,6 +326,38 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    override fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace? {
+        val request = getHttpClient().get("$WORKSPACE/$workspaceId")
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+
+        try {
+            beforeRequest(request)
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspace")) {
+                    val returnObj = returnValue.asJsonElement()
+                    return returnObj.sub("workspace")
+                        ?.asMap()
+                        ?.let {
+                            PostmanWorkspace(
+                                it["id"] as String,
+                                it["name"] as String,
+                                it["type"] as String
+                            )
+                        }
+                }
+
+                onErrorResponse(response)
+
+                return null
+            }
+        } catch (e: Throwable) {
+            logger!!.traceError("Load workspaces failed", e)
+
+            return null
+        }
+    }
+
     override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().delete("$COLLECTION/$collectionId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
