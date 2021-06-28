@@ -16,4 +16,12 @@ interface PostmanApiHelper {
     fun getAllCollection(): ArrayList<HashMap<String, Any?>>?
 
     fun getCollectionInfo(collectionId: String): HashMap<String, Any?>?
+
+    fun getAllWorkspaces(): List<PostmanWorkspace>?
 }
+
+data class PostmanWorkspace(
+    var id: String,
+    var name: String,
+    var type: String,
+)

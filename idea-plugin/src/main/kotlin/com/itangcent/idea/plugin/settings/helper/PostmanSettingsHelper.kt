@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.update
@@ -23,6 +24,9 @@ class PostmanSettingsHelper {
 
     @Inject
     private lateinit var messagesHelper: MessagesHelper
+
+    @Inject
+    private lateinit var postmanApiHelper: PostmanApiHelper
 
     //region privateToken----------------------------------------------------
 
@@ -71,7 +75,7 @@ class PostmanSettingsHelper {
             }
             workspaceMap!![module]?.let { return it }
             if (!dumb && tryInputWorkspaceOfModule.add(module)) {
-                val modulePrivateWorkspace = inputNewWorkspace(module)
+                val modulePrivateWorkspace = selectWorkspace(module)
                 if (modulePrivateWorkspace.notNullOrBlank()) {
                     setWorkspace(module, modulePrivateWorkspace!!)
                     return modulePrivateWorkspace
@@ -82,12 +86,16 @@ class PostmanSettingsHelper {
         return null
     }
 
-    private fun inputNewWorkspace(module: String): String? {
+    private fun selectWorkspace(module: String): String? {
         val inputTitle = "Workspace"
-        return messagesHelper.showInputDialog(
-            "Input $inputTitle Of Module:$module",
-            "Postman $inputTitle", Messages.getInformationIcon()
-        )
+        val workspaces = postmanApiHelper.getAllWorkspaces() ?: return null
+        val workspaceMap = workspaces.map { it.name to it.id }.toMap()
+        return messagesHelper.showEditableChooseDialog(
+            "Select $inputTitle Of Module:$module",
+            "Postman $inputTitle",
+            Messages.getInformationIcon(),
+            workspaceMap.keys.sorted().toTypedArray()
+        )?.let { workspaceMap[it] }
     }
 
     private fun initWorkspace() {
