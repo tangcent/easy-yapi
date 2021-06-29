@@ -2,6 +2,8 @@ package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
 import com.itangcent.common.kit.toJson
+import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
@@ -34,6 +36,14 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
         )
             .thenReturn(null, "123")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
+
+        val postmanWorkspaceChecker = object : PostmanWorkspaceChecker {
+            override fun checkWorkspace(workspace: String): Boolean {
+                return true
+            }
+        }
+        builder.bindInstance(PostmanWorkspaceChecker::class, postmanWorkspaceChecker)
+        builder.bindInstance(PostmanApiHelper::class, PostmanCachedApiHelper())
     }
 
     @Test
