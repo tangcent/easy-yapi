@@ -45,6 +45,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     var postmanApiTree: JTree? = null
     override var projectApiPanel: JPanel? = null
     var postmanPanel: JPanel? = null
+    var postmanWorkspaceComboBox: JComboBox<String>? = null
     override var projectApModeButton: JButton? = null
     override var projectCollapseButton: JButton? = null
 
@@ -62,6 +63,11 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
     @Inject
     private val postmanFormatter: PostmanFormatter? = null
+
+    // workspaceName -> workspaceId
+    private val postmanWorkspaceMap = mutableMapOf<String, String>()
+
+    private var selectedPostmanWorkspaceName:String? = null
 
     init {
         setContentPane(contentPane)
@@ -155,6 +161,11 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 }
             }
         })
+
+        postmanWorkspaceComboBox!!.addItemListener {
+            selectedPostmanWorkspaceName = it.item as String
+            loadPostmanCollection(true)
+        }
     }
 
     @PostConstruct
@@ -189,8 +200,9 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             autoComputer.value(this::postmanAvailable, false)
             tryInputPostmanPrivateToken()
         } else {
-            loadPostmanInfo(true)
+            loadPostmanWorkspace()
         }
+        loadPostmanCollection(true)
 
         //drop drag from api to postman
         DropTarget(this.postmanApiTree, DnDConstants.ACTION_COPY_OR_MOVE, object : DropTargetAdapter() {
@@ -234,7 +246,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
         this.postmanSyncButton!!.addActionListener {
             ((this.postmanApiTree!!.model as DefaultTreeModel).root as DefaultMutableTreeNode).removeAllChildren()
-            loadPostmanInfo(false)
+            loadPostmanCollection(false)
         }
 
         this.postmanNewCollectionButton!!.addActionListener {
@@ -249,17 +261,17 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             val postmanPrivateToken = postmanSettingsHelper.getPrivateToken(false)
             if (postmanPrivateToken.notNullOrBlank()) {
                 autoComputer.value(this::postmanAvailable, true)
-                loadPostmanInfo(true)
+                loadPostmanWorkspace()
             }
         }
     }
 
-    private fun loadPostmanInfo(useCache: Boolean) {
+    private fun loadPostmanWorkspace() {
 
         if (!postmanSettingsHelper.hasPrivateToken()) {
             actionContext!!.runInSwingUI {
                 Messages.showErrorDialog(this,
-                        "load postman info failed,no token be found", "Error")
+                        "load postman workspace failed,no token be found", "Error")
             }
             logger!!.info("If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
                     " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api].")
@@ -267,23 +279,58 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
 
         actionContext!!.runInSwingUI {
-            //            postmanApiTree!!.dragEnabled = true
-            val treeNode = DefaultMutableTreeNode()
-            val rootTreeModel = DefaultTreeModel(treeNode, true)
-
             actionContext!!.runAsync {
-
-                val collections = postmanCachedApiHelper.getAllCollection(useCache)
-                if (collections.isNullOrEmpty()) {
-                    if (collections == null) {
-                        actionContext!!.runInSwingUI {
-                            Messages.showErrorDialog(actionContext!!.instance(Project::class),
-                                    "load postman info failed", "Error")
+                val workspaces = postmanCachedApiHelper.getAllWorkspaces()
+                if(workspaces.isNullOrEmpty()) {
+                    if (workspaces == null) {
+                        actionContext.runInSwingUI {
+                            Messages.showErrorDialog(actionContext.instance(Project::class),
+                                "load postman workspace failed", "Error")
                         }
                     } else {
-                        actionContext!!.runInSwingUI {
-                            Messages.showErrorDialog(actionContext!!.instance(Project::class),
-                                    "No collection be found", "Error")
+                        actionContext.runInSwingUI {
+                            Messages.showErrorDialog(actionContext.instance(Project::class),
+                                "No workspace be found", "Error")
+                        }
+                    }
+                    return@runAsync
+                }
+                // clean workspace map
+                postmanWorkspaceMap.clear()
+                postmanWorkspaceComboBox!!.removeAllItems()
+                workspaces.forEach {
+                    postmanWorkspaceMap[it.name] = it.id
+                    postmanWorkspaceComboBox!!.addItem(it.name)
+                    if(selectedPostmanWorkspaceName.isNullOrEmpty()){
+                        postmanSettingsHelper.getWorkspace(project!!.name, true)
+                            ?.let { workspaceId ->
+                                selectedPostmanWorkspaceName = postmanWorkspaceMap.map { r -> r.value to r.key }.toMap()[workspaceId]
+                            }
+                    }
+                    postmanWorkspaceComboBox!!.selectedItem = selectedPostmanWorkspaceName
+                }
+            }
+        }
+    }
+
+    private fun loadPostmanCollection(useCache: Boolean) {
+        //            postmanApiTree!!.dragEnabled = true
+        val treeNode = DefaultMutableTreeNode()
+        val rootTreeModel = DefaultTreeModel(treeNode, true)
+        actionContext.runInSwingUI {
+            actionContext.runAsync {
+                val collections = if(selectedPostmanWorkspaceName.isNullOrEmpty()) postmanCachedApiHelper.getAllCollection(useCache)
+                else postmanCachedApiHelper.getCollectionByWorkspace(postmanWorkspaceMap[selectedPostmanWorkspaceName]!!)
+                if (collections.isNullOrEmpty()) {
+                    if (collections == null) {
+                        actionContext.runInSwingUI {
+                            Messages.showErrorDialog(actionContext.instance(Project::class),
+                                "load postman info failed", "Error")
+                        }
+                    } else {
+                        actionContext.runInSwingUI {
+                            Messages.showErrorDialog(actionContext.instance(Project::class),
+                                "No collection be found", "Error")
                         }
                     }
 
@@ -291,7 +338,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 }
                 val collectionNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
 
-                actionContext!!.runInSwingUI {
+                actionContext.runInSwingUI {
                     for (collection in collections) {
                         val collectionNode = PostmanCollectionNodeData(collection).asTreeNode()
                         treeNode.add(collectionNode)
@@ -397,7 +444,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 collection["info"] = info
                 collection["item"] = ArrayList<Any?>()
 
-                val createdCollection = postmanCachedApiHelper!!.createCollection(collection)
+                val createdCollection = postmanCachedApiHelper.createCollection(collection, postmanWorkspaceMap[selectedPostmanWorkspaceName])
                 if (createdCollection == null) {
                     logger!!.error("create collection failed")
                 } else {
