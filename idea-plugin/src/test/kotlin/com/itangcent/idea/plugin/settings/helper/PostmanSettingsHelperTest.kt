@@ -109,7 +109,7 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
         assertNull(postmanSettingsHelper.getWorkspace("demo"))
         postmanSettingsHelper.setWorkspace("demo", "123456789")
         assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo"))
-        postmanSettingsHelper.removeWorkspaceByModule("demo")
+        postmanSettingsHelper.removeWorkspaceByProject("demo")
         assertNull(postmanSettingsHelper.getWorkspace("demo"))
     }
 

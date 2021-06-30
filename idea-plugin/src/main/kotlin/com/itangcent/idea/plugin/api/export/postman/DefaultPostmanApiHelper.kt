@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
+import com.intellij.openapi.project.Project
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.asInt
@@ -56,7 +57,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     protected lateinit var actionContext: ActionContext
 
     @Inject
-    protected lateinit var moduleHelper: ModuleHelper
+    protected lateinit var project: Project
 
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
@@ -113,16 +114,15 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
      * @return collection id
      */
     override fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>? {
-        // get workspace
-        val module = actionContext.callInReadUI { moduleHelper.findModuleByPath(ActionUtils.findCurrentPath()) }
-        val workspace = module?.let { postmanSettingsHelper.getWorkspace(it, false) }
         val request = getHttpClient()
                 .post(COLLECTION)
                 .contentType(ContentType.APPLICATION_JSON)
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
                 .body(KV.by("collection", collection))
 
-        workspace?.let { request.query("workspace", it) }
+        // get workspace
+        postmanSettingsHelper.getWorkspace(project.name, false)
+            ?.let { request.query("workspace", it) }
 
         try {
             beforeRequest(request)

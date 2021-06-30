@@ -65,26 +65,26 @@ class PostmanSettingsHelper {
 
     /**
      * Workspace in setting.
-     * Map<module, workspace>
+     * Map<projectName, workspace>
      */
     private var workspaceMap: HashMap<String, String?>? = null
 
-    fun getWorkspace(module: String, dumb: Boolean = true): String? {
+    fun getWorkspace(projectName: String, dumb: Boolean = true): String? {
         cacheLock.readLock().withLock {
             if (workspaceMap != null) {
-                return workspaceMap!![module]
+                return workspaceMap!![projectName]
             }
         }
         cacheLock.writeLock().withLock {
             if (workspaceMap == null) {
                 initWorkspace()
             }
-            workspaceMap!![module]?.let { return it }
-            if (!dumb && tryInputWorkspaceOfModule.add(module)) {
-                val modulePrivateWorkspace = selectWorkspace(module)
-                if (modulePrivateWorkspace.notNullOrBlank()) {
-                    setWorkspace(module, modulePrivateWorkspace!!)
-                    return modulePrivateWorkspace
+            workspaceMap!![projectName]?.let { return it }
+            if (!dumb && tryInputWorkspaceOfModule.add(projectName)) {
+                val workspace = selectWorkspace(projectName)
+                if (workspace.notNullOrBlank()) {
+                    setWorkspace(projectName, workspace!!)
+                    return workspace
                 }
             }
         }
@@ -92,12 +92,12 @@ class PostmanSettingsHelper {
         return null
     }
 
-    private fun selectWorkspace(module: String): String? {
+    private fun selectWorkspace(projectName: String): String? {
         val inputTitle = "Workspace"
         val workspaces = postmanApiHelper.getAllWorkspaces() ?: return null
         val workspaceMap = workspaces.map { it.name to it.id }.toMap()
         return messagesHelper.showEditableChooseDialog(
-            "Select $inputTitle Of Module:$module",
+            "Select $inputTitle Of Project:$projectName",
             "Postman $inputTitle",
             Messages.getInformationIcon(),
             workspaceMap.keys.sorted().toTypedArray()
@@ -115,7 +115,7 @@ class PostmanSettingsHelper {
                     workspaceMap!![k.toString()] = v.toString()
                 } else {
                     logger.warn("workspace $v is not valid, will be removed.")
-                    removeWorkspaceByModule(k.toString())
+                    removeWorkspaceByProject(k.toString())
                 }
             }
         }
@@ -142,22 +142,22 @@ class PostmanSettingsHelper {
         }
     }
 
-    fun setWorkspace(module: String, workspace: String) {
+    fun setWorkspace(projectName: String, workspace: String) {
         if (postmanWorkspaceChecker.checkWorkspace(workspace)) {
             updateWorkspaces {
-                it[module] = workspace
+                it[projectName] = workspace
             }
-            workspaceMap?.put(module, workspace)
+            workspaceMap?.put(projectName, workspace)
         } else {
             logger.warn("workspace $workspace is not valid")
         }
     }
 
-    fun removeWorkspaceByModule(module: String) {
+    fun removeWorkspaceByProject(projectName: String) {
         updateWorkspaces {
-            it.remove(module)
+            it.remove(projectName)
         }
-        workspaceMap?.remove(module)
+        workspaceMap?.remove(projectName)
     }
 
     fun removeWorkspace(workspace: String) {
