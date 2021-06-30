@@ -194,9 +194,7 @@ class Settings {
         const val DEFAULT_INFER_MAX_DEEP = 4
 
         val DEFAULT_TRUST_HOSTS: Array<String> =
-            arrayOf(
-                "https://raw.githubusercontent.com/tangcent",
-                "https://api.getpostman.com"
-            )
+            arrayOf("https://raw.githubusercontent.com/tangcent",
+                "https://api.getpostman.com")
     }
 }

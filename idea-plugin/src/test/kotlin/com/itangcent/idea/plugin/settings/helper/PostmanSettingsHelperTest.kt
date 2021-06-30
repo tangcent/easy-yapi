@@ -28,12 +28,8 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
         super.bind(builder)
 
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)
-        Mockito.`when`(
-            messagesHelper.showInputDialog(
-                Mockito.anyString(),
-                Mockito.eq("Postman Private Token"), Mockito.any()
-            )
-        )
+        Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
+            Mockito.eq("Postman Private Token"), Mockito.any()))
             .thenReturn(null, "123")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
 

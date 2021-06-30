@@ -72,20 +72,19 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             return
         }
         if (returnValue.contains("AuthenticationError")
-            && returnValue.contains("Invalid API Key")
-        ) {
+            && returnValue.contains("Invalid API Key")) {
             logger!!.error("Authentication failed!")
             return
         }
         val returnObj = returnValue.asJsonElement()
         val errorName = returnObj
-            .sub("error")
-            .sub("name")
-            ?.asString
+                .sub("error")
+                .sub("name")
+                ?.asString
         val errorMessage = returnObj?.asJsonObject
-            .sub("error")
-            .sub("message")
-            ?.asString
+                .sub("error")
+                .sub("message")
+                ?.asString
 
         if (response.code() == 429) {
 
@@ -118,10 +117,10 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         val module = actionContext.callInReadUI { moduleHelper.findModuleByPath(ActionUtils.findCurrentPath()) }
         val workspace = module?.let { postmanSettingsHelper.getWorkspace(it, false) }
         val request = getHttpClient()
-            .post(COLLECTION)
-            .contentType(ContentType.APPLICATION_JSON)
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-            .body(KV.by("collection", collection))
+                .post(COLLECTION)
+                .contentType(ContentType.APPLICATION_JSON)
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+                .body(KV.by("collection", collection))
 
         if (workspace != null) {
             request.query("workspace", workspace)
@@ -171,32 +170,32 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         if (apiInfo.containsKey("item")) {
             val items = apiInfo["item"] as List<*>? ?: return
             apiInfo["item"] = items
-                .stream()
-                .map { it as Map<String, Any?> }
-                .map { it.asHashMap() }
-                .peek { item ->
-                    tryFixCollection(item)
-                }
-                .toList()
+                    .stream()
+                    .map { it as Map<String, Any?> }
+                    .map { it.asHashMap() }
+                    .peek { item ->
+                        tryFixCollection(item)
+                    }
+                    .toList()
         } else {
             val responses = apiInfo["response"] as List<*>?
             if (responses != null) {
                 apiInfo["response"] = responses
-                    .stream()
-                    .map { it as Map<String, Any?> }
-                    .map { it.asHashMap() }
-                    .peek { response ->
-                        val responseCode = response["code"]
-                        if (responseCode != null) {
-                            when (responseCode) {
-                                is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] =
-                                    responseCode["value"].asInt() ?: 200
-                                is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
-                                is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
+                        .stream()
+                        .map { it as Map<String, Any?> }
+                        .map { it.asHashMap() }
+                        .peek { response ->
+                            val responseCode = response["code"]
+                            if (responseCode != null) {
+                                when (responseCode) {
+                                    is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] =
+                                        responseCode["value"].asInt() ?: 200
+                                    is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
+                                    is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
+                                }
                             }
                         }
-                    }
-                    .toList()
+                        .toList()
             }
         }
     }
@@ -204,9 +203,9 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private fun doUpdateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
 
         val request = getHttpClient().put("$COLLECTION/$collectionId")
-            .contentType(ContentType.APPLICATION_JSON)
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-            .body(KV.by("collection", apiInfo))
+                .contentType(ContentType.APPLICATION_JSON)
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+                .body(KV.by("collection", apiInfo))
 
         try {
             beforeRequest(request)
@@ -216,9 +215,9 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                     val returnObj = returnValue.asJsonElement()
                     val collectionName = returnObj
-                        .sub("collection")
-                        .sub("name")
-                        ?.asString
+                            .sub("collection")
+                            .sub("name")
+                            ?.asString
                     if (collectionName.notNullOrBlank()) {
                         return true
                     }
@@ -236,7 +235,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun getAllCollection(): ArrayList<HashMap<String, Any?>>? {
         val request = getHttpClient().get(COLLECTION)
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
         try {
             beforeRequest(request)
@@ -245,7 +244,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collections")) {
                     val returnObj = returnValue.asJsonElement()
                     val collections = returnObj.sub("collections")
-                        ?.asJsonArray ?: return null
+                            ?.asJsonArray ?: return null
                     val collectionList: ArrayList<HashMap<String, Any?>> = ArrayList()
                     collections.forEach { collectionList.add(it.asMap()) }
                     return collectionList
@@ -264,7 +263,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().get("$COLLECTION/$collectionId")
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
             call(request).use { response ->
@@ -273,8 +272,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                     val returnObj = returnValue.asJsonElement()
                     return returnObj
-                        .sub("collection")
-                        ?.asMap()
+                            .sub("collection")
+                            ?.asMap()
                 }
 
                 onErrorResponse(response)
@@ -359,7 +358,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().delete("$COLLECTION/$collectionId")
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
             call(request).use { response ->
@@ -368,8 +367,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                     val returnObj = returnValue.asJsonElement()
                     return returnObj
-                        .sub("collection")
-                        ?.asMap()
+                            .sub("collection")
+                            ?.asMap()
                 }
 
                 onErrorResponse(response)
