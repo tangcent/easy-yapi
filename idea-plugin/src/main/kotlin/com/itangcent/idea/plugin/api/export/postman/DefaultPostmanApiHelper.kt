@@ -72,7 +72,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             return
         }
         if (returnValue.contains("AuthenticationError")
-            && returnValue.contains("Invalid API Key")) {
+                && returnValue.contains("Invalid API Key")) {
             logger!!.error("Authentication failed!")
             return
         }
@@ -189,7 +189,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                             if (responseCode != null) {
                                 when (responseCode) {
                                     is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] =
-                                        responseCode["value"].asInt() ?: 200
+                                            responseCode["value"].asInt() ?: 200
                                     is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                     is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                 }

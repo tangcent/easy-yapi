@@ -45,8 +45,8 @@ class PostmanSettingsHelper {
         settingBinder.read().postmanToken?.let { return it.trim() }
         if (!dumb) {
             val postmanPrivateToken = messagesHelper.showInputDialog(
-                "Input Postman Private Token",
-                "Postman Private Token", Messages.getInformationIcon())
+                    "Input Postman Private Token",
+                    "Postman Private Token", Messages.getInformationIcon())
             if (postmanPrivateToken.isNullOrBlank()) return null
             settingBinder.update {
                 it.postmanToken = postmanPrivateToken
