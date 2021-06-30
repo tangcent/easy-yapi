@@ -301,12 +301,10 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 workspaces.forEach {
                     postmanWorkspaceMap[it.name] = it.id
                     postmanWorkspaceComboBox!!.addItem(it.name)
-                    if(selectedPostmanWorkspaceName.isNullOrEmpty()){
-                        postmanSettingsHelper.getWorkspace(project!!.name, true)
-                            ?.let { workspaceId ->
-                                selectedPostmanWorkspaceName = postmanWorkspaceMap.map { r -> r.value to r.key }.toMap()[workspaceId]
-                            }
-                    }
+                    postmanSettingsHelper.getWorkspace(project!!.name, true)
+                        ?.let { workspaceId ->
+                            selectedPostmanWorkspaceName = postmanWorkspaceMap.map { r -> r.value to r.key }.toMap()[workspaceId]
+                        }
                     postmanWorkspaceComboBox!!.selectedItem = selectedPostmanWorkspaceName
                 }
             }
