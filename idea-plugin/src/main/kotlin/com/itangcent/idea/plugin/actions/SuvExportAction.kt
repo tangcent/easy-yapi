@@ -10,9 +10,13 @@ import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
 import com.itangcent.idea.plugin.api.export.generic.SimpleGenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.generic.SimpleGenericRequestClassExporter
+import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspaceCheckerSupport
 import com.itangcent.idea.plugin.api.export.spring.SimpleSpringRequestClassExporter
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.settings.helper.PostmanWorkspaceChecker
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -58,6 +62,9 @@ class SuvExportAction : ApiExportAction("Export Api") {
         builder.cache("DATA_EVENT_COLLECTOR", dataEventCollector)
 
         dataEventCollector = null
+
+        builder.bind(PostmanWorkspaceChecker::class) { it.with(PostmanWorkspaceCheckerSupport::class).singleton() }
+        builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
 
     }
 
