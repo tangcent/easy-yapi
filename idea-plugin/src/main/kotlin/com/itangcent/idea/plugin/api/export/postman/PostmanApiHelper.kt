@@ -4,7 +4,7 @@ interface PostmanApiHelper {
     /**
      * @return collection id
      */
-    fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>?
+    fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>?
 
     fun updateCollection(collectionId: String, collectionInfo: HashMap<String, Any?>): Boolean
 

@@ -47,6 +47,9 @@ class PostmanApiExporter {
     @Inject
     private val postmanFormatter: PostmanFormatter? = null
 
+    @Inject
+    private lateinit var project: Project
+
     fun export() {
         logger!!.info("Start find apis...")
         val requests: MutableList<Request> = Collections.synchronizedList(ArrayList<Request>())
@@ -90,7 +93,9 @@ class PostmanApiExporter {
                             try {
                                 if (postmanSettingsHelper.hasPrivateToken()) {
                                     logger.info("PrivateToken of postman be found")
-                                    val createdCollection = postmanApiHelper.createCollection(postman)
+                                    // get workspace
+                                    val workspaceId = postmanSettingsHelper.getWorkspace(project.name, false)
+                                    val createdCollection = postmanApiHelper.createCollection(postman, workspaceId)
 
                                     if (createdCollection.notNullOrEmpty()) {
                                         val collectionName = createdCollection!!.getAs<String>("name")

@@ -31,8 +31,8 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         return this.dbBeanBinderFactory!!
     }
 
-    override fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>? {
-        val createdCollection: HashMap<String, Any?> = super.createCollection(collection) ?: return null
+    override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>? {
+        val createdCollection: HashMap<String, Any?> = super.createCollection(collection, workspaceId) ?: return null
 
         val collectionId = createdCollection["id"]?.toString() ?: return null
 

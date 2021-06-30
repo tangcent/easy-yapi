@@ -56,9 +56,6 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     @Inject
     protected lateinit var actionContext: ActionContext
 
-    @Inject
-    protected lateinit var project: Project
-
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
     protected open fun beforeRequest(request: HttpRequest) {
@@ -113,16 +110,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     /**
      * @return collection id
      */
-    override fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>? {
+    override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>? {
         val request = getHttpClient()
                 .post(COLLECTION)
                 .contentType(ContentType.APPLICATION_JSON)
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
                 .body(KV.by("collection", collection))
 
-        // get workspace
-        postmanSettingsHelper.getWorkspace(project.name, false)
-            ?.let { request.query("workspace", it) }
+        workspaceId?.let { request.query("workspace", it) }
 
         try {
             beforeRequest(request)
