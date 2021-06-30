@@ -122,9 +122,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
                 .body(KV.by("collection", collection))
 
-        if (workspace != null) {
-            request.query("workspace", workspace)
-        }
+        workspace?.let { request.query("workspace", it) }
 
         try {
             beforeRequest(request)
