@@ -251,7 +251,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    override fun getCollectionByWorkspace(workspaceId: String): List<HashMap<String, Any?>>? {
+    override fun getCollectionByWorkspace(workspaceId: String): ArrayList<HashMap<String, Any?>>? {
         val request = getHttpClient().get("$WORKSPACE/$workspaceId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
@@ -264,8 +264,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                     val collections = returnObj
                         .sub("workspace")
                         .sub("collections")
-                        ?.asJsonArray ?: return null
-                    val collectionList = mutableListOf<HashMap<String, Any?>>()
+                        ?.asJsonArray ?: return arrayListOf()
+                    val collectionList = arrayListOf<HashMap<String, Any?>>()
                     collections.forEach { collectionList.add(it.asMap()) }
                     return collectionList
                 }
