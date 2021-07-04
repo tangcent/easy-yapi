@@ -11,12 +11,27 @@ class PsiClassResource : PsiResource {
         this.psiClass = psiClass
     }
 
-    override fun resourceClass(): PsiClass? {
+    override fun resourceClass(): PsiClass {
         return psiClass
     }
 
-    override fun resource(): PsiElement? {
+    override fun resource(): PsiElement {
         return psiClass
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PsiClassResource
+
+        if (psiClass != other.psiClass) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return psiClass.hashCode()
     }
 
 }
