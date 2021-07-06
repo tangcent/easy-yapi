@@ -14,11 +14,11 @@ class PsiMethodResource : PsiResource {
         this.psiClass = psiClass
     }
 
-    override fun resourceClass(): PsiClass? {
+    override fun resourceClass(): PsiClass {
         return psiClass
     }
 
-    override fun resource(): PsiElement? {
+    override fun resource(): PsiElement {
         return psiMethod
     }
 

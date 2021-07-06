@@ -393,6 +393,9 @@ class SuvApiExporter {
         @Inject
         private val postmanFormatter: PostmanFormatter? = null
 
+        @Inject
+        private lateinit var project: Project
+
         override fun actionName(): String {
             return "PostmanExportAction"
         }
@@ -445,7 +448,9 @@ class SuvApiExporter {
                 docs.clear()
                 if (postmanSettingsHelper.hasPrivateToken()) {
                     logger!!.info("PrivateToken of postman be found")
-                    val createdCollection = postmanApiHelper.createCollection(postman)
+                    // get workspace
+                    val workspaceId = postmanSettingsHelper.getWorkspace(project.name, false)
+                    val createdCollection = postmanApiHelper.createCollection(postman, workspaceId)
 
                     if (createdCollection.notNullOrEmpty()) {
                         val collectionName = createdCollection!!["name"]?.toString()

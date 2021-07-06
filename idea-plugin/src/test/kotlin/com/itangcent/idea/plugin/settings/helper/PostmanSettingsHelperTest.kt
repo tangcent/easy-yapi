@@ -29,8 +29,8 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
 
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
-            Mockito.eq("Postman Private Token"), Mockito.any()))
-            .thenReturn(null, "123")
+                Mockito.eq("Postman Private Token"), Mockito.any()))
+                .thenReturn(null, "123")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
 
         val postmanWorkspaceChecker = object : PostmanWorkspaceChecker {
@@ -109,7 +109,7 @@ internal class PostmanSettingsHelperTest : SettingsHelperTest() {
         assertNull(postmanSettingsHelper.getWorkspace("demo"))
         postmanSettingsHelper.setWorkspace("demo", "123456789")
         assertEquals("123456789", postmanSettingsHelper.getWorkspace("demo"))
-        postmanSettingsHelper.removeWorkspaceByModule("demo")
+        postmanSettingsHelper.removeWorkspaceByProject("demo")
         assertNull(postmanSettingsHelper.getWorkspace("demo"))
     }
 

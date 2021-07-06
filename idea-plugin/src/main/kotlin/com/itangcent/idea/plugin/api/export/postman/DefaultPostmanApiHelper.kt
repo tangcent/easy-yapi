@@ -15,13 +15,11 @@ import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.*
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.http.entity.ContentType
 import java.util.concurrent.Semaphore
@@ -55,9 +53,6 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     @Inject
     protected lateinit var actionContext: ActionContext
 
-    @Inject
-    protected lateinit var moduleHelper: ModuleHelper
-
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
     protected open fun beforeRequest(request: HttpRequest) {
@@ -72,7 +67,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             return
         }
         if (returnValue.contains("AuthenticationError")
-            && returnValue.contains("Invalid API Key")) {
+                && returnValue.contains("Invalid API Key")) {
             logger!!.error("Authentication failed!")
             return
         }
@@ -112,17 +107,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     /**
      * @return collection id
      */
-    override fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>? {
-        // get workspace
-        val module = actionContext.callInReadUI { moduleHelper.findModuleByPath(ActionUtils.findCurrentPath()) }
-        val workspace = module?.let { postmanSettingsHelper.getWorkspace(it, false) }
+    override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>? {
         val request = getHttpClient()
                 .post(COLLECTION)
                 .contentType(ContentType.APPLICATION_JSON)
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
                 .body(KV.by("collection", collection))
 
-        workspace?.let { request.query("workspace", it) }
+        workspaceId?.let { request.query("workspace", it) }
 
         try {
             beforeRequest(request)
@@ -187,7 +179,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                             if (responseCode != null) {
                                 when (responseCode) {
                                     is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] =
-                                        responseCode["value"].asInt() ?: 200
+                                            responseCode["value"].asInt() ?: 200
                                     is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                     is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
                                 }
@@ -255,6 +247,35 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         } catch (e: Throwable) {
             logger!!.traceError("Load collections failed", e)
 
+            return null
+        }
+    }
+
+    override fun getCollectionByWorkspace(workspaceId: String): ArrayList<HashMap<String, Any?>>? {
+        val request = getHttpClient().get("$WORKSPACE/$workspaceId")
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+
+        try {
+            beforeRequest(request)
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspace")) {
+                    val returnObj = returnValue.asJsonElement()
+                    val collections = returnObj
+                        .sub("workspace")
+                        .sub("collections")
+                        ?.asJsonArray ?: return arrayListOf()
+                    val collectionList = arrayListOf<HashMap<String, Any?>>()
+                    collections.forEach { collectionList.add(it.asMap()) }
+                    return collectionList
+                }
+
+                onErrorResponse(response)
+
+                return null
+            }
+        } catch (e: Throwable) {
+            logger!!.traceError("Load collections of workspace $workspaceId failed", e)
             return null
         }
     }
