@@ -6,6 +6,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
 import kotlin.math.abs
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
@@ -22,7 +23,12 @@ internal class DefaultSystemProviderTest : AdvancedContextTest() {
     }
 
     @Test
-    fun currentTimeMillis() {
+    fun testCurrentTimeMillis() {
         assertTrue(abs(systemProvider.currentTimeMillis() - System.currentTimeMillis()) < 5)
+    }
+
+    @Test
+    fun testRunTime() {
+        assertEquals(Runtime.getRuntime(), systemProvider.runtime())
     }
 }

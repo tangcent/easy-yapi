@@ -14,6 +14,9 @@ abstract class FileMarkdownRender : MarkdownRender {
     protected val idx = AtomicInteger()
 
     override fun render(markdown: String): String? {
+        if (markdown.isBlank()) {
+            return null
+        }
         var tempFile: File? = null
         var htmlFile: File? = null
         try {
@@ -23,8 +26,8 @@ abstract class FileMarkdownRender : MarkdownRender {
             if (!renderFile(tempFile.canonicalPath)) {
                 return null
             }
-            htmlFile = localFileRepository.getOrCreateFile("$tempFileName.html")
-            return FileUtils.read(htmlFile)
+            htmlFile = localFileRepository.getFile("$tempFileName.html")
+            return htmlFile?.let { FileUtils.read(it) }
         } finally {
             tempFile?.let { FileUtils.remove(it) }
             htmlFile?.let { FileUtils.remove(it) }
@@ -32,7 +35,7 @@ abstract class FileMarkdownRender : MarkdownRender {
     }
 
     open protected fun tempFileName(): String {
-        return ".temp${System.currentTimeMillis()}$idx"
+        return ".temp${System.currentTimeMillis()}${idx.getAndIncrement()}"
     }
 
     abstract fun renderFile(tempFile: String): Boolean

@@ -23,19 +23,22 @@ import java.util.concurrent.atomic.AtomicInteger
 open class RemoteMarkdownRender : MarkdownRender {
 
     @Inject
-    protected val httpClientProvide: HttpClientProvider? = null
+    protected lateinit var httpClientProvider: HttpClientProvider
 
     @Inject
-    protected val configReader: ConfigReader? = null
+    protected lateinit var configReader: ConfigReader
 
     @Inject
-    protected val logger: Logger? = null
+    protected lateinit var logger: Logger
 
     private val semaphore = Semaphore(3)
 
     private val cnt = AtomicInteger(0)
 
     override fun render(markdown: String): String? {
+        if (markdown.isBlank()) {
+            return null
+        }
         return try {
             if (cnt.incrementAndGet() > 2) {
                 semaphore.acquire()
@@ -53,10 +56,9 @@ open class RemoteMarkdownRender : MarkdownRender {
     }
 
     protected fun doRender(markdown: String): String? {
-
-        val server = configReader!!.first("markdown.render.server") ?: return null
+        val server = configReader.first("markdown.render.server") ?: return null
         try {
-            httpClientProvide!!.getHttpClient().post(server)
+            httpClientProvider.getHttpClient().post(server)
                     .contentType(ContentType.TEXT_PLAIN)
                     .body(markdown)
                     .call()
@@ -64,12 +66,11 @@ open class RemoteMarkdownRender : MarkdownRender {
                         if (httpResponse.code() == 200) {
                             return httpResponse.string()
                         }
-                        logger!!.warn(" try render markdown with $server,but response code is ${httpResponse.code()}, response is:${httpResponse.string()}")
+                        logger.warn("try render markdown with [$server], but response code is ${httpResponse.code()}, response is:${httpResponse.string()}")
                     }
         } catch (e: Exception) {
-            logger!!.traceError(" try render markdown with $server failed", e)
+            logger.traceError("try render markdown with [$server] failed", e)
         }
-
         return null
     }
 }
