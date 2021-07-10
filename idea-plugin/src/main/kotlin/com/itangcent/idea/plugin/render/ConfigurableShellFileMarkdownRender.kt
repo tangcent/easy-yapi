@@ -21,17 +21,17 @@ import com.itangcent.intellij.config.ConfigReader
 class ConfigurableShellFileMarkdownRender : ShellFileMarkdownRender() {
 
     @Inject
-    private val configReader: ConfigReader? = null
+    private lateinit var configReader: ConfigReader
 
     override fun getRenderShell(): String? {
-        return configReader!!.first("markdown.render.shell")
+        return configReader.first("markdown.render.shell")
     }
 
     override fun getWorkDir(): String? {
-        return configReader!!.first("markdown.render.work.dir")
+        return configReader.first("markdown.render.work.dir")
     }
 
     override fun getTimeOut(): Long? {
-        return configReader!!.first("markdown.render.timeout")?.toLong()
+        return configReader.first("markdown.render.timeout")?.toLong()
     }
 }

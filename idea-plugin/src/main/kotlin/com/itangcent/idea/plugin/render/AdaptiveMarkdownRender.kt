@@ -2,18 +2,18 @@ package com.itangcent.idea.plugin.render
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.itangcent.common.logger.traceError
 import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 
 @Singleton
 class AdaptiveMarkdownRender : MarkdownRender {
 
     @Inject
-    private val configurableShellFileMarkdownRender: ConfigurableShellFileMarkdownRender? = null
-
-    @Inject
-    private val remoteMarkdownRender: RemoteMarkdownRender? = null
+    private lateinit var actionContext: ActionContext
 
     @Inject
     private val configReader: ConfigReader? = null
@@ -21,7 +21,10 @@ class AdaptiveMarkdownRender : MarkdownRender {
     @Inject
     private val contextSwitchListener: ContextSwitchListener? = null
 
-    private var availableRender: ArrayList<MarkdownRender>? = null
+    private var availableRenders: ArrayList<MarkdownRender>? = null
+
+    @Inject
+    private lateinit var logger: Logger
 
     @Volatile
     private var init = false
@@ -30,7 +33,7 @@ class AdaptiveMarkdownRender : MarkdownRender {
     fun init() {
         contextSwitchListener!!.onModuleChange {
             synchronized(this) {
-                availableRender = null
+                availableRenders = null
                 init = false
             }
         }
@@ -54,21 +57,26 @@ class AdaptiveMarkdownRender : MarkdownRender {
     protected fun findAvailableRender() {
         val availableRender = ArrayList<MarkdownRender>()
         if (!configReader!!.first("markdown.render.shell").isNullOrBlank()) {
-            availableRender.add(configurableShellFileMarkdownRender!!)
+            availableRender.add(actionContext.instance(ConfigurableShellFileMarkdownRender::class))
         }
         if (!configReader.first("markdown.render.server").isNullOrBlank()) {
-            availableRender.add(remoteMarkdownRender!!)
+            availableRender.add(actionContext.instance(RemoteMarkdownRender::class))
         }
-        this.availableRender = availableRender
+        availableRender.add(actionContext.instance(BundledMarkdownRender::class))
+        this.availableRenders = availableRender
     }
 
     override fun render(markdown: String): String? {
         tryInit()
-        val renders = availableRender ?: return null
+        val renders = availableRenders ?: return null
         for (markdownRender in renders) {
-            val html = markdownRender.render(markdown)
-            if (html != null) {
-                return html
+            try {
+                val html = markdownRender.render(markdown)
+                if (html != null) {
+                    return html
+                }
+            } catch (e: Throwable) {
+                logger.traceError("failed render markdown with $markdownRender", e)
             }
         }
         return null
