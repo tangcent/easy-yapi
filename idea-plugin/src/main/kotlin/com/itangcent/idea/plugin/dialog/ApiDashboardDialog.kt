@@ -159,7 +159,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
         postmanWorkspaceComboBox!!.addItemListener {
             if(it.stateChange == ItemEvent.SELECTED) {
-                loadPostmanCollection(true)
+                loadPostmanCollection(true, it.item.toString())
             }
         }
     }
@@ -197,8 +197,8 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             tryInputPostmanPrivateToken()
         } else {
             loadPostmanWorkspace()
+            loadPostmanCollection(true)
         }
-        loadPostmanCollection(true)
 
         //drop drag from api to postman
         DropTarget(this.postmanApiTree, DnDConstants.ACTION_COPY_OR_MOVE, object : DropTargetAdapter() {
@@ -242,6 +242,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
         this.postmanSyncButton!!.addActionListener {
             ((this.postmanApiTree!!.model as DefaultTreeModel).root as DefaultMutableTreeNode).removeAllChildren()
+//            loadPostmanWorkspace() 只刷新当前选中的workspace下的collection
             loadPostmanCollection(false)
         }
 
@@ -276,7 +277,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
         actionContext!!.runInSwingUI {
             actionContext!!.run {
-                val workspaces = postmanCachedApiHelper.getAllWorkspaces()
+                val workspaces = postmanCachedApiHelper.getAllWorkspaces() // 不使用缓存
                 if(workspaces.isNullOrEmpty()) {
                     if (workspaces == null) {
                         actionContext.runInSwingUI {
@@ -291,25 +292,23 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 // clean workspace map
                 postmanWorkspaceMap.clear()
                 postmanWorkspaceComboBox!!.removeAllItems()
+                // 默认postman新账号就有一个My Workspace 的工作空间
                 workspaces.forEach {
                     postmanWorkspaceMap[it.name] = it.id
                     postmanWorkspaceComboBox!!.addItem(it.name)
-                    postmanSettingsHelper.getWorkspace(project!!.name, true)
-                        ?.let { workspaceId ->
-                            postmanWorkspaceComboBox!!.selectedItem = postmanWorkspaceMap.map { r -> r.value to r.key }.toMap()[workspaceId]
-                        }
                 }
+                postmanWorkspaceComboBox!!.selectedIndex = 0
             }
         }
     }
 
-    private fun loadPostmanCollection(useCache: Boolean) {
+    private fun loadPostmanCollection(useCache: Boolean, workspaceName: String? = null) {
         //            postmanApiTree!!.dragEnabled = true
         val treeNode = DefaultMutableTreeNode()
         val rootTreeModel = DefaultTreeModel(treeNode, true)
         actionContext.runInSwingUI {
             actionContext.runAsync {
-                val collections = postmanCachedApiHelper.getCollectionByWorkspace(postmanWorkspaceMap[postmanWorkspaceComboBox!!.selectedItem]!!)
+                val collections = postmanCachedApiHelper.getCollectionByWorkspace(postmanWorkspaceMap[workspaceName ?: postmanWorkspaceComboBox!!.selectedItem!!.toString()]!!, useCache)
                 if (collections.isNullOrEmpty()) {
                     if (collections == null) {
                         actionContext.runInSwingUI {
