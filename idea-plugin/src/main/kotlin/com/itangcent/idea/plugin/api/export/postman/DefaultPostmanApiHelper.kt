@@ -432,4 +432,3 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
 }
-
