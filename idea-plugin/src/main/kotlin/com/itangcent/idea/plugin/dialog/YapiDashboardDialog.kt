@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.intellij.ide.browsers.BrowserLauncher
 import com.intellij.openapi.components.ServiceManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
@@ -286,8 +285,8 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                     if (yapiTokens.isNullOrEmpty()) {
                         actionContext.runInSwingUI {
                             Messages.showErrorDialog(
-                                actionContext.instance(Project::class),
-                                "No token be found", "Error"
+                                    this,
+                                    "No token be found", "Error"
                             )
                         }
                         return@runAsync
