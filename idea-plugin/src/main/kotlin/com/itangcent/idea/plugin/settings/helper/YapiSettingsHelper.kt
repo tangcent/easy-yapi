@@ -16,6 +16,9 @@ import java.util.concurrent.locks.ReadWriteLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 
+/**
+ * Utility class providing access setting about yapi through [SettingBinder]&[ConfigReader].
+ */
 @Singleton
 class YapiSettingsHelper {
 
@@ -260,6 +263,13 @@ class YapiSettingsHelper {
     }
 }
 
+/**
+ * Performs checks on each {@code token} of yapi.
+ */
 interface YapiTokenChecker {
+
+    /**
+     * @return return true if the token is valid.
+     */
     fun checkToken(token: String): Boolean
 }
