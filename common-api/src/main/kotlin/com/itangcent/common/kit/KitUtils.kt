@@ -47,6 +47,13 @@ object KitUtils {
     }
 }
 
+fun <T> Boolean?.or(whenTrue: T, whenFalse: T): T {
+    return when (this) {
+        true -> whenTrue
+        else -> whenFalse
+    }
+}
+
 fun Any?.toJson(): String? {
     if (this == null) {
         return null

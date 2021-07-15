@@ -6,6 +6,7 @@ import com.intellij.psi.PsiClass
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.kit.KitUtils
+import com.itangcent.common.kit.or
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
@@ -72,10 +73,10 @@ class MarkdownFormatter {
         requests.forEach { request ->
             val module = request.resource?.let { moduleHelper!!.findModule(it) } ?: "easy-api"
             moduleGroupedMap.safeComputeIfAbsent(module) { ArrayList() }!!
-                    .add(request)
+                .add(request)
         }
 
-        moduleGroupedMap.forEach { module, requestsInModule ->
+        moduleGroupedMap.forEach { (module, requestsInModule) ->
             moduleFolderApiMap[module] = parseRequestsToFolder(requestsInModule)
         }
 
@@ -99,12 +100,12 @@ class MarkdownFormatter {
 
         val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
         moduleFolderApiMap.entries
-                .map { moduleAndFolders ->
-                    val items: ArrayList<HashMap<String, Any?>> = ArrayList()
-                    moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
-                    return@map wrapInfo(moduleAndFolders.key, items)
-                }
-                .forEach { modules.add(it) }
+            .map { moduleAndFolders ->
+                val items: ArrayList<HashMap<String, Any?>> = ArrayList()
+                moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
+                return@map wrapInfo(moduleAndFolders.key, items)
+            }
+            .forEach { modules.add(it) }
 
         val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
         return wrapInfo(rootModule, modules)
@@ -121,7 +122,7 @@ class MarkdownFormatter {
         requests.forEach { request ->
             val folder = formatFolderHelper!!.resolveFolder(request.resource ?: PostmanFormatter.NULL_RESOURCE)
             folderGroupedMap.safeComputeIfAbsent(folder) { ArrayList() }!!
-                    .add(request)
+                .add(request)
         }
 
         return folderGroupedMap
@@ -145,11 +146,11 @@ class MarkdownFormatter {
             handle("\n\n")
         }
         (info[ITEMS] as List<*>)
-                .filterNotNull()
-                .forEach {
-                    parseApi(it, deep + 1, handle)
-                    handle("\n\n")
-                }
+            .filterNotNull()
+            .forEach {
+                parseApi(it, deep + 1, handle)
+                handle("\n\n")
+            }
     }
 
     private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, handle: (String) -> Unit) {
@@ -211,8 +212,8 @@ class MarkdownFormatter {
             handle("| ------------ | ------------ | ------------ |\n")
             request.paths!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value ?: ""} |" +
-                                " ${escape(it.desc)} |\n"
+                    "| ${it.name} | ${it.value ?: ""} |" +
+                            " ${escape(it.desc)} |\n"
                 )
             }
         }
@@ -224,10 +225,12 @@ class MarkdownFormatter {
             handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.headers!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value ?: ""} | ${
-                            KitUtils.fromBool(it.required
-                                    ?: false, "YES", "NO")
-                        } | ${escape(it.desc)} |\n"
+                    "| ${it.name} | ${it.value ?: ""} | ${
+                        KitUtils.fromBool(
+                            it.required
+                                ?: false, "YES", "NO"
+                        )
+                    } | ${escape(it.desc)} |\n"
                 )
             }
         }
@@ -239,8 +242,8 @@ class MarkdownFormatter {
             handle("| ------------ | ------------ | ------------ | ------------ |\n")
             request.querys!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                                " ${escape(it.desc)} |\n"
+                    "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
+                            " ${escape(it.desc)} |\n"
                 )
             }
         }
@@ -263,8 +266,8 @@ class MarkdownFormatter {
             handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
             request.formParams!!.forEach {
                 handle(
-                        "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                                " ${it.type} | ${escape(it.desc)} |\n"
+                    "| ${it.name} | ${it.value ?: ""} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
+                            " ${it.type} | ${escape(it.desc)} |\n"
                 )
             }
         }
@@ -281,12 +284,9 @@ class MarkdownFormatter {
                 handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
                 response.headers!!.forEach {
                     handle(
-                            "| ${it.name} | ${it.value ?: ""} | ${
-                                KitUtils.fromBool(
-                                        it.required
-                                                ?: false, "YES", "NO"
-                                )
-                            } |  ${escape(it.desc)} |\n"
+                        "| ${it.name} | ${it.value ?: ""} | ${
+                            it.required.or("YES", "NO")
+                        } |  ${escape(it.desc)} |\n"
                     )
                 }
 
@@ -384,6 +384,11 @@ private interface ObjectFormatter {
 
 private abstract class AbstractObjectFormatter(val handle: (String) -> Unit) : ObjectFormatter {
 
+    /**
+     * -1: always writeHeader, -> -1
+     * 0: writeHeader once, -> 1
+     * >0: not writeHeader
+     */
     private var inStream = -1
 
     override fun writeObject(obj: Any?, name: String, desc: String) {
@@ -429,7 +434,7 @@ private abstract class AbstractObjectFormatter(val handle: (String) -> Unit) : O
         inStream = 0
         try {
             action(this)
-        } catch (e: Throwable) {
+        } finally {
             inStream = -1
         }
     }
@@ -493,8 +498,8 @@ private class SimpleObjectFormatter(handle: (String) -> Unit) : AbstractObjectFo
             } catch (e: Throwable) {
             }
             obj.forEachValid { k, v ->
-                val propertyDesc: String? = KVUtils.getUltimateComment(comment, k)
-                writeBody(v, k.toString(), propertyDesc ?: "", deep + 1)
+                val propertyDesc = KVUtils.getUltimateComment(comment, k)
+                writeBody(v, k.toString(), propertyDesc, deep + 1)
             }
         } else {
             addBodyProperty(deep, name, "object", desc)
@@ -560,11 +565,13 @@ private class UltimateObjectFormatter(handle: (String) -> Unit) : AbstractObject
             obj.forEachValid { k, v ->
                 val key = k.toString()
                 val propertyDesc: String? = KVUtils.getUltimateComment(comments, k)
-                writeBody(v, key,
-                        requireds?.get(key) as? Boolean,
-                        defaults?.get(key) as? String,
-                        propertyDesc ?: "",
-                        deep + 1)
+                writeBody(
+                    v, key,
+                    requireds?.get(key) as? Boolean,
+                    defaults?.get(key) as? String,
+                    propertyDesc ?: "",
+                    deep + 1
+                )
             }
         } else {
             addBodyProperty(deep, name, "object", required, default, desc)

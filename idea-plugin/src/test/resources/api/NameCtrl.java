@@ -3,7 +3,7 @@ package com.itangcent.api;
 import com.itangcent.common.annotation.Public;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-public class TestCtrl extends BaseController {
+public class NameCtrl extends BaseController {
 
     @RequestMapping(value = "/nothing")
     public String nothing() {

@@ -26,7 +26,7 @@ enum class FileType(private val suffix: String) {
 
         fun acceptable(fileName: String): Boolean {
             if (fileName.endsWith("scala")) {
-                ActionContext.instance(TipsHelper::class).showTips(SUPPORT_SUPPORT_TIP)
+                ActionContext.getContext()?.instance(TipsHelper::class)?.showTips(SUPPORT_SUPPORT_TIP)
             }
             return values().any { fileName.endsWith(it.suffix()) }
         }
