@@ -66,4 +66,10 @@ class KitUtilsTest {
         assertTrue("cbA".equalIgnoreCase("CBa"))
     }
 
+    @Test
+    fun testBoolOr() {
+        assertEquals("true", true.or("true", "false"))
+        assertEquals("false", false.or("true", "false"))
+    }
+
 }

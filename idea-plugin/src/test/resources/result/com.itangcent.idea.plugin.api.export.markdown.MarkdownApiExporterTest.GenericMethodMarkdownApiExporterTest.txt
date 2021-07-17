@@ -1,0 +1,123 @@
+# rpc apis about user
+
+
+---
+## say hello
+
+**Desc：**
+
+not update anything
+
+
+**Params：**
+
+Non-Parameter
+
+**Return：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  | 
+
+
+
+---
+## update username
+
+
+**Params：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+| newName | string | new user name | 
+| slogon | string | personal slogon | 
+| times | integer |  | 
+
+**Return：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| name | string | user name | 
+| age | integer | user age | 
+| sex | integer |  | 
+| birthDay | string | user birthDay | 
+| regtime | string | user regtime | 
+
+
+
+---
+## get user info
+
+
+**Params：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+
+**Return：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| name | string | user name | 
+| age | integer | user age | 
+| sex | integer |  | 
+| birthDay | string | user birthDay | 
+| regtime | string | user regtime | 
+
+
+
+---
+## create new use
+
+
+**Params：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| name | string | user name | 
+| age | integer | user age | 
+| sex | integer |  | 
+| birthDay | string | user birthDay | 
+| regtime | string | user regtime | 
+
+**Return：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| name | string | user name | 
+| age | integer | user age | 
+| sex | integer |  | 
+| birthDay | string | user birthDay | 
+| regtime | string | user regtime | 
+
+
+
+---
+## update user info
+
+
+**Params：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| name | string | user name | 
+| age | integer | user age | 
+| sex | integer |  | 
+| birthDay | string | user birthDay | 
+| regtime | string | user regtime | 
+
+**Return：**
+
+Non-Return

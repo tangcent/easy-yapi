@@ -1,0 +1,867 @@
+# test_default
+
+## test apis
+
+
+---
+### test RequestHeader
+
+#### BASIC
+
+**Path：** /test/header
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+**Query：**
+
+| name  |  value  |  required | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | NO | input token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string | token output | 
+
+**Response Demo：**
+
+```json
+
+```
+
+
+
+---
+### test query with array parameters
+
+#### BASIC
+
+**Path：** /test/arrays
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+**Query：**
+
+| name  |  value  |  required | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| strings |  | NO | string array |
+| ints | 0 | NO | integer array |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  | 
+
+**Response Demo：**
+
+```json
+
+```
+
+
+
+---
+### test ignored method
+
+#### BASIC
+
+**Path：** /test/ignore
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  | 
+
+**Response Demo：**
+
+```json
+
+```
+
+
+
+---
+### test query with javax.servlet.http.HttpServletRequest
+
+#### BASIC
+
+**Path：** /test/httpServletRequest
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  | 
+
+**Response Demo：**
+
+```json
+
+```
+
+
+
+---
+### test query with javax.servlet.http.HttpServletResponse
+
+#### BASIC
+
+**Path：** /test/httpServletResponse
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  | 
+
+**Response Demo：**
+
+```json
+
+```
+
+
+
+---
+### test api return void
+
+#### BASIC
+
+**Path：** /test/return/void
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+---
+### test api return Void
+
+#### BASIC
+
+**Path：** /test/return/Void
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+---
+### test api return Result<Void>
+
+#### BASIC
+
+**Path：** /test/return/result/Void
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": ""
+}
+```
+
+
+
+---
+### return nested node
+
+#### BASIC
+
+**Path：** /test/return/node
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {}
+}
+```
+
+
+
+---
+### return root with nested nodes
+
+#### BASIC
+
+**Path：** /test/return/root
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {}
+}
+```
+
+
+
+---
+### return customMap
+
+#### BASIC
+
+**Path：** /test/return/customMap
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {}
+}
+```
+
+
+
+---
+### user page query
+
+#### BASIC
+
+**Path：** /test/call/page/user
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {}
+}
+```
+
+
+
+---
+### user page query with ModelAttribute
+
+#### BASIC
+
+**Path：** /test/call/page/user/form
+
+**Method：** POST
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| Content-Type | application/x-www-form-urlencoded | YES |  |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {}
+}
+```
+
+
+
+---
+### user page query with POST
+
+#### BASIC
+
+**Path：** /test/call/page/user/post
+
+**Method：** POST
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| Content-Type | application/x-www-form-urlencoded | YES |  |
+| token |  | YES | auth token |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {}
+}
+```
+
+
+
+---
+### user page query with array
+
+#### BASIC
+
+**Path：** /test/call/page/user/array
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+**Query：**
+
+| name  |  value  |  required | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| id | 0 | NO | user id |
+| type | 0 | NO | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name |  | NO | user name |
+| age | 0 | NO | user age |
+| sex | 0 | NO |  |
+| birthDay |  | NO | user birthDay |
+| regtime |  | NO | user regtime |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | array | response data | 
+| &ensp;&ensp;&#124;─ | object |  | 
+| &ensp;&ensp;&ensp;&ensp;&#124;─id | integer | user id | 
+| &ensp;&ensp;&ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| &ensp;&ensp;&ensp;&ensp;&#124;─name | string | user name | 
+| &ensp;&ensp;&ensp;&ensp;&#124;─age | integer | user age | 
+| &ensp;&ensp;&ensp;&ensp;&#124;─sex | integer |  | 
+| &ensp;&ensp;&ensp;&ensp;&#124;─birthDay | string | user birthDay | 
+| &ensp;&ensp;&ensp;&ensp;&#124;─regtime | string | user regtime | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": [
+    {
+      "id": 0,
+      "type": 0,
+      "name": "",
+      "age": 0,
+      "sex": 0,
+      "birthDay": "",
+      "regtime": ""
+    }
+  ]
+}
+```
+
+
+
+
+## apis about user
+
+
+---
+### say hello
+
+#### BASIC
+
+**Path：** user/greeting
+
+**Method：** GET
+
+**Desc：**
+
+not update anything
+
+#### REQUEST
+
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  | 
+
+**Response Demo：**
+
+```json
+
+```
+
+
+
+---
+### get user info
+
+#### BASIC
+
+**Path：** user/get/{id}
+
+**Method：** GET
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+**Query：**
+
+| name  |  value  |  required | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| id | 0 | NO | user id |
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+| &ensp;&ensp;&#124;─id | integer | user id | 
+| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| &ensp;&ensp;&#124;─name | string | user name | 
+| &ensp;&ensp;&#124;─age | integer | user age | 
+| &ensp;&ensp;&#124;─sex | integer |  | 
+| &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
+| &ensp;&ensp;&#124;─regtime | string | user regtime | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "id": 0,
+    "type": 0,
+    "name": "Tony Stark",
+    "age": 45,
+    "sex": 0,
+    "birthDay": "",
+    "regtime": ""
+  }
+}
+```
+
+
+
+---
+### create new use
+
+#### BASIC
+
+**Path：** user/add
+
+**Method：** POST
+
+#### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| Content-Type | application/json | YES |  |
+| token |  | YES | auth token |
+
+**RequestBody**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| id | integer | user id | 
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| name | string | user name | 
+| age | integer | user age | 
+| sex | integer |  | 
+| birthDay | string | user birthDay | 
+| regtime | string | user regtime | 
+
+**Request Demo：**
+
+```json
+{
+  "id": 0,
+  "type": 0,
+  "name": "",
+  "age": 0,
+  "sex": 0,
+  "birthDay": "",
+  "regtime": ""
+}
+```
+
+
+#### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code | 
+| msg | string | message | 
+| data | object | response data | 
+| &ensp;&ensp;&#124;─id | integer | user id | 
+| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| &ensp;&ensp;&#124;─name | string | user name | 
+| &ensp;&ensp;&#124;─age | integer | user age | 
+| &ensp;&ensp;&#124;─sex | integer |  | 
+| &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
+| &ensp;&ensp;&#124;─regtime | string | user regtime | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "id": 0,
+    "type": 0,
+    "name": "",
+    "age": 0,
+    "sex": 0,
+    "birthDay": "",
+    "regtime": ""
+  }
+}
+```

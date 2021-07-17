@@ -1,0 +1,196 @@
+# apis about user
+
+
+---
+## say hello
+
+### BASIC
+
+**Path：** user/greeting
+
+**Method：** GET
+
+**Desc：**
+
+not update anything
+
+### REQUEST
+
+
+
+### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | required | default | desc |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+|  | string |  |  |  | 
+
+**Response Demo：**
+
+```json
+
+```
+
+
+
+---
+## get user info
+
+### BASIC
+
+**Path：** user/get/{id}
+
+**Method：** GET
+
+### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+**Query：**
+
+| name  |  value  |  required | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| id | 0 | NO | user id |
+
+
+### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | required | default | desc |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| code | integer |  |  | response code | 
+| msg | string |  |  | message | 
+| data | object |  |  | response data | 
+| &ensp;&ensp;&#124;─id | integer |  |  | user id | 
+| &ensp;&ensp;&#124;─type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| &ensp;&ensp;&#124;─name | string |  |  | user name | 
+| &ensp;&ensp;&#124;─age | integer |  |  | user age | 
+| &ensp;&ensp;&#124;─sex | integer |  |  |  | 
+| &ensp;&ensp;&#124;─birthDay | string |  |  | user birthDay | 
+| &ensp;&ensp;&#124;─regtime | string |  |  | user regtime | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "data": {
+    "id": 0,
+    "type": 0,
+    "name": "Tony Stark",
+    "age": 45,
+    "sex": 0,
+    "birthDay": "",
+    "regtime": ""
+  }
+}
+```
+
+
+
+---
+## create new use
+
+### BASIC
+
+**Path：** user/add
+
+**Method：** POST
+
+### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| Content-Type | application/json | YES |  |
+| token |  | YES | auth token |
+
+**RequestBody**
+
+| name | type | required | default | desc |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| id | integer |  |  | user id | 
+| type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| name | string |  |  | user name | 
+| age | integer |  |  | user age | 
+| sex | integer |  |  |  | 
+| birthDay | string |  |  | user birthDay | 
+| regtime | string |  |  | user regtime | 
+
+**Request Demo：**
+
+```json
+{
+  "id": 0,
+  "type": 0,
+  "name": "",
+  "age": 0,
+  "sex": 0,
+  "birthDay": "",
+  "regtime": ""
+}
+```
+
+
+### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | required | default | desc |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| code | integer |  |  | response code | 
+| msg | string |  |  | message | 
+| data | object |  |  | response data | 
+| &ensp;&ensp;&#124;─id | integer |  |  | user id | 
+| &ensp;&ensp;&#124;─type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| &ensp;&ensp;&#124;─name | string |  |  | user name | 
+| &ensp;&ensp;&#124;─age | integer |  |  | user age | 
+| &ensp;&ensp;&#124;─sex | integer |  |  |  | 
+| &ensp;&ensp;&#124;─birthDay | string |  |  | user birthDay | 
+| &ensp;&ensp;&#124;─regtime | string |  |  | user regtime | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "id": 0,
+    "type": 0,
+    "name": "",
+    "age": 0,
+    "sex": 0,
+    "birthDay": "",
+    "regtime": ""
+  }
+}
+```
