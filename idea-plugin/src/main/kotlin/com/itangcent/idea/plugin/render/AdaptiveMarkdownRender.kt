@@ -57,11 +57,14 @@ class AdaptiveMarkdownRender : MarkdownRender {
     protected fun findAvailableRender() {
         val availableRender = ArrayList<MarkdownRender>()
         if (!configReader!!.first("markdown.render.shell").isNullOrBlank()) {
+            LOG.info("add availableRender: [${ConfigurableShellFileMarkdownRender::class}]")
             availableRender.add(actionContext.instance(ConfigurableShellFileMarkdownRender::class))
         }
         if (!configReader.first("markdown.render.server").isNullOrBlank()) {
+            LOG.info("add availableRender: [${RemoteMarkdownRender::class}]")
             availableRender.add(actionContext.instance(RemoteMarkdownRender::class))
         }
+        LOG.info("add availableRender: [${BundledMarkdownRender::class}]")
         availableRender.add(actionContext.instance(BundledMarkdownRender::class))
         this.availableRenders = availableRender
     }
@@ -73,6 +76,7 @@ class AdaptiveMarkdownRender : MarkdownRender {
             try {
                 val html = markdownRender.render(markdown)
                 if (html != null) {
+                    LOG.info("render html with: [$markdownRender]")
                     return html
                 }
             } catch (e: Throwable) {
@@ -82,3 +86,5 @@ class AdaptiveMarkdownRender : MarkdownRender {
         return null
     }
 }
+
+private val LOG = org.apache.log4j.Logger.getLogger(AdaptiveMarkdownRender::class.java)
