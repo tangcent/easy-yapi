@@ -54,6 +54,8 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
                         .setConnectionRequestTimeout(config.timeOut)
                         .setSocketTimeout(config.timeOut)
                         .setCookieSpec(CookieSpecs.STANDARD).build())
+                .setSSLHostnameVerifier(NOOP_HOST_NAME_VERIFIER)
+                .setSSLSocketFactory(SSLSF)
 
         return HttpClientWrapper(ApacheHttpClient(httpClientBuilder.build()))
     }
