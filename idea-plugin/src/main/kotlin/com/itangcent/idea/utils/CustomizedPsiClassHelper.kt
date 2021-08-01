@@ -21,11 +21,11 @@ import com.itangcent.intellij.jvm.element.ExplicitField
 open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
 
     @Inject
-    private val psiExpressionResolver: PsiExpressionResolver? = null
+    private lateinit var psiExpressionResolver: PsiExpressionResolver
 
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
         //compute `field.required`
-        ruleComputer!!.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
             kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = required
         }
 
@@ -33,7 +33,7 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, fieldOrMethod)
         if (defaultValue.isNullOrEmpty()) {
             if (fieldOrMethod is ExplicitField) {
-                fieldOrMethod.psi().initializer?.let { psiExpressionResolver!!.process(it) }?.toPrettyString()
+                fieldOrMethod.psi().initializer?.let { psiExpressionResolver.process(it) }?.toPrettyString()
                         ?.let { kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = it }
             }
         } else {
