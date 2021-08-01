@@ -1,5 +1,17 @@
 * 2.2.4
 
+	* fix: Ignore SSL certificate in ApacheHttpClient [(#532)](https://github.com/tangcent/easy-yapi/pull/532)
+
+	* feat: read default value as param's value [(#541)](https://github.com/tangcent/easy-yapi/pull/541)
+
+	* fix: MarkdownFormatter#AbstractObjectFormatter [(#536)](https://github.com/tangcent/easy-yapi/pull/536)
+
+	* feat: show error dialog on the active Dialog instead of project [(#533)](https://github.com/tangcent/easy-yapi/pull/533)
+
+	* feat: bundled markdown render [(#530)](https://github.com/tangcent/easy-yapi/pull/530)
+
+	* release v2.2.4-rc [(#522)](https://github.com/tangcent/easy-yapi/pull/522)
+      
 	* feat: remove recommend config of enum [(#521)](https://github.com/tangcent/easy-yapi/pull/521)
 
 * 2.2.3
