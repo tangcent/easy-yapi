@@ -32,7 +32,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     @Inject
     private val configReader: ConfigReader? = null
 
-    @Inject
+    @Inject(optional = true)
     private val ruleComputeListener: RuleComputeListener? = null
 
     @Inject

@@ -10,6 +10,7 @@ import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
+import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
@@ -572,10 +573,13 @@ abstract class RequestClassExporter : ClassExporter, Worker {
             if (typeObject == null || typeObject !is Map<*, *>) {
                 requestBuilderListener.addParam(
                     parameterExportContext,
-                    request, parameterExportContext.name(), tinyQueryParam(typeObject?.toString()),
+                    request,
+                    parameterExportContext.name(),
+                    tinyQueryParam(parameterExportContext.defaultVal() ?: typeObject?.toString()),
                     parameterExportContext.required()
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.parameter)
-                        ?: false, paramDesc
+                        ?: false,
+                    paramDesc
                 )
                 return
             }
@@ -600,7 +604,9 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                         }
                         requestBuilderListener.addParam(
                             parameterExportContext,
-                            request, path, tinyQueryParam(value.toString()),
+                            request,
+                            path,
+                            tinyQueryParam((parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key) ?: value).toString()),
                             parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                             KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                         )
@@ -610,16 +616,17 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                 val fields = typeObject.asKV()
                 val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
                 val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
+                val defaultVal = fields.getAsKv(Attrs.DEFAULT_VALUE_ATTR)
                 parameterExportContext.setExt("parent", fields)
                 fields.forEachValid { filedName, fieldVal ->
                     parameterExportContext.setExt("key", filedName)
-                    val fv = deepComponent(fieldVal)
+                    val fv = deepComponent(defaultVal?.get(filedName) ?: fieldVal)
                     if (fv == Magics.FILE_STR && request.method == HttpMethod.GET) {
                         logger.warn("try upload file at `GET:`${request.path}")
                     }
                     requestBuilderListener.addParam(
                         parameterExportContext,
-                        request, filedName, null,
+                        request, filedName, tinyQueryParam(fv?.toString()),
                         required?.getAs(filedName) ?: false,
                         KVUtils.getUltimateComment(comment, filedName)
                     )
@@ -629,7 +636,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
             logger.traceError(
                 "error to parse [${
                     parameterExportContext.parameter.getType()?.canonicalText()
-                }] as Querys", e
+                }] as Queries", e
             )
         }
     }
@@ -660,7 +667,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     request, "Content-Type", "multipart/form-data"
                 )
                 if (this.intelligentSettingsHelper.formExpanded() && typeObject.isComplex()
-                    && request.getContentType() == "multipart/form-data"
+                    && (request.getContentType()?.contains("multipart/form-data") == true)
                 ) {
                     typeObject.flatValid(object : FieldConsumer {
                         override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
@@ -675,7 +682,10 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                             } else {
                                 requestBuilderListener.addFormParam(
                                     parameterExportContext,
-                                    request, path, tinyQueryParam(value.toString()),
+                                    request, path,
+                                    tinyQueryParam(
+                                        (parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key) ?: value).toString()
+                                    ),
                                     parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                     KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                                 )
@@ -686,12 +696,13 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     val fields = typeObject.asKV()
                     val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
                     val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
+                    val defaultVal = fields.getAsKv(Attrs.DEFAULT_VALUE_ATTR)
                     requestBuilderListener.addHeaderIfMissed(
                         parameterExportContext,
                         request, "Content-Type", "application/x-www-form-urlencoded"
                     )
                     fields.forEachValid { filedName, fieldVal ->
-                        val fv = deepComponent(fieldVal)
+                        val fv = deepComponent(defaultVal?.get(filedName) ?: fieldVal)
                         if (fv == Magics.FILE_STR) {
                             requestBuilderListener.addFormFileParam(
                                 parameterExportContext,
@@ -763,6 +774,9 @@ abstract class RequestClassExporter : ClassExporter, Worker {
         if (obj is Collection<*>) {
             if (obj.isEmpty()) return obj
             return deepComponent(obj.first())
+        }
+        if (obj is Map<*, *>) {
+            return RequestUtils.parseRawBody(obj)
         }
         return obj
     }
