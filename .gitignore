@@ -43,3 +43,5 @@ src/main/resources/META-INF/services/com.itangcent.common.spi.SetupAble
 
 /envs
 out/
+
+plugin-adapter/plugin-adapter-markdown/build/

@@ -62,10 +62,6 @@ artifacts {
 
 repositories {
 
-//    flatDir {
-//        dirs 'libs'
-//    }
-
     mavenCentral()
 
 }
@@ -74,6 +70,8 @@ dependencies {
     implementation(project(path: ':common-api', configuration: 'default')) {
         exclude group: 'org.apache.httpcomponents', module: 'httpclient'
     }
+
+    implementation project(path: ':plugin-adapter:plugin-adapter-markdown', configuration: 'default')
 
     compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
