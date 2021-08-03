@@ -698,7 +698,7 @@ class ApiCallDialog : JDialog() {
         request?.headers?.forEach {
             sb.append(it.name)
                     .append("=")
-                    .append(it.value)
+                    .append(it.value ?: "")
                     .appendln()
         }
         return sb.toString()
