@@ -18,6 +18,9 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)
         })
+        classExporter.export(defaultCtrlPsiClass, requestOnly {
+            requests.add(it)
+        })
         (classExporter as Worker).waitCompleted()
         requests[0].let { request ->
             assertEquals("say hello", request.name)
@@ -36,6 +39,32 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
             assertFalse(request.isOpen())
             assertEquals("undone", request.getStatus())
             assertTrue(request.getTags()!!.contains("deprecated"))
+        }
+
+        val apiCntInUserCtrl = userCtrlPsiClass.methods.size
+        requests[apiCntInUserCtrl + 0].let { request ->
+            assertEquals("call with query", request.name)
+            assertEquals("", request.desc)
+            assertEquals("GET", request.method)
+            assertEquals(defaultCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
+        }
+        requests[apiCntInUserCtrl + 1].let { request ->
+            assertEquals("call with form", request.name)
+            assertTrue(request.desc.isNullOrEmpty())
+            assertEquals("POST", request.method)
+            assertEquals(defaultCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
+
+            assertFalse(request.isOpen())
+            assertEquals("done", request.getStatus())
+        }
+        requests[apiCntInUserCtrl + 2].let { request ->
+            assertEquals("call with body", request.name)
+            assertTrue(request.desc.isNullOrEmpty())
+            assertEquals("POST", request.method)
+            assertEquals(defaultCtrlPsiClass.methods[2], (request.resource as PsiResource).resource())
+
+            assertFalse(request.isOpen())
+            assertEquals("done", request.getStatus())
         }
     }
 }

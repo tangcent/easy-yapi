@@ -24,6 +24,8 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
 
     internal lateinit var userCtrlPsiClass: PsiClass
 
+    internal lateinit var defaultCtrlPsiClass: PsiClass
+
     override fun beforeBind() {
         super.beforeBind()
         loadSource(Object::class)
@@ -43,13 +45,16 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
         loadFile("model/IResult.java")
         loadFile("model/Result.java")
         loadFile("model/UserInfo.java")
-        loadFile("spring/PostMapping.java")
+        loadFile("model/Default.java")
         loadFile("spring/GetMapping.java")
+        loadFile("spring/PostMapping.java")
+        loadFile("spring/ModelAttribute.java")
         loadFile("spring/RequestMapping.java")
         loadFile("spring/RequestBody.java")
         loadFile("spring/RestController.java")
         loadFile("api/BaseController.java")
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
+        defaultCtrlPsiClass = loadClass("api/DefaultCtrl.java")!!
     }
 
     override fun customConfig(): String {
@@ -61,6 +66,7 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
                 "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
+                "field.default.value=#default\n" +
                 "api.open=@com.itangcent.common.annotation.Public\n" +
                 "api.status[#undone]=undone\n" +
                 "api.tag[@java.lang.Deprecated]=deprecated"

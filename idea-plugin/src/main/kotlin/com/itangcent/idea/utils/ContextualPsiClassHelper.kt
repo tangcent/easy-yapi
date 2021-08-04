@@ -102,7 +102,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         devEnv?.dev {
             logger!!.info("path -> ${parseScriptContext.path()}")
         }
-        ruleComputer!!.computer(ClassExportRuleKeys.FIELD_PARSE_BEFORE, fieldOrMethod, fieldOrMethod.psi())
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_BEFORE, fieldOrMethod, fieldOrMethod.psi())
 
         return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
     }
@@ -115,7 +115,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
 
-        ruleComputer!!.computer(ClassExportRuleKeys.FIELD_PARSE_AFTER, fieldOrMethod, fieldOrMethod.psi())
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_AFTER, fieldOrMethod, fieldOrMethod.psi())
         popField(fieldName)
     }
 

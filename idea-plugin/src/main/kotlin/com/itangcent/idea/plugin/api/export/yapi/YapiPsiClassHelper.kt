@@ -31,7 +31,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
     @PostConstruct
     fun initYapiInfo() {
         val contextSwitchListener: ContextSwitchListener? = ActionContext.getContext()
-                ?.instance(ContextSwitchListener::class)
+            ?.instance(ContextSwitchListener::class)
         contextSwitchListener!!.onModuleChange {
             val resolveProperty = configReader!!.first("field.mock.resolveProperty")
             if (!resolveProperty.isNullOrBlank()) {
@@ -40,20 +40,30 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         }
     }
 
-    override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
+    override fun afterParseFieldOrMethod(
+        fieldName: String,
+        fieldType: DuckType,
+        fieldOrMethod: ExplicitElement<*>,
+        resourcePsiClass: ExplicitClass,
+        option: Int,
+        kv: KV<String, Any?>
+    ) {
         //compute `field.mock`
-        ruleComputer!!.computer(ClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
-                ?.takeIf { it.isNotBlank() }
-                ?.let { if (resolveProperty) configReader!!.resolveProperty(it) else it }
-                ?.let { mockInfo ->
-                    kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
-                }
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { if (resolveProperty) configReader!!.resolveProperty(it) else it }
+            ?.let { mockInfo ->
+                kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
+            }
 
         //compute `field.demo`
-        val demoValue = ruleComputer.computer(YapiClassExportRuleKeys.FIELD_DEMO,
-                fieldOrMethod)
+        val demoValue = ruleComputer.computer(
+            YapiClassExportRuleKeys.FIELD_DEMO,
+            fieldOrMethod
+        )
         if (demoValue.notNullOrBlank()) {
             kv.sub(Attrs.EXAMPLE_ATTR)[fieldName] = demoValue
+            populateFieldValue(fieldName, fieldType, kv, demoValue!!)
         }
 
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)

@@ -30,6 +30,7 @@ internal abstract class CustomizedPsiClassHelperBaseTest : PluginContextLightCod
     protected lateinit var linkedListPsiClass: PsiClass
     protected lateinit var modelPsiClass: PsiClass
     protected lateinit var userInfoPsiClass: PsiClass
+    protected lateinit var defaultPsiClass: PsiClass
     protected lateinit var javaVersionPsiClass: PsiClass
     protected lateinit var numbersPsiClass: PsiClass
 
@@ -51,6 +52,7 @@ internal abstract class CustomizedPsiClassHelperBaseTest : PluginContextLightCod
         loadSource(LocalDateTime::class)
         modelPsiClass = loadClass("model/Model.java")!!
         userInfoPsiClass = loadClass("model/UserInfo.java")!!
+        defaultPsiClass = loadClass("model/Default.java")!!
         javaVersionPsiClass = loadClass("constant/JavaVersion.java")!!
         numbersPsiClass = loadClass("constant/Numbers.java")!!
     }
