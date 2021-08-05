@@ -12,17 +12,17 @@ import com.itangcent.common.utils.getPropertyValue
 
 object GsonExUtils {
 
-    private val gson: Gson
+    val gson: Gson
 
     init {
         val numberObjectTypeAdapter = NumberFixedObjectTypeAdapter()
         gson = GsonBuilder()
-                .setExclusionStrategies(RegisterExclusionStrategy().exclude(Visional::class.java))
-                .registerTypeAdapterFactory(NumberFixedObjectTypeAdapter.FACTORY)
-                .registerTypeAdapter(Any::class.java, numberObjectTypeAdapter)
-                .registerTypeAdapter(Map::class.java, numberObjectTypeAdapter)
-                .registerTypeAdapter(List::class.java, numberObjectTypeAdapter)
-                .create()
+            .setExclusionStrategies(RegisterExclusionStrategy().exclude(Visional::class.java))
+            .registerTypeAdapterFactory(NumberFixedObjectTypeAdapter.FACTORY)
+            .registerTypeAdapter(Any::class.java, numberObjectTypeAdapter)
+            .registerTypeAdapter(Map::class.java, numberObjectTypeAdapter)
+            .registerTypeAdapter(List::class.java, numberObjectTypeAdapter)
+            .create()
         numberObjectTypeAdapter.setGson(gson)
 
         try {
@@ -45,38 +45,21 @@ object GsonExUtils {
 
         //unwrap for UnmodifiableList
         if (factories::class.qualifiedName == "java.util.Collections.UnmodifiableRandomAccessList" ||
-                factories::class.qualifiedName == "java.util.Collections.UnmodifiableList") {
+            factories::class.qualifiedName == "java.util.Collections.UnmodifiableList"
+        ) {
             factories = factories.getPropertyValue("list") ?: return
         }
 
         (factories as MutableList<TypeAdapterFactory>).remove(ObjectTypeAdapter.FACTORY)
     }
 
-    @Deprecated(message = "use JacksonUtils.toJson")
     fun toJson(bean: Any?): String {
-        val beanWithClass = BeanWithClass()
-        if (bean != null) {
-            beanWithClass.c = bean.javaClass.name
-            beanWithClass.j = gson.toJson(bean)
-        }
-        return gson.toJson(beanWithClass)
+        return gson.toJson(bean)
     }
 
-    @Deprecated(message = "use JacksonUtils.fromJson")
     @Suppress("UNCHECKED_CAST")
-    fun <T> fromJson(json: String): T? {
-        val beanWithClass = gson.fromJson(json, BeanWithClass::class.java)
-        if (beanWithClass.c == null) return null
-        val cls: Class<T> = Class.forName(beanWithClass.c) as Class<T>
-        return gson.fromJson(beanWithClass.j!!, cls)
-    }
-
-    class BeanWithClass {
-        //class
-        var c: String? = null
-
-        //json
-        var j: String? = null
+    inline fun <reified T> fromJson(json: String): T? {
+        return gson.fromJson(json, T::class.java)
     }
 
     fun prettyJson(json: String): String {
