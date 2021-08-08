@@ -191,6 +191,11 @@ class Settings {
 
         val DEFAULT_TRUST_HOSTS: Array<String> =
                 arrayOf("https://raw.githubusercontent.com/tangcent",
-                        "https://api.getpostman.com")
+                        "https://api.getpostman.com",
+                        "https://localhost",
+                        "http://localhost",
+                        "https://127.0.0.1",
+                        "http://127.0.0.1",
+                )
     }
 }
