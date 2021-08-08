@@ -48,7 +48,18 @@
 
             <action id="com.itangcent.idea.easy_api.actions.ApiCallAction"
                     class="com.itangcent.idea.plugin.actions.ApiCallAction" text="Call"
-                    description="Call"/>
+                    description="Call">
+                <keyboard-shortcut
+                        first-keystroke="alt shift C"
+                        keymap="$default"
+                />
+                <keyboard-shortcut
+                        first-keystroke="control C"
+                        keymap="Mac OS X" replace-all="true"/>
+                <keyboard-shortcut
+                        first-keystroke="control C"
+                        keymap="Mac OS X 10.5+" replace-all="true"/>
+            </action>
 
             <action id="com.itangcent.idea.easy_api.actions.MultipleExportAction"
                     class="com.itangcent.idea.plugin.actions.SuvExportAction" text="Export"
