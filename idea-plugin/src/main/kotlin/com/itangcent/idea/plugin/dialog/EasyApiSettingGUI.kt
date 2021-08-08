@@ -47,6 +47,8 @@ class EasyApiSettingGUI {
 
     private var postmanTokenTextArea: JTextArea? = null
 
+    private var postmanWorkspacesTextArea: JTextArea? = null
+
     private var wrapCollectionCheckBox: JCheckBox? = null
 
     private var autoMergeScriptCheckBox: JCheckBox? = null
@@ -158,6 +160,9 @@ class EasyApiSettingGUI {
 
         autoComputer.bind(postmanTokenTextArea!!)
                 .mutual(this, "settings.postmanToken")
+
+        autoComputer.bind(postmanWorkspacesTextArea!!)
+            .mutual(this, "settings.postmanWorkspaces")
 
         autoComputer.bind(wrapCollectionCheckBox!!)
                 .mutual(this, "settings.wrapCollection")

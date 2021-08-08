@@ -12,4 +12,8 @@ class EmptyMessagesHelper : MessagesHelper {
     override fun showInputDialog(message: String?, title: String?, icon: Icon?): String? {
         return null
     }
+
+    override fun showEditableChooseDialog(message: String?, title: String?, icon: Icon?, values: Array<String>, initialValue: String?): String? {
+        return null
+    }
 }

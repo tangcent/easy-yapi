@@ -15,6 +15,8 @@ class Settings {
 
     var postmanToken: String? = null
 
+    var postmanWorkspaces: String? = null
+
     var wrapCollection: Boolean = false
 
     var autoMergeScript: Boolean = false
@@ -83,6 +85,7 @@ class Settings {
     fun copy(): Settings {
         val newSetting = Settings()
         newSetting.postmanToken = this.postmanToken
+        newSetting.postmanWorkspaces = this.postmanWorkspaces
         newSetting.wrapCollection = this.wrapCollection
         newSetting.autoMergeScript = this.autoMergeScript
         newSetting.postmanJson5FormatType = this.postmanJson5FormatType
@@ -124,6 +127,7 @@ class Settings {
         if (methodDocEnable != other.methodDocEnable) return false
         if (genericEnable != other.genericEnable) return false
         if (postmanToken != other.postmanToken) return false
+        if (postmanWorkspaces != other.postmanWorkspaces) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
         if (postmanJson5FormatType != other.postmanJson5FormatType) return false

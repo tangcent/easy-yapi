@@ -15,6 +15,7 @@ import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
 import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.*
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
@@ -48,6 +49,9 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     @Inject
     private val httpClientProvider: HttpClientProvider? = null
+
+    @Inject
+    protected lateinit var actionContext: ActionContext
 
     private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
 
@@ -103,13 +107,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     /**
      * @return collection id
      */
-    override fun createCollection(collection: HashMap<String, Any?>): HashMap<String, Any?>? {
-
+    override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>? {
         val request = getHttpClient()
                 .post(COLLECTION)
                 .contentType(ContentType.APPLICATION_JSON)
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
                 .body(KV.by("collection", collection))
+
+        workspaceId?.let { request.query("workspace", it) }
 
         try {
             beforeRequest(request)
@@ -246,6 +251,35 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    override fun getCollectionByWorkspace(workspaceId: String): ArrayList<HashMap<String, Any?>>? {
+        val request = getHttpClient().get("$WORKSPACE/$workspaceId")
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+
+        try {
+            beforeRequest(request)
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspace")) {
+                    val returnObj = returnValue.asJsonElement()
+                    val collections = returnObj
+                        .sub("workspace")
+                        .sub("collections")
+                        ?.asJsonArray ?: return arrayListOf()
+                    val collectionList = arrayListOf<HashMap<String, Any?>>()
+                    collections.forEach { collectionList.add(it.asMap()) }
+                    return collectionList
+                }
+
+                onErrorResponse(response)
+
+                return null
+            }
+        } catch (e: Throwable) {
+            logger!!.traceError("Load collections of workspace $workspaceId failed", e)
+            return null
+        }
+    }
+
     override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().get("$COLLECTION/$collectionId")
                 .header("x-api-key", postmanSettingsHelper.getPrivateToken())
@@ -268,6 +302,75 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         } catch (e: Throwable) {
             logger!!.traceError("Load collection info  failed", e)
 
+            return null
+        }
+    }
+
+    override fun getAllWorkspaces(): List<PostmanWorkspace>? {
+        val request = getHttpClient().get(WORKSPACE)
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+
+        try {
+            beforeRequest(request)
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspaces")) {
+                    val returnObj = returnValue.asJsonElement()
+                    val workspaces = returnObj.sub("workspaces")
+                        ?.asJsonArray ?: return null
+                    val workspaceList = mutableListOf<PostmanWorkspace>()
+                    workspaces
+                        .forEach {
+                            val res = it.asMap()
+                            workspaceList.add(
+                                PostmanWorkspace(
+                                    res["id"] as String,
+                                    res["name"] as String,
+                                    res["type"] as String
+                                )
+                            )
+                        }
+                    return workspaceList
+                }
+
+                onErrorResponse(response)
+
+                return null
+            }
+        } catch (e: Throwable) {
+            logger!!.traceError("Load workspaces failed", e)
+
+            return null
+        }
+    }
+
+    override fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace? {
+        val request = getHttpClient().get("$WORKSPACE/$workspaceId")
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+
+        try {
+            beforeRequest(request)
+            call(request).use { response ->
+                val returnValue = response.string()
+                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspace")) {
+                    val returnObj = returnValue.asJsonElement()
+                    return returnObj.sub("workspace")
+                        ?.asMap()
+                        ?.let {
+                            PostmanWorkspace(
+                                it["id"] as String,
+                                it["name"] as String,
+                                it["type"] as String
+                            )
+                        }
+                }
+
+                onErrorResponse(response)
+
+                return null
+            }
+        } catch (e: Throwable) {
+            logger!!.traceError("Load workspace $workspaceId failed", e)
             return null
         }
     }
@@ -316,6 +419,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         const val POSTMANHOST = "https://api.getpostman.com"
         val IMPOREDAPI = "$POSTMANHOST/import/exported"
         const val COLLECTION = "$POSTMANHOST/collections"
+        const val WORKSPACE = "$POSTMANHOST/workspaces"
 
         //the postman rate limit is 60 per/s
         //Just to be on the safe side,limit to 30 per/s
@@ -328,4 +432,3 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
 }
-
