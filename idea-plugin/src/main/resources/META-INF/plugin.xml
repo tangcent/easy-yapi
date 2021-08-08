@@ -17,7 +17,6 @@
     <!--for dev-->
     <idea-version since-build="173.0"/>
 
-
     <change-notes><![CDATA[	Change notes will be filled by gradle build ]]>
     </change-notes>
 
