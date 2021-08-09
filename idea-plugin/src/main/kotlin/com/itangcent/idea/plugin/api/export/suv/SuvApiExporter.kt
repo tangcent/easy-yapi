@@ -33,10 +33,7 @@ import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
+import com.itangcent.idea.plugin.settings.helper.*
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
@@ -408,6 +405,7 @@ class SuvApiExporter {
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
+            builder.bind(PostmanWorkspaceChecker::class) { it.with(PostmanWorkspaceCheckerSupport::class).singleton() }
             builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
