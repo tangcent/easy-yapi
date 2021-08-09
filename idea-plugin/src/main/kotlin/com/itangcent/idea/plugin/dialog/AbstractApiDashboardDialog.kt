@@ -53,7 +53,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     private var projectMode: ProjectMode = ProjectMode.Legible
 
     @Inject
-    protected val logger: Logger? = null
+    protected lateinit var logger: Logger
 
     @Inject
     protected lateinit var actionContext: ActionContext
@@ -136,7 +136,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             try {
                 SwingUtils.expandOrCollapseNode(this.projectApiTree!!, false)
             } catch (e: Exception) {
-                logger!!.error("try collapse project apis failed!")
+                logger.error("try collapse project apis failed!")
             }
         }
 

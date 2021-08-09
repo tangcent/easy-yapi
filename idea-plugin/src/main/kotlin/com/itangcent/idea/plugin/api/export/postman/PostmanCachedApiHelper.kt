@@ -203,7 +203,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         if(useCache) {
             val workspaceInfoBeanBinder = getDbBeanBinderFactory()
                 .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collectionByWorkspace:$workspaceId")
-            var cache = workspaceInfoBeanBinder.read()
+            val cache = workspaceInfoBeanBinder.read()
             if (cache != NULL_POSTMAN_INFO_CACHE) {
                 logger.debug("hit collection by workspace $workspaceId cache.")
                 return cache.allCollection
