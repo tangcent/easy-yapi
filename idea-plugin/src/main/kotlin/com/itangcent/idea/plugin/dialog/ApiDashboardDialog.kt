@@ -154,6 +154,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     val postmanNodeData = (targetComponent as DefaultMutableTreeNode).userObject
 
                     addItem.isEnabled = postmanNodeData !is PostmanApiNodeData
+                    syncItem.isEnabled = syncEnable(postmanNodeData)
                     postmanPopMenu!!.show(postmanApiTree!!, e.x, e.y)
                     postmanApiTree!!.selectionPath = path
                 }
@@ -678,7 +679,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
     private fun syncPostmanAction() {
 
-        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
+        val lastSelectedPathComponent = postmanApiTree!!.lastSelectedPathComponent as? DefaultMutableTreeNode
 
         if (lastSelectedPathComponent != null) {
             val postmanNodeData = lastSelectedPathComponent.userObject
@@ -689,6 +690,16 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             //reload
             loadPostCollectionInfo(collectionPostmanNodeData.asTreeNode(), false)
         }
+    }
+
+    private fun syncEnable(postmanNodeData: Any?): Boolean {
+        if (postmanNodeData == null) {
+            return false
+        }
+        return postmanNodeData.let { it as? PostmanNodeData }
+            ?.getRootNodeData()
+            ?.let { it as? PostmanCollectionNodeData }
+            ?.status == NodeStatus.Loaded
     }
 
     private fun deletePostmanAction() {
