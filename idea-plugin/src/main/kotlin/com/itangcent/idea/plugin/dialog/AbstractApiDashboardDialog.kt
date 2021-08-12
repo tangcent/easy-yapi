@@ -28,6 +28,7 @@ import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.FileType
+import com.itangcent.task.TaskManager
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable

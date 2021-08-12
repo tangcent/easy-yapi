@@ -19,9 +19,13 @@ import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.eval
 import com.itangcent.intellij.extend.rx.from
+import com.itangcent.task.AsyncTask
+import com.itangcent.task.Task
+import com.itangcent.task.TaskManager
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DropTarget
@@ -31,7 +35,6 @@ import java.awt.event.*
 import java.util.*
 import java.util.concurrent.Future
 import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicInteger
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
@@ -66,6 +69,8 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     private val postmanFormatter: PostmanFormatter? = null
 
     private var currentWorkspace: WorkspaceWrapper? = null
+
+    protected var taskManager = TaskManager()
 
     init {
         setContentPane(contentPane)
@@ -311,32 +316,22 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    private class PostmanCollectionLoadTask(val apiDashboardDialog: ApiDashboardDialog) {
-        private val index: Int = indexSeed.incrementAndGet()
+    private class PostmanCollectionLoadTask(
+        val apiDashboardDialog: ApiDashboardDialog,
+        val useCache: Boolean,
+        actionContext: ActionContext,
+        taskManager: TaskManager
+    ) : AsyncTask(
+        actionContext, taskManager
+    ) {
 
-        var status: Int = 0
 
         var collectionInfoLoadingFuture: Future<*>? = null
 
-        fun loadPostmanCollection(useCache: Boolean) {
+        override fun doTask(): Int {
             try {
-                val workspace = apiDashboardDialog.currentWorkspace
-                if (workspace == null) {
-                    complete()
-                    return
-                }
+                val workspace = apiDashboardDialog.currentWorkspace ?: return Task.DONE
 
-                synchronized(apiDashboardDialog) {
-                    if (disposed()) {
-                        complete()
-                        return
-                    }
-                    tasks.forEach { it.terminal() }
-                    tasks.forEach { it.waitTerminal() }
-                    tasks.clear()
-                    tasks.add(this)
-                }
-                //            postmanApiTree!!.dragEnabled = true
                 val treeNode = DefaultMutableTreeNode()
                 val rootTreeModel = DefaultTreeModel(treeNode, true)
                 val collections =
@@ -352,8 +347,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     } else {
                         apiDashboardDialog.logger.debug("No collection be found")
                     }
-                    complete()
-                    return
+                    return Task.DONE
                 }
                 val collectionNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
 
@@ -371,7 +365,6 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     synchronized(apiDashboardDialog)
                     {
                         if (disposed()) {
-                            complete()
                             return@runInSwingUI
                         }
                         apiDashboardDialog.postmanApiTree!!.model = rootTreeModel
@@ -389,7 +382,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                                     if (disposed()) {
                                         break
                                     }
-                                    apiDashboardDialog.loadPostCollectionInfo(collectionNode, useCache) {
+                                    apiDashboardDialog.loadPostCollectionInfo(collectionNode, useCache,this) {
                                         semaphore.release()
                                     }
                                 } catch (e: Exception) {
@@ -406,60 +399,31 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                         }
                     }
                 }
+                return Task.RUNNING
             } catch (e: Exception) {
                 apiDashboardDialog.logger.traceError("failed load postman collection", e)
-                complete()
+                return Task.DONE
             }
         }
 
-        fun complete() {
-            status = 1
-        }
-
-        fun terminal() {
-            status = -1
-            KitUtils.safe {
-                collectionInfoLoadingFuture?.cancel(true)
+        override fun terminate(): Boolean {
+            val ret = super.terminate()
+            collectionInfoLoadingFuture?.let {
+                KitUtils.safe { it.cancel(true) }
             }
-        }
-
-        fun waitTerminal() {
-            for (i in 0..100) {
-                if (status == 1) {
-                    return
-                }
-                Thread.sleep(100)
-            }
-        }
-
-        fun disposed(): Boolean {
-            return apiDashboardDialog.disposed
-                    || status != 0
-                    || this.index < indexSeed.get()
-        }
-
-        companion object {
-            private val tasks = LinkedList<PostmanCollectionLoadTask>()
-            private val indexSeed = AtomicInteger(0)
-
-            fun terminalAll() {
-                indexSeed.incrementAndGet()
-                for (task in tasks) {
-                    task.terminal()
-                }
-            }
+            return ret
         }
     }
 
     private fun loadPostmanCollection(useCache: Boolean) {
-        actionContext.runAsync {
-            PostmanCollectionLoadTask(this).loadPostmanCollection(useCache)
-        }
+        PostmanCollectionLoadTask(this, useCache, actionContext, taskManager).start()
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun loadPostCollectionInfo(
-        collectionNode: DefaultMutableTreeNode, useCache: Boolean,
+        collectionNode: DefaultMutableTreeNode,
+        useCache: Boolean,
+        task: Task? = null,
         onCompleted: (() -> Unit)? = null
     ) {
         val moduleData: PostmanCollectionNodeData
@@ -472,6 +436,9 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             if (collectionId == null) {
                 moduleData.status = NodeStatus.Loaded
                 actionContext.runInSwingUI {
+                    if (task?.disposed() == true) {
+                        return@runInSwingUI
+                    }
                     collectionNode.removeFromParent()
                     postmanApiTreeModel.reload(collectionNode)
                 }
@@ -485,15 +452,27 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
         actionContext.runAsync {
             try {
+                if (task?.disposed() == true) {
+                    return@runAsync
+                }
                 moduleData.status = NodeStatus.Loading
                 val collectionInfo = postmanCachedApiHelper.getCollectionInfo(collectionId.toString(), useCache)
                     ?: return@runAsync
+                if (task?.disposed() == true) {
+                    return@runAsync
+                }
                 moduleData.detail = collectionInfo
                 val items = findEditableItem(collectionInfo)
 
                 actionContext.runInSwingUI {
                     for (item in items) {
+                        if (task?.disposed() == true) {
+                            return@runInSwingUI
+                        }
                         loadPostmanNode(collectionNode, item)
+                    }
+                    if (task?.disposed() == true) {
+                        return@runInSwingUI
                     }
                     postmanApiTreeModel.reload(collectionNode)
                 }
@@ -775,8 +754,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         abstract fun coreData(): HashMap<String, Any?>
 
         fun getRootNodeData(): PostmanNodeData? {
-            val parentCollectionInfo = getParentNodeData()
-            return when (parentCollectionInfo) {
+            return when (val parentCollectionInfo = getParentNodeData()) {
                 null -> this
                 else -> parentCollectionInfo.getRootNodeData()
             }
@@ -787,7 +765,9 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         var treeNode: DefaultMutableTreeNode? = null
 
         fun asTreeNode(): DefaultMutableTreeNode {
-            if (treeNode != null) return treeNode!!
+            if (treeNode != null) {
+                return treeNode!!
+            }
             treeNode = DefaultMutableTreeNode(this)
             return treeNode!!
 
@@ -977,7 +957,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 val collectionId = collection["id"].toString()
 
                 logger.info("upload api...")
-                if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
+                if (postmanCachedApiHelper.updateCollection(collectionId, rootPostmanNodeData.currData())) {
                     logger.info("export success")
                     rootPostmanNodeData.status = NodeStatus.Loaded
 
@@ -1106,7 +1086,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             )
         }
         try {
-            PostmanCollectionLoadTask.terminalAll()
+            taskManager.terminateAll()
         } catch (e: Throwable) {
             logger.traceError("error to cancel postman load", e)
 
