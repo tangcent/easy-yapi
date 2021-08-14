@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.export.postman
 
+import com.google.gson.JsonObject
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
@@ -11,9 +12,6 @@ import com.itangcent.http.HttpClient
 import com.itangcent.http.HttpRequest
 import com.itangcent.http.HttpResponse
 import com.itangcent.http.contentType
-import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
-import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
-import com.itangcent.idea.plugin.api.export.reserved
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.*
@@ -45,7 +43,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     private val httpClientProvider: HttpClientProvider? = null
@@ -63,41 +61,42 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
         val returnValue = response.string()
         if (returnValue.isNullOrBlank()) {
-            logger!!.error("No Response For:${response.request().url()}")
+            logger.error("No Response For:${response.request().url()}")
             return
         }
         if (returnValue.contains("AuthenticationError")
-                && returnValue.contains("Invalid API Key")) {
-            logger!!.error("Authentication failed!")
+            && returnValue.contains("Invalid API Key")
+        ) {
+            logger.error("Authentication failed!")
             return
         }
         val returnObj = returnValue.asJsonElement()
         val errorName = returnObj
-                .sub("error")
-                .sub("name")
-                ?.asString
-        val errorMessage = returnObj?.asJsonObject
-                .sub("error")
-                .sub("message")
-                ?.asString
+            .sub("error")
+            .sub("name")
+            ?.asString
+        val errorMessage = (returnObj as? JsonObject)
+            .sub("error")
+            .sub("message")
+            ?.asString
 
         if (response.code() == 429) {
 
             if (errorName == null) {
-                logger!!.error("$errorMessage \n $LIMIT_ERROR_MSG")
+                logger.error("$errorMessage \n $LIMIT_ERROR_MSG")
                 return
             } else {
-                logger!!.error("[$errorName] $errorMessage \n $LIMIT_ERROR_MSG")
+                logger.error("[$errorName] $errorMessage \n $LIMIT_ERROR_MSG")
                 return
             }
         }
 
         if (errorName != null) {
-            logger!!.error("[$errorName] $errorMessage")
+            logger.error("[$errorName] $errorMessage")
             return
         }
 
-        logger!!.error("Error Response:$returnValue")
+        logger.error("Error Response:$returnValue")
     }
 
     protected open fun getHttpClient(): HttpClient {
@@ -109,10 +108,10 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
      */
     override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>? {
         val request = getHttpClient()
-                .post(COLLECTION)
-                .contentType(ContentType.APPLICATION_JSON)
-                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-                .body(KV.by("collection", collection))
+            .post(COLLECTION)
+            .contentType(ContentType.APPLICATION_JSON)
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+            .body(KV.by("collection", collection))
 
         workspaceId?.let { request.query("workspace", it) }
 
@@ -133,7 +132,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Post to $COLLECTION failed", e)
+            logger.traceError("Post to $COLLECTION failed", e)
             return null
         }
     }
@@ -143,13 +142,13 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             return true
         }
         try {
-            logger!!.info("try fix collection.....")
+            logger.info("try fix collection.....")
             tryFixCollection(collectionInfo)
             if (doUpdateCollection(collectionId, collectionInfo)) {
                 return true
             }
         } catch (e: Exception) {
-            logger!!.traceError("fix collection failed", e)
+            logger.traceError("fix collection failed", e)
 
         }
         return false
@@ -160,32 +159,32 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         if (apiInfo.containsKey("item")) {
             val items = apiInfo["item"] as List<*>? ?: return
             apiInfo["item"] = items
-                    .stream()
-                    .map { it as Map<String, Any?> }
-                    .map { it.asHashMap() }
-                    .peek { item ->
-                        tryFixCollection(item)
-                    }
-                    .toList()
+                .stream()
+                .map { it as Map<String, Any?> }
+                .map { it.asHashMap() }
+                .peek { item ->
+                    tryFixCollection(item)
+                }
+                .toList()
         } else {
             val responses = apiInfo["response"] as List<*>?
             if (responses != null) {
                 apiInfo["response"] = responses
-                        .stream()
-                        .map { it as Map<String, Any?> }
-                        .map { it.asHashMap() }
-                        .peek { response ->
-                            val responseCode = response["code"]
-                            if (responseCode != null) {
-                                when (responseCode) {
-                                    is Map<*, *> -> (response as MutableMap<String, Any?>)["code"] =
-                                            responseCode["value"].asInt() ?: 200
-                                    is LazilyParsedNumber -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
-                                    is String -> (response as MutableMap<String, Any?>)["code"] = responseCode.toInt()
-                                }
+                    .stream()
+                    .map { it as Map<String, Any?> }
+                    .map { it.asHashMap() }
+                    .peek { response ->
+                        val responseCode = response["code"]
+                        if (responseCode != null) {
+                            (response as MutableMap<String, Any?>)["code"] = when (responseCode) {
+                                is Map<*, *> -> responseCode["value"].asInt() ?: 200
+                                is LazilyParsedNumber -> responseCode.toInt()
+                                is String -> responseCode.toInt()
+                                else -> 200
                             }
                         }
-                        .toList()
+                    }
+                    .toList()
             }
         }
     }
@@ -193,9 +192,9 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private fun doUpdateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
 
         val request = getHttpClient().put("$COLLECTION/$collectionId")
-                .contentType(ContentType.APPLICATION_JSON)
-                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-                .body(KV.by("collection", apiInfo))
+            .contentType(ContentType.APPLICATION_JSON)
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+            .body(KV.by("collection", apiInfo))
 
         try {
             beforeRequest(request)
@@ -205,9 +204,9 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                     val returnObj = returnValue.asJsonElement()
                     val collectionName = returnObj
-                            .sub("collection")
-                            .sub("name")
-                            ?.asString
+                        .sub("collection")
+                        .sub("name")
+                        ?.asString
                     if (collectionName.notNullOrBlank()) {
                         return true
                     }
@@ -217,7 +216,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return false
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Post to $COLLECTION failed", e)
+            logger.traceError("Post to $COLLECTION failed", e)
 
             return false
         }
@@ -225,7 +224,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     override fun getAllCollection(): ArrayList<HashMap<String, Any?>>? {
         val request = getHttpClient().get(COLLECTION)
-                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
         try {
             beforeRequest(request)
@@ -234,7 +233,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collections")) {
                     val returnObj = returnValue.asJsonElement()
                     val collections = returnObj.sub("collections")
-                            ?.asJsonArray ?: return null
+                        ?.asJsonArray ?: return null
                     val collectionList: ArrayList<HashMap<String, Any?>> = ArrayList()
                     collections.forEach { collectionList.add(it.asMap()) }
                     return collectionList
@@ -245,7 +244,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Load collections failed", e)
+            logger.traceError("Load collections failed", e)
 
             return null
         }
@@ -275,14 +274,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Load collections of workspace $workspaceId failed", e)
+            logger.traceError("Load collections of workspace $workspaceId failed", e)
             return null
         }
     }
 
     override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().get("$COLLECTION/$collectionId")
-                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
             call(request).use { response ->
@@ -291,8 +290,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                     val returnObj = returnValue.asJsonElement()
                     return returnObj
-                            .sub("collection")
-                            ?.asMap()
+                        .sub("collection")
+                        ?.asMap()
                 }
 
                 onErrorResponse(response)
@@ -300,7 +299,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Load collection info  failed", e)
+            logger.traceError("Load collection info  failed", e)
 
             return null
         }
@@ -338,7 +337,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Load workspaces failed", e)
+            logger.traceError("Load workspaces failed", e)
 
             return null
         }
@@ -370,14 +369,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("Load workspace $workspaceId failed", e)
+            logger.traceError("Load workspace $workspaceId failed", e)
             return null
         }
     }
 
     override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
         val request = getHttpClient().delete("$COLLECTION/$collectionId")
-                .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
             beforeRequest(request)
             call(request).use { response ->
@@ -386,8 +385,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
                     val returnObj = returnValue.asJsonElement()
                     return returnObj
-                            .sub("collection")
-                            ?.asMap()
+                        .sub("collection")
+                        ?.asMap()
                 }
 
                 onErrorResponse(response)
@@ -395,7 +394,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                 return null
             }
         } catch (e: Throwable) {
-            logger!!.traceError("delete collection failed", e)
+            logger.traceError("delete collection failed", e)
             return null
         }
     }
@@ -411,15 +410,11 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    protected fun reservedResponseHandle(): ReservedResponseHandle<String> {
-        return StringResponseHandler.DEFAULT_RESPONSE_HANDLER.reserved()
-    }
-
     companion object {
-        const val POSTMANHOST = "https://api.getpostman.com"
-        val IMPOREDAPI = "$POSTMANHOST/import/exported"
-        const val COLLECTION = "$POSTMANHOST/collections"
-        const val WORKSPACE = "$POSTMANHOST/workspaces"
+        const val POSTMAN_HOST = "https://api.getpostman.com"
+        //const val IMPOREDAPI = "$POSTMANHOST/import/exported"
+        const val COLLECTION = "$POSTMAN_HOST/collections"
+        const val WORKSPACE = "$POSTMAN_HOST/workspaces"
 
         //the postman rate limit is 60 per/s
         //Just to be on the safe side,limit to 30 per/s
