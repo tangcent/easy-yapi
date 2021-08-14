@@ -243,7 +243,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
 
         this.postmanSyncButton!!.addActionListener {
-            ((this.postmanApiTree!!.model as DefaultTreeModel).root as DefaultMutableTreeNode).removeAllChildren()
+            ((this.postmanApiTree!!.model as? DefaultTreeModel)?.root as? DefaultMutableTreeNode)?.removeAllChildren()
             //loadPostmanWorkspace() 只刷新当前选中的workspace下的collection
             loadPostmanCollection(false)
         }
