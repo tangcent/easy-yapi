@@ -1,3 +1,25 @@
+* 2.2.5
+
+	* chore: add test case of PostmanApiHelper [(#562)](https://github.com/tangcent/easy-yapi/pull/562)
+
+	* feat: refactor Task [(#561)](https://github.com/tangcent/easy-yapi/pull/561)
+
+	* feat: disable [sync] for the node which is not loaded [(#560)](https://github.com/tangcent/easy-yapi/pull/560)
+
+	* feat: optimize loading of postman collections [(#557)](https://github.com/tangcent/easy-yapi/pull/557)
+
+	* feat: support export to postman customize workspace [(#524)](https://github.com/tangcent/easy-yapi/pull/524)
+
+	* feat: add default keyboard-shortcut of ApiCallAction [(#553)](https://github.com/tangcent/easy-yapi/pull/553)
+
+	* feat: trust [localhost]&[127.0.0.1] by default [(#552)](https://github.com/tangcent/easy-yapi/pull/552)
+
+	* feat: keep changes in ApiCallDialog [(#551)](https://github.com/tangcent/easy-yapi/pull/551)
+
+	* feat: populate default value or demo as field value [(#548)](https://github.com/tangcent/easy-yapi/pull/548)
+
+	* fix: use "" instead of null in format request headers [(#547)](https://github.com/tangcent/easy-yapi/pull/547)
+
 * 2.2.4
 
 	* fix: Ignore SSL certificate in ApacheHttpClient [(#532)](https://github.com/tangcent/easy-yapi/pull/532)
@@ -10,8 +32,6 @@
 
 	* feat: bundled markdown render [(#530)](https://github.com/tangcent/easy-yapi/pull/530)
 
-	* release v2.2.4-rc [(#522)](https://github.com/tangcent/easy-yapi/pull/522)
-      
 	* feat: remove recommend config of enum [(#521)](https://github.com/tangcent/easy-yapi/pull/521)
 
 * 2.2.3
