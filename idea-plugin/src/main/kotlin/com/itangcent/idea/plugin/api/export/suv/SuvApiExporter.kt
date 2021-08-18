@@ -21,6 +21,7 @@ import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.curl.CurlFormatter
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
@@ -35,6 +36,7 @@ import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.helper.*
 import com.itangcent.idea.psi.PsiResource
+import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
@@ -53,6 +55,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.FileType
+import com.itangcent.intellij.util.ToolUtils
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
@@ -62,7 +65,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 import kotlin.streams.toList
 
-class SuvApiExporter {
+open class SuvApiExporter {
 
     @Inject
     private val logger: Logger? = null
@@ -684,6 +687,87 @@ class SuvApiExporter {
         }
     }
 
+    class CurlApiExporterAdapter : ApiExporterAdapter() {
+
+        @Inject
+        private val fileSaveHelper: FileSaveHelper? = null
+
+        @Inject
+        private lateinit var curlFormatter: CurlFormatter
+
+        @Inject
+        private lateinit var markdownSettingsHelper: MarkdownSettingsHelper
+
+        @Inject
+        private lateinit var messagesHelper: MessagesHelper
+
+        override fun actionName(): String {
+            return "CurlExportAction"
+        }
+
+        override fun afterBuildActionContext(
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder
+        ) {
+            super.afterBuildActionContext(actionContext, builder)
+
+            builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
+
+            builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
+            builder.bindInstance(
+                "AVAILABLE_CLASS_EXPORTER",
+                arrayOf<Any>(
+                    SpringRequestClassExporter::class,
+                    GenericRequestClassExporter::class
+                )
+            )
+
+            builder.bind(ConfigReader::class, "delegate_config_reader") {
+                it.with(EasyApiConfigReader::class).singleton()
+            }
+            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
+
+            //always not read api from cache
+            builder.bindInstance("class.exporter.read.cache", false)
+
+            builder.bindInstance("file.save.default", "easy-api-curl.md")
+            builder.bindInstance("file.save.last.location.key", "com.itangcent.curl.export.path")
+        }
+
+        override fun doExportDocs(docs: MutableList<Doc>) {
+            try {
+                if (docs.isEmpty()) {
+                    logger!!.info("No api be found to export!")
+                    return
+                }
+                if (docs.size == 1) {
+                    val curlCommand = curlFormatter.parseRequest(docs[0] as Request)
+                    ToolUtils.copy2Clipboard(curlCommand)
+                    messagesHelper.showInfoDialog(curlCommand, "Curl")
+                } else {
+                    logger!!.info("Start parse apis")
+                    val apiInfo = curlFormatter.parseRequests(docs.map { it as Request }.toList())
+                    docs.clear()
+                    actionContext!!.runAsync {
+                        try {
+                            fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
+                                logger!!.info("Exported data are copied to clipboard,you can paste to a md file now")
+                            }, {
+                                logger!!.info("Apis save success: $it")
+                            }) {
+                                logger!!.info("Apis save failed")
+                            }
+                        } catch (e: Exception) {
+                            logger!!.traceError("Apis save failed", e)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                logger!!.traceError("Apis save failed", e)
+            }
+        }
+    }
+
     private fun doExport(channel: ApiExporterWrapper, requests: List<DocWrapper>) {
         if (requests.isNullOrEmpty()) {
             logger!!.info("no api has be selected")
@@ -699,7 +783,8 @@ class SuvApiExporter {
         private val EXPORTER_CHANNELS: List<*> = listOf(
             ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi", Request::class, MethodDoc::class),
             ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
-            ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class)
+            ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
+            ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class)
         )
 
     }

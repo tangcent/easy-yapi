@@ -61,6 +61,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         loadFile("model/CustomMap.java")
         loadFile("model/PageRequest.java")
         loadFile("spring/GetMapping.java")
+        loadFile("spring/PutMapping.java")
         loadFile("spring/ModelAttribute.java")
         loadFile("spring/PostMapping.java")
         loadFile("spring/RequestBody.java")

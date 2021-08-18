@@ -100,7 +100,8 @@ class PostmanSettingsHelper {
             "Select $inputTitle Of Project:$projectName",
             "Postman $inputTitle",
             Messages.getInformationIcon(),
-            workspaceMap.keys.sorted().toTypedArray()
+            workspaceMap.keys.sorted().toTypedArray(),
+            workspaceMap.keys.firstOrNull()
         )?.let { workspaceMap[it] }
     }
 
