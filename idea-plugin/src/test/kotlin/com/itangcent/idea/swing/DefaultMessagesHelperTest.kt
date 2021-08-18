@@ -30,6 +30,29 @@ internal open class DefaultMessagesHelperTest : BaseContextTest() {
         builder.bind(MessagesHelper::class) { it.with(DefaultMessagesHelper::class) }
     }
 
+    @Test
+    fun showEditableChooseDialog() {
+        actionContext.runInSwingUI {
+            logger.info("test MessagesHelper.showEditableChooseDialog")
+            mockStatic(Messages::class.java).use { messages ->
+                messages.`when`<String> {
+                    Messages.showEditableChooseDialog(
+                        "Msg",
+                        "Title",
+                        Messages.getInformationIcon(),
+                        null, null, null
+                    )
+                }.thenReturn("select")
+                assertEquals(
+                    "select", messagesHelper.showEditableChooseDialog(
+                        "Msg", "Title", Messages.getInformationIcon(), null, null
+                    )
+                )
+            }
+            logger.info("test MessagesHelper.showEditableChooseDialog completed")
+        }
+    }
+
     class WithActiveWindowProviderTest : DefaultMessagesHelperTest() {
 
         @Inject

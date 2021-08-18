@@ -47,6 +47,7 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
         loadFile("model/UserInfo.java")
         loadFile("model/Default.java")
         loadFile("spring/GetMapping.java")
+        loadFile("spring/PutMapping.java")
         loadFile("spring/PostMapping.java")
         loadFile("spring/ModelAttribute.java")
         loadFile("spring/RequestMapping.java")

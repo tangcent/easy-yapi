@@ -9,6 +9,8 @@ import com.intellij.ui.BooleanTableCellRenderer
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
+import com.itangcent.cache.DefaultHttpContextCacheHelper
+import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
@@ -30,10 +32,7 @@ import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.Mode
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
-import com.itangcent.intellij.file.BeanBinder
-import com.itangcent.intellij.file.FileBeanBinder
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.file.lazy
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.suv.http.HttpClientProvider
@@ -284,19 +283,8 @@ class ApiCallDialog : JDialog() {
     @Inject(optional = true)
     private var httpClientProvider: HttpClientProvider? = null
 
-    @Volatile
-    private var httpContextCacheBinder: BeanBinder<HttpContextCache>? = null
-
-    @Volatile
-    private var httpContextCache: HttpContextCache? = null
-
-    @Inject(optional = true)
-    @Named("host.history.max")
-    private var maxHostHistory: Int = 10
-
-    @Inject(optional = true)
-    @Named("host.default")
-    private var defaultHost: String = "http://localhost:8080"
+    @Inject
+    private lateinit var httpContextCacheHelper: HttpContextCacheHelper
 
     @Synchronized
     private fun getHttpClient(): HttpClient {
@@ -304,10 +292,9 @@ class ApiCallDialog : JDialog() {
             httpClient = httpClientProvider!!.getHttpClient()
 
             try {
-                getHttpContextCache().cookies
-                    ?.stream()
-                    ?.map { BasicCookie.fromJson(it) }
-                    ?.filter { it.getName().notNullOrEmpty() }
+                httpContextCacheHelper.getCookies()
+                    .stream()
+                    .filter { it.getName().notNullOrEmpty() }
                     ?.forEach {
                         httpClient!!.cookieStore().addCookie(it)
                     }
@@ -878,32 +865,12 @@ class ApiCallDialog : JDialog() {
     }
 
     private fun onNewHost(host: String) {
-        val httpContextCache = getHttpContextCache()
-        val hosts = httpContextCache.hosts?.toMutableList() ?: ArrayList()
-
-        if (hosts.contains(host)) {
-            if (hosts.indexOf(host) != 0) {
-                //move to first
-                hosts.remove(host)
-                hosts.add(0, host)//always add to first
-            }
-        } else {
-            while (hosts.size >= maxHostHistory) {
-                hosts.removeAt(hosts.size - 1)//remove the last host
-            }
-            hosts.add(0, host)//always add to first
-        }
-
-        httpContextCache.hosts = hosts
+        httpContextCacheHelper.addHost(host)
         refreshHosts()
     }
 
     private fun refreshHosts() {
-        val httpContextCache = getHttpContextCache()
-        val hosts = httpContextCache.hosts?.toMutableList() ?: ArrayList()
-        if (hosts.isEmpty()) {
-            hosts.add(defaultHost)
-        }
+        val hosts = httpContextCacheHelper.getHosts()
         actionContext.runInSwingUI {
             this.hostComboBox!!.model = DefaultComboBoxModel(hosts.toTypedArray())
         }
@@ -1094,40 +1061,8 @@ class ApiCallDialog : JDialog() {
     }
     //endregion
 
-    //region common func
-    private fun getHttpContextCacheBinder(): BeanBinder<HttpContextCache>? {
-        if (httpContextCacheBinder == null) {
-            httpContextCacheBinder =
-                FileBeanBinder(projectCacheRepository!!.getOrCreateFile(".http_content_cache"), HttpContextCache::class)
-                    .lazy()
-        }
-        return httpContextCacheBinder!!
-    }
-
-    private fun getHttpContextCache(): HttpContextCache {
-        if (httpContextCache == null) {
-            httpContextCacheBinder = getHttpContextCacheBinder()
-            httpContextCache = httpContextCacheBinder!!.read()
-        }
-        return httpContextCache!!
-    }
-
-    //endregion
-
     private fun onCancel() {
-        if (httpContextCacheBinder != null && httpClient != null) {
-            val httpContextCache = getHttpContextCache()
-            val cookies: ArrayList<String> = ArrayList()
-            httpContextCache.cookies = cookies
-            try {
-                httpClient!!.cookieStore().cookies().forEach {
-                    cookies.add(it.json())
-                }
-                httpContextCacheBinder!!.save(httpContextCache)
-            } catch (e: Exception) {
-                logger.traceError("error to save http context.", e)
-            }
-        }
+        httpClient?.cookieStore()?.cookies()?.let { httpContextCacheHelper.addCookies(it) }
         this.requestRawViewList?.forEachIndexed { index, requestRawInfo ->
             if (requestRawInfo != this.apiList!![index].raw) {
                 this.requestRawInfoBinderFactory.getBeanBinder(requestRawInfo.cacheKey())
@@ -1139,11 +1074,6 @@ class ApiCallDialog : JDialog() {
         }
         dispose()
         actionContext.unHold()
-    }
-
-    class HttpContextCache {
-        var cookies: List<String>? = null
-        var hosts: List<String>? = null
     }
 
     class ResponseStatus(var response: HttpResponse) {

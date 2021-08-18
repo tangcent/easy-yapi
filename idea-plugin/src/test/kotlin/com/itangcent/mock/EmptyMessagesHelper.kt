@@ -13,7 +13,10 @@ class EmptyMessagesHelper : MessagesHelper {
         return null
     }
 
-    override fun showEditableChooseDialog(message: String?, title: String?, icon: Icon?, values: Array<String>, initialValue: String?): String? {
+    override fun showEditableChooseDialog(message: String?, title: String?, icon: Icon?, values: Array<String>?, initialValue: String?): String? {
         return null
+    }
+
+    override fun showInfoDialog(message: String?, title: String?) {
     }
 }

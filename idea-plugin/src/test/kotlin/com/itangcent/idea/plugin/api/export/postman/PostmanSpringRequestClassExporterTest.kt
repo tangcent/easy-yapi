@@ -66,7 +66,7 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
             )
         }
         requests[2].let { request ->
-            assertEquals("create new use", request.name)
+            assertEquals("create new user", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
             assertEquals(userCtrlPsiClass.methods[2], (request.resource as PsiResource).resource())

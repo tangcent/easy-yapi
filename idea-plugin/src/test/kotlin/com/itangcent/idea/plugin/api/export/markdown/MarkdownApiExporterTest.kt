@@ -57,6 +57,8 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
         loadFile("model/IResult.java")
         loadFile("model/Result.java")
         loadFile("model/UserInfo.java")
+        loadFile("spring/ModelAttribute.java")
+        loadFile("spring/PutMapping.java")
         loadFile("spring/PostMapping.java")
         loadFile("spring/GetMapping.java")
         loadFile("spring/RequestMapping.java")

@@ -25,7 +25,11 @@ class DefaultMessagesHelper : MessagesHelper {
      * @return [.YES] if user pressed "Yes" or [.NO] if user pressed "No" button.
      */
     @YesNoResult
-    override fun showYesNoDialog(message: String?, @Nls(capitalization = Nls.Capitalization.Title) title: String, icon: Icon?): Int {
+    override fun showYesNoDialog(
+        message: String?,
+        @Nls(capitalization = Nls.Capitalization.Title) title: String,
+        icon: Icon?
+    ): Int {
         val activeWindow = activeWindowProvider?.activeWindow()
         return actionContext.callInSwingUI {
             if (activeWindow == null) {
@@ -36,11 +40,14 @@ class DefaultMessagesHelper : MessagesHelper {
         }!!
     }
 
-
     /**
      * @return trimmed input string or `null` if user cancelled dialog.
      */
-    override fun showInputDialog(message: String?, @Nls(capitalization = Nls.Capitalization.Title) title: String?, icon: Icon?): String? {
+    override fun showInputDialog(
+        message: String?,
+        @Nls(capitalization = Nls.Capitalization.Title) title: String?,
+        icon: Icon?
+    ): String? {
         val activeWindow = activeWindowProvider?.activeWindow()
         return actionContext.callInSwingUI {
             if (activeWindow == null) {
@@ -55,11 +62,29 @@ class DefaultMessagesHelper : MessagesHelper {
         message: String?,
         @Nls(capitalization = Nls.Capitalization.Title) title: String?,
         icon: Icon?,
-        values: Array<String>,
+        values: Array<String>?,
         initialValue: String?
     ): String? {
         return actionContext.callInSwingUI {
             Messages.showEditableChooseDialog(message, title, icon, values, initialValue ?: "", null)
         }
     }
+
+    /**
+     * Shows dialog with given message and title, information icon {@link #getInformationIcon()} and OK button
+     */
+    override fun showInfoDialog(
+        message: String?,
+        @Nls(capitalization = Nls.Capitalization.Title) title: String?
+    ) {
+        val activeWindow = activeWindowProvider?.activeWindow()
+        actionContext.runInSwingUI {
+            if (activeWindow == null) {
+                Messages.showInfoMessage(project, message, title ?: "")
+            } else {
+                Messages.showInfoMessage(activeWindow, message, title ?: "")
+            }
+        }
+    }
+
 }

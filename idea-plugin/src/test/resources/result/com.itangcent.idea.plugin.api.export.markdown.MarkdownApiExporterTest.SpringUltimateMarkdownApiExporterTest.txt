@@ -109,7 +109,7 @@ not update anything
 
 
 ---
-## create new use
+## create new user
 
 ### BASIC
 
@@ -152,6 +152,81 @@ not update anything
   "regtime": ""
 }
 ```
+
+
+### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | required | default | desc |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| code | integer |  |  | response code | 
+| msg | string |  |  | message | 
+| data | object |  |  | response data | 
+| &ensp;&ensp;&#124;─id | integer |  |  | user id | 
+| &ensp;&ensp;&#124;─type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
+| &ensp;&ensp;&#124;─name | string |  |  | user name | 
+| &ensp;&ensp;&#124;─age | integer |  |  | user age | 
+| &ensp;&ensp;&#124;─sex | integer |  |  |  | 
+| &ensp;&ensp;&#124;─birthDay | string |  |  | user birthDay | 
+| &ensp;&ensp;&#124;─regtime | string |  |  | user regtime | 
+
+**Response Demo：**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "id": 0,
+    "type": 0,
+    "name": "",
+    "age": 0,
+    "sex": 0,
+    "birthDay": "",
+    "regtime": ""
+  }
+}
+```
+
+
+
+---
+## update user info
+
+### BASIC
+
+**Path：** user/update
+
+**Method：** PUT
+
+### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| Content-Type | multipart/form-data | YES |  |
+| token |  | YES | auth token |
+
+**Form：**
+
+| name  |  value  | required |  type  |  desc  |
+| ------------ | ------------ | ------------ | ------------ | ------------ |
+| id |  | NO | text | user id |
+| type |  | NO | text | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name |  | NO | text | user name |
+| age |  | NO | text | user age |
+| sex |  | NO | text |  |
+| birthDay |  | NO | text | user birthDay |
+| regtime |  | NO | text | user regtime |
 
 
 ### RESPONSE
