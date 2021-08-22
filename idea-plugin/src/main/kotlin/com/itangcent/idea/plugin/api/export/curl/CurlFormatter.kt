@@ -18,7 +18,7 @@ class CurlFormatter {
     private lateinit var httpContextCacheHelper: HttpContextCacheHelper
 
     fun parseRequests(requests: List<Request>): String {
-        val host = httpContextCacheHelper.selectHost()
+        val host = httpContextCacheHelper.selectHost("Select Host For Curl")
         val sb = StringBuilder()
         for (request in requests) {
             if (sb.isNotEmpty()) {
@@ -32,7 +32,7 @@ class CurlFormatter {
     }
 
     fun parseRequest(request: Request): String {
-        val host = httpContextCacheHelper.selectHost()
+        val host = httpContextCacheHelper.selectHost("Select Host For Curl")
         return StringBuilder().also {
             parseRequest(request, host, it)
         }.toString()

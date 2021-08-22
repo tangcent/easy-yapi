@@ -98,7 +98,7 @@ internal open class DefaultHttpContextCacheHelperTest : AdvancedContextTest() {
             messagesHelper.stub {
                 this.on(
                     messagesHelper.showEditableChooseDialog(
-                        Mockito.eq("Select Host For Curl"),
+                        Mockito.eq("Select Host"),
                         Mockito.anyString(),
                         Mockito.any(),
                         Mockito.argThat<Array<String>?> { arrayOf("http://localhost:8080").contentEquals(it) },
@@ -107,12 +107,13 @@ internal open class DefaultHttpContextCacheHelperTest : AdvancedContextTest() {
                 ).thenReturn("http://127.0.0.1:8088")
                 this.on(
                     messagesHelper.showEditableChooseDialog(
-                        Mockito.eq("Select Host For Curl"),
+                        Mockito.eq("Select Host"),
                         Mockito.anyString(),
                         Mockito.any(),
                         Mockito.argThat<Array<String>?> {
                             arrayOf(
                                 "http://127.0.0.1:8081",
+                                "http://127.0.0.1:8088",
                                 "http://localhost:8080"
                             ).contentEquals(it)
                         },
@@ -121,10 +122,10 @@ internal open class DefaultHttpContextCacheHelperTest : AdvancedContextTest() {
                 ).thenReturn("http://127.0.0.1:8081")
                 this.on(
                     messagesHelper.showEditableChooseDialog(
-                        Mockito.eq("Select Host For Curl"),
+                        Mockito.eq("Select Host"),
                         Mockito.anyString(),
                         Mockito.any(),
-                        Mockito.argThat<Array<String>?> { it.size > 2 },
+                        Mockito.argThat<Array<String>?> { it.size > 3 },
                         Mockito.any()
                     )
                 ).thenReturn(null)
@@ -134,11 +135,11 @@ internal open class DefaultHttpContextCacheHelperTest : AdvancedContextTest() {
 
         @Test
         fun selectHost() {
-            assertEquals("http://127.0.0.1:8088", httpContextCacheHelper.selectHost())
+            assertEquals("http://127.0.0.1:8088", httpContextCacheHelper.selectHost("Select Host"))
             httpContextCacheHelper.addHost("http://127.0.0.1:8081")
-            assertEquals("http://127.0.0.1:8081", httpContextCacheHelper.selectHost())
+            assertEquals("http://127.0.0.1:8081", httpContextCacheHelper.selectHost("Select Host"))
             httpContextCacheHelper.addHost("http://127.0.0.1:8082")
-            assertEquals("http://localhost:8080", httpContextCacheHelper.selectHost())
+            assertEquals("http://localhost:8080", httpContextCacheHelper.selectHost("Select Host"))
         }
     }
 }

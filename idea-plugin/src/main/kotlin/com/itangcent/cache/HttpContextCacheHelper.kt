@@ -14,5 +14,5 @@ interface HttpContextCacheHelper {
 
     fun addCookies(cookies: List<Cookie>)
 
-    fun selectHost(): String
+    fun selectHost(message: String? = null): String
 }
