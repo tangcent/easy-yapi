@@ -107,6 +107,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
      * @return collection id
      */
     override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>? {
+        LOG.info("create collection in workspace $workspaceId to postman")
         val request = getHttpClient()
             .post(COLLECTION)
             .contentType(ContentType.APPLICATION_JSON)
@@ -138,6 +139,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun updateCollection(collectionId: String, collectionInfo: HashMap<String, Any?>): Boolean {
+        LOG.info("update collection $collectionId to postman")
         if (doUpdateCollection(collectionId, collectionInfo)) {
             return true
         }
@@ -223,6 +225,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun getAllCollection(): ArrayList<HashMap<String, Any?>>? {
+        LOG.info("read all collection from postman")
         val request = getHttpClient().get(COLLECTION)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
@@ -251,6 +254,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun getCollectionByWorkspace(workspaceId: String): ArrayList<HashMap<String, Any?>>? {
+        LOG.info("read collection in workspace [$workspaceId] from postman")
         val request = getHttpClient().get("$WORKSPACE/$workspaceId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
@@ -280,6 +284,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+        LOG.info("read collection of $collectionId from postman")
         val request = getHttpClient().get("$COLLECTION/$collectionId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
@@ -306,6 +311,10 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun getAllWorkspaces(): List<PostmanWorkspace>? {
+        if (postmanSettingsHelper.getPrivateToken() == null) {
+            return null
+        }
+        LOG.info("read allWorkspaces from postman")
         val request = getHttpClient().get(WORKSPACE)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
@@ -344,6 +353,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace? {
+        LOG.info("read workspaceInfo of $workspaceId from postman")
         val request = getHttpClient().get("$WORKSPACE/$workspaceId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
 
@@ -375,6 +385,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+        LOG.info("delete collection $collectionId from postman")
         val request = getHttpClient().delete("$COLLECTION/$collectionId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
         try {
@@ -412,6 +423,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     companion object {
         const val POSTMAN_HOST = "https://api.getpostman.com"
+
         //const val IMPOREDAPI = "$POSTMANHOST/import/exported"
         const val COLLECTION = "$POSTMAN_HOST/collections"
         const val WORKSPACE = "$POSTMAN_HOST/workspaces"
@@ -427,3 +439,5 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
 }
+
+private val LOG = org.apache.log4j.Logger.getLogger(DefaultPostmanApiHelper::class.java)

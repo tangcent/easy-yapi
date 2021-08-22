@@ -1,8 +1,10 @@
 package com.itangcent.idea.plugin.settings
 
+import com.google.inject.ImplementedBy
 import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.CachedBeanBinder
 
+@ImplementedBy(DefaultSettingBinder::class)
 interface SettingBinder : BeanBinder<Settings> {
 }
 

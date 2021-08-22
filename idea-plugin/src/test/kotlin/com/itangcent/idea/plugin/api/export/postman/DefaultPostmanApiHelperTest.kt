@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.utils.KV
-import com.itangcent.idea.plugin.settings.helper.PostmanWorkspaceChecker
+import com.itangcent.idea.plugin.settings.helper.SettingsHelperTest
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.asJsonElement
 import com.itangcent.intellij.extend.asMap
@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
 /**
  * Test case of [DefaultPostmanApiHelper]
  */
-abstract class DefaultPostmanApiHelperTest : AdvancedContextTest() {
+abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
 
     @Inject
     protected lateinit var postmanApiHelper: PostmanApiHelper
@@ -34,7 +34,11 @@ abstract class DefaultPostmanApiHelperTest : AdvancedContextTest() {
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
         builder.bind(PostmanApiHelper::class) { it.with(DefaultPostmanApiHelper::class).singleton() }
-        builder.bind(PostmanWorkspaceChecker::class) { it.with(PostmanWorkspaceCheckerSupport::class).singleton() }
+    }
+
+    override fun afterBind(actionContext: ActionContext) {
+        super.afterBind(actionContext)
+        settings.postmanToken = "PMAK-XXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXX"
     }
 
     @DisabledOnOs(OS.WINDOWS)
@@ -171,6 +175,9 @@ abstract class DefaultPostmanApiHelperTest : AdvancedContextTest() {
                 "[{\"id\":\"0db55d8f-8e03-4568-2871-250a378ab87c\",\"name\":\"Team Workspace\",\"type\":\"team\"},{\"id\":\"1e2e3d32-91fe-4208-a4cf-714c372b5885\",\"name\":\"easy-yapi-Dev\",\"type\":\"team\"},{\"id\":\"58fa9260-917e-4ee7-9359-ba2f3ac02993\",\"name\":\"tangcent\",\"type\":\"personal\"},{\"id\":\"6792df46-04c3-832f-88f1-c723d1716ca4\",\"name\":\"My Workspace\",\"type\":\"personal\"},{\"id\":\"e60ffc9b-3ca5-4222-91ea-0a30f22ea4d3\",\"name\":\"easy-yapi-demo\",\"type\":\"personal\"},{\"id\":\"e508269b-72ef-4c67-92c4-55777ba33434\",\"name\":\"tang\",\"type\":\"team\"}]",
                 allWorkspaces.toJson()
             )
+
+            settings.postmanToken = null
+            assertNull(postmanApiHelper.getAllWorkspaces())
         }
 
         @Test

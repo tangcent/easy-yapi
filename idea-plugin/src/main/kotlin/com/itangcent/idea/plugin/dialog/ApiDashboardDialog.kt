@@ -14,6 +14,7 @@ import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.api.export.postman.PostmanUrls.INTEGRATIONS_DASHBOARD
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
@@ -276,7 +277,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             }
             logger.info(
                 "If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
-                        " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api]."
+                        " Postman Integrations Dashboard [$INTEGRATIONS_DASHBOARD]."
             )
             return
         }
@@ -335,7 +336,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 val treeNode = DefaultMutableTreeNode()
                 val rootTreeModel = DefaultTreeModel(treeNode, true)
                 val collections =
-                    apiDashboardDialog.postmanCachedApiHelper.getCollectionByWorkspace(workspace.id, useCache)
+                    apiDashboardDialog.postmanCachedApiHelper.getCollectionByWorkspace(workspace.id!!, useCache)
                 if (collections.isNullOrEmpty()) {
                     if (collections == null) {
                         apiDashboardDialog.actionContext.runInSwingUI {
@@ -382,7 +383,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                                     if (disposed()) {
                                         break
                                     }
-                                    apiDashboardDialog.loadPostCollectionInfo(collectionNode, useCache,this) {
+                                    apiDashboardDialog.loadPostCollectionInfo(collectionNode, useCache, this) {
                                         semaphore.release()
                                     }
                                 } catch (e: Exception) {
@@ -1057,10 +1058,10 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
     //region workspace--------------------------------------------------------
 
-    private class WorkspaceWrapper(var id: String, var name: String) {
+    private class WorkspaceWrapper(var id: String?, var name: String?) {
 
         override fun toString(): String {
-            return name
+            return name ?: ""
         }
 
     }

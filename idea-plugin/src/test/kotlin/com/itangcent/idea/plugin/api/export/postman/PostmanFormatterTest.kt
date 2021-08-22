@@ -10,7 +10,6 @@ import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.idea.plugin.settings.helper.PostmanWorkspaceChecker
 import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.ImmutableSystemProvider
@@ -43,12 +42,6 @@ internal class PostmanFormatterTest : PostmanSpringClassExporterBaseTest() {
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(settings))
         }
-        val postmanWorkspaceChecker = object : PostmanWorkspaceChecker {
-            override fun checkWorkspace(workspace: String): Boolean {
-                return true
-            }
-        }
-        builder.bindInstance(PostmanWorkspaceChecker::class, postmanWorkspaceChecker)
         builder.bindInstance(PostmanApiHelper::class, PostmanCachedApiHelper())
     }
 
