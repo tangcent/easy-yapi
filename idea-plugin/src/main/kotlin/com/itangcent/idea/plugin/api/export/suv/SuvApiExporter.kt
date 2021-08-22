@@ -408,7 +408,6 @@ open class SuvApiExporter {
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-            builder.bind(PostmanWorkspaceChecker::class) { it.with(PostmanWorkspaceCheckerSupport::class).singleton() }
             builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
@@ -450,7 +449,10 @@ open class SuvApiExporter {
                 if (postmanSettingsHelper.hasPrivateToken()) {
                     logger!!.info("PrivateToken of postman be found")
                     // get workspace
-                    val workspaceId = postmanSettingsHelper.getWorkspace(project.name, false)
+                    val workspaceId = postmanSettingsHelper.getWorkspace(false)
+                    if (workspaceId != null) {
+                        LOG.info("export to workspace $workspaceId")
+                    }
                     val createdCollection = postmanApiHelper.createCollection(postman, workspaceId)
 
                     if (createdCollection.notNullOrEmpty()) {
@@ -786,6 +788,7 @@ open class SuvApiExporter {
             ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
             ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class)
         )
-
     }
 }
+
+private val LOG = org.apache.log4j.Logger.getLogger(SuvApiExporter::class.java)

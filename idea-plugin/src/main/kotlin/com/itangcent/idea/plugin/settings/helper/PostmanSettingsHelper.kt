@@ -1,202 +1,22 @@
 package com.itangcent.idea.plugin.settings.helper
 
-import com.google.inject.Inject
-import com.google.inject.Singleton
-import com.intellij.openapi.ui.Messages
-import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
+import com.google.inject.ImplementedBy
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.update
-import com.itangcent.idea.swing.MessagesHelper
-import com.itangcent.intellij.logger.Logger
-import java.io.ByteArrayOutputStream
-import java.util.*
-import java.util.concurrent.locks.ReadWriteLock
-import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.withLock
 
-@Singleton
-class PostmanSettingsHelper {
+@ImplementedBy(DefaultPostmanSettingsHelper::class)
+interface PostmanSettingsHelper {
 
-    @Inject
-    private lateinit var settingBinder: SettingBinder
+    fun hasPrivateToken(): Boolean
 
-    @Inject
-    private lateinit var messagesHelper: MessagesHelper
+    fun getPrivateToken(dumb: Boolean = true): String?
 
-    @Inject
-    private lateinit var postmanApiHelper: PostmanApiHelper
+    fun getWorkspace(dumb: Boolean = true): String?
 
-    @Inject
-    private lateinit var postmanWorkspaceChecker: PostmanWorkspaceChecker
+    fun selectWorkspace(): String?
 
-    @Inject
-    private lateinit var logger: Logger
+    fun wrapCollection(): Boolean
 
-    //region privateToken----------------------------------------------------
+    fun autoMergeScript(): Boolean
 
-    fun hasPrivateToken(): Boolean {
-        return getPrivateToken().notNullOrEmpty()
-    }
-
-    fun getPrivateToken(dumb: Boolean = true): String? {
-        settingBinder.read().postmanToken?.let { return it.trim() }
-        if (!dumb) {
-            val postmanPrivateToken = messagesHelper.showInputDialog(
-                    "Input Postman Private Token",
-                    "Postman Private Token", Messages.getInformationIcon())
-            if (postmanPrivateToken.isNullOrBlank()) return null
-            settingBinder.update {
-                it.postmanToken = postmanPrivateToken
-            }
-            return postmanPrivateToken
-        }
-        return null
-    }
-
-    //endregion privateToken----------------------------------------------------
-
-    //region workspace----------------------------------------------------
-
-    private var tryInputWorkspaceOfModule: HashSet<String> = HashSet()
-    private var cacheLock: ReadWriteLock = ReentrantReadWriteLock()
-
-    /**
-     * Workspace in setting.
-     * Map<projectName, workspace>
-     */
-    private var workspaceMap: HashMap<String, String?>? = null
-
-    fun getWorkspace(projectName: String, dumb: Boolean = true): String? {
-        cacheLock.readLock().withLock {
-            if (workspaceMap != null) {
-                return workspaceMap!![projectName]
-            }
-        }
-        cacheLock.writeLock().withLock {
-            if (workspaceMap == null) {
-                initWorkspace()
-            }
-            workspaceMap!![projectName]?.let { return it }
-            if (!dumb && tryInputWorkspaceOfModule.add(projectName)) {
-                val workspace = selectWorkspace(projectName)
-                if (workspace.notNullOrBlank()) {
-                    setWorkspace(projectName, workspace!!)
-                    return workspace
-                }
-            }
-        }
-
-        return null
-    }
-
-    private fun selectWorkspace(projectName: String): String? {
-        val inputTitle = "Workspace"
-        val workspaces = postmanApiHelper.getAllWorkspaces() ?: return null
-        val workspaceMap = workspaces.map { it.name to it.id }.toMap()
-        return messagesHelper.showEditableChooseDialog(
-            "Select $inputTitle Of Project:$projectName",
-            "Postman $inputTitle",
-            Messages.getInformationIcon(),
-            workspaceMap.keys.sorted().toTypedArray(),
-            workspaceMap.keys.firstOrNull()
-        )?.let { workspaceMap[it] }
-    }
-
-    private fun initWorkspace() {
-        workspaceMap = hashMapOf()
-        val settings = settingBinder.read()
-        if (settings.postmanWorkspaces != null) {
-            val properties = Properties()
-            properties.load(settings.postmanWorkspaces!!.byteInputStream())
-            properties.forEach { k, v ->
-                if (postmanWorkspaceChecker.checkWorkspace(v.toString())) {
-                    workspaceMap!![k.toString()] = v.toString()
-                } else {
-                    logger.warn("workspace $v is not valid, will be removed.")
-                    removeWorkspaceByProject(k.toString())
-                }
-            }
-        }
-    }
-
-    private fun updateWorkspaces(handle: (Properties) -> Unit) {
-        cacheLock.writeLock().withLock {
-            val settings = settingBinder.read()
-            val properties = Properties()
-            if (settings.postmanWorkspaces != null) {
-                properties.load(settings.postmanWorkspaces!!.byteInputStream())
-            }
-            handle(properties)
-
-            settings.postmanWorkspaces = ByteArrayOutputStream().also { properties.store(it, "") }.toString()
-            settingBinder.save(settings)
-            if (workspaceMap == null) {
-                workspaceMap = hashMapOf()
-            } else {
-                workspaceMap!!.clear()
-            }
-            // 已经在[setWorkspace]校验过workspace
-            properties.forEach { k, v -> workspaceMap!![k.toString()] = v.toString() }
-        }
-    }
-
-    fun setWorkspace(projectName: String, workspace: String) {
-        if (postmanWorkspaceChecker.checkWorkspace(workspace)) {
-            updateWorkspaces {
-                it[projectName] = workspace
-            }
-            workspaceMap?.put(projectName, workspace)
-        } else {
-            logger.warn("workspace $workspace is not valid")
-        }
-    }
-
-    fun removeWorkspaceByProject(projectName: String) {
-        updateWorkspaces {
-            it.remove(projectName)
-        }
-        workspaceMap?.remove(projectName)
-    }
-
-    fun removeWorkspace(workspace: String) {
-        updateWorkspaces { properties ->
-            val removedKeys = properties.entries
-                .filter { it.value == workspace }
-                .map { it.key }
-                .toList()
-            removedKeys.forEach {
-                properties.remove(it)
-                workspaceMap?.remove(it)
-            }
-        }
-    }
-
-    fun readWorkspaces(): HashMap<String, String> {
-        if (workspaceMap == null) {
-            initWorkspace()
-        }
-        return HashMap(workspaceMap)
-    }
-
-    //endregion workspace----------------------------------------------------
-
-    fun wrapCollection(): Boolean {
-        return settingBinder.read().wrapCollection
-    }
-
-    fun autoMergeScript(): Boolean {
-        return settingBinder.read().autoMergeScript
-    }
-
-    fun postmanJson5FormatType(): PostmanJson5FormatType {
-        return PostmanJson5FormatType.valueOf(settingBinder.read().postmanJson5FormatType)
-    }
-
-}
-
-interface PostmanWorkspaceChecker {
-    fun checkWorkspace(workspace: String): Boolean
+    fun postmanJson5FormatType(): PostmanJson5FormatType
 }

@@ -12,11 +12,9 @@ import com.itangcent.idea.plugin.api.export.generic.SimpleGenericMethodDocClassE
 import com.itangcent.idea.plugin.api.export.generic.SimpleGenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspaceCheckerSupport
 import com.itangcent.idea.plugin.api.export.spring.SimpleSpringRequestClassExporter
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
 import com.itangcent.idea.plugin.config.RecommendConfigReader
-import com.itangcent.idea.plugin.settings.helper.PostmanWorkspaceChecker
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
@@ -46,11 +44,13 @@ class SuvExportAction : ApiExportAction("Export Api") {
         builder.bind(DataContext::class) { it.toInstance(copyDataEventCollector) }
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-        builder.bindInstance("AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(
+        builder.bindInstance(
+            "AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(
                 SimpleSpringRequestClassExporter::class,
                 SimpleGenericRequestClassExporter::class,
                 SimpleGenericMethodDocClassExporter::class
-        ))
+            )
+        )
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
@@ -63,7 +63,6 @@ class SuvExportAction : ApiExportAction("Export Api") {
 
         dataEventCollector = null
 
-        builder.bind(PostmanWorkspaceChecker::class) { it.with(PostmanWorkspaceCheckerSupport::class).singleton() }
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
 
     }

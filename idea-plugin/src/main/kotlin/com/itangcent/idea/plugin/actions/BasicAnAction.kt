@@ -42,7 +42,6 @@ abstract class BasicAnAction : KotlinAnAction {
         super.onBuildActionContext(event, builder)
         builder.bindInstance("plugin.name", "easy_api")
 
-        builder.bind(SettingBinder::class) { it.toInstance(ServiceManager.getService(SettingBinder::class.java).lazy()) }
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
         builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }

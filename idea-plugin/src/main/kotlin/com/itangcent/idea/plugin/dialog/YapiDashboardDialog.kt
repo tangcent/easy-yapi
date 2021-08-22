@@ -10,10 +10,12 @@ import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
+import com.itangcent.idea.plugin.support.IdeaSupport
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
+import com.itangcent.idea.utils.isDoubleClick
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.from
@@ -156,15 +158,9 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             }
 
             override fun mouseClicked(e: MouseEvent?) {
-                if (e == null || e.isConsumed) return
-
-                if (e.isPopupTrigger) return
-                if (e.clickCount == 1 && e.isControlDown) {
+                if(e.isDoubleClick()){
                     goToYapi()
-                    e.consume()
-                } else if (e.clickCount == 2 && e.button == MouseEvent.BUTTON1) {
-                    goToYapi()
-                    e.consume()
+                    e?.consume()
                 }
             }
         })
@@ -556,8 +552,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
     private fun goToYapi(yapiNodeData: YapiNodeData) {
         yapiNodeData.getUrl(this)?.let {
-            ServiceManager.getService(BrowserLauncher::class.java)
-                .open(it)
+            actionContext.instance(IdeaSupport::class).openUrl(it)
         }
     }
 

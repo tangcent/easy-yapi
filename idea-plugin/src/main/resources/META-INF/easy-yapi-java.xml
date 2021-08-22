@@ -89,14 +89,20 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationConfigurable groupId="null"
-                                 displayName="EasyApi"
-                                 id="preferences.EasyApiConfigurable"
-                                 instance="com.itangcent.idea.plugin.actions.EasyApiConfigurable"/>
+        <projectConfigurable groupId="null"
+                             displayName="EasyApi"
+                             id="preferences.EasyApiConfigurable"
+                             instance="com.itangcent.idea.plugin.actions.EasyApiConfigurable"/>
 
-        <applicationService id="easyapi.setting.binder"
-                            serviceInterface="com.itangcent.idea.plugin.settings.SettingBinder"
-                            serviceImplementation="com.itangcent.idea.plugin.settings.XmlSettingBinder"/>
+        <applicationService id="easyapi.setting.application.binder"
+                            serviceImplementation="com.itangcent.idea.plugin.settings.xml.ApplicationSettingsComponent"/>
+
+        <applicationService id="easyapi.setting.application.cache"
+                            serviceImplementation="com.itangcent.idea.plugin.settings.xml.ApplicationCacheComponent"/>
+
+        <projectService id="easyapi.setting.project.binder"
+                        serviceImplementation="com.itangcent.idea.plugin.settings.xml.ProjectSettingsComponent"/>
+
     </extensions>
 
 </idea-plugin>

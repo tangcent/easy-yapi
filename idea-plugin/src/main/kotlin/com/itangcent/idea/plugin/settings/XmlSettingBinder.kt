@@ -1,35 +1,56 @@
 package com.itangcent.idea.plugin.settings
 
-import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.State
-import com.intellij.openapi.components.Storage
+import com.google.inject.Inject
+import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.project.Project
+import com.itangcent.idea.plugin.settings.xml.ApplicationSettings
+import com.itangcent.idea.plugin.settings.xml.ApplicationSettingsComponent
+import com.itangcent.idea.plugin.settings.xml.ProjectSettings
+import com.itangcent.idea.plugin.settings.xml.ProjectSettingsComponent
 
-@State(name = "EasyApiSetting",
-        storages = [Storage("EasyApiSetting.xml")])
-class XmlSettingBinder : PersistentStateComponent<Settings>, SettingBinder {
-    override fun tryRead(): Settings? {
-        return state
+class XmlSettingBinder : SettingBinder {
+
+    @Inject
+    private var project: Project? = null
+
+    private val projectSettingsComponent: ProjectSettingsComponent? by lazy {
+        project?.let { ServiceManager.getService(it, ProjectSettingsComponent::class.java) }
+    }
+
+    private val applicationSettingsComponent: ApplicationSettingsComponent by lazy {
+        ServiceManager.getService(ApplicationSettingsComponent::class.java)
     }
 
     override fun read(): Settings {
-        return state ?: Settings()
+        return tryRead() ?: Settings()
     }
 
     override fun save(t: Settings?) {
-        loadState(t)
+        if (t == null) {
+            projectSettingsComponent?.loadState(null)
+            applicationSettingsComponent.loadState(null)
+            return
+        }
+
+        val projectSettings = projectSettingsComponent?.state ?: ProjectSettings()
+        t.copyTo(projectSettings)
+        projectSettingsComponent?.loadState(projectSettings)
+
+        val applicationSettings = applicationSettingsComponent.state ?: ApplicationSettings()
+        t.copyTo(applicationSettings)
+        applicationSettingsComponent.loadState(applicationSettings)
     }
 
-    private var settings: Settings? = null
+    override fun tryRead(): Settings? {
+        val projectSettings = projectSettingsComponent?.state
+        val applicationSettings = applicationSettingsComponent.state
+        if (projectSettings == null && applicationSettings == null) {
+            return null
+        }
 
-    override fun getState(): Settings? {
+        val settings = Settings()
+        projectSettings?.copyTo(settings)
+        applicationSettings?.copyTo(settings)
         return settings
-    }
-
-    override fun loadState(state: Settings?) {
-        this.settings = state?.copy()
-    }
-
-    override fun noStateLoaded() {
-        settings = Settings()
     }
 }

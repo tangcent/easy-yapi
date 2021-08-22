@@ -1,119 +1,93 @@
 package com.itangcent.idea.plugin.settings
 
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
+import com.itangcent.idea.plugin.settings.xml.ApplicationSettings
+import com.itangcent.idea.plugin.settings.xml.ApplicationSettingsSupport
+import com.itangcent.idea.plugin.settings.xml.ProjectSettingsSupport
 import com.itangcent.idea.utils.Charsets
 
-class Settings {
+class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
-    var methodDocEnable: Boolean = false
+    override var methodDocEnable: Boolean = false
 
-    var genericEnable: Boolean = false
+    override var genericEnable: Boolean = false
 
     //postman
 
-    var pullNewestDataBefore: Boolean = false
+    override var pullNewestDataBefore: Boolean = false
 
-    var postmanToken: String? = null
+    override var postmanToken: String? = null
 
-    var postmanWorkspaces: String? = null
+    override var postmanWorkspace: String? = null
 
-    var wrapCollection: Boolean = false
+    override var wrapCollection: Boolean = false
 
-    var autoMergeScript: Boolean = false
+    override var autoMergeScript: Boolean = false
 
-    var postmanJson5FormatType: String = PostmanJson5FormatType.EXAMPLE_ONLY.name
+    override var postmanJson5FormatType: String = PostmanJson5FormatType.EXAMPLE_ONLY.name
 
     //region intelligent
 
-    var queryExpanded: Boolean = true
+    override var queryExpanded: Boolean = true
 
-    var formExpanded: Boolean = true
+    override var formExpanded: Boolean = true
 
-    var readGetter: Boolean = false
+    override var readGetter: Boolean = false
 
-    var readSetter: Boolean = false
+    override var readSetter: Boolean = false
 
-    var inferEnable: Boolean = false
+    override var inferEnable: Boolean = false
 
-    var inferMaxDeep: Int = DEFAULT_INFER_MAX_DEEP
+    override var inferMaxDeep: Int = DEFAULT_INFER_MAX_DEEP
 
     //endregion
 
     //yapi
 
-    var yapiServer: String? = null
+    override var yapiServer: String? = null
 
-    var yapiTokens: String? = null
+    override var yapiTokens: String? = null
 
-    var enableUrlTemplating: Boolean = true
+    override var enableUrlTemplating: Boolean = true
 
-    var switchNotice: Boolean = true
+    override var switchNotice: Boolean = true
 
-    var loginMode: Boolean = false
+    override var loginMode: Boolean = false
 
-    var yapiReqBodyJson5: Boolean = false
+    override var yapiReqBodyJson5: Boolean = false
 
-    var yapiResBodyJson5: Boolean = false
+    override var yapiResBodyJson5: Boolean = false
 
     //region http--------------------------
 
     //unit:s
-    var httpTimeOut: Int = 5
+    override var httpTimeOut: Int = 5
 
-    var trustHosts: Array<String> = DEFAULT_TRUST_HOSTS
+    override var trustHosts: Array<String> = DEFAULT_TRUST_HOSTS
 
     //endregion
 
     //enable to use recommend config
-    var useRecommendConfig: Boolean = true
+    override var useRecommendConfig: Boolean = true
 
-    var recommendConfigs: String = RecommendConfigLoader.defaultCodes()
+    override var recommendConfigs: String = RecommendConfigLoader.defaultCodes()
 
-    var logLevel: Int = 50
+    override var logLevel: Int = 50
 
     // markdown
 
-    var outputDemo: Boolean = true
+    override var outputDemo: Boolean = true
 
-    var outputCharset: String = Charsets.UTF_8.displayName()
+    override var outputCharset: String = Charsets.UTF_8.displayName()
 
-    var markdownFormatType: String = MarkdownFormatType.SIMPLE.name
+    override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name
 
-    var builtInConfig: String? = null
-
+    override var builtInConfig: String? = null
 
     fun copy(): Settings {
         val newSetting = Settings()
-        newSetting.postmanToken = this.postmanToken
-        newSetting.postmanWorkspaces = this.postmanWorkspaces
-        newSetting.wrapCollection = this.wrapCollection
-        newSetting.autoMergeScript = this.autoMergeScript
-        newSetting.postmanJson5FormatType = this.postmanJson5FormatType
-        newSetting.pullNewestDataBefore = this.pullNewestDataBefore
-        newSetting.methodDocEnable = this.methodDocEnable
-        newSetting.genericEnable = this.genericEnable
-        newSetting.queryExpanded = this.queryExpanded
-        newSetting.formExpanded = this.formExpanded
-        newSetting.readGetter = this.readGetter
-        newSetting.readSetter = this.readSetter
-        newSetting.inferEnable = this.inferEnable
-        newSetting.inferMaxDeep = this.inferMaxDeep
-        newSetting.yapiServer = this.yapiServer
-        newSetting.yapiTokens = this.yapiTokens
-        newSetting.enableUrlTemplating = this.enableUrlTemplating
-        newSetting.switchNotice = this.switchNotice
-        newSetting.loginMode = this.loginMode
-        newSetting.yapiReqBodyJson5 = this.yapiReqBodyJson5
-        newSetting.yapiResBodyJson5 = this.yapiResBodyJson5
-        newSetting.httpTimeOut = this.httpTimeOut
-        newSetting.useRecommendConfig = this.useRecommendConfig
-        newSetting.recommendConfigs = this.recommendConfigs
-        newSetting.logLevel = this.logLevel
-        newSetting.outputDemo = this.outputDemo
-        newSetting.outputCharset = this.outputCharset
-        newSetting.markdownFormatType = this.markdownFormatType
-        newSetting.builtInConfig = this.builtInConfig
-        newSetting.trustHosts = this.trustHosts
+        this.copyTo(newSetting as ProjectSettingsSupport)
+        this.copyTo(newSetting as ApplicationSettingsSupport)
         return newSetting
     }
 
@@ -127,7 +101,7 @@ class Settings {
         if (methodDocEnable != other.methodDocEnable) return false
         if (genericEnable != other.genericEnable) return false
         if (postmanToken != other.postmanToken) return false
-        if (postmanWorkspaces != other.postmanWorkspaces) return false
+        if (postmanWorkspace != other.postmanWorkspace) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
         if (postmanJson5FormatType != other.postmanJson5FormatType) return false
@@ -194,12 +168,13 @@ class Settings {
         const val DEFAULT_INFER_MAX_DEEP = 4
 
         val DEFAULT_TRUST_HOSTS: Array<String> =
-                arrayOf("https://raw.githubusercontent.com/tangcent",
-                        "https://api.getpostman.com",
-                        "https://localhost",
-                        "http://localhost",
-                        "https://127.0.0.1",
-                        "http://127.0.0.1",
-                )
+            arrayOf(
+                "https://raw.githubusercontent.com/tangcent",
+                "https://api.getpostman.com",
+                "https://localhost",
+                "http://localhost",
+                "https://127.0.0.1",
+                "http://127.0.0.1",
+            )
     }
 }

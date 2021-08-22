@@ -1,5 +1,8 @@
 package com.itangcent.idea.plugin.api.export.postman
 
+import com.google.inject.ImplementedBy
+
+@ImplementedBy(DefaultPostmanApiHelper::class)
 interface PostmanApiHelper {
     /**
      * @return collection id
@@ -24,8 +27,16 @@ interface PostmanApiHelper {
     fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace?
 }
 
-data class PostmanWorkspace(
-    var id: String,
-    var name: String,
-    var type: String
-)
+class PostmanWorkspace {
+    var id: String? = null
+    var name: String? = null
+    var type: String? = null
+
+    constructor(id: String?, name: String?, type: String?) {
+        this.id = id
+        this.name = name
+        this.type = type
+    }
+
+    constructor()
+}
