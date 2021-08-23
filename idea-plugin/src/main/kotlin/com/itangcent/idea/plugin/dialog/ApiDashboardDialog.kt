@@ -34,6 +34,7 @@ import java.awt.dnd.DropTargetAdapter
 import java.awt.dnd.DropTargetDropEvent
 import java.awt.event.*
 import java.util.*
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Future
 import java.util.concurrent.Semaphore
 import javax.swing.*
@@ -335,6 +336,13 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
                 val treeNode = DefaultMutableTreeNode()
                 val rootTreeModel = DefaultTreeModel(treeNode, true)
+                synchronized(apiDashboardDialog)
+                {
+                    if (disposed()) {
+                        return Task.DONE
+                    }
+                    apiDashboardDialog.postmanApiTree!!.model = rootTreeModel
+                }
                 val collections =
                     apiDashboardDialog.postmanCachedApiHelper.getCollectionByWorkspace(workspace.id!!, useCache)
                 if (collections.isNullOrEmpty()) {
@@ -363,16 +371,10 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                         collectionNodes.add(collectionNode)
                         rootTreeModel.reload(collectionNode)
                     }
-                    synchronized(apiDashboardDialog)
-                    {
-                        if (disposed()) {
-                            return@runInSwingUI
-                        }
-                        apiDashboardDialog.postmanApiTree!!.model = rootTreeModel
-                    }
-
+                    rootTreeModel.reload()
                     collectionInfoLoadingFuture = apiDashboardDialog.actionContext.runAsync {
                         try {
+                            val countDown = CountDownLatch(collectionNodes.size)
                             val semaphore = Semaphore(3)
                             for (collectionNode in collectionNodes) {
                                 if (disposed()) {
@@ -385,11 +387,14 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                                     }
                                     apiDashboardDialog.loadPostCollectionInfo(collectionNode, useCache, this) {
                                         semaphore.release()
+                                        countDown.countDown()
                                     }
                                 } catch (e: Exception) {
                                     semaphore.release()
+                                    countDown.countDown()
                                 }
                             }
+                            countDown.await()
                         } catch (e: InterruptedException) {
                             if (!disposed()) {
                                 throw e
@@ -454,30 +459,44 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         actionContext.runAsync {
             try {
                 if (task?.disposed() == true) {
+                    moduleData.status = NodeStatus.Loaded
+                    onCompleted?.invoke()
                     return@runAsync
                 }
                 moduleData.status = NodeStatus.Loading
                 val collectionInfo = postmanCachedApiHelper.getCollectionInfo(collectionId.toString(), useCache)
-                    ?: return@runAsync
-                if (task?.disposed() == true) {
+                if (collectionInfo==null || task?.disposed() == true) {
+                    if(collectionInfo==null) {
+                        moduleData.status = NodeStatus.Deleted
+                        collectionNode.removeFromParent()
+                        postmanApiTreeModel.reload(collectionNode)
+                    } else {
+                        moduleData.status = NodeStatus.Loaded
+                    }
+                    onCompleted?.invoke()
                     return@runAsync
                 }
                 moduleData.detail = collectionInfo
                 val items = findEditableItem(collectionInfo)
 
                 actionContext.runInSwingUI {
-                    for (item in items) {
+                    try {
+                        for (item in items) {
+                            if (task?.disposed() == true) {
+                                return@runInSwingUI
+                            }
+                            loadPostmanNode(collectionNode, item)
+                        }
                         if (task?.disposed() == true) {
                             return@runInSwingUI
                         }
-                        loadPostmanNode(collectionNode, item)
+                        postmanApiTreeModel.reload(collectionNode)
+                    } finally {
+                        moduleData.status = NodeStatus.Loaded
+                        onCompleted?.invoke()
                     }
-                    if (task?.disposed() == true) {
-                        return@runInSwingUI
-                    }
-                    postmanApiTreeModel.reload(collectionNode)
                 }
-            } finally {
+            } catch (e:Throwable) {
                 moduleData.status = NodeStatus.Loaded
                 onCompleted?.invoke()
             }
@@ -490,12 +509,10 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
         actionContext.runInSwingUI {
             val parentNodeData = parentNode.userObject as PostmanNodeData
-            Thread.yield()
             if (item.containsKey("request")) {//is request
                 val apiTreeNode = PostmanApiNodeData(parentNodeData, item).asTreeNode()
                 apiTreeNode.allowsChildren = false
                 parentNode.add(apiTreeNode)
-
             } else {//is sub collection
                 val subCollectionNode = PostmanSubCollectionNodeData(parentNodeData, item).asTreeNode()
                 parentNode.add(subCollectionNode)
@@ -592,7 +609,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                         val collectionId = collection["id"].toString()
 
                         logger.info("upload info...")
-                        if (postmanCachedApiHelper!!.updateCollection(collectionId, rootPostmanNodeData.currData())) {
+                        if (postmanCachedApiHelper.updateCollection(collectionId, rootPostmanNodeData.currData())) {
                             logger.info("create success")
                             actionContext.runInSwingUI {
                                 rootPostmanNodeData.status = NodeStatus.Loaded

@@ -128,7 +128,7 @@ class PostmanApiExporter {
                                 )
                             }
                             fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
-                                logger.info("Exported data are copied to clipboard,you can paste to postman now")
+                                logger.info("Exported data are copied to clipboard, you can paste to postman now")
                             }, {
                                 logger.info("Apis save success: $it")
                             }) {

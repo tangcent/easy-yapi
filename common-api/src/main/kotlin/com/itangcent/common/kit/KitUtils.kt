@@ -1,7 +1,8 @@
 package com.itangcent.common.kit
 
-import com.itangcent.common.utils.GsonUtils
-
+import com.itangcent.common.spi.SpiUtils
+import com.itangcent.utils.DefaultJsonSupport
+import com.itangcent.utils.JsonSupport
 import kotlin.reflect.KClass
 
 object KitUtils {
@@ -63,7 +64,7 @@ fun Any?.toJson(): String? {
         return this
     }
 
-    return GsonUtils.toJson(this)
+    return (SpiUtils.loadService(JsonSupport::class) ?: DefaultJsonSupport).toJson(this)
 }
 
 fun String.headLine(): String? {

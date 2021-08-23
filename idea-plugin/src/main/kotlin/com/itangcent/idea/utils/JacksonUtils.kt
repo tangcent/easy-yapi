@@ -38,11 +38,11 @@ object JacksonUtils {
         val split = json.indexOf(',')
         return try {
             objectMapper.readValue(
-                json.substring(split + 1),
+                json.substring(split + 1).resolveGsonLazily(),
                 Class.forName(json.substring(0, split)) as Class<T>
             )
         } catch (e: Exception) {
-            LOG.error("failed parse json: [$json]")
+            LOG.error("failed parse json: [$json]", e)
             null
         }
     }

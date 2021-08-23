@@ -364,6 +364,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         Unload("(unload)"),
         Loading("(loading)"),
         Uploading("(uploading)"),
+        Deleted("(deleted)"),
         Loaded("")
     }
 

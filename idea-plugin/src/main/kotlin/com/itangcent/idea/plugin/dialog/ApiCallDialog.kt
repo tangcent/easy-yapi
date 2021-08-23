@@ -9,7 +9,6 @@ import com.intellij.ui.BooleanTableCellRenderer
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
-import com.itangcent.cache.DefaultHttpContextCacheHelper
 import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.KitUtils
@@ -36,6 +35,7 @@ import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.suv.http.HttpClientProvider
+import com.itangcent.idea.utils.GsonExUtils
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
