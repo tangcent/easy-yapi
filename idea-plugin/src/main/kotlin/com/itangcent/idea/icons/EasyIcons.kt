@@ -56,7 +56,6 @@ object EasyIcons {
         "/actions/export.png",
         "/graph/export.png",
         "/general/ExportSettings.png"
-
     )
 
     val Import = tryLoad(

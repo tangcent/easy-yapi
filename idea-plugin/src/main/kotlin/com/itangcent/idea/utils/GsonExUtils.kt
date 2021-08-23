@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import com.google.gson.TypeAdapterFactory
+import com.google.gson.internal.LazilyParsedNumber
 import com.google.gson.internal.bind.ObjectTypeAdapter
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.RegisterExclusionStrategy
@@ -22,6 +23,7 @@ object GsonExUtils {
             .registerTypeAdapter(Any::class.java, numberObjectTypeAdapter)
             .registerTypeAdapter(Map::class.java, numberObjectTypeAdapter)
             .registerTypeAdapter(List::class.java, numberObjectTypeAdapter)
+            .registerTypeAdapter(LazilyParsedNumber::class.java, LazilyParsedNumberTypeAdapter())
             .create()
         numberObjectTypeAdapter.setGson(gson)
 
@@ -69,3 +71,10 @@ object GsonExUtils {
     }
 }
 
+
+fun String.resolveGsonLazily(): String {
+    if (this.contains("\"com.google.gson.internal.LazilyParsedNumber\"")) {
+        return this.replace("\"com.google.gson.internal.LazilyParsedNumber\"", "\"java.lang.Integer\"")
+    }
+    return this
+}

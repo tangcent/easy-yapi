@@ -13,6 +13,8 @@ import com.itangcent.http.HttpRequest
 import com.itangcent.http.HttpResponse
 import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
+import com.itangcent.idea.utils.GsonExUtils
+import com.itangcent.idea.utils.resolveGsonLazily
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.*
 import com.itangcent.intellij.extend.rx.Throttle
@@ -196,7 +198,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         val request = getHttpClient().put("$COLLECTION/$collectionId")
             .contentType(ContentType.APPLICATION_JSON)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-            .body(KV.by("collection", apiInfo))
+            .body(GsonExUtils.toJson(KV.by("collection", apiInfo)).resolveGsonLazily())
 
         try {
             beforeRequest(request)
