@@ -21,6 +21,7 @@ import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.curl.CurlExporter
 import com.itangcent.idea.plugin.api.export.curl.CurlFormatter
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
@@ -695,7 +696,7 @@ open class SuvApiExporter {
         private val fileSaveHelper: FileSaveHelper? = null
 
         @Inject
-        private lateinit var curlFormatter: CurlFormatter
+        private lateinit var curlExporter: CurlExporter
 
         @Inject
         private lateinit var markdownSettingsHelper: MarkdownSettingsHelper
@@ -737,33 +738,13 @@ open class SuvApiExporter {
         }
 
         override fun doExportDocs(docs: MutableList<Doc>) {
+            val requests = docs.filterAs(Request::class)
             try {
                 if (docs.isEmpty()) {
                     logger!!.info("No api be found to export!")
                     return
                 }
-                if (docs.size == 1) {
-                    val curlCommand = curlFormatter.parseRequest(docs[0] as Request)
-                    ToolUtils.copy2Clipboard(curlCommand)
-                    messagesHelper.showInfoDialog(curlCommand, "Curl")
-                } else {
-                    logger!!.info("Start parse apis")
-                    val apiInfo = curlFormatter.parseRequests(docs.map { it as Request }.toList())
-                    docs.clear()
-                    actionContext!!.runAsync {
-                        try {
-                            fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
-                                logger!!.info("Exported data are copied to clipboard,you can paste to a md file now")
-                            }, {
-                                logger!!.info("Apis save success: $it")
-                            }) {
-                                logger!!.info("Apis save failed")
-                            }
-                        } catch (e: Exception) {
-                            logger!!.traceError("Apis save failed", e)
-                        }
-                    }
-                }
+                curlExporter.export(requests)
             } catch (e: Exception) {
                 logger!!.traceError("Apis save failed", e)
             }

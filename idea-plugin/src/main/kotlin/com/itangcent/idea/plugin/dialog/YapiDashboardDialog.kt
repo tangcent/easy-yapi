@@ -1,14 +1,14 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
-import com.intellij.ide.browsers.BrowserLauncher
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiDashBoardExporter
 import com.itangcent.idea.plugin.api.export.yapi.YapiApiHelper
+import com.itangcent.idea.plugin.api.export.yapi.YapiFormatter
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.idea.plugin.support.IdeaSupport
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
@@ -16,6 +16,8 @@ import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.idea.utils.isDoubleClick
+import com.itangcent.idea.utils.reload
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.from
@@ -43,7 +45,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     private var yapiApiTree: JTree? = null
     override var projectApiPanel: JPanel? = null
     private var yapiPanel: JPanel? = null
-    override var projectApModeButton: JButton? = null
+    override var projectApiModeButton: JButton? = null
     override var projectCollapseButton: JButton? = null
 
     private var yapiNewProjectButton: JButton? = null
@@ -75,23 +77,10 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             }
         })
 
-        if (EasyIcons.CollapseAll != null) {
-            this.projectCollapseButton!!.icon = EasyIcons.CollapseAll
-            this.projectCollapseButton!!.text = ""
-
-            this.yapiCollapseButton!!.icon = EasyIcons.CollapseAll
-            this.yapiCollapseButton!!.text = ""
-        }
-
-        if (EasyIcons.Add != null) {
-            this.yapiNewProjectButton!!.icon = EasyIcons.Add
-            this.yapiNewProjectButton!!.text = ""
-        }
-
-        if (EasyIcons.Refresh != null) {
-            this.yapiSyncButton!!.icon = EasyIcons.Refresh
-            this.yapiSyncButton!!.text = ""
-        }
+        EasyIcons.CollapseAll.iconOnly(this.projectCollapseButton)
+        EasyIcons.CollapseAll.iconOnly(this.yapiCollapseButton)
+        EasyIcons.Add.iconOnly(this.yapiNewProjectButton)
+        EasyIcons.Refresh.iconOnly(this.yapiSyncButton)
 
         try {
             val projectCellRenderer = EasyApiTreeCellRenderer()
@@ -133,13 +122,19 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             try {
                 syncYapiProject()
             } catch (e: Exception) {
-                logger!!.error("sync failed:" + ExceptionUtils.getStackTrace(e))
+                logger.error("sync failed:" + ExceptionUtils.getStackTrace(e))
             }
+        }
+
+        val curlItem = JMenuItem("Copy Curl")
+        curlItem.addActionListener {
+            selectedYapiNode()?.let { copyCurl(it) }
         }
 
         yapiPopMenu!!.add(addItem)
         yapiPopMenu!!.add(unloadItem)
         yapiPopMenu!!.add(syncItem)
+        yapiPopMenu!!.add(curlItem)
 
         this.yapiApiTree!!.addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent?) {
@@ -158,7 +153,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             }
 
             override fun mouseClicked(e: MouseEvent?) {
-                if(e.isDoubleClick()){
+                if (e.isDoubleClick()) {
                     goToYapi()
                     e?.consume()
                 }
@@ -223,13 +218,14 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
                     val transferData = transferable.getTransferData(wrapDataFlavor)
 
-                    val projectNodeData = (transferData as WrapData).wrapHash?.let { safeHashHelper.getBean(it) }
-                        ?: return
+                    val projectNodeData =
+                        (transferData as WrapData).wrapHash?.let { safeHashHelper.getBean(it) } as? ProjectNodeData
+                            ?: return
 
                     handleDropEvent(projectNodeData, yapiNodeData)
 
                 } catch (e: java.lang.Exception) {
-                    logger!!.info("drop failed:" + ExceptionUtils.getStackTrace(e))
+                    logger.info("drop failed:" + ExceptionUtils.getStackTrace(e))
                 } finally {
                     dtde.dropComplete(true)
                 }
@@ -240,7 +236,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             try {
                 SwingUtils.expandOrCollapseNode(this.yapiApiTree!!, false)
             } catch (e: Exception) {
-                logger!!.error("try collapse yapi apis failed!")
+                logger.error("try collapse yapi apis failed!")
             }
         }
 
@@ -274,15 +270,15 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
             actionContext.runAsync {
 
-                var projectNodes: ArrayList<DefaultMutableTreeNode>? = null
+                var projectNodes: ArrayList<YapiProjectNodeData>? = null
                 try {
                     val yapiTokens = yapiSettingsHelper.readTokens()
 
                     if (yapiTokens.isNullOrEmpty()) {
                         actionContext.runInSwingUI {
                             Messages.showErrorDialog(
-                                    this,
-                                    "No token be found", "Error"
+                                this,
+                                "No token be found", "Error"
                             )
                         }
                         return@runAsync
@@ -292,7 +288,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
                     yapiTokens.values.stream().distinct().forEach { token ->
 
-                        logger!!.info("load token:$token")
+                        logger.info("load token:$token")
                         val projectId = yapiApiHelper.getProjectIdByToken(token)
                         if (projectId.isNullOrBlank()) {
                             return@forEach
@@ -307,13 +303,13 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                             return@forEach
                         }
 
-                        val projectNode = YapiProjectNodeData(token, projectInfo).asTreeNode()
-                        treeNode.add(projectNode)
+                        val projectNode = YapiProjectNodeData(token, projectInfo)
+                        treeNode.add(projectNode.asTreeNode())
                         projectNodes.add(projectNode)
-                        rootTreeModel.reload(projectNode)
+                        rootTreeModel.reload(projectNode.asTreeNode())
                     }
                 } catch (e: Exception) {
-                    logger!!.error("error to load yapi info:" + ExceptionUtils.getStackTrace(e))
+                    logger.error("error to load yapi info:" + ExceptionUtils.getStackTrace(e))
                 }
 
                 actionContext.runInSwingUI {
@@ -336,69 +332,63 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun loadYapiProject(projectNode: DefaultMutableTreeNode) {
-        val yapiProjectNodeData = projectNode.userObject as YapiProjectNodeData
-        val projectId = yapiProjectNodeData.getProjectId()
+    private fun loadYapiProject(projectNode: YapiProjectNodeData) {
+        val projectId = projectNode.getProjectId()
         val yapiApiTreeModel = yapiApiTree!!.model as DefaultTreeModel
         if (projectId == null) {
             actionContext.runInSwingUI {
                 projectNode.removeFromParent()
-                yapiApiTreeModel.reload(projectNode)
+                yapiApiTreeModel.reload(projectNode.asTreeNode())
             }
             return
         }
 
         actionContext.runAsync {
-            yapiProjectNodeData.status = NodeStatus.Loading
+            projectNode.status = NodeStatus.Loading
             try {
-                val carts = yapiApiHelper!!.findCarts(projectId.toString(), yapiProjectNodeData.getProjectToken()!!)
+                val carts = yapiApiHelper.findCarts(projectId.toString(), projectNode.getProjectToken()!!)
                 if (carts.isNullOrEmpty()) {
-                    yapiProjectNodeData.status = NodeStatus.Loaded
+                    projectNode.status = NodeStatus.Loaded
                     return@runAsync
                 }
                 actionContext.runInSwingUI {
 
                     for (cart in carts) {
-                        val yapiCartNode = YapiCartNodeData(yapiProjectNodeData, cart as HashMap<String, Any?>)
-                        loadYapiCart(projectNode, yapiCartNode)
+                        val yapiCartNode = YapiCartNodeData(cart as HashMap<String, Any?>)
+                        projectNode.addSubNodeData(yapiCartNode)
+                        loadYapiCart(yapiCartNode)
                     }
-                    yapiApiTreeModel.reload(projectNode)
+                    yapiApiTreeModel.reload(projectNode.asTreeNode())
                 }
             } finally {
-                yapiProjectNodeData.status = NodeStatus.Loaded
+                projectNode.status = NodeStatus.Loaded
             }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun loadYapiCart(parentNode: DefaultMutableTreeNode, yapiCartNodeData: YapiCartNodeData) {
+    private fun loadYapiCart(yapiCartNodeData: YapiCartNodeData) {
 
         actionContext.runInSwingUI {
-            val parentNodeData = parentNode.userObject as YapiProjectNodeData
-            val yapiCartNode = yapiCartNodeData.asTreeNode()
-            parentNode.add(yapiCartNode)
             val cartInfo = yapiCartNodeData.info
 
             val apis = yapiApiHelper.findApis(
-                parentNodeData.getProjectToken()!!,
+                yapiCartNodeData.getProjectToken()!!,
                 cartInfo["_id"].toString()
             )
             if (apis.isNullOrEmpty()) return@runInSwingUI
             for (api in apis) {
-                loadYapiApi(yapiCartNode, api as HashMap<String, Any?>)
+                loadYapiApi(yapiCartNodeData, api as HashMap<String, Any?>)
             }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun loadYapiApi(parentNode: DefaultMutableTreeNode, item: HashMap<String, Any?>) {
+    private fun loadYapiApi(parentNode: YapiCartNodeData, item: HashMap<String, Any?>) {
         if (item.isNullOrEmpty()) return
-
         actionContext.runInSwingUI {
-            val parentNodeData = parentNode.userObject as YapiCartNodeData
-            val apiTreeNode = YapiApiNodeData(parentNodeData, item).asTreeNode()
-            apiTreeNode.allowsChildren = false
-            parentNode.add(apiTreeNode)
+            val apiNodeData = YapiApiNodeData(parentNode, item)
+            parentNode.addSubNodeData(apiNodeData)
         }
     }
 
@@ -422,7 +412,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 ?.asMap()
 
             if (projectInfo.isNullOrEmpty()) {
-                logger!!.error("invalid token:$projectToken")
+                logger.error("invalid token:$projectToken")
                 return@runAsync
             }
 
@@ -444,7 +434,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
                     yapiSettingsHelper.setToken(moduleName, projectToken)
                     actionContext.runInSwingUI {
-                        val projectTreeNode = YapiProjectNodeData(projectToken, projectInfo).asTreeNode()
+                        val projectTreeNode = YapiProjectNodeData(projectToken, projectInfo)
                         var model = yapiApiTree!!.model
                         if (model == null) {
                             val treeNode = DefaultMutableTreeNode()
@@ -454,7 +444,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
                         val yapiTreeModel = model as DefaultTreeModel
 
-                        (yapiTreeModel.root as DefaultMutableTreeNode).add(projectTreeNode)
+                        (yapiTreeModel.root as DefaultMutableTreeNode).add(projectTreeNode.asTreeNode())
                         yapiTreeModel.reload()
 
                         loadYapiProject(projectTreeNode)
@@ -507,14 +497,9 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     }
 
     private fun syncYapiProject() {
-
-        val lastSelectedPathComponent = yapiApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
-
-        if (lastSelectedPathComponent != null) {
-            val yapiNodeData = lastSelectedPathComponent.userObject
-            logger!!.info("reload:[$yapiNodeData]")
-            syncYapiNode(yapiNodeData as YapiNodeData)
-        }
+        val yapiNodeData = selectedYapiNode() ?: return
+        logger.info("reload:[$yapiNodeData]")
+        syncYapiNode(yapiNodeData)
     }
 
     private fun syncYapiNode(yapiNodeData: YapiNodeData) {
@@ -524,71 +509,56 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                     yapiNodeData.getParentNodeData()?.let { syncYapiNode(it) }
                 }
                 is YapiProjectNodeData -> {
-
                     //clear
-                    yapiNodeData.asTreeNode().removeAllChildren()
+                    yapiNodeData.removeAllSub()
                     //reload
-                    loadYapiProject(yapiNodeData.asTreeNode())
+                    loadYapiProject(yapiNodeData)
                 }
                 is YapiCartNodeData -> {
                     //clear
-                    yapiNodeData.asTreeNode().removeAllChildren()
-                    loadYapiCart(yapiNodeData.getParentNodeData()!!.asTreeNode(), yapiNodeData)
-                    (yapiApiTree!!.model as DefaultTreeModel).reload(yapiNodeData.getRootNodeData()!!.asTreeNode())
+                    yapiNodeData.removeAllSub()
+                    loadYapiCart(yapiNodeData)
+                    yapiApiTree!!.model.reload(yapiNodeData.getRootNodeData().asTreeNode())
                 }
             }
         }
     }
 
     private fun goToYapi() {
-        val lastSelectedPathComponent = yapiApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
-
-        if (lastSelectedPathComponent != null) {
-            val yapiNodeData = lastSelectedPathComponent.userObject
-            LOG!!.trace("go to:[$yapiNodeData]")
-            goToYapi(yapiNodeData as YapiNodeData)
-        }
-    }
-
-    private fun goToYapi(yapiNodeData: YapiNodeData) {
+        val yapiNodeData = selectedYapiNode() ?: return
+        LOG!!.trace("go to:[$yapiNodeData]")
         yapiNodeData.getUrl(this)?.let {
             actionContext.instance(IdeaSupport::class).openUrl(it)
         }
+    }
+
+    private fun selectedYapiNode(): YapiNodeData? {
+        return (yapiApiTree!!.lastSelectedPathComponent as? DefaultMutableTreeNode)
+            ?.userObject as? YapiNodeData
     }
 
     //endregion yapi pop action---------------------------------------------------------
 
     //region yapi Node Data--------------------------------------------------
 
-    abstract class YapiNodeData {
+    abstract class YapiNodeData : DocContainer, TreeNodeData<YapiNodeData>() {
         abstract fun data(): HashMap<String, Any?>
-
-        fun getRootNodeData(): YapiNodeData? {
-            val parentCollectionInfo = getParentNodeData()
-            return when (parentCollectionInfo) {
-                null -> this
-                else -> parentCollectionInfo.getRootNodeData()
-            }
-        }
-
-        abstract fun getParentNodeData(): YapiNodeData?
-
-        var treeNode: DefaultMutableTreeNode? = null
-
-        fun asTreeNode(): DefaultMutableTreeNode {
-            if (treeNode != null) return treeNode!!
-            treeNode = DefaultMutableTreeNode(this)
-            return treeNode!!
-        }
 
         abstract fun getProjectId(): String?
 
         abstract fun getProjectToken(): String?
 
         abstract fun getUrl(yapiDashboardDialog: YapiDashboardDialog): String?
+
+        override fun docs(handle: (Doc) -> Unit) {
+            this.getSubNodeData()?.forEach { it.docs(handle) }
+        }
     }
 
-    class YapiProjectNodeData : YapiNodeData, IconCustomized {
+    class YapiProjectNodeData(
+        private var projectToken: String,
+        var projectInfo: HashMap<String, Any?>
+    ) : YapiNodeData(), IconCustomized {
         override fun icon(): Icon? {
             return when (status) {
                 NodeStatus.Loading -> EasyIcons.Refresh
@@ -605,10 +575,6 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         override fun getParentNodeData(): YapiNodeData? {
             return null
         }
-
-        var projectInfo: HashMap<String, Any?>
-
-        private var projectToken: String
 
         var status = NodeStatus.Unload
 
@@ -628,17 +594,14 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return "${yapiDashboardDialog.yapiSettingsHelper.getServer(true)}/project/${projectId}/interface/api"
         }
 
-        constructor(projectToken: String, projectInfo: HashMap<String, Any?>) {
-            this.projectToken = projectToken
-            this.projectInfo = projectInfo
-        }
-
         override fun toString(): String {
             return status.desc + projectInfo.getOrDefault("name", "unknown")
         }
     }
 
-    class YapiCartNodeData : YapiNodeData, IconCustomized, ToolTipAble {
+    class YapiCartNodeData(
+        var info: HashMap<String, Any?>
+    ) : YapiNodeData(), IconCustomized, ToolTipAble {
 
         override fun icon(): Icon? {
             return EasyIcons.Module
@@ -649,15 +612,15 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         }
 
         override fun getParentNodeData(): YapiProjectNodeData {
-            return parentNode
+            return super.getParentNodeData() as YapiProjectNodeData
         }
 
         override fun getProjectId(): String? {
-            return parentNode.getProjectId()
+            return getParentNodeData().getProjectId()
         }
 
         override fun getProjectToken(): String? {
-            return parentNode.getProjectToken()
+            return getParentNodeData().getProjectToken()
         }
 
         override fun getUrl(yapiDashboardDialog: YapiDashboardDialog): String? {
@@ -669,15 +632,6 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return "${yapiDashboardDialog.yapiSettingsHelper.getServer(true)}/project/${projectId}/interface/api/cat_${cartId}"
         }
 
-        private var parentNode: YapiProjectNodeData
-
-        var info: HashMap<String, Any?>
-
-        constructor(parentNode: YapiProjectNodeData, info: HashMap<String, Any?>) {
-            this.info = info
-            this.parentNode = parentNode
-        }
-
         override fun toString(): String {
             return info.getOrDefault("name", "unknown").toString()
         }
@@ -687,7 +641,12 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    class YapiApiNodeData : YapiNodeData, IconCustomized, ToolTipAble {
+    class YapiApiNodeData(private var parentNode: YapiCartNodeData, var info: HashMap<String, Any?>) : YapiNodeData(),
+        IconCustomized, ToolTipAble {
+
+        private val yapiFormatter: YapiFormatter by lazy {
+            ActionContext.getContext()!!.instance(YapiFormatter::class)
+        }
 
         override fun icon(): Icon? {
             return EasyIcons.Link
@@ -709,13 +668,12 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return parentNode.getProjectToken()
         }
 
-        private var parentNode: YapiCartNodeData
+        override fun docs(handle: (Doc) -> Unit) {
+            handle(yapiFormatter.item2Request(this.info))
+        }
 
-        var info: HashMap<String, Any?>
-
-        constructor(parentNode: YapiCartNodeData, info: HashMap<String, Any?>) {
-            this.info = info
-            this.parentNode = parentNode
+        override fun asTreeNode(): DefaultMutableTreeNode {
+            return super.asTreeNode().also { it.allowsChildren = false }
         }
 
         override fun toString(): String {
@@ -751,7 +709,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     //region handle drop--------------------------------------------------------
 
     @Suppress("UNCHECKED_CAST", "LABEL_NAME_CLASH")
-    fun handleDropEvent(fromProjectData: Any, toYapiNodeData: Any) {
+    fun handleDropEvent(fromProjectData: ProjectNodeData, toYapiNodeData: Any) {
 
         //    \to  | api    |cart               |project
         // from\   |        |                   |
@@ -765,7 +723,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             else -> toYapiNodeData as YapiNodeData
         }
 
-        logger!!.info("export [$fromProjectData] to $targetNodeData")
+        logger.info("export [$fromProjectData] to $targetNodeData")
 
         actionContext.runAsync {
             try {
@@ -817,35 +775,24 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     }
 
     private fun export(
-        fromProjectData: Any, targetNodeData: YapiNodeData,
+        fromProjectData: ProjectNodeData, targetNodeData: YapiNodeData,
         cartId: String?
     ) {
 
         val privateToken = targetNodeData.getProjectToken()
         if (privateToken == null) {
-            logger!!.error("target token missing!Please try sync")
+            logger.error("target token missing!Please try sync")
             return
         }
 
-        val docHandle: (Doc) -> Unit
-        docHandle = if (cartId.isNullOrBlank()) {
+        val docHandle: (Doc) -> Unit = if (cartId.isNullOrBlank()) {
             { doc -> yapiApiDashBoardExporter!!.exportDoc(doc, privateToken) }
         } else {
             { doc -> yapiApiDashBoardExporter!!.exportDoc(doc, privateToken, cartId) }
         }
 
-        export(fromProjectData, docHandle)
-        logger!!.info("exported success")
-    }
-
-    private fun export(fromProjectData: Any, docHandle: (Doc) -> Unit) {
-        if (fromProjectData is ApiProjectNodeData) {
-            docHandle(fromProjectData.doc)
-        } else if (fromProjectData is ProjectNodeData<*>) {
-            fromProjectData.getSubProjectNodeData()
-                ?.filterNotNull()
-                ?.forEach { export(it, docHandle) }
-        }
+        fromProjectData.docs(docHandle)
+        logger.info("exported success")
     }
 
     //endregion handle drop--------------------------------------------------------
@@ -858,7 +805,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 apiLoadFuture.cancel(true)
             }
         } catch (e: Throwable) {
-            logger!!.error(
+            logger.error(
                 "error to cancel api load:" +
                         ExceptionUtils.getStackTrace(e)
             )
@@ -869,7 +816,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 yapiLoadFuture.cancel(true)
             }
         } catch (e: Throwable) {
-            logger!!.error(
+            logger.error(
                 "error to cancel yapi load:" +
                         ExceptionUtils.getStackTrace(e)
             )

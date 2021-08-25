@@ -130,5 +130,27 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         assertEquals(requests, requestsAgain)
         Mockito.verify(delegateClassExporter, times(1))
             .export(any(), any(), any())
+
+        //export thrice
+        (classExporter as CachedRequestClassExporter).notUserCache()
+        val requestsThrice = ArrayList<Request>()
+        classExporter.export(userCtrlPsiClass, requestOnly {
+            requestsThrice.add(it)
+        })
+        (classExporter as Worker).waitCompleted()
+        assertEquals(requests, requestsThrice)
+        Mockito.verify(delegateClassExporter, times(2))
+            .export(any(), any(), any())
+
+        //export quartic
+        (classExporter as CachedRequestClassExporter).userCache()
+        val requestsQuartic = ArrayList<Request>()
+        classExporter.export(userCtrlPsiClass, requestOnly {
+            requestsQuartic.add(it)
+        })
+        (classExporter as Worker).waitCompleted()
+        assertEquals(requests, requestsQuartic)
+        Mockito.verify(delegateClassExporter, times(2))
+            .export(any(), any(), any())
     }
 }

@@ -3,9 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
-import com.itangcent.common.model.Request
-import com.itangcent.common.model.URL
-import com.itangcent.common.model.getContentType
+import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
@@ -20,6 +18,7 @@ import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
+import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.config.rule.RuleComputer
@@ -140,7 +139,7 @@ open class PostmanFormatter {
         var host = "{{host}}"
 
         val hostByRule = request.resourceClass()
-                ?.let { ruleComputer!!.computer(ClassExportRuleKeys.POST_MAN_HOST, it) }
+            ?.let { ruleComputer!!.computer(ClassExportRuleKeys.POST_MAN_HOST, it) }
 
         if (hostByRule == null) {
             val module = request.resource?.let { resource ->
@@ -173,7 +172,8 @@ open class PostmanFormatter {
         val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
         requestInfo["header"] = headers
         request.headers?.forEach {
-            headers.add(KV.create<String, Any?>()
+            headers.add(
+                KV.create<String, Any?>()
                     .set(KEY, it.name)
                     .set(VALUE, it.value)
                     .set(TYPE, "text")
@@ -184,7 +184,8 @@ open class PostmanFormatter {
         val queryList: ArrayList<HashMap<String, Any?>> = ArrayList()
         url["query"] = queryList
         request.querys?.forEach {
-            queryList.add(KV.create<String, Any?>()
+            queryList.add(
+                KV.create<String, Any?>()
                     .set(KEY, it.name)
                     .set(VALUE, it.value)
                     .set("equals", true)
@@ -199,7 +200,8 @@ open class PostmanFormatter {
                 body[MODE] = "formdata"
                 val formdatas: ArrayList<HashMap<String, Any?>> = ArrayList()
                 request.formParams!!.forEach {
-                    formdatas.add(KV.create<String, Any?>()
+                    formdatas.add(
+                        KV.create<String, Any?>()
                             .set(KEY, it.name)
                             .set(VALUE, it.value)
                             .set(TYPE, it.type)
@@ -212,7 +214,8 @@ open class PostmanFormatter {
                 body[MODE] = "urlencoded"
                 val urlEncodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
                 request.formParams!!.forEach {
-                    urlEncodeds.add(KV.create<String, Any?>()
+                    urlEncodeds.add(
+                        KV.create<String, Any?>()
                             .set(KEY, it.name)
                             .set(VALUE, it.value)
                             .set(TYPE, it.type)
@@ -262,7 +265,8 @@ open class PostmanFormatter {
                 responseInfo["header"] = responseHeader
 
                 if (response.headers?.any { it.name.equals("content-type", true) } == false) {
-                    responseHeader.add(KV.create<String, Any?>()
+                    responseHeader.add(
+                        KV.create<String, Any?>()
                             .set(NAME, "content-type")
                             .set(KEY, "content-type")
                             .set(VALUE, "application/json;charset=UTF-8")
@@ -272,16 +276,21 @@ open class PostmanFormatter {
 
                 if (response.headers?.any { it.name.equals("date", true) } == false) {
 
-                    responseHeader.add(KV.create<String, Any?>()
+                    responseHeader.add(
+                        KV.create<String, Any?>()
                             .set(NAME, "date")
                             .set(KEY, "date")
-                            .set(VALUE, systemProvider.currentTimeMillis().asDate().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'"))
+                            .set(
+                                VALUE,
+                                systemProvider.currentTimeMillis().asDate().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'")
+                            )
                             .set(DESCRIPTION, "The date and time that the message was sent")
                     )
                 }
 
                 if (response.headers?.any { it.name.equals("server", true) } == false) {
-                    responseHeader.add(KV.create<String, Any?>()
+                    responseHeader.add(
+                        KV.create<String, Any?>()
                             .set(NAME, "server")
                             .set(KEY, "server")
                             .set(VALUE, "Apache-Coyote/1.1")
@@ -291,16 +300,21 @@ open class PostmanFormatter {
 
                 if (response.headers?.any { it.name.equals("transfer-encoding", true) } == false) {
 
-                    responseHeader.add(KV.create<String, Any?>()
+                    responseHeader.add(
+                        KV.create<String, Any?>()
                             .set(NAME, "transfer-encoding")
                             .set(KEY, "transfer-encoding")
                             .set(VALUE, "chunked")
-                            .set(DESCRIPTION, "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.")
+                            .set(
+                                DESCRIPTION,
+                                "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                            )
                     )
                 }
 
                 response.headers?.forEach {
-                    responseHeader.add(KV.create<String, Any?>()
+                    responseHeader.add(
+                        KV.create<String, Any?>()
                             .set(NAME, it.name)
                             .set(KEY, it.name)
                             .set(VALUE, it.value)
@@ -321,11 +335,92 @@ open class PostmanFormatter {
         return item
     }
 
+    fun item2Request(item: HashMap<String, Any?>): Request? {
+        val request = Request()
+        request.name = item.getAs("name")
+
+        val requestInfo: HashMap<String, Any?> = item.getAs("request") ?: return null
+        request.path = URL.of(requestInfo.getAs<List<String>>("url", "path")?.joinToString(separator = "/"))
+        request.method = requestInfo.getAs("method")
+        request.desc = requestInfo.getAs(DESCRIPTION)
+
+        val headers: ArrayList<HashMap<String, Any?>>? = requestInfo.getAs("header")
+        if (headers.notNullOrEmpty()) {
+            val requestHeaders = arrayListOf<Header>()
+            request.headers = requestHeaders
+            headers!!.forEach {
+                val header = Header()
+                header.name = it.getAs(KEY)
+                header.value = it.getAs(VALUE)
+                header.desc = it.getAs(DESCRIPTION)
+                requestHeaders.add(header)
+            }
+        }
+
+        val queryList: ArrayList<HashMap<String, Any?>>? = requestInfo.getAs("url", "query")
+        if (queryList.notNullOrEmpty()) {
+            val params = arrayListOf<Param>()
+            queryList!!.forEach {
+                val param = Param()
+                param.name = it.getAs(KEY)
+                param.value = it.getAs(VALUE)
+                param.desc = it.getAs(DESCRIPTION)
+                params.add(param)
+            }
+            request.querys = params
+        }
+
+        val body: HashMap<String, Any?>? = requestInfo.getAs("body")
+        if (body != null) {
+            val mode = body.getAs<String>(MODE)
+            when (mode) {
+                "raw" -> {//json
+                    val jsonBody = body.getAs<String>("raw")
+                    if (jsonBody.notNullOrBlank()) {
+                        request.body = GsonExUtils.fromJson(jsonBody!!)
+                        request.bodyType = "json"
+                    }
+                }
+                "formdata" -> {
+                    val formdatas: ArrayList<HashMap<String, Any?>>? = body.getAs("formdata")
+                    if (formdatas != null) {
+                        val formParams = arrayListOf<FormParam>()
+                        formdatas.forEach {
+                            val formParam = FormParam()
+                            formParam.name = it.getAs(KEY)
+                            formParam.value = it.getAs(VALUE)
+                            formParam.desc = it.getAs(DESCRIPTION)
+                            formParam.type = it.getAs(TYPE)
+                            formParams.add(formParam)
+                        }
+                        request.formParams = formParams
+                    }
+                }
+                "urlencoded" -> {
+                    val urlEncodeds: ArrayList<HashMap<String, Any?>>? = body.getAs("urlencoded")
+                    if (urlEncodeds != null) {
+                        val formParams = arrayListOf<FormParam>()
+                        urlEncodeds.forEach {
+                            val formParam = FormParam()
+                            formParam.name = it.getAs(KEY)
+                            formParam.value = it.getAs(VALUE)
+                            formParam.desc = it.getAs(DESCRIPTION)
+                            formParam.type = it.getAs(TYPE)
+                            formParams.add(formParam)
+                        }
+                        request.formParams = formParams
+                    }
+                }
+            }
+        }
+        return request
+    }
+
     private fun parseScripts(extensible: Extensible, item: HashMap<String, Any?>) {
         if (extensible.hasAnyExt(ClassExportRuleKeys.POST_PRE_REQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
             addScriptsToItem(item,
-                    { extensible.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()) },
-                    { extensible.getExt<String>(ClassExportRuleKeys.POST_TEST.name()) }
+                { extensible.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()) },
+                { extensible.getExt<String>(ClassExportRuleKeys.POST_TEST.name()) }
             )
         }
     }
@@ -335,20 +430,26 @@ open class PostmanFormatter {
 
         preRequest()?.takeIf { it.notNullOrBlank() }?.let {
             events = ArrayList()
-            events!!.add(KV.any().set("listen", "prerequest")
-                    .set("script", KV.any()
+            events!!.add(
+                KV.any().set("listen", "prerequest")
+                    .set(
+                        "script", KV.any()
                             .set("exec", it.lines())
                             .set(TYPE, "text/javascript")
-                    ))
+                    )
+            )
         }
 
         test()?.takeIf { it.notNullOrBlank() }?.let {
             events = events ?: ArrayList()
-            events!!.add(KV.any().set("listen", "test")
-                    .set("script", KV.any()
+            events!!.add(
+                KV.any().set("listen", "test")
+                    .set(
+                        "script", KV.any()
                             .set("exec", it.lines())
                             .set(TYPE, "text/javascript")
-                    ))
+                    )
+            )
         }
 
         if (events.notNullOrEmpty()) {
@@ -366,27 +467,35 @@ open class PostmanFormatter {
         context.setExt("postman", postman)
         if (resource is Extensible) {
             addScriptsToItem(postman,
-                    {
-                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
-                                context, null)
-                                .append(resource.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()), "\n")
-                    },
-                    {
-                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_TEST,
-                                context, null)
-                                .append(resource.getExt<String>(ClassExportRuleKeys.POST_TEST.name()), "\n")
-                    }
+                {
+                    ruleComputer!!.computer(
+                        ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
+                        context, null
+                    )
+                        .append(resource.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()), "\n")
+                },
+                {
+                    ruleComputer!!.computer(
+                        ClassExportRuleKeys.COLLECTION_POST_TEST,
+                        context, null
+                    )
+                        .append(resource.getExt<String>(ClassExportRuleKeys.POST_TEST.name()), "\n")
+                }
             )
         } else {
             addScriptsToItem(postman,
-                    {
-                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
-                                context, null)
-                    },
-                    {
-                        ruleComputer!!.computer(ClassExportRuleKeys.COLLECTION_POST_TEST,
-                                context, null)
-                    }
+                {
+                    ruleComputer!!.computer(
+                        ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
+                        context, null
+                    )
+                },
+                {
+                    ruleComputer!!.computer(
+                        ClassExportRuleKeys.COLLECTION_POST_TEST,
+                        context, null
+                    )
+                }
             )
         }
 
@@ -464,7 +573,7 @@ open class PostmanFormatter {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun mergeEvents(item: java.util.HashMap<String, Any?>, events: List<*>) {
+    private fun mergeEvents(item: HashMap<String, Any?>, events: List<*>) {
         val existedEvents = item[EVENT] as? List<*>
         if (existedEvents == null) {
             item[EVENT] = events
@@ -525,7 +634,7 @@ open class PostmanFormatter {
         requests.forEach { request ->
             val module = request.resource?.let { moduleHelper!!.findModule(it) } ?: "easy-api"
             moduleGroupedMap.safeComputeIfAbsent(module) { ArrayList() }!!
-                    .add(request)
+                .add(request)
         }
 
         moduleGroupedMap.forEach { (module, requestsInModule) ->
@@ -561,12 +670,12 @@ open class PostmanFormatter {
 
         val modules: ArrayList<HashMap<String, Any?>> = ArrayList()
         moduleFolderApiMap.entries
-                .map { moduleAndFolders ->
-                    val items: ArrayList<HashMap<String, Any?>> = ArrayList()
-                    moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
-                    return@map wrapInfo(moduleAndFolders.key, items)
-                }
-                .forEach { modules.add(it) }
+            .map { moduleAndFolders ->
+                val items: ArrayList<HashMap<String, Any?>> = ArrayList()
+                moduleAndFolders.value.forEach { items.add(wrapInfo(it.key, it.value)) }
+                return@map wrapInfo(moduleAndFolders.key, items)
+            }
+            .forEach { modules.add(it) }
 
         return wrapCollection(modules)
     }
@@ -587,7 +696,7 @@ open class PostmanFormatter {
         requests.forEach { request ->
             val folder = formatFolderHelper!!.resolveFolder(request.resource ?: NULL_RESOURCE)
             folderGroupedMap.safeComputeIfAbsent(folder) { ArrayList() }!!
-                    .addAll(request2Items(request))
+                .addAll(request2Items(request))
         }
 
         return folderGroupedMap
@@ -601,8 +710,8 @@ open class PostmanFormatter {
                     it.substring(0, it.indexOf(':')) else
                     it
                 return@map p
-                        .replace("{", ":")
-                        .replace("}", "")
+                    .replace("{", ":")
+                    .replace("}", "")
             } else {
                 return@map it
             }

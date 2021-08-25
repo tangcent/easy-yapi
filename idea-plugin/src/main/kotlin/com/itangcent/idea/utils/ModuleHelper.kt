@@ -7,7 +7,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 
 /**
- *find [Module] name
+ * find [Module] name
  */
 @ImplementedBy(DefaultModuleHelper::class)
 interface ModuleHelper {
