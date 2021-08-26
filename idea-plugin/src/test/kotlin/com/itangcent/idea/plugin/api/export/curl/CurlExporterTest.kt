@@ -15,7 +15,6 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.FileSaveHelperAdaptor
 import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
-import junit.framework.Assert
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.stub
 import java.time.LocalDate
@@ -99,18 +98,30 @@ internal class CurlExporterTest : PluginContextLightCodeInsightFixtureTestCase()
         })
         (classExporter as Worker).waitCompleted()
 
+        assertNoThrowable { curlExporter.export(emptyList()) }
+
         curlExporter.export(requests[0])
-        assertEquals("curl -X GET http://localhost:8080/user/greeting",command)
+        assertEquals("curl -X GET http://localhost:8080/user/greeting", command)
 
         command = ""
         curlExporter.export(listOf(requests[1]))
-        assertEquals("curl -X GET http://localhost:8080/user/get/{id}?id=0",command)
+        assertEquals("curl -X GET http://localhost:8080/user/get/{id}?id=0", command)
 
         command = ""
         curlExporter.export(requests)
-        assertEquals("",command)
-        actionContext.waitComplete()
-        assertEquals(ResultLoader.load(),
-            (fileSaveHelper as FileSaveHelperAdaptor).content())
+        assertEquals("", command)
+        for (i in 0..10) {
+            val content = (fileSaveHelper as FileSaveHelperAdaptor).content()
+            if (content.isNullOrEmpty()) {
+                Thread.sleep(500)
+                continue
+            }
+            assertEquals(
+                ResultLoader.load(),
+                content
+            )
+            return
+        }
+        fail()
     }
 }
