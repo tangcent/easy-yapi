@@ -1,6 +1,8 @@
 package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.ImplementedBy
+import com.itangcent.idea.plugin.api.export.postman.Emojis.PERSONAL
+import com.itangcent.idea.plugin.api.export.postman.Emojis.TEAM
 
 @ImplementedBy(DefaultPostmanApiHelper::class)
 interface PostmanApiHelper {
@@ -39,4 +41,13 @@ class PostmanWorkspace {
     }
 
     constructor()
+
+    fun nameWithType(): String? {
+        if (type == "team") {
+            return "${TEAM}$name"
+        } else if (type == "personal") {
+            return "${PERSONAL}$name"
+        }
+        return name
+    }
 }
