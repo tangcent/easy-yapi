@@ -15,25 +15,30 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.CompletedHandle
 import com.itangcent.idea.plugin.api.export.core.docs
+import com.itangcent.idea.plugin.api.export.curl.CurlExporter
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.psi.ResourceHelper
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.*
 import com.itangcent.idea.utils.SwingUtils
+import com.itangcent.idea.utils.reload
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.FileType
-import com.itangcent.task.TaskManager
 import java.awt.Cursor
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DragSource
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.io.Serializable
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -48,8 +53,10 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     protected abstract var contentPane: JPanel?
     protected abstract var projectApiTree: JTree?
     protected abstract var projectApiPanel: JPanel?
-    protected abstract var projectApModeButton: JButton?
+    protected abstract var projectApiModeButton: JButton?
     protected abstract var projectCollapseButton: JButton?
+
+    private var apiPopMenu: JPopupMenu? = null
 
     private var projectMode: ProjectMode = ProjectMode.Legible
 
@@ -81,6 +88,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     protected var apiLoadFuture: Future<*>? = null
 
     //region project module-----------------------------------------------------
+
     protected fun initProjectApiModule() {
 
         (activeWindowProvider as? MutableActiveWindowProvider)?.setActiveWindow(this)
@@ -93,13 +101,17 @@ abstract class AbstractApiDashboardDialog : JDialog() {
 
         val dragSource = DragSource.getDefaultDragSource()
 
-        dragSource.createDefaultDragGestureRecognizer(projectApiTree, DnDConstants.ACTION_COPY_OR_MOVE
+        dragSource.createDefaultDragGestureRecognizer(
+            projectApiTree, DnDConstants.ACTION_COPY_OR_MOVE
         ) { dge ->
             val lastSelectedPathComponent = projectApiTree!!.lastSelectedPathComponent as (DefaultMutableTreeNode?)
 
             if (lastSelectedPathComponent != null) {
                 val projectNodeData = lastSelectedPathComponent.userObject
-                dge.startDrag(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR), SimpleTransferable(wrapData(projectNodeData), getWrapDataFlavor()))
+                dge.startDrag(
+                    Cursor.getPredefinedCursor(Cursor.HAND_CURSOR),
+                    SimpleTransferable(wrapData(projectNodeData), getWrapDataFlavor())
+                )
             }
         }
 
@@ -107,25 +119,24 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             actionContext.runInReadUI {
 
                 val moduleManager = ModuleManager.getInstance(project!!)
-                val treeNode = DefaultMutableTreeNode()
-//            var moduleNodeMap: HashMap<Module, DefaultMutableTreeNode> = HashMap()
+                val rootTreeNode = DefaultMutableTreeNode()
                 val modules = moduleManager.sortedModules.reversed()
 
-                val moduleNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
+                val moduleNodes: ArrayList<ModuleProjectNodeData> = ArrayList()
                 for (module in modules) {
-                    val moduleProjectNode = DefaultMutableTreeNode(ModuleProjectNodeData(module))
-                    treeNode.add(moduleProjectNode)
-                    moduleNodes.add(moduleProjectNode)
+                    val moduleProjectNodeData = ModuleProjectNodeData(module)
+                    moduleNodes.add(moduleProjectNodeData)
+                    rootTreeNode.add(moduleProjectNodeData.asTreeNode())
                 }
 
                 actionContext.runInSwingUI {
-                    val rootTreeModel = DefaultTreeModel(treeNode, true)
+                    val rootTreeModel = DefaultTreeModel(rootTreeNode, true)
                     projectApiTree!!.model = rootTreeModel
                     apiLoadFuture = actionContext.runAsync {
                         for (moduleNode in moduleNodes) {
                             if (disposed) break
-                            loadApiInModule(moduleNode, rootTreeModel)
-                            rootTreeModel.reload(moduleNode)
+                            loadApiInModule(moduleNode)
+                            rootTreeModel.reload(moduleNode.asTreeNode())
                         }
                         apiLoadFuture = null
                     }
@@ -141,19 +152,88 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             }
         }
 
-        autoComputer.bindText(this.projectApModeButton!!)
-                .with(this::projectMode)
-                .eval { it.next().desc }
+        autoComputer.bindText(this.projectApiModeButton!!)
+            .with(this::projectMode)
+            .eval { it.next().desc }
         autoComputer.value(this::projectMode, ProjectMode.Legible)
-        this.projectApModeButton!!.addActionListener {
+        this.projectApiModeButton!!.addActionListener {
             autoComputer.value(this::projectMode, this.projectMode.next())
-            (this.projectApiTree!!.model as DefaultTreeModel).reload()
+            this.projectApiTree!!.model.reload()
+        }
+
+        apiPopMenu = JPopupMenu()
+
+        val refreshItem = JMenuItem("Refresh")
+        refreshItem.addActionListener { refreshProjectNode() }
+        apiPopMenu!!.add(refreshItem)
+
+        val curlItem = JMenuItem("Copy Curl")
+        curlItem.addActionListener {
+            selectedProjectNode()?.let { copyCurl(it) }
+        }
+        apiPopMenu!!.add(curlItem)
+
+        this.projectApiTree!!.addMouseListener(object : MouseAdapter() {
+            override fun mousePressed(e: MouseEvent?) {
+                if (e == null) return
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    val path = projectApiTree!!.getPathForLocation(e.x, e.y) ?: return
+
+                    val targetComponent = path.lastPathComponent
+                    val projectNodeData =
+                        (targetComponent as DefaultMutableTreeNode).userObject as? ProjectNodeData ?: return
+                    if (!projectNodeData.popupEnable()) {
+                        return
+                    }
+                    curlItem.isEnabled = projectNodeData.curlEnable()
+                    refreshItem.isEnabled = projectNodeData.refreshEnable()
+                    apiPopMenu!!.show(projectApiTree!!, e.x, e.y)
+                    projectApiTree!!.selectionPath = path
+                }
+            }
+        })
+    }
+
+    private fun refreshProjectNode() {
+        val projectNodeData = selectedProjectNode() ?: return
+        if (projectNodeData is ModuleProjectNodeData) {
+            (classExporter as? CachedRequestClassExporter)?.notUserCache()
+            loadApiInModule(projectNodeData) {
+                (classExporter as? CachedRequestClassExporter)?.userCache()
+            }
+        } else if (projectNodeData is ClassProjectNodeData) {
+            val rootTreeModel = projectApiTree!!.model
+            projectNodeData.removeAllSub()
+            rootTreeModel.reload(projectNodeData.asTreeNode())
+            (classExporter as? CachedRequestClassExporter)?.notUserCache()
+            loadApiInClass(projectNodeData.cls, { projectNodeData }) {
+                (classExporter as? CachedRequestClassExporter)?.userCache()
+                actionContext.runInSwingUI {
+                    rootTreeModel.reload(projectNodeData.asTreeNode())
+                }
+            }
         }
     }
 
-    private fun loadApiInModule(moduleNode: DefaultMutableTreeNode, rootTreeModel: DefaultTreeModel) {
-        val moduleData = moduleNode.userObject as ModuleProjectNodeData
+    private fun selectedProjectNode(): ProjectNodeData? {
+        return (projectApiTree!!.lastSelectedPathComponent as? DefaultMutableTreeNode)
+            ?.userObject as? ProjectNodeData
+    }
 
+    protected fun copyCurl(docContainer: DocContainer) {
+        val requests = arrayListOf<Request>()
+        docContainer.docs { doc -> (doc as? Request)?.let { requests.add(it) } }
+        actionContext.instance(CurlExporter::class).export(requests)
+    }
+
+    private fun loadApiInModule(
+        moduleData: ModuleProjectNodeData,
+        completedHandle: () -> Unit = {}
+    ) {
+        val rootTreeModel = projectApiTree!!.model
+        moduleData.removeAllSub()
+        val moduleNode = moduleData.asTreeNode()
+        rootTreeModel.reload(moduleNode)
         val sourceRoots = moduleData.module.rootManager.getSourceRoots(false)
         if (sourceRoots.isNullOrEmpty()) {
             LOG.info("no source files be found in module:${moduleData.module.name}")
@@ -167,65 +247,50 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         var anyFound = false
         for (contentRoot in sourceRoots) {
             if (disposed) {
-                LOG.info("interrupt parsing api from ${contentRoot.path} because the action ApiDashBoard was disposed")
+                LOG.info("interrupt parsing api from ${contentRoot.path} because the action ${this::class.simpleName} was disposed")
                 return
             }
             countLatch.down()
-            val classNodeMap: ConcurrentHashMap<PsiClass, DefaultMutableTreeNode> = ConcurrentHashMap()
+            val classNodeMap: ConcurrentHashMap<PsiClass, ClassProjectNodeData> = ConcurrentHashMap()
             actionContext.runInReadUI {
                 try {
                     if (disposed) {
-                        LOG.info("interrupt parsing api from ${contentRoot.path} because the action ApiDashBoard was disposed")
+                        LOG.info("interrupt parsing api from ${contentRoot.path} because the action ${this::class.simpleName} was disposed")
                         return@runInReadUI
                     }
-                    val rootDirectory = PsiManager.getInstance(project!!).findDirectory(contentRoot)
-                    traversal(rootDirectory!!,
-                            { !disposed },
-                            {
-                                !disposed
-                                        && FileType.acceptable(it.name)
-                                        && (it is PsiClassOwner)
-                            }) { psiFile ->
+                    val rootDirectory =
+                        PsiManager.getInstance(project!!).findDirectory(contentRoot) ?: return@runInReadUI
+                    traversal(
+                        rootDirectory,
+                        { !disposed },
+                        {
+                            !disposed
+                                    && FileType.acceptable(it.name)
+                                    && (it is PsiClassOwner)
+                        }) { psiFile ->
                         if (disposed) {
-                            LOG.info("interrupt parsing api from ${rootDirectory.name} because the action ApiDashBoard was disposed")
+                            LOG.info("interrupt parsing api from ${rootDirectory.name} because the action ${this::class.simpleName} was disposed")
                             return@traversal
                         }
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
                             if (disposed) {
-                                LOG.info("interrupt export api from ${contentRoot.path} because the action ApiDashBoard was disposed")
+                                LOG.info("interrupt export api from ${contentRoot.path} because the action ${this::class.simpleName} was disposed")
                                 return@traversal
                             }
                             countLatch.down()
-                            classExporter!!.export(psiClass, docs {
-                                filterDoc(it)?.let { doc ->
-                                    if (disposed) {
-                                        LOG.info("interrupt export api from ${psiClass.name} because the action ApiDashBoard was disposed")
-                                        return@docs
-                                    }
-                                    if (doc.resource == null) {
-                                        return@docs
-                                    }
-                                    anyFound = true
-                                    val resourceClass = doc.resourceClass()
-
-                                    val clsTreeNode = classNodeMap.safeComputeIfAbsent(resourceClass!!) {
-                                        val classProjectNodeData = ClassProjectNodeData(this, resourceClass, resourceHelper!!.findAttrOfClass(resourceClass))
-                                        val node = DefaultMutableTreeNode(classProjectNodeData)
-                                        moduleNode.add(node)
-                                        (moduleNode.userObject as ModuleProjectNodeData).addSubProjectNodeData(classProjectNodeData)
-                                        node
-                                    }!!
-
-                                    val apiProjectNodeData = ApiProjectNodeData(this, doc)
-
-                                    val apiTreeNode = DefaultMutableTreeNode(apiProjectNodeData)
-                                    apiTreeNode.allowsChildren = false
-                                    clsTreeNode.add(apiTreeNode)
-                                    (clsTreeNode.userObject as ClassProjectNodeData).addSubProjectNodeData(apiProjectNodeData)
-                                }
-                            }) {
-                                countLatch.up()
-                            }
+                            loadApiInClass(psiClass, {
+                                anyFound = true
+                                val resourceClass = it.doc.resourceClass()
+                                classNodeMap.safeComputeIfAbsent(resourceClass!!) {
+                                    val classProjectNodeData = ClassProjectNodeData(
+                                        this,
+                                        resourceClass,
+                                        resourceHelper!!.findAttrOfClass(resourceClass)
+                                    )
+                                    moduleData.addSubNodeData(classProjectNodeData)
+                                    classProjectNodeData
+                                }!!
+                            }) { countLatch.up() }
                         }
                     }
                 } finally {
@@ -243,18 +308,45 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                 LOG.info("no api be found from module [${moduleData.module.name}]")
                 moduleNode.removeFromParent()
             }
-            KitUtils.safe(ArrayIndexOutOfBoundsException::class,
-                    NullPointerException::class) {
-                rootTreeModel.reload(moduleNode)
+            KitUtils.safe { completedHandle() }
+            actionContext.runInSwingUI {
+                KitUtils.safe(
+                    ArrayIndexOutOfBoundsException::class,
+                    NullPointerException::class
+                ) {
+                    rootTreeModel.reload(moduleNode)
+                }
             }
         }
     }
 
+    private fun loadApiInClass(
+        psiClass: PsiClass,
+        classProjectNodeData: (ApiProjectNodeData) -> ClassProjectNodeData,
+        completedHandle: CompletedHandle
+    ) {
+        classExporter!!.export(psiClass, docs {
+            filterDoc(it)?.let { doc ->
+                if (disposed) {
+                    LOG.info("interrupt export api from ${psiClass.name} because the action ${this::class.simpleName} was disposed")
+                    return@docs
+                }
+                if (doc.resource == null) {
+                    return@docs
+                }
+                val apiProjectNodeData = ApiProjectNodeData(this, doc)
+                classProjectNodeData(apiProjectNodeData).addSubNodeData(
+                    apiProjectNodeData
+                )
+            }
+        }, completedHandle)
+    }
+
     private fun traversal(
-            psiDirectory: PsiDirectory,
-            keepRunning: () -> Boolean,
-            fileFilter: (PsiFile) -> Boolean,
-            fileHandle: (PsiFile) -> Unit
+        psiDirectory: PsiDirectory,
+        keepRunning: () -> Boolean,
+        fileFilter: (PsiFile) -> Boolean,
+        fileHandle: (PsiFile) -> Unit
     ) {
         val dirStack: Stack<PsiDirectory> = Stack()
         var dir: PsiDirectory? = psiDirectory
@@ -279,86 +371,13 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         }
     }
 
-    open protected fun filterDoc(doc: Doc): Doc? {
+    protected open fun filterDoc(doc: Doc): Doc? {
         return doc
     }
 
     //endregion project module-----------------------------------------------------
 
     //region project Node Data--------------------------------------------------
-
-    abstract class ProjectNodeData<C> {
-
-        private var subProjectNodeData: ArrayList<C>? = null
-
-        fun addSubProjectNodeData(projectNodeData: C) {
-            if (subProjectNodeData == null) {
-                subProjectNodeData = ArrayList()
-            }
-            subProjectNodeData!!.add(projectNodeData)
-        }
-
-        fun getSubProjectNodeData(): ArrayList<C>? {
-            return this.subProjectNodeData
-        }
-
-    }
-
-    class ModuleProjectNodeData : ProjectNodeData<ClassProjectNodeData>, IconCustomized {
-        override fun icon(): Icon? {
-            return when (status) {
-                NodeStatus.Loading -> EasyIcons.Refresh
-                else -> null
-            } ?: EasyIcons.WebFolder
-        }
-
-        var module: Module
-
-        var status = NodeStatus.Unload
-
-        constructor(module: Module) {
-            this.module = module
-        }
-
-        override fun toString(): String {
-            return status.desc + module.name
-        }
-    }
-
-    class ClassProjectNodeData : ProjectNodeData<ApiProjectNodeData>, IconCustomized, ToolTipAble {
-        override fun toolTip(): String? {
-            return cls.qualifiedName
-        }
-
-        override fun icon(): Icon? {
-            return EasyIcons.Class
-        }
-
-        var cls: PsiClass
-
-        var attr: String? = null
-
-        private val apiDashboardDialog: AbstractApiDashboardDialog
-
-        constructor(apiDashboardDialog: AbstractApiDashboardDialog, cls: PsiClass) {
-            this.cls = cls
-            this.apiDashboardDialog = apiDashboardDialog
-        }
-
-        constructor(apiDashboardDialog: AbstractApiDashboardDialog, cls: PsiClass, attr: String?) {
-            this.cls = cls
-            this.attr = attr
-            this.apiDashboardDialog = apiDashboardDialog
-        }
-
-        override fun toString(): String {
-            return if (apiDashboardDialog.projectMode == ProjectMode.Legible) {
-                attr ?: cls.name ?: "anonymous"
-            } else {
-                cls.name ?: "anonymous"
-            }
-        }
-    }
 
     enum class NodeStatus(var desc: String) {
         Unload("(unload)"),
@@ -368,7 +387,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         Loaded("")
     }
 
-    enum class ProjectMode {
+    enum class ProjectMode(var desc: String) {
         Original("original") {
             override fun next(): ProjectMode {
                 return Legible
@@ -380,35 +399,188 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             }
         };
 
-        var desc: String
-
-        constructor(desc: String) {
-            this.desc = desc
-        }
-
         abstract fun next(): ProjectMode
     }
 
-    class ApiProjectNodeData : IconCustomized, ToolTipAble {
-        override fun toolTip(): String? {
-            val psiResource = (doc.resource ?: return "") as PsiResource
-            return when (doc) {
-                is Request -> "${PsiClassUtils.fullNameOfMethod(psiResource.resourceClass()!!, psiResource.resource() as PsiMethod)}\n${(doc as Request).method}:${(doc as Request).path}"
-                else -> "${PsiClassUtils.fullNameOfMethod(psiResource.resourceClass()!!, psiResource.resource() as PsiMethod)}\n${(doc as MethodDoc).name}"
+    abstract class TreeNodeData<T> {
+
+        var treeNode: DefaultMutableTreeNode? = null
+
+        private var subProjectNodeData: ArrayList<T>? = null
+
+        private var parentProjectNodeData: T? = null
+
+        @Suppress("UNCHECKED_CAST")
+        open fun addSubNodeData(nodeData: T) {
+            if (subProjectNodeData == null) {
+                subProjectNodeData = ArrayList()
+            }
+            subProjectNodeData!!.add(nodeData)
+            (nodeData as TreeNodeData<Any>).parentProjectNodeData = this
+            this.asTreeNode().add(nodeData.asTreeNode())
+        }
+
+        open fun getSubNodeData(): ArrayList<T>? {
+            return this.subProjectNodeData
+        }
+
+        fun removeSub(nodeData: T) {
+            subProjectNodeData?.remove(nodeData)
+            nodeData.asTreeNode().removeFromParent()
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        fun removeFromParent() {
+            if(parentProjectNodeData==null){
+                treeNode?.removeFromParent()
+            }else {
+                parentProjectNodeData?.asNode()?.removeSub(this as T)
             }
         }
 
-        private val apiDashboardDialog: AbstractApiDashboardDialog
+        fun removeAllSub() {
+            this.asTreeNode().removeAllChildren()
+            this.subProjectNodeData?.clear()
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun T.asNode(): TreeNodeData<T> {
+            return (this as TreeNodeData<T>)
+        }
+
+        private fun T.asTreeNode(): DefaultMutableTreeNode {
+            return (this as TreeNodeData<*>).asTreeNode()
+        }
+
+        open fun getParentNodeData(): T? {
+            return this.parentProjectNodeData
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        fun getRootNodeData(): T {
+            return when (val parentNodeData = getParentNodeData()) {
+                null -> this as T
+                else -> (parentNodeData as TreeNodeData<T>).getRootNodeData()
+            }
+        }
+
+        open fun asTreeNode(): DefaultMutableTreeNode {
+            if (treeNode != null) {
+                return treeNode!!
+            }
+            treeNode = DefaultMutableTreeNode(this)
+            return treeNode!!
+        }
+    }
+
+    interface DocContainer {
+
+        fun docs(handle: (Doc) -> Unit)
+    }
+
+    abstract class ProjectNodeData : DocContainer, TreeNodeData<ProjectNodeData>() {
+
+        override fun docs(handle: (Doc) -> Unit) {
+            this.getSubNodeData()?.forEach { it.docs(handle) }
+        }
+
+        open fun popupEnable(): Boolean {
+            return true
+        }
+
+        open fun curlEnable(): Boolean {
+            return true
+        }
+
+        open fun refreshEnable(): Boolean {
+            return true
+        }
+    }
+
+    class ModuleProjectNodeData(var module: Module) : ProjectNodeData(), IconCustomized {
+        override fun icon(): Icon? {
+            return when (status) {
+                NodeStatus.Loading -> EasyIcons.Refresh
+                else -> null
+            } ?: EasyIcons.WebFolder
+        }
+
+        override fun refreshEnable(): Boolean {
+            return status ==NodeStatus.Loaded
+        }
+
+        var status = NodeStatus.Unload
+
+        override fun toString(): String {
+            return status.desc + module.name
+        }
+    }
+
+    class ClassProjectNodeData(
+        private val apiDashboardDialog: AbstractApiDashboardDialog,
+        var cls: PsiClass,
+        var attr: String?
+    ) : ProjectNodeData(), IconCustomized, ToolTipAble {
+        override fun toolTip(): String? {
+            return cls.qualifiedName
+        }
+
+        override fun icon(): Icon? {
+            return EasyIcons.Class
+        }
+
+        override fun getParentNodeData(): ProjectNodeData? {
+            return null
+        }
+
+        override fun refreshEnable(): Boolean {
+            return true
+        }
+
+        override fun toString(): String {
+            return if (apiDashboardDialog.projectMode == ProjectMode.Legible) {
+                attr ?: cls.name ?: "anonymous"
+            } else {
+                cls.name ?: "anonymous"
+            }
+        }
+    }
+
+    class ApiProjectNodeData(private val apiDashboardDialog: AbstractApiDashboardDialog, var doc: Doc) :
+        ProjectNodeData(), IconCustomized,
+        ToolTipAble {
+        override fun toolTip(): String {
+            val psiResource = (doc.resource ?: return "") as PsiResource
+            return when (doc) {
+                is Request -> "${
+                    PsiClassUtils.fullNameOfMethod(
+                        psiResource.resourceClass()!!,
+                        psiResource.resource() as PsiMethod
+                    )
+                }\n${(doc as Request).method}:${(doc as Request).path}"
+                else -> "${
+                    PsiClassUtils.fullNameOfMethod(
+                        psiResource.resourceClass()!!,
+                        psiResource.resource() as PsiMethod
+                    )
+                }\n${(doc as MethodDoc).name}"
+            }
+        }
 
         override fun icon(): Icon? {
             return EasyIcons.Method
         }
 
-        var doc: Doc
+        override fun addSubNodeData(nodeData: ProjectNodeData) {
+            throw IllegalArgumentException("add sub projectNodeData to ApiProjectNodeData failed")
+        }
 
-        constructor(apiDashboardDialog: AbstractApiDashboardDialog, doc: Doc) {
-            this.doc = doc
-            this.apiDashboardDialog = apiDashboardDialog
+        override fun refreshEnable(): Boolean {
+            return false
+        }
+
+        override fun asTreeNode(): DefaultMutableTreeNode {
+            return super.asTreeNode().also { it.allowsChildren = false }
         }
 
         override fun toString(): String {
@@ -416,7 +588,10 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                 return doc.resourceMethod()?.name ?: ""
             }
             return doc.name ?: "anonymous"
+        }
 
+        override fun docs(handle: (Doc) -> Unit) {
+            handle(this.doc)
         }
     }
 
@@ -486,7 +661,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             return super.importData(comp, t)
         }
 
-        override fun createTransferable(component: JComponent?): Transferable {
+        override fun createTransferable(component: JComponent?): Transferable? {
             return super.createTransferable(component)
         }
     }

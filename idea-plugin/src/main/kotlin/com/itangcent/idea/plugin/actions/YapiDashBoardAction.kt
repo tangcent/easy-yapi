@@ -2,10 +2,12 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
+import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.swing.ActiveWindowProvider
@@ -35,7 +37,10 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
-        builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
+        //allow cache api
+        builder.bind(ClassExporter::class, "delegate_classExporter") {
+            it.with(CompositeClassExporter::class).singleton()
+        }
         builder.bindInstance(
             "AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(
                 YapiSpringRequestClassExporter::class,
@@ -43,6 +48,7 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
                 GenericMethodDocClassExporter::class
             )
         )
+        builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
 
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
         builder.bindInstance(

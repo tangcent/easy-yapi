@@ -31,7 +31,7 @@ class SafeHashHelper {
     }
 
     /**
-     * rehash,copy from HashMap
+     * rehash, copy from HashMap
      */
     private fun rehash(key: Any): Int {
         val h: Int = key.hashCode()

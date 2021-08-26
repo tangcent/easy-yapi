@@ -10,8 +10,7 @@ import javax.swing.JComponent
 import javax.swing.JTable
 import javax.swing.JTree
 import javax.swing.table.TableColumn
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.TreePath
+import javax.swing.tree.*
 
 
 object SwingUtils {
@@ -84,4 +83,30 @@ fun MouseEvent?.isDoubleClick(): Boolean {
 
 fun JTable.findColumn(index: Int): TableColumn? {
     return this.getColumn(this.getColumnName(index))
+}
+
+fun TreeModel.reload() {
+    (this as? DefaultTreeModel)?.reload()
+}
+
+fun TreeModel.reload(node: TreeNode) {
+    (this as? DefaultTreeModel)?.reload(node)
+}
+
+fun TreeModel.clear(node: TreeNode) {
+    if (node !is DefaultMutableTreeNode) return
+    if (node.childCount > 0) {
+        node.removeAllChildren()
+        this.reload(node)
+    }
+}
+
+fun TreeModel.clear() {
+    (this.root as? TreeNode)?.let { this.clear(it) }
+}
+
+fun TreeModel.remove(node: TreeNode) {
+    if (node !is DefaultMutableTreeNode) return
+    node.removeFromParent()
+    this.reload(node)
 }

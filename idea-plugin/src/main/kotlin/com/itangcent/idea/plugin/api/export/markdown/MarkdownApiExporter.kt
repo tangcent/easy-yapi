@@ -82,7 +82,7 @@ class MarkdownApiExporter {
                         logger.info("No api be found to export!")
                         return@onCompleted
                     }
-                    logger.info("Start parse apis")
+                    logger.debug("Start parse apis")
                     val apiInfo = markdownFormatter!!.parseRequests(docs)
                     docs.clear()
                     actionContext!!.runAsync {

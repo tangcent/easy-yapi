@@ -2,10 +2,10 @@ package com.itangcent.idea.plugin.api.export.curl
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.http.RequestUtils
 
 /**
@@ -24,6 +24,8 @@ class CurlFormatter {
             if (sb.isNotEmpty()) {
                 sb.append("\n\n---\n\n")
             }
+            val apiName = request.name ?: (request.method + ":" + request.path?.url())
+            sb.append("## $apiName\n")
             sb.append("```bash\n")
             parseRequest(request, host, sb)
             sb.append("\n```")

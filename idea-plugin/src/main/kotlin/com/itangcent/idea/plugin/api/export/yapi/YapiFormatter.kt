@@ -22,6 +22,9 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.tip.OnlyOnceInContextTip
+import com.itangcent.intellij.tip.TipsHelper
+import com.itangcent.intellij.util.FileType
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
 import java.util.regex.Pattern
@@ -107,7 +110,8 @@ open class YapiFormatter {
                 val queryList: MutableList<HashMap<String, Any?>> = LinkedList()
                 item["req_query"] = queryList
                 methodDoc.params?.forEach {
-                    queryList.add(KV.create<String, Any?>()
+                    queryList.add(
+                        KV.create<String, Any?>()
                             .set("name", it.name)
                             .set("value", parseQueryValueAsJson5(it.value))
                             .set("example", parseQueryValueAsJson5(it.getExample() ?: it.value))
@@ -130,14 +134,14 @@ open class YapiFormatter {
             if (yapiSettingsHelper.yapiResBodyJson5()) {
                 item["res_body_is_json_schema"] = false
                 item["res_body"] = parseByJson5(methodDoc.ret,
-                        methodDoc.resourceMethod()?.let {
-                            findReturnOfMethod(it)
-                        })
+                    methodDoc.resourceMethod()?.let {
+                        findReturnOfMethod(it)
+                    })
             } else {
                 item["res_body"] = parseBySchema(methodDoc.ret,
-                        methodDoc.resourceMethod()?.let {
-                            findReturnOfMethod(it)
-                        })
+                    methodDoc.resourceMethod()?.let {
+                        findReturnOfMethod(it)
+                    })
             }
         } else {
             item["res_body_type"] = "json"
@@ -151,15 +155,15 @@ open class YapiFormatter {
         when (value) {
             is Array<*> -> {
                 return actionContext.instance(Json5Formatter::class)
-                        .format(value)
+                    .format(value)
             }
             is Collection<*> -> {
                 return actionContext.instance(Json5Formatter::class)
-                        .format(value)
+                    .format(value)
             }
             is Map<*, *> -> {
                 return actionContext.instance(Json5Formatter::class)
-                        .format(value)
+                    .format(value)
             }
             else -> {
                 return value?.toString()
@@ -179,7 +183,7 @@ open class YapiFormatter {
 
     private fun getHttpMethodOfMethodDoc(methodDoc: MethodDoc): String {
         return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_METHOD, methodDoc.resource()!!)
-                ?: "POST"
+            ?: "POST"
     }
 
     private fun parseParamsBySchema(params: MutableList<Param>?, rootDesc: String?): String? {
@@ -309,7 +313,8 @@ open class YapiFormatter {
         val headers: MutableList<HashMap<String, Any?>> = LinkedList()
         item["req_headers"] = headers
         request.headers?.forEach {
-            headers.add(KV.create<String, Any?>()
+            headers.add(
+                KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
                     .set("desc", it.desc)
@@ -321,7 +326,8 @@ open class YapiFormatter {
         val queryList: MutableList<HashMap<String, Any?>> = LinkedList()
         item["req_query"] = queryList
         request.querys?.forEach {
-            queryList.add(KV.create<String, Any?>()
+            queryList.add(
+                KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
                     .set("example", it.getExample() ?: it.value?.toString())
@@ -335,7 +341,8 @@ open class YapiFormatter {
             val urlencodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
             item["req_body_form"] = urlencodeds
             request.formParams!!.forEach {
-                urlencodeds.add(KV.create<String, Any?>()
+                urlencodeds.add(
+                    KV.create<String, Any?>()
                         .set("name", it.name)
                         .set("example", it.getExample() ?: it.value)
                         .set("type", it.type)
@@ -349,7 +356,8 @@ open class YapiFormatter {
             val pathParmas: ArrayList<HashMap<String, Any?>> = ArrayList()
             item["req_params"] = pathParmas
             request.paths!!.forEach {
-                pathParmas.add(KV.create<String, Any?>()
+                pathParmas.add(
+                    KV.create<String, Any?>()
                         .set("name", it.name)
                         .set("example", it.getExample() ?: it.value)
                         .set("desc", it.desc)
@@ -391,6 +399,75 @@ open class YapiFormatter {
         }
 
         return item
+    }
+
+    fun item2Request(item: HashMap<String, Any?>): Request {
+
+        val request = Request()
+
+        request.name = item.getAs("title")
+        request.desc = item.getAs("markdown")
+        request.path = URL.of(item.getAs<String>("path"))
+        request.method = item.getAs("method")
+
+        val headers: MutableList<HashMap<String, Any?>>? = item.getAs("req_headers")
+        if (headers.notNullOrEmpty()) {
+            val requestHeaders = arrayListOf<Header>()
+            request.headers = requestHeaders
+            headers!!.forEach {
+                val header = Header()
+                header.name = it.getAs("name")
+                header.value = it.getAs("value")
+                header.desc = it.getAs("desc")
+                header.required = it.getAs<Int>("required") == 1
+                requestHeaders.add(header)
+            }
+        }
+
+        val queryList: ArrayList<HashMap<String, Any?>>? = item.getAs("req_query")
+        if (queryList.notNullOrEmpty()) {
+            val params = arrayListOf<Param>()
+            queryList!!.forEach {
+                val param = Param()
+                param.name = it.getAs("name")
+                param.value = it.getAs("value")
+                param.desc = it.getAs("desc")
+                param.required = it.getAs<Int>("required") == 1
+                params.add(param)
+            }
+            request.querys = params
+        }
+
+        val formParams: ArrayList<HashMap<String, Any?>>? = item.getAs("req_body_form")
+        if (formParams != null) {
+            val requestFormParams = arrayListOf<FormParam>()
+            formParams.forEach {
+                val formParam = FormParam()
+                formParam.name = it.getAs("name")
+                formParam.value = it.getAs("value")
+                formParam.desc = it.getAs("desc")
+                formParam.required = it.getAs<Int>("required") == 1
+                requestFormParams.add(formParam)
+            }
+            request.formParams = requestFormParams
+        }
+
+        val pathParmas: ArrayList<HashMap<String, Any?>>? = item.getAs("req_params")
+        if (pathParmas != null) {
+            val requestPathParams = arrayListOf<PathParam>()
+            pathParmas.forEach {
+                val pathParam = PathParam()
+                pathParam.name = it.getAs("name")
+                pathParam.value = it.getAs("value")
+                pathParam.desc = it.getAs("desc")
+                requestPathParams.add(pathParam)
+            }
+            request.paths = requestPathParams
+        }
+
+        ActionContext.getContext()?.instance(TipsHelper::class)?.showTips(YAPI_BODY_PARSE_TIP)
+
+        return request
     }
 
     /**
@@ -514,8 +591,8 @@ open class YapiFormatter {
                             val optionList = options as List<Map<String, Any?>>
 
                             val optionVals = optionList.stream()
-                                    .map { it["value"] }
-                                    .collect(Collectors.toList())
+                                .map { it["value"] }
+                                .collect(Collectors.toList())
 
                             val optionDesc = KVUtils.getOptionDesc(optionList)
                             mockPropertyInfo["enum"] = optionVals
@@ -532,7 +609,7 @@ open class YapiFormatter {
                     mocks?.get(key)?.let { addMock(propertyInfo, it) }
 
                     default?.get(k)?.takeUnless { it.anyIsNullOrBlank() }
-                            ?.let { propertyInfo["default"] = it }
+                        ?.let { propertyInfo["default"] = it }
 
 
                     properties[key] = propertyInfo
@@ -551,7 +628,8 @@ open class YapiFormatter {
         if (mockRules.isNotEmpty()) {
             for (mockRule in mockRules) {
                 if (mockRule.pathPredict(path) &&
-                        mockRule.typePredict(item["type"] as String?)) {
+                    mockRule.typePredict(item["type"] as String?)
+                ) {
                     addMock(item, mockRule.mockStr)
                     break
                 }
@@ -604,8 +682,8 @@ open class YapiFormatter {
                     if (options != null) {
                         val optionList = options as List<Map<String, Any?>>
                         val optionVals = optionList.stream()
-                                .map { it["value"] }
-                                .collect(Collectors.toList())
+                            .map { it["value"] }
+                            .collect(Collectors.toList())
                         setMock(typedObject, key, "@pick(${GsonUtils.toJson(optionVals).asMockString()})")
                         continue
                     }
@@ -641,7 +719,8 @@ open class YapiFormatter {
                 if (jsonType != "object" && jsonType != "array") {
                     for (mockRule in readMockRules()) {
                         if (mockRule.pathPredict(path) &&
-                                mockRule.typePredict(jsonType)) {
+                            mockRule.typePredict(jsonType)
+                        ) {
                             retSet(mockRule.mockStr.asMockString())
                             break
                         }
@@ -774,12 +853,14 @@ open class YapiFormatter {
     private fun parseMockRule(key: String, value: String): MockRule {
 
         val tinyKey = key
-                .removePrefix("[")
-                .removeSuffix("]")
+            .removePrefix("[")
+            .removeSuffix("]")
         val pathStr = tinyKey.substringBefore("|")
         val typeStr = tinyKey.substringAfter("|", "*")
-        return MockRule(parseRegexOrConstant(pathStr),
-                parseRegexOrConstant(typeStr), value)
+        return MockRule(
+            parseRegexOrConstant(pathStr),
+            parseRegexOrConstant(typeStr), value
+        )
 
     }
 
@@ -797,15 +878,15 @@ open class YapiFormatter {
 
             if (tinyStr.contains("*")) {
                 val pattern = Pattern.compile(
-                        "^${
-                            tinyStr.replace("*.", SimpleRuleParser.STAR_DOT)
-                                    .replace("*", SimpleRuleParser.STAR)
-                                    .replace(SimpleRuleParser.STAR_DOT, ".*?(?<=^|\\.)")
-                                    .replace(SimpleRuleParser.STAR, ".*?")
-                                    .replace("[", "\\[")
-                                    .replace("]", "\\]")
+                    "^${
+                        tinyStr.replace("*.", SimpleRuleParser.STAR_DOT)
+                            .replace("*", SimpleRuleParser.STAR)
+                            .replace(SimpleRuleParser.STAR_DOT, ".*?(?<=^|\\.)")
+                            .replace(SimpleRuleParser.STAR, ".*?")
+                            .replace("[", "\\[")
+                            .replace("]", "\\]")
 
-                        }$"
+                    }$"
                 )
 
                 return@safeComputeIfAbsent {
@@ -819,9 +900,11 @@ open class YapiFormatter {
         }!!
     }
 
-    class MockRule(val pathPredict: (String?) -> Boolean,
-                   val typePredict: (String?) -> Boolean,
-                   val mockStr: String)
+    class MockRule(
+        val pathPredict: (String?) -> Boolean,
+        val typePredict: (String?) -> Boolean,
+        val mockStr: String
+    )
 
     //endregion mock rules---------------------------------------------------------
 
@@ -832,6 +915,10 @@ open class YapiFormatter {
     companion object {
         val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!
         val EMPTY_PARAMS: List<String> = Collections.emptyList<String>()
-    }
 
+        // TODO: support parse yapi body
+        private val YAPI_BODY_PARSE_TIP = OnlyOnceInContextTip(
+            "Yapi body not be parsed. It will be supported in the future"
+        )
+    }
 }

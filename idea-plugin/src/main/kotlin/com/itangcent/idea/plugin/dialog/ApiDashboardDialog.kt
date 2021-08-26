@@ -6,10 +6,7 @@ import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.utils.mapNotNull
-import com.itangcent.common.utils.mapToTypedArray
-import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
@@ -20,6 +17,9 @@ import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
+import com.itangcent.idea.utils.clear
+import com.itangcent.idea.utils.reload
+import com.itangcent.idea.utils.remove
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.eval
@@ -52,7 +52,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     override var projectApiPanel: JPanel? = null
     var postmanPanel: JPanel? = null
     private var postmanWorkspaceComboBox: JComboBox<WorkspaceWrapper>? = null
-    override var projectApModeButton: JButton? = null
+    override var projectApiModeButton: JButton? = null
     override var projectCollapseButton: JButton? = null
 
     private var postmanNewCollectionButton: JButton? = null
@@ -146,10 +146,16 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             }
         }
 
+        val curlItem = JMenuItem("Copy Curl")
+        curlItem.addActionListener {
+            selectedPostmanNode()?.let { copyCurl(it) }
+        }
+
         postmanPopMenu!!.add(addItem)
         postmanPopMenu!!.add(renameItem)
         postmanPopMenu!!.add(syncItem)
         postmanPopMenu!!.add(deleteItem)
+        postmanPopMenu!!.add(curlItem)
 
         this.postmanApiTree!!.addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent?) {
@@ -158,10 +164,11 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     val path = postmanApiTree!!.getPathForLocation(e.x, e.y) ?: return
 
                     val targetComponent = path.lastPathComponent
-                    val postmanNodeData = (targetComponent as DefaultMutableTreeNode).userObject
+                    val postmanNodeData = (targetComponent as DefaultMutableTreeNode).userObject as PostmanNodeData
 
                     addItem.isEnabled = postmanNodeData !is PostmanApiNodeData
                     syncItem.isEnabled = syncEnable(postmanNodeData)
+                    curlItem.isEnabled = postmanNodeData.curlEnable()
                     postmanPopMenu!!.show(postmanApiTree!!, e.x, e.y)
                     postmanApiTree!!.selectionPath = path
                 }
@@ -222,8 +229,9 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
                     val transferData = transferable.getTransferData(wrapDataFlavor)
 
-                    val projectNodeData = (transferData as WrapData).wrapHash?.let { safeHashHelper.getBean(it) }
-                        ?: return
+                    val projectNodeData =
+                        (transferData as WrapData).wrapHash?.let { safeHashHelper.getBean(it) } as? ProjectNodeData
+                            ?: return
 
                     handleDropEvent(projectNodeData, postmanNodeData)
 
@@ -245,7 +253,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
 
         this.postmanSyncButton!!.addActionListener {
-            ((this.postmanApiTree!!.model as? DefaultTreeModel)?.root as? DefaultMutableTreeNode)?.removeAllChildren()
+            this.postmanApiTree!!.model.clear()
             //loadPostmanWorkspace() 只刷新当前选中的workspace下的collection
             loadPostmanCollection(false)
         }
@@ -326,8 +334,6 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     ) : AsyncTask(
         actionContext, taskManager
     ) {
-
-
         var collectionInfoLoadingFuture: Future<*>? = null
 
         override fun doTask(): Int {
@@ -358,7 +364,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     }
                     return Task.DONE
                 }
-                val collectionNodes: ArrayList<DefaultMutableTreeNode> = ArrayList()
+                val collectionNodes: ArrayList<PostmanCollectionNodeData> = ArrayList()
 
                 apiDashboardDialog.actionContext.runInSwingUI {
                     for (collection in collections) {
@@ -366,10 +372,10 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                             complete()
                             return@runInSwingUI
                         }
-                        val collectionNode = PostmanCollectionNodeData(collection).asTreeNode()
-                        treeNode.add(collectionNode)
+                        val collectionNode = PostmanCollectionNodeData(collection)
+                        treeNode.add(collectionNode.asTreeNode())
                         collectionNodes.add(collectionNode)
-                        rootTreeModel.reload(collectionNode)
+                        rootTreeModel.reload(collectionNode.asTreeNode())
                     }
                     rootTreeModel.reload()
                     collectionInfoLoadingFuture = apiDashboardDialog.actionContext.runAsync {
@@ -427,26 +433,23 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
     @Suppress("UNCHECKED_CAST")
     private fun loadPostCollectionInfo(
-        collectionNode: DefaultMutableTreeNode,
+        collectionNode: PostmanCollectionNodeData,
         useCache: Boolean,
         task: Task? = null,
         onCompleted: (() -> Unit)? = null
     ) {
-        val moduleData: PostmanCollectionNodeData
         val collectionId: Any?
         val postmanApiTreeModel: DefaultTreeModel
         try {
-            moduleData = collectionNode.userObject as PostmanCollectionNodeData
-            collectionId = moduleData.collection["id"]
+            collectionId = collectionNode.collection["id"]
             postmanApiTreeModel = postmanApiTree!!.model as DefaultTreeModel
             if (collectionId == null) {
-                moduleData.status = NodeStatus.Loaded
+                collectionNode.status = NodeStatus.Loaded
                 actionContext.runInSwingUI {
                     if (task?.disposed() == true) {
                         return@runInSwingUI
                     }
-                    collectionNode.removeFromParent()
-                    postmanApiTreeModel.reload(collectionNode)
+                    postmanApiTreeModel.remove(collectionNode.asTreeNode())
                 }
                 onCompleted?.invoke()
                 return
@@ -459,24 +462,23 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         actionContext.runAsync {
             try {
                 if (task?.disposed() == true) {
-                    moduleData.status = NodeStatus.Loaded
+                    collectionNode.status = NodeStatus.Loaded
                     onCompleted?.invoke()
                     return@runAsync
                 }
-                moduleData.status = NodeStatus.Loading
+                collectionNode.status = NodeStatus.Loading
                 val collectionInfo = postmanCachedApiHelper.getCollectionInfo(collectionId.toString(), useCache)
-                if (collectionInfo==null || task?.disposed() == true) {
-                    if(collectionInfo==null) {
-                        moduleData.status = NodeStatus.Deleted
-                        collectionNode.removeFromParent()
-                        postmanApiTreeModel.reload(collectionNode)
+                if (collectionInfo == null || task?.disposed() == true) {
+                    if (collectionInfo == null) {
+                        collectionNode.status = NodeStatus.Deleted
+                        postmanApiTreeModel.remove(collectionNode.asTreeNode())
                     } else {
-                        moduleData.status = NodeStatus.Loaded
+                        collectionNode.status = NodeStatus.Loaded
                     }
                     onCompleted?.invoke()
                     return@runAsync
                 }
-                moduleData.detail = collectionInfo
+                collectionNode.detail = collectionInfo
                 val items = findEditableItem(collectionInfo)
 
                 actionContext.runInSwingUI {
@@ -490,32 +492,30 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                         if (task?.disposed() == true) {
                             return@runInSwingUI
                         }
-                        postmanApiTreeModel.reload(collectionNode)
+                        postmanApiTreeModel.reload(collectionNode.asTreeNode())
                     } finally {
-                        moduleData.status = NodeStatus.Loaded
+                        collectionNode.status = NodeStatus.Loaded
                         onCompleted?.invoke()
                     }
                 }
-            } catch (e:Throwable) {
-                moduleData.status = NodeStatus.Loaded
+            } catch (e: Throwable) {
+                collectionNode.status = NodeStatus.Loaded
                 onCompleted?.invoke()
             }
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun loadPostmanNode(parentNode: DefaultMutableTreeNode, item: HashMap<String, Any?>) {
+    private fun loadPostmanNode(parentNode: PostmanNodeData, item: HashMap<String, Any?>) {
         if (item.isNullOrEmpty()) return
 
         actionContext.runInSwingUI {
-            val parentNodeData = parentNode.userObject as PostmanNodeData
             if (item.containsKey("request")) {//is request
-                val apiTreeNode = PostmanApiNodeData(parentNodeData, item).asTreeNode()
-                apiTreeNode.allowsChildren = false
-                parentNode.add(apiTreeNode)
+                val apiNodeData = PostmanApiNodeData(item)
+                parentNode.addSubNodeData(apiNodeData)
             } else {//is sub collection
-                val subCollectionNode = PostmanSubCollectionNodeData(parentNodeData, item).asTreeNode()
-                parentNode.add(subCollectionNode)
+                val subCollectionNode = PostmanSubCollectionNodeData(item)
+                parentNode.addSubNodeData(subCollectionNode)
 
                 val items = findEditableItem(item)
                 if (items.isNullOrEmpty()) return@runInSwingUI
@@ -613,8 +613,8 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                             logger.info("create success")
                             actionContext.runInSwingUI {
                                 rootPostmanNodeData.status = NodeStatus.Loaded
-                                loadPostmanNode(postmanNodeData.asTreeNode(), newCollection)
-                                (postmanApiTree!!.model as DefaultTreeModel).reload(postmanNodeData.asTreeNode())
+                                loadPostmanNode(postmanNodeData, newCollection)
+                                postmanApiTree!!.model.reload(postmanNodeData.asTreeNode())
                             }
                         } else {
                             logger.error("create failed")
@@ -659,7 +659,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                             logger.info("rename success")
                             actionContext.runInSwingUI {
                                 rootPostmanNodeData.status = NodeStatus.Loaded
-                                (postmanApiTree!!.model as DefaultTreeModel).reload(postmanNodeData.asTreeNode())
+                                postmanApiTree!!.model.reload(postmanNodeData.asTreeNode())
                             }
                         } else {
                             logger.error("rename failed")
@@ -681,11 +681,12 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         if (lastSelectedPathComponent != null) {
             val postmanNodeData = lastSelectedPathComponent.userObject
             logger.info("reload:[$postmanNodeData]")
-            val collectionPostmanNodeData = (postmanNodeData as PostmanNodeData).getRootNodeData() ?: return
+            val collectionPostmanNodeData = (postmanNodeData as PostmanNodeData).getRootNodeData()
+                    as? PostmanCollectionNodeData ?: return
             //clear
-            collectionPostmanNodeData.asTreeNode().removeAllChildren()
+            postmanApiTree!!.model.clear(collectionPostmanNodeData.asTreeNode())
             //reload
-            loadPostCollectionInfo(collectionPostmanNodeData.asTreeNode(), false)
+            loadPostCollectionInfo(collectionPostmanNodeData, false)
         }
     }
 
@@ -713,7 +714,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     if (postmanCachedApiHelper!!.deleteCollectionInfo(collectionId) != null) {
                         logger.info("delete success")
                         postmanNodeData.asTreeNode().removeFromParent()
-                        (postmanApiTree!!.model as DefaultTreeModel).reload(postmanApiTree!!.model.root as TreeNode)
+                        postmanApiTree!!.model.reload(postmanApiTree!!.model.root as TreeNode)
                     } else {
                         logger.error("delete failed")
                     }
@@ -742,7 +743,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                                 actionContext.runInSwingUI {
                                     postmanNodeData.asTreeNode().removeFromParent()
                                     rootPostmanNodeData.status = NodeStatus.Loaded
-                                    (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
+                                    postmanApiTree!!.model.reload(rootPostmanNodeData.asTreeNode())
                                 }
                             } else {
                                 logger.error("delete failed")
@@ -760,39 +761,34 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             }
         }
     }
+
+    private fun selectedPostmanNode(): PostmanNodeData? {
+        return (postmanApiTree!!.lastSelectedPathComponent as? DefaultMutableTreeNode)
+            ?.userObject as? PostmanNodeData
+    }
+
     //endregion postman pop action---------------------------------------------------------
 
     //region postman Node Data--------------------------------------------------
 
-    abstract class PostmanNodeData {
+    abstract class PostmanNodeData : DocContainer, TreeNodeData<PostmanNodeData>() {
         open fun currData(): HashMap<String, Any?> {
             return coreData()
         }
 
         abstract fun coreData(): HashMap<String, Any?>
 
-        fun getRootNodeData(): PostmanNodeData? {
-            return when (val parentCollectionInfo = getParentNodeData()) {
-                null -> this
-                else -> parentCollectionInfo.getRootNodeData()
-            }
+        override fun docs(handle: (Doc) -> Unit) {
+            this.getSubNodeData()?.forEach { it.docs(handle) }
         }
 
-        abstract fun getParentNodeData(): PostmanNodeData?
-
-        var treeNode: DefaultMutableTreeNode? = null
-
-        fun asTreeNode(): DefaultMutableTreeNode {
-            if (treeNode != null) {
-                return treeNode!!
-            }
-            treeNode = DefaultMutableTreeNode(this)
-            return treeNode!!
-
+        open fun curlEnable(): Boolean {
+            return true
         }
     }
 
-    class PostmanCollectionNodeData : PostmanNodeData, IconCustomized, ToolTipAble {
+    class PostmanCollectionNodeData(var collection: HashMap<String, Any?>) : PostmanNodeData(), IconCustomized,
+        ToolTipAble {
         override fun icon(): Icon? {
             return when (status) {
                 NodeStatus.Loading -> EasyIcons.Refresh
@@ -830,15 +826,9 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             return null
         }
 
-        var collection: HashMap<String, Any?>
-
         var detail: HashMap<String, Any?>? = null
 
         var status = NodeStatus.Unload
-
-        constructor(collection: HashMap<String, Any?>) {
-            this.collection = collection
-        }
 
         override fun toString(): String {
             return status.desc + collection.getOrDefault("name", "unknown")
@@ -852,26 +842,15 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    class PostmanSubCollectionNodeData : PostmanNodeData, IconCustomized, ToolTipAble {
+    class PostmanSubCollectionNodeData(
+        var info: HashMap<String, Any?>
+    ) : PostmanNodeData(), IconCustomized, ToolTipAble {
         override fun icon(): Icon? {
             return EasyIcons.Module
         }
 
         override fun coreData(): HashMap<String, Any?> {
             return info
-        }
-
-        override fun getParentNodeData(): PostmanNodeData? {
-            return parentNode
-        }
-
-        private var parentNode: PostmanNodeData
-
-        var info: HashMap<String, Any?>
-
-        constructor(parentNode: PostmanNodeData, info: HashMap<String, Any?>) {
-            this.info = info
-            this.parentNode = parentNode
         }
 
         override fun toString(): String {
@@ -884,7 +863,13 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    class PostmanApiNodeData : PostmanNodeData, IconCustomized, ToolTipAble {
+    class PostmanApiNodeData(
+        var info: HashMap<String, Any?>
+    ) : PostmanNodeData(), IconCustomized, ToolTipAble {
+
+        private val postmanFormatter: PostmanFormatter by lazy {
+            ActionContext.getContext()!!.instance(PostmanFormatter::class)
+        }
 
         override fun icon(): Icon? {
             return EasyIcons.Link
@@ -894,17 +879,12 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             return info
         }
 
-        override fun getParentNodeData(): PostmanNodeData? {
-            return parentNode
+        override fun asTreeNode(): DefaultMutableTreeNode {
+            return super.asTreeNode().also { it.allowsChildren = false }
         }
 
-        private var parentNode: PostmanNodeData
-
-        var info: HashMap<String, Any?>
-
-        constructor(parentNode: PostmanNodeData, info: HashMap<String, Any?>) {
-            this.info = info
-            this.parentNode = parentNode
+        override fun docs(handle: (Doc) -> Unit) {
+            postmanFormatter.item2Request(this.info)?.let { handle(it) }
         }
 
         override fun toString(): String {
@@ -940,7 +920,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     //region handle drop--------------------------------------------------------
 
     @Suppress("UNCHECKED_CAST")
-    fun handleDropEvent(fromProjectData: Any, toPostmanNodeData: Any) {
+    fun handleDropEvent(fromProjectData: ProjectNodeData, toPostmanNodeData: Any) {
 
         val targetCollectionNodeData: PostmanNodeData = when (toPostmanNodeData) {
             is PostmanApiNodeData -> toPostmanNodeData.getParentNodeData()!!
@@ -961,10 +941,10 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 }
 
                 rootPostmanNodeData =
-                    (toPostmanNodeData as PostmanNodeData).getRootNodeData()!! as PostmanCollectionNodeData
+                    (toPostmanNodeData as PostmanNodeData).getRootNodeData() as PostmanCollectionNodeData
                 rootPostmanNodeData.status = NodeStatus.Uploading
                 actionContext.runInSwingUI {
-                    (postmanApiTree!!.model as DefaultTreeModel).reload(rootPostmanNodeData.asTreeNode())
+                    postmanApiTree!!.model.reload(rootPostmanNodeData.asTreeNode())
                 }
 
                 val currData = targetCollectionNodeData.currData()
@@ -980,8 +960,8 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     rootPostmanNodeData.status = NodeStatus.Loaded
 
                     actionContext.runInSwingUI {
-                        loadPostmanNode(targetCollectionNodeData.asTreeNode(), formatToPostmanInfo)
-                        (postmanApiTree!!.model as DefaultTreeModel).reload(targetCollectionNodeData.asTreeNode())
+                        loadPostmanNode(targetCollectionNodeData, formatToPostmanInfo)
+                        postmanApiTree!!.model.reload(targetCollectionNodeData.asTreeNode())
                     }
                 } else {
                     logger.error("export failed")
@@ -1038,37 +1018,25 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         return HashMap()
     }
 
-    private fun formatPostmanInfo(projectNodeData: Any): HashMap<String, Any?>? {
+    private fun formatPostmanInfo(projectNodeData: ProjectNodeData): HashMap<String, Any?>? {
         LOG.info("format postman info:$projectNodeData")
-        when (projectNodeData) {
-            is ApiProjectNodeData -> return postmanFormatter!!.request2Item(projectNodeData.doc as Request)
-            is ClassProjectNodeData -> {
-                val subProjectNodeData: ArrayList<ApiProjectNodeData>? = projectNodeData.getSubProjectNodeData()
-                    ?: return null
-
-                val subItems: ArrayList<HashMap<String, Any?>> = ArrayList()
-                subProjectNodeData!!.stream()
-                    .mapNotNull { it.doc }
-                    .filter { it is Request }
-                    .map { postmanFormatter!!.request2Item(it as Request) }
-                    .forEach { subItems.add(it) }
-                return postmanFormatter!!.wrapInfo(projectNodeData.cls, subItems)
-
-            }
-            is ModuleProjectNodeData -> {
-                val subProjectNodeData: ArrayList<ClassProjectNodeData>? = projectNodeData.getSubProjectNodeData()
-                    ?: return null
-
-                val subItems: ArrayList<HashMap<String, Any?>> = ArrayList()
-                subProjectNodeData!!.stream()
-                    .map { formatPostmanInfo(it) }
-                    .filter { it != null }
-                    .forEach { subItems.add(it!!) }
-                return postmanFormatter!!.wrapInfo(projectNodeData.module.name, subItems)
-            }
-            else -> return null
+        if (projectNodeData is ApiProjectNodeData) {
+            return (projectNodeData.doc as? Request)?.let { postmanFormatter!!.request2Item(it) }
         }
 
+        val subProjectNodeData: ArrayList<ProjectNodeData> = projectNodeData.getSubNodeData()
+            ?: return null
+        val subItems: ArrayList<HashMap<String, Any?>> = ArrayList()
+        subProjectNodeData.stream()
+            .mapNotNull { formatPostmanInfo(it) }
+            .forEach { subItems.add(it) }
+
+        if (projectNodeData is ClassProjectNodeData) {
+            return postmanFormatter!!.wrapInfo(projectNodeData.cls, subItems)
+        } else if (projectNodeData is ModuleProjectNodeData) {
+            return postmanFormatter!!.wrapInfo(projectNodeData.module.name, subItems)
+        }
+        return null
     }
 
     //endregion handle drop--------------------------------------------------------
@@ -1084,7 +1052,6 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     }
 
     //endregion workspace--------------------------------------------------------
-
 
     override fun filterDoc(doc: Doc): Doc? {
         return doc.takeIf { it is Request }
