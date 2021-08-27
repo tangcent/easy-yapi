@@ -37,7 +37,6 @@ import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.utils.ResourceUtils
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
 import java.io.File
 import javax.swing.*
 
@@ -217,7 +216,7 @@ class EasyApiSettingGUI {
 
         postmanTokenLabel!!.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
-                if(e.isDoubleClick()) {
+                if (e.isDoubleClick()) {
                     actionContext.instance(IdeaSupport::class).openUrl(INTEGRATIONS_DASHBOARD)
                 }
             }
@@ -607,7 +606,7 @@ class EasyApiSettingGUI {
 
         constructor(postmanWorkspace: PostmanWorkspace) {
             this.id = postmanWorkspace.id ?: ""
-            this.name = postmanWorkspace.name ?: ""
+            this.name = postmanWorkspace.nameWithType()?:""
         }
 
         override fun toString(): String {

@@ -308,7 +308,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             }
             actionContext.runInSwingUI {
                 postmanWorkspaceComboBox!!.removeAllItems()
-                val workSpacesArrData = workspaces.mapToTypedArray { WorkspaceWrapper(it.id, it.name) }
+                val workSpacesArrData = workspaces.mapToTypedArray { WorkspaceWrapper(it.id, it.nameWithType()) }
                 postmanWorkspaceComboBox!!.model =
                     DefaultComboBoxModel(workSpacesArrData)
                 postmanWorkspaceComboBox!!.selectedIndex = 0

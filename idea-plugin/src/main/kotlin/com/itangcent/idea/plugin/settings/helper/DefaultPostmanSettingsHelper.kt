@@ -64,10 +64,9 @@ open class DefaultPostmanSettingsHelper : PostmanSettingsHelper {
 
     override fun selectWorkspace(): String? {
         val workspaces = postmanApiHelper.getAllWorkspaces() ?: return null
-        val workspaceNames: List<String> = if (workspaces.map { it.name }.distinct().size == workspaces.size) {
-            workspaces.map { workspace -> (workspace.name ?: "") }
-        } else {
-            workspaces.mapIndexed { index, workspace -> "${index + 1}: ${workspace.name}" }
+        var workspaceNames = workspaces.map { it.nameWithType() ?: "" }
+        if (workspaceNames.distinct().size != workspaceNames.size) {
+            workspaceNames = workspaceNames.mapIndexed { index, workspace -> "${index + 1}: $workspace" }
         }
         return messagesHelper.showEditableChooseDialog(
             "Select Workspace For Current Project",

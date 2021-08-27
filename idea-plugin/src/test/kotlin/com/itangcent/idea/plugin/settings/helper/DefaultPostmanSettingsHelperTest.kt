@@ -1,12 +1,16 @@
 package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
+import com.itangcent.idea.plugin.api.export.postman.Emojis.PERSONAL
+import com.itangcent.idea.plugin.api.export.postman.Emojis.TEAM
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspace
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.test.mock
+import com.itangcent.utils.Emojis.BUST
+import com.itangcent.utils.Emojis.BUSTS
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito
@@ -78,6 +82,7 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         listOf(
                             PostmanWorkspace("111", "aaa", "team"),
                             PostmanWorkspace("222", "bbb", "team"),
+                            PostmanWorkspace("222", "bbb", "personal"),
                             PostmanWorkspace("333", "ccc", "team"),
                         )
                     )
@@ -91,10 +96,10 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         Mockito.eq("Select Workspace For Current Project"),
                         Mockito.eq("Postman Workspace"),
                         Mockito.any(),
-                        Mockito.argThat<Array<String>?> { arrayOf("aaa", "bbb", "ccc").contentEquals(it) },
+                        Mockito.argThat<Array<String>?> { arrayOf("${TEAM}aaa","${TEAM}bbb","${PERSONAL}bbb","${TEAM}ccc").contentEquals(it) },
                         Mockito.any()
                     )
-                ).thenReturn(null, "bbb")
+                ).thenReturn(null, "${TEAM}bbb")
             }
 
             builder.bindInstance(MessagesHelper::class, messagesHelper)
@@ -139,13 +144,13 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         Mockito.eq("Postman Workspace"),
                         Mockito.any(),
                         Mockito.argThat<Array<String>?> {
-                            arrayOf("1: aaa", "2: bbb", "3: bbb", "4: ccc").contentEquals(
+                            arrayOf("1: ${TEAM}aaa", "2: ${TEAM}bbb", "3: ${TEAM}bbb", "4: ${TEAM}ccc").contentEquals(
                                 it
                             )
                         },
                         Mockito.any()
                     )
-                ).thenReturn(null, "3: bbb")
+                ).thenReturn(null, "3: ${TEAM}bbb")
             }
 
             builder.bindInstance(MessagesHelper::class, messagesHelper)
@@ -188,10 +193,10 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         Mockito.eq("Select Workspace For Current Project"),
                         Mockito.eq("Postman Workspace"),
                         Mockito.any(),
-                        Mockito.argThat<Array<String>?> { arrayOf("aaa", "bbb", "ccc").contentEquals(it) },
+                        Mockito.argThat<Array<String>?> { arrayOf("${TEAM}aaa", "${TEAM}bbb", "${TEAM}ccc").contentEquals(it) },
                         Mockito.any()
                     )
-                ).thenReturn("fff", "ccc")
+                ).thenReturn("fff", "${TEAM}ccc")
             }
 
             builder.bindInstance(MessagesHelper::class, messagesHelper)
