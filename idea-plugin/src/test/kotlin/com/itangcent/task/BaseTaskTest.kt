@@ -3,6 +3,7 @@ package com.itangcent.task
 import com.itangcent.common.utils.ThreadPoolUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.BaseContextTest
+import com.itangcent.utils.WaitHelper
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertFalse
@@ -51,9 +52,8 @@ internal class BaseTaskTest : BaseContextTest() {
         executorService.submit {
             terminatedTask.start()
         }
-
-        while (!terminatedTask.isRunning()) {
-            Thread.sleep(100)
+        WaitHelper.waitUtil(10000) {
+            terminatedTask.isRunning()
         }
 
         val task = BaseTaskImpl(actionContext, taskManager, 1000)

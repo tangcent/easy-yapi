@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.curl
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
@@ -15,6 +16,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.FileSaveHelperAdaptor
 import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
+import com.itangcent.utils.WaitHelper
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.kotlin.stub
 import java.time.LocalDate
@@ -110,18 +112,10 @@ internal class CurlExporterTest : PluginContextLightCodeInsightFixtureTestCase()
         command = ""
         curlExporter.export(requests)
         assertEquals("", command)
-        for (i in 0..10) {
-            val content = (fileSaveHelper as FileSaveHelperAdaptor).content()
-            if (content.isNullOrEmpty()) {
-                Thread.sleep(500)
-                continue
-            }
-            assertEquals(
-                ResultLoader.load(),
-                content
-            )
-            return
-        }
-        fail()
+        WaitHelper.waitUtil(5000) { (fileSaveHelper as FileSaveHelperAdaptor).content().notNullOrEmpty() }
+        assertEquals(
+            ResultLoader.load(),
+            (fileSaveHelper as FileSaveHelperAdaptor).content()
+        )
     }
 }

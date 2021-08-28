@@ -63,11 +63,6 @@ interface Task {
     }
 }
 
-fun Task.waitRunning() {
-    while (!this.isRunning()) {
-        Thread.sleep(100)
-    }
-}
 
 class TaskManager {
 

@@ -145,4 +145,5 @@ internal class AsyncTaskTest : BaseContextTest() {
         }
     }
 }
+
 private val LOG = org.apache.log4j.Logger.getLogger(AsyncTaskTest::class.java)
