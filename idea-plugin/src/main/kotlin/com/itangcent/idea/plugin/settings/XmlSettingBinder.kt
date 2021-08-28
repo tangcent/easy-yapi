@@ -32,13 +32,13 @@ class XmlSettingBinder : SettingBinder {
             return
         }
 
-        val projectSettings = projectSettingsComponent?.state ?: ProjectSettings()
-        t.copyTo(projectSettings)
-        projectSettingsComponent?.loadState(projectSettings)
-
         val applicationSettings = applicationSettingsComponent.state ?: ApplicationSettings()
         t.copyTo(applicationSettings)
         applicationSettingsComponent.loadState(applicationSettings)
+
+        val projectSettings = projectSettingsComponent?.state ?: ProjectSettings()
+        t.copyTo(projectSettings)
+        projectSettingsComponent?.loadState(projectSettings)
     }
 
     override fun tryRead(): Settings? {
@@ -49,8 +49,8 @@ class XmlSettingBinder : SettingBinder {
         }
 
         val settings = Settings()
-        projectSettings?.copyTo(settings)
         applicationSettings?.copyTo(settings)
+        projectSettings?.copyTo(settings)
         return settings
     }
 }
