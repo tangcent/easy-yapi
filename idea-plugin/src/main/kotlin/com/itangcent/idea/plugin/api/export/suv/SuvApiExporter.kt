@@ -9,10 +9,8 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.filterAs
 import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.Worker
@@ -22,7 +20,6 @@ import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.MethodFilter
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.curl.CurlExporter
-import com.itangcent.idea.plugin.api.export.curl.CurlFormatter
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
@@ -56,7 +53,6 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.FileType
-import com.itangcent.intellij.util.ToolUtils
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
@@ -443,56 +439,8 @@ open class SuvApiExporter {
         }
 
         override fun doExportDocs(docs: MutableList<Doc>) {
-
-            try {
-                val postman = postmanFormatter!!.parseRequests(docs.filterAs())
-                docs.clear()
-                if (postmanSettingsHelper.hasPrivateToken()) {
-                    logger!!.info("PrivateToken of postman be found")
-                    // get workspace
-                    val workspaceId = postmanSettingsHelper.getWorkspace(false)
-                    if (workspaceId != null) {
-                        LOG.info("export to workspace $workspaceId")
-                    }
-                    val createdCollection = postmanApiHelper.createCollection(postman, workspaceId)
-
-                    if (createdCollection.notNullOrEmpty()) {
-                        val collectionName = createdCollection!!["name"]?.toString()
-                        if (collectionName.notNullOrBlank()) {
-                            logger!!.info("Imported as collection:$collectionName")
-                            return
-                        }
-                    }
-
-                    logger!!.error(
-                        "Export to postman failed,You could check below:" +
-                                "1.the network " +
-                                "2.the privateToken"
-                    )
-
-                } else {
-                    logger!!.info("PrivateToken of postman not be setting")
-                    logger!!.info(
-                        "To enable automatically import to postman you could set privateToken of postman " +
-                                "in \"Preference -> Other Setting -> EasyApi\""
-                    )
-                    logger!!.info(
-                        "If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
-                                " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api]."
-                    )
-                }
-                fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
-                    logger!!.info("Exported data are copied to clipboard, you can paste to postman now")
-                }, {
-                    logger!!.info("Apis save success: $it")
-                }) {
-                    logger!!.info("Apis save failed")
-                }
-            } catch (e: Exception) {
-                logger!!.traceError("Apis save failed", e)
-
-            }
-
+            actionContext!!.instance(PostmanApiExporter::class)
+                .export(docs.filterAs())
         }
     }
 
@@ -771,5 +719,3 @@ open class SuvApiExporter {
         )
     }
 }
-
-private val LOG = org.apache.log4j.Logger.getLogger(SuvApiExporter::class.java)

@@ -5,6 +5,7 @@ import com.itangcent.common.logger.ILoggerProvider
 import com.itangcent.common.spi.SpiUtils
 import com.itangcent.common.utils.ResourceUtils
 import com.itangcent.mock.toUnixString
+import com.itangcent.test.TimeZoneKit.fixTimeZone
 
 object ResultLoader {
 
@@ -17,7 +18,7 @@ object ResultLoader {
         if (resource.isEmpty()) {
             LOG?.warn("no resource [result/$rawName.txt] be found")
         }
-        return resource.toUnixString()
+        return resource.toUnixString().fixTimeZone()
     }
 
     fun load(name: String): String {
@@ -30,7 +31,7 @@ object ResultLoader {
         if (resource.isEmpty()) {
             LOG?.warn("no resource [result/$fileName.txt] be found")
         }
-        return resource.toUnixString()
+        return resource.toUnixString().fixTimeZone()
     }
 }
 

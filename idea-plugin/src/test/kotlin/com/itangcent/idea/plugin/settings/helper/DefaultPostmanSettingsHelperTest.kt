@@ -1,16 +1,14 @@
 package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
-import com.itangcent.idea.plugin.api.export.postman.Emojis.PERSONAL
-import com.itangcent.idea.plugin.api.export.postman.Emojis.TEAM
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspace
+import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.mock.any
 import com.itangcent.test.mock
-import com.itangcent.utils.Emojis.BUST
-import com.itangcent.utils.Emojis.BUSTS
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito
@@ -83,7 +81,7 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                             PostmanWorkspace("111", "aaa", "team"),
                             PostmanWorkspace("222", "bbb", "team"),
                             PostmanWorkspace("222", "bbb", "personal"),
-                            PostmanWorkspace("333", "ccc", "team"),
+                            PostmanWorkspace("333", "ccc", "team")
                         )
                     )
             }
@@ -96,10 +94,18 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         Mockito.eq("Select Workspace For Current Project"),
                         Mockito.eq("Postman Workspace"),
                         Mockito.any(),
-                        Mockito.argThat<Array<String>?> { arrayOf("${TEAM}aaa","${TEAM}bbb","${PERSONAL}bbb","${TEAM}ccc").contentEquals(it) },
+                        Mockito.argThat<Array<PostmanWorkspace>?> {
+                            arrayOf(
+                                PostmanWorkspace("111", "aaa", "team"),
+                                PostmanWorkspace("222", "bbb", "team"),
+                                PostmanWorkspace("222", "bbb", "personal"),
+                                PostmanWorkspace("333", "ccc", "team")
+                            ).contentEquals(it)
+                        },
+                        any { it.nameWithType() ?: "" },
                         Mockito.any()
                     )
-                ).thenReturn(null, "${TEAM}bbb")
+                ).thenReturn(null, PostmanWorkspace("222", "bbb", "team"))
             }
 
             builder.bindInstance(MessagesHelper::class, messagesHelper)
@@ -130,7 +136,7 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                             PostmanWorkspace("111", "aaa", "team"),
                             PostmanWorkspace("222", "bbb", "team"),
                             PostmanWorkspace("223", "bbb", "team"),
-                            PostmanWorkspace("333", "ccc", "team"),
+                            PostmanWorkspace("333", "ccc", "team")
                         )
                     )
             }
@@ -143,14 +149,20 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         Mockito.eq("Select Workspace For Current Project"),
                         Mockito.eq("Postman Workspace"),
                         Mockito.any(),
-                        Mockito.argThat<Array<String>?> {
-                            arrayOf("1: ${TEAM}aaa", "2: ${TEAM}bbb", "3: ${TEAM}bbb", "4: ${TEAM}ccc").contentEquals(
+                        Mockito.argThat<Array<PostmanWorkspace>?> {
+                            arrayOf(
+                                PostmanWorkspace("111", "aaa", "team"),
+                                PostmanWorkspace("222", "bbb", "team"),
+                                PostmanWorkspace("223", "bbb", "team"),
+                                PostmanWorkspace("333", "ccc", "team")
+                            ).contentEquals(
                                 it
                             )
                         },
+                        any { it.name ?: "" },
                         Mockito.any()
                     )
-                ).thenReturn(null, "3: ${TEAM}bbb")
+                ).thenReturn(null, PostmanWorkspace("223", "bbb", "team"))
             }
 
             builder.bindInstance(MessagesHelper::class, messagesHelper)
@@ -165,52 +177,6 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
             assertEquals("223", postmanSettingsHelper.getWorkspace(false))
             assertEquals("223", settings.postmanWorkspace)
             assertEquals("223", postmanSettingsHelper.getWorkspace())
-        }
-    }
-
-    class EditErrorWorkspaceTest : DefaultPostmanSettingsHelperTest() {
-
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
-            super.bind(builder)
-
-            val postmanApiHelper = mock<PostmanApiHelper>()
-            postmanApiHelper.stub {
-                on(postmanApiHelper.getAllWorkspaces())
-                    .thenReturn(
-                        listOf(
-                            PostmanWorkspace("111", "aaa", "team"),
-                            PostmanWorkspace("222", "bbb", "team"),
-                            PostmanWorkspace("333", "ccc", "team"),
-                        )
-                    )
-            }
-            builder.bindInstance(PostmanApiHelper::class, postmanApiHelper)
-
-            val messagesHelper = mock<MessagesHelper>()
-            messagesHelper.stub {
-                this.on(
-                    messagesHelper.showEditableChooseDialog(
-                        Mockito.eq("Select Workspace For Current Project"),
-                        Mockito.eq("Postman Workspace"),
-                        Mockito.any(),
-                        Mockito.argThat<Array<String>?> { arrayOf("${TEAM}aaa", "${TEAM}bbb", "${TEAM}ccc").contentEquals(it) },
-                        Mockito.any()
-                    )
-                ).thenReturn("fff", "${TEAM}ccc")
-            }
-
-            builder.bindInstance(MessagesHelper::class, messagesHelper)
-
-        }
-
-        @Test
-        fun testGetWorkspace() {
-            assertNull(postmanSettingsHelper.getWorkspace())
-            assertNull(settings.postmanWorkspace)
-            assertNull(postmanSettingsHelper.getWorkspace(false))
-            assertEquals("333", postmanSettingsHelper.getWorkspace(false))
-            assertEquals("333", settings.postmanWorkspace)
-            assertEquals("333", postmanSettingsHelper.getWorkspace())
         }
     }
 
@@ -239,5 +205,155 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                 assertEquals(formatType, postmanSettingsHelper.postmanJson5FormatType())
             }
         }
+
+        @Test
+        fun testPostmanExportMode() {
+            for (postmanExportMode in PostmanExportMode.values()) {
+                settings.postmanExportMode = postmanExportMode.name
+                assertEquals(postmanExportMode, postmanSettingsHelper.postmanExportMode())
+            }
+        }
     }
+
+    class GetCollectionFromDistinctTest : DefaultPostmanSettingsHelperTest() {
+
+        override fun bind(builder: ActionContext.ActionContextBuilder) {
+            super.bind(builder)
+
+            val postmanApiHelper = mock<PostmanApiHelper>()
+            postmanApiHelper.stub {
+                on(postmanApiHelper.getAllCollection())
+                    .thenReturn(
+                        arrayListOf(
+                            hashMapOf("name" to "aaa", "id" to "111"),
+                            hashMapOf("name" to "bbb", "id" to "222"),
+                            hashMapOf("name" to "ccc", "id" to "333")
+                        )
+                    )
+            }
+            builder.bindInstance(PostmanApiHelper::class, postmanApiHelper)
+
+            val messagesHelper = mock<MessagesHelper>()
+            messagesHelper.stub {
+                this.on(
+                    messagesHelper.showEditableChooseDialog(
+                        eq("Select a collection to save apis in [module-a] to"),
+                        eq("Postman Collection"),
+                        Mockito.any(),
+                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                            arrayOf(
+                                hashMapOf("name" to "aaa", "id" to "111"),
+                                hashMapOf("name" to "bbb", "id" to "222"),
+                                hashMapOf("name" to "ccc", "id" to "333")
+                            ).contentEquals(it)
+                        },
+                        any { it["name"].toString() },
+                        Mockito.any()
+                    )
+                ).thenReturn(null, hashMapOf("name" to "bbb", "id" to "222"))
+                this.on(
+                    messagesHelper.showEditableChooseDialog(
+                        eq("Select a collection to save apis in [module-b] to"),
+                        eq("Postman Collection"),
+                        Mockito.any(),
+                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                            arrayOf(
+                                hashMapOf("name" to "aaa", "id" to "111"),
+                                hashMapOf("name" to "bbb", "id" to "222"),
+                                hashMapOf("name" to "ccc", "id" to "333")
+                            ).contentEquals(it)
+                        },
+                        any { it["name"].toString() },
+                        Mockito.any()
+                    )
+                ).thenReturn(hashMapOf("name" to "ccc", "id" to "333"))
+            }
+
+            builder.bindInstance(MessagesHelper::class, messagesHelper)
+        }
+
+        @Test
+        fun testGetCollection() {
+            assertNull(postmanSettingsHelper.getCollectionId("module-a"))
+            assertNull(postmanSettingsHelper.getCollectionId("module-a", false))
+            assertEquals("222", postmanSettingsHelper.getCollectionId("module-a", false))
+            assertEquals("222", postmanSettingsHelper.getCollectionId("module-a"))
+            assertNull(postmanSettingsHelper.getCollectionId("module-b"))
+            assertEquals("333", postmanSettingsHelper.getCollectionId("module-b", false))
+            assertEquals("333", postmanSettingsHelper.getCollectionId("module-b"))
+        }
+    }
+
+    class GetCollectionFromDuplicatedTest : DefaultPostmanSettingsHelperTest() {
+
+        override fun bind(builder: ActionContext.ActionContextBuilder) {
+            super.bind(builder)
+
+            val postmanApiHelper = mock<PostmanApiHelper>()
+            postmanApiHelper.stub {
+                on(postmanApiHelper.getAllCollection())
+                    .thenReturn(
+                        arrayListOf(
+                            hashMapOf("name" to "aaa", "id" to "111"),
+                            hashMapOf("name" to "bbb", "id" to "222"),
+                            hashMapOf("name" to "bbb", "id" to "555"),
+                            hashMapOf("name" to "ccc", "id" to "333")
+                        )
+                    )
+            }
+            builder.bindInstance(PostmanApiHelper::class, postmanApiHelper)
+
+            val messagesHelper = mock<MessagesHelper>()
+            messagesHelper.stub {
+                this.on(
+                    messagesHelper.showEditableChooseDialog(
+                        eq("Select a collection to save apis in [module-a] to"),
+                        eq("Postman Collection"),
+                        Mockito.any(),
+                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                            arrayOf(
+                                hashMapOf("name" to "aaa", "id" to "111"),
+                                hashMapOf("name" to "bbb", "id" to "222"),
+                                hashMapOf("name" to "bbb", "id" to "555"),
+                                hashMapOf("name" to "ccc", "id" to "333")
+                            ).contentEquals(it)
+                        },
+                        any { it["name"].toString() },
+                        Mockito.any()
+                    )
+                ).thenReturn(null, hashMapOf("name" to "bbb", "id" to "222"))
+                this.on(
+                    messagesHelper.showEditableChooseDialog(
+                        eq("Select a collection to save apis in [module-b] to"),
+                        eq("Postman Collection"),
+                        Mockito.any(),
+                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                            arrayOf(
+                                hashMapOf("name" to "aaa", "id" to "111"),
+                                hashMapOf("name" to "bbb", "id" to "222"),
+                                hashMapOf("name" to "bbb", "id" to "555"),
+                                hashMapOf("name" to "ccc", "id" to "333")
+                            ).contentEquals(it)
+                        },
+                        any { it["name"].toString() },
+                        Mockito.any()
+                    )
+                ).thenReturn(hashMapOf("name" to "bbb", "id" to "555"))
+            }
+
+            builder.bindInstance(MessagesHelper::class, messagesHelper)
+        }
+
+        @Test
+        fun testGetCollection() {
+            assertNull(postmanSettingsHelper.getCollectionId("module-a"))
+            assertNull(postmanSettingsHelper.getCollectionId("module-a", false))
+            assertEquals("222", postmanSettingsHelper.getCollectionId("module-a", false))
+            assertEquals("222", postmanSettingsHelper.getCollectionId("module-a"))
+            assertNull(postmanSettingsHelper.getCollectionId("module-b"))
+            assertEquals("555", postmanSettingsHelper.getCollectionId("module-b", false))
+            assertEquals("555", postmanSettingsHelper.getCollectionId("module-b"))
+        }
+    }
+
 }

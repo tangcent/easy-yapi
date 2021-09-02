@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.settings
 
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
-import com.itangcent.idea.plugin.settings.xml.ApplicationSettings
 import com.itangcent.idea.plugin.settings.xml.ApplicationSettingsSupport
 import com.itangcent.idea.plugin.settings.xml.ProjectSettingsSupport
 import com.itangcent.idea.utils.Charsets
@@ -19,6 +18,10 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
     override var postmanToken: String? = null
 
     override var postmanWorkspace: String? = null
+
+    override var postmanExportMode: String? = PostmanExportMode.COPY.name
+
+    override var postmanCollections: String? = null
 
     override var wrapCollection: Boolean = false
 
@@ -102,6 +105,8 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (genericEnable != other.genericEnable) return false
         if (postmanToken != other.postmanToken) return false
         if (postmanWorkspace != other.postmanWorkspace) return false
+        if (postmanExportMode != other.postmanExportMode) return false
+        if (postmanCollections != other.postmanCollections) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
         if (postmanJson5FormatType != other.postmanJson5FormatType) return false
@@ -136,6 +141,9 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + methodDocEnable.hashCode()
         result = 31 * result + genericEnable.hashCode()
         result = 31 * result + (postmanToken?.hashCode() ?: 0)
+        result = 31 * result + (postmanWorkspace?.hashCode() ?: 0)
+        result = 31 * result + (postmanExportMode?.hashCode() ?: 0)
+        result = 31 * result + (postmanCollections?.hashCode() ?: 0)
         result = 31 * result + wrapCollection.hashCode()
         result = 31 * result + autoMergeScript.hashCode()
         result = 31 * result + postmanJson5FormatType.hashCode()

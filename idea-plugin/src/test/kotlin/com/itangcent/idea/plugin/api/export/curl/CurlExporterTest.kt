@@ -112,7 +112,7 @@ internal class CurlExporterTest : PluginContextLightCodeInsightFixtureTestCase()
         command = ""
         curlExporter.export(requests)
         assertEquals("", command)
-        WaitHelper.waitUtil(5000) { (fileSaveHelper as FileSaveHelperAdaptor).content().notNullOrEmpty() }
+        WaitHelper.waitUtil(10000) { (fileSaveHelper as FileSaveHelperAdaptor).content().notNullOrEmpty() }
         assertEquals(
             ResultLoader.load(),
             (fileSaveHelper as FileSaveHelperAdaptor).content()

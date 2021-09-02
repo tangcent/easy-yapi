@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.itangcent.cache.CacheSwitcher
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
@@ -10,10 +11,12 @@ import com.itangcent.intellij.logger.Logger
 import kotlin.streams.toList
 
 @Singleton
-class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
+class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
 
     @Inject
     private lateinit var logger: Logger
+
+    private var readCache: Boolean = true
 
     @Inject
     private val localFileRepository: LocalFileRepository? = null
@@ -130,7 +133,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
     }
 
     fun getAllCollection(useCache: Boolean): ArrayList<HashMap<String, Any?>>? {
-        if (useCache) {
+        if (useCache && this.readCache) {
             val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder(
                 "${postmanSettingsHelper.getPrivateToken()}_getAllCollection"
             )
@@ -184,7 +187,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
     }
 
     fun getCollectionInfo(collectionId: String, useCache: Boolean = true): HashMap<String, Any?>? {
-        if (useCache) {
+        if (useCache && this.readCache) {
             val collectionDetailBeanBinder =
                 getDbBeanBinderFactory().getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
             val cache = collectionDetailBeanBinder.read()
@@ -208,7 +211,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
     }
 
     fun getCollectionByWorkspace(workspaceId: String, useCache: Boolean): ArrayList<HashMap<String, Any?>>? {
-        if (useCache) {
+        if (useCache && this.readCache) {
             val workspaceInfoBeanBinder = getDbBeanBinderFactory()
                 .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collectionByWorkspace:$workspaceId")
             val cache = workspaceInfoBeanBinder.read()
@@ -217,9 +220,9 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
                 return cache.allCollection
             }
         }
-        val allCollection = super.getCollectionByWorkspace(workspaceId)
+        val collectionInWorkspace = super.getCollectionByWorkspace(workspaceId)
         val cache = PostmanInfoCache()
-        cache.allCollection = allCollection
+        cache.allCollection = collectionInWorkspace
 
         val beanBinder = getDbBeanBinderFactory()
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collectionByWorkspace:$workspaceId")
@@ -229,7 +232,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
             if (oldCollectionCache != NULL_POSTMAN_INFO_CACHE
                 && oldCollectionCache.allCollection.notNullOrEmpty()
             ) {
-                val survivedCollectionIds = allCollection!!.mapNotNull { it["id"] }.toList()
+                val survivedCollectionIds = collectionInWorkspace!!.mapNotNull { it["id"] }.toList()
 
                 val deletedCollections = oldCollectionCache
                     .allCollection!!
@@ -246,7 +249,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
 
         beanBinder.save(cache)
 
-        return allCollection
+        return collectionInWorkspace
     }
 
     override fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace? {
@@ -271,7 +274,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
     }
 
     fun getAllWorkspaces(useCache: Boolean): List<PostmanWorkspace>? {
-        if (useCache) {
+        if (useCache && this.readCache) {
             val allWorkspacesBeanBinder = getDbBeanBinderFactory().getBeanBinder(
                 "${postmanSettingsHelper.getPrivateToken()}_getAllWorkspaces"
             )
@@ -317,6 +320,14 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper() {
         beanBinder.save(cache)
 
         return allWorkspaces
+    }
+
+    override fun notUserCache() {
+        readCache = false
+    }
+
+    override fun userCache() {
+        readCache = true
     }
 
     data class PostmanInfoCache(

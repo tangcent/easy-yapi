@@ -1,5 +1,8 @@
 package com.itangcent.idea.plugin.settings.helper
 
+import com.google.inject.Singleton
+
+@Singleton
 class MemoryPostmanSettingsHelper : DefaultPostmanSettingsHelper() {
 
     private var privateToken: String? = null

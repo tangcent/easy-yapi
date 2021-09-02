@@ -15,6 +15,7 @@ import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.ImmutableSystemProvider
 import com.itangcent.mock.SettingBinderAdaptor
+import com.itangcent.test.TimeZoneKit.STANDARD_TIME
 import org.junit.jupiter.api.condition.OS
 
 /**
@@ -71,7 +72,7 @@ internal class ValidationGroupedTest : YapiSpringClassExporterBaseTest() {
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SystemProvider::class) {
-            it.toInstance(ImmutableSystemProvider(1618124194123L))
+            it.toInstance(ImmutableSystemProvider(STANDARD_TIME))
         }
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(settings))

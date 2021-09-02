@@ -64,6 +64,7 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
                 "# read folder name from tag `folder`\n" +
+                "folder.name=#folder\n" +
                 "postman.prerequest=```\n" +
                 "pm.environment.set(\"token\", \"123456\");\n" +
                 "```\n" +
@@ -80,7 +81,10 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
         builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
 
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance("AVAILABLE_REQUEST_BUILDER_LISTENER", arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class))
+        builder.bindInstance(
+            "AVAILABLE_REQUEST_BUILDER_LISTENER",
+            arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class)
+        )
 
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
