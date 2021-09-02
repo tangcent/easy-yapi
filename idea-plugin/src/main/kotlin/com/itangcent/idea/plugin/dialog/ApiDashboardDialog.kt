@@ -12,6 +12,7 @@ import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.api.export.postman.PostmanUrls.INTEGRATIONS_DASHBOARD
+import com.itangcent.idea.plugin.api.export.postman.getEditableItem
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
@@ -479,7 +480,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     return@runAsync
                 }
                 collectionNode.detail = collectionInfo
-                val items = findEditableItem(collectionInfo)
+                val items = collectionInfo.getEditableItem()
 
                 actionContext.runInSwingUI {
                     try {
@@ -517,7 +518,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 val subCollectionNode = PostmanSubCollectionNodeData(item)
                 parentNode.addSubNodeData(subCollectionNode)
 
-                val items = findEditableItem(item)
+                val items = item.getEditableItem()
                 if (items.isNullOrEmpty()) return@runInSwingUI
                 for (subItem in items) {
                     loadPostmanNode(subCollectionNode, subItem)
@@ -600,9 +601,9 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                         newCollection["name"] = newCollectionName
                         newCollection["description"] = "create by easyApi at ${DateUtils.formatYMD_HMS(Date())}"
                         newCollection["item"] = ArrayList<Any?>()
-                        findEditableItem((postmanNodeData as PostmanNodeData).currData()).add(newCollection)
+                        (postmanNodeData as PostmanNodeData).currData().getEditableItem().add(newCollection)
 
-                        val rootPostmanNodeData = postmanNodeData.getRootNodeData()!! as PostmanCollectionNodeData
+                        val rootPostmanNodeData = postmanNodeData.getRootNodeData() as PostmanCollectionNodeData
                         rootPostmanNodeData.status = NodeStatus.Uploading
 
                         val collection = rootPostmanNodeData.collection
@@ -720,12 +721,11 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     }
                 }
             } else {//delete sub collection or api
-                if (findEditableItem((postmanNodeData as PostmanNodeData).getParentNodeData()!!.currData()).remove(
+                if ((postmanNodeData as PostmanNodeData).getParentNodeData()!!.currData().getEditableItem().remove(
                         postmanNodeData.currData()
                     )
                 ) {
-
-                    val rootPostmanNodeData = postmanNodeData.getRootNodeData()!! as PostmanCollectionNodeData
+                    val rootPostmanNodeData = postmanNodeData.getRootNodeData() as PostmanCollectionNodeData
                     rootPostmanNodeData.status = NodeStatus.Uploading
 
                     val collection = rootPostmanNodeData.collection
@@ -734,7 +734,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     logger.info("delete from remote...")
                     actionContext.runAsync {
                         try {
-                            if (postmanCachedApiHelper!!.updateCollection(
+                            if (postmanCachedApiHelper.updateCollection(
                                     collectionId,
                                     rootPostmanNodeData.currData()
                                 )
@@ -948,7 +948,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 }
 
                 val currData = targetCollectionNodeData.currData()
-                val items = findEditableItem(currData)
+                val items = currData.getEditableItem()
                 items.add(formatToPostmanInfo)
 
                 val collection = rootPostmanNodeData.collection
@@ -973,49 +973,6 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 rootPostmanNodeData!!.status = NodeStatus.Loaded
             }
         }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun findEditableItem(data: HashMap<String, Any?>): ArrayList<HashMap<String, Any?>> {
-        var items = data["item"]
-        if (items != null) {
-            if (items is ArrayList<*>) {
-                val firstOrNull = items.firstOrNull()
-                if (firstOrNull != null && firstOrNull !is HashMap<*, *>) {
-                    val arrayListItems = ArrayList<HashMap<String, Any?>>()
-                    items.forEach { arrayListItems.add(castToHashMap(it)) }
-                    data["item"] = arrayListItems
-                    return arrayListItems
-                }
-                return items as ArrayList<HashMap<String, Any?>>
-            }
-
-            if (items is List<*>) {
-                val arrayListItems = ArrayList<HashMap<String, Any?>>()
-                items.forEach { arrayListItems.add(castToHashMap(it)) }
-                data["item"] = arrayListItems
-                return arrayListItems
-            }
-
-        }
-
-        items = ArrayList<HashMap<String, Any?>>()
-        data["item"] = items
-        return items
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun castToHashMap(obj: Any?): HashMap<String, Any?> {
-        if (obj is HashMap<*, *>) {
-            return obj as HashMap<String, Any?>
-        }
-
-        if (obj is Map<*, *>) {
-            val map: HashMap<String, Any?> = LinkedHashMap()
-            obj.forEach { (k, v) -> map[k.toString()] = v }
-            return map
-        }
-        return HashMap()
     }
 
     private fun formatPostmanInfo(projectNodeData: ProjectNodeData): HashMap<String, Any?>? {

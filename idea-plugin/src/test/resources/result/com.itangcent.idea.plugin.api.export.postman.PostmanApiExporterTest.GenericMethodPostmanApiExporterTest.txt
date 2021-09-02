@@ -1,0 +1,452 @@
+{
+  "item": [
+    {
+      "request": {
+        "method": "GET",
+        "description": "not update anything",
+        "header": [],
+        "url": {
+          "path": [
+            "user",
+            "greeting"
+          ],
+          "query": [],
+          "host": "{{test_default}}",
+          "raw": "{{test_default}}/user/greeting"
+        }
+      },
+      "response": [
+        {
+          "originalRequest": {
+            "method": "GET",
+            "description": "not update anything",
+            "header": [],
+            "url": {
+              "path": [
+                "user",
+                "greeting"
+              ],
+              "query": [],
+              "host": "{{test_default}}",
+              "raw": "{{test_default}}/user/greeting"
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "code": 200,
+          "_postman_previewtype": "text",
+          "responseTime": 50,
+          "name": "say hello-Example",
+          "header": [
+            {
+              "name": "date",
+              "key": "date",
+              "value": "Sun, 11 Apr 202106:56:34 GMT",
+              "description": "The date and time that the message was sent"
+            },
+            {
+              "name": "server",
+              "key": "server",
+              "value": "Apache-Coyote/1.1",
+              "description": "A name for the server"
+            },
+            {
+              "name": "transfer-encoding",
+              "key": "transfer-encoding",
+              "value": "chunked",
+              "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+            },
+            {
+              "name": "content-type",
+              "key": "content-type",
+              "value": "application/json;charset\u003dUTF-8"
+            }
+          ],
+          "body": "\"\"",
+          "status": "OK"
+        }
+      ],
+      "name": "say hello"
+    },
+    {
+      "request": {
+        "method": "GET",
+        "description": "",
+        "header": [
+          {
+            "key": "token",
+            "value": "",
+            "type": "text",
+            "description": "auth token"
+          }
+        ],
+        "url": {
+          "path": [
+            "user",
+            "get",
+            ":id"
+          ],
+          "query": [
+            {
+              "key": "id",
+              "value": "0",
+              "equals": true,
+              "description": "user id"
+            }
+          ],
+          "host": "{{test_default}}",
+          "raw": "{{test_default}}/user/get/{id}"
+        }
+      },
+      "response": [
+        {
+          "originalRequest": {
+            "method": "GET",
+            "description": "",
+            "header": [
+              {
+                "key": "token",
+                "value": "",
+                "type": "text",
+                "description": "auth token"
+              }
+            ],
+            "url": {
+              "path": [
+                "user",
+                "get",
+                ":id"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "0",
+                  "equals": true,
+                  "description": "user id"
+                }
+              ],
+              "host": "{{test_default}}",
+              "raw": "{{test_default}}/user/get/{id}"
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "code": 200,
+          "_postman_previewtype": "text",
+          "responseTime": 50,
+          "name": "get user info-Example",
+          "header": [
+            {
+              "name": "date",
+              "key": "date",
+              "value": "Sun, 11 Apr 202106:56:34 GMT",
+              "description": "The date and time that the message was sent"
+            },
+            {
+              "name": "server",
+              "key": "server",
+              "value": "Apache-Coyote/1.1",
+              "description": "A name for the server"
+            },
+            {
+              "name": "transfer-encoding",
+              "key": "transfer-encoding",
+              "value": "chunked",
+              "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+            },
+            {
+              "name": "content-type",
+              "key": "content-type",
+              "value": "application/json;charset\u003dUTF-8"
+            }
+          ],
+          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
+          "status": "OK"
+        }
+      ],
+      "name": "get user info"
+    },
+    {
+      "request": {
+        "method": "POST",
+        "description": "",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text",
+            "description": ""
+          },
+          {
+            "key": "token",
+            "value": "",
+            "type": "text",
+            "description": "auth token"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"id\": 0,\n  \"type\": 0,\n  \"name\": \"\",\n  \"age\": 0,\n  \"sex\": 0,\n  \"birthDay\": \"\",\n  \"regtime\": \"\"\n}"
+        },
+        "url": {
+          "path": [
+            "user",
+            "add"
+          ],
+          "query": [],
+          "host": "{{test_default}}",
+          "raw": "{{test_default}}/user/add"
+        }
+      },
+      "response": [
+        {
+          "originalRequest": {
+            "method": "POST",
+            "description": "",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text",
+                "description": ""
+              },
+              {
+                "key": "token",
+                "value": "",
+                "type": "text",
+                "description": "auth token"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\n    \"id\": 0, //user id\n    /**\n     * user type\n     * 1 :administration\n     * 2 :a person, an animal or a plant\n     * 3 :Anonymous visitor\n     */\n    \"type\": 0,\n    \"name\": \"\", //user name\n    \"age\": 0, //user age\n    \"sex\": 0,\n    \"birthDay\": \"\", //user birthDay\n    \"regtime\": \"\" //user regtime\n}"
+            },
+            "url": {
+              "query": [],
+              "host": "{{test_default}}"
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "code": 200,
+          "_postman_previewtype": "text",
+          "responseTime": 50,
+          "name": "create new user-Example",
+          "header": [
+            {
+              "name": "date",
+              "key": "date",
+              "value": "Sun, 11 Apr 202106:56:34 GMT",
+              "description": "The date and time that the message was sent"
+            },
+            {
+              "name": "server",
+              "key": "server",
+              "value": "Apache-Coyote/1.1",
+              "description": "A name for the server"
+            },
+            {
+              "name": "transfer-encoding",
+              "key": "transfer-encoding",
+              "value": "chunked",
+              "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+            },
+            {
+              "name": "content-type",
+              "key": "content-type",
+              "value": "application/json;charset\u003dUTF-8"
+            }
+          ],
+          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
+          "status": "OK"
+        }
+      ],
+      "name": "create new user"
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "description": "",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data",
+            "type": "text",
+            "description": ""
+          },
+          {
+            "key": "token",
+            "value": "",
+            "type": "text",
+            "description": "auth token"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "id",
+              "type": "text",
+              "description": "user id"
+            },
+            {
+              "key": "type",
+              "type": "text",
+              "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
+            },
+            {
+              "key": "name",
+              "type": "text",
+              "description": "user name"
+            },
+            {
+              "key": "age",
+              "type": "text",
+              "description": "user age"
+            },
+            {
+              "key": "sex",
+              "type": "text",
+              "description": ""
+            },
+            {
+              "key": "birthDay",
+              "type": "text",
+              "description": "user birthDay"
+            },
+            {
+              "key": "regtime",
+              "type": "text",
+              "description": "user regtime"
+            }
+          ]
+        },
+        "url": {
+          "path": [
+            "user",
+            "update"
+          ],
+          "query": [],
+          "host": "{{test_default}}",
+          "raw": "{{test_default}}/user/update"
+        }
+      },
+      "response": [
+        {
+          "originalRequest": {
+            "method": "PUT",
+            "description": "",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data",
+                "type": "text",
+                "description": ""
+              },
+              {
+                "key": "token",
+                "value": "",
+                "type": "text",
+                "description": "auth token"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "id",
+                  "type": "text",
+                  "description": "user id"
+                },
+                {
+                  "key": "type",
+                  "type": "text",
+                  "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
+                },
+                {
+                  "key": "name",
+                  "type": "text",
+                  "description": "user name"
+                },
+                {
+                  "key": "age",
+                  "type": "text",
+                  "description": "user age"
+                },
+                {
+                  "key": "sex",
+                  "type": "text",
+                  "description": ""
+                },
+                {
+                  "key": "birthDay",
+                  "type": "text",
+                  "description": "user birthDay"
+                },
+                {
+                  "key": "regtime",
+                  "type": "text",
+                  "description": "user regtime"
+                }
+              ]
+            },
+            "url": {
+              "path": [
+                "user",
+                "update"
+              ],
+              "query": [],
+              "host": "{{test_default}}",
+              "raw": "{{test_default}}/user/update"
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "code": 200,
+          "_postman_previewtype": "text",
+          "responseTime": 50,
+          "name": "update user info-Example",
+          "header": [
+            {
+              "name": "date",
+              "key": "date",
+              "value": "Sun, 11 Apr 202106:56:34 GMT",
+              "description": "The date and time that the message was sent"
+            },
+            {
+              "name": "server",
+              "key": "server",
+              "value": "Apache-Coyote/1.1",
+              "description": "A name for the server"
+            },
+            {
+              "name": "transfer-encoding",
+              "key": "transfer-encoding",
+              "value": "chunked",
+              "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+            },
+            {
+              "name": "content-type",
+              "key": "content-type",
+              "value": "application/json;charset\u003dUTF-8"
+            }
+          ],
+          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
+          "status": "OK"
+        }
+      ],
+      "name": "update user info"
+    }
+  ],
+  "info": {
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "name": "apis about user-20210411065634",
+    "description": "apis about user\naccess user info"
+  }
+}

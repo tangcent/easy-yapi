@@ -70,6 +70,39 @@ class DefaultMessagesHelper : MessagesHelper {
         }
     }
 
+    override fun <T> showEditableChooseDialog(
+        message: String?,
+        title: String?,
+        icon: Icon?,
+        values: Array<T>?,
+        showAs: (T) -> String,
+        initialValue: T?
+    ): T? {
+        if (values.isNullOrEmpty()) {
+            return null
+        }
+        var showValues = values.map(showAs)
+        var initialShowValue: String? = null
+        if (showValues.distinct().size == showValues.size) {
+            initialShowValue = initialValue?.let { showAs(it) }
+        } else {
+            showValues = showValues.mapIndexed { index, showValue -> "${index + 1}: $showValue" }
+            if (initialValue != null) {
+                val index = values.indexOf(initialValue)
+                if (index != -1) {
+                    initialShowValue = "${index + 1}: ${showAs(initialValue)}"
+                }
+            }
+        }
+        val chooseValue =
+            showEditableChooseDialog(message, title, icon, showValues.toTypedArray(), initialShowValue) ?: return null
+        val chooseIndex = showValues.indexOf(chooseValue)
+        if (chooseIndex == -1) {
+            return null
+        }
+        return values[chooseIndex]
+    }
+
     /**
      * Shows dialog with given message and title, information icon {@link #getInformationIcon()} and OK button
      */

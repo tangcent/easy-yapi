@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
-import com.itangcent.utils.WaitHelper
+import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.assertNotEquals
 
 /**
@@ -37,7 +37,6 @@ internal class DefaultSettingBinderTest : PluginContextLightCodeInsightFixtureTe
         assertEquals(settings, settingBinder.read())
         assertEquals(settings, settingBinder.tryRead())
 
-        settingBinder.save(null)
-        WaitHelper.waitUtil(5000) { settingBinder.tryRead() == null }
+        assertDoesNotThrow { settingBinder.save(null) }
     }
 }

@@ -6,11 +6,14 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBoxTableRenderer
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.CheckBoxList
 import com.intellij.ui.MutableCollectionComboBoxModel
+import com.intellij.ui.table.JBTable
+import com.itangcent.cache.withoutCache
 import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
@@ -18,12 +21,12 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanUrls.INTEGRATIONS_DASHBOARD
 import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspace
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
+import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.MemoryPostmanSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
+import com.itangcent.idea.plugin.settings.helper.*
+import com.itangcent.idea.plugin.settings.xml.postmanCollectionsAsPairs
+import com.itangcent.idea.plugin.settings.xml.setPostmanCollectionsPairs
 import com.itangcent.idea.plugin.support.IdeaSupport
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.SwingUtils
@@ -37,8 +40,10 @@ import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.utils.ResourceUtils
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.event.MouseListener
 import java.io.File
 import javax.swing.*
+import javax.swing.table.DefaultTableModel
 
 
 class EasyApiSettingGUI {
@@ -69,9 +74,17 @@ class EasyApiSettingGUI {
 
     private var autoMergeScriptCheckBox: JCheckBox? = null
 
+    private var postmanExportModeComboBox: JComboBox<String>? = null
+
     private var postmanJson5FormatTypeComboBox: JComboBox<String>? = null
 
     private var postmanWorkSpaceRefreshButton: JButton? = null
+
+    private var postmanCollectionsTable: JBTable? = null
+
+    private var postmanCollectionsRefreshButton: JButton? = null
+
+    private var postmanExportCollectionPanel: JPanel? = null
 
     @Inject
     private lateinit var postmanCachedApiHelper: PostmanCachedApiHelper
@@ -196,6 +209,7 @@ class EasyApiSettingGUI {
     private fun initPostman() {
 
         EasyIcons.Refresh.iconOnly(this.postmanWorkSpaceRefreshButton)
+        EasyIcons.Refresh.iconOnly(this.postmanCollectionsRefreshButton)
         SwingUtils.immersed(this.postmanWorkSpaceRefreshButton!!)
 
         postmanJson5FormatTypeComboBox!!.model =
@@ -206,12 +220,28 @@ class EasyApiSettingGUI {
             .filter { throttleHelper.acquire("settings.postmanJson5FormatType", 300) }
             .eval { (it ?: PostmanJson5FormatType.EXAMPLE_ONLY.name) }
 
+        postmanExportModeComboBox!!.model =
+            DefaultComboBoxModel(PostmanExportMode.values().mapToTypedArray { it.name })
+
+        autoComputer.bind<String?>(this, "settings.postmanExportMode")
+            .with(this.postmanExportModeComboBox!!)
+            .filter { throttleHelper.acquire("settings.postmanExportMode", 300) }
+            .eval { (it ?: PostmanExportMode.COPY.name) }
+
         autoComputer.bindVisible(postmanWorkSpaceRefreshButton!!)
             .with(this.postmanTokenTextArea!!)
             .eval { it.notNullOrBlank() }
 
+        autoComputer.bindVisible(postmanExportCollectionPanel!!)
+            .with(this.postmanExportModeComboBox!!)
+            .eval { it == PostmanExportMode.UPDATE.name }
+
         postmanWorkSpaceRefreshButton!!.addActionListener {
             refreshPostmanWorkSpaces(false)
+        }
+
+        postmanCollectionsRefreshButton!!.addActionListener {
+            refreshPostmanCollections(false)
         }
 
         postmanTokenLabel!!.addMouseListener(object : MouseAdapter() {
@@ -435,6 +465,7 @@ class EasyApiSettingGUI {
         this.logLevelComboBox!!.selectedItem = CommonSettingsHelper.CoarseLogLevel.toLevel(settings.logLevel)
         this.outputCharsetComboBox!!.selectedItem = Charsets.forName(settings.outputCharset)
         this.postmanJson5FormatTypeComboBox!!.selectedItem = settings.postmanJson5FormatType
+        this.postmanExportModeComboBox!!.selectedItem = settings.postmanExportMode
         this.markdownFormatTypeComboBox!!.selectedItem = settings.markdownFormatType
 
         RecommendConfigLoader.selectedCodes(settings.recommendConfigs).forEach {
@@ -447,6 +478,7 @@ class EasyApiSettingGUI {
         actionContext.runAsync {
             refreshCache()
             refreshPostmanWorkSpaces()
+            refreshPostmanCollections()
         }
     }
 
@@ -489,6 +521,88 @@ class EasyApiSettingGUI {
             val selected = this.selectedPostmanWorkspace
             postmanWorkspaceComboBoxModel!!.replaceAll(allWorkspacesData.toMutableList())
             postmanWorkspaceComboBoxModel!!.selectedItem = selected
+        }
+    }
+
+    @Volatile
+    private var postmanCollectionTableModel: DefaultTableModel? = null
+    private var tableMouseListener: MouseListener? = null;
+
+    @Synchronized
+    private fun refreshPostmanCollections(cache: Boolean) {
+        if (cache) {
+            refreshPostmanCollections()
+        } else {
+            postmanCachedApiHelper.withoutCache {
+                refreshPostmanCollections()
+            }
+        }
+    }
+
+    @Synchronized
+    private fun refreshPostmanCollections() {
+        if (postmanCollectionTableModel != null) {
+            postmanCollectionsTable!!.removeAll()
+            postmanCollectionTableModel!!.columnCount = 0
+            postmanCollectionTableModel!!.rowCount = 0
+        }
+        val allCollections = postmanCachedApiHelper.getAllCollectionPreferred() ?: emptyList()
+        val collectionDataArray = allCollections.mapToTypedArray { PostmanCollectionData(it) }
+        val collectionMap = HashMap<String, PostmanCollectionData>()
+        collectionDataArray.forEach { collectionMap[it.id] = it }
+        val columns = arrayOf("module", "collection")
+        val data: ArrayList<Array<Any>> = ArrayList()
+        settings?.postmanCollectionsAsPairs()?.forEach { collection ->
+            data.add(
+                arrayOf(
+                    collection.first,
+                    collectionMap[collection.second] ?: PostmanCollectionData(collection.second, "unknown")
+                )
+            )
+        }
+        val tableModel = DefaultTableModel(data.toTypedArray(), columns)
+        postmanCollectionsTable!!.model = tableModel
+        this.postmanCollectionTableModel = tableModel
+
+        val columnModel = postmanCollectionsTable!!.columnModel
+
+        val moduleColumn = columnModel.getColumn(0)
+        moduleColumn.preferredWidth = 200
+
+        val collectionColumn = columnModel.getColumn(1)
+        collectionColumn.preferredWidth = 340
+        collectionColumn.cellEditor = ComboBoxTableRenderer(collectionDataArray)
+
+        if (tableMouseListener == null) {
+            val tablePopMenu = JPopupMenu()
+
+            val insertRowItem = JMenuItem("Insert Row")
+
+            insertRowItem.addActionListener {
+                postmanCollectionTableModel!!.addRow(arrayOf("", null))
+            }
+
+            tablePopMenu.add(insertRowItem)
+
+            val removeRowItem = JMenuItem("Remove Row")
+
+            removeRowItem.addActionListener {
+                postmanCollectionsTable!!.selectedRow
+                    .takeIf { it >= 0 }
+                    ?.let { postmanCollectionTableModel!!.removeRow(it) }
+            }
+
+            tablePopMenu.add(removeRowItem)
+
+            tableMouseListener = object : MouseAdapter() {
+                override fun mousePressed(e: MouseEvent?) {
+                    if (e == null) return
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        tablePopMenu.show(e.component!!, e.x, e.y)
+                    }
+                }
+            }
+            postmanCollectionsTable!!.addMouseListener(tableMouseListener)
         }
     }
 
@@ -538,7 +652,20 @@ class EasyApiSettingGUI {
         if (settings == null) {
             settings = Settings()
         }
-        return settings!!
+        return settings!!.copy().also {
+            readPostmanCollections(it)
+        }
+    }
+
+    private fun readPostmanCollections(settings: Settings) {
+        val collectionModel = postmanCollectionTableModel ?: return
+        val pairs: ArrayList<Pair<String, String>> = ArrayList()
+        for (row in 0 until collectionModel.rowCount) {
+            val module = collectionModel.getValueAt(row, 0) as? String ?: continue
+            val collectionId = collectionModel.getValueAt(row, 1) as? PostmanCollectionData ?: continue
+            pairs.add(module to collectionId.id)
+        }
+        settings.setPostmanCollectionsPairs(pairs)
     }
 
     private fun globalBasePath(): String {
@@ -606,7 +733,7 @@ class EasyApiSettingGUI {
 
         constructor(postmanWorkspace: PostmanWorkspace) {
             this.id = postmanWorkspace.id ?: ""
-            this.name = postmanWorkspace.nameWithType()?:""
+            this.name = postmanWorkspace.nameWithType() ?: ""
         }
 
         override fun toString(): String {
@@ -628,6 +755,37 @@ class EasyApiSettingGUI {
             return id.hashCode()
         }
 
+    }
+
+    private class PostmanCollectionData {
+
+        var id: String
+        var name: String
+
+        constructor(id: String, name: String) {
+            this.id = id
+            this.name = name
+        }
+
+        constructor(collectionData: HashMap<String, Any?>) {
+            this.id = collectionData.getAs("id") ?: "unknown"
+            this.name = collectionData.getAs("name") ?: "unknown"
+        }
+
+        override fun toString(): String {
+            return name
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+            if (id != (other as? PostmanWorkspaceData)?.id) return false
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return id.hashCode()
+        }
     }
 
     companion object {

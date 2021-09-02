@@ -26,6 +26,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.ActionUtils
 import org.apache.commons.lang3.RandomUtils
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.collections.set
 
 @Singleton
@@ -499,7 +500,7 @@ open class PostmanFormatter {
             )
         }
 
-        info[NAME] = "${info[NAME]}-${Date().formatDate("yyyyMMddHHmmss")}"
+        info[NAME] = "${info[NAME]}-${systemProvider.currentTimeMillis().asDate().formatDate("yyyyMMddHHmmss")}"
         info["schema"] = POSTMAN_SCHEMA_V2_1_0
         postman[ITEM] = items
         return postman
@@ -539,7 +540,7 @@ open class PostmanFormatter {
             info[DESCRIPTION] = resource.second
         } else {
             info[NAME] = resource.toString()
-            info[DESCRIPTION] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
+            info[DESCRIPTION] = "exported at ${DateUtils.formatYMD_HMS(systemProvider.currentTimeMillis().asDate())}"
         }
     }
 
@@ -700,6 +701,54 @@ open class PostmanFormatter {
         }
 
         return folderGroupedMap
+    }
+
+    fun parseRequestsToCollection(collectionInfo: HashMap<String, Any?>, requests: MutableList<Request>) {
+        val folderGroupedMap = parseRequestsToFolder(requests)
+        val folders = collectionInfo.getEditableItem()
+        folderGroupedMap.entries.forEach { (folder, items) ->
+            val targetFolder = folders.firstOrNull { it.isCollection() && it["name"] == folder.name }
+            if (targetFolder == null) {
+                folders.add(wrapInfo(folder, items))
+                return@forEach
+            }
+
+            val apis = targetFolder.getEditableItem()
+            for (item in items) {
+                val method = item.method()
+                val url = item.rawUrl()
+                val sameApi = apis.firstOrNull {
+                    it.method() == method && it.rawUrl() == url
+                }
+                if (sameApi == null) {
+                    apis.add(item)
+                } else {
+                    sameApi.putAll(item)
+                }
+            }
+        }
+    }
+
+    private fun HashMap<String, Any?>.method(): String? {
+        return this.getAs("request", "method")
+    }
+
+    private fun HashMap<String, Any?>.rawUrl(): String? {
+        val url = this.sub("request").sub("url")
+        var rawUrl = url.getAs<List<String>>("path")?.joinToString("/")
+
+        val queryList: ArrayList<HashMap<String, Any?>>? = url.getAs("query")
+        if (queryList.notNullOrEmpty()) {
+            rawUrl = rawUrl ?: ""
+            queryList!!.forEach {
+                rawUrl = if (rawUrl!!.contains('?')) {
+                    rawUrl + "&" + it.getAs(KEY) + "=" + it.getAs(VALUE)
+                } else {
+                    rawUrl + "?" + it.getAs(KEY) + "=" + it.getAs(VALUE)
+                }
+            }
+        }
+        return rawUrl
     }
 
     private fun parsePath(path: String): List<String> {

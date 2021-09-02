@@ -244,6 +244,9 @@
                                   <showHorizontalLines value="true"/>
                                   <showVerticalLines value="false"/>
                                 </properties>
+                                <clientProperties>
+                                  <terminateEditOnFocusLost class="java.lang.Boolean" value="true"/>
+                                </clientProperties>
                               </component>
                             </children>
                           </scrollpane>

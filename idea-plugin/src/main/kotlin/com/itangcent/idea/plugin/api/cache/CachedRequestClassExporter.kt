@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.google.inject.name.Named
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.itangcent.cache.CacheSwitcher
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.notNullOrEmpty
@@ -26,7 +27,7 @@ import java.io.File
 import kotlin.reflect.KClass
 
 @Singleton
-class CachedRequestClassExporter : ClassExporter, Worker {
+class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
 
     override fun support(docType: KClass<*>): Boolean {
         return delegateClassExporter?.support(docType) ?: false
@@ -180,11 +181,11 @@ class CachedRequestClassExporter : ClassExporter, Worker {
 
     }
 
-    fun notUserCache() {
+    override fun notUserCache() {
         this.readCache = false
     }
 
-    fun userCache() {
+    override fun userCache() {
         this.readCache = true
     }
 }

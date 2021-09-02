@@ -35,6 +35,16 @@ interface MessagesHelper {
         initialValue: String? = null
     ): String?
 
+    fun <T> showEditableChooseDialog(
+        message: String?,
+        @Nls(capitalization = Nls.Capitalization.Title) title: String?,
+        icon: Icon?,
+        values: Array<T>?,
+        showAs: (T) -> String,
+        initialValue: T? = null
+    ): T?
+
+
     /**
      * Shows dialog with given message and title, information icon {@link #getInformationIcon()} and OK button
      */
