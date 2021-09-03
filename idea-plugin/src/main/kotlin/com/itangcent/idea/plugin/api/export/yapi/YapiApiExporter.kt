@@ -1,12 +1,12 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.Folder
+import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType
@@ -27,36 +27,36 @@ class YapiApiExporter : AbstractYapiApiExporter() {
         logger!!.info("Start find apis...")
 
         SelectedHelper.Builder()
-                .dirFilter { dir, callBack ->
-                    actionContext!!.runInSwingUI {
-                        try {
-                            val project = actionContext.instance(Project::class)
-                            val yes = Messages.showYesNoDialog(project,
-                                    "Export the model in directory [${ActionUtils.findCurrentPath(dir)}]?",
-                                    "Please Confirm",
-                                    Messages.getQuestionIcon())
-                            if (yes == Messages.YES) {
-                                callBack(true)
-                            } else {
-                                logger.info("Cancel the operation export api from [${ActionUtils.findCurrentPath(dir)}]!")
-                                callBack(false)
-                            }
-                        } catch (e: Exception) {
+            .dirFilter { dir, callBack ->
+                actionContext!!.runInSwingUI {
+                    try {
+                        val yes = actionContext.instance(MessagesHelper::class).showYesNoDialog(
+                            "Export apis in directory [${ActionUtils.findCurrentPath(dir)}]?",
+                            "Please Confirm",
+                            Messages.getQuestionIcon()
+                        )
+                        if (yes == Messages.YES) {
+                            callBack(true)
+                        } else {
+                            logger.info("Cancel the operation export api from [${ActionUtils.findCurrentPath(dir)}]!")
                             callBack(false)
                         }
+                    } catch (e: Exception) {
+                        callBack(false)
                     }
                 }
-                .fileFilter { file -> FileType.acceptable(file.name) }
-                .classHandle {
-                    classExporter!!.export(it) { doc -> exportDoc(doc) }
+            }
+            .fileFilter { file -> FileType.acceptable(file.name) }
+            .classHandle {
+                classExporter!!.export(it) { doc -> exportDoc(doc) }
+            }
+            .onCompleted {
+                if (classExporter is Worker) {
+                    classExporter.waitCompleted()
                 }
-                .onCompleted {
-                    if (classExporter is Worker) {
-                        classExporter.waitCompleted()
-                    }
-                    logger.info("Apis exported completed")
-                }
-                .traversal()
+                logger.info("Apis exported completed")
+            }
+            .traversal()
     }
 
     //privateToken+folderName -> CartInfo
@@ -74,18 +74,22 @@ class YapiApiExporter : AbstractYapiApiExporter() {
         return cartInfo
     }
 
-    private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet<String>()
+    private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet()
 
     override fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
         if (super.exportDoc(doc, privateToken, cartId)) {
             if (successExportedCarts.add(cartId)) {
-                logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
+                logger!!.info(
+                    "Export to ${
+                        yapiApiHelper!!.getCartWeb(
+                            yapiApiHelper.getProjectIdByToken(privateToken)!!,
+                            cartId
+                        )
+                    } success"
+                )
             }
             return true
         }
         return false
     }
 }
-
-//background idea log
-private val LOG = org.apache.log4j.Logger.getLogger(YapiApiExporter::class.java)
