@@ -20,6 +20,7 @@ import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.TimeZoneKit.LOCAL_TIME_YMS_STRING
 import com.itangcent.test.TimeZoneKit.LOCAL_TIME_RAW_STRING
+import com.itangcent.test.TimeZoneKit.STANDARD_TIME
 import com.itangcent.test.mock
 import org.junit.jupiter.api.condition.OS
 
@@ -33,7 +34,7 @@ internal class PostmanFormatterTest : PostmanSpringClassExporterBaseTest() {
 
     private lateinit var settings: Settings
 
-    private val date = 1618124194123L.asDate().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'")
+    private val date = STANDARD_TIME.asDate().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'")
 
     override fun beforeBind() {
         super.beforeBind()
@@ -44,7 +45,7 @@ internal class PostmanFormatterTest : PostmanSpringClassExporterBaseTest() {
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SystemProvider::class) {
-            it.toInstance(ImmutableSystemProvider(1618124194123L))
+            it.toInstance(ImmutableSystemProvider(STANDARD_TIME))
         }
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(settings))

@@ -57,7 +57,7 @@ open class YapiFormatter {
     @Inject
     protected lateinit var yapiSettingsHelper: YapiSettingsHelper
 
-    fun doc2Item(doc: Doc): List<HashMap<String, Any?>> {
+    fun doc2Items(doc: Doc): List<HashMap<String, Any?>> {
         if (doc is Request) {
             return request2Items(doc)
         } else if (doc is MethodDoc) {
@@ -471,7 +471,7 @@ open class YapiFormatter {
     }
 
     /**
-     * Make sure  the path prefix with `/`
+     * Make sure the path prefix with `/`
      * Path is only allowed to consist of alphanumeric or `-/_:.{}=`
      */
     private fun formatPath(path: String?): String {

@@ -114,9 +114,9 @@ open class AbstractYapiApiExporter {
     }
 
     open fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
-        val apiInfos = yapiFormatter!!.doc2Item(doc)
+        val items = yapiFormatter!!.doc2Items(doc)
         var ret = false
-        apiInfos.forEach { apiInfo ->
+        items.forEach { apiInfo ->
             apiInfo["token"] = privateToken
             apiInfo["catid"] = cartId
             apiInfo["switch_notice"] = yapiSettingsHelper.switchNotice()
