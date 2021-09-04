@@ -99,7 +99,7 @@ class CurlFormatter {
                 .append("?")
             request.querys!!.forEach { param ->
                 if (query.lastOrNull() != '?') {
-                    query.append("&")
+                    query.append("\\&")
                 }
                 query.append(param.name).append("=")
                 param.value?.let { query.append(it) }
@@ -110,6 +110,6 @@ class CurlFormatter {
     }
 
     private fun String.escape(): String {
-        return this.replace("'", "\\'")
+        return this.replace("\\", "\\\\").replace("'", "\\'")
     }
 }
