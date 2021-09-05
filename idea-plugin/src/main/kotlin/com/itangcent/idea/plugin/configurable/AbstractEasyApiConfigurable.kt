@@ -64,9 +64,27 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
             context.runInSwingUI {
                 easyApiConfigurableGUI.onCreate()
                 easyApiConfigurableGUI.setSettings(settingBinder.read().copy())
+                checkUI()
             }
         }
         return easyApiConfigurableGUI.getRootPanel()
+    }
+
+    private fun checkUI() {
+        context!!.runAsync {
+            for (i in 0..8) {
+                Thread.sleep(250)
+                if (easyApiConfigurableGUI.checkUI()) {
+                    continue
+                }
+                LOG.error("checkUI failed.Try refresh ui again.")
+                context!!.runInSwingUI {
+                    easyApiConfigurableGUI.setSettings(easyApiConfigurableGUI.getSettings())
+                    checkUI()
+                }
+                break
+            }
+        }
     }
 
     open fun afterBuildActionContext(builder: ActionContext.ActionContextBuilder) {}
