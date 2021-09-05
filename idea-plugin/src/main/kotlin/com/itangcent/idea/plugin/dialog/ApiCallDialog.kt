@@ -713,7 +713,7 @@ class ApiCallDialog : JDialog() {
             val data: ArrayList<Array<Any>> = ArrayList()
 
             formParams?.forEach { param ->
-                data.add(arrayOf(param.required ?: true, param.name!!, param.value ?: ""))
+                data.add(arrayOf(param.required ?: true, param.name?:"", param.value ?: ""))
             }
 
             return DefaultTableModel(data.toTypedArray(), columns)
