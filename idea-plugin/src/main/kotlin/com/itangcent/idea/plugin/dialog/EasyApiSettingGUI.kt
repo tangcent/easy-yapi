@@ -1,16 +1,9 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
-import com.intellij.ide.util.PropertiesComponent
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
-import com.intellij.openapi.fileChooser.FileChooserFactory
-import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBoxTableRenderer
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.CheckBoxList
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.ui.table.JBTable
 import com.itangcent.cache.withoutCache
@@ -20,6 +13,7 @@ import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanUrls.INTEGRATIONS_DASHBOARD
 import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspace
+import com.itangcent.idea.plugin.configurable.AbstractEasyApiSettingGUI
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
@@ -32,7 +26,6 @@ import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.idea.utils.isDoubleClick
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.logger.Logger
@@ -46,7 +39,7 @@ import javax.swing.*
 import javax.swing.table.DefaultTableModel
 
 
-class EasyApiSettingGUI {
+class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     @Inject
     private lateinit var actionContext: ActionContext
@@ -66,7 +59,7 @@ class EasyApiSettingGUI {
 
     private var postmanTokenLabel: JLabel? = null
 
-    private var postmanTokenTextArea: JTextArea? = null
+    private var postmanTokenTextField: JTextField? = null
 
     private lateinit var postmanWorkspaceComboBox: JComboBox<PostmanWorkspaceData>
 
@@ -96,14 +89,14 @@ class EasyApiSettingGUI {
 
     private var selectedPostmanWorkspace: PostmanWorkspaceData?
         get() {
-            val postmanWorkspace = settings?.postmanWorkspace ?: return DEFAULT_WORKSPACE
+            val postmanWorkspace = settingsInstance?.postmanWorkspace ?: return DEFAULT_WORKSPACE
             return allWorkspaces?.firstOrNull { it.id == postmanWorkspace } ?: PostmanWorkspaceData(
                 postmanWorkspace,
                 "unknown"
             )
         }
         set(value) {
-            settings?.postmanWorkspace = value?.id
+            settingsInstance?.postmanWorkspace = value?.id
         }
 
     //endregion postman-----------------------------------------------------
@@ -174,36 +167,20 @@ class EasyApiSettingGUI {
 
     //endregion general-----------------------------------------------------
 
-    //region recommend-----------------------------------------------------
-    private var recommendConfigList: CheckBoxList<String>? = null
-
-    private var previewTextArea: JTextArea? = null
-    //endregion recommend-----------------------------------------------------
-
-    private var builtInConfigTextArea: JTextArea? = null
-
     private val throttleHelper = ThrottleHelper()
 
-    fun getRootPanel(): JPanel? {
+    override fun getRootPanel(): JPanel? {
         return rootPanel
     }
-
-    private var settings: Settings? = null
-
-    private var autoComputer: AutoComputer = AutoComputer()
 
     /**
      * please call it from dispatch thread
      */
-    fun onCreate() {
-
-        initExportAndImport()
+    override fun onCreate() {
 
         initGeneral()
 
         initPostman()
-
-        initRecommendConfig()
     }
 
     private fun initPostman() {
@@ -215,26 +192,28 @@ class EasyApiSettingGUI {
         postmanJson5FormatTypeComboBox!!.model =
             DefaultComboBoxModel(PostmanJson5FormatType.values().mapToTypedArray { it.name })
 
-        autoComputer.bind<String?>(this, "settings.postmanJson5FormatType")
+        autoComputer.bind<String?>(this, "settingsInstance.postmanJson5FormatType")
             .with(this.postmanJson5FormatTypeComboBox!!)
-            .filter { throttleHelper.acquire("settings.postmanJson5FormatType", 300) }
+            .filter { throttleHelper.acquire("settingsInstance.postmanJson5FormatType", 300) }
             .eval { (it ?: PostmanJson5FormatType.EXAMPLE_ONLY.name) }
 
         postmanExportModeComboBox!!.model =
             DefaultComboBoxModel(PostmanExportMode.values().mapToTypedArray { it.name })
 
-        autoComputer.bind<String?>(this, "settings.postmanExportMode")
+        autoComputer.bind<String?>(this, "settingsInstance.postmanExportMode")
             .with(this.postmanExportModeComboBox!!)
-            .filter { throttleHelper.acquire("settings.postmanExportMode", 300) }
+            .filter { throttleHelper.acquire("settingsInstance.postmanExportMode", 300) }
             .eval { (it ?: PostmanExportMode.COPY.name) }
 
         autoComputer.bindVisible(postmanWorkSpaceRefreshButton!!)
-            .with(this.postmanTokenTextArea!!)
+            .with(this.postmanTokenTextField!!)
             .eval { it.notNullOrBlank() }
 
         autoComputer.bindVisible(postmanExportCollectionPanel!!)
-            .with(this.postmanExportModeComboBox!!)
-            .eval { it == PostmanExportMode.UPDATE.name }
+            .with<String?>(this, "settingsInstance.postmanExportMode")
+            .eval {
+                it == PostmanExportMode.UPDATE.name
+            }
 
         postmanWorkSpaceRefreshButton!!.addActionListener {
             refreshPostmanWorkSpaces(false)
@@ -259,16 +238,16 @@ class EasyApiSettingGUI {
         recommendedCheckBox!!.toolTipText = RecommendConfigLoader.plaint()
 
         autoComputer.bind(pullNewestDataBeforeCheckBox!!)
-            .mutual(this, "settings.pullNewestDataBefore")
+            .mutual(this, "settingsInstance.pullNewestDataBefore")
 
-        autoComputer.bind(postmanTokenTextArea!!)
-            .mutual(this, "settings.postmanToken")
+        autoComputer.bind(postmanTokenTextField!!)
+            .mutual(this, "settingsInstance.postmanToken")
 
         autoComputer.bind(wrapCollectionCheckBox!!)
-            .mutual(this, "settings.wrapCollection")
+            .mutual(this, "settingsInstance.wrapCollection")
 
         autoComputer.bind(autoMergeScriptCheckBox!!)
-            .mutual(this, "settings.autoMergeScript")
+            .mutual(this, "settingsInstance.autoMergeScript")
 
         autoComputer.bind(this.globalCacheSizeLabel!!)
             .with(this::globalCacheSize)
@@ -287,37 +266,37 @@ class EasyApiSettingGUI {
         }
 
         autoComputer.bind(methodDocEnableCheckBox!!)
-            .mutual(this, "settings.methodDocEnable")
+            .mutual(this, "settingsInstance.methodDocEnable")
 
         autoComputer.bind(genericEnableCheckBox!!)
-            .mutual(this, "settings.genericEnable")
+            .mutual(this, "settingsInstance.genericEnable")
 
         autoComputer.bind(inferEnableCheckBox!!)
-            .mutual(this, "settings.inferEnable")
+            .mutual(this, "settingsInstance.inferEnable")
 
         autoComputer.bind(readGetterCheckBox!!)
-            .mutual(this, "settings.readGetter")
+            .mutual(this, "settingsInstance.readGetter")
 
         autoComputer.bind(readSetterCheckBox!!)
-            .mutual(this, "settings.readSetter")
+            .mutual(this, "settingsInstance.readSetter")
 
         autoComputer.bind(formExpandedCheckBox!!)
-            .mutual(this, "settings.formExpanded")
+            .mutual(this, "settingsInstance.formExpanded")
 
         autoComputer.bind(queryExpandedCheckBox!!)
-            .mutual(this, "settings.queryExpanded")
+            .mutual(this, "settingsInstance.queryExpanded")
 
         autoComputer.bind(recommendedCheckBox!!)
-            .mutual(this, "settings.useRecommendConfig")
+            .mutual(this, "settingsInstance.useRecommendConfig")
 
         autoComputer.bind(outputDemoCheckBox!!)
-            .mutual(this, "settings.outputDemo")
+            .mutual(this, "settingsInstance.outputDemo")
 
         autoComputer.bind(this.maxDeepTextField!!)
-            .with<Int?>(this, "settings.inferMaxDeep")
+            .with<Int?>(this, "settingsInstance.inferMaxDeep")
             .eval { (it ?: Settings.DEFAULT_INFER_MAX_DEEP).toString() }
 
-        autoComputer.bind<Int>(this, "settings.inferMaxDeep")
+        autoComputer.bind<Int>(this, "settingsInstance.inferMaxDeep")
             .with(this.maxDeepTextField!!)
             .eval {
                 try {
@@ -328,41 +307,41 @@ class EasyApiSettingGUI {
             }
 
         autoComputer.bind(yapiServerTextField!!)
-            .mutual(this, "settings.yapiServer")
+            .mutual(this, "settingsInstance.yapiServer")
 
         autoComputer.bind(yapiTokenTextArea!!)
-            .mutual(this, "settings.yapiTokens")
+            .mutual(this, "settingsInstance.yapiTokens")
 
         autoComputer.bind(enableUrlTemplatingCheckBox!!)
-            .mutual(this, "settings.enableUrlTemplating")
+            .mutual(this, "settingsInstance.enableUrlTemplating")
 
         autoComputer.bind(switchNoticeCheckBox!!)
-            .mutual(this, "settings.switchNotice")
+            .mutual(this, "settingsInstance.switchNotice")
 
         autoComputer.bind(loginModeCheckBox!!)
-            .mutual(this, "settings.loginMode")
+            .mutual(this, "settingsInstance.loginMode")
 
         autoComputer.bind(yapiReqBodyJson5CheckBox!!)
-            .mutual(this, "settings.yapiReqBodyJson5")
+            .mutual(this, "settingsInstance.yapiReqBodyJson5")
 
         autoComputer.bind(yapiResBodyJson5CheckBox!!)
-            .mutual(this, "settings.yapiResBodyJson5")
+            .mutual(this, "settingsInstance.yapiResBodyJson5")
 
         autoComputer.bind(yapiTokenLabel!!)
-            .with<Boolean?>(this, "settings.loginMode")
+            .with<Boolean?>(this, "settingsInstance.loginMode")
             .eval {
                 if (it == true) {
-                    "projectIds"
+                    "projectIds:"
                 } else {
-                    "tokens"
+                    "tokens:"
                 }
             }
 
         autoComputer.bind(this.httpTimeOutTextField!!)
-            .with<Int?>(this, "settings.httpTimeOut")
+            .with<Int?>(this, "settingsInstance.httpTimeOut")
             .eval { (it ?: ConfigurableHttpClientProvider.defaultHttpTimeOut).toString() }
 
-        autoComputer.bind<Int>(this, "settings.httpTimeOut")
+        autoComputer.bind<Int>(this, "settingsInstance.httpTimeOut")
             .with(this.httpTimeOutTextField!!)
             .eval {
                 try {
@@ -374,9 +353,9 @@ class EasyApiSettingGUI {
 
         logLevelComboBox!!.model = DefaultComboBoxModel(CommonSettingsHelper.CoarseLogLevel.editableValues())
 
-        autoComputer.bind<Int?>(this, "settings.logLevel")
+        autoComputer.bind<Int?>(this, "settingsInstance.logLevel")
             .with(this.logLevelComboBox!!)
-            .filter { throttleHelper.acquire("settings.logLevel", 300) }
+            .filter { throttleHelper.acquire("settingsInstance.logLevel", 300) }
             .eval { (it ?: CommonSettingsHelper.CoarseLogLevel.LOW).getLevel() }
 
         outputCharsetComboBox!!.model = DefaultComboBoxModel(Charsets.SUPPORTED_CHARSETS)
@@ -384,82 +363,32 @@ class EasyApiSettingGUI {
         markdownFormatTypeComboBox!!.model =
             DefaultComboBoxModel(MarkdownFormatType.values().mapToTypedArray { it.name })
 
-        autoComputer.bind<String?>(this, "settings.outputCharset")
+        autoComputer.bind<String?>(this, "settingsInstance.outputCharset")
             .with(this.outputCharsetComboBox!!)
-            .filter { throttleHelper.acquire("settings.outputCharset", 300) }
+            .filter { throttleHelper.acquire("settingsInstance.outputCharset", 300) }
             .eval { (it ?: Charsets.UTF_8).displayName() }
 
-        autoComputer.bind<String?>(this, "settings.markdownFormatType")
+        autoComputer.bind<String?>(this, "settingsInstance.markdownFormatType")
             .with(this.markdownFormatTypeComboBox!!)
-            .filter { throttleHelper.acquire("settings.markdownFormatType", 300) }
+            .filter { throttleHelper.acquire("settingsInstance.markdownFormatType", 300) }
             .eval { (it ?: MarkdownFormatType.SIMPLE.name) }
 
-        autoComputer.bind(this.previewTextArea!!)
-            .with<String>(this, "settings.recommendConfigs")
-            .eval { configs ->
-                RecommendConfigLoader.buildRecommendConfig(
-                    configs,
-                    "\n#${"-".repeat(20)}\n"
-                )
-            }
-
-        autoComputer.bind(this.builtInConfigTextArea!!)
-            .with<String?>(this, "settings.builtInConfig")
-            .eval { it.takeIf { it.notNullOrBlank() } ?: DEFAULT_BUILT_IN_CONFIG }
-
-        autoComputer.bind<String?>(this, "settings.builtInConfig")
-            .with(builtInConfigTextArea!!)
-            .eval { it.takeIf { it != DEFAULT_BUILT_IN_CONFIG } ?: "" }
-
-        autoComputer.bind<Array<String>>(this, "settings.trustHosts")
+        autoComputer.bind<Array<String>>(this, "settingsInstance.trustHosts")
             .with(trustHostsTextArea!!)
             .eval { trustHosts -> trustHosts?.lines()?.toTypedArray() ?: emptyArray() }
 
         autoComputer.bind(trustHostsTextArea!!)
-            .with<Array<String>>(this, "settings.trustHosts")
+            .with<Array<String>>(this, "settingsInstance.trustHosts")
             .eval { trustHosts -> trustHosts.joinToString(separator = "\n") }
 
         //endregion general-----------------------------------------------------
     }
 
-    private fun initExportAndImport() {
-        EasyIcons.Export.iconOnly(this.exportButton)
-        EasyIcons.Import.iconOnly(this.importButton)
-        SwingUtils.immersed(this.exportButton!!)
-        SwingUtils.immersed(this.importButton!!)
+    override fun setSettings(settings: Settings) {
+        val snapshot = settings.copy()
+        super.setSettings(settings)
 
-        this.exportButton!!.addActionListener {
-            export()
-        }
-        this.importButton!!.addActionListener {
-            import()
-        }
-    }
-
-    private fun initRecommendConfig() {
-        recommendConfigList!!.setItems(RecommendConfigLoader.codes().toList())
-        {
-            it.padEnd(30) + "    " +
-                    RecommendConfigLoader[it]?.truncate(100)
-                        ?.replace("\n", "    ")
-        }
-
-        this.recommendConfigList!!.setCheckBoxListListener { index, value ->
-            val code = RecommendConfigLoader[index]
-            val settings = this.settings!!
-            if (value) {
-                settings.recommendConfigs = RecommendConfigLoader.addSelectedConfig(settings.recommendConfigs, code)
-            } else {
-                settings.recommendConfigs = RecommendConfigLoader.removeSelectedConfig(settings.recommendConfigs, code)
-            }
-            autoComputer.value(this, "settings.recommendConfigs", settings.recommendConfigs)
-        }
-    }
-
-    fun setSettings(settings: Settings) {
         throttleHelper.refresh("throttleHelper")
-
-        autoComputer.value(this::settings, settings.copy())
 
         this.postmanWorkspaceComboBoxModel?.selectedItem = this.selectedPostmanWorkspace
         this.logLevelComboBox!!.selectedItem = CommonSettingsHelper.CoarseLogLevel.toLevel(settings.logLevel)
@@ -468,17 +397,28 @@ class EasyApiSettingGUI {
         this.postmanExportModeComboBox!!.selectedItem = settings.postmanExportMode
         this.markdownFormatTypeComboBox!!.selectedItem = settings.markdownFormatType
 
-        RecommendConfigLoader.selectedCodes(settings.recommendConfigs).forEach {
-            this.recommendConfigList!!.setItemSelected(it, true)
-        }
-        refresh()
+        refresh(snapshot)
     }
 
-    private fun refresh() {
+    private fun refresh(settings: Settings) {
         actionContext.runAsync {
+            //fix
+            this.settingsInstance?.postmanExportMode = settings.postmanExportMode
             refreshCache()
             refreshPostmanWorkSpaces()
             refreshPostmanCollections()
+            if (settings.postmanExportMode == PostmanExportMode.UPDATE.name) {
+                actionContext.runAsync {
+                    for (i in 0..50) {
+                        Thread.sleep(100)
+                        if (!this.postmanExportCollectionPanel!!.isVisible
+                            && this.settingsInstance?.postmanExportMode == PostmanExportMode.UPDATE.name
+                        ) {
+                            this.postmanExportCollectionPanel!!.isVisible = true
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -500,12 +440,12 @@ class EasyApiSettingGUI {
     private var postmanWorkspaceComboBoxModel: MutableCollectionComboBoxModel<PostmanWorkspaceData>? = null
 
     private fun refreshPostmanWorkSpaces(userCache: Boolean = true) {
-        (postmanSettingsHelper as? MemoryPostmanSettingsHelper)?.setPrivateToken(this.settings?.postmanToken)
+        (postmanSettingsHelper as? MemoryPostmanSettingsHelper)?.setPrivateToken(this.settingsInstance?.postmanToken)
         val allWorkspaces = postmanCachedApiHelper.getAllWorkspaces(userCache)
         val allWorkspacesData: ArrayList<PostmanWorkspaceData> = arrayListOf(DEFAULT_WORKSPACE)
         if (allWorkspaces == null) {
-            if (settings?.postmanWorkspace != null) {
-                allWorkspacesData.add(PostmanWorkspaceData(settings?.postmanWorkspace ?: "", "unknown"))
+            if (settingsInstance?.postmanWorkspace != null) {
+                allWorkspacesData.add(PostmanWorkspaceData(settingsInstance?.postmanWorkspace ?: "", "unknown"))
             }
         } else {
             allWorkspaces.forEach { allWorkspacesData.add(PostmanWorkspaceData(it)) }
@@ -541,6 +481,8 @@ class EasyApiSettingGUI {
 
     @Synchronized
     private fun refreshPostmanCollections() {
+        this.postmanExportCollectionPanel!!.isVisible =
+            this.settingsInstance?.postmanExportMode == PostmanExportMode.UPDATE.name
         if (postmanCollectionTableModel != null) {
             postmanCollectionsTable!!.removeAll()
             postmanCollectionTableModel!!.columnCount = 0
@@ -552,7 +494,7 @@ class EasyApiSettingGUI {
         collectionDataArray.forEach { collectionMap[it.id] = it }
         val columns = arrayOf("module", "collection")
         val data: ArrayList<Array<Any>> = ArrayList()
-        settings?.postmanCollectionsAsPairs()?.forEach { collection ->
+        settingsInstance?.postmanCollectionsAsPairs()?.forEach { collection ->
             data.add(
                 arrayOf(
                     collection.first,
@@ -648,11 +590,8 @@ class EasyApiSettingGUI {
         return FileUtils.deleteDirectory(File(path))
     }
 
-    fun getSettings(): Settings {
-        if (settings == null) {
-            settings = Settings()
-        }
-        return settings!!.copy().also {
+    override fun getSettings(): Settings {
+        return super.getSettings().also {
             readPostmanCollections(it)
         }
     }
@@ -675,50 +614,6 @@ class EasyApiSettingGUI {
             home = home.substring(0, home.length - 1)
         }
         return home
-    }
-
-    private fun export() {
-        val descriptor = FileSaverDescriptor(
-            "Export Setting",
-            "Choose directory to export setting to",
-            "json"
-        )
-        descriptor.withHideIgnored(false)
-        val chooser = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, this.getRootPanel()!!)
-        var toSelect: VirtualFile? = null
-        val lastLocation = PropertiesComponent.getInstance().getValue(setting_path)
-        if (lastLocation != null) {
-            toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
-        }
-        val fileWrapper = chooser.save(toSelect, "setting.json")
-        if (fileWrapper != null) {
-            com.itangcent.intellij.util.FileUtils.forceSave(
-                fileWrapper.file.path,
-                GsonUtils.toJson(settings).toByteArray(kotlin.text.Charsets.UTF_8)
-            )
-        }
-    }
-
-    private fun import() {
-        val descriptor = FileChooserDescriptorFactory
-            .createSingleFileOrFolderDescriptor()
-            .withTitle("Import Setting")
-            .withDescription("Choose setting file")
-            .withHideIgnored(false)
-        val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, null, this.getRootPanel()!!)
-        var toSelect: VirtualFile? = null
-        val lastLocation = PropertiesComponent.getInstance().getValue(setting_path)
-        if (lastLocation != null) {
-            toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
-        }
-        val files = chooser.choose(null, toSelect)
-        if (files.notNullOrEmpty()) {
-            val virtualFile = files[0]
-            val read = FileUtils.read(File(virtualFile.path), kotlin.text.Charsets.UTF_8)
-            if (read.notNullOrEmpty()) {
-                setSettings(GsonUtils.fromJson(read!!, Settings::class))
-            }
-        }
     }
 
     private class PostmanWorkspaceData {
@@ -788,6 +683,42 @@ class EasyApiSettingGUI {
         }
     }
 
+    override fun readSettings(settings: Settings, from: Settings) {
+        settings.postmanToken = from.postmanToken
+        settings.wrapCollection = from.wrapCollection
+        settings.autoMergeScript = from.autoMergeScript
+        settings.postmanJson5FormatType = from.postmanJson5FormatType
+        settings.pullNewestDataBefore = from.pullNewestDataBefore
+        settings.methodDocEnable = from.methodDocEnable
+        settings.genericEnable = from.genericEnable
+        settings.queryExpanded = from.queryExpanded
+        settings.formExpanded = from.formExpanded
+        settings.readGetter = from.readGetter
+        settings.readSetter = from.readSetter
+        settings.inferEnable = from.inferEnable
+        settings.inferMaxDeep = from.inferMaxDeep
+        settings.yapiServer = from.yapiServer
+        settings.yapiTokens = from.yapiTokens
+        settings.enableUrlTemplating = from.enableUrlTemplating
+        settings.switchNotice = from.switchNotice
+        settings.loginMode = from.loginMode
+        settings.yapiReqBodyJson5 = from.yapiReqBodyJson5
+        settings.yapiResBodyJson5 = from.yapiResBodyJson5
+        settings.httpTimeOut = from.httpTimeOut
+        settings.useRecommendConfig = from.useRecommendConfig
+        settings.recommendConfigs = from.recommendConfigs
+        settings.logLevel = from.logLevel
+        settings.outputDemo = from.outputDemo
+        settings.outputCharset = from.outputCharset
+        settings.markdownFormatType = from.markdownFormatType
+        settings.builtInConfig = from.builtInConfig
+        settings.trustHosts = from.trustHosts
+        settings.postmanWorkspace = from.postmanWorkspace
+        settings.postmanExportMode = from.postmanExportMode
+        settings.postmanCollections = from.postmanCollections
+        settings.yapiTokens = from.yapiTokens
+    }
+
     companion object {
         const val basePath = ".easy_api"
 
@@ -801,4 +732,4 @@ class EasyApiSettingGUI {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(EasyApiSettingGUI::class.java)
+private val LOG = org.apache.log4j.Logger.getLogger(YapiDashboardDialog::class.java)
