@@ -1,3 +1,31 @@
+* 2.2.6
+
+	* fix: AbstractEasyApiConfigurable checkUI after createComponent [(#579)](https://github.com/tangcent/easy-yapi/pull/579)
+
+	* feat: update gui [(#578)](https://github.com/tangcent/easy-yapi/pull/578)
+
+	* fix: [curl] escape [&\] [(#577)](https://github.com/tangcent/easy-yapi/pull/577)
+
+	* test: add test case of YapiApiExporter [(#576)](https://github.com/tangcent/easy-yapi/pull/576)
+
+	* feat: support export apis to specified postman collection [(#575)](https://github.com/tangcent/easy-yapi/pull/575)
+
+	* feat: save yapi tokens in project scope [(#572)](https://github.com/tangcent/easy-yapi/pull/572)
+
+	* feat: show workspace with type [(#571)](https://github.com/tangcent/easy-yapi/pull/571)
+
+	* test: update CurlExporterTest [(#570)](https://github.com/tangcent/easy-yapi/pull/570)
+
+	* feat: support copy curl command from ApiDashBoard(YapiDashBoard) [(#569)](https://github.com/tangcent/easy-yapi/pull/569)
+
+	* fix: resolve LazilyParsedNumber as Integer [(#568)](https://github.com/tangcent/easy-yapi/pull/568)
+
+	* feat: add host to cache in exporting curl command [(#567)](https://github.com/tangcent/easy-yapi/pull/567)
+
+	* feat: select workspace by comboBox [(#566)](https://github.com/tangcent/easy-yapi/pull/566)
+
+	* feat: support export requests as curl command [(#565)](https://github.com/tangcent/easy-yapi/pull/565)
+
 * 2.2.5
 
 	* chore: add test case of PostmanApiHelper [(#562)](https://github.com/tangcent/easy-yapi/pull/562)
