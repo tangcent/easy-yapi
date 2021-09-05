@@ -12,6 +12,9 @@ import org.mockito.kotlin.mock
 import javax.swing.JComponent
 import kotlin.test.*
 
+/**
+ * Test case of [AbstractEasyApiConfigurableTest]
+ */
 internal class AbstractEasyApiConfigurableTest {
 
     @Test

@@ -8,6 +8,8 @@ interface EasyApiSettingGUI {
 
     fun onCreate()
 
+    fun checkUI(): Boolean
+
     fun getSettings(): Settings
 
     fun setSettings(settings: Settings)

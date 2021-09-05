@@ -407,18 +407,6 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
             refreshCache()
             refreshPostmanWorkSpaces()
             refreshPostmanCollections()
-            if (settings.postmanExportMode == PostmanExportMode.UPDATE.name) {
-                actionContext.runAsync {
-                    for (i in 0..50) {
-                        Thread.sleep(100)
-                        if (!this.postmanExportCollectionPanel!!.isVisible
-                            && this.settingsInstance?.postmanExportMode == PostmanExportMode.UPDATE.name
-                        ) {
-                            this.postmanExportCollectionPanel!!.isVisible = true
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -717,6 +705,13 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.postmanExportMode = from.postmanExportMode
         settings.postmanCollections = from.postmanCollections
         settings.yapiTokens = from.yapiTokens
+    }
+
+    override fun checkUI(): Boolean {
+        return this.yapiServerTextField?.text == this.settingsInstance?.yapiServer
+                && this.postmanTokenTextField?.text == this.settingsInstance?.postmanToken
+                && this.trustHostsTextArea?.text == this.settingsInstance?.trustHosts?.joinToString(separator = "\n")
+                && (this.postmanExportCollectionPanel!!.isVisible == (this.settingsInstance?.postmanExportMode == PostmanExportMode.UPDATE.name))
     }
 
     companion object {
