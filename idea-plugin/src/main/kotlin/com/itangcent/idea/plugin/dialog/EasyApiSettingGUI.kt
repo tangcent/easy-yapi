@@ -454,7 +454,9 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     @Volatile
     private var postmanCollectionTableModel: DefaultTableModel? = null
-    private var tableMouseListener: MouseListener? = null;
+    private var tableMouseListener: MouseListener? = null
+    private var postmanCollectionInit = false
+
 
     @Synchronized
     private fun refreshPostmanCollections(cache: Boolean) {
@@ -534,6 +536,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
             }
             postmanCollectionsTable!!.addMouseListener(tableMouseListener)
         }
+        postmanCollectionInit = true
     }
 
     private fun computeProjectCacheSize() {
@@ -585,6 +588,9 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
     }
 
     private fun readPostmanCollections(settings: Settings) {
+        if(!postmanCollectionInit){
+            return
+        }
         val collectionModel = postmanCollectionTableModel ?: return
         val pairs: ArrayList<Pair<String, String>> = ArrayList()
         for (row in 0 until collectionModel.rowCount) {
@@ -694,12 +700,10 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.yapiResBodyJson5 = from.yapiResBodyJson5
         settings.httpTimeOut = from.httpTimeOut
         settings.useRecommendConfig = from.useRecommendConfig
-        settings.recommendConfigs = from.recommendConfigs
         settings.logLevel = from.logLevel
         settings.outputDemo = from.outputDemo
         settings.outputCharset = from.outputCharset
         settings.markdownFormatType = from.markdownFormatType
-        settings.builtInConfig = from.builtInConfig
         settings.trustHosts = from.trustHosts
         settings.postmanWorkspace = from.postmanWorkspace
         settings.postmanExportMode = from.postmanExportMode

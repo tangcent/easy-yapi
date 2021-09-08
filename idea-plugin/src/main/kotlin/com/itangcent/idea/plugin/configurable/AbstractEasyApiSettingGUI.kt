@@ -22,8 +22,7 @@ abstract class AbstractEasyApiSettingGUI : EasyApiSettingGUI {
     }
 
     override fun readSettings(settings: Settings) {
-        this.settingsInstance?.let { readSettings(settings, it) }
-
+        readSettings(settings, getSettings())
     }
 
     protected abstract fun readSettings(settings: Settings, from: Settings)
