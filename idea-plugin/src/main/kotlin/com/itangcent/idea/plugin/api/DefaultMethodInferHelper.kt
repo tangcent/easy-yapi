@@ -79,11 +79,11 @@ class DefaultMethodInferHelper : MethodInferHelper {
     }
 
     fun inferReturn(
-            context: PsiElement?,
-            psiMethod: PsiMethod,
-            caller: Any? = null,
-            args: Array<Any?>?,
-            option: Int = DEFAULT_OPTION
+        context: PsiElement?,
+        psiMethod: PsiMethod,
+        caller: Any? = null,
+        args: Array<Any?>?,
+        option: Int = DEFAULT_OPTION
     ): Any? {
         actionContext!!.checkStatus()
         if (methodStack.size < intelligentSettingsHelper.inferMaxDeep()) {
@@ -94,7 +94,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     if (allowQuickCall(option)) {
                         val returnType = psiMethod.returnType
                         if (returnType != null && !PsiClassUtils.isInterface(returnType)
-                                && duckTypeHelper!!.isQualified(returnType, psiMethod)
+                            && duckTypeHelper!!.isQualified(returnType, psiMethod)
                         ) {
                             return psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption)
                         }
@@ -207,10 +207,10 @@ class DefaultMethodInferHelper : MethodInferHelper {
      * method of collection(Set/List/Map...)
      */
     private fun callSimpleMethod(
-            context: PsiElement?,
-            psiMethod: PsiMethod,
-            caller: Any? = null,
-            args: Array<Any?>?
+        context: PsiElement?,
+        psiMethod: PsiMethod,
+        caller: Any? = null,
+        args: Array<Any?>?
     ): Any? {
         actionContext!!.checkStatus()
         try {
@@ -329,7 +329,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         actionContext!!.checkStatus()
         try {//find recursive call
             methodStack.filter { it.callMethod() == infer.callMethod() }
-                    .forEach { return it.possible() }
+                .forEach { return it.possible() }
         } catch (ignore: Exception) {
         }
         try {
@@ -367,20 +367,20 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
             if (candidateMethod.size > 1) {
                 candidateMethod.filter { it.parameterCount == argCount }
-                        .forEach {
-                            try {
-                                return callMethod(null, it, args)
-                            } catch (e: Exception) {
-                            }
+                    .forEach {
+                        try {
+                            return callMethod(null, it, args)
+                        } catch (e: Exception) {
                         }
+                    }
 
                 candidateMethod.filter { it.parameterCount != argCount }
-                        .forEach {
-                            try {
-                                return callMethod(null, it, args)
-                            } catch (e: Exception) {
-                            }
+                    .forEach {
+                        try {
+                            return callMethod(null, it, args)
+                        } catch (e: Exception) {
                         }
+                    }
             }
 
             return CALL_FAILED
@@ -716,6 +716,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
         actionContext!!.checkStatus()
         val kv = KV.create<String, Any?>()
         for (field in jvmClassHelper!!.getAllFields(psiClass)) {
+            if (jvmClassHelper.isStaticFinal(field)) {
+                continue
+            }
             val type = field.type
             val name = psiClassHelper!!.getJsonFieldName(field)
 
@@ -895,9 +898,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
     }
 
     abstract class AbstractMethodReturnInfer(
-            var caller: Any? = null,
-            val args: Array<Any?>?,
-            val methodReturnInferHelper: DefaultMethodInferHelper
+        var caller: Any? = null,
+        val args: Array<Any?>?,
+        val methodReturnInferHelper: DefaultMethodInferHelper
     ) : Infer {
 
         var localParams: HashMap<String, Any?> = HashMap()
@@ -989,33 +992,33 @@ class DefaultMethodInferHelper : MethodInferHelper {
                         val variableType = psiElement.type
 
                         if (!PsiClassUtils.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(
-                                        variableType,
-                                        psiElement
-                                )
+                                variableType,
+                                psiElement
+                            )
                         ) {
                             variable.addLazyAction {
                                 variable.setValue(
-                                        methodReturnInferHelper.psiClassHelper!!.getTypeObject(
-                                                variableType,
-                                                psiElement,
-                                                methodReturnInferHelper.jsonOption
-                                        )
+                                    methodReturnInferHelper.psiClassHelper!!.getTypeObject(
+                                        variableType,
+                                        psiElement,
+                                        methodReturnInferHelper.jsonOption
+                                    )
                                 )
                             }
                         } else {
                             variable.addLazyAction {
                                 val processValue: Any? = if (psiElement.initializer != null) {
                                     findComplexResult(
-                                            processExpression(psiElement.initializer!!),
-                                            methodReturnInferHelper.getSimpleFields(
-                                                    psiElement.type,
-                                                    psiElement
-                                            )
+                                        processExpression(psiElement.initializer!!),
+                                        methodReturnInferHelper.getSimpleFields(
+                                            psiElement.type,
+                                            psiElement
+                                        )
                                     )
                                 } else {
                                     methodReturnInferHelper.getSimpleFields(
-                                            psiElement.type,
-                                            psiElement
+                                        psiElement.type,
+                                        psiElement
                                     )
                                 }
                                 variable.setValue(processValue)
@@ -1032,8 +1035,8 @@ class DefaultMethodInferHelper : MethodInferHelper {
                         return processStaticField(psiElement)
                     }
                     val fieldName =
-                            methodReturnInferHelper.psiClassHelper!!.getJsonFieldName(psiElement)
-                                    .removePrefix("this.")
+                        methodReturnInferHelper.psiClassHelper!!.getJsonFieldName(psiElement)
+                            .removePrefix("this.")
                     (context as? Map<*, *>)?.let { return findVariableIn(fieldName, context) }
 
                     return if (fields?.containsKey(fieldName) == true) {
@@ -1175,9 +1178,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
             val args = psiNewExpression.argumentList?.expressions?.mapToTypedArray { processExpression(it) }
             return DirectVariable {
                 methodReturnInferHelper.NewExpressionInfer(
-                        psiNewExpression,
-                        args,
-                        methodReturnInferHelper
+                    psiNewExpression,
+                    args,
+                    methodReturnInferHelper
                 ).infer()
             }
         }
@@ -1417,10 +1420,10 @@ class DefaultMethodInferHelper : MethodInferHelper {
     }
 
     inner class MethodReturnInfer(
-            private val psiMethod: PsiMethod,
-            caller: Any? = null,
-            args: Array<Any?>?,
-            methodReturnInferHelper: DefaultMethodInferHelper
+        private val psiMethod: PsiMethod,
+        caller: Any? = null,
+        args: Array<Any?>?,
+        methodReturnInferHelper: DefaultMethodInferHelper
     ) : AbstractMethodReturnInfer(caller, args, methodReturnInferHelper) {
 
         override fun infer(): Any? {
@@ -1470,6 +1473,8 @@ class DefaultMethodInferHelper : MethodInferHelper {
         private fun initFields(psiClass: PsiClass) {
             if (caller != null && caller is HashMap<*, *>) {
                 this.fields = asMap(caller)
+            } else if (caller != null && caller is Collection<*>) {
+                this.fields = LinkedHashMap()
             } else {
                 this.fields = LinkedHashMap()
                 val fields = getSimpleFields(psiClass)
@@ -1493,8 +1498,8 @@ class DefaultMethodInferHelper : MethodInferHelper {
      * Throws an exception if it finds that the return value is related to a parameter or a local variable
      */
     open inner class QuicklyMethodReturnInfer(
-            private val psiMethod: PsiMethod,
-            methodReturnInferHelper: DefaultMethodInferHelper
+        private val psiMethod: PsiMethod,
+        methodReturnInferHelper: DefaultMethodInferHelper
     ) : AbstractMethodReturnInfer(null, null, methodReturnInferHelper) {
 
         override fun infer(): Any? {
@@ -1609,17 +1614,18 @@ class DefaultMethodInferHelper : MethodInferHelper {
     }
 
     inner class NewExpressionInfer(
-            private val psiNewExpression: PsiNewExpression,
-            args: Array<Any?>?,
-            methodReturnInferHelper: DefaultMethodInferHelper
+        private val psiNewExpression: PsiNewExpression,
+        args: Array<Any?>?,
+        methodReturnInferHelper: DefaultMethodInferHelper
     ) : AbstractMethodReturnInfer(null, args, methodReturnInferHelper) {
 
         override fun infer(): Any? {
+            val psiType = psiNewExpression.type ?: return null
             this.caller = DirectVariable {
                 methodReturnInferHelper.psiClassHelper!!.getTypeObject(
-                        psiNewExpression.type,
-                        psiNewExpression,
-                        methodReturnInferHelper.jsonOption
+                    psiType,
+                    psiNewExpression,
+                    methodReturnInferHelper.jsonOption
                 )
             }
             this.fields = asMap((caller as DirectVariable).getValue())
@@ -1632,10 +1638,17 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 }
             }
 
+            if (jvmClassHelper!!.isMap(psiType)
+                || jvmClassHelper.isCollection(psiType)
+                || jvmClassHelper.isNormalType(psiType.canonicalText)
+            ) {
+                return returnVal
+            }
+
             val resolveConstructor = this.psiNewExpression.resolveConstructor()
             if (resolveConstructor != null) {
                 val inferReturnResult =
-                        inferReturn(resolveConstructor, this.caller, args, DEFAULT_OPTION xor ALLOW_QUICK_CALL)
+                    inferReturn(resolveConstructor, this.caller, args, DEFAULT_OPTION xor ALLOW_QUICK_CALL)
                 if (inferReturnResult != null && inferReturnResult is Variable) {
                     inferReturnResult.getValue()
                 }
@@ -1644,7 +1657,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             return returnVal
         }
 
-        override fun callMethod(): Any? {
+        override fun callMethod(): Any {
             return psiNewExpression
         }
 

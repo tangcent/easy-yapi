@@ -23,9 +23,6 @@ import com.itangcent.intellij.psi.ContextSwitchListener
  */
 class YapiPsiClassHelper : CustomizedPsiClassHelper() {
 
-    @Inject(optional = true)
-    private val configReader: ConfigReader? = null
-
     private var resolveProperty: Boolean = true
 
     @PostConstruct
@@ -33,7 +30,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         val contextSwitchListener: ContextSwitchListener? = ActionContext.getContext()
             ?.instance(ContextSwitchListener::class)
         contextSwitchListener!!.onModuleChange {
-            val resolveProperty = configReader!!.first("field.mock.resolveProperty")
+            val resolveProperty = configReader.first("field.mock.resolveProperty")
             if (!resolveProperty.isNullOrBlank()) {
                 this.resolveProperty = resolveProperty.toBoolean()
             }
@@ -51,7 +48,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         //compute `field.mock`
         ruleComputer.computer(ClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
             ?.takeIf { it.isNotBlank() }
-            ?.let { if (resolveProperty) configReader!!.resolveProperty(it) else it }
+            ?.let { if (resolveProperty) configReader.resolveProperty(it) else it }
             ?.let { mockInfo ->
                 kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
             }

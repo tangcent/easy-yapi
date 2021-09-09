@@ -105,7 +105,7 @@ internal class RecommendConfigLoaderTest {
     @Test
     fun testCodes() {
         assertEquals(
-            "[module, ignore, deprecated_java, deprecated_kotlin, Jackson, Jackson_JsonIgnoreProperties, Gson, ignore_transient_field, converts, spring_Entity, spring_webflux, spring.validations, spring.ui, javax.validation, javax.validation(grouped), is_file, yapi_tag, yapi_tag_kotlin, yapi_status, yapi_mock, yapi_tag, import_spring_properties, resolve_spring_properties, ignore_serialVersionUID, support_mock_for_general, private_protected_field_only, support_mock_for_javax_validation]",
+            "[module, ignore, deprecated_java, deprecated_kotlin, Jackson, Jackson_JsonIgnoreProperties, Gson, ignore_transient_field, converts, spring_Entity, spring_webflux, spring.validations, spring.ui, javax.validation, javax.validation(grouped), is_file, yapi_tag, yapi_tag_kotlin, yapi_status, yapi_mock, yapi_tag, import_spring_properties, resolve_spring_properties, ignore_serialVersionUID, support_mock_for_general, private_protected_field_only, support_mock_for_javax_validation, not_ignore_static_final_field]",
             RecommendConfigLoader.codes().contentToString()
         )
 

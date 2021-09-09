@@ -71,6 +71,15 @@ internal class CurlExporterTest : PluginContextLightCodeInsightFixtureTestCase()
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
     }
 
+    override fun customConfig(): String {
+        return "#The ObjectId and Date will be parsed as strings\n" +
+                "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
+                "json.rule.convert[java.util.Date]=java.lang.String\n" +
+                "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
+                "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
+                "json.rule.convert[java.time.LocalDate]=java.lang.String\n"
+    }
+
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
 
