@@ -20,8 +20,8 @@ curl -X POST -H 'Content-Type: application/json' -d '{
   "name": "",
   "age": 0,
   "sex": 0,
-  "birthDay": {},
-  "regtime": {}
+  "birthDay": "",
+  "regtime": ""
 }' http://localhost:8080/user/add
 ```
 
@@ -29,5 +29,5 @@ curl -X POST -H 'Content-Type: application/json' -d '{
 
 ## update user info
 ```bash
-curl -X PUT -H 'Content-Type: multipart/form-data' -F 'id=0' -F 'type=0' -F 'name=' -F 'age=0' -F 'sex=0' http://localhost:8080/user/update
+curl -X PUT -H 'Content-Type: multipart/form-data' -F 'id=' -F 'type=' -F 'name=' -F 'age=' -F 'sex=' -F 'birthDay=' -F 'regtime=' http://localhost:8080/user/update
 ```

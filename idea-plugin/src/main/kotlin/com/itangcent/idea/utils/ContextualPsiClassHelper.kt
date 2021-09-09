@@ -30,7 +30,7 @@ import java.util.*
 open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
     @Inject
-    private val configReader: ConfigReader? = null
+    protected lateinit var configReader: ConfigReader
 
     @Inject(optional = true)
     private val ruleComputeListener: RuleComputeListener? = null
@@ -97,7 +97,14 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    override fun beforeParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>): Boolean {
+    override fun beforeParseFieldOrMethod(
+        fieldName: String,
+        fieldType: DuckType,
+        fieldOrMethod: ExplicitElement<*>,
+        resourcePsiClass: ExplicitClass,
+        option: Int,
+        kv: KV<String, Any?>
+    ): Boolean {
         parseContext.get()?.add(fieldName)
         devEnv?.dev {
             logger!!.info("path -> ${parseScriptContext.path()}")
@@ -107,12 +114,26 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
     }
 
-    override fun onIgnoredParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
+    override fun onIgnoredParseFieldOrMethod(
+        fieldName: String,
+        fieldType: DuckType,
+        fieldOrMethod: ExplicitElement<*>,
+        resourcePsiClass: ExplicitClass,
+        option: Int,
+        kv: KV<String, Any?>
+    ) {
         super.onIgnoredParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
         popField(fieldName)
     }
 
-    override fun afterParseFieldOrMethod(fieldName: String, fieldType: DuckType, fieldOrMethod: ExplicitElement<*>, resourcePsiClass: ExplicitClass, option: Int, kv: KV<String, Any?>) {
+    override fun afterParseFieldOrMethod(
+        fieldName: String,
+        fieldType: DuckType,
+        fieldOrMethod: ExplicitElement<*>,
+        resourcePsiClass: ExplicitClass,
+        option: Int,
+        kv: KV<String, Any?>
+    ) {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
 
         ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_AFTER, fieldOrMethod, fieldOrMethod.psi())
@@ -143,7 +164,13 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
     inner class InnerComputeListener : RuleComputeListener {
 
-        override fun computer(ruleKey: RuleKey<*>, target: Any, context: PsiElement?, contextHandle: (RuleContext) -> Unit, methodHandle: (RuleKey<*>, Any, PsiElement?, (RuleContext) -> Unit) -> Any?): Any? {
+        override fun computer(
+            ruleKey: RuleKey<*>,
+            target: Any,
+            context: PsiElement?,
+            contextHandle: (RuleContext) -> Unit,
+            methodHandle: (RuleKey<*>, Any, PsiElement?, (RuleContext) -> Unit) -> Any?
+        ): Any? {
             return if (JSON_RULE_KEYS.contains(ruleKey)) {
                 methodHandle(ruleKey, target, context) {
                     contextHandle(it)
@@ -158,13 +185,13 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
     companion object {
         val JSON_RULE_KEYS = arrayOf(
-                ClassRuleKeys.FIELD_IGNORE,
-                ClassRuleKeys.FIELD_DOC,
-                ClassRuleKeys.FIELD_NAME,
-                ClassExportRuleKeys.FIELD_DEFAULT_VALUE,
-                ClassExportRuleKeys.FIELD_PARSE_BEFORE,
-                ClassExportRuleKeys.FIELD_PARSE_AFTER,
-                ClassExportRuleKeys.FIELD_REQUIRED
+            ClassRuleKeys.FIELD_IGNORE,
+            ClassRuleKeys.FIELD_DOC,
+            ClassRuleKeys.FIELD_NAME,
+            ClassExportRuleKeys.FIELD_DEFAULT_VALUE,
+            ClassExportRuleKeys.FIELD_PARSE_BEFORE,
+            ClassExportRuleKeys.FIELD_PARSE_AFTER,
+            ClassExportRuleKeys.FIELD_REQUIRED
         )
     }
 }
