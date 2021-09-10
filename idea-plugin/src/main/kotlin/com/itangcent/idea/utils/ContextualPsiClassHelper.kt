@@ -89,7 +89,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     }
 
     private fun clearCachePotentially() {
-        if (configReader!!.first("json.cache.disable").asBool() == true) {
+        if (configReader.first("json.cache.disable").asBool() == true) {
             devEnv?.dev {
                 logger!!.info("clear json cache")
             }
@@ -105,13 +105,17 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         option: Int,
         kv: KV<String, Any?>
     ): Boolean {
+        pushField(fieldName)
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_BEFORE, fieldOrMethod, fieldOrMethod.psi())
+
+        return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
+    }
+
+    private fun pushField(fieldName: String) {
         parseContext.get()?.add(fieldName)
         devEnv?.dev {
             logger!!.info("path -> ${parseScriptContext.path()}")
         }
-        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_BEFORE, fieldOrMethod, fieldOrMethod.psi())
-
-        return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
     }
 
     override fun onIgnoredParseFieldOrMethod(

@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.utils.CustomizedPsiClassHelperBaseTest
+import com.itangcent.idea.utils.ContextualPsiClassHelperBaseTest
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.PsiClassHelper
@@ -12,7 +12,7 @@ import com.itangcent.intellij.psi.JsonOption
 /**
  * Test case of [YapiPsiClassHelper]
  */
-internal class YapiPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
+internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
 
     override fun customConfig(): String {
         return "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +

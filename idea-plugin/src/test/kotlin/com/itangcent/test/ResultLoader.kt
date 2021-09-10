@@ -6,6 +6,7 @@ import com.itangcent.common.spi.SpiUtils
 import com.itangcent.common.utils.ResourceUtils
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.TimeZoneKit.fixTimeZone
+import kotlin.reflect.KClass
 
 object ResultLoader {
 
@@ -23,7 +24,15 @@ object ResultLoader {
 
     fun load(name: String): String {
         val grandCallerClass = com.intellij.util.ReflectionUtil.getGrandCallerClass()!!
-        val rawName = grandCallerClass.name
+        return load(grandCallerClass, name)
+    }
+
+    fun load(callerClass: KClass<*>, name: String): String {
+        return load(callerClass.java, name)
+    }
+
+    fun load(callerClass: Class<*>, name: String): String {
+        val rawName = callerClass.name
             .replace('#', '.')
             .replace('$', '.')
         val fileName = "$rawName.$name"
