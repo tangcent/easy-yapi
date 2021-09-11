@@ -13,9 +13,9 @@ import java.util.*
 import java.util.Collection
 
 /**
- * Base test case of [CustomizedPsiClassHelper]
+ * Base test case of [ContextualPsiClassHelper]
  */
-internal abstract class CustomizedPsiClassHelperBaseTest : PluginContextLightCodeInsightFixtureTestCase() {
+internal abstract class ContextualPsiClassHelperBaseTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     protected lateinit var psiClassHelper: PsiClassHelper

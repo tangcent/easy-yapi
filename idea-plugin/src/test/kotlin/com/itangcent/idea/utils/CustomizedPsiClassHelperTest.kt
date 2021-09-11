@@ -1,10 +1,7 @@
 package com.itangcent.idea.utils
 
-import com.google.gson.GsonBuilder
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.RegisterExclusionStrategy
-import com.itangcent.common.utils.Visional
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.PsiClassHelper
@@ -14,7 +11,7 @@ import com.itangcent.intellij.psi.JsonOption
 /**
  * Test case of [CustomizedPsiClassHelper]
  */
-internal class CustomizedPsiClassHelperTest : CustomizedPsiClassHelperBaseTest() {
+internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
 
     override fun customConfig(): String {
         return "dev=true\n" +

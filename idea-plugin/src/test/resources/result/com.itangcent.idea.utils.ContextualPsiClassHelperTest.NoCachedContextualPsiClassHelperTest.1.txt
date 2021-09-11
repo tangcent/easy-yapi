@@ -1,0 +1,14 @@
+[INFO]	before:com.itangcent.model.UserInfo#id
+[INFO]	after:com.itangcent.model.UserInfo#id
+[INFO]	before:com.itangcent.model.UserInfo#type
+[INFO]	after:com.itangcent.model.UserInfo#type
+[INFO]	before:com.itangcent.model.UserInfo#name
+[INFO]	after:com.itangcent.model.UserInfo#name
+[INFO]	before:com.itangcent.model.UserInfo#age
+[INFO]	after:com.itangcent.model.UserInfo#age
+[INFO]	before:com.itangcent.model.UserInfo#sex
+[INFO]	after:com.itangcent.model.UserInfo#sex
+[INFO]	before:com.itangcent.model.UserInfo#birthDay
+[INFO]	after:com.itangcent.model.UserInfo#birthDay
+[INFO]	before:com.itangcent.model.UserInfo#regtime
+[INFO]	after:com.itangcent.model.UserInfo#regtime
