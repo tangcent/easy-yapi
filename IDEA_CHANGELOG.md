@@ -1,3 +1,11 @@
+* 2.2.7
+
+	* feat: `method&field` support  containingClass&defineClass [(#585)](https://github.com/tangcent/easy-yapi/pull/585)
+
+	* feat: new recommend config to support [not ignore `static final` field] [(#583)](https://github.com/tangcent/easy-yapi/pull/583)
+
+	* fix: apply setting not work [(#582)](https://github.com/tangcent/easy-yapi/pull/582)
+
 * 2.2.6
 
 	* fix: AbstractEasyApiConfigurable checkUI after createComponent [(#579)](https://github.com/tangcent/easy-yapi/pull/579)
@@ -6,15 +14,11 @@
 
 	* fix: [curl] escape [&\] [(#577)](https://github.com/tangcent/easy-yapi/pull/577)
 
-	* test: add test case of YapiApiExporter [(#576)](https://github.com/tangcent/easy-yapi/pull/576)
-
 	* feat: support export apis to specified postman collection [(#575)](https://github.com/tangcent/easy-yapi/pull/575)
 
 	* feat: save yapi tokens in project scope [(#572)](https://github.com/tangcent/easy-yapi/pull/572)
 
 	* feat: show workspace with type [(#571)](https://github.com/tangcent/easy-yapi/pull/571)
-
-	* test: update CurlExporterTest [(#570)](https://github.com/tangcent/easy-yapi/pull/570)
 
 	* feat: support copy curl command from ApiDashBoard(YapiDashBoard) [(#569)](https://github.com/tangcent/easy-yapi/pull/569)
 
