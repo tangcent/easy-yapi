@@ -10,6 +10,7 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.config.rule.RuleKey
+import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.jvm.duck.DuckType
@@ -106,7 +107,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         kv: KV<String, Any?>
     ): Boolean {
         pushField(fieldName)
-        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_BEFORE, fieldOrMethod, fieldOrMethod.psi())
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_BEFORE, fieldOrMethod)
 
         return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
     }
@@ -140,7 +141,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     ) {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
 
-        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_AFTER, fieldOrMethod, fieldOrMethod.psi())
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_AFTER, fieldOrMethod)
         popField(fieldName)
     }
 

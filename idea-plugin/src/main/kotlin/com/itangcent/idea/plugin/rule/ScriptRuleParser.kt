@@ -86,8 +86,8 @@ abstract class ScriptRuleParser : RuleParser {
             }
 
             val contextForScript: RuleContext? = (context as? BaseScriptRuleContext)
-                    ?: context.getCore()?.let { contextOf(it, context.getResource()) }
-                    ?: context.getResource()?.let { contextOf(it, context.getResource()) }
+                ?: context.getCore()?.let { contextOf(it, context.getResource()) }
+                ?: context.getResource()?.let { contextOf(it, context.getResource()) }
             if (contextForScript != null) {
                 simpleScriptContext.setAttribute("it", contextForScript, ScriptContext.ENGINE_SCOPE)
             }
@@ -261,8 +261,10 @@ abstract class ScriptRuleParser : RuleParser {
          * it.doc("tag","subTag"):String?
          */
         fun doc(tag: String, subTag: String): String? {
-            return docHelper!!.findDocsByTagAndName(getResource(),
-                    tag, subTag)
+            return docHelper!!.findDocsByTagAndName(
+                getResource(),
+                tag, subTag
+            )
         }
 
         fun hasModifier(modifier: String): Boolean {
@@ -298,8 +300,8 @@ abstract class ScriptRuleParser : RuleParser {
      * @see ScriptPsiTypeContext
      */
     @ScriptTypeName("class")
-    open inner class ScriptPsiClassContext(protected val psiClass: PsiClass)
-        : BaseScriptRuleContext(psiClass), ScriptClassContext {
+    open inner class ScriptPsiClassContext(protected val psiClass: PsiClass) : BaseScriptRuleContext(psiClass),
+        ScriptClassContext {
 
         override fun contextType(): String {
             return "class"
@@ -307,7 +309,7 @@ abstract class ScriptRuleParser : RuleParser {
 
         open fun methods(): Array<ScriptPsiMethodContext> {
             return jvmClassHelper!!.getAllMethods(psiClass)
-                    .mapToTypedArray { ScriptPsiMethodContext(it) }
+                .mapToTypedArray { ScriptPsiMethodContext(it) }
         }
 
         override fun methodCnt(): Int {
@@ -316,7 +318,7 @@ abstract class ScriptRuleParser : RuleParser {
 
         open fun fields(): Array<ScriptPsiFieldContext> {
             return jvmClassHelper!!.getAllFields(psiClass)
-                    .mapToTypedArray { ScriptPsiFieldContext(it) }
+                .mapToTypedArray { ScriptPsiFieldContext(it) }
         }
 
         override fun fieldCnt(): Int {
@@ -376,16 +378,19 @@ abstract class ScriptRuleParser : RuleParser {
 
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
-                psiClassHelper!!.getTypeObject(it, psiClass,
-                        JsonOption.NONE.or(readGetter, readSetter)
+                psiClassHelper!!.getTypeObject(
+                    it, psiClass,
+                    JsonOption.NONE.or(readGetter, readSetter)
                 )
             } ?: psiClassHelper!!.getFields(psiClass)).let { RequestUtils.parseRawBody(it) }
         }
 
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
-                psiClassHelper!!.getTypeObject(it, psiClass,
-                        JsonOption.READ_COMMENT.or(readGetter, readSetter))
+                psiClassHelper!!.getTypeObject(
+                    it, psiClass,
+                    JsonOption.READ_COMMENT.or(readGetter, readSetter)
+                )
             } ?: psiClassHelper!!.getFields(psiClass)).let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
             }
@@ -397,7 +402,8 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     @ScriptTypeName("class")
-    inner class ScriptExplicitClassContext(private val explicitClass: ExplicitClass) : ScriptPsiClassContext(explicitClass.psi()) {
+    inner class ScriptExplicitClassContext(private val explicitClass: ExplicitClass) :
+        ScriptPsiClassContext(explicitClass.psi()) {
 
         override fun methods(): Array<ScriptPsiMethodContext> {
             val methods = explicitClass.methods()
@@ -412,14 +418,16 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
-            return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass,
-                    JsonOption.NONE.or(readGetter, readSetter)
+            return psiClassHelper!!.getTypeObject(
+                explicitClass.asDuckType(), psiClass,
+                JsonOption.NONE.or(readGetter, readSetter)
             )?.let { RequestUtils.parseRawBody(it) }
         }
 
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
-            return psiClassHelper!!.getTypeObject(explicitClass.asDuckType(), psiClass,
-                    JsonOption.READ_COMMENT.or(readGetter, readSetter)
+            return psiClassHelper!!.getTypeObject(
+                explicitClass.asDuckType(), psiClass,
+                JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
             }
@@ -460,8 +468,17 @@ abstract class ScriptRuleParser : RuleParser {
          *
          * @return the containing class.
          */
-        fun containingClass(): ScriptPsiClassContext {
+        open fun containingClass(): ScriptPsiClassContext {
             return ScriptPsiClassContext(psiField.containingClass!!)
+        }
+
+        /**
+         * Returns the class define the member.
+         *
+         * @return the defining class.
+         */
+        open fun defineClass(): ScriptPsiClassContext {
+            return containingClass()
         }
 
         /**
@@ -481,14 +498,23 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     @ScriptTypeName("field")
-    inner class ScriptExplicitFieldContext(private val explicitField: ExplicitField) : ScriptPsiFieldContext(explicitField.psi()) {
+    inner class ScriptExplicitFieldContext(private val explicitField: ExplicitField) :
+        ScriptPsiFieldContext(explicitField.psi()) {
+
+        override fun containingClass(): ScriptPsiClassContext {
+            return ScriptExplicitClassContext(explicitField.containClass())
+        }
+
+        override fun defineClass(): ScriptPsiClassContext {
+            return ScriptExplicitClassContext(explicitField.defineClass())
+        }
 
         override fun type(): ScriptClassContext {
             return ScriptDuckTypeContext(explicitField.getType(), explicitField.psi())
         }
 
         @ScriptIgnore
-        override fun getCore(): Any? {
+        override fun getCore(): Any {
             return explicitField
         }
     }
@@ -556,6 +582,15 @@ abstract class ScriptRuleParser : RuleParser {
             return ScriptPsiClassContext(psiMethod.containingClass!!)
         }
 
+        /**
+         * Returns the class define the member.
+         *
+         * @return the defining class.
+         */
+        open fun defineClass(): ScriptPsiClassContext {
+            return containingClass()
+        }
+
         @ScriptIgnore
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             return psiMethod
@@ -575,11 +610,13 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun jsonType(): ScriptPsiTypeContext? {
             return psiMethod.returnType?.let { classRuleConfig!!.tryConvert(it, psiMethod) }
-                    ?.let { ScriptPsiTypeContext(it) }
+                ?.let { ScriptPsiTypeContext(it) }
         }
 
-        open fun returnJson(needInfer: Boolean = false, readGetter: Boolean = true,
-                            readSetter: Boolean = true): String? {
+        open fun returnJson(
+            needInfer: Boolean = false, readGetter: Boolean = true,
+            readSetter: Boolean = true
+        ): String? {
             val psiType = psiMethod.returnType ?: return null
             return when {
                 needInfer && (!duckTypeHelper!!.isQualified(psiType, psiMethod) ||
@@ -587,8 +624,10 @@ abstract class ScriptRuleParser : RuleParser {
                     logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper!!.inferReturn(psiMethod)
                 }
-                else -> psiClassHelper!!.getTypeObject(psiType, psiMethod,
-                        JsonOption.NONE.or(readGetter, readSetter))
+                else -> psiClassHelper!!.getTypeObject(
+                    psiType, psiMethod,
+                    JsonOption.NONE.or(readGetter, readSetter)
+                )
             }?.let { RequestUtils.parseRawBody(it) }
         }
 
@@ -598,22 +637,27 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     @ScriptTypeName("method")
-    inner class ScriptExplicitMethodContext(private val explicitMethod: ExplicitMethod) : ScriptPsiMethodContext(explicitMethod.psi()) {
+    inner class ScriptExplicitMethodContext(private val explicitMethod: ExplicitMethod) :
+        ScriptPsiMethodContext(explicitMethod.psi()) {
 
         override fun returnType(): ScriptClassContext? {
             return explicitMethod.getReturnType()?.let { ScriptDuckTypeContext(it) }
         }
 
-        override fun returnJson(needInfer: Boolean, readGetter: Boolean,
-                                readSetter: Boolean): String? {
+        override fun returnJson(
+            needInfer: Boolean, readGetter: Boolean,
+            readSetter: Boolean
+        ): String? {
             val duckType = explicitMethod.getReturnType() ?: return null
             return when {
                 needInfer && !duckTypeHelper!!.isQualified(duckType) -> {
                     logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper!!.inferReturn(psiMethod)
                 }
-                else -> psiClassHelper!!.getTypeObject(duckType, psiMethod, JsonOption.NONE
-                        .or(readGetter, readSetter))
+                else -> psiClassHelper!!.getTypeObject(
+                    duckType, psiMethod, JsonOption.NONE
+                        .or(readGetter, readSetter)
+                )
             }?.let { RequestUtils.parseRawBody(it) }
         }
 
@@ -633,6 +677,10 @@ abstract class ScriptRuleParser : RuleParser {
             return ScriptExplicitClassContext(explicitMethod.containClass())
         }
 
+        override fun defineClass(): ScriptPsiClassContext {
+            return ScriptExplicitClassContext(explicitMethod.defineClass())
+        }
+
         @ScriptIgnore
         override fun getCore(): Any? {
             return explicitMethod
@@ -645,7 +693,8 @@ abstract class ScriptRuleParser : RuleParser {
      * it.isVarArgs:Boolean
      */
     @ScriptTypeName("arg")
-    open inner class ScriptPsiParameterContext(private val psiParameter: PsiParameter) : BaseScriptRuleContext(psiParameter) {
+    open inner class ScriptPsiParameterContext(private val psiParameter: PsiParameter) :
+        BaseScriptRuleContext(psiParameter) {
         override fun contextType(): String {
             return "param"
         }
@@ -695,7 +744,8 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     @ScriptTypeName("arg")
-    inner class ScriptExplicitParameterContext(private val explicitParam: ExplicitParameter) : ScriptPsiParameterContext(explicitParam.psi()) {
+    inner class ScriptExplicitParameterContext(private val explicitParam: ExplicitParameter) :
+        ScriptPsiParameterContext(explicitParam.psi()) {
 
         override fun type(): ScriptClassContext {
             return explicitParam.getType()?.let { ScriptDuckTypeContext(it) } ?: super.type()
@@ -795,14 +845,14 @@ abstract class ScriptRuleParser : RuleParser {
         fun methods(): Array<ScriptPsiMethodContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllMethods(psiElement)
-                        .mapToTypedArray { ScriptPsiMethodContext(it) }
+                    .mapToTypedArray { ScriptPsiMethodContext(it) }
             } ?: emptyArray()
         }
 
         fun fields(): Array<ScriptPsiFieldContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllFields(psiElement)
-                        .mapToTypedArray { ScriptPsiFieldContext(it) }
+                    .mapToTypedArray { ScriptPsiFieldContext(it) }
             } ?: emptyArray()
         }
 
@@ -847,28 +897,30 @@ abstract class ScriptRuleParser : RuleParser {
         override fun fieldCnt(): Int {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllFields(psiElement)
-                        .mapToTypedArray { ScriptPsiFieldContext(it) }
+                    .mapToTypedArray { ScriptPsiFieldContext(it) }
             }?.size ?: 0
         }
 
         override fun methodCnt(): Int {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllMethods(psiElement)
-                        .mapToTypedArray { ScriptPsiMethodContext(it) }
+                    .mapToTypedArray { ScriptPsiMethodContext(it) }
             }?.size ?: 0
         }
 
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
-            return psiClassHelper!!.getTypeObject(psiType, getResource()!!,
-                    JsonOption.NONE.or(readGetter, readSetter)
+            return psiClassHelper!!.getTypeObject(
+                psiType, getResource()!!,
+                JsonOption.NONE.or(readGetter, readSetter)
             )?.let {
                 RequestUtils.parseRawBody(it)
             }
         }
 
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
-            return psiClassHelper!!.getTypeObject(psiType, getResource()!!,
-                    JsonOption.READ_COMMENT.or(readGetter, readSetter)
+            return psiClassHelper!!.getTypeObject(
+                psiType, getResource()!!,
+                JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
             }
@@ -947,14 +999,14 @@ abstract class ScriptRuleParser : RuleParser {
         fun methods(): Array<ScriptPsiMethodContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllMethods(psiElement)
-                        .mapToTypedArray { ScriptPsiMethodContext(it) }
+                    .mapToTypedArray { ScriptPsiMethodContext(it) }
             } ?: emptyArray()
         }
 
         fun fields(): Array<ScriptPsiFieldContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllFields(psiElement)
-                        .mapToTypedArray { ScriptPsiFieldContext(it) }
+                    .mapToTypedArray { ScriptPsiFieldContext(it) }
             } ?: emptyArray()
         }
 
@@ -999,28 +1051,30 @@ abstract class ScriptRuleParser : RuleParser {
         override fun fieldCnt(): Int {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllFields(psiElement)
-                        .mapToTypedArray { ScriptPsiFieldContext(it) }
+                    .mapToTypedArray { ScriptPsiFieldContext(it) }
             }?.size ?: 0
         }
 
         override fun methodCnt(): Int {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllMethods(psiElement)
-                        .mapToTypedArray { ScriptPsiMethodContext(it) }
+                    .mapToTypedArray { ScriptPsiMethodContext(it) }
             }?.size ?: 0
         }
 
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
-            return psiClassHelper!!.getTypeObject(duckType, resource,
-                    JsonOption.NONE.or(readGetter, readSetter)
+            return psiClassHelper!!.getTypeObject(
+                duckType, resource,
+                JsonOption.NONE.or(readGetter, readSetter)
             )?.let { RequestUtils.parseRawBody(it) }
         }
 
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
-            return psiClassHelper!!.getTypeObject(duckType, resource,
-                    JsonOption.READ_COMMENT.or(readGetter, readSetter)
+            return psiClassHelper!!.getTypeObject(
+                duckType, resource,
+                JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
             }
@@ -1031,7 +1085,6 @@ abstract class ScriptRuleParser : RuleParser {
         }
     }
 }
-
 
 private fun Int.or(readGetter: Boolean, readSetter: Boolean): Int {
     var option = this

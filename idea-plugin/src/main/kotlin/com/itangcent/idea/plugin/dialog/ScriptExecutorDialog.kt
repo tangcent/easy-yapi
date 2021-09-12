@@ -675,8 +675,6 @@ class ScriptExecutorDialog : JDialog() {
 
         private const val DELAY: Long = 3000L
 
-        const val script_path = "easy.api.script.path"
-
         private val EMPTY_SCRIPT_CONTEXT = object : ScriptContext {
             override fun element(): PsiElement? {
                 return null
