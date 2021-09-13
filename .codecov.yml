@@ -28,3 +28,6 @@ ignore:
   - "**/*.properties"
   - "gradlew"
   - "gradlew.bat"
+  - "*Dialog.kt"
+  - "*Configurable.kt"
+  - "*Action.kt"
