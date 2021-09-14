@@ -1,0 +1,4 @@
+[INFO]	use recommend config
+[INFO]	use built-in config
+[INFO]	use recommend config
+[INFO]	use built-in config

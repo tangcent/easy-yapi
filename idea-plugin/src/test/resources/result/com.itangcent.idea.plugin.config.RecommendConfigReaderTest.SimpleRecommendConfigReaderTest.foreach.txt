@@ -1,0 +1,17 @@
+module=#module
+ignore=#ignore
+ignore=@Ignore
+field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
+field.name=@com.google.gson.annotations.SerializedName#value
+field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
+field.ignore=!@com.google.gson.annotations.Expose#serialize
+field.ignore=groovy:it.hasModifier("transient")
+field.required=@org.springframework.lang.NonNull
+param.ignore=groovy:it.type().isExtend("org.springframework.validation.BindingResult")
+type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
+api.tag[@kotlin.Deprecated]=deprecated
+api.tag[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=deprecated
+api.status[#undone]=undone
+api.status[#todo]=undone
+field.mock=#mock
+constant.field.ignore=groovy:it.name()=="serialVersionUID"
