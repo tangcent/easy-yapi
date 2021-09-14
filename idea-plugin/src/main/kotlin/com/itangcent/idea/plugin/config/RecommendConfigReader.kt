@@ -83,16 +83,19 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 synchronized(this)
                 {
                     loading = Thread.currentThread()
-                    configReader.reset()
-                    val moduleFile = module.file()
-                    val modulePath = when {
-                        moduleFile == null -> module.filePath()?.substringBeforeLast(File.separator)
-                        moduleFile.isDirectory -> moduleFile.path
-                        else -> moduleFile.parent.path
+                    try {
+                        configReader.reset()
+                        val moduleFile = module.file()
+                        val modulePath = when {
+                            moduleFile == null -> module.filePath()?.substringBeforeLast(File.separator)
+                            moduleFile.isDirectory -> moduleFile.path
+                            else -> moduleFile.parent.path
+                        }
+                        modulePath?.let { configReader.put("module_path", it) }
+                        initDelegateAndRecommend()
+                    } finally {
+                        loading = null
                     }
-                    modulePath?.let { configReader.put("module_path", it) }
-                    initDelegateAndRecommend()
-                    loading = null
                 }
             }
         } else {
@@ -120,10 +123,10 @@ class RecommendConfigReader : ConfigReader, Initializable {
 
                 if (recommendConfig.isEmpty()) {
                     logger!!.info(
-                            "Even useRecommendConfig was true, but no recommend config be selected!\n" +
-                                    "\n" +
-                                    "If you need to enable the built-in recommended configuration." +
-                                    "Go to [Preference -> Other Setting -> EasyApi -> Recommend]"
+                        "Even useRecommendConfig was true, but no recommend config be selected!\n" +
+                                "\n" +
+                                "If you need to enable the built-in recommended configuration." +
+                                "Go to [Preference -> Other Setting -> EasyApi -> Recommend]"
                     )
 
                     return
@@ -150,7 +153,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
                     logger.debug("----------------\n$builtInConfig\n----------------")
                 }
             } else {
-                logger!!.warn("failed to use recommend config")
+                logger!!.warn("failed to use built-in config")
             }
         }
     }
