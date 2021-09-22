@@ -37,7 +37,7 @@
         </action>
 
         <action id="com.itangcent.idea.easy_api.actions.PostmanExportAction"
-                class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportMarkdown"
+                class="com.itangcent.idea.plugin.actions.PostmanExportAction" text="ExportToPostman"
                 description="ExportToPostman">
             <add-to-group group-id="EasyApiCodeMenu" anchor="last"/>
             <add-to-group group-id="EasyApiGenerateMenu" anchor="last"/>
@@ -46,7 +46,7 @@
         </action>
 
         <action id="com.itangcent.idea.easy_api.actions.YapiExportAction"
-                class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportMarkdown"
+                class="com.itangcent.idea.plugin.actions.YapiExportAction" text="ExportToYapi"
                 description="ExportToYapi">
             <add-to-group group-id="EasyApiCodeMenu" anchor="last"/>
             <add-to-group group-id="EasyApiGenerateMenu" anchor="last"/>
@@ -82,6 +82,7 @@
                 description="Call">
             <add-to-group group-id="EasyApiCodeMenu" anchor="last"/>
             <add-to-group group-id="EasyApiEditorLangPopupMenu" anchor="last"/>
+            <add-to-group group-id="EasyApiProjectViewPopupMenu" anchor="last"/>
             <keyboard-shortcut
                     first-keystroke="alt shift C"
                     keymap="$default"
