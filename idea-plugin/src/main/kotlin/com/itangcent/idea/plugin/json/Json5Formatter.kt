@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.json
 import com.google.inject.Singleton
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.intellij.util.forEachValid
 import com.itangcent.intellij.util.validSize
@@ -18,13 +19,13 @@ class Json5Formatter : JsonFormatter {
 
     @Suppress("UNCHECKED_CAST")
     private fun format(obj: Any?, deep: Int, end: Boolean, desc: String?, sb: StringBuilder) {
-        when (obj) {
-            null -> {
+        when {
+            obj == null -> {
                 sb.append("null")
                 sb.appendEnd(end)
                 sb.appendEndLineComment(desc)
             }
-            is Array<*> -> {
+            obj is Array<*> -> {
                 if (obj.isEmpty()) {
                     sb.append("[]")
                     sb.appendEnd(end)
@@ -42,7 +43,7 @@ class Json5Formatter : JsonFormatter {
                 sb.append("]")
                 sb.appendEnd(end)
             }
-            is Collection<*> -> {
+            obj is Collection<*> -> {
                 if (obj.isEmpty()) {
                     sb.append("[]")
                     sb.appendEnd(end)
@@ -60,7 +61,7 @@ class Json5Formatter : JsonFormatter {
                 sb.append("]")
                 sb.appendEnd(end)
             }
-            is Map<*, *> -> {
+            obj is Map<*, *> -> {
                 if (obj.isEmpty()) {
                     sb.append("{}")
                     sb.appendEnd(end)
@@ -72,21 +73,26 @@ class Json5Formatter : JsonFormatter {
                 sb.appendEndLineComment(desc)
                 val endCounter = EndCounter(obj.validSize())
                 obj.forEachValid { k, v ->
-                    val propertyDesc: String? = KVUtils.getUltimateComment(comment, k)
+                    val propertyDesc: String = KVUtils.getUltimateComment(comment, k)
                     sb.nextLine(deep + 1)
-                    format(k.toString(), v, deep + 1, propertyDesc ?: "", endCounter.end(), sb)
+                    format(k.toString(), v, deep + 1, propertyDesc, endCounter.end(), sb)
                 }
                 sb.nextLine(deep)
                 sb.append("}")
                 sb.appendEnd(end)
             }
-            is String -> {
+            obj is String -> {
                 sb.appendString(obj)
                 sb.appendEnd(end)
                 sb.appendEndLineComment(desc)
             }
+            obj.javaClass == java.lang.Object::class.java -> {
+                sb.append("{}")
+                sb.appendEnd(end)
+                sb.appendEndLineComment(desc)
+            }
             else -> {
-                sb.append(obj)
+                sb.append(GsonUtils.toJson(obj))
                 sb.appendEnd(end)
                 sb.appendEndLineComment(desc)
             }

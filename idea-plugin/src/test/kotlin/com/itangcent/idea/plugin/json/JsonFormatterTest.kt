@@ -28,20 +28,24 @@ internal abstract class JsonFormatterTest : BaseContextTest() {
     @BeforeEach
     fun buildModel() {
         model = mapOf<Any?, Any?>(
-                "string" to "abc",
-                "int" to 1,
-                1 to "int",
-                "null" to null,
-                null to "null",
-                "array" to arrayOf<Any?>("def", 2, emptyMap<Any?, Any?>()),
-                "list" to listOf<Any?>("ghi", 3, mapOf("x" to 1, 2 to "y"), emptyArray<Any?>()),
-                "map" to mapOf<Any?, Any?>("x" to 1, 2 to "y", "empty" to emptyList<Any?>()),
+            "string" to "abc",
+            "int" to 1,
+            1 to "int",
+            "null" to null,
+            null to "null",
+            "array" to arrayOf<Any?>("def", 2, emptyMap<Any?, Any?>()),
+            "list" to listOf<Any?>("ghi", 3, mapOf("x" to 1, 2 to "y"), emptyArray<Any?>()),
+            "map" to mapOf<Any?, Any?>("x" to 1, 2 to "y", "empty" to emptyList<Any?>()),
+            "any" to Any()
         )
         KVUtils.addKeyComment(model, "string", "a string")
         KVUtils.addKeyComment(model, "int", "a int")
-        KVUtils.addKeyOptions(model, "int", arrayListOf(
+        KVUtils.addKeyOptions(
+            model, "int", arrayListOf(
                 hashMapOf("value" to 1, "desc" to "ONE"),
-                hashMapOf("value" to 2, "desc" to "TWO")))
+                hashMapOf("value" to 2, "desc" to "TWO")
+            )
+        )
         KVUtils.addKeyComment(model, "list", "list")
         KVUtils.addKeyComment(model, "list.x", "The value of the x axis")
         KVUtils.addKeyComment(model, "map", "map\nmap")

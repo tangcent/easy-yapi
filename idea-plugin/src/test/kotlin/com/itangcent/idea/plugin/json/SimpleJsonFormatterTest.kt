@@ -12,9 +12,59 @@ internal class SimpleJsonFormatterTest : JsonFormatterTest() {
 
     @Test
     fun testFormat() {
-        assertEquals("{\n  \"string\": \"abc\",\n  \"int\": 1,\n  \"1\": \"int\",\n  \"null\": \"null\",\n  \"array\": [\n    \"def\",\n    2,\n    {}\n  ],\n  \"list\": [\n    \"ghi\",\n    3,\n    {\n      \"x\": 1,\n      \"2\": \"y\"\n    },\n    []\n  ],\n  \"map\": {\n    \"x\": 1,\n    \"2\": \"y\",\n    \"empty\": []\n  }\n}",
+        assertEquals("{\n" +
+                "  \"string\": \"abc\",\n" +
+                "  \"int\": 1,\n" +
+                "  \"1\": \"int\",\n" +
+                "  \"null\": \"null\",\n" +
+                "  \"array\": [\n" +
+                "    \"def\",\n" +
+                "    2,\n" +
+                "    {}\n" +
+                "  ],\n" +
+                "  \"list\": [\n" +
+                "    \"ghi\",\n" +
+                "    3,\n" +
+                "    {\n" +
+                "      \"x\": 1,\n" +
+                "      \"2\": \"y\"\n" +
+                "    },\n" +
+                "    []\n" +
+                "  ],\n" +
+                "  \"map\": {\n" +
+                "    \"x\": 1,\n" +
+                "    \"2\": \"y\",\n" +
+                "    \"empty\": []\n" +
+                "  },\n" +
+                "  \"any\": {}\n" +
+                "}",
                 jsonFormatter.format(model))
-        assertEquals("{\n  \"string\": \"abc\",\n  \"int\": 1,\n  \"1\": \"int\",\n  \"null\": \"null\",\n  \"array\": [\n    \"def\",\n    2,\n    {}\n  ],\n  \"list\": [\n    \"ghi\",\n    3,\n    {\n      \"x\": 1,\n      \"2\": \"y\"\n    },\n    []\n  ],\n  \"map\": {\n    \"x\": 1,\n    \"2\": \"y\",\n    \"empty\": []\n  }\n}",
+        assertEquals("{\n" +
+                "  \"string\": \"abc\",\n" +
+                "  \"int\": 1,\n" +
+                "  \"1\": \"int\",\n" +
+                "  \"null\": \"null\",\n" +
+                "  \"array\": [\n" +
+                "    \"def\",\n" +
+                "    2,\n" +
+                "    {}\n" +
+                "  ],\n" +
+                "  \"list\": [\n" +
+                "    \"ghi\",\n" +
+                "    3,\n" +
+                "    {\n" +
+                "      \"x\": 1,\n" +
+                "      \"2\": \"y\"\n" +
+                "    },\n" +
+                "    []\n" +
+                "  ],\n" +
+                "  \"map\": {\n" +
+                "    \"x\": 1,\n" +
+                "    \"2\": \"y\",\n" +
+                "    \"empty\": []\n" +
+                "  },\n" +
+                "  \"any\": {}\n" +
+                "}",
                 jsonFormatter.format(model), "test model")
     }
 }
