@@ -1,3 +1,23 @@
+* 2.2.8
+
+	* feat: new rule `field.advanced` [(#605)](https://github.com/tangcent/easy-yapi/pull/605)
+
+	* fix: resolve Object as {} [(#603)](https://github.com/tangcent/easy-yapi/pull/603)
+
+	* chore: fix action text [(#601)](https://github.com/tangcent/easy-yapi/pull/601)
+
+	* feat: change action groups [(#600)](https://github.com/tangcent/easy-yapi/pull/600)
+
+	* feat: recommend configs of Jackson JsonNaming(namingStrategy) [(#595)](https://github.com/tangcent/easy-yapi/pull/595)
+
+	* test: add test case of RecommendConfigReader [(#591)](https://github.com/tangcent/easy-yapi/pull/591)
+
+	* test: add test case for ProjectHelperTest [(#589)](https://github.com/tangcent/easy-yapi/pull/589)
+
+	* chore: ignore `*Dialog`&`*Configurable`&`*Action.kt` for codecov [(#588)](https://github.com/tangcent/easy-yapi/pull/588)
+
+	* chore: ignore `*Dialog`&`*Configurable`&`*Action.kt` for codecov [(#587)](https://github.com/tangcent/easy-yapi/pull/587)
+
 * 2.2.7
 
 	* feat: `method&field` support  containingClass&defineClass [(#585)](https://github.com/tangcent/easy-yapi/pull/585)
