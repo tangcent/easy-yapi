@@ -12,7 +12,9 @@ object Attrs {
 
     const val EXAMPLE_ATTR = "@example"
 
+    const val ADVANCED_ATTR = "@advanced"
+
     const val PREFIX = "@"
 
-    val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, MOCK_ATTR, DEFAULT_VALUE_ATTR, EXAMPLE_ATTR)
+    val ALL = arrayOf(COMMENT_ATTR, REQUIRED_ATTR, MOCK_ATTR, DEFAULT_VALUE_ATTR, EXAMPLE_ATTR, ADVANCED_ATTR)
 }

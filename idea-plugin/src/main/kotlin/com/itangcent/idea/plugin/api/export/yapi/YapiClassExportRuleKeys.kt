@@ -1,32 +1,42 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.itangcent.idea.plugin.rule.MyStringRuleMode
 import com.itangcent.intellij.config.rule.*
 
 object YapiClassExportRuleKeys {
 
     val BEFORE_EXPORT: RuleKey<String> = SimpleRuleKey(
-            "yapi.export.before", EventRule::class,
-            EventRuleMode.THROW_IN_ERROR)
+        "yapi.export.before",
+        EventRuleMode.THROW_IN_ERROR
+    )
 
     val TAG: RuleKey<String> = SimpleRuleKey(
-            "api.tag", StringRule::class,
-            StringRuleMode.MERGE_DISTINCT)
+        "api.tag",
+        StringRuleMode.MERGE_DISTINCT
+    )
 
     val STATUS: RuleKey<String> = SimpleRuleKey(
-            "api.status", StringRule::class,
-            StringRuleMode.SINGLE)
+        "api.status", StringRuleMode.SINGLE
+    )
 
     val FIELD_DEMO: RuleKey<String> = SimpleRuleKey(
-            "field.demo", StringRule::class,
-            StringRuleMode.SINGLE
+        "field.demo",
+        StringRuleMode.SINGLE
+    )
+
+
+    val FIELD_ADVANCED: RuleKey<List<String>> = SimpleRuleKey(
+        "field.advanced",
+        MyStringRuleMode.LIST
     )
 
     val PARAM_DEMO: RuleKey<String> = SimpleRuleKey(
-            "param.demo", StringRule::class,
-            StringRuleMode.SINGLE
+        "param.demo",
+        StringRuleMode.SINGLE
     )
 
     val OPEN: RuleKey<Boolean> = SimpleRuleKey(
-            "api.open", BooleanRule::class,
-            BooleanRuleMode.ANY)
+        "api.open",
+        BooleanRuleMode.ANY
+    )
 }

@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
+import com.itangcent.common.logger.traceWarn
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
@@ -24,7 +25,6 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.tip.OnlyOnceInContextTip
 import com.itangcent.intellij.tip.TipsHelper
-import com.itangcent.intellij.util.FileType
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
 import java.util.regex.Pattern
@@ -34,7 +34,7 @@ import java.util.stream.Collectors
 open class YapiFormatter {
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     private val ruleComputer: RuleComputer? = null
@@ -567,7 +567,7 @@ open class YapiFormatter {
                 requireds = LinkedList()
             }
             val mocks: HashMap<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? HashMap<String, Any?>?
-
+            val advancedList: HashMap<String, Any?>? = typedObject[Attrs.ADVANCED_ATTR] as? HashMap<String, Any?>?
             typedObject.forEachValid { k, v ->
                 try {
                     val key = k.toString()
@@ -607,14 +607,14 @@ open class YapiFormatter {
                         requireds?.add(key)
                     }
                     mocks?.get(key)?.let { addMock(propertyInfo, it) }
+                    advancedList?.get(key)?.let { addAdvanced(propertyInfo, it) }
 
                     default?.get(k)?.takeUnless { it.anyIsNullOrBlank() }
                         ?.let { propertyInfo["default"] = it }
 
-
                     properties[key] = propertyInfo
                 } catch (e: Exception) {
-                    logger!!.warn("failed to mock for $path.$k")
+                    logger.traceWarn("failed to mock for $path.$k", e)
                 }
             }
             item["properties"] = properties
@@ -638,6 +638,7 @@ open class YapiFormatter {
 
         return item
     }
+
     //endregion
 
     //region parse-json5
@@ -783,6 +784,26 @@ open class YapiFormatter {
         }
     }
 
+    private fun addAdvanced(propertyInfo: HashMap<String, Any?>, it: Any?) {
+        if (it == null) {
+            return
+        } else if (it is Array<*>) {
+            it.forEach { advanced -> addAdvanced(propertyInfo, advanced) }
+        } else if (it is Collection<*>) {
+            it.forEach { advanced -> addAdvanced(propertyInfo, advanced) }
+        } else if (it is String) {
+            val advancedMap = try {
+                GsonUtils.fromJson(it, Map::class)
+            } catch (e: Exception) {
+                logger.warn("failed process advanced info: $it")
+                return
+            }
+            advancedMap.forEach { (key, value) -> propertyInfo.putIfAbsent(key.toString(), value) }
+        } else if (it is Map<*, *>) {
+            it.forEach { (key, value) -> propertyInfo.putIfAbsent(key.toString(), value) }
+        }
+    }
+
     //endregion
 
     private fun contactPath(path: String?, subPath: String): String {
@@ -843,7 +864,7 @@ open class YapiFormatter {
             try {
                 mockRules!!.add(parseMockRule(key.removePrefix("mock."), value))
             } catch (e: Exception) {
-                logger!!.error("error to parse mock rule:$key=$value")
+                logger.error("error to parse mock rule:$key=$value")
             }
         })
 

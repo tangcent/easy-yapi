@@ -6,11 +6,13 @@ import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.common.kit.headLine
+import com.itangcent.common.text.TemplateUtils
 import com.itangcent.common.utils.*
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.util.ToolUtils
+import com.itangcent.utils.TemplateKit
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.time.DateFormatUtils
 import java.util.*
@@ -79,9 +81,9 @@ class RuleToolUtils {
     fun intersect(any: Any?, other: Any?): Array<*>? {
         val list = asList(other) ?: return null
         return asList(any)
-                ?.filter { list.contains(it) }
-                ?.takeIf { it.isNotEmpty() }
-                ?.toTypedArray()
+            ?.filter { list.contains(it) }
+            ?.takeIf { it.isNotEmpty() }
+            ?.toTypedArray()
     }
 
     fun anyIntersect(any: Any?, other: Any?): Boolean {
@@ -822,6 +824,18 @@ class RuleToolUtils {
         return suffix?.let { str?.removeSuffix(it) }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun resolveProperty(str: String?, placeHolder: Any?, context: Map<*, *>?): String? {
+        if (str == null) {
+            return null
+        }
+        return TemplateUtils.render(
+            str,
+            TemplateKit.resolvePlaceHolder(placeHolder) ?: arrayOf('$'),
+            context as Map<String?, *>
+        )
+    }
+
     //endregion
 
     //region time&date
@@ -869,14 +883,14 @@ class RuleToolUtils {
 
         val sb = StringBuilder()
         sb.append("type:")
-                .append(typeName(kClass))
-                .appendln()
+            .append(typeName(kClass))
+            .appendln()
 
         val ignoreMethods: ArrayList<String> = ArrayList()
         kClass.findAnnotation<ScriptIgnore>()?.let { ignoreMethods.addAll(it.name) }
         kClass.allSuperclasses.mapNotNull { it.findAnnotation<ScriptIgnore>() }
-                .map { it.name }
-                .forEach { ignoreMethods.addAll(it) }
+            .map { it.name }
+            .forEach { ignoreMethods.addAll(it) }
 
         val functions = kClass.functions
         if (functions.isNotEmpty()) {
@@ -885,19 +899,19 @@ class RuleToolUtils {
             for (function in functions) {
                 val functionSb = StringBuilder()
                 if (function.visibility != KVisibility.PUBLIC
-                        || excludedMethods.contains(function.name)
-                        || function.findAnnotation<ScriptIgnore>() != null
-                        || (ignoreMethods.contains(function.name) &&
-                                function.findAnnotation<ScriptUnIgnore>() == null)
+                    || excludedMethods.contains(function.name)
+                    || function.findAnnotation<ScriptIgnore>() != null
+                    || (ignoreMethods.contains(function.name) &&
+                            function.findAnnotation<ScriptUnIgnore>() == null)
                 ) {
                     continue
                 }
 
 
                 functionSb.append(returnTypeOfFun(function))
-                        .append(" ")
-                        .append(function.name)
-                        .append("(")
+                    .append(" ")
+                    .append(function.name)
+                    .append("(")
                 var appended = false
                 for (param in function.parameters) {
                     if (param.kind != KParameter.Kind.VALUE) {
@@ -916,7 +930,7 @@ class RuleToolUtils {
                             functionSb.append(typeName(param.type))
                         } else {
                             functionSb.append(typeName(type))
-                                    .append("...")
+                                .append("...")
                         }
                     } else {
                         functionSb.append(typeName(param.type))
@@ -955,13 +969,13 @@ class RuleToolUtils {
         val sb = StringBuilder()
 
         ActionContext.instance(PsiResolver::class)
-                .visit(any) {
-                    if (it is PsiElement) {
-                        sb.append("[${it::class}]${it.text.replace("\n", "\\n")}\n")
-                    } else {
-                        sb.append("[${it::class}]${it.toString().replace("\n", "\\n")}\n")
-                    }
+            .visit(any) {
+                if (it is PsiElement) {
+                    sb.append("[${it::class}]${it.text.replace("\n", "\\n")}\n")
+                } else {
+                    sb.append("[${it::class}]${it.toString().replace("\n", "\\n")}\n")
                 }
+            }
         return sb.toString()
     }
 
@@ -985,11 +999,13 @@ class RuleToolUtils {
         } else {
             val sb = StringBuilder()
 
-            sb.append(if (classifier is KClass<*>) {
-                typeName(classifier)
-            } else {
-                typeName(classifier.toString())
-            })
+            sb.append(
+                if (classifier is KClass<*>) {
+                    typeName(classifier)
+                } else {
+                    typeName(classifier.toString())
+                }
+            )
 
             sb.append("<")
             sb.append(arguments.joinToString(separator = ", ") { argument ->
@@ -1020,29 +1036,39 @@ class RuleToolUtils {
 
         val INSTANCE = RuleToolUtils()
 
-        private val excludedMethods = Arrays.asList("hashCode", "toString", "equals", "getClass", "clone", "notify", "notifyAll", "wait", "finalize")
+        private val excludedMethods = Arrays.asList(
+            "hashCode",
+            "toString",
+            "equals",
+            "getClass",
+            "clone",
+            "notify",
+            "notifyAll",
+            "wait",
+            "finalize"
+        )
 
         private val TO_LINE_PATTERN = Pattern.compile("[A-Z]+")
 
         private val typeMapper = KV.create<String, String>()
-                .set("java.lang.String", "string")
-                .set("java.lang.Long", "long")
-                .set("java.lang.Double", "double")
-                .set("java.lang.Short", "short")
-                .set("java.lang.Integer", "int")
-                .set("java.lang.Object", "object")
-                .set("kotlin.String", "string")
-                .set("kotlin.Array", "array")
-                .set("kotlin.Int", "int")
-                .set("kotlin.Unit", "void")
-                .set("kotlin.collections.List", "array")
-                .set("kotlin.Any", "object")
-                .set("kotlin.Boolean", "bool")
-                .set("kotlin.collections.Map", "map")
-                .set("kotlin.collections.Set", "array")
-                .set("kotlin.CharArray", "array<char>")
-                .set("kotlin.Function0", "func")
-                .set("kotlin.Function1", "func")
+            .set("java.lang.String", "string")
+            .set("java.lang.Long", "long")
+            .set("java.lang.Double", "double")
+            .set("java.lang.Short", "short")
+            .set("java.lang.Integer", "int")
+            .set("java.lang.Object", "object")
+            .set("kotlin.String", "string")
+            .set("kotlin.Array", "array")
+            .set("kotlin.Int", "int")
+            .set("kotlin.Unit", "void")
+            .set("kotlin.collections.List", "array")
+            .set("kotlin.Any", "object")
+            .set("kotlin.Boolean", "bool")
+            .set("kotlin.collections.Map", "map")
+            .set("kotlin.collections.Set", "array")
+            .set("kotlin.CharArray", "array<char>")
+            .set("kotlin.Function0", "func")
+            .set("kotlin.Function1", "func")
 
     }
 }

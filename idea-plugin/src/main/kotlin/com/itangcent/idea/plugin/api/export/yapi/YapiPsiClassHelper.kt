@@ -1,13 +1,12 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
-import com.google.inject.Inject
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.PostConstruct
@@ -61,6 +60,15 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         if (demoValue.notNullOrBlank()) {
             kv.sub(Attrs.EXAMPLE_ATTR)[fieldName] = demoValue
             populateFieldValue(fieldName, fieldType, kv, demoValue!!)
+        }
+
+        //compute `field.advanced`
+        val advancedValue = ruleComputer.computer(
+            YapiClassExportRuleKeys.FIELD_ADVANCED,
+            fieldOrMethod
+        )
+        if (advancedValue.notNullOrEmpty()) {
+            kv.sub(Attrs.ADVANCED_ATTR)[fieldName] = advancedValue
         }
 
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
