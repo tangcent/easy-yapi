@@ -5,86 +5,86 @@ import com.itangcent.intellij.config.rule.*
 object ClassExportRuleKeys {
 
     val MODULE: RuleKey<String> = SimpleRuleKey(
-            "module", StringRule::class,
+            "module", 
             StringRuleMode.SINGLE
     )
 
     val IGNORE: RuleKey<Boolean> = SimpleRuleKey(
-            "ignore", BooleanRule::class,
+            "ignore", 
             BooleanRuleMode.ANY
     )
 
     val IS_CTRL: RuleKey<Boolean> = SimpleRuleKey(
-            "class.is.ctrl", BooleanRule::class,
+            "class.is.ctrl", 
             BooleanRuleMode.ANY
     )
 
     //filter class for methodDoc(rpc)
     val CLASS_FILTER: RuleKey<Boolean> = SimpleRuleKey(
-            "mdoc.class.filter", BooleanRule::class,
+            "mdoc.class.filter", 
             BooleanRuleMode.ANY
     )
 
     //filter method for methodDoc(rpc)
     val METHOD_FILTER: RuleKey<Boolean> = SimpleRuleKey(
-            "mdoc.method.filter", BooleanRule::class,
+            "mdoc.method.filter", 
             BooleanRuleMode.ANY
     )
 
-    val METHOD_DOC_PATH: RuleKey<String> = SimpleRuleKey("mdoc.method.path", StringRule::class,
+    val METHOD_DOC_PATH: RuleKey<String> = SimpleRuleKey("mdoc.method.path", 
             StringRuleMode.SINGLE)
 
-    val METHOD_DOC_METHOD: RuleKey<String> = SimpleRuleKey("mdoc.method.http.method", StringRule::class,
+    val METHOD_DOC_METHOD: RuleKey<String> = SimpleRuleKey("mdoc.method.http.method", 
             StringRuleMode.SINGLE)
 
     val PARAM_DOC: RuleKey<String> = SimpleRuleKey(
             "param.doc",
             arrayOf("doc.param"),
-            StringRule::class,
+            
             StringRuleMode.MERGE_DISTINCT
     )
 
     val METHOD_DOC: RuleKey<String> = SimpleRuleKey(
             "method.doc",
             arrayOf("doc.method"),
-            StringRule::class,
+            
             StringRuleMode.MERGE_DISTINCT
     )
 
     val CLASS_DOC: RuleKey<String> = SimpleRuleKey(
             "class.doc",
             arrayOf("doc.class"),
-            StringRule::class,
+            
             StringRuleMode.MERGE_DISTINCT
     )
 
     val METHOD_ADDITIONAL_HEADER: RuleKey<String> = SimpleRuleKey(
-            "method.additional.header", StringRule::class,
+            "method.additional.header", 
             StringRuleMode.MERGE_DISTINCT
     )
 
     val METHOD_ADDITIONAL_PARAM: RuleKey<String> = SimpleRuleKey(
-            "method.additional.param", StringRule::class,
+            "method.additional.param", 
             StringRuleMode.MERGE_DISTINCT
     )
 
     val METHOD_ADDITIONAL_RESPONSE_HEADER: RuleKey<String> = SimpleRuleKey(
-            "method.additional.response.header", StringRule::class,
+            "method.additional.response.header", 
             StringRuleMode.MERGE_DISTINCT
     )
 
     val PARAM_REQUIRED: RuleKey<Boolean> = SimpleRuleKey(
-            "param.required", BooleanRule::class,
+            "param.required", 
             BooleanRuleMode.ANY
     )
 
     val PARAM_IGNORE: RuleKey<Boolean> = SimpleRuleKey(
-            "param.ignore", BooleanRule::class,
+            "param.ignore", 
             BooleanRuleMode.ANY
     )
 
     val PARAM_DEFAULT_VALUE: RuleKey<String> = SimpleRuleKey(
-            "param.default.value", StringRule::class,
+            "param.default.value", 
             StringRuleMode.MERGE_DISTINCT
     )
 
@@ -99,12 +99,12 @@ object ClassExportRuleKeys {
     )
 
     val FIELD_REQUIRED: RuleKey<Boolean> = SimpleRuleKey(
-            "field.required", BooleanRule::class,
+            "field.required", 
             BooleanRuleMode.ANY
     )
 
     val CLASS_PREFIX_PATH: RuleKey<String> = SimpleRuleKey(
-            "class.prefix.path", StringRule::class,
+            "class.prefix.path", 
             StringRuleMode.SINGLE
     )
 
@@ -112,7 +112,7 @@ object ClassExportRuleKeys {
      * the main goal of the {@return}
      */
     val METHOD_RETURN_MAIN: RuleKey<String> = SimpleRuleKey(
-            "method.return.main", StringRule::class,
+            "method.return.main", 
             StringRuleMode.SINGLE
     )
 
@@ -120,7 +120,7 @@ object ClassExportRuleKeys {
      * the real return type of method
      */
     val METHOD_RETURN: RuleKey<String> = SimpleRuleKey(
-            "method.return", StringRule::class,
+            "method.return", 
             StringRuleMode.SINGLE
     )
 
@@ -128,7 +128,7 @@ object ClassExportRuleKeys {
      * The content-type of the api.
      */
     val METHOD_CONTENT_TYPE: RuleKey<String> = SimpleRuleKey(
-            "method.content.type", StringRule::class,
+            "method.content.type", 
             StringRuleMode.SINGLE
     )
 
@@ -138,7 +138,7 @@ object ClassExportRuleKeys {
      * should return body/form/query
      */
     val PARAM_HTTP_TYPE: RuleKey<String> = SimpleRuleKey(
-            "param.http.type", StringRule::class,
+            "param.http.type", 
             StringRuleMode.SINGLE
     )
 
@@ -146,7 +146,7 @@ object ClassExportRuleKeys {
      * name of api
      */
     val API_NAME: RuleKey<String> = SimpleRuleKey(
-            "api.name", StringRule::class,
+            "api.name", 
             StringRuleMode.SINGLE
     )
 
@@ -154,28 +154,28 @@ object ClassExportRuleKeys {
      * folder of api
      */
     val API_FOLDER: RuleKey<String> = SimpleRuleKey(
-            "folder.name", StringRule::class,
+            "folder.name", 
             StringRuleMode.SINGLE
     )
 
     //default http method of api(method)
     val METHOD_DEFAULT_HTTP_METHOD: RuleKey<String> = SimpleRuleKey(
-            "method.default.http.method", StringRule::class,
+            "method.default.http.method", 
             StringRuleMode.SINGLE
     )
 
     val FIELD_MOCK: RuleKey<String> = SimpleRuleKey(
-            "field.mock", StringRule::class,
+            "field.mock", 
             StringRuleMode.SINGLE
     )
 
     val FIELD_DEFAULT_VALUE: RuleKey<String> = SimpleRuleKey(
-            "field.default.value", StringRule::class,
+            "field.default.value", 
             StringRuleMode.SINGLE
     )
 
     val POST_MAN_HOST: RuleKey<String> = SimpleRuleKey(
-            "postman.host", StringRule::class,
+            "postman.host", 
             StringRuleMode.SINGLE
     )
 
@@ -190,7 +190,7 @@ object ClassExportRuleKeys {
     )
 
     val PATH_MULTI: RuleKey<String> = SimpleRuleKey(
-            "path.multi", StringRule::class,
+            "path.multi", 
             StringRuleMode.SINGLE
     )
 
@@ -200,7 +200,7 @@ object ClassExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/pre-request-scripts]
      */
     val POST_PRE_REQUEST: RuleKey<String> = SimpleRuleKey(
-            "postman.prerequest", StringRule::class,
+            "postman.prerequest", 
             StringRuleMode.MERGE
     )
 
@@ -211,7 +211,7 @@ object ClassExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/pre-request-scripts]
      */
     val CLASS_POST_PRE_REQUEST: RuleKey<String> = SimpleRuleKey(
-            "class.postman.prerequest", StringRule::class,
+            "class.postman.prerequest", 
             StringRuleMode.MERGE
     )
 
@@ -222,7 +222,7 @@ object ClassExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/pre-request-scripts]
      */
     val COLLECTION_POST_PRE_REQUEST: RuleKey<String> = SimpleRuleKey(
-            "collection.postman.prerequest", StringRule::class,
+            "collection.postman.prerequest", 
             StringRuleMode.MERGE
     )
 
@@ -232,7 +232,7 @@ object ClassExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/test-scripts/]
      */
     val POST_TEST: RuleKey<String> = SimpleRuleKey(
-            "postman.test", StringRule::class,
+            "postman.test", 
             StringRuleMode.MERGE
     )
 
@@ -243,7 +243,7 @@ object ClassExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/test-scripts/]
      */
     val CLASS_POST_TEST: RuleKey<String> = SimpleRuleKey(
-            "class.postman.test", StringRule::class,
+            "class.postman.test", 
             StringRuleMode.MERGE
     )
 
@@ -254,7 +254,7 @@ object ClassExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/test-scripts/]
      */
     val COLLECTION_POST_TEST: RuleKey<String> = SimpleRuleKey(
-            "collection.postman.test", StringRule::class,
+            "collection.postman.test", 
             StringRuleMode.MERGE
     )
 

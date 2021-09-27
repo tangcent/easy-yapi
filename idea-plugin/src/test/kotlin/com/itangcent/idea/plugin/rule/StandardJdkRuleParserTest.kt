@@ -95,6 +95,18 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
         assertEquals("666",
                 ruleParser.parseStringRule("groovy:config.resolveProperty(\"\\\${y}\")")!!
                         .compute(ruleContext))
+        assertNull(
+                ruleParser.parseStringRule("groovy:config.resolvePropertyWith(null,\"#\\\$\",[z:888])")!!
+                        .compute(ruleContext))
+        assertEquals("#{x},888",
+                ruleParser.parseStringRule("groovy:config.resolvePropertyWith(\"#{x},\\\${z}\",null,[z:888])")!!
+                        .compute(ruleContext))
+        assertEquals("123,",
+                ruleParser.parseStringRule("groovy:config.resolvePropertyWith(\"#{x},\\\${z}\",\"#\\\$\",null)")!!
+                        .compute(ruleContext))
+        assertEquals("123,888",
+                ruleParser.parseStringRule("groovy:config.resolvePropertyWith(\"#{x},\\\${z}\",\"#\\\$\",[z:888])")!!
+                        .compute(ruleContext))
     }
 
     /**
