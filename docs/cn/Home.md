@@ -1,4 +1,11 @@
+# This wiki is no longer maintained
+
+***see http://easyyapi.com/***
+
+---
+
 # easy-yapi
+
 - [yapi](https://github.com/YMFE/yapi)定制版[easy-api](https://github.com/tangcent/easy-api)
 
 - 在[easy-api](https://github.com/tangcent/easy-api)的基础上增加对yapi的支持
