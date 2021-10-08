@@ -1,21 +1,33 @@
+#Get the module from the comment,group the apis
 module=#module
+#Ignore class/api
 ignore=#ignore
-ignore=@Ignore
+#Support for Jackson annotations
 field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
-field.name=@com.google.gson.annotations.SerializedName#value
 field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
+field.mock[@com.fasterxml.jackson.annotation.JsonFormat]=groovy:```
+    return "@datetime(\"" + it.ann("com.fasterxml.jackson.annotation.JsonFormat","pattern") + "\")"
+```
+#Support for Gson annotations
+field.name=@com.google.gson.annotations.SerializedName#value
 field.ignore=!@com.google.gson.annotations.Expose#serialize
+#ignore transient field
 field.ignore=groovy:it.hasModifier("transient")
-field.mock[@com.fasterxml.jackson.annotation.JsonFormat]=groovy:
-return "@datetime(\"" + it.ann("com.fasterxml.jackson.annotation.JsonFormat","pattern") + "\")"
+#Support spring.validations
 field.required=@org.springframework.lang.NonNull
 param.ignore=groovy:it.type().isExtend("org.springframework.validation.BindingResult")
-field.mock[@org.springframework.format.annotation.DateTimeFormat]=groovy:
-return "@datetime(\"" + it.ann("org.springframework.format.annotation.DateTimeFormat","pattern") + "\")"
+field.mock[@org.springframework.format.annotation.DateTimeFormat]=groovy:```
+    return "@datetime(\"" + it.ann("org.springframework.format.annotation.DateTimeFormat","pattern") + "\")"
+```
+#Support spring file
 type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
+#yapi tag for kotlin
 api.tag[@kotlin.Deprecated]=deprecated
 api.tag[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=deprecated
+#yapi status
 api.status[#undone]=undone
 api.status[#todo]=undone
+#yapi mock
 field.mock=#mock
+#ignore serialVersionUID
 constant.field.ignore=groovy:it.name()=="serialVersionUID"
