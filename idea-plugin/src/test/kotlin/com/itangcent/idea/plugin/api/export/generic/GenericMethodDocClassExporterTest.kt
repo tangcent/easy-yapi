@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.generic
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.MethodDoc
+import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.methodDocOnly
@@ -12,7 +13,10 @@ import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.logger.Logger
 import com.itangcent.mock.SettingBinderAdaptor
+import com.itangcent.mock.toUnixString
+import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -51,12 +55,24 @@ internal class GenericMethodDocClassExporterTest
         loadFile("model/UserInfo.java")
         loadFile("api/BaseController.java")
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
+
+        //clear log
+        LoggerCollector.getLog()
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
+        builder.bind(Logger::class) { it.with(LoggerCollector::class) }
+
         builder.bind(ClassExporter::class) { it.with(GenericMethodDocClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
+    }
+
+    override fun customConfig(): String {
+        return "api.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
+                "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n"
     }
 
     fun testExport() {
@@ -84,5 +100,7 @@ internal class GenericMethodDocClassExporterTest
             assertTrue(methodDoc.desc.isNullOrEmpty())
             assertEquals(userCtrlPsiClass.methods[1], (methodDoc.resource as PsiResource).resource())
         }
+
+        assertEquals(ResultLoader.load(), LoggerCollector.getLog().toUnixString())
     }
 }

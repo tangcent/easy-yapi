@@ -2,10 +2,16 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
+import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
+import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.logger.Logger
+import com.itangcent.mock.toUnixString
+import com.itangcent.test.ResultLoader
 import org.junit.jupiter.api.condition.OS
 
 /**
@@ -18,6 +24,20 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
 
     override fun shouldRunTest(): Boolean {
         return !OS.WINDOWS.isCurrentOs
+    }
+
+    override fun customConfig(): String {
+        return super.customConfig() +
+                "\napi.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
+                "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n"
+    }
+
+    override fun bind(builder: ActionContext.ActionContextBuilder) {
+        super.bind(builder)
+
+        builder.bind(Logger::class) { it.with(LoggerCollector::class) }
     }
 
     fun testExport() {
@@ -89,5 +109,7 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
                 request.response!!.first().body.toJson()
             )
         }
+
+        assertEquals(ResultLoader.load(), LoggerCollector.getLog().toUnixString())
     }
 }

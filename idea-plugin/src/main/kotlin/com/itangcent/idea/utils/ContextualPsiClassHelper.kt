@@ -17,6 +17,7 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitElement
+import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.DefaultPsiClassHelper
 import java.util.*
@@ -39,7 +40,6 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     @Inject
     private val devEnv: DevEnv? = null
 
-
     private val parseContext: ThreadLocal<Deque<String>> = ThreadLocal()
     private val parseScriptContext = ParseScriptContext()
 
@@ -50,17 +50,20 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
     override fun beforeParseClass(psiClass: PsiClass, option: Int, kv: KV<String, Any?>) {
         tryInitParseContext()
+        ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_BEFORE, psiClass)
         super.beforeParseClass(psiClass, option, kv)
     }
 
     override fun beforeParseType(psiClass: PsiClass, duckType: SingleDuckType, option: Int, kv: KV<String, Any?>) {
         tryInitParseContext()
+        ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_BEFORE, duckType, psiClass)
         super.beforeParseType(psiClass, duckType, option, kv)
     }
 
     override fun afterParseClass(psiClass: PsiClass, option: Int, kv: KV<String, Any?>) {
         try {
             super.afterParseClass(psiClass, option, kv)
+            ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_AFTER, psiClass)
         } finally {
             tryCleanParseContext()
         }
@@ -69,6 +72,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     override fun afterParseType(psiClass: PsiClass, duckType: SingleDuckType, option: Int, kv: KV<String, Any?>) {
         try {
             super.afterParseType(psiClass, duckType, option, kv)
+            ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_AFTER, duckType, psiClass)
         } finally {
             tryCleanParseContext()
         }
@@ -107,7 +111,11 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         kv: KV<String, Any?>
     ): Boolean {
         pushField(fieldName)
-        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_BEFORE, fieldOrMethod)
+        if (fieldOrMethod is ExplicitMethod) {
+            ruleComputer.computer(ClassExportRuleKeys.JSON_METHOD_PARSE_BEFORE, fieldOrMethod)
+        } else {
+            ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE, fieldOrMethod)
+        }
 
         return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
     }
@@ -141,7 +149,11 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     ) {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
 
-        ruleComputer.computer(ClassExportRuleKeys.FIELD_PARSE_AFTER, fieldOrMethod)
+        if (fieldOrMethod is ExplicitMethod) {
+            ruleComputer.computer(ClassExportRuleKeys.JSON_METHOD_PARSE_AFTER, fieldOrMethod)
+        } else {
+            ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER, fieldOrMethod)
+        }
         popField(fieldName)
     }
 
@@ -194,8 +206,8 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             ClassRuleKeys.FIELD_DOC,
             ClassRuleKeys.FIELD_NAME,
             ClassExportRuleKeys.FIELD_DEFAULT_VALUE,
-            ClassExportRuleKeys.FIELD_PARSE_BEFORE,
-            ClassExportRuleKeys.FIELD_PARSE_AFTER,
+            ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE,
+            ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER,
             ClassExportRuleKeys.FIELD_REQUIRED
         )
     }
