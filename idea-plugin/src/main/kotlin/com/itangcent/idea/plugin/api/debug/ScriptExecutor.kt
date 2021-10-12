@@ -26,7 +26,7 @@ class ScriptExecutor {
             return
         }
 
-        debugDialog = actionContext!!.instance { ScriptExecutorDialog() }
+        debugDialog = actionContext!!.init(ScriptExecutorDialog())
         UIUtils.show(debugDialog)
         project.putUserData(DEBUG_DIALOG, WeakReference(debugDialog))
         actionContext.on(EventKey.ON_COMPLETED) {

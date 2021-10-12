@@ -28,6 +28,7 @@ import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.jvm.DuckTypeHelper
+import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.jvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
@@ -69,28 +70,28 @@ class ScriptExecutorDialog : JDialog() {
     private var context: ScriptContext? = null
 
     @Inject
-    val actionContext: ActionContext? = null
+    private val actionContext: ActionContext? = null
 
     @Inject
-    val duckTypeHelper: DuckTypeHelper? = null
+    private lateinit var duckTypeHelper: DuckTypeHelper
 
     @Inject
-    val ruleParser: RuleParser? = null
+    private lateinit var ruleParser: RuleParser
 
     @Inject
-    val project: Project? = null
+    private val project: Project? = null
 
     @Inject
-    val logger: Logger? = null
+    private val logger: Logger? = null
 
     @Inject
-    val contextSwitchListener: ContextSwitchListener? = null
+    private val contextSwitchListener: ContextSwitchListener? = null
 
     @Inject
-    val fileSaveHelper: FileSaveHelper? = null
+    private val fileSaveHelper: FileSaveHelper? = null
 
     @Inject
-    val fileSelectHelper: FileSelectHelper? = null
+    private val fileSelectHelper: FileSelectHelper? = null
 
     private var evalTimer: Timer = Timer()
     private var lastEvalTime: AtomicLong = AtomicLong(0)
@@ -115,7 +116,11 @@ class ScriptExecutorDialog : JDialog() {
         })
 
         // call onCancel() on ESCAPE
-        contentPane!!.registerKeyboardAction({ onCancel() }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+        contentPane!!.registerKeyboardAction(
+            { onCancel() },
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+        )
 
     }
 
@@ -123,7 +128,8 @@ class ScriptExecutorDialog : JDialog() {
     fun postConstruct() {
         actionContext!!.hold()
 
-        this.scriptTypeComboBox!!.model = DefaultComboBoxModel(scriptSupports.filter { it.checkSupport() }.toTypedArray())
+        this.scriptTypeComboBox!!.model =
+            DefaultComboBoxModel(scriptSupports.filter { it.checkSupport() }.toTypedArray())
 
         this.executeContextButton!!.addActionListener {
             autoComputer.value(this::consoleText, "script parsing...")
@@ -155,57 +161,57 @@ class ScriptExecutorDialog : JDialog() {
         }
 
         autoComputer.listen(this::context)
-                .action { ele ->
-                    if (ele == EMPTY_SCRIPT_CONTEXT) {
-                        return@action
-                    }
-                    ele?.element()?.let {
-                        contextSwitchListener?.switchTo(it)
-                    }
+            .action { ele ->
+                if (ele == EMPTY_SCRIPT_CONTEXT) {
+                    return@action
                 }
+                ele?.element()?.let {
+                    contextSwitchListener?.switchTo(getPsiClass(it))
+                }
+            }
 
         autoComputer.bind(this.consoleTextArea!!)
-                .with(this::consoleText)
-                .eval { it }
+            .with(this::consoleText)
+            .eval { it }
 
         autoComputer.bind(this::scriptText)
-                .with(this.scriptTypeComboBox!!)
-                .eval {
-                    val ret =
-                            if (this.scriptText.isBlank() || this.scriptText == preScriptType.demoCode()) {
-                                it?.demoCode() ?: ""
-                            } else {
-                                this.scriptText
-                            }
-                    preScriptType = it ?: GroovyScriptSupport
-                    return@eval ret
-                }
+            .with(this.scriptTypeComboBox!!)
+            .eval {
+                val ret =
+                    if (this.scriptText.isBlank() || this.scriptText == preScriptType.demoCode()) {
+                        it?.demoCode() ?: ""
+                    } else {
+                        this.scriptText
+                    }
+                preScriptType = it ?: GroovyScriptSupport
+                return@eval ret
+            }
 
         autoComputer.bind(this::scriptTextArea)
-                .with(this.scriptTypeComboBox!!)
-                .eval {
-                    buildEditor(it)
-                    this.scriptTextArea
-                }
+            .with(this.scriptTypeComboBox!!)
+            .eval {
+                buildEditor(it)
+                this.scriptTextArea
+            }
 
         autoComputer.bind(this.consoleTextArea!!)
-                .with(this::context)
-                .with(this.scriptTypeComboBox!!)
-                .with(this::scriptText)
-                .eval { context, scriptType, script ->
-                    if (context?.element() == null) return@eval "please choose context"
-                    if (script == null) return@eval "please input script"
-                    if (scriptType == null) return@eval "please select script type"
-                    this.scriptInfo = ScriptInfo(script, scriptType, context.element())
-                    return@eval if (this.autoExecute) {
-                        "script parsing..."
-                    } else {
-                        this.consoleText
-                    }
+            .with(this::context)
+            .with(this.scriptTypeComboBox!!)
+            .with(this::scriptText)
+            .eval { context, scriptType, script ->
+                if (context?.element() == null) return@eval "please choose context"
+                if (script == null) return@eval "please input script"
+                if (scriptType == null) return@eval "please select script type"
+                this.scriptInfo = ScriptInfo(script, scriptType, context.element())
+                return@eval if (this.autoExecute) {
+                    "script parsing..."
+                } else {
+                    this.consoleText
                 }
+            }
 
         autoComputer.bind(this.autoExecuteCheckBox!!)
-                .mutual(this::autoExecute)
+            .mutual(this::autoExecute)
 
         EvalTimer(actionContext, evalTimer) { eval() }.schedule()
 
@@ -231,7 +237,7 @@ class ScriptExecutorDialog : JDialog() {
 
     private fun onContextSelected() {
 
-        val selectedContext: Any? = this.contextComboBox!!.model.selectedItem ?: return
+        val selectedContext: Any = this.contextComboBox!!.model.selectedItem ?: return
 
         if (selectedContext == EMPTY_SCRIPT_CONTEXT) {
             selectClass()
@@ -244,8 +250,10 @@ class ScriptExecutorDialog : JDialog() {
     private fun selectClass() {
         val dialog = this
         val chooser = TreeClassChooserFactory.getInstance(project)
-                .createWithInnerClassesScopeChooser("Choose context", GlobalSearchScope.allScope(project!!),
-                        ClassFilter.ALL, null)
+            .createWithInnerClassesScopeChooser(
+                "Choose context", GlobalSearchScope.allScope(project!!),
+                ClassFilter.ALL, null
+            )
         chooser.showDialog()
         val selected = chooser.selected ?: return
         autoComputer.value(dialog::context, SimpleScriptContext(selected))
@@ -260,22 +268,17 @@ class ScriptExecutorDialog : JDialog() {
         contexts.add(EMPTY_SCRIPT_CONTEXT)
         val context = this.context
         context?.element()?.let { ele ->
-            val psiCls = if (ele is PsiClass) {
-                ele
-            } else {
-                ele.getContainingClass()
-            }
+            val psiCls = getPsiClass(ele)
             if (psiCls != null) {
                 actionContext!!.callInReadUI {
+                    val explicitClass = duckTypeHelper.explicit(psiCls)
                     contexts.add(SimpleScriptContext(psiCls, psiCls.qualifiedName))
-                    jvmClassHelper.getAllFields(psiCls)
-                            .forEach {
-                                contexts.add(SimpleScriptContext(it, PsiClassUtils.fullNameOfField(it)))
-                            }
-                    jvmClassHelper.getAllMethods(psiCls)
-                            .forEach {
-                                contexts.add(SimpleScriptContext(it, PsiClassUtils.fullNameOfMethod(it)))
-                            }
+                    explicitClass.fields().forEach {
+                        contexts.add(SimpleScriptContext(it, it.toString()))
+                    }
+                    explicitClass.methods().forEach {
+                        contexts.add(SimpleScriptContext(it, it.toString()))
+                    }
                 }
             }
         }
@@ -283,19 +286,37 @@ class ScriptExecutorDialog : JDialog() {
         actionContext!!.runInSwingUI {
             this.contextComboBox!!.model = DefaultComboBoxModel(contexts.toTypedArray())
             this.contextComboBox!!.model
-                    .also { it.selectedItem = context }
-                    .addListDataListener(object : ListDataListener {
-                        override fun contentsChanged(e: ListDataEvent?) {
-                            onContextSelected()
-                        }
+                .also { it.selectedItem = context }
+                .addListDataListener(object : ListDataListener {
+                    override fun contentsChanged(e: ListDataEvent?) {
+                        onContextSelected()
+                    }
 
-                        override fun intervalRemoved(e: ListDataEvent?) {
-                        }
+                    override fun intervalRemoved(e: ListDataEvent?) {
+                    }
 
-                        override fun intervalAdded(e: ListDataEvent?) {
-                        }
-                    })
+                    override fun intervalAdded(e: ListDataEvent?) {
+                    }
+                })
         }
+    }
+
+    private fun getPsiClass(ele: Any): PsiClass {
+        val psiCls = when (ele) {
+            is PsiClass -> {
+                ele
+            }
+            is PsiElement -> {
+                ele.getContainingClass()
+            }
+            is ExplicitElement<*> -> {
+                ele.containClass().psi()
+            }
+            else -> {
+                throw IllegalArgumentException("unknown context:$ele")
+            }
+        }
+        return psiCls!!
     }
 
     private var editor: Editor? = null
@@ -314,11 +335,13 @@ class ScriptExecutorDialog : JDialog() {
 
             val psiFileFactory = PsiFileFactory.getInstance(project)
             val suffix = scriptType?.suffix()
-                    ?: "txt"
+                ?: "txt"
             val fileName = "easy.api.debug.$suffix"
             val fileType = FileTypeManager.getInstance().getFileTypeByExtension(suffix)
-            val psiFile = psiFileFactory.createFileFromText(fileName, fileType, this.scriptText,
-                    0, true, false)
+            val psiFile = psiFileFactory.createFileFromText(
+                fileName, fileType, this.scriptText,
+                0, true, false
+            )
             val document = PsiDocumentManager.getInstance(project!!).getDocument(psiFile)!!
             val editor = editorFactory!!.createEditor(document, project, fileType, false)
             val editorSettings = editor.settings
@@ -330,8 +353,10 @@ class ScriptExecutorDialog : JDialog() {
             editorSettings.additionalColumnsCount = 3
             editorSettings.additionalLinesCount = 3
             editorSettings.isCaretRowShown = false
-            (editor as? EditorEx)?.highlighter = EditorHighlighterFactory.getInstance().createEditorHighlighter(project,
-                    LightVirtualFile(fileName))
+            (editor as? EditorEx)?.highlighter = EditorHighlighterFactory.getInstance().createEditorHighlighter(
+                project,
+                LightVirtualFile(fileName)
+            )
 
             val component = editor.component
             component.preferredSize = Dimension(500, 300)
@@ -360,7 +385,8 @@ class ScriptExecutorDialog : JDialog() {
         val scriptInfo = this.scriptInfo!!
         val lastEvalTime = lastEvalTime.get()
         if (lastEvalTime <= scriptInfo.scriptUpdateTime &&
-                now > scriptInfo.scriptUpdateTime + DELAY) {
+            now > scriptInfo.scriptUpdateTime + DELAY
+        ) {
             if (this.lastEvalTime.compareAndSet(lastEvalTime, now)) {
                 doEvalToConsole(scriptInfo)
                 return null
@@ -371,9 +397,11 @@ class ScriptExecutorDialog : JDialog() {
             //do check
             EventQueue.invokeLater {
                 try {
-                    val currScriptInfo = ScriptInfo(this.scriptText,
-                            this.scriptTypeComboBox!!.selectedItem!! as ScriptSupport,
-                            context?.element())
+                    val currScriptInfo = ScriptInfo(
+                        this.scriptText,
+                        this.scriptTypeComboBox!!.selectedItem!! as ScriptSupport,
+                        context?.element()
+                    )
 
                     if (this.scriptInfo != currScriptInfo) {
                         this.scriptInfo = currScriptInfo
@@ -398,7 +426,7 @@ class ScriptExecutorDialog : JDialog() {
     private fun doEval(scriptInfo: ScriptInfo): String? {
         val parseStringRule: StringRule?
         try {
-            parseStringRule = ruleParser!!.parseStringRule(scriptInfo.scriptType!!.buildScript(scriptInfo.script))
+            parseStringRule = ruleParser.parseStringRule(scriptInfo.scriptType!!.buildScript(scriptInfo.script))
         } catch (e: Exception) {
             return "script parse failed:" + ExceptionUtils.getStackTrace(e)
         }
@@ -409,10 +437,13 @@ class ScriptExecutorDialog : JDialog() {
         try {
             val context = scriptInfo.context
             ret = parseStringRule.compute(
-                    when (context) {
-                        is PsiClass -> ruleParser.contextOf(duckTypeHelper!!.explicit(context))
-                        else -> ruleParser.contextOf(scriptInfo.context!!, scriptInfo.context!!)
-                    })
+                when (context) {
+                    is ExplicitElement<*> -> ruleParser.contextOf(context)
+                    is PsiClass -> ruleParser.contextOf(duckTypeHelper.explicit(context))
+                    is PsiElement -> ruleParser.contextOf(context, context)
+                    else -> throw IllegalArgumentException("unable to build context of:$context")
+                }
+            )
             //eval success.
 
         } catch (e: Exception) {
@@ -423,9 +454,9 @@ class ScriptExecutorDialog : JDialog() {
 
     private fun doCopy() {
         this.scriptInfo
-                ?.takeIf { it.script.notNullOrEmpty() }
-                ?.let { it.scriptType?.buildProperty(it.script) }
-                ?.let { ToolUtils.copy2Clipboard(it) }
+            ?.takeIf { it.script.notNullOrEmpty() }
+            ?.let { it.scriptType?.buildProperty(it.script) }
+            ?.let { ToolUtils.copy2Clipboard(it) }
     }
 
     private fun onCancel() {
@@ -439,11 +470,11 @@ class ScriptExecutorDialog : JDialog() {
             val path = file.path
             val suffix = path.substringAfterLast('.', "")
             scriptSupports.firstOrNull { it.suffix() == suffix }
-                    ?.let { scriptType ->
-                        actionContext!!.runInSwingUI {
-                            this.scriptTypeComboBox!!.selectedItem = scriptType
-                        }
+                ?.let { scriptType ->
+                    actionContext!!.runInSwingUI {
+                        this.scriptTypeComboBox!!.selectedItem = scriptType
                     }
+                }
             val script = file.readText(Charsets.UTF_8)
             actionContext!!.runInSwingUI {
                 editor?.document?.setText(script)
@@ -454,7 +485,7 @@ class ScriptExecutorDialog : JDialog() {
 
     private fun onSave() {
         val charset = ActionContext.getContext()?.instance(CommonSettingsHelper::class)?.outputCharset()
-                ?: Charsets.UTF_8
+            ?: Charsets.UTF_8
         fileSaveHelper!!.saveBytes({
             (scriptInfo?.script ?: "").toByteArray(charset)
         }, {
@@ -580,7 +611,11 @@ class ScriptExecutorDialog : JDialog() {
         }
     }
 
-    class EvalTimer(private var actionContext: ActionContext, private var evalTimer: Timer, private val task: (() -> Long?)) {
+    class EvalTimer(
+        private var actionContext: ActionContext,
+        private var evalTimer: Timer,
+        private val task: (() -> Long?)
+    ) {
 
         private fun run() {
             var delay: Long? = null
@@ -588,7 +623,7 @@ class ScriptExecutorDialog : JDialog() {
                 delay = task()
             } catch (e: Throwable) {
                 actionContext.instance(Logger::class)
-                        .traceError("error to eval script", e)
+                    .traceError("error to eval script", e)
             } finally {
                 schedule(delay ?: 3000)
             }
@@ -608,7 +643,7 @@ class ScriptExecutorDialog : JDialog() {
         }
     }
 
-    class ScriptInfo(var script: String, var scriptType: ScriptSupport?, var context: PsiElement?) {
+    class ScriptInfo(var script: String, var scriptType: ScriptSupport?, var context: Any?) {
         var scriptUpdateTime: Long = System.currentTimeMillis()
 
         override fun equals(other: Any?): Boolean {
@@ -634,11 +669,11 @@ class ScriptExecutorDialog : JDialog() {
 
     inner class SimpleScriptContext : ScriptContext {
 
-        private var element: PsiElement?
+        private var element: Any?
 
         private var name: String? = null
 
-        override fun element(): PsiElement? {
+        override fun element(): Any? {
             return this.element
         }
 
@@ -646,11 +681,11 @@ class ScriptExecutorDialog : JDialog() {
             return this.name
         }
 
-        constructor(context: PsiElement?) {
+        constructor(context: Any?) {
             this.element = context
         }
 
-        constructor(context: PsiElement?, name: String?) {
+        constructor(context: Any?, name: String?) {
             this.element = context
             this.name = name
         }
@@ -663,12 +698,14 @@ class ScriptExecutorDialog : JDialog() {
                 return "select context"
             }
             name = actionContext!!.callInReadUI {
-                PsiClassUtils.fullNameOfMember(element!!)
+                when (element) {
+                    is PsiElement -> PsiClassUtils.fullNameOfMember(element as PsiElement)
+                    else -> element.toString()
+                }
             }
             return name ?: ""
         }
     }
-
 
     companion object {
         val scriptSupports = arrayOf(GroovyScriptSupport, GeneralScriptSupport, JsScriptSupport)
@@ -693,7 +730,7 @@ class ScriptExecutorDialog : JDialog() {
 
 interface ScriptContext {
 
-    fun element(): PsiElement?
+    fun element(): Any?
 
     fun name(): String?
 }
