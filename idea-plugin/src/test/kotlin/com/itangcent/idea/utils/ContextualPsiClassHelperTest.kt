@@ -27,11 +27,17 @@ internal abstract class ContextualPsiClassHelperTest : ContextualPsiClassHelperB
                 "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
-                "field.parse.before=groovy:```\n" +
-                "    logger.info(\"before:\"+it)\n" +
+                "json.field.parse.before=groovy:```\n" +
+                "    logger.info(\"before field:\"+it)\n" +
                 "```\n" +
-                "field.parse.after=groovy:```\n" +
-                "    logger.info(\"after:\"+it)\n" +
+                "json.field.parse.after=groovy:```\n" +
+                "    logger.info(\"after field:\"+it)\n" +
+                "```\n" +
+                "json.class.parse.before=groovy:```\n" +
+                "    logger.info(\"before class:\"+it)\n" +
+                "```\n" +
+                "json.class.parse.after=groovy:```\n" +
+                "    logger.info(\"after class:\"+it)\n" +
                 "```\n"
     }
 

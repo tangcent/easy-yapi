@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
+import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
@@ -17,7 +18,10 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.logger.Logger
 import com.itangcent.mock.SettingBinderAdaptor
+import com.itangcent.mock.toUnixString
+import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -73,6 +77,9 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
         testCtrlPsiClass = loadClass("api/TestCtrl.java")!!
         settings.inferEnable = true
+
+        //clear log
+        LoggerCollector.getLog()
     }
 
     override fun customConfig(): String {
@@ -90,18 +97,24 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 "json.rule.convert[java.util.Date]=java.lang.String\n" +
                 "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDate]=java.lang.String"
+                "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
+                "api.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
+                "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n" +
+                "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
+        builder.bind(Logger::class) { it.with(LoggerCollector::class) }
 
         builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class) }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
     }
-
 
     fun testExportFromUserCtrl() {
         settings.queryExpanded = true
@@ -123,6 +136,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("GET", request.method)
             assertEquals(userCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
         }
+
+        assertEquals(ResultLoader.load("testExportFromUserCtrl"), LoggerCollector.getLog().toUnixString())
     }
 
     fun testExportFromTestCtrlWithExpanded() {
@@ -304,6 +319,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
+
+        assertEquals(ResultLoader.load("testExportFromTestCtrlWithExpanded"), LoggerCollector.getLog().toUnixString())
     }
 
     fun testExportFromTestCtrlWithOutExpanded() {
@@ -485,5 +502,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
+
+        assertEquals(ResultLoader.load("testExportFromTestCtrlWithOutExpanded"), LoggerCollector.getLog().toUnixString())
     }
 }

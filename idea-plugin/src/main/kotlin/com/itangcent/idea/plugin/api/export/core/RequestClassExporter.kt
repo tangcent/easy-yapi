@@ -132,24 +132,31 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     completedHandle(cls)
                     return true
                 }
-                else -> {
-                    logger.info("search api from:${cls.qualifiedName}")
+            }
 
-                    val classExportContext = ClassExportContext(cls)
+            logger.info("search api from:${cls.qualifiedName}")
 
-                    processClass(cls, classExportContext)
+            val classExportContext = ClassExportContext(cls)
 
-                    classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
-                        val method = explicitMethod.psi()
-                        if (isApi(method) && methodFilter?.checkMethod(method) != false) {
-                            try {
-                                exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
-                            } catch (e: Exception) {
-                                logger.traceError("error to export api from method:" + method.name, e)
-                            }
+            ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_BEFORE, cls)
+            try {
+                processClass(cls, classExportContext)
+
+                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
+                    val method = explicitMethod.psi()
+                    if (isApi(method) && methodFilter?.checkMethod(method) != false) {
+                        try {
+                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_BEFORE, explicitMethod)
+                            exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
+                        } catch (e: Exception) {
+                            logger.traceError("error to export api from method:" + method.name, e)
+                        } finally {
+                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
                         }
                     }
                 }
+            } finally {
+                ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_AFTER, cls)
             }
         } catch (e: Exception) {
             logger.traceError("error to export api from class:" + cls.name, e)
@@ -460,7 +467,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                     continue
                 }
 
-                ruleComputer.computer(ClassExportRuleKeys.PARAM_BEFORE, param)
+                ruleComputer.computer(ClassExportRuleKeys.API_PARAM_BEFORE, param)
 
                 try {
                     val paramType = param.getType() ?: continue
@@ -473,7 +480,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
 
                     parsedParams.add(ParameterExportContext(methodExportContext, param).also { it.raw() })
                 } finally {
-                    ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
+                    ruleComputer.computer(ClassExportRuleKeys.API_PARAM_AFTER, param)
                 }
             }
 
@@ -495,7 +502,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
             }
 
             for (parameterExportContext in parsedParams) {
-                ruleComputer.computer(ClassExportRuleKeys.PARAM_BEFORE, parameterExportContext.parameter)
+                ruleComputer.computer(ClassExportRuleKeys.API_PARAM_BEFORE, parameterExportContext.parameter)
 
                 try {
                     processMethodParameter(
@@ -505,7 +512,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                             .append(readParamDoc(parameterExportContext.parameter))
                     )
                 } finally {
-                    ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, parameterExportContext.parameter)
+                    ruleComputer.computer(ClassExportRuleKeys.API_PARAM_AFTER, parameterExportContext.parameter)
                 }
             }
         }

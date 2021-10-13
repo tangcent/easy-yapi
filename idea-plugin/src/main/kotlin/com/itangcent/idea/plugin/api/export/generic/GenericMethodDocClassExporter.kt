@@ -86,7 +86,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     protected val methodInferHelper: MethodInferHelper? = null
 
     @Inject
-    protected val ruleComputer: RuleComputer? = null
+    protected lateinit var ruleComputer: RuleComputer
 
     @Inject(optional = true)
     protected val methodFilter: MethodFilter? = null
@@ -122,21 +122,32 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
                     completedHandle(cls)
                     return true
                 }
-                else -> {
-                    logger.info("search api from:${cls.qualifiedName}")
+            }
 
-                    val classExportContext = ClassExportContext(cls)
+            logger.info("search api from:${cls.qualifiedName}")
 
-                    processClass(cls, classExportContext)
+            ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_BEFORE, cls)
 
-                    classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
-                        val method = explicitMethod.psi()
-                        if (isApi(method) && methodFilter?.checkMethod(method) != false) {
+            try {
+                val classExportContext = ClassExportContext(cls)
+
+                processClass(cls, classExportContext)
+
+                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
+                    val method = explicitMethod.psi()
+                    if (isApi(method) && methodFilter?.checkMethod(method) != false) {
+                        try {
+                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_BEFORE, explicitMethod)
                             exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
+                        } finally {
+                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
                         }
                     }
                 }
+            } finally {
+                ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_AFTER, cls)
             }
+
         } catch (e: Exception) {
             logger.traceError(e)
         } finally {
@@ -180,9 +191,9 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     }
 
     private fun exportMethodApi(
-            psiClass: PsiClass, method: ExplicitMethod,
-            classExportContext: ClassExportContext,
-            docHandle: DocHandle
+        psiClass: PsiClass, method: ExplicitMethod,
+        classExportContext: ClassExportContext,
+        docHandle: DocHandle
     ) {
 
         actionContext!!.checkStatus()
@@ -208,8 +219,10 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
         docHandle(methodDoc)
     }
 
-    protected open fun processMethod(methodExportContext: MethodExportContext,
-                                     methodDoc: MethodDoc) {
+    protected open fun processMethod(
+        methodExportContext: MethodExportContext,
+        methodDoc: MethodDoc
+    ) {
         apiHelper!!.nameAndAttrOfApi(methodExportContext.method, {
             methodDocBuilderListener.setName(methodExportContext, methodDoc, it)
         }, {
@@ -233,45 +246,52 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
                 val descOfReturn = docHelper!!.findDocByTag(methodExportContext.psi(), "return")
 
                 if (descOfReturn.notNullOrBlank()) {
-                    val methodReturnMain = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN,
-                            methodExportContext.method)
+                    val methodReturnMain = ruleComputer!!.computer(
+                        ClassExportRuleKeys.METHOD_RETURN_MAIN,
+                        methodExportContext.method
+                    )
                     if (methodReturnMain.isNullOrBlank()) {
-                        methodDocBuilderListener.appendRetDesc(methodExportContext,
-                                methodDoc, descOfReturn)
+                        methodDocBuilderListener.appendRetDesc(
+                            methodExportContext,
+                            methodDoc, descOfReturn
+                        )
                     } else {
                         val options: ArrayList<HashMap<String, Any?>> = ArrayList()
-                        val comment = linkExtractor!!.extract(descOfReturn, methodExportContext.psi(), object : AbstractLinkResolve() {
+                        val comment = linkExtractor!!.extract(
+                            descOfReturn,
+                            methodExportContext.psi(),
+                            object : AbstractLinkResolve() {
 
-                            override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
+                                override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
-                                psiClassHelper!!.resolveEnumOrStatic(plainText, methodExportContext.psi(), "")
+                                    psiClassHelper!!.resolveEnumOrStatic(plainText, methodExportContext.psi(), "")
                                         ?.let { options.addAll(it) }
 
-                                return super.linkToPsiElement(plainText, linkTo)
-                            }
-
-                            override fun linkToType(plainText: String, linkType: PsiType): String? {
-                                return jvmClassHelper.resolveClassInType(linkType)?.let {
-                                    linkResolver!!.linkToClass(it)
+                                    return super.linkToPsiElement(plainText, linkTo)
                                 }
-                            }
 
-                            override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
-                                return linkResolver!!.linkToClass(linkClass)
-                            }
+                                override fun linkToType(plainText: String, linkType: PsiType): String? {
+                                    return jvmClassHelper.resolveClassInType(linkType)?.let {
+                                        linkResolver!!.linkToClass(it)
+                                    }
+                                }
 
-                            override fun linkToField(plainText: String, linkField: PsiField): String? {
-                                return linkResolver!!.linkToProperty(linkField)
-                            }
+                                override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
+                                    return linkResolver!!.linkToClass(linkClass)
+                                }
 
-                            override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
-                                return linkResolver!!.linkToMethod(linkMethod)
-                            }
+                                override fun linkToField(plainText: String, linkField: PsiField): String? {
+                                    return linkResolver!!.linkToProperty(linkField)
+                                }
 
-                            override fun linkToUnresolved(plainText: String): String? {
-                                return plainText
-                            }
-                        })
+                                override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
+                                    return linkResolver!!.linkToMethod(linkMethod)
+                                }
+
+                                override fun linkToUnresolved(plainText: String): String? {
+                                    return plainText
+                                }
+                            })
 
                         if (comment.notNullOrBlank()) {
                             if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, comment!!)) {
@@ -280,7 +300,11 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
                         }
                         if (options.notNullOrEmpty()) {
                             if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain, options)) {
-                                methodDocBuilderListener.appendRetDesc(methodExportContext, methodDoc, KVUtils.getOptionDesc(options))
+                                methodDocBuilderListener.appendRetDesc(
+                                    methodExportContext,
+                                    methodDoc,
+                                    KVUtils.getOptionDesc(options)
+                                )
                             }
                         }
                     }
@@ -309,28 +333,38 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
                     continue
                 }
 
-                ruleComputer.computer(ClassExportRuleKeys.PARAM_BEFORE, param)
+                ruleComputer.computer(ClassExportRuleKeys.API_PARAM_BEFORE, param)
                 try {
-                    processMethodParameter(methodExportContext, methodDoc, param,
-                            KVUtils.getUltimateComment(paramDocComment, param.name()).append(readParamDoc(param))
+                    processMethodParameter(
+                        methodExportContext, methodDoc, param,
+                        KVUtils.getUltimateComment(paramDocComment, param.name()).append(readParamDoc(param))
                     )
                 } finally {
-                    ruleComputer.computer(ClassExportRuleKeys.PARAM_AFTER, param)
+                    ruleComputer.computer(ClassExportRuleKeys.API_PARAM_AFTER, param)
                 }
             }
         }
     }
 
     protected fun processMethodParameter(
-            methodExportContext: MethodExportContext,
-            methodDoc: MethodDoc,
-            param: ExplicitParameter,
-            paramDesc: String?
+        methodExportContext: MethodExportContext,
+        methodDoc: MethodDoc,
+        param: ExplicitParameter,
+        paramDesc: String?
     ) {
         val paramType = param.getType() ?: return
-        val typeObject = psiClassHelper!!.getTypeObject(paramType, param.psi(),
-                intelligentSettingsHelper.jsonOptionForInput(JsonOption.READ_COMMENT))
-        methodDocBuilderListener.addParam(methodExportContext, methodDoc, param.name(), typeObject, paramDesc, ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true)
+        val typeObject = psiClassHelper!!.getTypeObject(
+            paramType, param.psi(),
+            intelligentSettingsHelper.jsonOptionForInput(JsonOption.READ_COMMENT)
+        )
+        methodDocBuilderListener.addParam(
+            methodExportContext,
+            methodDoc,
+            param.name(),
+            typeObject,
+            paramDesc,
+            ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true
+        )
     }
 
     protected fun parseResponseBody(methodExportContext: MethodExportContext, duckType: DuckType?): Any? {
@@ -346,8 +380,10 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
                 methodInferHelper!!.inferReturn(methodExportContext.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
-            else -> psiClassHelper!!.getTypeObject(duckType, methodExportContext.psi(),
-                    intelligentSettingsHelper.jsonOptionForOutput(JsonOption.READ_COMMENT))
+            else -> psiClassHelper!!.getTypeObject(
+                duckType, methodExportContext.psi(),
+                intelligentSettingsHelper.jsonOptionForOutput(JsonOption.READ_COMMENT)
+            )
         }
     }
 

@@ -1,14 +1,16 @@
-[INFO]	before:com.itangcent.model.UserInfo#id
-[INFO]	after:com.itangcent.model.UserInfo#id
-[INFO]	before:com.itangcent.model.UserInfo#type
-[INFO]	after:com.itangcent.model.UserInfo#type
-[INFO]	before:com.itangcent.model.UserInfo#name
-[INFO]	after:com.itangcent.model.UserInfo#name
-[INFO]	before:com.itangcent.model.UserInfo#age
-[INFO]	after:com.itangcent.model.UserInfo#age
-[INFO]	before:com.itangcent.model.UserInfo#sex
-[INFO]	after:com.itangcent.model.UserInfo#sex
-[INFO]	before:com.itangcent.model.UserInfo#birthDay
-[INFO]	after:com.itangcent.model.UserInfo#birthDay
-[INFO]	before:com.itangcent.model.UserInfo#regtime
-[INFO]	after:com.itangcent.model.UserInfo#regtime
+[INFO]	before class:com.itangcent.model.UserInfo
+[INFO]	before field:com.itangcent.model.UserInfo#id
+[INFO]	after field:com.itangcent.model.UserInfo#id
+[INFO]	before field:com.itangcent.model.UserInfo#type
+[INFO]	after field:com.itangcent.model.UserInfo#type
+[INFO]	before field:com.itangcent.model.UserInfo#name
+[INFO]	after field:com.itangcent.model.UserInfo#name
+[INFO]	before field:com.itangcent.model.UserInfo#age
+[INFO]	after field:com.itangcent.model.UserInfo#age
+[INFO]	before field:com.itangcent.model.UserInfo#sex
+[INFO]	after field:com.itangcent.model.UserInfo#sex
+[INFO]	before field:com.itangcent.model.UserInfo#birthDay
+[INFO]	after field:com.itangcent.model.UserInfo#birthDay
+[INFO]	before field:com.itangcent.model.UserInfo#regtime
+[INFO]	after field:com.itangcent.model.UserInfo#regtime
+[INFO]	after class:com.itangcent.model.UserInfo

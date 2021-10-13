@@ -1,9 +1,15 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.itangcent.common.model.Request
+import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
+import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.logger.Logger
+import com.itangcent.mock.toUnixString
+import com.itangcent.test.ResultLoader
 
 /**
  * Test case of [YapiSpringRequestClassExporter]
@@ -12,6 +18,21 @@ import com.itangcent.idea.psi.PsiResource
  * 3.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.OPEN]
  */
 internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseTest() {
+    override fun customConfig(): String {
+        return super.customConfig() +
+                "\napi.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
+                "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n" +
+                "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n"
+    }
+
+    override fun bind(builder: ActionContext.ActionContextBuilder) {
+        super.bind(builder)
+
+        builder.bind(Logger::class) { it.with(LoggerCollector::class) }
+    }
 
     fun testExport() {
         val requests = ArrayList<Request>()
@@ -66,5 +87,7 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
             assertFalse(request.isOpen())
             assertEquals("done", request.getStatus())
         }
+
+        assertEquals(ResultLoader.load(), LoggerCollector.getLog().toUnixString())
     }
 }
