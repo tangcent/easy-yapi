@@ -135,15 +135,16 @@ class Json5Formatter : JsonFormatter {
 
     private fun StringBuilder.appendBlockComment(descs: List<String>, deep: Int) {
         this.append("/**")
-        this.appendln()
+        this.appendLine()
         descs.forEach {
             this.append(TAB.repeat(deep))
             this.append(" * ")
-            this.appendln(it)
+            this.append(it)
+            this.appendLine()
         }
         this.append(TAB.repeat(deep))
         this.append(" */")
-        this.appendln()
+        this.appendLine()
         this.append(TAB.repeat(deep))
     }
 
@@ -155,7 +156,7 @@ class Json5Formatter : JsonFormatter {
     }
 
     private fun StringBuilder.nextLine(deep: Int) {
-        this.appendln()
+        this.appendLine()
         this.append(TAB.repeat(deep))
     }
 }
@@ -168,5 +169,3 @@ private class EndCounter(val size: Int) {
 }
 
 private const val TAB = "    "
-
-private fun StringBuilder.appendln(): StringBuilder = append("\n")

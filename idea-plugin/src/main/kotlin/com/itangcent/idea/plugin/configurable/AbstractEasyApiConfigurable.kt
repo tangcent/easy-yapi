@@ -3,12 +3,14 @@ package com.itangcent.idea.plugin.configurable
 import com.google.inject.Inject
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.Project
+import com.itangcent.common.kit.toJson
 import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
@@ -24,8 +26,18 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
     @Inject
     private lateinit var settingBinder: SettingBinder
 
+    private val throttle = ThrottleHelper().build(this::class.qualifiedName!!)
+
     override fun isModified(): Boolean {
-        return settingBinder.read() != easyApiConfigurableGUI.getSettings()
+        val pre = settingBinder.read()
+        val inUI = easyApiConfigurableGUI.getSettings()
+        if (pre == inUI) {
+            return false
+        }
+        if (throttle.acquire(5000L)) {
+            LOG.info("settings is modified:\npre:----\n${pre.toJson()}\ninUI:----\n${inUI.toJson()}\n----\n")
+        }
+        return true
     }
 
     override fun apply() {

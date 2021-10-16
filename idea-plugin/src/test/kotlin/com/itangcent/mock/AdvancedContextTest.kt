@@ -76,8 +76,8 @@ abstract class AdvancedContextTest : BaseContextTest() {
         }
     }
 
-    protected val n = System.getProperty("line.separator")
-    protected val s = File.separator
+    protected val n = System.getProperty("line.separator") ?: "\n"
+    protected val s = File.separator!!
 
     companion object {
         @JvmStatic

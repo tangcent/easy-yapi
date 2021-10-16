@@ -21,7 +21,7 @@ import kotlin.reflect.*
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.functions
-import kotlin.text.appendln
+import kotlin.text.appendLine
 
 /**
  * <p>Util operations for rule.</p>
@@ -884,7 +884,7 @@ class RuleToolUtils {
         val sb = StringBuilder()
         sb.append("type:")
             .append(typeName(kClass))
-            .appendln()
+            .appendLine()
 
         val ignoreMethods: ArrayList<String> = ArrayList()
         kClass.findAnnotation<ScriptIgnore>()?.let { ignoreMethods.addAll(it.name) }
@@ -894,7 +894,7 @@ class RuleToolUtils {
 
         val functions = kClass.functions
         if (functions.isNotEmpty()) {
-            sb.append("methods:").appendln()
+            sb.append("methods:").appendLine()
             val set: HashSet<String> = HashSet()
             for (function in functions) {
                 val functionSb = StringBuilder()
@@ -939,7 +939,7 @@ class RuleToolUtils {
                 functionSb.append(")")
                 val functionStr = functionSb.toString()
                 if (set.add(functionStr)) {
-                    sb.append(functionStr).appendln()
+                    sb.append(functionStr).appendLine()
                 }
             }
         }

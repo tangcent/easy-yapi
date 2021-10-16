@@ -395,57 +395,57 @@ internal class RuleToolUtilsTest {
     @Test
     fun testDebug() {
         assertEquals(
-            "type:tool$n" +
-                    "methods:$n" +
-                    "bool anyIntersect(object, object)$n" +
-                    "array<object> asArray(object)$n" +
-                    "array<object> asList(object)$n" +
-                    "string camel2Underline(string)$n" +
-                    "string capitalize(string)$n" +
-                    "void copy2Clipboard(string)$n" +
-                    "string debug(object)$n" +
-                    "bool equalOrIntersect(object, object)$n" +
-                    "string format(kotlin.Long, string)$n" +
-                    "string headLine(string)$n" +
-                    "array<object> intersect(object, object)$n" +
-                    "bool isAlpha(string)$n" +
-                    "bool isNullOrEmpty(object)$n" +
-                    "bool isNumeric(string)$n" +
-                    "string lowerCase(string)$n" +
-                    "array<object> newList(object...)$n" +
-                    "map<object, object> newMap()$n" +
-                    "array<object> newSet(object...)$n" +
-                    "bool notNullOrBlank(string)$n" +
-                    "bool notNullOrEmpty(object)$n" +
-                    "bool notNullOrEmpty(string)$n" +
-                    "string now()$n" +
-                    "string now(string)$n" +
-                    "bool nullOrBlank(string)$n" +
-                    "bool nullOrEmpty(string)$n" +
-                    "object parseJson(string)$n" +
-                    "string prettyJson(object)$n" +
-                    "string removePrefix(string, string)$n" +
-                    "string removeSuffix(string, string)$n" +
-                    "string repeat(string, int)$n" +
-                    "string repeat(string, string, int)$n" +
-                    "string resolveProperty(string, object, map<object, object>)$n" +
-                    "string reverse(string)$n" +
-                    "array<string> split(string)$n" +
-                    "array<string> split(string, string)$n" +
-                    "string substringAfter(string, string)$n" +
-                    "string substringAfterLast(string, string)$n" +
-                    "string substringBefore(string, string)$n" +
-                    "string substringBeforeLast(string, string)$n" +
-                    "string substringBetween(string, string)$n" +
-                    "string substringBetween(string, string, string)$n" +
-                    "array<string> substringsBetween(string, string, string)$n" +
-                    "string swapCase(string)$n" +
-                    "string toCamelCase(string, bool, array<char>)$n" +
-                    "string toJson(object)$n" +
-                    "string today()$n" +
-                    "string traversal(object)$n" +
-                    "string uncapitalize(string)$n" +
-                    "string upperCase(string)$n", ruleToolUtils.debug(ruleToolUtils)
+            "type:tool\n" +
+                    "methods:\n" +
+                    "bool anyIntersect(object, object)\n" +
+                    "array<object> asArray(object)\n" +
+                    "array<object> asList(object)\n" +
+                    "string camel2Underline(string)\n" +
+                    "string capitalize(string)\n" +
+                    "void copy2Clipboard(string)\n" +
+                    "string debug(object)\n" +
+                    "bool equalOrIntersect(object, object)\n" +
+                    "string format(kotlin.Long, string)\n" +
+                    "string headLine(string)\n" +
+                    "array<object> intersect(object, object)\n" +
+                    "bool isAlpha(string)\n" +
+                    "bool isNullOrEmpty(object)\n" +
+                    "bool isNumeric(string)\n" +
+                    "string lowerCase(string)\n" +
+                    "array<object> newList(object...)\n" +
+                    "map<object, object> newMap()\n" +
+                    "array<object> newSet(object...)\n" +
+                    "bool notNullOrBlank(string)\n" +
+                    "bool notNullOrEmpty(object)\n" +
+                    "bool notNullOrEmpty(string)\n" +
+                    "string now()\n" +
+                    "string now(string)\n" +
+                    "bool nullOrBlank(string)\n" +
+                    "bool nullOrEmpty(string)\n" +
+                    "object parseJson(string)\n" +
+                    "string prettyJson(object)\n" +
+                    "string removePrefix(string, string)\n" +
+                    "string removeSuffix(string, string)\n" +
+                    "string repeat(string, int)\n" +
+                    "string repeat(string, string, int)\n" +
+                    "string resolveProperty(string, object, map<object, object>)\n" +
+                    "string reverse(string)\n" +
+                    "array<string> split(string)\n" +
+                    "array<string> split(string, string)\n" +
+                    "string substringAfter(string, string)\n" +
+                    "string substringAfterLast(string, string)\n" +
+                    "string substringBefore(string, string)\n" +
+                    "string substringBeforeLast(string, string)\n" +
+                    "string substringBetween(string, string)\n" +
+                    "string substringBetween(string, string, string)\n" +
+                    "array<string> substringsBetween(string, string, string)\n" +
+                    "string swapCase(string)\n" +
+                    "string toCamelCase(string, bool, array<char>)\n" +
+                    "string toJson(object)\n" +
+                    "string today()\n" +
+                    "string traversal(object)\n" +
+                    "string uncapitalize(string)\n" +
+                    "string upperCase(string)\n", ruleToolUtils.debug(ruleToolUtils)
         )
     }
 
@@ -472,5 +472,3 @@ private class RuleToolUtilsTestPoint(
     private var y: Int,
     protected var z: Int
 )
-
-val n = System.getProperty("line.separator")
