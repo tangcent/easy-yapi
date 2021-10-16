@@ -6,7 +6,6 @@ import com.itangcent.common.utils.invokeMethod
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.settings.helper.BuiltInConfigSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigSettingsHelper
-import com.itangcent.intellij.adaptor.ModuleAdaptor.file
 import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
@@ -85,13 +84,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
                     loading = Thread.currentThread()
                     try {
                         configReader.reset()
-                        val moduleFile = module.file()
-                        val modulePath = when {
-                            moduleFile == null -> module.filePath()?.substringBeforeLast(File.separator)
-                            moduleFile.isDirectory -> moduleFile.path
-                            else -> moduleFile.parent.path
-                        }
-                        modulePath?.let { configReader.put("module_path", it) }
+                        module.filePath()?.let { configReader.put("module_path", it) }
                         initDelegateAndRecommend()
                     } finally {
                         loading = null

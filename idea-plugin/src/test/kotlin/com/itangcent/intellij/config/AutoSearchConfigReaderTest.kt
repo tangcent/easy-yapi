@@ -52,7 +52,7 @@ internal abstract class AutoSearchConfigReaderTest : AdvancedContextTest() {
 
         //mock mockContextSwitchListener
         val mockModule = Mockito.mock(Module::class.java)
-        Mockito.`when`(mockModule.moduleFilePath).thenReturn("$tempDir${s}config${s}a")
+        Mockito.`when`(mockModule.moduleFilePath).thenReturn("$tempDir${s}config${s}a/a.iml")
         val mockContextSwitchListener = Mockito.mock(ContextSwitchListener::class.java)
         Mockito.`when`(mockContextSwitchListener.getModule()).thenReturn(mockModule)
         builder.bind(ContextSwitchListener::class.java) { it.toInstance(mockContextSwitchListener) }

@@ -859,7 +859,7 @@ class ApiCallDialog : JDialog() {
             sb.append(it.name)
                 .append("=")
                 .append(it.value ?: "")
-                .appendln()
+                .appendLine()
         }
         return sb.toString()
     }
