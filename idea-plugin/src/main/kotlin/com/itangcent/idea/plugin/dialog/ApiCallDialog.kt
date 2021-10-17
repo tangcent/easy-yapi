@@ -13,7 +13,9 @@ import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.model.*
+import com.itangcent.common.model.FormParam
+import com.itangcent.common.model.Request
+import com.itangcent.common.model.hasBodyOrForm
 import com.itangcent.common.utils.appendlnIfNotEmpty
 import com.itangcent.common.utils.firstOrNull
 import com.itangcent.common.utils.notNullOrBlank
@@ -22,6 +24,7 @@ import com.itangcent.http.*
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
+import com.itangcent.idea.plugin.api.call.ApiCallUI
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.utils.*
@@ -35,7 +38,6 @@ import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.suv.http.HttpClientProvider
-import com.itangcent.idea.utils.GsonExUtils
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
@@ -51,7 +53,7 @@ import javax.swing.table.TableColumn
 import javax.swing.table.TableModel
 
 
-class ApiCallDialog : JDialog() {
+class ApiCallDialog : JDialog(), ApiCallUI {
     private var contentPane: JPanel? = null
 
     private var apisJList: JList<*>? = null
@@ -236,7 +238,7 @@ class ApiCallDialog : JDialog() {
             }
     }
 
-    fun updateRequestList(requestList: List<Request>?) {
+    override fun updateRequestList(requestList: List<Request>?) {
         if (requestList == null) {
             return
         }
@@ -713,7 +715,7 @@ class ApiCallDialog : JDialog() {
             val data: ArrayList<Array<Any>> = ArrayList()
 
             formParams?.forEach { param ->
-                data.add(arrayOf(param.required ?: true, param.name?:"", param.value ?: ""))
+                data.add(arrayOf(param.required ?: true, param.name ?: "", param.value ?: ""))
             }
 
             return DefaultTableModel(data.toTypedArray(), columns)
