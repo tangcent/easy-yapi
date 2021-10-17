@@ -3,18 +3,15 @@ package com.itangcent.idea.plugin.api.call
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
-import com.itangcent.idea.plugin.dialog.ApiCallDialog
-import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
-import com.itangcent.intellij.util.UIUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.lang.ref.WeakReference
 import java.util.*
 
@@ -34,9 +31,8 @@ class ApiCaller {
 
     fun showCallWindow() {
 
-        var apiCallDialog = project!!.getUserData(API_CALL_DIALOG)?.get()
-        if (apiCallDialog != null) {
-            SwingUtils.focus(apiCallDialog)
+        project!!.getUserData(API_CALL_UI)?.get()?.let {
+            it.focusUI()
             return
         }
 
@@ -44,37 +40,37 @@ class ApiCaller {
         val requests: MutableList<Request> = Collections.synchronizedList(ArrayList<Request>())
 
         SelectedHelper.Builder()
-                .classHandle {
-                    actionContext!!.checkStatus()
-                    classExporter!!.export(it, requestOnly { request ->
-                        requests.add(request)
-                    })
-                }
-                .onCompleted {
-                    try {
-                        if (classExporter is Worker) {
-                            classExporter.waitCompleted()
-                        }
-                        if (requests.isEmpty()) {
-                            logger.info("No api be found to call!")
-                            return@onCompleted
-                        }
-
-                        apiCallDialog = actionContext!!.instance { ApiCallDialog() }
-                        apiCallDialog!!.updateRequestList(requests)
-                        UIUtils.show(apiCallDialog!!)
-                        project.putUserData(API_CALL_DIALOG, WeakReference(apiCallDialog!!))
-                        actionContext.on(EventKey.ON_COMPLETED) {
-                            project.putUserData(API_CALL_DIALOG, null)
-                        }
-                    } catch (e: Exception) {
-                        logger.info("Apis find failed" + ExceptionUtils.getStackTrace(e))
+            .classHandle {
+                actionContext!!.checkStatus()
+                classExporter!!.export(it, requestOnly { request ->
+                    requests.add(request)
+                })
+            }
+            .onCompleted {
+                try {
+                    if (classExporter is Worker) {
+                        classExporter.waitCompleted()
                     }
+                    if (requests.isEmpty()) {
+                        logger.info("No api be found to call!")
+                        return@onCompleted
+                    }
+
+                    val apiCallUI = actionContext!!.instance(ApiCallUI::class)
+                    apiCallUI.updateRequestList(requests)
+                    apiCallUI.showUI()
+                    project.putUserData(API_CALL_UI, WeakReference(apiCallUI))
+                    actionContext.on(EventKey.ON_COMPLETED) {
+                        project.putUserData(API_CALL_UI, null)
+                    }
+                } catch (e: Exception) {
+                    logger.traceError("Apis find failed", e)
                 }
-                .traversal()
+            }
+            .traversal()
     }
 
     companion object {
-        private val API_CALL_DIALOG = Key.create<WeakReference<ApiCallDialog>>("API_CALL_DIALOG")
+        private val API_CALL_UI = Key.create<WeakReference<ApiCallUI>>("API_CALL_UI")
     }
 }
