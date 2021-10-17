@@ -1,3 +1,15 @@
+* 2.2.9
+
+	* fix: fix regex rule [(#620)](https://github.com/tangcent/easy-yapi/pull/620)
+
+	* feat: new event rules [(#616)](https://github.com/tangcent/easy-yapi/pull/616)
+
+	* feat: [ScriptExecutor] explicit class [(#615)](https://github.com/tangcent/easy-yapi/pull/615)
+
+	* feat: mock field of  java_date_types as datetime [(#610)](https://github.com/tangcent/easy-yapi/pull/610)
+
+	* feat: support jackson-JsonFormat & spring-DateTimeFormat [(#609)](https://github.com/tangcent/easy-yapi/pull/609)
+
 * 2.2.8
 
 	* feat: new rule `field.advanced` [(#605)](https://github.com/tangcent/easy-yapi/pull/605)
