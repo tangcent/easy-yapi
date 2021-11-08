@@ -9,7 +9,9 @@ import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
-import com.itangcent.common.utils.*
+import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.idea.plugin.api.export.Orders
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.generic.GenericClassExportRuleKeys.HTTP_METHOD
 import com.itangcent.idea.plugin.api.export.generic.GenericClassExportRuleKeys.HTTP_PATH
@@ -25,6 +27,7 @@ import com.itangcent.idea.plugin.api.export.generic.GenericClassExportRuleKeys.P
 import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.util.hasFile
+import com.itangcent.order.Order
 import kotlin.reflect.KClass
 
 /**
@@ -32,6 +35,8 @@ import kotlin.reflect.KClass
  * from any ordinary method
  * Depends on [GenericClassExportRuleKeys]
  */
+@Order(Orders.GENERIC)
+@ConditionOnSimple(false)
 open class GenericRequestClassExporter : RequestClassExporter() {
 
     @Inject

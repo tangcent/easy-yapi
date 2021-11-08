@@ -88,7 +88,7 @@ class DefaultHttpContextCacheHelper : HttpContextCacheHelper {
         httpContextCacheBinder.save(httpContextCache)
     }
 
-    override fun selectHost(message: String? ): String {
+    override fun selectHost(message: String?): String {
         val messagesHelper = ActionContext.getContext()!!.instance(MessagesHelper::class)
         val hosts = getHosts()
         val selectedHost = messagesHelper.showEditableChooseDialog(

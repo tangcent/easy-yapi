@@ -2,6 +2,9 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.ExportDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
@@ -33,15 +36,10 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_CLASS_EXPORTER",
-            arrayOf<Any>(
-                YapiSpringRequestClassExporter::class,
-                GenericRequestClassExporter::class,
-                GenericMethodDocClassExporter::class
-            )
-        )
 
+        builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
+        builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
+        
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
         builder.bindInstance(
             "AVAILABLE_REQUEST_BUILDER_LISTENER",

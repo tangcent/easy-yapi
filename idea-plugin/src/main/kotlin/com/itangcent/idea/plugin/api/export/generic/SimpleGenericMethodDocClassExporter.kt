@@ -11,6 +11,9 @@ import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.MethodFilter
+import com.itangcent.idea.plugin.api.export.Orders
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
@@ -19,11 +22,15 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.order.Order
 import kotlin.reflect.KClass
 
 /**
  * only parse name
  */
+@Order(Orders.GENERIC + Orders.METHOD_DOC)
+@ConditionOnSimple
+@ConditionOnDoc("methodDoc")
 open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
 
     @Inject
@@ -146,8 +153,10 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
         return false
     }
 
-    private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
-                                docHandle: DocHandle) {
+    private fun exportMethodApi(
+        psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
+        docHandle: DocHandle
+    ) {
 
         actionContext!!.checkStatus()
 
@@ -166,11 +175,11 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         jvmClassHelper!!.getAllMethods(cls)
-                .filter { !jvmClassHelper.isBasicMethod(it.name) }
-                .filter { !it.hasModifierProperty("static") }
-                .filter { !it.isConstructor }
-                .filter { !shouldIgnore(it) }
-                .forEach(handle)
+            .filter { !jvmClassHelper.isBasicMethod(it.name) }
+            .filter { !it.hasModifierProperty("static") }
+            .filter { !it.isConstructor }
+            .filter { !shouldIgnore(it) }
+            .forEach(handle)
     }
 
     private fun methodDocEnable(): Boolean {

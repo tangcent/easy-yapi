@@ -11,12 +11,16 @@ import com.itangcent.common.model.Header
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.common.utils.*
+import com.itangcent.idea.condition.annotation.ConditionOnClass
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.util.hasFile
 
 @Singleton
+@ConditionOnSimple(false)
+@ConditionOnClass("org.springframework.web.bind.annotation.RequestMapping")
 open class SpringRequestClassExporter : RequestClassExporter() {
 
     @Inject

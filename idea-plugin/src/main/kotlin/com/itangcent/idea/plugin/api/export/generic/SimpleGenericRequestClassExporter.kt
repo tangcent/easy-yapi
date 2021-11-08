@@ -11,6 +11,9 @@ import com.itangcent.common.utils.stream
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
+import com.itangcent.idea.plugin.api.export.Orders
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
@@ -19,6 +22,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.order.Order
 import kotlin.reflect.KClass
 
 /**
@@ -27,6 +31,9 @@ import kotlin.reflect.KClass
  * Depends on [GenericClassExportRuleKeys]
  */
 @Singleton
+@ConditionOnSimple
+@Order(Orders.GENERIC)
+@ConditionOnDoc("request")
 open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
 
     @Inject

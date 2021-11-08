@@ -5,6 +5,9 @@ import com.intellij.psi.PsiFile
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.asDate
 import com.itangcent.common.utils.formatDate
+import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.ExportDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
@@ -95,7 +98,10 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
         builder.bind(SystemProvider::class) {
             it.toInstance(ImmutableSystemProvider(STANDARD_TIME))
         }
-    }
+
+        builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
+        builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
+            }
 
     override fun customConfig(): String {
         return "method.additional.header[!@com.itangcent.common.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
@@ -117,13 +123,7 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -149,13 +149,6 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -189,13 +182,6 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
         private val updatedCollections = HashMap<String, Any>()
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -240,13 +226,6 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true

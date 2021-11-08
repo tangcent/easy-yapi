@@ -1,0 +1,5 @@
+com.itangcent.idea.condition.OnClassCondition
+com.itangcent.idea.condition.OnMissingClassCondition
+com.itangcent.idea.plugin.api.export.condition.OnChannelCondition
+com.itangcent.idea.plugin.api.export.condition.OnDocCondition
+com.itangcent.idea.plugin.api.export.condition.OnSimpleCondition

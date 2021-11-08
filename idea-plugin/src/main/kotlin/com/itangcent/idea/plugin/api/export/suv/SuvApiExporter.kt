@@ -17,14 +17,14 @@ import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
+import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.MethodFilter
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.curl.CurlExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
 import com.itangcent.idea.plugin.api.export.postman.*
-import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
@@ -32,7 +32,10 @@ import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.helper.*
+import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
@@ -416,14 +419,10 @@ open class SuvApiExporter {
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
 
+            builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
+            builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
+            
             builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
             builder.bindInstance(
                 "AVAILABLE_REQUEST_BUILDER_LISTENER",
@@ -471,15 +470,10 @@ open class SuvApiExporter {
             builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    YapiSpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class,
-                    GenericMethodDocClassExporter::class
-                )
-            )
 
+            builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
+            builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
+            
             builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
             builder.bindInstance(
                 "AVAILABLE_REQUEST_BUILDER_LISTENER",
@@ -587,15 +581,10 @@ open class SuvApiExporter {
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class,
-                    GenericMethodDocClassExporter::class
-                )
-            )
 
+            builder.bindInstance(ExportChannel::class, ExportChannel.of("markdown"))
+            builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
+            
             builder.bind(ConfigReader::class, "delegate_config_reader") {
                 it.with(EasyApiConfigReader::class).singleton()
             }
@@ -665,14 +654,9 @@ open class SuvApiExporter {
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
 
+            builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
+            
             builder.bind(ConfigReader::class, "delegate_config_reader") {
                 it.with(EasyApiConfigReader::class).singleton()
             }

@@ -15,6 +15,9 @@ import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.MethodFilter
+import com.itangcent.idea.plugin.api.export.Orders
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.core.LinkResolver
 import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
@@ -30,8 +33,12 @@ import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.order.Order
 import kotlin.reflect.KClass
 
+@Order(Orders.GENERIC + Orders.METHOD_DOC)
+@ConditionOnSimple(false)
+@ConditionOnDoc("methodDoc")
 open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     @Inject
@@ -173,7 +180,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     @Suppress("UNUSED")
     protected open fun shouldIgnore(psiElement: PsiElement): Boolean {
-        if (ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) == true) {
+        if (ruleComputer.computer(ClassExportRuleKeys.IGNORE, psiElement) == true) {
             return true
         }
 
@@ -246,7 +253,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
                 val descOfReturn = docHelper!!.findDocByTag(methodExportContext.psi(), "return")
 
                 if (descOfReturn.notNullOrBlank()) {
-                    val methodReturnMain = ruleComputer!!.computer(
+                    val methodReturnMain = ruleComputer.computer(
                         ClassExportRuleKeys.METHOD_RETURN_MAIN,
                         methodExportContext.method
                     )
@@ -329,7 +336,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
             for (param in params) {
 
-                if (ruleComputer!!.computer(ClassExportRuleKeys.PARAM_IGNORE, param) == true) {
+                if (ruleComputer.computer(ClassExportRuleKeys.PARAM_IGNORE, param) == true) {
                     continue
                 }
 
@@ -363,7 +370,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
             param.name(),
             typeObject,
             paramDesc,
-            ruleComputer!!.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true
+            ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, param) == true
         )
     }
 
@@ -388,7 +395,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     }
 
     protected open fun readParamDoc(explicitParameter: ExplicitParameter): String? {
-        return ruleComputer!!.computer(ClassExportRuleKeys.PARAM_DOC, explicitParameter)
+        return ruleComputer.computer(ClassExportRuleKeys.PARAM_DOC, explicitParameter)
     }
 
     private fun methodDocEnable(): Boolean {

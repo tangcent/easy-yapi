@@ -8,7 +8,10 @@ import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.model.*
+import com.itangcent.common.model.Request
+import com.itangcent.common.model.Response
+import com.itangcent.common.model.getContentType
+import com.itangcent.common.model.hasBodyOrForm
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.StatusRecorder
@@ -17,6 +20,7 @@ import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.MethodFilter
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.api.export.spring.SpringClassName
 import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
@@ -39,6 +43,7 @@ import kotlin.reflect.KClass
  * An abstract implementation of  [ClassExporter]
  * that exports [Request] from code.
  */
+@ConditionOnDoc("request")
 abstract class RequestClassExporter : ClassExporter, Worker {
 
     @Inject
