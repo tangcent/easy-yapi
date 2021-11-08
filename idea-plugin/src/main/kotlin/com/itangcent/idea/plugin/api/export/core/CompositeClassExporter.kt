@@ -1,47 +1,30 @@
 package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.Inject
-import com.google.inject.name.Named
 import com.itangcent.common.utils.filterAs
 import com.itangcent.common.utils.reduceSafely
 import com.itangcent.common.utils.stream
-import com.itangcent.common.utils.toTypedArray
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompletedHandle
-import com.itangcent.idea.plugin.api.export.core.DocHandle
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.spi.SpiCompositeLoader
 import kotlin.reflect.KClass
 
 class CompositeClassExporter : ClassExporter, Worker {
 
     @Inject
-    @Named("AVAILABLE_CLASS_EXPORTER")
-    private var classExporters: Array<*>? = null
+    private lateinit var actionContext: ActionContext
 
-    @Inject
-    private var actionContext: ActionContext? = null
-
-    private var subClassExporters: Array<ClassExporter>? = null
-
-    @PostConstruct
-    fun init() {
-        subClassExporters = classExporters
-                ?.stream()
-                ?.map { it as KClass<*> }
-                ?.map { actionContext!!.instance(it) }
-                ?.map { it as ClassExporter }
-                ?.toTypedArray()
+    private val subClassExporters: Array<ClassExporter> by lazy {
+        SpiCompositeLoader.load(actionContext)
     }
 
     override fun support(docType: KClass<*>): Boolean {
-        return this.subClassExporters?.stream()?.map { it.support(docType) }?.anyMatch { it } ?: false
+        return this.subClassExporters.stream().map { it.support(docType) }?.anyMatch { it } ?: false
     }
 
     override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
-        val ret = this.subClassExporters?.stream()?.map {
+        val ret = this.subClassExporters.stream().map {
             it.export(cls, docHandle)
         }?.anyMatch { it } ?: false
         completedHandle(cls)
@@ -50,25 +33,25 @@ class CompositeClassExporter : ClassExporter, Worker {
 
     override fun status(): WorkerStatus {
         return this.subClassExporters
-                ?.stream()
-                ?.filter { it is Worker }
-                ?.map { it as Worker }
-                ?.map { it.status() }
-                ?.reduceSafely(WorkerStatus::and)
-                ?: WorkerStatus.FREE
+            .stream()
+            .filter { it is Worker }
+            ?.map { it as Worker }
+            ?.map { it.status() }
+            ?.reduceSafely(WorkerStatus::and)
+            ?: WorkerStatus.FREE
     }
 
     override fun waitCompleted() {
         this.subClassExporters
-                ?.stream()
-                ?.filterAs<Worker>()
-                ?.forEach { it.waitCompleted() }
+            .stream()
+            .filterAs<Worker>()
+            .forEach { it.waitCompleted() }
     }
 
     override fun cancel() {
         this.subClassExporters
-                ?.stream()
-                ?.filterAs<Worker>()
-                ?.forEach { it.cancel() }
+            .stream()
+            .filterAs<Worker>()
+            .forEach { it.cancel() }
     }
 }

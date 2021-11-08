@@ -8,14 +8,13 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.firstOrNull
 import com.itangcent.common.utils.stream
+import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.StatusRecorder
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.export.core.ApiHelper
-import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompletedHandle
-import com.itangcent.idea.plugin.api.export.core.DocHandle
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
+import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
@@ -27,6 +26,9 @@ import kotlin.reflect.KClass
 /**
  * only parse name
  */
+@ConditionOnSimple
+@ConditionOnClass("org.springframework.web.bind.annotation.RequestMapping")
+@ConditionOnDoc("request")
 open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
 
     @Inject
@@ -125,18 +127,18 @@ open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Map<String, Any?>? {
         return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
-                .stream()
-                .map { annotationHelper!!.findAnnMap(ele, it) }
-                .firstOrNull { it != null }
+            .stream()
+            .map { annotationHelper!!.findAnnMap(ele, it) }
+            .firstOrNull { it != null }
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         jvmClassHelper!!.getAllMethods(cls)
-                .stream()
-                .filter { !jvmClassHelper.isBasicMethod(it.name) }
-                .filter { !it.hasModifierProperty("static") }
-                .filter { !it.isConstructor }
-                .filter { !shouldIgnore(it) }
-                .forEach(handle)
+            .stream()
+            .filter { !jvmClassHelper.isBasicMethod(it.name) }
+            .filter { !it.hasModifierProperty("static") }
+            .filter { !it.isConstructor }
+            .filter { !shouldIgnore(it) }
+            .forEach(handle)
     }
 }

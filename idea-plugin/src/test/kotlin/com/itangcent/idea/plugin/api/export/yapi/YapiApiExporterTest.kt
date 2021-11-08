@@ -4,10 +4,10 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiFile
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.debug.LoggerCollector
+import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.FileSaveHelper
@@ -27,8 +27,6 @@ import org.mockito.kotlin.eq
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 /**
  * Test case of [YapiApiExporter]
@@ -86,6 +84,9 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
         }
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
         builder.bind(FileSaveHelper::class) { it.with(FileSaveHelperAdaptor::class) }
+
+        builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
+        builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
     }
 
     override fun customConfig(): String {
@@ -103,13 +104,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    YapiSpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -161,13 +156,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    YapiSpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -213,14 +202,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
     class GenericMethodYapiApiExporterTest : YapiApiExporterTest() {
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    YapiSpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class,
-                    GenericMethodDocClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true

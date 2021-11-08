@@ -63,7 +63,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
         val returnValue = response.string()
         if (returnValue.isNullOrBlank()) {
-            logger.error("No Response For:${response.request().url()}")
+            logger.error("No Response For: ${response.request().url()}")
             return
         }
         if (returnValue.contains("AuthenticationError")

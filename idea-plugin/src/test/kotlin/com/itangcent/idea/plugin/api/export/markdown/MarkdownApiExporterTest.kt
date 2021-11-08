@@ -2,11 +2,10 @@ package com.itangcent.idea.plugin.api.export.markdown
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiFile
+import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
-import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
@@ -74,6 +73,9 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
         builder.bind(FileSaveHelper::class) { it.with(FileSaveHelperAdaptor::class) }
+
+        builder.bindInstance(ExportChannel::class, ExportChannel.of("markdown"))
+        builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
     }
 
     override fun customConfig(): String {
@@ -91,13 +93,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -120,13 +116,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -155,13 +145,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
@@ -183,14 +167,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
     class GenericMethodMarkdownApiExporterTest : MarkdownApiExporterTest() {
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
-            builder.bindInstance(
-                "AVAILABLE_CLASS_EXPORTER",
-                arrayOf<Any>(
-                    SpringRequestClassExporter::class,
-                    GenericRequestClassExporter::class,
-                    GenericMethodDocClassExporter::class
-                )
-            )
+
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true

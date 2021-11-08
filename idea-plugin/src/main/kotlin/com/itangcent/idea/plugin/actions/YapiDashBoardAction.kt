@@ -4,10 +4,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
+import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.ExportDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
-import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
-import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.swing.ActiveWindowProvider
@@ -41,13 +41,10 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(ClassExporter::class, "delegate_classExporter") {
             it.with(CompositeClassExporter::class).singleton()
         }
-        builder.bindInstance(
-            "AVAILABLE_CLASS_EXPORTER", arrayOf<Any>(
-                YapiSpringRequestClassExporter::class,
-                GenericRequestClassExporter::class,
-                GenericMethodDocClassExporter::class
-            )
-        )
+
+        builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
+        builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
+        
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
 
         builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }

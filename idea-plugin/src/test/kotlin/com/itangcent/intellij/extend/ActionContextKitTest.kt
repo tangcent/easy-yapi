@@ -7,7 +7,7 @@ import java.util.concurrent.TimeoutException
 import kotlin.test.assertEquals
 
 /**
- * Test case ot [com.itangcent.intellij.extend.ActionContextKit]
+ * Test case of [com.itangcent.intellij.extend.ActionContextKit]
  */
 internal class ActionContextKitTest : BaseContextTest() {
 

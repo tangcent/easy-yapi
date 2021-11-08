@@ -2,6 +2,9 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.ExportDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
@@ -28,15 +31,10 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_CLASS_EXPORTER",
-            arrayOf<Any>(
-                SpringRequestClassExporter::class,
-                GenericRequestClassExporter::class,
-                GenericMethodDocClassExporter::class
-            )
-        )
 
+        builder.bindInstance(ExportChannel::class, ExportChannel.of("markdown"))
+        builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
+        
         //always not read api from cache
         builder.bindInstance("class.exporter.read.cache", false)
 
