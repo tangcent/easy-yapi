@@ -20,7 +20,6 @@ import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.MethodFilter
-import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.curl.CurlExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
@@ -423,12 +422,7 @@ open class SuvApiExporter {
             builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
             builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
             
-            builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-            builder.bindInstance(
-                "AVAILABLE_REQUEST_BUILDER_LISTENER",
-                arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class)
-            )
-
+            builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
             //always not read api from cache
             builder.bindInstance("class.exporter.read.cache", false)
 
@@ -474,19 +468,10 @@ open class SuvApiExporter {
             builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
             builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
             
-            builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-            builder.bindInstance(
-                "AVAILABLE_REQUEST_BUILDER_LISTENER",
-                arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class)
-            )
-
+            builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
             builder.bind(MethodDocBuilderListener::class) {
-                it.with(ComponentMethodDocBuilderListener::class).singleton()
+                it.with(CompositeMethodDocBuilderListener::class).singleton()
             }
-            builder.bindInstance(
-                "AVAILABLE_METHOD_DOC_BUILDER_LISTENER",
-                arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class)
-            )
 
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")

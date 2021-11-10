@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnChannel
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.ExportContext
 import com.itangcent.idea.plugin.api.export.core.MethodExportContext
@@ -16,6 +17,7 @@ import com.itangcent.intellij.config.rule.computer
  *
  * @see [https://learning.postman.com/docs/writing-scripts/intro-to-scripts/]
  */
+@ConditionOnChannel("postman")
 class PostmanRequestBuilderListener : RequestBuilderListener {
 
     @Inject

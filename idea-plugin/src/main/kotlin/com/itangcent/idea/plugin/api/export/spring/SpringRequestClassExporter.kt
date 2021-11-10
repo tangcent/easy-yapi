@@ -18,13 +18,18 @@ import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.util.hasFile
 
+/**
+ * Support export apis from spring controllers.
+ *
+ * @author tangcent
+ */
 @Singleton
 @ConditionOnSimple(false)
-@ConditionOnClass("org.springframework.web.bind.annotation.RequestMapping")
+@ConditionOnClass(SpringClassName.REQUEST_MAPPING_ANNOTATION)
 open class SpringRequestClassExporter : RequestClassExporter() {
 
     @Inject
-    private val annotationHelper: AnnotationHelper? = null
+    protected val annotationHelper: AnnotationHelper? = null
 
     @Inject
     protected val commentResolver: CommentResolver? = null
@@ -285,8 +290,11 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         val requestMapping = findRequestMappingInAnn(methodExportContext.psi())
         methodExportContext.setExt("requestMapping", requestMapping)
         var httpMethod = findHttpMethod(requestMapping)
-        if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
-            httpMethod = ctrlHttpMethod!!
+        if (httpMethod == HttpMethod.NO_METHOD
+            && ctrlHttpMethod != null
+            && ctrlHttpMethod != HttpMethod.NO_METHOD
+        ) {
+            httpMethod = ctrlHttpMethod
         }
         request.method = httpMethod
 

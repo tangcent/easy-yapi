@@ -207,6 +207,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
                     settings.methodDocEnable = true
+                    settings.genericEnable = true
                     settings.yapiServer = "http://127.0.0.1:3088"
                     settings.yapiTokens = "test_default=token111111"
                 }))

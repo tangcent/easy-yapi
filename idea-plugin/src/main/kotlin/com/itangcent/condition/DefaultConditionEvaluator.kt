@@ -10,7 +10,6 @@ import kotlin.reflect.full.findAnnotation
 
 class DefaultConditionEvaluator : ConditionEvaluator {
 
-
     private val loadedConditions by lazy {
         val conditions = SpiUtils.loadServices(Condition::class)!!
         if (conditions.isEmpty()) {

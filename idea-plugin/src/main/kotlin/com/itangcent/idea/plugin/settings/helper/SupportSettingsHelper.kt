@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.itangcent.idea.plugin.settings.SettingBinder
 
 @Singleton
+@Deprecated("use @ConditionOnSetting")
 class SupportSettingsHelper {
 
     @Inject

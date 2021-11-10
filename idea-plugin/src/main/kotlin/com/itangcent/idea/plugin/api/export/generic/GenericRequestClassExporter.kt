@@ -24,11 +24,10 @@ import com.itangcent.idea.plugin.api.export.generic.GenericClassExportRuleKeys.P
 import com.itangcent.idea.plugin.api.export.generic.GenericClassExportRuleKeys.PARAM_HEADER
 import com.itangcent.idea.plugin.api.export.generic.GenericClassExportRuleKeys.PARAM_NAME
 import com.itangcent.idea.plugin.api.export.generic.GenericClassExportRuleKeys.PARAM_PATH_VAR
-import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
+import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.util.hasFile
 import com.itangcent.order.Order
-import kotlin.reflect.KClass
 
 /**
  * A generic [RequestClassExporter] that exports [Request]
@@ -37,25 +36,11 @@ import kotlin.reflect.KClass
  */
 @Order(Orders.GENERIC)
 @ConditionOnSimple(false)
+@ConditionOnSetting("genericEnable")
 open class GenericRequestClassExporter : RequestClassExporter() {
 
     @Inject
-    protected lateinit var supportSettingsHelper: SupportSettingsHelper
-
-    @Inject
     protected val commentResolver: CommentResolver? = null
-
-    override fun support(docType: KClass<*>): Boolean {
-        return supportSettingsHelper.genericEnable() && super.support(docType)
-    }
-
-    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
-        if (!supportSettingsHelper.genericEnable()) {
-            completedHandle(cls)
-            return false
-        }
-        return super.export(cls, docHandle, completedHandle)
-    }
 
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
         val pathAndMethodOfClass = findPathAndMethod(cls)

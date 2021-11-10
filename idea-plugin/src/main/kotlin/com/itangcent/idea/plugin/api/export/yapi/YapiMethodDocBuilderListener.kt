@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Param
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnChannel
 import com.itangcent.idea.plugin.api.export.core.ExportContext
 import com.itangcent.idea.plugin.api.export.core.MethodDocBuilderListener
 import com.itangcent.idea.plugin.api.export.core.MethodExportContext
@@ -11,6 +12,7 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import org.apache.commons.lang3.StringUtils
 
+@ConditionOnChannel("yap")
 class YapiMethodDocBuilderListener : MethodDocBuilderListener {
 
     @Inject
@@ -47,9 +49,9 @@ class YapiMethodDocBuilderListener : MethodDocBuilderListener {
         val tags = ruleComputer.computer(YapiClassExportRuleKeys.TAG, methodExportContext.method)
         if (!tags.isNullOrBlank()) {
             methodDoc.setTags(StringUtils.split(tags, configReader.first("api.tag.delimiter")?.let { it + "\n" }
-                    ?: ",\n")
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() })
+                ?: ",\n")
+                .map { it.trim() }
+                .filter { it.isNotBlank() })
         }
 
         val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, methodExportContext.method)

@@ -61,14 +61,6 @@ internal class SimpleGenericMethodDocClassExporterTest
 
     fun testExport() {
         val methodDocs = ArrayList<MethodDoc>()
-        settings.methodDocEnable = false
-        classExporter.export(userCtrlPsiClass, methodDocOnly {
-            methodDocs.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
-        assertTrue(methodDocs.isEmpty())
-
-        //enable export method doc
         settings.methodDocEnable = true
         classExporter.export(userCtrlPsiClass, methodDocOnly {
             methodDocs.add(it)

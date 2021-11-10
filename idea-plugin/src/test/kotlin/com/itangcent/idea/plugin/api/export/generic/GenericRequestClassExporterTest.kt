@@ -88,14 +88,6 @@ internal class GenericRequestClassExporterTest
 
     fun testExport() {
         val requests = ArrayList<Request>()
-        settings.genericEnable = false
-        classExporter.export(userClientClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
-        assertTrue(requests.isEmpty())
-
-        //enable export generic
         settings.genericEnable = true
         classExporter.export(userClientClass, requestOnly {
             requests.add(it)

@@ -15,7 +15,7 @@ import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
-import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
+import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
@@ -34,6 +34,7 @@ import kotlin.reflect.KClass
 @ConditionOnSimple
 @Order(Orders.GENERIC)
 @ConditionOnDoc("request")
+@ConditionOnSetting("genericEnable")
 open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
 
     @Inject
@@ -42,11 +43,8 @@ open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
 
-    @Inject
-    protected lateinit var supportSettingsHelper: SupportSettingsHelper
-
     override fun support(docType: KClass<*>): Boolean {
-        return supportSettingsHelper.genericEnable() && docType == Request::class
+        return docType == Request::class
     }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
@@ -76,7 +74,7 @@ open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
     protected var apiHelper: ApiHelper? = null
 
     override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
-        if (!supportSettingsHelper.genericEnable() || cls !is PsiClass) {
+        if (cls !is PsiClass) {
             completedHandle(cls)
             return false
         }

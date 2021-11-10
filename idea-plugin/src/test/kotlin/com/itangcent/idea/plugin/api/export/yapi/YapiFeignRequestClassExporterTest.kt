@@ -1,24 +1,37 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.ExportChannel
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
+import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
 
 /**
- * Test case of [YapiSpringRequestClassExporter]
+ * Test case of [YapiFeignRequestClassExporter]
  * 1.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.TAG]
  * 2.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.STATUS]
  * 3.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.OPEN]
  */
-internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseTest() {
+internal class YapiFeignRequestClassExporterTest : YapiSpringClassExporterBaseTest() {
+
+    private lateinit var userClientPsiClass: PsiClass
+    override fun beforeBind() {
+        super.beforeBind()
+        loadFile("spring/FeignClient.java")
+        userClientPsiClass = loadClass("feign/UserClient.java")!!
+    }
+
     override fun customConfig(): String {
         return super.customConfig() +
                 "\napi.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
@@ -33,14 +46,17 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
         super.bind(builder)
 
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
+        builder.bind(ClassExporter::class) { it.with(YapiFeignRequestClassExporter::class).singleton() }
+        builder.bind(SettingBinder::class) {
+            it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
+                settings.feignEnable = true
+            }))
+        }
     }
 
     fun testExport() {
         val requests = ArrayList<Request>()
-        classExporter.export(userCtrlPsiClass, requestOnly {
-            requests.add(it)
-        })
-        classExporter.export(defaultCtrlPsiClass, requestOnly {
+        classExporter.export(userClientPsiClass, requestOnly {
             requests.add(it)
         })
         (classExporter as Worker).waitCompleted()
@@ -48,7 +64,7 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)
             assertEquals("GET", request.method)
-            assertEquals(userCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
+            assertEquals(userClientPsiClass.methods[0], (request.resource as PsiResource).resource())
 
             assertTrue(request.isOpen())
         }
@@ -56,39 +72,12 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
             assertEquals("get user info", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("GET", request.method)
-            assertEquals(userCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
+            assertEquals(userClientPsiClass.methods[1], (request.resource as PsiResource).resource())
 
             assertFalse(request.isOpen())
             assertEquals("undone", request.getStatus())
             assertTrue(request.getTags()!!.contains("deprecated"))
         }
-
-        val apiCntInUserCtrl = userCtrlPsiClass.methods.size
-        requests[apiCntInUserCtrl + 0].let { request ->
-            assertEquals("call with query", request.name)
-            assertEquals("", request.desc)
-            assertEquals("GET", request.method)
-            assertEquals(defaultCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
-        }
-        requests[apiCntInUserCtrl + 1].let { request ->
-            assertEquals("call with form", request.name)
-            assertTrue(request.desc.isNullOrEmpty())
-            assertEquals("POST", request.method)
-            assertEquals(defaultCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
-
-            assertFalse(request.isOpen())
-            assertEquals("done", request.getStatus())
-        }
-        requests[apiCntInUserCtrl + 2].let { request ->
-            assertEquals("call with body", request.name)
-            assertTrue(request.desc.isNullOrEmpty())
-            assertEquals("POST", request.method)
-            assertEquals(defaultCtrlPsiClass.methods[2], (request.resource as PsiResource).resource())
-
-            assertFalse(request.isOpen())
-            assertEquals("done", request.getStatus())
-        }
-
         assertEquals(ResultLoader.load(), LoggerCollector.getLog().toUnixString())
     }
 }

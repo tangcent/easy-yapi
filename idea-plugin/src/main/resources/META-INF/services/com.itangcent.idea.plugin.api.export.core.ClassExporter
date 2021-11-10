@@ -5,3 +5,5 @@ com.itangcent.idea.plugin.api.export.generic.SimpleGenericRequestClassExporter
 com.itangcent.idea.plugin.api.export.spring.SimpleSpringRequestClassExporter
 com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 com.itangcent.idea.plugin.api.export.yapi.YapiSpringRequestClassExporter
+com.itangcent.idea.plugin.api.export.feign.FeignRequestClassExporter
+com.itangcent.idea.plugin.api.export.feign.SimpleFeignRequestClassExporter
