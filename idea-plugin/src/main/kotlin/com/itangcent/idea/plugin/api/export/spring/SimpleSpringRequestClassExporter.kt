@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.spring
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
@@ -26,13 +27,14 @@ import kotlin.reflect.KClass
 /**
  * only parse name
  */
+@Singleton
 @ConditionOnSimple
-@ConditionOnClass("org.springframework.web.bind.annotation.RequestMapping")
+@ConditionOnClass(SpringClassName.REQUEST_MAPPING_ANNOTATION)
 @ConditionOnDoc("request")
 open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
 
     @Inject
-    private val annotationHelper: AnnotationHelper? = null
+    protected val annotationHelper: AnnotationHelper? = null
 
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
@@ -103,7 +105,7 @@ open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
         return true
     }
 
-    private fun isCtrl(psiClass: PsiClass): Boolean {
+    protected open fun isCtrl(psiClass: PsiClass): Boolean {
         return psiClass.annotations.any {
             SpringClassName.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
         } || (ruleComputer!!.computer(ClassExportRuleKeys.IS_CTRL, psiClass) ?: false)

@@ -8,6 +8,7 @@ import com.itangcent.idea.utils.Charsets
 interface ApplicationSettingsSupport {
     var methodDocEnable: Boolean
     var genericEnable: Boolean
+    var feignEnable: Boolean
     var pullNewestDataBefore: Boolean
     var postmanToken: String?
     var wrapCollection: Boolean
@@ -48,6 +49,7 @@ interface ApplicationSettingsSupport {
         newSetting.pullNewestDataBefore = this.pullNewestDataBefore
         newSetting.methodDocEnable = this.methodDocEnable
         newSetting.genericEnable = this.genericEnable
+        newSetting.feignEnable = this.feignEnable
         newSetting.queryExpanded = this.queryExpanded
         newSetting.formExpanded = this.formExpanded
         newSetting.readGetter = this.readGetter
@@ -78,6 +80,8 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var methodDocEnable: Boolean = false
 
     override var genericEnable: Boolean = false
+
+    override var feignEnable: Boolean = false
 
     //postman
 

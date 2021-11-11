@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 /**
- * Test case of [ComponentMethodDocBuilderListener]
+ * Test case of [CompositeMethodDocBuilderListener]
  */
-internal class ComponentMethodDocBuilderListenerTest : AdvancedContextTest() {
+internal class CompositeMethodDocBuilderListenerTest : AdvancedContextTest() {
 
     @Inject
     private lateinit var methodDocBuilderListener: MethodDocBuilderListener
@@ -24,12 +24,8 @@ internal class ComponentMethodDocBuilderListenerTest : AdvancedContextTest() {
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
         builder.bind(MethodDocBuilderListener::class) {
-            it.with(ComponentMethodDocBuilderListener::class).singleton()
+            it.with(CompositeMethodDocBuilderListener::class).singleton()
         }
-        builder.bindInstance(
-            "AVAILABLE_METHOD_DOC_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultMethodDocBuilderListener::class)
-        )
     }
 
     @BeforeEach

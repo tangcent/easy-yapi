@@ -172,6 +172,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                     settings.inferEnable = true
                     settings.methodDocEnable = true
+                    settings.genericEnable = true
                 }))
             }
             builder.workAt(userClientPsiFile)

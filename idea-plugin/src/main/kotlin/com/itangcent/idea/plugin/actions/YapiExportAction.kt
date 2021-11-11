@@ -4,10 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
-import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
-import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
-import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
@@ -40,17 +37,8 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
         
-        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_REQUEST_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class)
-        )
-
-        builder.bind(MethodDocBuilderListener::class) { it.with(ComponentMethodDocBuilderListener::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_METHOD_DOC_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class)
-        )
+        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
+        builder.bind(MethodDocBuilderListener::class) { it.with(CompositeMethodDocBuilderListener::class).singleton() }
 
         builder.bindInstance("file.save.default", "yapi.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.yapi.export.path")

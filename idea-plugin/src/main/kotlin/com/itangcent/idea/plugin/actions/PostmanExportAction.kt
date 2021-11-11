@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import com.itangcent.idea.plugin.api.export.core.ComponentRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.CompositeRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
@@ -32,12 +32,7 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
-        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_REQUEST_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class)
-        )
-
+        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
         //always not read api from cache
         builder.bindInstance("class.exporter.read.cache", false)
 

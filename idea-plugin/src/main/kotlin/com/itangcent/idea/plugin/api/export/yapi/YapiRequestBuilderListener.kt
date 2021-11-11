@@ -7,6 +7,7 @@ import com.itangcent.common.utils.Extensible
 import com.itangcent.common.utils.getAs
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnChannel
 import com.itangcent.idea.plugin.api.export.core.ExportContext
 import com.itangcent.idea.plugin.api.export.core.MethodExportContext
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
@@ -22,6 +23,7 @@ import org.apache.commons.lang3.StringUtils
  * 2.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.STATUS]
  * 3.support rule:[com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys.OPEN]
  */
+@ConditionOnChannel("yapi")
 class YapiRequestBuilderListener : RequestBuilderListener {
 
     @Inject

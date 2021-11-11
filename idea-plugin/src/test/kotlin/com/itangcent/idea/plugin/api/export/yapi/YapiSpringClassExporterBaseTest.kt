@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
@@ -76,15 +77,11 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
 
+        builder.bind(ExportChannel::class) { it.toInstance(ExportChannel.of("yapi")) }
         builder.bind(ClassExporter::class) { it.with(YapiSpringRequestClassExporter::class).singleton() }
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
-        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_REQUEST_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class)
-        )
-
+        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
         builder.bind(AdditionalParseHelper::class) { it.with(YapiAdditionalParseHelper::class).singleton() }
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->

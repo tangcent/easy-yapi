@@ -6,7 +6,6 @@ import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.dashboard.YapiDashBoard
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
-import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
@@ -47,17 +46,8 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
 
-        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_REQUEST_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultRequestBuilderListener::class, YapiRequestBuilderListener::class)
-        )
-
-        builder.bind(MethodDocBuilderListener::class) { it.with(ComponentMethodDocBuilderListener::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_METHOD_DOC_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultMethodDocBuilderListener::class, YapiMethodDocBuilderListener::class)
-        )
+        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
+        builder.bind(MethodDocBuilderListener::class) { it.with(CompositeMethodDocBuilderListener::class).singleton() }
 
         builder.bind(ActiveWindowProvider::class) { it.with(SimpleActiveWindowProvider::class) }
 

@@ -1,28 +1,15 @@
 package com.itangcent.idea.plugin.api.export.core
 
-import com.google.inject.Inject
-import com.google.inject.name.Named
+import com.google.inject.Singleton
 import com.itangcent.common.model.*
-import com.itangcent.intellij.jvm.spi.ProxyBuilder
-import kotlin.reflect.KClass
+import com.itangcent.spi.SpiCompositeLoader
 
-class ComponentRequestBuilderListener :
-        RequestBuilderListener {
-
-    @Inject
-    @Named("AVAILABLE_REQUEST_BUILDER_LISTENER")
-    private lateinit var delegateClass: Array<*>
+@Singleton
+class CompositeRequestBuilderListener :
+    RequestBuilderListener {
 
     private val delegate: RequestBuilderListener by lazy {
-        buildDelegate()
-    }
-
-    private fun buildDelegate(): RequestBuilderListener {
-        val proxyBuilder = ProxyBuilder(RequestBuilderListener::class)
-        for (delegateClass in delegateClass) {
-            proxyBuilder.addImplementClass(delegateClass as KClass<*>)
-        }
-        return proxyBuilder.buildProxy() as RequestBuilderListener
+        SpiCompositeLoader.loadComposite()
     }
 
     override fun setName(exportContext: ExportContext, request: Request, name: String) {

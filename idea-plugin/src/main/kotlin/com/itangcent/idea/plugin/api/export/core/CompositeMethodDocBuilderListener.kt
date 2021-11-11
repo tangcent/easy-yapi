@@ -1,29 +1,16 @@
 package com.itangcent.idea.plugin.api.export.core
 
-import com.google.inject.Inject
-import com.google.inject.name.Named
+import com.google.inject.Singleton
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Param
-import com.itangcent.intellij.jvm.spi.ProxyBuilder
-import kotlin.reflect.KClass
+import com.itangcent.spi.SpiCompositeLoader
 
-class ComponentMethodDocBuilderListener :
-        MethodDocBuilderListener {
-
-    @Inject
-    @Named("AVAILABLE_METHOD_DOC_BUILDER_LISTENER")
-    private lateinit var delegateClass: Array<*>
+@Singleton
+class CompositeMethodDocBuilderListener :
+    MethodDocBuilderListener {
 
     private val delegate: MethodDocBuilderListener by lazy {
-        buildDelegate()
-    }
-
-    private fun buildDelegate(): MethodDocBuilderListener {
-        val proxyBuilder = ProxyBuilder(MethodDocBuilderListener::class)
-        for (delegateClass in delegateClass) {
-            proxyBuilder.addImplementClass(delegateClass as KClass<*>)
-        }
-        return proxyBuilder.buildProxy() as MethodDocBuilderListener
+        SpiCompositeLoader.loadComposite()
     }
 
     override fun setName(exportContext: ExportContext, methodDoc: MethodDoc, name: String) {

@@ -113,6 +113,8 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     private var genericEnableCheckBox: JCheckBox? = null
 
+    private var feignEnableCheckBox: JCheckBox? = null
+
     private var globalCacheSizeLabel: JLabel? = null
 
     private var projectCacheSizeLabel: JLabel? = null
@@ -270,6 +272,9 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
         autoComputer.bind(genericEnableCheckBox!!)
             .mutual(this, "settingsInstance.genericEnable")
+
+        autoComputer.bind(feignEnableCheckBox!!)
+            .mutual(this, "settingsInstance.feignEnable")
 
         autoComputer.bind(inferEnableCheckBox!!)
             .mutual(this, "settingsInstance.inferEnable")
@@ -685,6 +690,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.pullNewestDataBefore = from.pullNewestDataBefore
         settings.methodDocEnable = from.methodDocEnable
         settings.genericEnable = from.genericEnable
+        settings.feignEnable = from.feignEnable
         settings.queryExpanded = from.queryExpanded
         settings.formExpanded = from.formExpanded
         settings.readGetter = from.readGetter

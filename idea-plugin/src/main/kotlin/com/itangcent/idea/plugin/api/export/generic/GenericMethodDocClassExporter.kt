@@ -20,8 +20,8 @@ import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.core.LinkResolver
+import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.SupportSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
@@ -39,6 +39,7 @@ import kotlin.reflect.KClass
 @Order(Orders.GENERIC + Orders.METHOD_DOC)
 @ConditionOnSimple(false)
 @ConditionOnDoc("methodDoc")
+@ConditionOnSetting("genericEnable", "methodDocEnable")
 open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     @Inject
@@ -54,7 +55,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     private val linkResolver: LinkResolver? = null
 
     override fun support(docType: KClass<*>): Boolean {
-        return docType == MethodDoc::class && methodDocEnable()
+        return docType == MethodDoc::class
     }
 
     private var statusRecorder: StatusRecorder = StatusRecorder()
@@ -81,9 +82,6 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     protected lateinit var methodDocBuilderListener: MethodDocBuilderListener
 
     @Inject
-    protected lateinit var supportSettingsHelper: SupportSettingsHelper
-
-    @Inject
     protected lateinit var intelligentSettingsHelper: IntelligentSettingsHelper
 
     @Inject
@@ -108,10 +106,6 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     private lateinit var classApiExporterHelper: ClassApiExporterHelper
 
     override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
-        if (!methodDocEnable()) {
-            completedHandle(cls)
-            return false
-        }
         if (cls !is PsiClass) {
             completedHandle(cls)
             return false
@@ -396,10 +390,6 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     protected open fun readParamDoc(explicitParameter: ExplicitParameter): String? {
         return ruleComputer.computer(ClassExportRuleKeys.PARAM_DOC, explicitParameter)
-    }
-
-    private fun methodDocEnable(): Boolean {
-        return supportSettingsHelper.methodDocEnable()
     }
 
     private fun needInfer(): Boolean {

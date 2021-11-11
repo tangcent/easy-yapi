@@ -2,9 +2,9 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.ComponentRequestBuilderListener
-import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.CompositeRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -80,16 +80,14 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
 
         builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
 
-        builder.bind(RequestBuilderListener::class) { it.with(ComponentRequestBuilderListener::class).singleton() }
-        builder.bindInstance(
-            "AVAILABLE_REQUEST_BUILDER_LISTENER",
-            arrayOf<Any>(DefaultRequestBuilderListener::class, PostmanRequestBuilderListener::class)
-        )
+        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
 
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                 settings.inferEnable = true
             }))
         }
+
+        builder.bind(ExportChannel::class) { it.toInstance(ExportChannel.of("postman")) }
     }
 }

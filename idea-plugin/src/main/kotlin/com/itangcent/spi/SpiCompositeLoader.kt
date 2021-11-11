@@ -4,13 +4,28 @@ import com.itangcent.common.spi.SpiUtils
 import com.itangcent.condition.ConditionEvaluator
 import com.itangcent.condition.Exclusion
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.jvm.spi.ContextProxyBean
 import com.itangcent.order.order
 import com.itangcent.utils.superClasses
+import java.lang.reflect.Proxy
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
 object SpiCompositeLoader {
+
+    @Suppress("UNCHECKED_CAST")
+    inline fun <reified S : Any> loadComposite(): S {
+        val cls = S::class
+        val loadServices = load<S>(ActionContext.getContext()!!)
+        if (loadServices.size == 1) {
+            return loadServices[0]
+        }
+        return Proxy.newProxyInstance(
+            cls.java.classLoader, arrayOf(cls.java),
+            ContextProxyBean(arrayOf(*loadServices))
+        ) as S
+    }
 
     /**
      * Load available beans of special type [T].
