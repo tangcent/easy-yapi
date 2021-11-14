@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.generic
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
@@ -65,6 +66,9 @@ internal class SimpleGenericRequestClassExporterTest
     }
 
     fun testExport() {
+        assertTrue(classExporter.support(Request::class))
+        assertFalse(classExporter.support(MethodDoc::class))
+
         val requests = ArrayList<Request>()
         settings.genericEnable = true
         classExporter.export(userClientClass, requestOnly {

@@ -12,7 +12,7 @@ curl -X GET -H 'token: ' http://localhost:8080/user/get/{id}?id=0
 
 ---
 
-## create new user
+## create an user
 ```bash
 curl -X POST -H 'Content-Type: application/json' -H 'token: ' -d '{
   "id": 0,

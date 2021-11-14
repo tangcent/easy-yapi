@@ -129,7 +129,7 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
         assertEquals("abc", request.desc)
         requestBuilderListener.appendDesc(FakeExportContext.INSTANCE,
                 request, "def")
-        assertEquals("abcdef", request.desc)
+        assertEquals("abc\ndef", request.desc)
     }
 
     @Test

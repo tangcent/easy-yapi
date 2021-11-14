@@ -108,7 +108,7 @@ open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
     protected open fun isCtrl(psiClass: PsiClass): Boolean {
         return psiClass.annotations.any {
             SpringClassName.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
-        } || (ruleComputer!!.computer(ClassExportRuleKeys.IS_CTRL, psiClass) ?: false)
+        } || (ruleComputer!!.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
     }
 
     private fun shouldIgnore(psiElement: PsiElement): Boolean {

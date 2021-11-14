@@ -291,7 +291,7 @@
               "code": 200,
               "_postman_previewtype": "text",
               "responseTime": 50,
-              "name": "create new user-Example",
+              "name": "create an user-Example",
               "header": [
                 {
                   "name": "date",
@@ -321,7 +321,7 @@
               "status": "OK"
             }
           ],
-          "name": "create new user",
+          "name": "create an user",
           "event": [
             {
               "listen": "prerequest",
@@ -614,7 +614,7 @@
               "code": 200,
               "_postman_previewtype": "text",
               "responseTime": 50,
-              "name": "create new user-Example",
+              "name": "create an user-Example",
               "header": [
                 {
                   "name": "date",
@@ -644,7 +644,7 @@
               "status": "OK"
             }
           ],
-          "name": "create new user"
+          "name": "create an user"
         },
         {
           "request": {

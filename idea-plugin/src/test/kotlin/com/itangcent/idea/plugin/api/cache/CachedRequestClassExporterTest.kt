@@ -67,7 +67,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
     }
 
     override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.common.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
+        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
                 "#[converts]*\n" +
                 "#The ObjectId and Date will be parsed as strings\n" +
                 "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +

@@ -52,7 +52,7 @@ internal class ApiHelperTest : PluginContextLightCodeInsightFixtureTestCase() {
     override fun customConfig(): String? {
         return super.customConfig() + "\n" +
                 "api.name=#name\n" +
-                "method.doc[@com.itangcent.common.annotation.Public]=public api"
+                "method.doc[@com.itangcent.annotation.Public]=public api"
     }
 
     fun testNameOfApi() {

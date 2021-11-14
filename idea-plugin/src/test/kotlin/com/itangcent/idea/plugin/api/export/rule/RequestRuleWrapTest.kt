@@ -110,7 +110,7 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         requestRuleWrap.appendDesc("desc")
         assertEquals("desc", request.desc)
         requestRuleWrap.appendDesc("-suffix")
-        assertEquals("desc-suffix", request.desc)
+        assertEquals("desc\n-suffix", request.desc)
     }
 
     fun testMethod() {

@@ -1,9 +1,9 @@
 package com.itangcent.springboot.demo.client;
 
-import com.itangcent.common.annotation.Public;
-import com.itangcent.common.dto.IResult;
-import com.itangcent.common.dto.Result;
-import com.itangcent.common.model.UserInfo;
+import com.itangcent.annotation.Public;
+import com.itangcent.dto.IResult;
+import com.itangcent.model.Result;
+import com.itangcent.model.UserInfo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -39,7 +39,7 @@ public interface UserClient {
     public IResult get(@PathVariable("id") Long id);
 
     /**
-     * create new user
+     * create an user
      */
     @PostMapping("/add")
     public Result<UserInfo> add(@RequestBody UserInfo userInfo);

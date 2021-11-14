@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.spring
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.kit.toJson
+import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
@@ -83,7 +84,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
     }
 
     override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.common.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
+        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
                 "ignore=#ignore\n" +
                 "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +
                 "field.required=@javax.validation.constraints.NotBlank\n" +
@@ -101,9 +102,9 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 "api.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
                 "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
                 "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
-                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.method.parse.after=groovy:logger.info(\"after parse method:\"+it)\n" +
                 "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n" +
-                "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n"
+                "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -117,6 +118,9 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
     }
 
     fun testExportFromUserCtrl() {
+        assertTrue(classExporter.support(Request::class))
+        assertFalse(classExporter.support(MethodDoc::class))
+
         settings.queryExpanded = true
         settings.formExpanded = true
         val requests = ArrayList<Request>()

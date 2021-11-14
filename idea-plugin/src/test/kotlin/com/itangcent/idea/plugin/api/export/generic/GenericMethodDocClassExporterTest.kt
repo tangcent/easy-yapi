@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.generic
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.MethodDoc
+import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
@@ -76,6 +77,9 @@ internal class GenericMethodDocClassExporterTest
     }
 
     fun testExport() {
+        assertFalse(classExporter.support(Request::class))
+        assertTrue(classExporter.support(MethodDoc::class))
+
         val methodDocs = ArrayList<MethodDoc>()
         classExporter.export(userCtrlPsiClass, methodDocOnly {
             methodDocs.add(it)

@@ -78,7 +78,7 @@ internal class SuvRuleParserTest : RuleParserBaseTest() {
         assertNull(ruleParser.parseBooleanRule(""))
         assertNull(ruleParser.parseBooleanRule("\t\n"))
         for (script in arrayOf(
-                "@com.itangcent.common.annotation.Public",
+                "@com.itangcent.annotation.Public",
                 "js:it.hasAnn(\"org.springframework.web.bind.annotation.RequestMapping\")",
                 "groovy:it.hasAnn(\"org.springframework.web.bind.annotation.RequestMapping\")"
         )) {
@@ -88,7 +88,7 @@ internal class SuvRuleParserTest : RuleParserBaseTest() {
         }
 
         for (script in arrayOf(
-                "!@com.itangcent.common.annotation.Public",
+                "!@com.itangcent.annotation.Public",
                 "js:!it.hasAnn(\"org.springframework.web.bind.annotation.RequestMapping\")",
                 "groovy:!it.hasAnn(\"org.springframework.web.bind.annotation.RequestMapping\")"
         )) {

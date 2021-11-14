@@ -9,6 +9,7 @@ interface ApplicationSettingsSupport {
     var methodDocEnable: Boolean
     var genericEnable: Boolean
     var feignEnable: Boolean
+    var quarkusEnable: Boolean
     var pullNewestDataBefore: Boolean
     var postmanToken: String?
     var wrapCollection: Boolean
@@ -50,6 +51,7 @@ interface ApplicationSettingsSupport {
         newSetting.methodDocEnable = this.methodDocEnable
         newSetting.genericEnable = this.genericEnable
         newSetting.feignEnable = this.feignEnable
+        newSetting.quarkusEnable = this.quarkusEnable
         newSetting.queryExpanded = this.queryExpanded
         newSetting.formExpanded = this.formExpanded
         newSetting.readGetter = this.readGetter
@@ -82,6 +84,8 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var genericEnable: Boolean = false
 
     override var feignEnable: Boolean = false
+
+    override var quarkusEnable: Boolean = true
 
     //postman
 

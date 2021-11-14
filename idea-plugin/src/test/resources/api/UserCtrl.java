@@ -1,6 +1,6 @@
 package com.itangcent.api;
 
-import com.itangcent.common.annotation.Public;
+import com.itangcent.annotation.Public;
 import com.itangcent.model.IResult;
 import com.itangcent.model.Result;
 import com.itangcent.model.UserInfo;
@@ -50,7 +50,7 @@ public class UserCtrl extends BaseController {
     }
 
     /**
-     * create new user
+     * create an user
      */
     @PostMapping("/add")
     public Result<UserInfo> create(@RequestBody UserInfo userInfo) {

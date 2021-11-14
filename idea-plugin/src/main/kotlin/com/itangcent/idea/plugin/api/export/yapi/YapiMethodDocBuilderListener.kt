@@ -46,7 +46,7 @@ class YapiMethodDocBuilderListener : MethodDocBuilderListener {
     }
 
     override fun processCompleted(methodExportContext: MethodExportContext, methodDoc: MethodDoc) {
-        val tags = ruleComputer.computer(YapiClassExportRuleKeys.TAG, methodExportContext.method)
+        val tags = ruleComputer.computer(YapiClassExportRuleKeys.TAG, methodExportContext.element())
         if (!tags.isNullOrBlank()) {
             methodDoc.setTags(StringUtils.split(tags, configReader.first("api.tag.delimiter")?.let { it + "\n" }
                 ?: ",\n")
@@ -54,10 +54,10 @@ class YapiMethodDocBuilderListener : MethodDocBuilderListener {
                 .filter { it.isNotBlank() })
         }
 
-        val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, methodExportContext.method)
+        val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, methodExportContext.element())
         methodDoc.setStatus(status)
 
-        val open = ruleComputer.computer(YapiClassExportRuleKeys.OPEN, methodExportContext.method)
+        val open = ruleComputer.computer(YapiClassExportRuleKeys.OPEN, methodExportContext.element())
         methodDoc.setOpen(open)
     }
 }

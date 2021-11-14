@@ -6,6 +6,8 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.utils.Extensible
 import com.itangcent.common.utils.SimpleExtensible
+import com.itangcent.intellij.jvm.duck.DuckType
+import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import kotlin.reflect.KClass
@@ -19,6 +21,15 @@ interface ExportContext : Extensible {
      * @return the psi element
      */
     fun psi(): PsiElement
+}
+
+interface VariableExportContext : ExportContext {
+
+    fun name(): String
+
+    fun type(): DuckType?
+
+    fun element(): ExplicitElement<*>
 }
 
 //region kits of ExportContext
@@ -51,14 +62,14 @@ fun <T> ExportContext.findExt(attr: String): T? {
 //endregion
 
 abstract class RootExportContext :
-        SimpleExtensible(), ExportContext {
+    SimpleExtensible(), ExportContext {
     override fun parent(): ExportContext? {
         return null
     }
 }
 
 abstract class AbstractExportContext(private val parent: ExportContext) :
-        SimpleExtensible(), ExportContext {
+    SimpleExtensible(), ExportContext {
     override fun parent(): ExportContext? {
         return this.parent
     }
@@ -68,19 +79,66 @@ class ClassExportContext(val cls: PsiClass) : RootExportContext() {
     override fun psi(): PsiClass {
         return cls
     }
-
 }
 
-class MethodExportContext(val parent: ExportContext,
-                          val method: ExplicitMethod) : AbstractExportContext(parent) {
+class MethodExportContext(
+    private val parent: ExportContext,
+    private val method: ExplicitMethod
+) : AbstractExportContext(parent), VariableExportContext {
+
+    /**
+     * Returns the name of the element.
+     *
+     * @return the element name.
+     */
+    override fun name(): String {
+        return method.name()
+    }
+
+    /**
+     * Returns the type of the variable.
+     *
+     * @return the variable type.
+     */
+    override fun type(): DuckType? {
+        return method.getReturnType()
+    }
+
+    override fun element(): ExplicitMethod {
+        return method
+    }
 
     override fun psi(): PsiMethod {
         return method.psi()
     }
 }
 
-class ParameterExportContext(val parent: ExportContext,
-                             val parameter: ExplicitParameter) : AbstractExportContext(parent) {
+class ParameterExportContext(
+    private val parent: ExportContext,
+    private val parameter: ExplicitParameter
+) : AbstractExportContext(parent), VariableExportContext {
+
+    /**
+     * Returns the name of the element.
+     *
+     * @return the element name.
+     */
+    override fun name(): String {
+        return parameter.name()
+    }
+
+    /**
+     * Returns the type of the variable.
+     *
+     * @return the variable type.
+     */
+    override fun type(): DuckType? {
+        return parameter.getType()
+    }
+
+    override fun element(): ExplicitParameter {
+        return parameter
+    }
 
     override fun psi(): PsiParameter {
         return parameter.psi()
@@ -89,6 +147,10 @@ class ParameterExportContext(val parent: ExportContext,
 
 fun ExportContext.classContext(): ClassExportContext? {
     return this.findContext(ClassExportContext::class)
+}
+
+fun ExportContext.methodContext(): MethodExportContext? {
+    return this.findContext(MethodExportContext::class)
 }
 
 fun ExportContext.paramContext(): ParameterExportContext? {
