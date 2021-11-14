@@ -21,7 +21,7 @@ import com.itangcent.idea.plugin.api.export.core.CompletedHandle
 import com.itangcent.idea.plugin.api.export.core.docs
 import com.itangcent.idea.plugin.api.export.curl.CurlExporter
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.*
@@ -70,7 +70,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     protected val classExporter: ClassExporter? = null
 
     @Inject
-    protected val resourceHelper: ResourceHelper? = null
+    protected val ultimateDocHelper: UltimateDocHelper? = null
 
     @Volatile
     protected var disposed = false
@@ -285,7 +285,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                                     val classProjectNodeData = ClassProjectNodeData(
                                         this,
                                         resourceClass,
-                                        resourceHelper!!.findAttrOfClass(resourceClass)
+                                        ultimateDocHelper!!.findUltimateDescOfClass(resourceClass)
                                     )
                                     moduleData.addSubNodeData(classProjectNodeData)
                                     classProjectNodeData
