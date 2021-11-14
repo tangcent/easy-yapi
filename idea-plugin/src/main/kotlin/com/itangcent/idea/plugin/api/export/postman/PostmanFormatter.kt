@@ -15,7 +15,7 @@ import com.itangcent.idea.plugin.json.JsonFormatter
 import com.itangcent.idea.plugin.json.SimpleJsonFormatter
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.GsonExUtils
@@ -39,7 +39,7 @@ open class PostmanFormatter {
     private val moduleHelper: ModuleHelper? = null
 
     @Inject
-    private val resourceHelper: ResourceHelper? = null
+    private val ultimateDocHelper: UltimateDocHelper? = null
 
     @Inject
     private val formatFolderHelper: FormatFolderHelper? = null
@@ -518,7 +518,7 @@ open class PostmanFormatter {
 
     fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
-            val attr = resourceHelper!!.findAttrOfClass(resource)
+            val attr = ultimateDocHelper!!.findUltimateDescOfClass(resource)
             if (attr.isNullOrBlank()) {
                 info[NAME] = resource.name!!
                 info[DESCRIPTION] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"

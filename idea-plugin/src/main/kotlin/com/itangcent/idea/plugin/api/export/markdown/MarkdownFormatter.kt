@@ -20,7 +20,7 @@ import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
-import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.toPrettyString
@@ -43,7 +43,7 @@ class MarkdownFormatter {
     protected lateinit var markdownSettingsHelper: MarkdownSettingsHelper
 
     @Inject
-    protected val resourceHelper: ResourceHelper? = null
+    protected val ultimateDocHelper: UltimateDocHelper? = null
 
     @Inject
     private val formatFolderHelper: FormatFolderHelper? = null
@@ -328,7 +328,7 @@ class MarkdownFormatter {
 
     fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
-            val attr = resourceHelper!!.findAttrOfClass(resource)
+            val attr = ultimateDocHelper!!.findUltimateDescOfClass(resource)
             if (attr.isNullOrBlank()) {
                 info["name"] = resource.name!!
                 info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"

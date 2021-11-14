@@ -10,7 +10,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.kit.headLine
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.psi.ResourceHelper
+import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.element.ExplicitClass
@@ -24,7 +24,7 @@ open class DefaultFormatFolderHelper : FormatFolderHelper {
     private val ruleComputer: RuleComputer? = null
 
     @Inject
-    private val resourceHelper: ResourceHelper? = null
+    private val ultimateDocHelper: UltimateDocHelper? = null
 
     @Inject
     private val docParseHelper: DefaultDocParseHelper? = null
@@ -33,8 +33,8 @@ open class DefaultFormatFolderHelper : FormatFolderHelper {
      * cache class -> folder
      */
     private val folderCache: Cache<Any, Folder> = CacheBuilder.newBuilder()
-            .maximumSize(20)
-            .build()
+        .maximumSize(20)
+        .build()
 
     override fun resolveFolder(resource: Any): Folder {
         var folder = folderCache.getIfPresent(resource)
@@ -143,7 +143,7 @@ open class DefaultFormatFolderHelper : FormatFolderHelper {
     }
 
     private fun findAttrOfClass(cls: PsiClass): String? {
-        val docText = resourceHelper!!.findAttrOfClass(cls)
+        val docText = ultimateDocHelper!!.findUltimateDescOfClass(cls)
         return if (docText.isNullOrBlank()) null
         else docParseHelper!!.resolveLinkInAttr(docText, cls)
     }
