@@ -4,6 +4,7 @@ import com.google.inject.Singleton
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.*
+import com.itangcent.common.utils.appendln
 import com.itangcent.intellij.extend.toPrettyString
 import java.util.*
 
@@ -31,8 +32,8 @@ open class DefaultRequestBuilderListener : RequestBuilderListener {
             val default = model[Attrs.DEFAULT_VALUE_ATTR] as Map<*, *>?
             model.forEach { (k, v) ->
                 addFormParam(
-                        exportContext, request, k.toString(), (default?.get(k) ?: v).toPrettyString(),
-                        KVUtils.getUltimateComment(comment, k)
+                    exportContext, request, k.toString(), (default?.get(k) ?: v).toPrettyString(),
+                    KVUtils.getUltimateComment(comment, k)
                 )
             }
         }
@@ -69,11 +70,7 @@ open class DefaultRequestBuilderListener : RequestBuilderListener {
     }
 
     override fun appendDesc(exportContext: ExportContext, request: Request, desc: String?) {
-        if (request.desc == null) {
-            request.desc = desc
-        } else {
-            request.desc = "${request.desc}$desc"
-        }
+        request.desc = request.desc.appendln(desc)
     }
 
     override fun addHeader(exportContext: ExportContext, request: Request, header: Header) {

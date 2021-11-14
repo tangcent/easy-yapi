@@ -1,6 +1,6 @@
 package com.itangcent.api;
 
-import com.itangcent.common.annotation.Public;
+import com.itangcent.annotation.Public;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 public class NameCtrl extends BaseController {

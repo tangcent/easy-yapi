@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.Worker
@@ -24,9 +25,9 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
                 "\napi.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
                 "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
                 "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
-                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.method.parse.after=groovy:logger.info(\"after parse method:\"+it)\n" +
                 "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n" +
-                "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n"
+                "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -36,6 +37,9 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
     }
 
     fun testExport() {
+        assertTrue(classExporter.support(Request::class))
+        assertFalse(classExporter.support(MethodDoc::class))
+
         val requests = ArrayList<Request>()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)

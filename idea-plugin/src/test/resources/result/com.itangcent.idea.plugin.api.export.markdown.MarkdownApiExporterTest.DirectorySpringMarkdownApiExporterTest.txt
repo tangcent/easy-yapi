@@ -780,7 +780,7 @@ not update anything
 
 
 ---
-### create new user
+### create an user
 
 #### BASIC
 

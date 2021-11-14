@@ -96,12 +96,12 @@ class PostmanRequestBuilderListener : RequestBuilderListener {
     }
 
     override fun processCompleted(methodExportContext: MethodExportContext, request: Request) {
-        val preRequest = ruleComputer.computer(ClassExportRuleKeys.POST_PRE_REQUEST, methodExportContext.method)
+        val preRequest = ruleComputer.computer(ClassExportRuleKeys.POST_PRE_REQUEST, methodExportContext.element())
         if (preRequest.notNullOrBlank()) {
             request.setExt(ClassExportRuleKeys.POST_PRE_REQUEST.name(), preRequest)
         }
 
-        val test = ruleComputer.computer(ClassExportRuleKeys.POST_TEST, methodExportContext.method)
+        val test = ruleComputer.computer(ClassExportRuleKeys.POST_TEST, methodExportContext.element())
         if (test.notNullOrBlank()) {
             request.setExt(ClassExportRuleKeys.POST_TEST.name(), test)
         }

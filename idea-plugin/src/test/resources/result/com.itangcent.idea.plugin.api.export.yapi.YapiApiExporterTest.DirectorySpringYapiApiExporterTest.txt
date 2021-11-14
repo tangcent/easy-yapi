@@ -720,7 +720,7 @@
     "res_body_type": "json",
     "req_body_other": "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
     "type": "static",
-    "title": "create new user",
+    "title": "create an user",
     "path": "/user/add",
     "catid": "111111",
     "req_body_is_json_schema": true,

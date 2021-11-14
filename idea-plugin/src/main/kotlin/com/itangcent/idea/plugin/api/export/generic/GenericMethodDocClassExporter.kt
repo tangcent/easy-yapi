@@ -224,7 +224,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
         methodExportContext: MethodExportContext,
         methodDoc: MethodDoc
     ) {
-        apiHelper!!.nameAndAttrOfApi(methodExportContext.method, {
+        apiHelper!!.nameAndAttrOfApi(methodExportContext.element(), {
             methodDocBuilderListener.setName(methodExportContext, methodDoc, it)
         }, {
             methodDocBuilderListener.appendDesc(methodExportContext, methodDoc, it)
@@ -237,7 +237,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     protected open fun processRet(methodExportContext: MethodExportContext, methodDoc: MethodDoc) {
 
-        val returnType = methodExportContext.method.getReturnType()
+        val returnType = methodExportContext.element().getReturnType()
         if (returnType != null) {
             try {
                 val typedResponse = parseResponseBody(methodExportContext, returnType)
@@ -249,7 +249,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
                 if (descOfReturn.notNullOrBlank()) {
                     val methodReturnMain = ruleComputer.computer(
                         ClassExportRuleKeys.METHOD_RETURN_MAIN,
-                        methodExportContext.method
+                        methodExportContext.element()
                     )
                     if (methodReturnMain.isNullOrBlank()) {
                         methodDocBuilderListener.appendRetDesc(
@@ -322,7 +322,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     private fun processMethodParameters(methodExportContext: MethodExportContext, methodDoc: MethodDoc) {
 
-        val params = methodExportContext.method.getParameters()
+        val params = methodExportContext.element().getParameters()
 
         if (params.isNotEmpty()) {
 

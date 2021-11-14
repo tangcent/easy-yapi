@@ -69,7 +69,7 @@ internal class SimpleFeignRequestClassExporterTest : PluginContextLightCodeInsig
         loadFile("spring/RequestHeader.java")
         loadFile("spring/RequestParam.java")
         loadFile("spring/FeignClient.java")
-        userClientPsiClass = loadClass("feign/UserClient.java")!!
+        userClientPsiClass = loadClass("api/feign/UserClient.java")!!
         settings.feignEnable = true
 
         //clear log
@@ -77,7 +77,7 @@ internal class SimpleFeignRequestClassExporterTest : PluginContextLightCodeInsig
     }
 
     override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.common.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
+        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
                 "ignore=#ignore\n" +
                 "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +
                 "field.required=@javax.validation.constraints.NotBlank\n" +
@@ -95,9 +95,9 @@ internal class SimpleFeignRequestClassExporterTest : PluginContextLightCodeInsig
                 "api.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
                 "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
                 "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
-                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
+                "api.method.parse.after=groovy:logger.info(\"after parse method:\"+it)\n" +
                 "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n" +
-                "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n"
+                "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {

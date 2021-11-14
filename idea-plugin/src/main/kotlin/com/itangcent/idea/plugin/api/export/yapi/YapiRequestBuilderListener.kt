@@ -74,7 +74,7 @@ class YapiRequestBuilderListener : RequestBuilderListener {
 
     private fun trySetDemo(exportContext: ExportContext, extensible: Extensible) {
         val paramContext = exportContext.paramContext() ?: return
-        val demo = ruleComputer.computer(YapiClassExportRuleKeys.PARAM_DEMO, paramContext.parameter)
+        val demo = ruleComputer.computer(YapiClassExportRuleKeys.PARAM_DEMO, paramContext.element())
         if (demo.notNullOrBlank()) {
             extensible.setExample(demo)
         }
@@ -126,7 +126,7 @@ class YapiRequestBuilderListener : RequestBuilderListener {
 
     override fun processCompleted(methodExportContext: MethodExportContext, request: Request) {
 
-        val tags = ruleComputer.computer(YapiClassExportRuleKeys.TAG, methodExportContext.method)
+        val tags = ruleComputer.computer(YapiClassExportRuleKeys.TAG, methodExportContext.element())
         if (tags.notNullOrEmpty()) {
             request.setTags(StringUtils.split(tags, configReader.first("api.tag.delimiter")?.let { it + "\n" }
                     ?: ",\n")
@@ -134,10 +134,10 @@ class YapiRequestBuilderListener : RequestBuilderListener {
                     .filter { it.isNotBlank() })
         }
 
-        val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, methodExportContext.method)
+        val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, methodExportContext.element())
         request.setStatus(status)
 
-        val open = ruleComputer.computer(YapiClassExportRuleKeys.OPEN, methodExportContext.method)
+        val open = ruleComputer.computer(YapiClassExportRuleKeys.OPEN, methodExportContext.element())
         request.setOpen(open)
     }
 }

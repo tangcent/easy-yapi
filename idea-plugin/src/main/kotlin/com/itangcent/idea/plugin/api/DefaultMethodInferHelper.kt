@@ -29,8 +29,9 @@ import java.util.*
  */
 @Singleton
 class DefaultMethodInferHelper : MethodInferHelper {
+
     @Inject
-    private var logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     private val psiClassHelper: PsiClassHelper? = null
@@ -110,7 +111,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     return findComplexResult(GsonUtils.resolveCycle(valueOf(inferRet)), byType)
                 }
             } catch (e: Exception) {
-                logger!!.traceError("infer error", e)
+                logger.traceError("infer error", e)
                 //infer failed
             }
         }
@@ -218,6 +219,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 val unboxedArgs = unboxArgs(args)
                 val key = psiMethod to unboxedArgs
                 if (staticMethodCache.containsKey(key)) {
+                    logger.info("cached:$key")
                     return staticMethodCache[key]
                 }
                 val tryCallRet = tryCallStaticMethod(psiMethod, unboxedArgs)
@@ -292,8 +294,8 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 }
             }
         } catch (e: Exception) {
-            logger!!.error("error to infer method return type:" + e.message)
-            logger!!.traceError(e)
+            logger.error("error to infer method return type:" + e.message)
+            logger.traceError(e)
         }
 
         return CALL_FAILED
@@ -387,8 +389,8 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
 
         } catch (e: Exception) {
-            logger!!.warn("error in infer method return type")
-            logger!!.traceError(e)
+            logger.warn("error in infer method return type")
+            logger.traceError(e)
         }
         return CALL_FAILED
     }
@@ -492,9 +494,29 @@ class DefaultMethodInferHelper : MethodInferHelper {
         return null
     }
 
+    fun init(content: PsiElement) {
+        if (map_put_method != null) return
+
+        val mapClass = ClassUtils.findClass(CommonClassNames.JAVA_UTIL_MAP, content)!!
+        map_put_method = mapClass.findMethodsByName("put", false)[0]
+        map_get_method = mapClass.findMethodsByName("get", false)[0]
+        map_putAll_method = mapClass.findMethodsByName("putAll", false)[0]
+
+        val collectionClass = ClassUtils.findClass(CommonClassNames.JAVA_UTIL_COLLECTION, content)!!
+        collection_add_method = collectionClass.findMethodsByName("add", false)[0]
+        collection_addAll_method = collectionClass.findMethodsByName("addAll", false)[0]
+    }
+
+    private var map_put_method: PsiMethod? = null
+    private var map_get_method: PsiMethod? = null
+    private var map_putAll_method: PsiMethod? = null
+
+    private var collection_add_method: PsiMethod? = null
+    private var collection_addAll_method: PsiMethod? = null
+
     companion object {
 
-        const val ALLOW_QUICK_CALL: Int = 0b0001
+        private const val ALLOW_QUICK_CALL: Int = 0b0001
 
         const val DEFAULT_OPTION = ALLOW_QUICK_CALL
 
@@ -502,28 +524,8 @@ class DefaultMethodInferHelper : MethodInferHelper {
             return (option and ALLOW_QUICK_CALL) != 0
         }
 
-        val CALL_FAILED = Any()
-        val COLLECTION_METHODS = setOf("put", "set", "add", "addAll", "putAll")
-
-        fun init(content: PsiElement) {
-            if (map_put_method != null) return
-
-            val mapClass = ClassUtils.findClass(CommonClassNames.JAVA_UTIL_MAP, content)!!
-            map_put_method = mapClass.findMethodsByName("put", false)[0]
-            map_get_method = mapClass.findMethodsByName("get", false)[0]
-            map_putAll_method = mapClass.findMethodsByName("putAll", false)[0]
-
-            val collectionClass = ClassUtils.findClass(CommonClassNames.JAVA_UTIL_COLLECTION, content)!!
-            collection_add_method = collectionClass.findMethodsByName("add", false)[0]
-            collection_addAll_method = collectionClass.findMethodsByName("addAll", false)[0]
-        }
-
-        var map_put_method: PsiMethod? = null
-        var map_get_method: PsiMethod? = null
-        var map_putAll_method: PsiMethod? = null
-
-        var collection_add_method: PsiMethod? = null
-        var collection_addAll_method: PsiMethod? = null
+        private val CALL_FAILED = Any()
+        private val COLLECTION_METHODS = setOf("put", "set", "add", "addAll", "putAll")
 
         private fun isSuperMethod(method: PsiMethod, superMethod: PsiMethod): Boolean {
             if (method == superMethod) return true
@@ -579,7 +581,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             }
         }
 
-        fun needCompute(obj: Any?): Boolean {
+        private fun needCompute(obj: Any?): Boolean {
             return when (obj) {
                 null -> false
                 is Variable -> true
@@ -599,7 +601,6 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
 
         fun assignment(target: Any?, value: Any?) {
-
             if (target is Variable) {
                 target.setValue(value)
             }
@@ -968,7 +969,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     //ignore
                 }
                 else -> {
-                    methodReturnInferHelper.logger!!.debug("no matched statement:${statement::class} - ${statement.text}")
+                    methodReturnInferHelper.logger.debug("no matched statement:${statement::class} - ${statement.text}")
                 }
             }
 
@@ -1094,7 +1095,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 }
                 else -> {
                     //ignore
-//                    methodReturnInferHelper.logger!!.debug("no matched ele ${psiElement::class.qualifiedName}:${psiElement.text}")
+//                    methodReturnInferHelper.logger.debug("no matched ele ${psiElement::class.qualifiedName}:${psiElement.text}")
                 }
             }
             return null
@@ -1167,7 +1168,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 is PsiLambdaExpression -> return psiExpression.body?.let { processElement(it) }
                 else -> {
                     //ignore
-//                    methodReturnInferHelper.logger!!.debug("no matched exp ${psiExpression::class.qualifiedName}:${psiExpression.text}")
+//                    methodReturnInferHelper.logger.debug("no matched exp ${psiExpression::class.qualifiedName}:${psiExpression.text}")
                     return null
                 }
             }

@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.spring
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
@@ -62,6 +63,9 @@ internal class SimpleSpringRequestClassExporterTest
     }
 
     fun testExport() {
+        assertTrue(classExporter.support(Request::class))
+        assertFalse(classExporter.support(MethodDoc::class))
+
         val requests = ArrayList<Request>()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)

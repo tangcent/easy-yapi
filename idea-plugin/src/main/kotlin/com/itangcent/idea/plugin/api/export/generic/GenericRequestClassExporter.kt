@@ -134,7 +134,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         }
 
         if (parameterExportContext.required() == null) {
-            ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.parameter)?.let {
+            ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.element())?.let {
                 parameterExportContext.setRequired(it)
             }
         }
@@ -151,13 +151,13 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             requestBuilderListener.appendDesc(
                 parameterExportContext,
                 request, if (parameterExportContext.required() == true) {
-                    "\nNeed cookie:$cookieName ($ultimateComment)"
+                    "Need cookie:$cookieName ($ultimateComment)"
                 } else {
                     val defaultValue = findCookieValue(parameterExportContext.psi())
                     if (defaultValue.isNullOrBlank()) {
-                        "\nCookie:$cookieName ($ultimateComment)"
+                        "Cookie:$cookieName ($ultimateComment)"
                     } else {
-                        "\nCookie:$cookieName=$defaultValue ($ultimateComment)"
+                        "Cookie:$cookieName=$defaultValue ($ultimateComment)"
                     }
                 }
             )
@@ -168,13 +168,13 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         //form/body/query
         var paramType: String? = null
 
-        findParamName(parameterExportContext.psi())?.let { parameterExportContext.setName(it) }
+        findParamName(parameterExportContext.psi())?.let { parameterExportContext.setParamName(it) }
 
         if (request.method == "GET") {
             paramType = "query"
         }
 
-        val readParamDefaultValue = readParamDefaultValue(parameterExportContext.parameter)
+        val readParamDefaultValue = readParamDefaultValue(parameterExportContext.element())
 
         if (readParamDefaultValue.notNullOrBlank()) {
             parameterExportContext.setDefaultVal(readParamDefaultValue!!)
@@ -188,7 +188,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         if (paramType.isNullOrBlank()) {
             paramType = ruleComputer.computer(
                 ClassExportRuleKeys.PARAM_HTTP_TYPE,
-                parameterExportContext.parameter
+                parameterExportContext.element()
             ) ?: "query"
         }
 
@@ -233,7 +233,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             requestBuilderListener.addParam(
                 parameterExportContext,
                 request,
-                parameterExportContext.name(),
+                parameterExportContext.paramName(),
                 parameterExportContext.defaultVal().toString(),
                 parameterExportContext.required()
                     ?: false,
@@ -256,7 +256,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         parameterExportContext: ParameterExportContext
     ): String {
         var ultimateComment = (paramDesc ?: "")
-        parameterExportContext.parameter.getType()?.let { duckType ->
+        parameterExportContext.element().getType()?.let { duckType ->
             commentResolver!!.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
                 ultimateComment = "$ultimateComment $it"
             }

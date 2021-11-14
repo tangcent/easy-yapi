@@ -60,7 +60,7 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
     }
 
     override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.common.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
+        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
                 "#[converts]*\n" +
                 "#The ObjectId and Date will be parsed as strings\n" +
                 "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
@@ -69,7 +69,7 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
                 "field.default.value=#default\n" +
-                "api.open=@com.itangcent.common.annotation.Public\n" +
+                "api.open=@com.itangcent.annotation.Public\n" +
                 "api.status[#undone]=undone\n" +
                 "api.tag[@java.lang.Deprecated]=deprecated"
     }
