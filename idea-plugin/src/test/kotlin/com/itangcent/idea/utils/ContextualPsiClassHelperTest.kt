@@ -38,14 +38,16 @@ internal abstract class ContextualPsiClassHelperTest : ContextualPsiClassHelperB
                 "```\n" +
                 "json.class.parse.after=groovy:```\n" +
                 "    logger.info(\"after class:\"+it)\n" +
-                "```\n"
+                "```\n" +
+                "json.additional.field[com.itangcent.model.UserInfo]={\"name\":\"label\",\"value\":\"123\",\"defaultValue\":\"123\",\"type\":\"java.lang.String\",\"desc\":\"label of the user\",\"required\":false}\n" +
+                "json.additional.field[com.itangcent.model.UserInfo#name]={\"name\":\"firstName\",\"value\":\"123\",\"defaultValue\":\"123\",\"type\":\"java.lang.String\",\"desc\":\"a family name\",\"required\":false}"
     }
 
     fun testParseUserInfo() {
         LoggerCollector.getLog()
         val fields = psiClassHelper.getFields(userInfoPsiClass)
         assertEquals(
-            "{\"id\":0,\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"type\":0,\"name\":\"\",\"firstName\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             fields.toJson()
         )
         assertEquals(ResultLoader.load(this::class, "1"), LoggerCollector.getLog().toUnixString())

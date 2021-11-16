@@ -1,10 +1,12 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.intellij.psi.PsiElement
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.common.utils.sub
+import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.intellij.config.rule.computer
@@ -19,6 +21,7 @@ import com.itangcent.intellij.psi.ContextSwitchListener
  * support rules:
  * 1. field.mock
  * 2. field.demo
+ * 3. field.advanced
  */
 class YapiPsiClassHelper : CustomizedPsiClassHelper() {
 
@@ -74,4 +77,22 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
     }
 
+    override fun resolveAdditionalField(
+        additionalField: AdditionalField,
+        context: PsiElement,
+        option: Int,
+        kv: KV<String, Any?>
+    ) {
+        super.resolveAdditionalField(additionalField, context, option, kv)
+        val fieldName = additionalField.name!!
+        additionalField.getExt<Any>(Attrs.MOCK_ATTR)?.let {
+            kv.sub(Attrs.MOCK_ATTR)[fieldName] = it
+        }
+        additionalField.getExt<Any>(Attrs.EXAMPLE_ATTR)?.let {
+            kv.sub(Attrs.EXAMPLE_ATTR)[fieldName] = it
+        }
+        additionalField.getExt<Any>(Attrs.ADVANCED_ATTR)?.let {
+            kv.sub(Attrs.ADVANCED_ATTR)[fieldName] = it
+        }
+    }
 }

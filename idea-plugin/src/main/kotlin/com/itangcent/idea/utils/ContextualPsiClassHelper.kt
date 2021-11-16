@@ -3,8 +3,12 @@ package com.itangcent.idea.utils
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.asBool
+import com.itangcent.common.utils.sub
+import com.itangcent.idea.plugin.api.export.AdditionalField
+import com.itangcent.idea.plugin.api.export.core.AdditionalParseHelper
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
@@ -20,6 +24,8 @@ import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.DefaultPsiClassHelper
+import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.psi.JsonOption.has
 import java.util.*
 
 /**
@@ -36,6 +42,9 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
     @Inject(optional = true)
     private val ruleComputeListener: RuleComputeListener? = null
+
+    @Inject
+    private lateinit var additionalParseHelper: AdditionalParseHelper
 
     @Inject
     private val devEnv: DevEnv? = null
@@ -63,6 +72,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     override fun afterParseClass(psiClass: PsiClass, option: Int, kv: KV<String, Any?>) {
         try {
             super.afterParseClass(psiClass, option, kv)
+            computeAdditionalField(psiClass, option, kv)
             ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_AFTER, psiClass)
         } finally {
             tryCleanParseContext()
@@ -72,6 +82,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     override fun afterParseType(psiClass: PsiClass, duckType: SingleDuckType, option: Int, kv: KV<String, Any?>) {
         try {
             super.afterParseType(psiClass, duckType, option, kv)
+            computeAdditionalField(psiClass, option, kv)
             ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_AFTER, duckType, psiClass)
         } finally {
             tryCleanParseContext()
@@ -155,6 +166,51 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER, fieldOrMethod)
         }
         popField(fieldName)
+        computeAdditionalField(fieldOrMethod.psi(), option, kv)
+    }
+
+    protected open fun computeAdditionalField(
+        context: PsiElement,
+        option: Int,
+        kv: KV<String, Any?>
+    ) {
+        //support json.additional.field
+        val additionalFields = ruleComputer.computer(ClassExportRuleKeys.JSON_ADDITIONAL_FIELD, context)
+        if (!additionalFields.isNullOrBlank()) {
+            for (additionalField in additionalFields.lines()) {
+                val field = additionalParseHelper.parseFieldFromJson(additionalField)
+                if (field.name.isNullOrBlank()
+                    || field.type.isNullOrBlank()
+                ) {
+                    logger!!.error("Illegal additional field: $additionalField")
+                    return
+                }
+                val fieldName = field.name
+                if (kv.containsKey(fieldName)) {
+                    logger!!.debug("additional field [$fieldName] is already existed.")
+                    continue
+                }
+                resolveAdditionalField(field, context, option, kv)
+            }
+        }
+    }
+
+    protected open fun resolveAdditionalField(
+        additionalField: AdditionalField,
+        context: PsiElement,
+        option: Int,
+        kv: KV<String, Any?>
+    ) {
+        val additionalFieldType = duckTypeHelper!!.resolve(additionalField.type!!, context)
+        val fieldName = additionalField.name!!
+        if (additionalFieldType == null) {
+            kv[fieldName] = null
+        } else {
+            kv[fieldName] = doGetTypeObject(additionalFieldType, context, option)
+        }
+        if (option.has(JsonOption.READ_COMMENT)) {
+            kv.sub(Attrs.COMMENT_ATTR)[fieldName] = additionalField.desc
+        }
     }
 
     private fun popField(fieldName: String) {

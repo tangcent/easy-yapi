@@ -14,13 +14,17 @@ import com.itangcent.intellij.psi.JsonOption
 internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
 
     override fun customConfig(): String {
+        //language=Properties
         return "dev=true\n" +
                 "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +
                 "field.required=@javax.validation.constraints.NotBlank\n" +
                 "field.required=@javax.validation.constraints.NotNull\n" +
                 "field.default.value=#default\n" +
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDate]=java.lang.String"
+                "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
+                "json.additional.field[com.itangcent.model.UserInfo]={\"name\":\"label\",\"defaultValue\":\"genius\",\"type\":\"java.lang.String\",\"desc\":\"label of the user\",\"required\":true}\n" +
+                "json.additional.field[com.itangcent.model.UserInfo#name]={\"name\":\"firstName\",\"defaultValue\":\"tang\",\"type\":\"java.lang.String\",\"desc\":\"a family name\",\"required\":false}\n" +
+                "json.additional.field[com.itangcent.model.UserInfo#age]={\"name\":\"order\",\"defaultValue\":\"12\",\"type\":\"int\",\"desc\":\"order of the age in family\",\"required\":true}"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -76,7 +80,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
         )
 
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(userInfoPsiClass),
@@ -207,7 +211,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(userInfoPsiClass), userInfoPsiClass,
@@ -216,7 +220,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(userInfoPsiClass), userInfoPsiClass,
@@ -225,7 +229,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(userInfoPsiClass), userInfoPsiClass,
@@ -234,7 +238,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"firstName\":\"a family name\",\"age\":\"user age\",\"order\":\"order of the age in family\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\",\"label\":\"label of the user\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(userInfoPsiClass), userInfoPsiClass,
@@ -289,7 +293,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
         )
 
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getTypeObject(SingleDuckType(userInfoPsiClass), userInfoPsiClass))
         )
 
@@ -405,7 +409,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(userInfoPsiClass), userInfoPsiClass,
@@ -414,7 +418,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(userInfoPsiClass), userInfoPsiClass,
@@ -423,7 +427,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(userInfoPsiClass), userInfoPsiClass,
@@ -432,7 +436,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"firstName\":\"a family name\",\"age\":\"user age\",\"order\":\"order of the age in family\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\",\"label\":\"label of the user\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(userInfoPsiClass), userInfoPsiClass,
@@ -460,19 +464,19 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass, modelPsiClass, JsonOption.ALL))
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(userInfoPsiClass))
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(userInfoPsiClass, userInfoPsiClass))
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"firstName\":\"a family name\",\"age\":\"user age\",\"order\":\"order of the age in family\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\",\"label\":\"label of the user\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(userInfoPsiClass, JsonOption.ALL))
         )
         assertEquals(
-            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"age\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"tangcent\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"firstName\":\"a family name\",\"age\":\"user age\",\"order\":\"order of the age in family\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\",\"label\":\"label of the user\"},\"type\":0,\"name\":\"tangcent\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(userInfoPsiClass, userInfoPsiClass, JsonOption.ALL))
         )
     }
