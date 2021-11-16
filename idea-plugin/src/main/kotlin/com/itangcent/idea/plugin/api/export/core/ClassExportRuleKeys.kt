@@ -293,6 +293,11 @@ object ClassExportRuleKeys {
         EventRuleMode.THROW_IN_ERROR
     )
 
+    val JSON_ADDITIONAL_FIELD: RuleKey<String> = SimpleRuleKey(
+        "json.additional.field",
+        StringRuleMode.MERGE_DISTINCT
+    )
+
     //region api parse - event
     val API_CLASS_PARSE_BEFORE: RuleKey<Boolean> = SimpleRuleKey(
         "api.class.parse.before", EventRuleMode.THROW_IN_ERROR

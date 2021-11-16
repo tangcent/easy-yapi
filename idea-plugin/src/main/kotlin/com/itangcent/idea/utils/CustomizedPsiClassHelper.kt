@@ -1,9 +1,11 @@
 package com.itangcent.idea.utils
 
 import com.google.inject.Inject
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.*
+import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.toPrettyString
@@ -50,6 +52,18 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         }
 
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
+    }
+
+    override fun resolveAdditionalField(
+        additionalField: AdditionalField,
+        context: PsiElement,
+        option: Int,
+        kv: KV<String, Any?>
+    ) {
+        super.resolveAdditionalField(additionalField, context, option, kv)
+        val fieldName = additionalField.name!!
+        kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = additionalField.required
+        kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = additionalField.defaultValue
     }
 
     protected fun populateFieldValue(fieldName: String, fieldType: DuckType, kv: KV<String, Any?>, valueText: String) {
