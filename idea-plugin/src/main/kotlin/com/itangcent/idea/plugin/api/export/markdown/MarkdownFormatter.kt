@@ -281,7 +281,7 @@ class MarkdownFormatter {
                 handle("${hN(deep + 1)} RESPONSE\n\n")
                 handle("**Header：**\n\n")
                 handle("| name  |  value  |  required  | desc  |\n")
-                handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
+                handle("| ------------ | ------------ | ------------ | ------------ |\n")
                 response.headers!!.forEach {
                     handle(
                         "| ${it.name} | ${it.value ?: ""} | ${
