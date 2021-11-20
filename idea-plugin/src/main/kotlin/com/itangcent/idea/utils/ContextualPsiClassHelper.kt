@@ -16,6 +16,7 @@ import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.config.rule.RuleKey
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.jvm.JsonOption.has
 import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.duck.SingleDuckType
@@ -25,7 +26,6 @@ import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.DefaultPsiClassHelper
 import com.itangcent.intellij.psi.JsonOption
-import com.itangcent.intellij.psi.JsonOption.has
 import java.util.*
 
 /**
@@ -254,14 +254,17 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             }
         }
     }
-
-
+    
     companion object {
         val JSON_RULE_KEYS = arrayOf(
             ClassRuleKeys.FIELD_IGNORE,
             ClassRuleKeys.FIELD_DOC,
             ClassRuleKeys.FIELD_NAME,
+            ClassRuleKeys.FIELD_NAME_PREFIX,
+            ClassRuleKeys.FIELD_NAME_SUFFIX,
+            ClassExportRuleKeys.FIELD_MOCK,
             ClassExportRuleKeys.FIELD_DEFAULT_VALUE,
+            ClassRuleKeys.JSON_UNWRAPPED,
             ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE,
             ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER,
             ClassExportRuleKeys.FIELD_REQUIRED

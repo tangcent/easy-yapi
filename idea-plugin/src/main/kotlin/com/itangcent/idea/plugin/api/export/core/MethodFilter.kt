@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.api.export
+package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.ImplementedBy
 import com.google.inject.Singleton
