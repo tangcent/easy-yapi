@@ -1,3 +1,19 @@
+* 2.3.0
+
+	* feat: recommend config for `Jackson-JsonUnwrapped` [(#658)](https://github.com/tangcent/easy-yapi/pull/658)
+
+	* fix: remove redundant table header in markdown [(#654)](https://github.com/tangcent/easy-yapi/pull/654)
+
+	* feat: new rule `json.additional.field` [(#652)](https://github.com/tangcent/easy-yapi/pull/652)
+
+	* fix: read desc of class before compute by rule [(#649)](https://github.com/tangcent/easy-yapi/pull/649)
+
+	* feat: support quarkus [(#648)](https://github.com/tangcent/easy-yapi/pull/648)
+
+	* feat: support spring-feign [(#643)](https://github.com/tangcent/easy-yapi/pull/643)
+
+	* feat: support Condition [(#641)](https://github.com/tangcent/easy-yapi/pull/641)
+
 * 2.2.9
 
 	* fix: fix regex rule [(#620)](https://github.com/tangcent/easy-yapi/pull/620)
