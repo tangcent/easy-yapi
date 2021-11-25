@@ -1,6 +1,7 @@
 package com.itangcent.api;
 
 
+import com.itangcent.api.BaseController;
 import com.itangcent.model.Default;
 import com.itangcent.model.Result;
 import org.springframework.web.bind.annotation.GetMapping;

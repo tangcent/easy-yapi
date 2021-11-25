@@ -206,5 +206,42 @@
     "add_time": 1618124194,
     "status": "done",
     "desc": "\u003cp\u003e\u003c/p\u003e"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/user/ctrl/name",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "current ctrl name",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/user/ctrl/name",
+    "catid": "111111",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "example": "",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "\u003cp\u003e\u003c/p\u003e"
   }
 ]

@@ -269,3 +269,44 @@ not update anything
   }
 }
 ```
+
+
+
+---
+## current ctrl name
+
+### BASIC
+
+**Path：** user/ctrl/name
+
+**Method：** GET
+
+### REQUEST
+
+
+**Headers：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+### RESPONSE
+
+**Header：**
+
+| name  |  value  |  required  | desc  |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |   |
+
+**Body：**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  | 
+
+**Response Demo：**
+
+```json
+
+```

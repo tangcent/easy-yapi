@@ -1,6 +1,7 @@
 package com.itangcent.api;
 
 import com.itangcent.annotation.Public;
+import com.itangcent.api.BaseController;
 import com.itangcent.model.IResult;
 import com.itangcent.model.Result;
 import com.itangcent.model.UserInfo;

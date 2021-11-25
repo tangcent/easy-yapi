@@ -16,8 +16,8 @@ import org.junit.jupiter.api.condition.OS
 
 /**
  * Test case of export spring apis with [PostmanRequestBuilderListener]
- * 1.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_PRE_REQUEST]
- * 2.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_TEST]
+ * 1.support rule:[com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.POST_PRE_REQUEST]
+ * 2.support rule:[com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.POST_TEST]
  *
  */
 internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporterBaseTest() {
@@ -31,7 +31,7 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
                 "\napi.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
                 "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
                 "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
-                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n"
+                "api.method.parse.after=groovy:logger.info(\"after parse method:\"+it)\n"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {

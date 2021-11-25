@@ -1,0 +1,2 @@
+com.itangcent.idea.plugin.api.export.spring.StandardSpringRequestMappingResolver
+com.itangcent.idea.plugin.api.export.spring.CustomSpringRequestMappingResolver

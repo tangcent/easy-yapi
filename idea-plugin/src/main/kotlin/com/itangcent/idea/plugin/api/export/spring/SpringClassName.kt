@@ -4,13 +4,15 @@ package com.itangcent.idea.plugin.api.export.spring
 object SpringClassName {
 
     val SPRING_REQUEST_RESPONSE: Array<String> = arrayOf(
-            "javax.servlet.http.HttpServletRequest",
-            "javax.servlet.http.HttpServletResponse"
+        "javax.servlet.http.HttpServletRequest",
+        "javax.servlet.http.HttpServletResponse"
     )
 
     var SPRING_CONTROLLER_ANNOTATION: Set<String> =
-            mutableSetOf("org.springframework.stereotype.Controller",
-                    "org.springframework.web.bind.annotation.RestController")
+        mutableSetOf(
+            "org.springframework.stereotype.Controller",
+            "org.springframework.web.bind.annotation.RestController"
+        )
 
     //file
     const val MULTI_PART_FILE = "org.springframework.web.multipart.MultipartFile"
@@ -31,12 +33,22 @@ object SpringClassName {
     const val DELETE_MAPPING = "org.springframework.web.bind.annotation.DeleteMapping"
     const val PATCH_MAPPING = "org.springframework.web.bind.annotation.PatchMapping"
 
-    val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(REQUEST_MAPPING_ANNOTATION,
-            GET_MAPPING,
-            DELETE_MAPPING,
-            PATCH_MAPPING,
-            POST_MAPPING,
-            PUT_MAPPING)
+    val SPRING_SINGLE_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(
+        GET_MAPPING,
+        DELETE_MAPPING,
+        PATCH_MAPPING,
+        POST_MAPPING,
+        PUT_MAPPING
+    )
+
+    val SPRING_REQUEST_MAPPING_ANNOTATIONS: Set<String> = setOf(
+        REQUEST_MAPPING_ANNOTATION,
+        GET_MAPPING,
+        DELETE_MAPPING,
+        PATCH_MAPPING,
+        POST_MAPPING,
+        PUT_MAPPING
+    )
 
     const val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
 

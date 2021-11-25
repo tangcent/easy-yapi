@@ -73,7 +73,7 @@ internal class GenericMethodDocClassExporterTest
         return "api.class.parse.before=groovy:logger.info(\"before parse class:\"+it)\n" +
                 "api.class.parse.after=groovy:logger.info(\"after parse class:\"+it)\n" +
                 "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
-                "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n"
+                "api.method.parse.after=groovy:logger.info(\"after parse method:\"+it)\n"
     }
 
     fun testExport() {

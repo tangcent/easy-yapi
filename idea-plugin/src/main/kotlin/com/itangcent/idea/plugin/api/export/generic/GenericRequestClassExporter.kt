@@ -271,7 +271,6 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         val basePath: URL = classExportContext?.getExt("basePath") ?: URL.nil()
         val ctrlHttpMethod: String? = classExportContext?.getExt("ctrlHttpMethod")
         val pathAndMethod = findPathAndMethod(methodExportContext.psi())
-        methodExportContext.setExt("requestMapping", pathAndMethod)
         var httpMethod = pathAndMethod.second
         if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
             httpMethod = ctrlHttpMethod!!

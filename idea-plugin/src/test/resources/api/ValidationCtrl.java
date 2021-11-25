@@ -1,6 +1,7 @@
 package com.itangcent.springboot.demo.controller;
 
 
+import com.itangcent.api.BaseController;
 import com.itangcent.constant.Add;
 import com.itangcent.constant.Update;
 import com.itangcent.model.ValidationDemoDto;
