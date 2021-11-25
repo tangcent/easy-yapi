@@ -7,7 +7,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.firstOrNull
 import com.itangcent.common.utils.stream
 import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.StatusRecorder
@@ -38,6 +37,9 @@ open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
 
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
+
+    @Inject
+    protected lateinit var springRequestMappingResolver: SpringRequestMappingResolver
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
@@ -128,10 +130,7 @@ open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
     }
 
     private fun findRequestMappingInAnn(ele: PsiElement): Map<String, Any?>? {
-        return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
-            .stream()
-            .map { annotationHelper!!.findAnnMap(ele, it) }
-            .firstOrNull { it != null }
+        return springRequestMappingResolver.resolveRequestMapping(ele)
     }
 
     private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {

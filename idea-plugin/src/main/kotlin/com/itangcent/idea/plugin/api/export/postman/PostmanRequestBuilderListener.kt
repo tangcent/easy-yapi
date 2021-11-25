@@ -12,8 +12,8 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 
 /**
- * 1.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_PRE_REQUEST]
- * 2.support rule:[com.itangcent.idea.plugin.api.export.ClassExportRuleKeys.POST_TEST]
+ * 1.support rule:[com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.POST_PRE_REQUEST]
+ * 2.support rule:[com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.POST_TEST]
  *
  * @see [https://learning.postman.com/docs/writing-scripts/intro-to-scripts/]
  */

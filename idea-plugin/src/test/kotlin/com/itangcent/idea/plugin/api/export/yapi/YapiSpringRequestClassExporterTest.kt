@@ -69,12 +69,17 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
 
         val apiCntInUserCtrl = userCtrlPsiClass.methods.size
         requests[apiCntInUserCtrl + 0].let { request ->
+            assertEquals("current ctrl name", request.name)
+            assertEquals("", request.desc)
+            assertEquals("GET", request.method)
+        }
+        requests[apiCntInUserCtrl + 1].let { request ->
             assertEquals("call with query", request.name)
             assertEquals("", request.desc)
             assertEquals("GET", request.method)
             assertEquals(defaultCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
         }
-        requests[apiCntInUserCtrl + 1].let { request ->
+        requests[apiCntInUserCtrl + 2].let { request ->
             assertEquals("call with form", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
@@ -83,7 +88,7 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
             assertFalse(request.isOpen())
             assertEquals("done", request.getStatus())
         }
-        requests[apiCntInUserCtrl + 2].let { request ->
+        requests[apiCntInUserCtrl + 3].let { request ->
             assertEquals("call with body", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)

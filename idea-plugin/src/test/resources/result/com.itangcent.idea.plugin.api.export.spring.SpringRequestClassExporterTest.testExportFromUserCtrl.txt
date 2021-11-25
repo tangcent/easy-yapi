@@ -21,4 +21,6 @@
 [INFO]	before parse param:userInfo
 [INFO]	after parse param:userInfo
 [INFO]	after parse method:com.itangcent.api.UserCtrl#update
+[INFO]	before parse method:com.itangcent.api.UserCtrl#ctrlName
+[INFO]	after parse method:com.itangcent.api.UserCtrl#ctrlName
 [INFO]	after parse class:com.itangcent.api.UserCtrl

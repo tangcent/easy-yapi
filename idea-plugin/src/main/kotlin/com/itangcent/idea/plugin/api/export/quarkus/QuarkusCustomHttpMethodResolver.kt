@@ -27,20 +27,20 @@ class QuarkusCustomHttpMethodResolver {
         return actionContext.callInReadUI {
             val annotations = psiMethod.annotations
             for (annotation in annotations) {
-                getHttpMethodFroAnnotation(annotation)?.let { return@callInReadUI it }
+                getHttpMethodForAnnotation(annotation)?.let { return@callInReadUI it }
             }
             return@callInReadUI null
         }
     }
 
-    private fun getHttpMethodFroAnnotation(annotation: PsiAnnotation): String? {
+    private fun getHttpMethodForAnnotation(annotation: PsiAnnotation): String? {
         val annotationName = annotation.qualifiedName ?: return null
         return resolvedAnnotations.computeIfAbsent(annotationName) {
-            resolveHttpMethodFroAnnotation(annotation)
+            resolveHttpMethodForAnnotation(annotation)
         }.takeIf { it != HttpMethod.NO_METHOD }
     }
 
-    private fun resolveHttpMethodFroAnnotation(annotation: PsiAnnotation): String {
+    private fun resolveHttpMethodForAnnotation(annotation: PsiAnnotation): String {
         val annotationType = annotation.nameReferenceElement?.resolve() ?: return HttpMethod.NO_METHOD
         annotationHelper.findAttrAsString(annotationType, QuarkusClassName.HTTP_METHOD_ANNOTATION)?.let {
             return it

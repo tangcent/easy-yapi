@@ -72,4 +72,6 @@
 [INFO]	before parse param:userInfoPageRequest
 [INFO]	after parse param:userInfoPageRequest
 [INFO]	after parse method:com.itangcent.api.TestCtrl#listPageRequestWithArray
+[INFO]	before parse method:com.itangcent.api.TestCtrl#ctrlName
+[INFO]	after parse method:com.itangcent.api.TestCtrl#ctrlName
 [INFO]	after parse class:com.itangcent.api.TestCtrl

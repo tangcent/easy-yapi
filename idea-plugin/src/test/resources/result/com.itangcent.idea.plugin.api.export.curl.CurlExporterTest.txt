@@ -31,3 +31,10 @@ curl -X POST -H 'Content-Type: application/json' -d '{
 ```bash
 curl -X PUT -H 'Content-Type: multipart/form-data' -F 'id=' -F 'type=' -F 'name=' -F 'age=' -F 'sex=' -F 'birthDay=' -F 'regtime=' http://localhost:8080/user/update
 ```
+
+---
+
+## current ctrl name
+```bash
+curl -X GET http://localhost:8080/user/ctrl/name
+```
