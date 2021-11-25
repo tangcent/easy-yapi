@@ -9,14 +9,20 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/tangcent/easy-yapi.svg)](http://isitmaintained.com/project/tangcent/easy-yapi "Percentage of issues still open")
 
 ## 功能特性
-- [导出API文档到`Postman`](https://easyyapi.com/documents/export2postman.html)
-- [导出API文档到`Yapi`](https://easyyapi.com/documents/export2yapi.html)
-- [导出API文档到`Markdown`](https://easyyapi.com/documents/export2markdown.html)
-- [导出RPC文档到`Yapi`](https://easyyapi.com/documents/export_rpc.html)
-- [导出RPC文档到`Markdown`](https://easyyapi.com/documents/export_rpc.html)
+
+- [导出API文档](https://easyyapi.com/documents/use.html)
 - [在`IDEA`中直接发起API请求](http://easyyapi.com/documents/call.html)
 - Api DashBoard
 - YApi DashBoard
+
+## 支持项列表
+
+|   |  默认支持  |  额外(配置)支持  |
+| ------------ | ------------ | ------------ |
+| 语言 | java, kotlin | scala |
+| web | [spring](https://spring.io/), [feign](https://spring.io/projects/spring-cloud-openfeign), [quarkus](https://quarkus.io/) | [dubbo](https://dubbo.apache.org) |
+| 导出到 | [Postman](https://easyyapi.com/documents/export2postman.html), [Yapi](https://easyyapi.com/documents/export2yapi.html), [Markdown](https://easyyapi.com/documents/export2markdown.html) | - |
+| 常用框架 | javax.validation, Jackson, Gson |  [swagger](https://swagger.io/) |
 
 ## 导航
 
@@ -43,6 +49,6 @@
 
 * 丰富支持的三方配置: [third](https://github.com/tangcent/easy-yapi/tree/master/third)
 
-* 丰富demo: [spring-demo](https://github.com/Earth-1610/spring-demo)
+* 丰富demo: [spring-demo](https://github.com/Earth-1610/spring-demo) | [web-demo](https://github.com/Earth-1610/web-demo)
 
 * 修复IDE兼容问题: [intellij-kotlin](https://github.com/Earth-1610/intellij-kotlin/pulls?q=label%3Acompatibility+)
