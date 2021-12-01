@@ -13,7 +13,14 @@ class Json5Formatter : JsonFormatter {
 
     override fun format(obj: Any?, desc: String?): String {
         val sb = StringBuilder()
-        format(obj, 0, true, desc, sb)
+        val lines = desc?.lines()
+        if (lines == null || lines.size == 1) {
+            format(obj, 0, true, desc, sb)
+        } else {
+            sb.appendBlockComment(lines, 0)
+            format(obj, 0, true, null, sb)
+        }
+
         return sb.toString()
     }
 
