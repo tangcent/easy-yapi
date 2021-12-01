@@ -9,14 +9,11 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/tangcent/easy-yapi.svg)](http://isitmaintained.com/project/tangcent/easy-yapi "Percentage of issues still open")
 [![Gitter](https://badges.gitter.im/Earth-1610/easy-yapi.svg)](https://gitter.im/Earth-1610/easy-yapi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-- Customized [easyApi](https://github.com/tangcent/easy-api) for [yapi](https://github.com/YMFE/yapi)
 - Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
 - [中文](https://github.com/tangcent/easy-yapi/blob/master/README_cn.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
 
 - [demo](https://github.com/Earth-1610/spring-demo)
-
-- [QA](https://github.com/tangcent/easy-yapi/blob/master/docs/QA.md)
 
 # Table of Contents
 

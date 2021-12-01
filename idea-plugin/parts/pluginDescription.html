@@ -21,83 +21,35 @@
 <br/>
 
 <b>详细信息参考:<a href="https://easyyapi.com">Guide</a></b>
-<ul>导出API到Yapi,有四种方法:
+<ul>导出API到Yapi,有以下方法:
     <li>
-        1. 打开spring项目中的Controller文件或者在IDEA的左边项目文件区域选择文件或者文件夹
-        使用快捷键"alt shift E(windows)/ctrl E(mac)"
-        然后选择要导出的API,选择导出渠道为yapi
+        1. 打开项目中的包含`api/rpc`的文件或者在IDEA的左边项目文件区域选择文件或者文件夹,
+        使用快捷键`alt shift E(windows)/ctrl E(mac)`,
+        然后选择要导出的API,选择导出渠道`Yapi/Markdown/Postman`,
         点击[✔]按钮或者按回车键完成导出
     </li>
     <li>
-        2. 打开spring项目中的Controller文件
-        右键文件内容选择generate...或者用"[Alt + Insert]/[Ctrl+Enter](快捷键可能不一样)"
-        然后选择"ExportYapi"
+        2. 打开项目中的包含`api/rpc`的文件或者在IDEA的左边项目文件区域选择文件或者文件夹,
+        鼠标右键点击文件内容或文件夹, 选择`ExportYapi/ExportPostman/ExportMarkdown`
+        导出该文件或文件夹中所有的`api`
     </li>
     <li>
-        3. 在IDEA的左边项目文件区域选择文件或者文件夹
-        鼠标点击最上方[Code -> ExportYapi]
+        3. 在IDEA的左边项目文件区域选择文件或者文件夹,
+        鼠标点击最上方<kbd>Code</kbd> > <kbd>ExportYapi/ExportPostman/ExportMarkdown</kbd>
     </li>
     <li>
-        4. 鼠标点击最上方[Code -> YapiDashBoard]
-        然后就可以用鼠标将左边的API拖动到右边yapi目录中
+        4. 鼠标点击最上方<kbd>Code</kbd> > <kbd>YapiDashBoard</kbd>,
+        然后就可以用鼠标将左边的API拖动到右边yapi目录中，完成API导出到Yapi
     </li>
-</ul>
 
-<b>Features</b>
-<ul>
-    <li>Export Api(beta)
-        <br>
-        1. Open existed Spring Controller File Or Select files or directories from project navigation
-        You can use by this : "alt shift E(windows)/ctrl E(mac)"
-        <br>
-        2.select apis and channel
-        <br>
-        3.click [✔] button or press enter key
+    <li>
+        5. 鼠标点击最上方<kbd>Code</kbd> > <kbd>ApiDashBoard</kbd>,
+        然后就可以用鼠标将左边的API拖动到右边postman目录中，完成API导出到Postman
     </li>
-    <li>Export Api To Postman
-        <br>
-        There are two ways to export api.
-        <br>
-        1. Open existed Spring Controller File
-        You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt +
-        Insert]/[Ctrl+Enter]" , then
-        choose the action "ExportPostman"
-        <br>
-        2. Select files or directories from project navigation
-        You can use by this : "Click [Code -> ExportPostman] in top"
-    </li>
-    <li>Quick API requests from code
-        <br>
-        Open existed Spring Controller File
-        Right click in the file -> generate... or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]"
-        then choose the action "Call"
-    </li>
-    <li>Export API To Markdown(beta)
-        <br>
-        There are two ways to export api.
-        <br>
-        1. Open existed Spring Controller File
-        You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt +
-        Insert]/[Ctrl+Enter]" , then
-        choose the action "ExportMarkdown"
-        <br>
-        2. Select files or directories from project navigation
-        You can use by this : "Click [Code -> ExportMarkdown] in top"
-    </li>
-    <li>ApiDashBoard
-        <br>
-        You can use by this : "Click [Code -> ApiDashBoard] in top"
-        Then you can easily export api by drag it from project(left) to postman(right)
-    </li>
-    <li>YApiDashBoard
-        <br>
-        You can use by this : "Click [Code -> YApiDashBoard] in top"
-        Then you can easily export api by drag it from project(left) to yapi(right)
-    </li>
-    <li>ScriptExecutor
-        <br>
-        You can use by this : "Click [Code -> ScriptExecutor] in top"
-        Then you can easily write、load or run scripts.
+
+    <li>
+        6. 打开项目中的包含`api`的文件,
+        右键文件内容选择`Call`,就可以发起对当前文件中的API的请求
     </li>
 </ul>
 <br/>
