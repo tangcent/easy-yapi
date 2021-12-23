@@ -92,11 +92,6 @@ class FakeEasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         this.settingsInstance?.let { action(it) }
     }
 
-    override fun readSettings(settings: Settings, from: Settings) {
-        from.copyTo(settings as ProjectSettingsSupport)
-        from.copyTo(settings as ApplicationSettingsSupport)
-    }
-
     override fun getRootPanel(): JComponent {
         return mock()
     }
@@ -113,5 +108,10 @@ class FakeEasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     fun onCreateCalled(): Boolean {
         return this.onCreateCalled
+    }
+
+    override fun readSettings(settings: Settings) {
+        settingsInstance!!.copyTo(settings as ProjectSettingsSupport)
+        settingsInstance!!.copyTo(settings as ApplicationSettingsSupport)
     }
 }

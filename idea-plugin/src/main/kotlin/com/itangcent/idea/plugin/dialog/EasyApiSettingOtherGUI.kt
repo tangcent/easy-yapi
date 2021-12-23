@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.dialog
 
+import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
@@ -12,6 +13,7 @@ import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.configurable.AbstractEasyApiSettingGUI
+import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.SwingUtils
 import java.io.File
@@ -26,6 +28,9 @@ class EasyApiSettingOtherGUI : AbstractEasyApiSettingGUI() {
     private var importButton: JButton? = null
 
     private var exportButton: JButton? = null
+
+    @Inject
+    private lateinit var settingBinder: SettingBinder
 
     override fun getRootPanel(): JComponent? {
         return rootPanel
@@ -45,9 +50,6 @@ class EasyApiSettingOtherGUI : AbstractEasyApiSettingGUI() {
         }
     }
 
-    override fun readSettings(settings: Settings, from: Settings) {
-    }
-
     private fun export() {
         val descriptor = FileSaverDescriptor(
             "Export Setting",
@@ -65,7 +67,7 @@ class EasyApiSettingOtherGUI : AbstractEasyApiSettingGUI() {
         if (fileWrapper != null) {
             com.itangcent.intellij.util.FileUtils.forceSave(
                 fileWrapper.file.path,
-                GsonUtils.toJson(settingsInstance).toByteArray(kotlin.text.Charsets.UTF_8)
+                GsonUtils.toJson(settingsInstance).toByteArray(Charsets.UTF_8)
             )
         }
     }
@@ -85,9 +87,11 @@ class EasyApiSettingOtherGUI : AbstractEasyApiSettingGUI() {
         val files = chooser.choose(null, toSelect)
         if (files.notNullOrEmpty()) {
             val virtualFile = files[0]
-            val read = FileUtils.read(File(virtualFile.path), kotlin.text.Charsets.UTF_8)
+            val read = FileUtils.read(File(virtualFile.path), Charsets.UTF_8)
             if (read.notNullOrEmpty()) {
-                setSettings(GsonUtils.fromJson(read!!, Settings::class))
+                val settings = GsonUtils.fromJson(read!!, Settings::class)
+                settingBinder.save(settings)
+                setSettings(settings)
             }
         }
     }

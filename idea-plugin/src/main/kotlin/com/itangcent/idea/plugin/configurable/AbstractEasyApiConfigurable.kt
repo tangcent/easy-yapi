@@ -35,7 +35,7 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
             return false
         }
         if (throttle.acquire(5000L)) {
-            LOG.info("settings is modified:\npre:----\n${pre.toJson()}\ninUI:----\n${inUI.toJson()}\n----\n")
+            LOG.info("settings is modified at ${this::class.qualifiedName}:\npre:----\n${pre.toJson()}\ninUI:----\n${inUI.toJson()}\n----\n")
         }
         return true
     }
@@ -72,31 +72,9 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
         easyApiConfigurableGUI = createGUI()
 
         context.init(easyApiConfigurableGUI)
-        context.runAsync {
-            context.runInSwingUI {
-                easyApiConfigurableGUI.onCreate()
-                easyApiConfigurableGUI.setSettings(settingBinder.read().copy())
-                checkUI()
-            }
-        }
+        easyApiConfigurableGUI.onCreate()
+        easyApiConfigurableGUI.setSettings(settingBinder.read().copy())
         return easyApiConfigurableGUI.getRootPanel()
-    }
-
-    private fun checkUI() {
-        context!!.runAsync {
-            for (i in 0..8) {
-                Thread.sleep(250)
-                if (easyApiConfigurableGUI.checkUI()) {
-                    continue
-                }
-                LOG.error("checkUI failed.Try refresh ui again.")
-                context!!.runInSwingUI {
-                    easyApiConfigurableGUI.setSettings(easyApiConfigurableGUI.getSettings())
-                    checkUI()
-                }
-                break
-            }
-        }
     }
 
     open fun afterBuildActionContext(builder: ActionContext.ActionContextBuilder) {}
