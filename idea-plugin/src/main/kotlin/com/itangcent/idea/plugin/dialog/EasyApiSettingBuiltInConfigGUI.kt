@@ -17,17 +17,12 @@ class EasyApiSettingBuiltInConfigGUI : AbstractEasyApiSettingGUI() {
         return rootPanel
     }
 
-    override fun onCreate() {
-        autoComputer.bind(this.builtInConfigTextArea!!)
-            .with<String?>(this, "settingsInstance.builtInConfig")
-            .eval { it.takeIf { it.notNullOrBlank() } ?: EasyApiSettingGUI.DEFAULT_BUILT_IN_CONFIG }
-
-        autoComputer.bind<String?>(this, "settingsInstance.builtInConfig")
-            .with(builtInConfigTextArea!!)
-            .eval { it.takeIf { it != EasyApiSettingGUI.DEFAULT_BUILT_IN_CONFIG } ?: "" }
+    override fun setSettings(settings: Settings) {
+        super.setSettings(settings)
+        this.builtInConfigTextArea!!.text = settings.builtInConfig.takeIf { it.notNullOrBlank() } ?: EasyApiSettingGUI.DEFAULT_BUILT_IN_CONFIG
     }
 
-    override fun readSettings(settings: Settings, from: Settings) {
-        settings.builtInConfig = from.builtInConfig
+    override fun readSettings(settings: Settings) {
+        settings.builtInConfig =  this.builtInConfigTextArea!!.text.takeIf { it != EasyApiSettingGUI.DEFAULT_BUILT_IN_CONFIG } ?: ""
     }
 }

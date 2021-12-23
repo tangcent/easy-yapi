@@ -22,27 +22,6 @@ class EasyApiSettingRecommendGUI : AbstractEasyApiSettingGUI() {
     }
 
     override fun onCreate() {
-        initRecommendConfig()
-    }
-
-    private fun initRecommendConfig() {
-        autoComputer.bind(this.previewTextArea!!)
-            .with<String>(this, "settingsInstance.recommendConfigs")
-            .eval { configs ->
-                RecommendConfigLoader.buildRecommendConfig(
-                    configs,
-                    "\n#${"-".repeat(20)}\n"
-                )
-            }
-
-        autoComputer.bind(this.previewTextArea!!)
-            .with<String>(this, "settingsInstance.recommendConfigs")
-            .eval { configs ->
-                RecommendConfigLoader.buildRecommendConfig(
-                    configs,
-                    "\n#${"-".repeat(20)}\n"
-                )
-            }
 
         recommendConfigList!!.setItems(RecommendConfigLoader.codes().toList())
         {
@@ -59,7 +38,7 @@ class EasyApiSettingRecommendGUI : AbstractEasyApiSettingGUI() {
             } else {
                 settings.recommendConfigs = RecommendConfigLoader.removeSelectedConfig(settings.recommendConfigs, code)
             }
-            autoComputer.value(this, "settingsInstance.recommendConfigs", settings.recommendConfigs)
+            computePreviewTextArea()
         }
     }
 
@@ -70,9 +49,19 @@ class EasyApiSettingRecommendGUI : AbstractEasyApiSettingGUI() {
         RecommendConfigLoader.selectedCodes(settings.recommendConfigs).forEach {
             this.recommendConfigList!!.setItemSelected(it, true)
         }
+
+        computePreviewTextArea()
     }
 
-    override fun readSettings(settings: Settings, from: Settings) {
-        settings.recommendConfigs = from.recommendConfigs
+    private fun computePreviewTextArea() {
+        this.previewTextArea!!.text =
+            RecommendConfigLoader.buildRecommendConfig(
+                settingsInstance?.recommendConfigs ?: "",
+                "\n#${"-".repeat(20)}\n"
+            )
+    }
+
+    override fun readSettings(settings: Settings) {
+        settings.recommendConfigs = settingsInstance?.recommendConfigs ?: ""
     }
 }
