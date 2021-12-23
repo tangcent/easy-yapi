@@ -40,6 +40,10 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
 
     private lateinit var testCtrlPsiClass: PsiClass
 
+    private lateinit var iuserApiPsiClass: PsiClass
+
+    private lateinit var userApiImplPsiClass: PsiClass
+
     private val settings = Settings()
 
     override fun beforeBind() {
@@ -77,6 +81,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         loadFile("api/BaseController.java")
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
         testCtrlPsiClass = loadClass("api/TestCtrl.java")!!
+        iuserApiPsiClass = loadClass("api/IUserApi.java")!!
+        userApiImplPsiClass = loadClass("api/UserApiImpl.java")!!
         settings.inferEnable = true
 
         //clear log
@@ -508,5 +514,20 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         }
 
         assertEquals(ResultLoader.load("testExportFromTestCtrlWithOutExpanded"), LoggerCollector.getLog().toUnixString())
+    }
+
+    fun testExportFromUserApi() {
+        val requests = ArrayList<Request>()
+        classExporter.export(userApiImplPsiClass, requestOnly {
+            requests.add(it)
+        })
+        (classExporter as Worker).waitCompleted()
+        requests[0].let { request ->
+            assertEquals("loginAuth", request.name)
+            assertNull( request.desc)
+            assertEquals("POST", request.method)
+            assertEquals(iuserApiPsiClass.methods[0], (request.resource as PsiResource).resource())
+        }
+        assertEquals(ResultLoader.load("testExportFromUserApi"), LoggerCollector.getLog().toUnixString())
     }
 }
