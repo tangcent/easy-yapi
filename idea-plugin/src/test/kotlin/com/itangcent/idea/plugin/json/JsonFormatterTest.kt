@@ -47,8 +47,8 @@ internal abstract class JsonFormatterTest : BaseContextTest() {
             )
         )
         KVUtils.addKeyComment(model, "list", "list")
-        KVUtils.addKeyComment(model, "list.x", "The value of the x axis")
-        KVUtils.addKeyComment(model, "map", "map\nmap")
+        KVUtils.addKeyComment(model, "list.x", "\t\nThe value of the x axis")
+        KVUtils.addKeyComment(model, "map", " \nmap\nmap")
         KVUtils.addKeyComment(model, "map.x", "The value of the x axis\nin map")
     }
 }

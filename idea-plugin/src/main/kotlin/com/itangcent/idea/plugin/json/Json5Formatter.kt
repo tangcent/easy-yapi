@@ -13,12 +13,16 @@ class Json5Formatter : JsonFormatter {
 
     override fun format(obj: Any?, desc: String?): String {
         val sb = StringBuilder()
-        val lines = desc?.lines()
-        if (lines == null || lines.size == 1) {
-            format(obj, 0, true, desc, sb)
-        } else {
-            sb.appendBlockComment(lines, 0)
+        if (desc.isNullOrBlank()) {
             format(obj, 0, true, null, sb)
+        } else {
+            val lines = desc.lines().removeLeadBlankLines()
+            if (lines.isNullOrEmpty() || lines.size == 1) {
+                format(obj, 0, true, lines?.firstOrNull(), sb)
+            } else {
+                sb.appendBlockComment(lines, 0)
+                format(obj, 0, true, null, sb)
+            }
         }
 
         return sb.toString()
@@ -113,18 +117,21 @@ class Json5Formatter : JsonFormatter {
             format(obj, deep, end, desc, sb)
             return
         }
-        val lines = desc.lines()
-        if (lines.size == 1) {
-            sb.appendString(name)
-            sb.append(": ")
-            format(obj, deep, end, desc, sb)
-            return
-        } else {
-            sb.appendBlockComment(lines, deep)
-            sb.appendString(name)
-            sb.append(": ")
-            format(obj, deep, end, null, sb)
-            return
+        val lines = desc.lines().removeLeadBlankLines()
+        when {
+            lines.isNullOrEmpty() || lines.size == 1 -> {
+                sb.appendString(name)
+                sb.append(": ")
+                format(obj, deep, end, lines?.firstOrNull(), sb)
+                return
+            }
+            else -> {
+                sb.appendBlockComment(lines, deep)
+                sb.appendString(name)
+                sb.append(": ")
+                format(obj, deep, end, null, sb)
+                return
+            }
         }
     }
 
@@ -165,6 +172,20 @@ class Json5Formatter : JsonFormatter {
     private fun StringBuilder.nextLine(deep: Int) {
         this.appendLine()
         this.append(TAB.repeat(deep))
+    }
+}
+
+private fun List<String>.removeLeadBlankLines(): List<String>? {
+    return when (val firstLine = this.indexOfFirst { it.notNullOrBlank() }) {
+        -1 -> {
+            null
+        }
+        0 -> {
+            this
+        }
+        else -> {
+            this.subList(firstLine, this.size)
+        }
     }
 }
 
