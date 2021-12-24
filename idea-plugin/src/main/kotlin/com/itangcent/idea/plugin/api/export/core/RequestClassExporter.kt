@@ -146,7 +146,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
             try {
                 processClass(cls, classExportContext)
 
-                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
+                fun exportApiFromMethod(explicitMethod: ExplicitMethod): Boolean {
                     val method = explicitMethod.psi()
                     if (isApi(method) && methodFilter?.checkMethod(method) != false) {
                         try {
@@ -157,6 +157,13 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                         } finally {
                             ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
                         }
+                        return true
+                    }
+                    return false
+                }
+                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
+                    if (!exportApiFromMethod(explicitMethod)) {
+                        explicitMethod.superMethods().forEach { exportApiFromMethod(it) }
                     }
                 }
             } finally {
