@@ -63,7 +63,7 @@ open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
     private val logger: Logger? = null
 
     @Inject
-    private val ruleComputer: RuleComputer? = null
+    protected lateinit var ruleComputer: RuleComputer
 
     @Inject
     private var actionContext: ActionContext? = null
@@ -110,11 +110,11 @@ open class SimpleSpringRequestClassExporter : ClassExporter, Worker {
     protected open fun isCtrl(psiClass: PsiClass): Boolean {
         return psiClass.annotations.any {
             SpringClassName.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
-        } || (ruleComputer!!.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
+        } || (ruleComputer.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
     }
 
     private fun shouldIgnore(psiElement: PsiElement): Boolean {
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
+        return ruleComputer.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
     private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, docHandle: DocHandle) {
