@@ -1,3 +1,25 @@
+* 2.3.1
+
+	* feat: support @RequestLine、@Headers、@Param、@Body [(#676)](https://github.com/tangcent/easy-yapi/pull/676)
+
+	* test: Test case of [DefaultDocParseHelper] [(#675)](https://github.com/tangcent/easy-yapi/pull/675)
+
+	* feat: try parse api info from super methods [(#674)](https://github.com/tangcent/easy-yapi/pull/674)
+
+	* fix: [json5] remove lead blank lines [(#673)](https://github.com/tangcent/easy-yapi/pull/673)
+
+	* feat: improve Settings UI [(#672)](https://github.com/tangcent/easy-yapi/pull/672)
+
+	* feat: [recommend] converter of reactivestreams.Publisher [(#667)](https://github.com/tangcent/easy-yapi/pull/667)
+
+	* chore: update docs [(#665)](https://github.com/tangcent/easy-yapi/pull/665)
+
+	* fix: resolve multi-line root desc as block comments [(#664)](https://github.com/tangcent/easy-yapi/pull/664)
+
+	* feat: support custom annotation with Spring-RequestMapping [(#663)](https://github.com/tangcent/easy-yapi/pull/663)
+
+	* feat: convert [java.sql.Date]&[java.sql.Time] as java.lang.String [(#662)](https://github.com/tangcent/easy-yapi/pull/662)
+
 * 2.3.0
 
 	* feat: recommend config for `Jackson-JsonUnwrapped` [(#658)](https://github.com/tangcent/easy-yapi/pull/658)
