@@ -14,6 +14,11 @@ object ClassExportRuleKeys {
         BooleanRuleMode.ANY
     )
 
+    val IS_FEIGN_CTRL: RuleKey<Boolean> = SimpleRuleKey(
+        "class.is.feign.ctrl",
+        BooleanRuleMode.ANY
+    )
+
     val IS_SPRING_CTRL: RuleKey<Boolean> = SimpleRuleKey(
         "class.is.spring.ctrl",
         arrayOf("class.is.ctrl"),

@@ -29,7 +29,7 @@ import com.itangcent.intellij.util.hasFile
 open class SpringRequestClassExporter : RequestClassExporter() {
 
     @Inject
-    protected val annotationHelper: AnnotationHelper? = null
+    protected lateinit var annotationHelper: AnnotationHelper
 
     @Inject
     protected val commentResolver: CommentResolver? = null
@@ -54,14 +54,12 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
     override fun hasApi(psiClass: PsiClass): Boolean {
         return SpringClassName.SPRING_CONTROLLER_ANNOTATION.any {
-            annotationHelper!!.hasAnn(psiClass, it)
+            annotationHelper.hasAnn(psiClass, it)
         } || (ruleComputer.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
     }
 
     override fun isApi(psiMethod: PsiMethod): Boolean {
-        return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS.any {
-            annotationHelper!!.hasAnn(psiMethod, it)
-        }
+        return springRequestMappingResolver.resolveRequestMapping(psiMethod) != null
     }
 
     override fun processMethodParameter(
@@ -194,7 +192,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
 
         //form/body/query
-        var paramType: String? = null
+        var paramType: String? = parameterExportContext.searchExt("paramType")
 
         val requestParamAnn = findRequestParam(parameterExportContext.psi())
 
@@ -491,27 +489,27 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     }
 
     protected fun isRequestBody(parameter: PsiParameter): Boolean {
-        return annotationHelper!!.hasAnn(parameter, SpringClassName.REQUEST_BODY_ANNOTATION)
+        return annotationHelper.hasAnn(parameter, SpringClassName.REQUEST_BODY_ANNOTATION)
     }
 
     protected fun isModelAttr(parameter: PsiParameter): Boolean {
-        return annotationHelper!!.hasAnn(parameter, SpringClassName.MODEL_ATTRIBUTE_ANNOTATION)
+        return annotationHelper.hasAnn(parameter, SpringClassName.MODEL_ATTRIBUTE_ANNOTATION)
     }
 
     protected fun findRequestHeader(parameter: PsiParameter): Map<String, Any?>? {
-        return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_HEADER)
+        return annotationHelper.findAnnMap(parameter, SpringClassName.REQUEST_HEADER)
     }
 
     protected fun findPathVariable(parameter: PsiParameter): Map<String, Any?>? {
-        return annotationHelper!!.findAnnMap(parameter, SpringClassName.PATH_VARIABLE_ANNOTATION)
+        return annotationHelper.findAnnMap(parameter, SpringClassName.PATH_VARIABLE_ANNOTATION)
     }
 
     protected fun findCookieValue(parameter: PsiParameter): Map<String, Any?>? {
-        return annotationHelper!!.findAnnMap(parameter, SpringClassName.COOKIE_VALUE_ANNOTATION)
+        return annotationHelper.findAnnMap(parameter, SpringClassName.COOKIE_VALUE_ANNOTATION)
     }
 
     protected fun findRequestParam(parameter: PsiParameter): Map<String, Any?>? {
-        return annotationHelper!!.findAnnMap(parameter, SpringClassName.REQUEST_PARAM_ANNOTATION)
+        return annotationHelper.findAnnMap(parameter, SpringClassName.REQUEST_PARAM_ANNOTATION)
     }
 
     protected fun findParamName(requestParamAnn: Map<String, Any?>?): String? {

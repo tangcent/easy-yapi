@@ -156,3 +156,9 @@ fun ExportContext.methodContext(): MethodExportContext? {
 fun ExportContext.paramContext(): ParameterExportContext? {
     return this.findContext(ParameterExportContext::class)
 }
+
+fun <T> ExportContext.searchExt(attr: String): T? {
+    this.getExt<T>(attr)?.let { return it }
+    this.parent()?.searchExt<T>(attr)?.let { return it }
+    return null
+}

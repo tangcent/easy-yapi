@@ -13,8 +13,10 @@ class OnClassCondition : AnnotatedCondition<ConditionOnClass>() {
 
     override fun matches(actionContext: ActionContext, annotation: ConditionOnClass): Boolean {
         val project = actionContext.instance(Project::class)
-        return annotation.value.all {
-            PsiClassFinder.findClass(it, project) != null
-        }
+        return actionContext.callInReadUI {
+            return@callInReadUI annotation.value.all {
+                PsiClassFinder.findClass(it, project) != null
+            }
+        } ?: false
     }
 }
