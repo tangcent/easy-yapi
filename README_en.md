@@ -11,8 +11,6 @@
 
 - Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
-- [中文](https://github.com/tangcent/easy-yapi/blob/master/README_cn.md) | [English](https://github.com/tangcent/easy-yapi/blob/master/README.md)
-
 - [demo](https://github.com/Earth-1610/spring-demo)
 
 # Table of Contents
@@ -23,25 +21,15 @@
   * 2.2 [KDoc](#KDoc)
 * 3 [Installation](#Installation)
 * 4 [Guide](#Guide)
-* 5 [Support](#Support)
-* 6 [Changelog](https://github.com/tangcent/easy-yapi/blob/feature/doc/IDEA_CHANGELOG.md)
-* 7 [Docs](https://github.com/tangcent/easy-yapi/tree/master/docs)
-  * 7.1 [Config](https://github.com/tangcent/easy-yapi/blob/master/docs/en/1.%20Config.md)
-  * 7.2 [Supported-custom-rules](https://github.com/tangcent/easy-yapi/blob/master/docs/en/2.%20Supported-custom-rules.md)
-  * 7.3 [Support-local-groovy-extension](https://github.com/tangcent/easy-yapi/blob/master/docs/en/3.%20Support-local-groovy-extension.md)
 
 ## Feature
-- [X] Support Java&Kotlin
-- [X] Support Spring
-- [X] Export api to Postman
-- [X] Export api to Yapi
-- [ ] Export api to Word
-- [X] Export api to Markdown
-- [X] Export method doc(rpc) to Markdown
-- [X] Export method doc(rpc) to Yapi
-- [X] Call api from code
-- [X] Api DashBoard
-- [X] YApi DashBoard
+
+|   |  support  |  additional  |
+| ------------ | ------------ | ------------ |
+| language | java, kotlin | scala |
+| web | [spring](https://spring.io/), [feign](https://spring.io/projects/spring-cloud-openfeign), [quarkus](https://quarkus.io/) | [dubbo](https://dubbo.apache.org) |
+| channels | [Postman](https://easyyapi.com/documents/export2postman.html), [Yapi](https://easyyapi.com/documents/export2yapi.html), [Markdown](https://easyyapi.com/documents/export2markdown.html) | - |
+| frameworks | javax.validation, Jackson, Gson |  [swagger](https://swagger.io/) |
 
 
 ## Javadoc
@@ -73,8 +61,6 @@ restart **IDE**.
 
 
 ## Guide
-
-* [docs](https://github.com/tangcent/easy-yapi/blob/master/docs/cn/Home.md)
 
 * ExportApi(0.8.2.1+)
 ```textCode
@@ -143,11 +129,3 @@ restart **IDE**.
     2. Select files or directories from project navigation
     You can use by this : "Click [Code -> ExportMarkdown] in top"
 ```
-
-
-### Support: 
-
-| Doc Type  |  Postman  |  Markdown  |  Yapi  |
-| ------------ | ------------ | ------------ | ------------ |
-| spring api | ![yes](assets/yes.png) | ![yes](assets/yes.png) | ![yes](assets/yes.png) |
-| method doc(rpc) | ![yes](assets/no.png) | ![yes](assets/yes.png) |  ![yes](assets/yes.png) |
