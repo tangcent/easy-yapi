@@ -77,6 +77,13 @@
             <add-to-group group-id="EasyApiEditorLangPopupMenu" anchor="last"/>
         </action>
 
+        <action id="com.itangcent.idea.easy_api.actions.FieldsToPropertiesAction"
+                class="com.itangcent.idea.plugin.actions.FieldsToPropertiesAction" text="ToProperties"
+                description="ToProperties">
+            <add-to-group group-id="EasyApiGenerateMenu" anchor="last"/>
+            <add-to-group group-id="EasyApiEditorLangPopupMenu" anchor="last"/>
+        </action>
+
         <action id="com.itangcent.idea.easy_api.actions.ApiCallAction"
                 class="com.itangcent.idea.plugin.actions.ApiCallAction" text="Call"
                 description="Call">

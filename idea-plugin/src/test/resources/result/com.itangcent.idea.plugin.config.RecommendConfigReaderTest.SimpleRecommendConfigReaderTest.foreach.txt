@@ -19,3 +19,4 @@ api.status[#undone]=undone
 api.status[#todo]=undone
 field.mock=#mock
 constant.field.ignore=groovy:it.name()=="serialVersionUID"
+properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix

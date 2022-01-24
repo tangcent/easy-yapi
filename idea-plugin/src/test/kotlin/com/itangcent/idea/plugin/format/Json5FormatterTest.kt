@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.json
+package com.itangcent.idea.plugin.format
 
 import com.itangcent.mock.toUnixString
 import org.junit.jupiter.api.Test
@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 /**
  * Test case of [Json5Formatter]
  */
-internal class Json5FormatterTest : JsonFormatterTest() {
+internal class Json5FormatterTest : MessageFormatterTest() {
 
     override val formatClass get() = Json5Formatter::class
 
@@ -53,7 +53,7 @@ internal class Json5FormatterTest : JsonFormatterTest() {
                     "    },\n" +
                     "    \"any\": {},\n" +
                     "}",
-            jsonFormatter.format(model).toUnixString()
+            messageFormatter.format(model).toUnixString()
         )
         assertEquals(
             "{ //test model\n" +
@@ -95,7 +95,7 @@ internal class Json5FormatterTest : JsonFormatterTest() {
                     "    },\n" +
                     "    \"any\": {},\n" +
                     "}",
-            jsonFormatter.format(model, "test model").toUnixString()
+            messageFormatter.format(model, "test model").toUnixString()
         )
 
         assertEquals(
@@ -107,7 +107,7 @@ internal class Json5FormatterTest : JsonFormatterTest() {
                     "    \"str\",\n" +
                     "    {}\n" +
                     "]",
-            jsonFormatter.format(listOf<Any?>("str", Object()), "multi lines\ncomments").toUnixString()
+            messageFormatter.format(listOf<Any?>("str", Object()), "multi lines\ncomments").toUnixString()
         )
     }
 }

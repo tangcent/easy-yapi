@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.json
+package com.itangcent.idea.plugin.format
 
 import com.google.inject.Singleton
 import com.itangcent.common.constant.Attrs
@@ -8,8 +8,16 @@ import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.intellij.util.forEachValid
 import com.itangcent.intellij.util.validSize
 
+/**
+ * Implementation of [com.itangcent.idea.plugin.format.MessageFormatter]
+ * that can write the object as JSON5 string.
+ *
+ * see [https://json5.org/]
+ *
+ * @author tangcent
+ */
 @Singleton
-class Json5Formatter : JsonFormatter {
+class Json5Formatter : MessageFormatter {
 
     override fun format(obj: Any?, desc: String?): String {
         val sb = StringBuilder()

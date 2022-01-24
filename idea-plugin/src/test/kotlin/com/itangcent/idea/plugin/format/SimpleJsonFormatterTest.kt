@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.json
+package com.itangcent.idea.plugin.format
 
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 /**
  * Test case of [SimpleJsonFormatter]
  */
-internal class SimpleJsonFormatterTest : JsonFormatterTest() {
+internal class SimpleJsonFormatterTest : MessageFormatterTest() {
 
     override val formatClass get() = SimpleJsonFormatter::class
 
@@ -38,7 +38,7 @@ internal class SimpleJsonFormatterTest : JsonFormatterTest() {
                 "  },\n" +
                 "  \"any\": {}\n" +
                 "}",
-                jsonFormatter.format(model))
+                messageFormatter.format(model))
         assertEquals("{\n" +
                 "  \"string\": \"abc\",\n" +
                 "  \"int\": 1,\n" +
@@ -65,6 +65,6 @@ internal class SimpleJsonFormatterTest : JsonFormatterTest() {
                 "  },\n" +
                 "  \"any\": {}\n" +
                 "}",
-                jsonFormatter.format(model), "test model")
+                messageFormatter.format(model), "test model")
     }
 }

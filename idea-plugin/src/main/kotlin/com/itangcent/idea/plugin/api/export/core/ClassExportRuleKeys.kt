@@ -330,4 +330,10 @@ object ClassExportRuleKeys {
         EventRuleMode.IGNORE_ERROR
     )
     //endregion
+
+
+    val PROPERTIES_PREFIX: RuleKey<String> = SimpleRuleKey(
+        "properties.prefix",
+        StringRuleMode.SINGLE
+    )
 }
