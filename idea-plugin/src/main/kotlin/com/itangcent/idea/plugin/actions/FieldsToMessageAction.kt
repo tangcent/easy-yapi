@@ -9,6 +9,7 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
 import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.format.MessageFormatter
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
@@ -31,7 +32,7 @@ import javax.swing.Icon
 /**
  * @author tangcent
  */
-abstract class ToJsonAction : BasicAnAction {
+abstract class FieldsToMessageAction : BasicAnAction {
 
     @Inject
     private val logger: Logger? = null
@@ -76,7 +77,7 @@ abstract class ToJsonAction : BasicAnAction {
                 }
                 contextSwitchListener!!.switchTo(currentClass)
                 val psiType = jvmClassHelper!!.resolveClassToType(currentClass)
-                val json = parseToJson(currentClass, psiType)
+                val json = formatMessage(currentClass, psiType)
                 actionContext.runAsync {
                     ToolUtils.copy2Clipboard(json)
                     logger!!.log("\n$json\n")
@@ -87,5 +88,5 @@ abstract class ToJsonAction : BasicAnAction {
         }
     }
 
-    abstract fun parseToJson(psiClass: PsiClass, type: PsiType?): String
+    abstract fun formatMessage(psiClass: PsiClass, type: PsiType?): String
 }

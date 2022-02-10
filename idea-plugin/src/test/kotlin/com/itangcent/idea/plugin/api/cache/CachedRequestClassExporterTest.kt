@@ -118,7 +118,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         Mockito.verify(delegateClassExporter, times(1))
             .export(any(), any(), any())
 
-        TimeUnit.SECONDS.sleep(5)//wait 5s to save cache
+        TimeUnit.SECONDS.sleep(10)//wait 10s to save cache
         (classExporter as Worker).waitCompleted()
 
         //export again

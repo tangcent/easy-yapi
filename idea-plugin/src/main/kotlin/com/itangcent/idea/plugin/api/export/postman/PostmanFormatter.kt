@@ -10,9 +10,9 @@ import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
-import com.itangcent.idea.plugin.json.Json5Formatter
-import com.itangcent.idea.plugin.json.JsonFormatter
-import com.itangcent.idea.plugin.json.SimpleJsonFormatter
+import com.itangcent.idea.plugin.format.Json5Formatter
+import com.itangcent.idea.plugin.format.MessageFormatter
+import com.itangcent.idea.plugin.format.SimpleJsonFormatter
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.psi.UltimateDocHelper
@@ -767,7 +767,7 @@ open class PostmanFormatter {
         }
     }
 
-    private fun getBodyFormatter(type: Int): JsonFormatter {
+    private fun getBodyFormatter(type: Int): MessageFormatter {
         val useJson5 = postmanSettingsHelper.postmanJson5FormatType().needUseJson5(type)
         return if (useJson5) {
             actionContext!!.instance(Json5Formatter::class)

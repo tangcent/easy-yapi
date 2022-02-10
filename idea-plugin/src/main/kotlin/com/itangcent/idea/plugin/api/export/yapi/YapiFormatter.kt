@@ -10,7 +10,7 @@ import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
-import com.itangcent.idea.plugin.json.Json5Formatter
+import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.idea.plugin.render.MarkdownRender
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.idea.psi.resource

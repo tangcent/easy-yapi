@@ -12,7 +12,7 @@ import com.itangcent.common.utils.getPropertyValue
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
-import com.itangcent.idea.plugin.json.Json5Formatter
+import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.toPrettyString

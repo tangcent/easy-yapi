@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.json
+package com.itangcent.idea.plugin.format
 
 import com.google.inject.Inject
 import com.itangcent.common.kit.KVUtils
@@ -9,20 +9,20 @@ import org.junit.jupiter.api.BeforeEach
 import kotlin.reflect.KClass
 
 /**
- * Test case of [JsonFormatter]
+ * Test case of [MessageFormatter]
  */
-internal abstract class JsonFormatterTest : BaseContextTest() {
+internal abstract class MessageFormatterTest : BaseContextTest() {
 
     @Inject
-    lateinit var jsonFormatter: JsonFormatter
+    lateinit var messageFormatter: MessageFormatter
 
     @Inject
     lateinit var model: Any
 
-    protected abstract val formatClass: KClass<out JsonFormatter>
+    protected abstract val formatClass: KClass<out MessageFormatter>
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
-        builder.bind(JsonFormatter::class) { it.with(formatClass) }
+        builder.bind(MessageFormatter::class) { it.with(formatClass) }
     }
 
     @BeforeEach
