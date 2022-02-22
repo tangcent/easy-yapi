@@ -163,7 +163,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                 }
                 classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
                     if (!exportApiFromMethod(explicitMethod)) {
-                        explicitMethod.superMethods().forEach { exportApiFromMethod(it) }
+                        explicitMethod.superMethods().any { exportApiFromMethod(it) }
                     }
                 }
             } finally {
