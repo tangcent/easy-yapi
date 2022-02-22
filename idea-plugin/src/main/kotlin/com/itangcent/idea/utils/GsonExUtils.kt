@@ -51,8 +51,10 @@ object GsonExUtils {
         ) {
             factories = factories.getPropertyValue("list") ?: return
         }
-
-        (factories as MutableList<TypeAdapterFactory>).remove(ObjectTypeAdapter.FACTORY)
+        val objectTypeAdapterClassName = ObjectTypeAdapter::class.qualifiedName!!
+        (factories as MutableList<TypeAdapterFactory>).removeIf {
+            it::class.java.name.startsWith(objectTypeAdapterClassName)
+        }
     }
 
     fun toJson(bean: Any?): String {
