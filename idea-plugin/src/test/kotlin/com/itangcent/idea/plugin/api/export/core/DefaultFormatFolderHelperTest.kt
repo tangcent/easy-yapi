@@ -2,9 +2,6 @@ package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.idea.plugin.api.export.core.DefaultFormatFolderHelper
-import com.itangcent.idea.plugin.api.export.core.Folder
-import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
 import com.itangcent.idea.psi.PsiClassResource
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.context.ActionContext

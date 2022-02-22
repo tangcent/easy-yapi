@@ -346,7 +346,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         actionContext.runAsync {
             projectNode.status = NodeStatus.Loading
             try {
-                val carts = yapiApiHelper.findCarts(projectId.toString(), projectNode.getProjectToken()!!)
+                val carts = yapiApiHelper.findCarts(projectId.toString(), projectNode.getProjectToken())
                 if (carts.isNullOrEmpty()) {
                     projectNode.status = NodeStatus.Loaded
                     return@runAsync
@@ -373,7 +373,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             val cartInfo = yapiCartNodeData.info
 
             val apis = yapiApiHelper.findApis(
-                yapiCartNodeData.getProjectToken()!!,
+                yapiCartNodeData.getProjectToken(),
                 cartInfo["_id"].toString()
             )
             if (apis.isNullOrEmpty()) return@runInSwingUI
@@ -475,7 +475,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
                 yapiApiHelper.addCart(yapiNodeData.getProjectToken()!!, cartName, "")
 
-                syncYapiNode(yapiNodeData.getRootNodeData()!!)
+                syncYapiNode(yapiNodeData.getRootNodeData())
             }
         }
     }
@@ -490,7 +490,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
             val treeModel = yapiApiTree!!.model as DefaultTreeModel
             (treeModel.root as DefaultMutableTreeNode)
-                .remove(yapiNodeData.getRootNodeData()!!.asTreeNode())
+                .remove(yapiNodeData.getRootNodeData().asTreeNode())
             treeModel.reload()
         }
 
@@ -506,7 +506,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         actionContext.runInSwingUI {
             when (yapiNodeData) {
                 is YapiApiNodeData -> {
-                    yapiNodeData.getParentNodeData()?.let { syncYapiNode(it) }
+                    syncYapiNode(yapiNodeData.getParentNodeData())
                 }
                 is YapiProjectNodeData -> {
                     //clear
@@ -582,7 +582,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return projectInfo["_id"]?.toString()
         }
 
-        override fun getProjectToken(): String? {
+        override fun getProjectToken(): String {
             return projectToken
         }
 
@@ -619,7 +619,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return getParentNodeData().getProjectId()
         }
 
-        override fun getProjectToken(): String? {
+        override fun getProjectToken(): String {
             return getParentNodeData().getProjectToken()
         }
 
@@ -656,7 +656,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return info
         }
 
-        override fun getParentNodeData(): YapiCartNodeData? {
+        override fun getParentNodeData(): YapiCartNodeData {
             return parentNode
         }
 
@@ -664,7 +664,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return parentNode.getProjectId()
         }
 
-        override fun getProjectToken(): String? {
+        override fun getProjectToken(): String {
             return parentNode.getProjectToken()
         }
 
@@ -680,7 +680,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             return info.getOrDefault("title", "unknown").toString()
         }
 
-        override fun toolTip(): String? {
+        override fun toolTip(): String {
             val sb = StringBuilder()
             val method = info["method"]
             if (method != null) {
@@ -719,7 +719,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
         //targetNodeData should be YapiCartNodeData or YapiProjectNodeData
         val targetNodeData: YapiNodeData = when (toYapiNodeData) {
-            is YapiApiNodeData -> toYapiNodeData.getParentNodeData()!!
+            is YapiApiNodeData -> toYapiNodeData.getParentNodeData()
             else -> toYapiNodeData as YapiNodeData
         }
 
@@ -752,12 +752,12 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                                     Messages.OK -> {
                                         export(fromProjectData, targetNodeData, null)
                                         Thread.sleep(200)
-                                        syncYapiNode(targetNodeData.getRootNodeData()!!)
+                                        syncYapiNode(targetNodeData.getRootNodeData())
                                     }
                                     Messages.NO -> {
                                         export(fromProjectData, targetNodeData, cartId)
                                         Thread.sleep(200)
-                                        syncYapiNode(targetNodeData.getRootNodeData()!!)
+                                        syncYapiNode(targetNodeData.getRootNodeData())
                                     }
                                 }
                             }
@@ -766,7 +766,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 } else {
                     export(fromProjectData, targetNodeData, null)
                     Thread.sleep(200)
-                    syncYapiNode(targetNodeData.getRootNodeData()!!)
+                    syncYapiNode(targetNodeData.getRootNodeData())
                 }
             } catch (e: Exception) {
                 logger.error("export failed:" + ExceptionUtils.getStackTrace(e))

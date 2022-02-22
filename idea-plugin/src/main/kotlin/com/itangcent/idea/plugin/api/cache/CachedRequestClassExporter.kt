@@ -169,7 +169,7 @@ class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
         fileApiCache.requests?.forEach { request ->
             val method = request.key?.let { PsiClassUtils.findMethodFromFullName(it, cls as PsiElement) }
             if (method == null) {
-                logger?.warn("${request.key} not be found")
+                logger.warn("${request.key} not be found")
                 return@forEach
             }
             request.request().let {

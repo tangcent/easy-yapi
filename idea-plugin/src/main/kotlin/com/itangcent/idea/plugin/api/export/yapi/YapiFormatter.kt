@@ -738,7 +738,7 @@ open class YapiFormatter {
     private fun setMock(typedObject: MutableMap<Any?, Any?>, key: Any?, mockStr: Any?) {
         when (val value = typedObject[key]) {
             is Map<*, *> -> {
-                logger?.warn("should not set mock to map!!")
+                logger.warn("should not set mock to map!!")
                 return
             }
             is Array<*> -> {
