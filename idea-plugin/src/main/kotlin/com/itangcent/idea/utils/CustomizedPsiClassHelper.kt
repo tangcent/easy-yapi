@@ -14,6 +14,7 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitField
+import com.itangcent.intellij.psi.unwrap
 import com.itangcent.intellij.psi.unwrapped
 
 /**
@@ -76,7 +77,7 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         if (isOriginal(obj)) {
             return
         }
-        val oldValue = kv[fieldName].unwrapped()
+        val oldValue = kv[fieldName].unwrap()
         if (isOriginal(oldValue)) {
             kv[fieldName] = obj
         } else {

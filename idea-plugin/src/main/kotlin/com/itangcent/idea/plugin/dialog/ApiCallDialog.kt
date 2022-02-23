@@ -231,11 +231,6 @@ class ApiCallDialog : JDialog(), ApiCallUI {
                 }
             }
         })
-
-        autoComputer.listen(this::currRequest)
-            .action {
-                val model = this.apisJList!!.model
-            }
     }
 
     override fun updateRequestList(requestList: List<Request>?) {
@@ -612,7 +607,7 @@ class ApiCallDialog : JDialog(), ApiCallUI {
             return readForm(formTable.model, onlyAvailable)
         }
 
-        private fun readForm(model: TableModel, onlyAvailable: Boolean): ArrayList<FormParam>? {
+        private fun readForm(model: TableModel, onlyAvailable: Boolean): ArrayList<FormParam> {
             val formParams: ArrayList<FormParam> = ArrayList()
             for (row in 0 until model.rowCount) {
                 readParamFromRow(model, row, onlyAvailable)?.let { formParams.add(it) }
@@ -1000,14 +995,14 @@ class ApiCallDialog : JDialog(), ApiCallUI {
 
     }
 
-    private fun formatResponseHeaders(response: HttpResponse?): String? {
+    private fun formatResponseHeaders(response: HttpResponse?): String {
         if (response?.headers() == null) return ""
         val sb = StringBuilder()
         response.headers()?.forEach {
             sb.append(it.name())
                 .append("=")
                 .append(it.value())
-                .appendln()
+                .appendLine()
         }
         return sb.toString()
     }
@@ -1275,11 +1270,11 @@ class ApiCallDialog : JDialog(), ApiCallUI {
         requestRawInfo.name = request.name?.trim()
         requestRawInfo.path = request.path?.url()
         requestRawInfo.method = request.method?.trim()
-        requestRawInfo.headers = formatRequestHeaders(request)?.trim()
+        requestRawInfo.headers = formatRequestHeaders(request).trim()
         requestRawInfo.querys = formatQueryParams(request)
         requestRawInfo.formParams = request.formParams
         requestRawInfo.bodyType = request.bodyType?.trim()
-        requestRawInfo.body = formatRequestBody(request)?.trim()
+        requestRawInfo.body = formatRequestBody(request).trim()
         requestRawInfo.bodyAttr = request.bodyAttr?.trim()
         return requestRawInfo
     }

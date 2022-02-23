@@ -350,7 +350,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext, priv
     }
 
     fun setResponseHeader(name: String, value: String?, required: Boolean?, desc: String?) {
-        val response = response() ?: return
+        val response = response()
         val header = response.headers?.firstOrNull { it.name == name }
         if (header == null) {
             addResponseHeader(name, value, required, desc)

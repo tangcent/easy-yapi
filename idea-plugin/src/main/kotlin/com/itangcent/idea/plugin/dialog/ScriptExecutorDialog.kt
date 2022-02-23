@@ -269,16 +269,14 @@ class ScriptExecutorDialog : JDialog() {
         val context = this.context
         context?.element()?.let { ele ->
             val psiCls = getPsiClass(ele)
-            if (psiCls != null) {
-                actionContext!!.callInReadUI {
-                    val explicitClass = duckTypeHelper.explicit(psiCls)
-                    contexts.add(SimpleScriptContext(psiCls, psiCls.qualifiedName))
-                    explicitClass.fields().forEach {
-                        contexts.add(SimpleScriptContext(it, it.toString()))
-                    }
-                    explicitClass.methods().forEach {
-                        contexts.add(SimpleScriptContext(it, it.toString()))
-                    }
+            actionContext!!.callInReadUI {
+                val explicitClass = duckTypeHelper.explicit(psiCls)
+                contexts.add(SimpleScriptContext(psiCls, psiCls.qualifiedName))
+                explicitClass.fields().forEach {
+                    contexts.add(SimpleScriptContext(it, it.toString()))
+                }
+                explicitClass.methods().forEach {
+                    contexts.add(SimpleScriptContext(it, it.toString()))
                 }
             }
         }
@@ -717,7 +715,7 @@ class ScriptExecutorDialog : JDialog() {
                 return null
             }
 
-            override fun name(): String? {
+            override fun name(): String {
                 return "select context"
             }
 
