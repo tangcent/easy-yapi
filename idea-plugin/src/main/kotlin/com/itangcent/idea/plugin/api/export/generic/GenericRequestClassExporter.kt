@@ -67,7 +67,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
     override fun processMethodParameter(
         request: Request,
         parameterExportContext: ParameterExportContext,
-        paramDesc: String?
+        paramDesc: String?,
     ) {
 
         //RequestBody(json)
@@ -253,7 +253,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
 
     private fun getUltimateComment(
         paramDesc: String?,
-        parameterExportContext: ParameterExportContext
+        parameterExportContext: ParameterExportContext,
     ): String {
         var ultimateComment = (paramDesc ?: "")
         parameterExportContext.element().getType()?.let { duckType ->
@@ -275,7 +275,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         if (httpMethod == HttpMethod.NO_METHOD && ctrlHttpMethod != HttpMethod.NO_METHOD) {
             httpMethod = ctrlHttpMethod!!
         }
-        request.method = httpMethod
+        httpMethod?.let { request.method = HttpMethod.preferMethod(it) }
 
         val httpPath = basePath.concat(URL.of(pathAndMethod.first))
         requestBuilderListener.setPath(methodExportContext, request, httpPath)

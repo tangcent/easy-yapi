@@ -70,7 +70,7 @@ open class SuvApiExporter {
     private val logger: Logger? = null
 
     @Inject
-    private val actionContext: ActionContext? = null
+    private lateinit var actionContext: ActionContext
 
     @Inject
     private val classExporter: ClassExporter? = null
@@ -87,7 +87,7 @@ open class SuvApiExporter {
         SelectedHelper.Builder()
             .fileFilter { FileType.acceptable(it.name) }
             .classHandle {
-                actionContext!!.checkStatus()
+                actionContext.checkStatus()
                 classExporter!!.export(it) { doc ->
                     docs.add(DocWrapper(doc))
                 }
