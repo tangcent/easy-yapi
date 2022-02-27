@@ -1,3 +1,19 @@
+* 2.3.2
+
+	* feat: [generic] auto fix http method [(#697)](https://github.com/tangcent/easy-yapi/pull/697)
+
+	* feat: generic.spring.demo.config [(#696)](https://github.com/tangcent/easy-yapi/pull/696)
+
+	* chore: fix warnings [(#695)](https://github.com/tangcent/easy-yapi/pull/695)
+
+	* fix: use `any` instead of `forEach` to export api from superMethods [(#694)](https://github.com/tangcent/easy-yapi/pull/694)
+
+	* fix: remove usage of  ObjectTypeAdapter.FACTORY [(#693)](https://github.com/tangcent/easy-yapi/pull/693)
+
+	* feat: new Action FieldsToProperties [(#686)](https://github.com/tangcent/easy-yapi/pull/686)
+
+	* chore: update docs [(#680)](https://github.com/tangcent/easy-yapi/pull/680)
+
 * 2.3.1
 
 	* feat: support @RequestLine、@Headers、@Param、@Body [(#676)](https://github.com/tangcent/easy-yapi/pull/676)
