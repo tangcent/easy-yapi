@@ -1024,7 +1024,7 @@ class RuleToolUtils {
         return typeName(qualifiedName)
     }
 
-    private fun typeName(qualifiedName: String): String? {
+    private fun typeName(qualifiedName: String): String {
         return typeMapper[qualifiedName] ?: qualifiedName
     }
 

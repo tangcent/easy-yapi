@@ -825,11 +825,10 @@ class ApiCallDialog : JDialog(), ApiCallUI {
                     }
 
                     if (apiCallDialog!!.throttleHelper.acquire("select_file_for_form_param", 1000)) {
-                        IdeaFileChooserHelper(
+                        IdeaFileChooserHelper.create(
                             apiCallDialog!!.actionContext,
                             FileChooserDescriptorFactory.createSingleFileDescriptor()
-                        )
-                            .lastSelectedLocation("file.form.param.select.last.location.key")
+                        ).lastSelectedLocation("file.form.param.select.last.location.key")
                             .selectFile {
                                 formTable.setValueAt(it?.path, row, column)
                             }
@@ -1121,7 +1120,7 @@ class ApiCallDialog : JDialog(), ApiCallUI {
 
     class ApiInfo(
         val origin: Request,
-        val raw: RequestRawInfo
+        val raw: RequestRawInfo,
     )
 
     class RequestRawInfo {
