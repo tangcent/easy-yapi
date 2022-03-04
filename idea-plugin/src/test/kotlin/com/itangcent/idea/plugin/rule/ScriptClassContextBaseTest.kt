@@ -419,7 +419,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     fun testMethodCnt() {
         assertEquals1(12, objectPsiClass.asClassContext().methodCnt())
         assertEquals1(22, modelPsiClass.asClassContext().methodCnt())
-        assertEquals1(23, resultPsiClass.asClassContext().methodCnt())
+        assertEquals1(25, resultPsiClass.asClassContext().methodCnt())
         assertEquals1(14, iResultPsiClass.asClassContext().methodCnt())
     }
 

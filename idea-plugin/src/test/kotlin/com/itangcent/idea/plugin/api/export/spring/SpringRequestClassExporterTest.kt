@@ -24,6 +24,7 @@ import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
+import junit.framework.Assert
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -513,7 +514,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             )
         }
 
-        assertEquals(ResultLoader.load("testExportFromTestCtrlWithOutExpanded"), LoggerCollector.getLog().toUnixString())
+        assertEquals(ResultLoader.load("testExportFromTestCtrlWithOutExpanded"),
+            LoggerCollector.getLog().toUnixString())
     }
 
     fun testExportFromUserApi() {
@@ -524,9 +526,15 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         (classExporter as Worker).waitCompleted()
         requests[0].let { request ->
             assertEquals("loginAuth", request.name)
-            assertNull( request.desc)
+            assertNull(request.desc)
             assertEquals("POST", request.method)
             assertEquals(iuserApiPsiClass.methods[0], (request.resource as PsiResource).resource())
+        }
+        requests[1].let { request ->
+            assertEquals("A default api", request.name)
+            Assert.assertEquals("It is not necessary to implement it", request.desc)
+            assertEquals("POST", request.method)
+            assertEquals(iuserApiPsiClass.methods[1], (request.resource as PsiResource).resource())
         }
         assertEquals(ResultLoader.load("testExportFromUserApi"), LoggerCollector.getLog().toUnixString())
     }

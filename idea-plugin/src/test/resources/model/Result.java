@@ -23,6 +23,14 @@ public class Result<T> implements IResult {
         return new Result<>(0, "success", data);
     }
 
+    public static <T> Result<T> fail(Integer code) {
+        return new Result<>(code, "error", null);
+    }
+
+    public static <T> Result<T> fail(Integer code, String msg) {
+        return new Result<>(code, msg, null);
+    }
+
     @Override
     public Integer getCode() {
         return code;

@@ -24,6 +24,7 @@ import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.api.export.spring.SpringClassName
 import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
+import com.itangcent.idea.psi.PsiMethodSet
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
@@ -146,9 +147,13 @@ abstract class RequestClassExporter : ClassExporter, Worker {
             try {
                 processClass(cls, classExportContext)
 
-                fun exportApiFromMethod(explicitMethod: ExplicitMethod): Boolean {
+                val psiMethodSet = PsiMethodSet()
+
+                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
                     val method = explicitMethod.psi()
-                    if (isApi(method) && methodFilter?.checkMethod(method) != false) {
+                    if (isApi(method)
+                        && methodFilter?.checkMethod(method) != false
+                        && psiMethodSet.add(method)) {
                         try {
                             ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_BEFORE, explicitMethod)
                             exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
@@ -157,13 +162,6 @@ abstract class RequestClassExporter : ClassExporter, Worker {
                         } finally {
                             ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
                         }
-                        return true
-                    }
-                    return false
-                }
-                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
-                    if (!exportApiFromMethod(explicitMethod)) {
-                        explicitMethod.superMethods().any { exportApiFromMethod(it) }
                     }
                 }
             } finally {
@@ -191,7 +189,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
     private fun exportMethodApi(
         psiClass: PsiClass, method: ExplicitMethod,
         classExportContext: ClassExportContext,
-        docHandle: DocHandle
+        docHandle: DocHandle,
     ) {
 
         actionContext!!.checkStatus()
@@ -219,7 +217,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
 
     protected open fun processMethod(
         methodExportContext: MethodExportContext,
-        request: Request
+        request: Request,
     ) {
 
         apiHelper!!.nameAndAttrOfApi(methodExportContext.element(), {
@@ -554,12 +552,12 @@ abstract class RequestClassExporter : ClassExporter, Worker {
     abstract fun processMethodParameter(
         request: Request,
         parameterExportContext: ParameterExportContext,
-        paramDesc: String?
+        paramDesc: String?,
     )
 
     protected fun setRequestBody(
         exportContext: ExportContext,
-        request: Request, typeObject: Any?, paramDesc: String?
+        request: Request, typeObject: Any?, paramDesc: String?,
     ) {
         requestBuilderListener.setMethodIfMissed(exportContext, request, HttpMethod.POST)
         requestBuilderListener.addHeader(exportContext, request, "Content-Type", "application/json")
@@ -575,7 +573,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
     @Suppress("UNCHECKED_CAST")
     protected open fun addParamAsQuery(
         parameterExportContext: VariableExportContext,
-        request: Request, typeObject: Any?, paramDesc: String? = null
+        request: Request, typeObject: Any?, paramDesc: String? = null,
     ) {
         try {
             parameterExportContext.setExt("paramTypeObject", typeObject)
@@ -665,7 +663,7 @@ abstract class RequestClassExporter : ClassExporter, Worker {
     @Suppress("UNCHECKED_CAST")
     protected open fun addParamAsForm(
         parameterExportContext: VariableExportContext,
-        request: Request, typeObject: Any?, paramDesc: String? = null
+        request: Request, typeObject: Any?, paramDesc: String? = null,
     ) {
 
         try {
