@@ -24,6 +24,14 @@ internal class CommonSettingsHelperTest : SettingsHelperTest() {
     }
 
     @Test
+    fun testLogCharset() {
+        for (charset in Charsets.SUPPORTED_CHARSETS) {
+            settings.logCharset = charset.displayName()
+            assertEquals(charset.charset(), commonSettingsHelper.logCharset())
+        }
+    }
+
+    @Test
     fun testLogLevel() {
         for (level in Logger.BasicLevel.values()) {
             settings.logLevel = level.getLevel()

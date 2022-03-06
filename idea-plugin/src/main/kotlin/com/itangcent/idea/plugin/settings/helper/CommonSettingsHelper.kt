@@ -21,6 +21,10 @@ class CommonSettingsHelper {
         return settingBinder.read().logLevel
     }
 
+    fun logCharset(): Charset {
+        return Charsets.forName(settingBinder.read().logCharset)?.charset() ?: kotlin.text.Charsets.UTF_8
+    }
+
     fun currentLogLevel(): Logger.Level {
         val logLevel: Int = logLevel()
         return logLevel.let { CoarseLogLevel.toLevel(it) }

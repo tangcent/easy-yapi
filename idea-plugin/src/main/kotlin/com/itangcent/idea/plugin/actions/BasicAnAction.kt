@@ -6,6 +6,7 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.itangcent.common.spi.Setup
 import com.itangcent.idea.config.CachedResourceResolver
+import com.itangcent.idea.plugin.log.CustomLogConfig
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -22,6 +23,7 @@ import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
+import com.itangcent.intellij.logger.LogConfig
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.spi.IdeaAutoInject
 import com.itangcent.intellij.tip.OnlyOnceInContextTipSetup
@@ -41,6 +43,7 @@ abstract class BasicAnAction : KotlinAnAction {
 
         super.onBuildActionContext(event, builder)
         builder.bindInstance("plugin.name", "easy_api")
+        builder.bind(LogConfig::class) { it.with(CustomLogConfig::class).singleton() }
 
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }

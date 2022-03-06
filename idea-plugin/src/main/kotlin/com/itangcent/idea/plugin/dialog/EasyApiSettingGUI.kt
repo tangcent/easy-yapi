@@ -105,6 +105,8 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     private var logLevelComboBox: JComboBox<Logger.Level>? = null
 
+    private var logCharsetComboBox: JComboBox<Charsets>? = null
+
     private var methodDocEnableCheckBox: JCheckBox? = null
 
     private var genericEnableCheckBox: JCheckBox? = null
@@ -235,6 +237,8 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
         logLevelComboBox!!.model = DefaultComboBoxModel(CommonSettingsHelper.CoarseLogLevel.editableValues())
 
+        logCharsetComboBox!!.model = DefaultComboBoxModel(Charsets.SUPPORTED_CHARSETS)
+
         outputCharsetComboBox!!.model = DefaultComboBoxModel(Charsets.SUPPORTED_CHARSETS)
 
         markdownFormatTypeComboBox!!.model =
@@ -253,6 +257,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
         this.postmanWorkspaceComboBoxModel?.selectedItem = this.selectedPostmanWorkspace
         this.logLevelComboBox!!.selectedItem = CommonSettingsHelper.CoarseLogLevel.toLevel(settings.logLevel)
+        this.logCharsetComboBox!!.selectedItem = Charsets.forName(settings.logCharset)
         this.outputCharsetComboBox!!.selectedItem = Charsets.forName(settings.outputCharset)
         this.postmanJson5FormatTypeComboBox!!.selectedItem = settings.postmanJson5FormatType
         this.postmanExportModeComboBox!!.selectedItem = settings.postmanExportMode
@@ -589,6 +594,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.useRecommendConfig = recommendedCheckBox!!.isSelected
         settings.logLevel =
             (logLevelComboBox!!.selected() ?: CommonSettingsHelper.CoarseLogLevel.LOW).getLevel()
+        settings.logCharset = (logCharsetComboBox!!.selectedItem as? Charsets ?: Charsets.UTF_8).displayName()
         settings.outputDemo = outputDemoCheckBox!!.isSelected
         settings.outputCharset = (outputCharsetComboBox!!.selectedItem as? Charsets ?: Charsets.UTF_8).displayName()
         settings.markdownFormatType =
