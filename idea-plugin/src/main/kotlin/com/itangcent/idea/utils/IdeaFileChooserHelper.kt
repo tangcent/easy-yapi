@@ -10,42 +10,20 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.itangcent.intellij.context.ActionContext
 
-class IdeaFileChooserHelper {
-
-    private val descriptor: FileChooserDescriptor
-
-    constructor(descriptor: FileChooserDescriptor) {
-        this.descriptor = descriptor
-        ActionContext.getContext()!!.init(this)
-    }
-
-    constructor(actionContext: ActionContext, descriptor: FileChooserDescriptor) {
-        this.descriptor = descriptor
-        actionContext.init(this)
-    }
+class IdeaFileChooserHelper private constructor(
+    private val actionContext: ActionContext,
+    private val descriptor: FileChooserDescriptor,
+) {
 
     @Named("file.select.last.location.key")
     @Inject(optional = true)
     private var lastSelectedLocation: String? = null
 
-    @Inject(optional = true)
-    private var project: Project? = null
-
-    @Inject(optional = true)
-    private var actionContext: ActionContext? = null
+    @Inject
+    private lateinit var project: Project
 
     fun lastSelectedLocation(lastSelectedLocation: String?): IdeaFileChooserHelper {
         this.lastSelectedLocation = lastSelectedLocation
-        return this
-    }
-
-    fun project(project: Project?): IdeaFileChooserHelper {
-        this.project = project
-        return this
-    }
-
-    fun actionContext(actionContext: ActionContext?): IdeaFileChooserHelper {
-        this.actionContext = actionContext
         return this
     }
 
@@ -66,9 +44,11 @@ class IdeaFileChooserHelper {
         })
     }
 
-    fun selectFile(onSelect: (VirtualFile) -> Unit,
-                   onCancel: () -> Unit) {
-        actionContext!!.runInSwingUI {
+    fun selectFile(
+        onSelect: (VirtualFile) -> Unit,
+        onCancel: () -> Unit,
+    ) {
+        actionContext.runInSwingUI {
             val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
             var toSelect: VirtualFile? = null
             val lastLocation = PropertiesComponent.getInstance().getValue(getLastImportedLocation())
@@ -77,7 +57,7 @@ class IdeaFileChooserHelper {
             }
             val files = chooser.choose(project, toSelect)
             if (files.isNotEmpty()) {
-                actionContext!!.runInWriteUI {
+                actionContext.runInWriteUI {
                     val file = files[0]
                     PropertiesComponent.getInstance().setValue(getLastImportedLocation(), file.path)
                     onSelect(file)
@@ -86,5 +66,20 @@ class IdeaFileChooserHelper {
                 onCancel()
             }
         }
+    }
+
+    companion object {
+
+        fun create(descriptor: FileChooserDescriptor): IdeaFileChooserHelper {
+            return create(ActionContext.getContext()!!, descriptor)
+        }
+
+        fun create(actionContext: ActionContext, descriptor: FileChooserDescriptor): IdeaFileChooserHelper {
+            return IdeaFileChooserHelper(actionContext, descriptor)
+        }
+    }
+
+    init {
+        actionContext.init(this)
     }
 }
