@@ -1,15 +1,15 @@
 [INFO]	search api from:com.itangcent.api.UserApiImpl
 [INFO]	before parse class:com.itangcent.api.UserApiImpl
 [INFO]	before parse method:com.itangcent.api.UserApiImpl#loginAuth
-[INFO]	before parse param:userInfo
-[INFO]	after parse param:userInfo
-[INFO]	before parse param:userInfo
-[INFO]	after parse param:userInfo
+[INFO]	before parse param:req
+[INFO]	after parse param:req
+[INFO]	before parse param:req
+[INFO]	after parse param:req
 [INFO]	after parse method:com.itangcent.api.UserApiImpl#loginAuth
-[INFO]	before parse method:com.itangcent.api.UserApiImpl#loginAuth
-[INFO]	before parse param:userInfo
-[INFO]	after parse param:userInfo
-[INFO]	before parse param:userInfo
-[INFO]	after parse param:userInfo
-[INFO]	after parse method:com.itangcent.api.UserApiImpl#loginAuth
+[INFO]	before parse method:com.itangcent.api.UserApiImpl#defaultApi
+[INFO]	before parse param:req
+[INFO]	after parse param:req
+[INFO]	try infer return type of method[com.itangcent.api.IUserApi#defaultApi(List<Req>)]
+[WARN]	error to resolve class:Res
+[INFO]	after parse method:com.itangcent.api.UserApiImpl#defaultApi
 [INFO]	after parse class:com.itangcent.api.UserApiImpl
