@@ -25,9 +25,6 @@ import org.apache.commons.lang.StringUtils.lowerCase
 @ConditionOnClass(SpringFeignClassName.REQUEST_LINE_ANNOTATION)
 @ConditionOnSetting("feignEnable")
 open class FeignRequestClassExporter : SpringRequestClassExporter() {
-    override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
-        //NOP
-    }
 
     override fun hasApi(psiClass: PsiClass): Boolean {
         return annotationHelper.hasAnn(psiClass, SpringFeignClassName.FEIGN_CLIENT_ANNOTATION)
