@@ -129,12 +129,14 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
         })
         (classExporter as Worker).waitCompleted()
         requests[0].let { request ->
+            assertEquals("/user/index", request.path!!.url())
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)
             assertEquals("GET", request.method)
             assertEquals(userClientPsiClass.methods[0], (request.resource as PsiResource).resource())
         }
         requests[1].let { request ->
+            assertEquals("/user/get/{id}", request.path!!.url())
             assertEquals("get user info", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("GET", request.method)
@@ -153,6 +155,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
         })
         (classExporter as Worker).waitCompleted()
         requests[0].let { request ->
+            assertEquals("/user", request.path!!.url())
             assertEquals("create an user", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
@@ -165,6 +168,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             )
         }
         requests[1].let { request ->
+            assertEquals("/user/list/{type}", request.path!!.url())
             assertEquals("list users", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
