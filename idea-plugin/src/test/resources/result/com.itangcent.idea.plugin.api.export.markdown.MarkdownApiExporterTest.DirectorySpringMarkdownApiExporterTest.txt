@@ -6,43 +6,43 @@
 ---
 ### test RequestHeader
 
-#### BASIC
+> BASIC
 
-**Path：** /test/header
+**Path:** /test/header
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
-**Query：**
+**Query:**
 
 | name  |  value  |  required | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | NO | input token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string | token output | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
@@ -50,25 +50,25 @@
 
 
 
+
 ---
 ### test query with array parameters
 
-#### BASIC
+> BASIC
 
-**Path：** /test/arrays
+**Path:** /test/arrays
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
-**Query：**
+**Query:**
 
 | name  |  value  |  required | desc  |
 | ------------ | ------------ | ------------ | ------------ |
@@ -76,219 +76,224 @@
 | ints | 0 | NO | integer array |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
 ```
+
 
 
 
 ---
 ### test ignored method
 
-#### BASIC
+> BASIC
 
-**Path：** /test/ignore
+**Path:** /test/ignore
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
 ```
+
 
 
 
 ---
 ### test query with javax.servlet.http.HttpServletRequest
 
-#### BASIC
+> BASIC
 
-**Path：** /test/httpServletRequest
+**Path:** /test/httpServletRequest
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
 ```
+
 
 
 
 ---
 ### test query with javax.servlet.http.HttpServletResponse
 
-#### BASIC
+> BASIC
 
-**Path：** /test/httpServletResponse
+**Path:** /test/httpServletResponse
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
 ```
+
 
 
 
 ---
 ### test api return void
 
-#### BASIC
+> BASIC
 
-**Path：** /test/return/void
+**Path:** /test/return/void
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
+
 
 
 
 ---
 ### test api return Void
 
-#### BASIC
+> BASIC
 
-**Path：** /test/return/Void
+**Path:** /test/return/Void
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
+
 
 
 
 ---
 ### test api return Result<Void>
 
-#### BASIC
+> BASIC
 
-**Path：** /test/return/result/Void
+**Path:** /test/return/result/Void
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -296,45 +301,47 @@
 | msg | string | message | 
 | data | object | response data | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
   "code": 0,
-  "msg": ""
+  "msg": "",
+  "data": null
 }
 ```
+
 
 
 
 ---
 ### return nested node
 
-#### BASIC
+> BASIC
 
-**Path：** /test/return/node
+**Path:** /test/return/node
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -342,7 +349,7 @@
 | msg | string | message | 
 | data | object | response data | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -351,37 +358,38 @@
   "data": {}
 }
 ```
+
 
 
 
 ---
 ### return root with nested nodes
 
-#### BASIC
+> BASIC
 
-**Path：** /test/return/root
+**Path:** /test/return/root
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -389,7 +397,7 @@
 | msg | string | message | 
 | data | object | response data | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -398,37 +406,38 @@
   "data": {}
 }
 ```
+
 
 
 
 ---
 ### return customMap
 
-#### BASIC
+> BASIC
 
-**Path：** /test/return/customMap
+**Path:** /test/return/customMap
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -436,7 +445,7 @@
 | msg | string | message | 
 | data | object | response data | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -445,37 +454,38 @@
   "data": {}
 }
 ```
+
 
 
 
 ---
 ### user page query
 
-#### BASIC
+> BASIC
 
-**Path：** /test/call/page/user
+**Path:** /test/call/page/user
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -483,7 +493,7 @@
 | msg | string | message | 
 | data | object | response data | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -492,22 +502,22 @@
   "data": {}
 }
 ```
+
 
 
 
 ---
 ### user page query with ModelAttribute
 
-#### BASIC
+> BASIC
 
-**Path：** /test/call/page/user/form
+**Path:** /test/call/page/user/form
 
-**Method：** POST
+**Method:** POST
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
@@ -515,15 +525,16 @@
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -531,7 +542,7 @@
 | msg | string | message | 
 | data | object | response data | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -540,22 +551,22 @@
   "data": {}
 }
 ```
+
 
 
 
 ---
 ### user page query with POST
 
-#### BASIC
+> BASIC
 
-**Path：** /test/call/page/user/post
+**Path:** /test/call/page/user/post
 
-**Method：** POST
+**Method:** POST
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
@@ -563,15 +574,16 @@
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -579,7 +591,7 @@
 | msg | string | message | 
 | data | object | response data | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -591,25 +603,25 @@
 
 
 
+
 ---
 ### user page query with array
 
-#### BASIC
+> BASIC
 
-**Path：** /test/call/page/user/array
+**Path:** /test/call/page/user/array
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
-**Query：**
+**Query:**
 
 | name  |  value  |  required | desc  |
 | ------------ | ------------ | ------------ | ------------ |
@@ -622,15 +634,16 @@
 | regtime |  | NO | user regtime |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -646,7 +659,7 @@
 | &ensp;&ensp;&ensp;&ensp;&#124;─birthDay | string | user birthDay | 
 | &ensp;&ensp;&ensp;&ensp;&#124;─regtime | string | user regtime | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -668,44 +681,46 @@
 
 
 
+
 ---
 ### current ctrl name
 
-#### BASIC
+> BASIC
 
-**Path：** /test/ctrl/name
+**Path:** /test/ctrl/name
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
 ```
+
 
 
 
@@ -716,35 +731,35 @@
 ---
 ### say hello
 
-#### BASIC
+> BASIC
 
-**Path：** user/greeting
+**Path:** user/greeting
 
-**Method：** GET
+**Method:** GET
 
-**Desc：**
+**Desc:**
 
-not update anything
+ not update anything
 
-#### REQUEST
+> REQUEST
 
 
 
-#### RESPONSE
+> RESPONSE
 
-**Header：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
@@ -752,40 +767,41 @@ not update anything
 
 
 
+
 ---
 ### get user info
 
-#### BASIC
+> BASIC
 
-**Path：** user/get/{id}
+**Path:** user/get/{id}
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
-**Query：**
+**Query:**
 
 | name  |  value  |  required | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | id | 0 | NO | user id |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -800,7 +816,7 @@ not update anything
 | &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
 | &ensp;&ensp;&#124;─regtime | string | user regtime | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -820,26 +836,26 @@ not update anything
 
 
 
+
 ---
 ### create an user
 
-#### BASIC
+> BASIC
 
-**Path：** user/add
+**Path:** user/add
 
-**Method：** POST
+**Method:** POST
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | Content-Type | application/json | YES |  |
 | token |  | YES | auth token |
 
-**RequestBody**
+**Request Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -851,7 +867,7 @@ not update anything
 | birthDay | string | user birthDay | 
 | regtime | string | user regtime | 
 
-**Request Demo：**
+**Request Demo:**
 
 ```json
 {
@@ -866,15 +882,16 @@ not update anything
 ```
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -889,7 +906,7 @@ not update anything
 | &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
 | &ensp;&ensp;&#124;─regtime | string | user regtime | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -909,26 +926,26 @@ not update anything
 
 
 
+
 ---
 ### update user info
 
-#### BASIC
+> BASIC
 
-**Path：** user/update
+**Path:** user/update
 
-**Method：** PUT
+**Method:** PUT
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | Content-Type | multipart/form-data | YES |  |
 | token |  | YES | auth token |
 
-**Form：**
+**Form:**
 
 | name  |  value  | required |  type  |  desc  |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
@@ -941,15 +958,16 @@ not update anything
 | regtime |  | NO | text | user regtime |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -964,7 +982,7 @@ not update anything
 | &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
 | &ensp;&ensp;&#124;─regtime | string | user regtime | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -984,40 +1002,41 @@ not update anything
 
 
 
+
 ---
 ### current ctrl name
 
-#### BASIC
+> BASIC
 
-**Path：** user/ctrl/name
+**Path:** user/ctrl/name
 
-**Method：** GET
+**Method:** GET
 
-#### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-#### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 

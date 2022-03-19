@@ -11,7 +11,7 @@ object RequestUtils {
         if (body is String) {
             return body
         }
-        return GsonUtils.prettyJson(toRawBody(body, copy))
+        return GsonUtils.prettyJsonWithNulls(toRawBody(body, copy))
     }
 
     fun toRawBody(body: Any?, copy: Boolean): Any? {

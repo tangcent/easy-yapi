@@ -4,35 +4,35 @@
 ---
 ## say hello
 
-### BASIC
+> BASIC
 
-**Path：** user/greeting
+**Path:** user/greeting
 
-**Method：** GET
+**Method:** GET
 
-**Desc：**
+**Desc:**
 
-not update anything
+ not update anything
 
-### REQUEST
+> REQUEST
 
 
 
-### RESPONSE
+> RESPONSE
 
-**Header：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
@@ -40,40 +40,41 @@ not update anything
 
 
 
+
 ---
 ## get user info
 
-### BASIC
+> BASIC
 
-**Path：** user/get/{id}
+**Path:** user/get/{id}
 
-**Method：** GET
+**Method:** GET
 
-### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
-**Query：**
+**Query:**
 
 | name  |  value  |  required | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | id | 0 | NO | user id |
 
 
-### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -88,7 +89,7 @@ not update anything
 | &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
 | &ensp;&ensp;&#124;─regtime | string | user regtime | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -108,26 +109,26 @@ not update anything
 
 
 
+
 ---
 ## create an user
 
-### BASIC
+> BASIC
 
-**Path：** user/add
+**Path:** user/add
 
-**Method：** POST
+**Method:** POST
 
-### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | Content-Type | application/json | YES |  |
 | token |  | YES | auth token |
 
-**RequestBody**
+**Request Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -139,7 +140,7 @@ not update anything
 | birthDay | string | user birthDay | 
 | regtime | string | user regtime | 
 
-**Request Demo：**
+**Request Demo:**
 
 ```json
 {
@@ -154,15 +155,16 @@ not update anything
 ```
 
 
-### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -177,7 +179,7 @@ not update anything
 | &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
 | &ensp;&ensp;&#124;─regtime | string | user regtime | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -197,26 +199,26 @@ not update anything
 
 
 
+
 ---
 ## update user info
 
-### BASIC
+> BASIC
 
-**Path：** user/update
+**Path:** user/update
 
-**Method：** PUT
+**Method:** PUT
 
-### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | Content-Type | multipart/form-data | YES |  |
 | token |  | YES | auth token |
 
-**Form：**
+**Form:**
 
 | name  |  value  | required |  type  |  desc  |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
@@ -229,15 +231,16 @@ not update anything
 | regtime |  | NO | text | user regtime |
 
 
-### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
@@ -252,7 +255,7 @@ not update anything
 | &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
 | &ensp;&ensp;&#124;─regtime | string | user regtime | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 {
@@ -272,40 +275,41 @@ not update anything
 
 
 
+
 ---
 ## current ctrl name
 
-### BASIC
+> BASIC
 
-**Path：** user/ctrl/name
+**Path:** user/ctrl/name
 
-**Method：** GET
+**Method:** GET
 
-### REQUEST
+> REQUEST
 
-
-**Headers：**
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 
-### RESPONSE
 
-**Header：**
+> RESPONSE
+
+**Headers:**
 
 | name  |  value  |  required  | desc  |
 | ------------ | ------------ | ------------ | ------------ |
 | content-type | application/json;charset=UTF-8 | NO |   |
 
-**Body：**
+**Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
 |  | string |  | 
 
-**Response Demo：**
+**Response Demo:**
 
 ```json
 
