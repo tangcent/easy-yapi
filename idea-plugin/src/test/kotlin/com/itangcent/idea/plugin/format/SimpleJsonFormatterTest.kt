@@ -16,6 +16,7 @@ internal class SimpleJsonFormatterTest : MessageFormatterTest() {
                 "  \"string\": \"abc\",\n" +
                 "  \"int\": 1,\n" +
                 "  \"1\": \"int\",\n" +
+                "  \"null\": null,\n" +
                 "  \"null\": \"null\",\n" +
                 "  \"array\": [\n" +
                 "    \"def\",\n" +
@@ -43,6 +44,7 @@ internal class SimpleJsonFormatterTest : MessageFormatterTest() {
                 "  \"string\": \"abc\",\n" +
                 "  \"int\": 1,\n" +
                 "  \"1\": \"int\",\n" +
+                "  \"null\": null,\n" +
                 "  \"null\": \"null\",\n" +
                 "  \"array\": [\n" +
                 "    \"def\",\n" +
