@@ -1,3 +1,13 @@
+* 2.3.4
+
+	* test: add test case for DataEventCollector [(#719)](https://github.com/tangcent/easy-yapi/pull/719)
+
+	* build: upgrade idea SDK version [(#718)](https://github.com/tangcent/easy-yapi/pull/718)
+
+	* test: add test case for CustomLogConfig [(#717)](https://github.com/tangcent/easy-yapi/pull/717)
+
+	* feat: provide rules to customize markdown [(#716)](https://github.com/tangcent/easy-yapi/pull/716)
+
 * 2.3.3
 
 	* chore: update swagger.config [(#712)](https://github.com/tangcent/easy-yapi/pull/712)
