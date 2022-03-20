@@ -26,19 +26,19 @@ fun ActionContextBuilder.workAt(vararg psiDirectory: PsiDirectory) {
 }
 
 private class WorkAtFile(private val psiFile: PsiFile) : DataContext {
-    override fun getData(dataId: String?): Any? {
+    override fun getData(dataId: String): Any? {
         return if (CommonDataKeys.PSI_FILE.name == dataId) psiFile else null
     }
 }
 
 private class WorkAtDirectory(private val psiDirectory: PsiDirectory) : DataContext {
-    override fun getData(dataId: String?): Any? {
+    override fun getData(dataId: String): Any? {
         return if (CommonDataKeys.NAVIGATABLE.name == dataId) psiDirectory else null
     }
 }
 
 private class WorkAtDirectoryArray(private val psiDirectory: Array<PsiDirectory>) : DataContext {
-    override fun getData(dataId: String?): Any? {
+    override fun getData(dataId: String): Any? {
         return if (CommonDataKeys.NAVIGATABLE_ARRAY.name == dataId) psiDirectory else null
     }
 }

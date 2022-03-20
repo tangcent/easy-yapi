@@ -17,7 +17,7 @@ class ApplicationSettingsComponent : PersistentStateComponent<ApplicationSetting
         return applicationSettings?.copy()
     }
 
-    override fun loadState(state: ApplicationSettings?) {
+    override fun loadState(state: ApplicationSettings) {
         this.applicationSettings = state
     }
 }

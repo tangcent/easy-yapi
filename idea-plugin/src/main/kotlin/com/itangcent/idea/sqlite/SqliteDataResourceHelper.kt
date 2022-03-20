@@ -320,4 +320,4 @@ fun SqliteDataResourceHelper.ExpiredBeanDAO.delete(str: String) {
     this.delete(str.toByteArray(Charsets.UTF_8))
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(SqliteDataResourceHelper::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(SqliteDataResourceHelper::class.java)

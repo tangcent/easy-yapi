@@ -1689,4 +1689,4 @@ fun LazyAction.disposable(): DisposableLazyAction {
     return DisposableLazyAction(this)
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(DefaultMethodInferHelper::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(DefaultMethodInferHelper::class.java)

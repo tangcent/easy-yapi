@@ -71,7 +71,7 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         val obj = try {
             GsonExUtils.fromJson<Any>(valueText)
         } catch (e: Exception) {
-            LOG.error("failed parse json:\n$valueText\n", e)
+            LOG.warn("failed parse json:\n$valueText\n", e)
             return
         }
         if (isOriginal(obj)) {
@@ -132,4 +132,4 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(CustomizedPsiClassHelper::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(CustomizedPsiClassHelper::class.java)

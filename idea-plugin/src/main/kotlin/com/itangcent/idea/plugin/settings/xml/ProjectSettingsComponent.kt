@@ -16,7 +16,7 @@ class ProjectSettingsComponent : PersistentStateComponent<ProjectSettings> {
         return projectSettings?.copy()
     }
 
-    override fun loadState(state: ProjectSettings?) {
+    override fun loadState(state: ProjectSettings) {
         this.projectSettings = state
     }
 }

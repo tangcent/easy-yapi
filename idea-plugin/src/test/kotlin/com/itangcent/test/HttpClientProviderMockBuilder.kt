@@ -88,8 +88,10 @@ class HttpClientProviderMockBuilder : RequestStub {
                 throw error
             }
         }
-        afterCall { _, _, _ ->
-            cnt.decrementAndGet()
+        afterCall { _, _, e ->
+            if (e != null) {
+                cnt.decrementAndGet()
+            }
         }
         return this;
     }
@@ -115,7 +117,7 @@ class HttpClientProviderMockBuilder : RequestStub {
 
 class RequestHandle(
     val requestMatcher: (HttpUriRequest) -> Boolean,
-    val response: () -> HttpResponse, priority: Int?
+    val response: () -> HttpResponse, priority: Int?,
 ) {
     val priority: Int
 
@@ -131,7 +133,7 @@ class RequestHandle(
 class MockHttpClient(
     private val handles: List<RequestHandle>,
     private val before: ((HttpUriRequest) -> Unit)?,
-    private val after: ((HttpUriRequest, HttpResponse?, Throwable?) -> Unit)?
+    private val after: ((HttpUriRequest, HttpResponse?, Throwable?) -> Unit)?,
 ) : HttpClient {
 
     private val delegate: HttpClient by lazy {
@@ -189,7 +191,7 @@ class MockHttpClient(
     override fun <T : Any?> execute(
         request: HttpUriRequest?,
         responseHandler: ResponseHandler<out T>?,
-        context: HttpContext?
+        context: HttpContext?,
     ): T? {
         return responseHandler?.handleResponse(request?.let { handleRequest(it) })
     }
@@ -197,7 +199,7 @@ class MockHttpClient(
     override fun <T : Any?> execute(
         target: HttpHost?,
         request: HttpRequest?,
-        responseHandler: ResponseHandler<out T>?
+        responseHandler: ResponseHandler<out T>?,
     ): T {
         TODO("Not yet implemented")
     }
@@ -206,7 +208,7 @@ class MockHttpClient(
         target: HttpHost?,
         request: HttpRequest?,
         responseHandler: ResponseHandler<out T>?,
-        context: HttpContext?
+        context: HttpContext?,
     ): T {
         TODO("Not yet implemented")
     }
@@ -259,7 +261,7 @@ interface ResponseStub {
         responseCode: Int = 200,
         contentType: ContentType = ContentType.APPLICATION_JSON,
         headers: Array<Pair<String, String>>? = null,
-        elapse: Long? = null
+        elapse: Long? = null,
     ): HttpClientProviderMockBuilder
 
     fun failed(e: Throwable, elapse: Long? = null): HttpClientProviderMockBuilder
@@ -284,7 +286,7 @@ class CallStub : RequestStub, ResponseStub {
     internal constructor(
         builder: HttpClientProviderMockBuilder,
         requestMatcher: (HttpUriRequest) -> Boolean,
-        priority: Int
+        priority: Int,
     ) {
         this.builder = builder
         this.requestMatcher = requestMatcher
@@ -319,7 +321,7 @@ class CallStub : RequestStub, ResponseStub {
 
     override fun failed(
         e: Throwable,
-        elapse: Long?
+        elapse: Long?,
     ): HttpClientProviderMockBuilder {
         builder.addHandle(RequestHandle(this.requestMatcher, {
             elapse?.let { Thread.sleep(elapse) }
@@ -334,7 +336,7 @@ class CallStub : RequestStub, ResponseStub {
         responseCode: Int,
         contentType: ContentType,
         headers: Array<Pair<String, String>>?,
-        elapse: Long?
+        elapse: Long?,
     ): HttpClientProviderMockBuilder {
         builder.addHandle(RequestHandle(this.requestMatcher, {
             elapse?.let { Thread.sleep(elapse) }
@@ -348,7 +350,7 @@ class CallStub : RequestStub, ResponseStub {
         contentByte: ByteArray?,
         responseCode: Int,
         headers: Array<Pair<String, String>>?,
-        contentType: ContentType
+        contentType: ContentType,
     ): BasicHttpResponse {
         //build response
         val httpEntity = BasicHttpEntity()

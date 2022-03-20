@@ -57,8 +57,9 @@ abstract class Charsets {
          * Returns a charset object for the named charset.
          */
         fun forName(charset: String): Charsets? {
-            return SUPPORTED_CHARSETS.firstOrNull { it.displayName() == charset }
-                    ?: tryLoadCharset(charset)
+            return SUPPORTED_CHARSETS.firstOrNull {
+                it.displayName() == charset || it.charset().name() == charset
+            } ?: tryLoadCharset(charset)
         }
 
         /**

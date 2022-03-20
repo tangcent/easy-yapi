@@ -10,6 +10,7 @@ import org.apache.http.entity.ContentType
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -37,9 +38,9 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()
-                        .url("http://www.itangcent.com/render")
-                        .response(content = "<h1>Header</h1>",
-                                contentType = ContentType.TEXT_PLAIN).build())
+                    .url("http://www.itangcent.com/render")
+                    .response(content = "<h1>Header</h1>",
+                        contentType = ContentType.TEXT_PLAIN).build())
             }
         }
 
@@ -65,9 +66,9 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()
-                        .url("http://www.itangcent.com/render")
-                        .response(content = "<h1>Header</h1>",
-                                contentType = ContentType.TEXT_PLAIN).build())
+                    .url("http://www.itangcent.com/render")
+                    .response(content = "<h1>Header</h1>",
+                        contentType = ContentType.TEXT_PLAIN).build())
             }
         }
 
@@ -80,7 +81,7 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             val md = "# Header"
             val html = markdownRender.render(md)
             assertEquals(
-                    "<h1>Header</h1>", html
+                "<h1>Header</h1>", html
             )
         }
     }
@@ -91,8 +92,8 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()
-                        .url("http://www.itangcent.com/render")
-                        .response(responseCode = 404).build())
+                    .url("http://www.itangcent.com/render")
+                    .response(responseCode = 404).build())
             }
         }
 
@@ -113,9 +114,9 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()
-                        .url("http://www.itangcent.com/render")
-                        .failed(IllegalArgumentException())
-                        .build()
+                    .url("http://www.itangcent.com/render")
+                    .failed(IllegalArgumentException())
+                    .build()
                 )
             }
         }
@@ -137,12 +138,12 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()
-                        .url("http://www.itangcent.com/render")
-                        .response(content = "<h1>Header</h1>",
-                                contentType = ContentType.TEXT_PLAIN,
-                                elapse = 3000)
-                        .currentTotalLimit(4, IllegalArgumentException("limited!"))
-                        .build())
+                    .url("http://www.itangcent.com/render")
+                    .response(content = "<h1>Header</h1>",
+                        contentType = ContentType.TEXT_PLAIN,
+                        elapse = 3000)
+                    .currentTotalLimit(4, IllegalArgumentException("limited!"))
+                    .build())
             }
         }
 
@@ -151,19 +152,22 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             assertNull(markdownRender.render(""))
             assertNull(markdownRender.render("\t"))
 
-            val countDownLatch = CountDownLatch(6)
+            val countDownLatch = CountDownLatch(7)
+            val cyclicBarrier = CyclicBarrier(7)
             val failed = AtomicInteger()
-            for (i in 0..6) {
+
+            @Language("Markdown")
+            val md = "# Header"
+            for (i in 1..7) {
                 Thread {
                     try {
-                        @Language("Markdown")
-                        val md = "# Header"
+                        cyclicBarrier.await()
                         val html = markdownRender.render(md)
                         if (html == null) {
                             failed.incrementAndGet()
                         } else {
                             assertEquals(
-                                    "<h1>Header</h1>", html
+                                "<h1>Header</h1>", html
                             )
                         }
                     } finally {
@@ -182,12 +186,12 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()
-                        .url("http://www.itangcent.com/render")
-                        .response(content = "<h1>Header</h1>",
-                                contentType = ContentType.TEXT_PLAIN,
-                                elapse = 3000)
-                        .currentTotalLimit(7, IllegalArgumentException("limited!"))
-                        .build())
+                    .url("http://www.itangcent.com/render")
+                    .response(content = "<h1>Header</h1>",
+                        contentType = ContentType.TEXT_PLAIN,
+                        elapse = 3000)
+                    .currentTotalLimit(7, IllegalArgumentException("limited!"))
+                    .build())
             }
         }
 
@@ -204,7 +208,7 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
                         val md = "# Header"
                         val html = markdownRender.render(md)
                         assertEquals(
-                                "<h1>Header</h1>", html
+                            "<h1>Header</h1>", html
                         )
                     } finally {
                         countDownLatch.countDown()
