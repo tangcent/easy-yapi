@@ -667,4 +667,4 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(AbstractApiDashboardDialog::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(AbstractApiDashboardDialog::class.java)

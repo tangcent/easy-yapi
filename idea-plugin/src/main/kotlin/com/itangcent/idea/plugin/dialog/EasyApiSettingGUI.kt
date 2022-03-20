@@ -620,4 +620,4 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(YapiDashboardDialog::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(YapiDashboardDialog::class.java)

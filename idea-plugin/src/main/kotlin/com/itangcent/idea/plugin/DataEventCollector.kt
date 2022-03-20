@@ -20,10 +20,7 @@ class DataEventCollector : DataContext {
         this.anActionEvent = anActionEvent
     }
 
-    override fun getData(dataId: String?): Any? {
-        if (dataId == null) {
-            return null
-        }
+    override fun getData(dataId: String): Any? {
         if (cache.containsKey(dataId)) {
             return cache[dataId]
         }

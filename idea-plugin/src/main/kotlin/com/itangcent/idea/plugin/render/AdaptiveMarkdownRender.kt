@@ -87,4 +87,4 @@ class AdaptiveMarkdownRender : MarkdownRender {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(AdaptiveMarkdownRender::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(AdaptiveMarkdownRender::class.java)

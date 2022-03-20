@@ -95,4 +95,4 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(EasyApiConfigurable::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(EasyApiConfigurable::class.java)

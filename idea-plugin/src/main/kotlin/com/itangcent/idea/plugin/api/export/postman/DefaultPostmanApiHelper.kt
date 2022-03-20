@@ -442,4 +442,4 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
 
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(DefaultPostmanApiHelper::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(DefaultPostmanApiHelper::class.java)

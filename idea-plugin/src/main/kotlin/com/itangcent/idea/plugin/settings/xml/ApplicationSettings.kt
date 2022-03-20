@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.settings.xml
 
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
+import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
 import com.itangcent.idea.utils.Charsets
 
@@ -113,7 +114,7 @@ class ApplicationSettings : ApplicationSettingsSupport {
 
     override var inferEnable: Boolean = false
 
-    override var inferMaxDeep: Int = 0
+    override var inferMaxDeep: Int = Settings.DEFAULT_INFER_MAX_DEEP
 
     //endregion
 
@@ -138,7 +139,7 @@ class ApplicationSettings : ApplicationSettingsSupport {
     //unit:s
     override var httpTimeOut: Int = 5
 
-    override var trustHosts: Array<String> = emptyArray()
+    override var trustHosts: Array<String> = Settings.DEFAULT_TRUST_HOSTS
 
     //endregion
 

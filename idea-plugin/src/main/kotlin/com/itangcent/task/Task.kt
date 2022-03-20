@@ -165,7 +165,7 @@ abstract class BaseTask(
             }
             Thread.sleep(100)
         }
-        LOG.error("wait task $this done timeout")
+        LOG.warn("wait task $this done timeout")
     }
 
     override fun disposed(): Boolean {
@@ -237,4 +237,4 @@ abstract class AsyncTask(actionContext: ActionContext, taskManager: TaskManager)
         return ret
     }
 }
-private val LOG = org.apache.log4j.Logger.getLogger(Task::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(Task::class.java)

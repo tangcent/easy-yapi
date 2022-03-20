@@ -362,7 +362,7 @@ class ScriptExecutorDialog : JDialog() {
             this.editor = editor
             val debugDialog = this
             document.addDocumentListener(object : com.intellij.openapi.editor.event.DocumentListener {
-                override fun documentChanged(event: com.intellij.openapi.editor.event.DocumentEvent?) {
+                override fun documentChanged(event: com.intellij.openapi.editor.event.DocumentEvent) {
                     autoComputer.value(debugDialog::scriptText, document.text)
                     super.documentChanged(event)
                 }

@@ -215,4 +215,4 @@ class PostmanApiExporter {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(PostmanApiExporter::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(PostmanApiExporter::class.java)

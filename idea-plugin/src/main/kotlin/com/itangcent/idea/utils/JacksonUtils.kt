@@ -14,7 +14,7 @@ object JacksonUtils {
 
     init {
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
-        objectMapper.activateDefaultTyping(LaissezFaireSubTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL)
+        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL)
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -48,4 +48,4 @@ object JacksonUtils {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(JacksonUtils::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(JacksonUtils::class.java)

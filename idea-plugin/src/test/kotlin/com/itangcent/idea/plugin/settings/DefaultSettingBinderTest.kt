@@ -22,7 +22,10 @@ internal class DefaultSettingBinderTest : PluginContextLightCodeInsightFixtureTe
 
     fun testReadAndSave() {
 
-        assertNull(settingBinder.tryRead())
+        settingBinder.save(null)
+        settingBinder.tryRead().let {
+            assertTrue(it == null || it == Settings())
+        }
         val settings = settingBinder.read()
         assertEquals(Settings(), settings)
 

@@ -342,4 +342,4 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
     }
 }
 
-private val LOG = org.apache.log4j.Logger.getLogger(PostmanCachedApiHelper::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(PostmanCachedApiHelper::class.java)

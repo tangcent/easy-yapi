@@ -1,9 +1,6 @@
 package com.itangcent.idea.plugin.settings
 
 import com.google.inject.Inject
-import com.intellij.openapi.components.ServiceManager
-import com.itangcent.idea.plugin.settings.xml.ApplicationSettingsComponent
-import com.itangcent.idea.plugin.settings.xml.ProjectSettingsComponent
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -24,7 +21,10 @@ internal class XmlSettingBinderTest : PluginContextLightCodeInsightFixtureTestCa
 
     fun testReadAndSave() {
 
-        assertNull(settingBinder.tryRead())
+        settingBinder.save(null)
+        settingBinder.tryRead().let {
+            assertTrue(it == null || it == Settings())
+        }
         val settings = settingBinder.read()
         assertEquals(Settings(), settings)
 
@@ -39,7 +39,7 @@ internal class XmlSettingBinderTest : PluginContextLightCodeInsightFixtureTestCa
         assertEquals(settings, settingBinder.tryRead())
 
         settingBinder.save(null)
-        assertNull(settingBinder.tryRead())
+        assertEquals(Settings(), settingBinder.tryRead())
 
     }
 }

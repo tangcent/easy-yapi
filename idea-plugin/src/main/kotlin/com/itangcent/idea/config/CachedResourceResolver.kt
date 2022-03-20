@@ -92,4 +92,4 @@ open class CachedResourceResolver : DefaultResourceResolver() {
 }
 
 private const val URL_CACHE_EXPIRE = "url.cache.expire"
-private val LOG = org.apache.log4j.Logger.getLogger(CachedResourceResolver::class.java)
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(CachedResourceResolver::class.java)

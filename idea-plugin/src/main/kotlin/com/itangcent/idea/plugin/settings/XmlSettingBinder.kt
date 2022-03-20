@@ -27,8 +27,8 @@ class XmlSettingBinder : SettingBinder {
 
     override fun save(t: Settings?) {
         if (t == null) {
-            projectSettingsComponent?.loadState(null)
-            applicationSettingsComponent.loadState(null)
+            projectSettingsComponent?.loadState(ProjectSettings())
+            applicationSettingsComponent.loadState(ApplicationSettings())
             return
         }
 
