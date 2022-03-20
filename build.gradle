@@ -15,7 +15,7 @@ plugins {
 }
 
 group 'com.itangcent'
-version '2.3.3.183.0'
+version '2.3.4.191.0'
 
 @SuppressWarnings("GroovyAssignabilityCheck")
 static def majorVersion(version) {
@@ -37,7 +37,7 @@ task patchUpdate {
         def majorVersion = majorVersion(version)
         println "current version:" + majorVersion
         def nextVersion = nextVersion(version)
-        def nextVersionFull = nextVersion + ".183.0"
+        def nextVersionFull = nextVersion + ".191.0"
         println "next version:" + nextVersion
 
         //patch IDEA_CHANGELOG.md
@@ -70,7 +70,7 @@ task patchUpdate {
         pluginChangesFile.delete()
         pluginChangesFile.createNewFile()
         pluginChangesFile.newOutputStream().withCloseable {
-            it.write("<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${nextVersion}\">v${nextVersion}.183.0(${new Date().format("yyyy-MM-dd")})</a>\n".getBytes(StandardCharsets.UTF_8))
+            it.write("<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${nextVersion}\">v${nextVersion}.191.0(${new Date().format("yyyy-MM-dd")})</a>\n".getBytes(StandardCharsets.UTF_8))
             it.write("<br/>\n".getBytes(StandardCharsets.UTF_8))
             it.write("<a href=\"https://github.com/tangcent/easy-yapi/blob/master/IDEA_CHANGELOG.md\">Full Changelog</a>\n".getBytes(StandardCharsets.UTF_8))
             def enhancements = []
@@ -144,7 +144,7 @@ task patchUpdateRc {
         println "current version:" + majorVersion
         def nextVersion = nextVersion(version)
         def nextVersionShort = nextVersion + "-rc"
-        def nextVersionFull = nextVersion + ".183.0-rc"
+        def nextVersionFull = nextVersion + ".191.0-rc"
         println "next version: ${nextVersionShort}"
 
         //patch IDEA_CHANGELOG.md

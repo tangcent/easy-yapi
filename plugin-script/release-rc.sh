@@ -19,7 +19,7 @@ cd $scriptDir
 ./env-build.sh
 
 cd ${basedir}
-echo "swith to"`pwd`
+echo "switch to"`pwd`
 
 git add .
 version=`cat ${basedir}/gradle.properties | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
