@@ -3,31 +3,31 @@ package com.itangcent.idea.plugin.api.export.markdown
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
-import com.itangcent.common.constant.Attrs
-import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.KitUtils
-import com.itangcent.common.kit.or
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.common.utils.safeComputeIfAbsent
+import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
+import com.itangcent.idea.plugin.api.export.core.ClassExportContext
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanFormatter
+import com.itangcent.idea.plugin.api.export.core.MethodExportContext
+import com.itangcent.idea.plugin.api.export.rule.MethodDocRuleWrap
+import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.rule.SuvRuleContext
-import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
 import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.idea.psi.resource
+import com.itangcent.idea.psi.resourceClass
+import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.idea.utils.SystemProvider
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.toPrettyString
-import com.itangcent.intellij.util.forEachValid
+import com.itangcent.intellij.jvm.DuckTypeHelper
+import com.itangcent.intellij.jvm.element.ExplicitMethod
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * format [com.itangcent.common.model.Doc] to `markdown`.
@@ -44,6 +44,12 @@ class MarkdownFormatter {
     private val moduleHelper: ModuleHelper? = null
 
     @Inject
+    protected lateinit var systemProvider: SystemProvider
+
+    @Inject
+    private lateinit var duckTypeHelper: DuckTypeHelper
+
+    @Inject
     private lateinit var ruleComputer: RuleComputer
 
     @Inject
@@ -55,10 +61,31 @@ class MarkdownFormatter {
     @Inject
     private val formatFolderHelper: FormatFolderHelper? = null
 
+    @Inject
+    private lateinit var tableWriterBuilder: TableWriterBuilder
+
+    @Inject
+    private lateinit var objectWriterBuilder: ObjectWriterBuilder
+
+    @Inject
+    private lateinit var configReader: ConfigReader
+
     fun parseRequests(requests: List<Doc>): String {
         val sb = StringBuilder()
+        val writer: Writer = { sb.append(it) }
         val groupedRequest = groupRequests(requests)
-        parseApi(groupedRequest, 1) { sb.append(it) }
+        val suvRuleContext = SuvRuleContext()
+        ruleComputer.computer(MarkdownExportRuleKeys.HEADER, suvRuleContext, null)
+            ?.let {
+                writer(it)
+                writer.doubleLine()
+            }
+        parseApi(groupedRequest, 1, writer)
+        ruleComputer.computer(MarkdownExportRuleKeys.FOOTER, suvRuleContext, null)
+            ?.let {
+                writer(it)
+                writer.nextLine()
+            }
         return sb.toString()
     }
 
@@ -126,7 +153,7 @@ class MarkdownFormatter {
         //group by folder into: {folder:requests}
         val folderGroupedMap: HashMap<Folder, ArrayList<Doc>> = HashMap()
         requests.forEach { request ->
-            val folder = formatFolderHelper!!.resolveFolder(request.resource ?: PostmanFormatter.NULL_RESOURCE)
+            val folder = formatFolderHelper!!.resolveFolder(request.resource ?: NULL_RESOURCE)
             folderGroupedMap.safeComputeIfAbsent(folder) { ArrayList() }!!
                 .add(request)
         }
@@ -134,217 +161,200 @@ class MarkdownFormatter {
         return folderGroupedMap
     }
 
-    private fun parseApi(info: Any, deep: Int, handle: Handle) {
+    private fun parseApi(info: Any, deep: Int, writer: Writer) {
         when (info) {
-            is Request -> parseRequest(info, deep, handle)
-            is MethodDoc -> parseMethodDoc(info, deep, handle)
-            is Map<*, *> -> parseInfo(info, deep, handle)
+            is Request -> parseRequest(info, deep, writer)
+            is MethodDoc -> parseMethodDoc(info, deep, writer)
+            is Map<*, *> -> parseInfo(info, deep, writer)
             is List<*> -> info.filterNotNull()
                 .forEach {
-                    parseApi(it, deep, handle)
-                    handle.doubleLine()
+                    parseApi(it, deep, writer)
+                    writer.doubleLine()
                 }
         }
     }
 
-    private fun parseInfo(info: Map<*, *>, deep: Int, handle: Handle) {
+    private fun parseInfo(info: Map<*, *>, deep: Int, writer: Writer) {
         val title = info[NAME].toString()
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE,
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE,
             SuvRuleContext().also {
                 it.setExt("title", title)
                 it.setExt("deep", deep)
             }, null)
             ?: "${hN(deep)} $title")
-        handle.doubleLine()
+        writer.doubleLine()
         info[DESC]?.let {
-            handle(it.toString())
-            handle.doubleLine()
+            writer(it.toString())
+            writer.doubleLine()
         }
-        info[ITEMS]?.let { parseApi(it, deep + 1, handle) }
+        info[ITEMS]?.let { parseApi(it, deep + 1, writer) }
     }
 
-    private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, handle: Handle) {
-
-        val objectFormatter = getObjectFormatter(handle)
+    private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, writer: Writer) {
 
         val suvRuleContext = SuvRuleContext()
         suvRuleContext.setExt("type", "methodDoc")
-        suvRuleContext.setExt("doc", methodDoc)
+        suvRuleContext.setExt("doc", methodDoc)//for compatible
+        suvRuleContext.setExt("methodDoc", MethodDocRuleWrap(methodDoc.createMethodExportContext(), methodDoc))
         suvRuleContext.setExt("deep", deep)
         suvRuleContext.setExt("title", methodDoc.name)
 
-        handle("\n---\n")
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, methodDoc.resource())
+        writer("\n---\n")
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, methodDoc.resource())
             ?: "${hN(deep)} ${methodDoc.name}")
-        handle.doubleLine()
+        writer.doubleLine()
 
         if (methodDoc.desc.notNullOrBlank()) {
-            handle(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_DESC, suvRuleContext, methodDoc.resource())
+            writer(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_DESC, suvRuleContext, methodDoc.resource())
                 ?: "**Desc:**\n\n ${methodDoc.desc}")
-            handle.doubleLine()
+            writer.doubleLine()
         }
 
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_PARAMS, suvRuleContext, methodDoc.resource())
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_PARAMS, suvRuleContext, methodDoc.resource())
             ?: "**Params:**")
-        handle.doubleLine()
+        writer.doubleLine()
         if (methodDoc.params.isNullOrEmpty()) {
-            handle("Non-Parameter\n")
+            writer("Non-Parameter\n")
         } else {
-            objectFormatter.transaction {
-                methodDoc.params?.forEach {
-                    objectFormatter.writeObject(it.value, it.name ?: "", it.desc ?: "")
-                }
+            val objectWriter = objectWriterBuilder.build("methodDoc.params", writer)
+            objectWriter.writeHeader()
+            methodDoc.params?.forEach {
+                objectWriter.writeObject(it.value, it.name ?: "", it.desc ?: "")
             }
-            handle.nextLine()
+            writer.nextLine()
         }
 
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_RETURN, suvRuleContext, methodDoc.resource())
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_RETURN, suvRuleContext, methodDoc.resource())
             ?: "**Return:**")
-        handle.doubleLine()
+        writer.doubleLine()
         if (methodDoc.ret == null) {
-            handle("Non-Return\n")
+            writer("Non-Return\n")
         } else {
             methodDoc.ret?.let {
-                objectFormatter.writeObject(it, methodDoc.retDesc ?: "")
+                val objectWriter = objectWriterBuilder.build("methodDoc.return", writer)
+                objectWriter.writeHeader()
+                objectWriter.writeObject(it, methodDoc.retDesc ?: "")
             }
-            handle.nextLine()
+            writer.nextLine()
         }
     }
 
-    private fun parseRequest(request: Request, deep: Int, handle: Handle) {
-
-        val objectFormatter = getObjectFormatter(handle)
+    private fun parseRequest(request: Request, deep: Int, writer: Writer) {
 
         val suvRuleContext = SuvRuleContext()
         suvRuleContext.setExt("type", "request")
-        suvRuleContext.setExt("doc", request)
+        suvRuleContext.setExt("doc", request)//for compatible
+        suvRuleContext.setExt("api", RequestRuleWrap(request.createMethodExportContext(), request))
         suvRuleContext.setExt("deep", deep)
         suvRuleContext.setExt("title", request.name)
 
-        handle("\n---\n")
+        writer("\n---\n")
 
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, request.resource())
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, request.resource())
             ?: "${hN(deep)} ${request.name}")
-        handle.doubleLine()
+        writer.doubleLine()
 
         //region basic info
 
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.BASIC, suvRuleContext, request.resource())
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC, suvRuleContext, request.resource())
             ?: "> BASIC")
-        handle.doubleLine()
+        writer.doubleLine()
 
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_PATH, suvRuleContext, request.resource())
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_PATH, suvRuleContext, request.resource())
             ?: "**Path:** ${request.path}")
-        handle.doubleLine()
+        writer.doubleLine()
 
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_METHOD, suvRuleContext, request.resource())
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_METHOD, suvRuleContext, request.resource())
             ?: "**Method:** ${request.method}")
-        handle.doubleLine()
+        writer.doubleLine()
 
         if (request.desc.notNullOrBlank()) {
-            handle(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_DESC, suvRuleContext, request.resource())
+            writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_DESC, suvRuleContext, request.resource())
                 ?: "**Desc:**\n\n ${request.desc}")
-            handle.doubleLine()
+            writer.doubleLine()
         }
 
         //endregion
 
         //region request
 
-        handle(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST, suvRuleContext, request.resource())
+        writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST, suvRuleContext, request.resource())
             ?: "> REQUEST")
-        handle.doubleLine()
+        writer.doubleLine()
 
         //path
         if (request.paths.notNullOrEmpty()) {
-            handle(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_PATH, suvRuleContext, request.resource())
+            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_PATH, suvRuleContext, request.resource())
                 ?: "**Path Params:**")
-            handle.doubleLine()
-            handle("| name  |  value   | desc  |\n")
-            handle("| ------------ | ------------ | ------------ |\n")
-            request.paths!!.forEach {
-                handle(
-                    "| ${it.name} | ${escape(it.value)} |" +
-                            " ${escape(it.desc)} |\n"
-                )
-            }
-            handle.nextLine()
+            writer.doubleLine()
+            val tableRender = tableWriterBuilder.build(writer, "request.pathParams", arrayOf("name", "value", "desc"))
+            tableRender.writeHeaders()
+            tableRender.addRows(request.paths, { it.name }, { it.value }, { it.desc })
+            writer.nextLine()
         }
 
         //header
         if (request.headers.notNullOrEmpty()) {
-            handle(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_HEADERS, suvRuleContext, request.resource())
+            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_HEADERS, suvRuleContext, request.resource())
                 ?: "**Headers:**")
-            handle.doubleLine()
-            handle("| name  |  value  |  required  | desc  |\n")
-            handle("| ------------ | ------------ | ------------ | ------------ |\n")
-            request.headers!!.forEach {
-                handle(
-                    "| ${it.name} | ${escape(it.value)} | ${
-                        KitUtils.fromBool(
-                            it.required
-                                ?: false, "YES", "NO"
-                        )
-                    } | ${escape(it.desc)} |\n"
-                )
-            }
-            handle.nextLine()
+            writer.doubleLine()
+            val tableRender =
+                tableWriterBuilder.build(writer, "request.headers", arrayOf("name", "value", "required", "desc"))
+            tableRender.writeHeaders()
+            tableRender.addRows(request.headers, { it.name }, { it.value }, { it.required ?: false }, { it.desc })
+            writer.nextLine()
         }
 
         //query
         if (request.querys.notNullOrEmpty()) {
-            handle(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_QUERY, suvRuleContext, request.resource())
+            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_QUERY, suvRuleContext, request.resource())
                 ?: "**Query:**")
-            handle.doubleLine()
-            handle("| name  |  value  |  required | desc  |\n")
-            handle("| ------------ | ------------ | ------------ | ------------ |\n")
-            request.querys!!.forEach {
-                handle(
-                    "| ${it.name} | ${escape(it.value?.toString())} | ${
-                        KitUtils.fromBool(it.required ?: false,
-                            "YES",
-                            "NO")
-                    } |" +
-                            " ${escape(it.desc)} |\n"
-                )
-            }
-            handle.nextLine()
+            writer.doubleLine()
+            val tableRender =
+                tableWriterBuilder.build(writer, "request.querys", arrayOf("name", "value", "required", "desc"))
+            tableRender.writeHeaders()
+            tableRender.addRows(request.querys, { it.name }, { it.value }, { it.required ?: false }, { it.desc })
+            writer.nextLine()
         }
 
         if (request.body != null) {
-            handle(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_BODY, suvRuleContext, request.resource())
+            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_BODY, suvRuleContext, request.resource())
                 ?: "**Request Body:**")
-            handle.doubleLine()
+            writer.doubleLine()
 
-            objectFormatter.writeObject(request.body, request.bodyAttr ?: "")
+            val objectWriter = objectWriterBuilder.build("request.body", writer)
+            objectWriter.writeHeader()
+            objectWriter.writeObject(request.body, request.bodyAttr ?: "")
 
             if (markdownSettingsHelper.outputDemo()) {
-                handle("\n")
-                handle(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_BODY_DEMO,
+                writer("\n")
+                writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_BODY_DEMO,
                     suvRuleContext,
                     request.resource())
                     ?: "**Request Demo:**")
-                handle.doubleLine()
+                writer.doubleLine()
 
-                parseToJson(handle, request.body)
+                parseToJson(writer, request.body)
             }
-            handle.nextLine()
+            writer.nextLine()
         }
 
         if (request.formParams.notNullOrEmpty()) {
-            handle(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_FORM, suvRuleContext, request.resource())
+            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_FORM, suvRuleContext, request.resource())
                 ?: "**Form:**")
-            handle.doubleLine()
+            writer.doubleLine()
 
-            handle("| name  |  value  | required |  type  |  desc  |\n")
-            handle("| ------------ | ------------ | ------------ | ------------ | ------------ |\n")
-            request.formParams!!.forEach {
-                handle(
-                    "| ${it.name} | ${escape(it.value)} | ${KitUtils.fromBool(it.required ?: false, "YES", "NO")} |" +
-                            " ${it.type} | ${escape(it.desc)} |\n"
-                )
-            }
-            handle.nextLine()
+            val tableRender =
+                tableWriterBuilder.build(writer, "request.form", arrayOf("name", "value", "required", "type", "desc"))
+            tableRender.writeHeaders()
+            tableRender.addRows(request.formParams,
+                { it.name },
+                { it.value },
+                { it.required ?: false },
+                { it.type },
+                { it.desc })
+
+            writer.nextLine()
         }
 
         //endregion
@@ -354,64 +364,69 @@ class MarkdownFormatter {
             val response = request.response!!.firstOrNull { it.body != null }
             //todo:support multiple response
             if (response != null) {
-                handle.doubleLine()
-                handle(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE, suvRuleContext, request.resource())
+                writer.doubleLine()
+                writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE, suvRuleContext, request.resource())
                     ?: "> RESPONSE")
-                handle.doubleLine()
+                writer.doubleLine()
 
                 //response headers
                 val responseHeaders = response.headers
                 if (responseHeaders.notNullOrEmpty()) {
-                    handle(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_HEADERS,
+                    writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_HEADERS,
                         suvRuleContext,
                         request.resource())
                         ?: "**Headers:**")
-                    handle.doubleLine()
-                    handle("| name  |  value  |  required  | desc  |\n")
-                    handle("| ------------ | ------------ | ------------ | ------------ |\n")
-                    responseHeaders!!.forEach {
-                        handle(
-                            "| ${it.name} | ${escape(it.value)} | ${
-                                it.required.or("YES", "NO")
-                            } |  ${escape(it.desc)} |\n"
-                        )
-                    }
-                    handle.nextLine()
+                    writer.doubleLine()
+
+                    val tableRender =
+                        tableWriterBuilder.build(writer,
+                            "response.headers",
+                            arrayOf("name", "value", "required", "desc"))
+                    tableRender.writeHeaders()
+                    tableRender.addRows(responseHeaders,
+                        { it.name },
+                        { it.value },
+                        { it.required ?: false },
+                        { it.desc })
+
+                    writer.nextLine()
                 }
 
                 //response body
                 response.body?.let {
-                    handle(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_BODY,
+                    writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_BODY,
                         suvRuleContext,
                         request.resource())
                         ?: "**Body:**")
-                    handle.doubleLine()
-                    objectFormatter.writeObject(it, response.bodyDesc ?: "")
-                    handle.nextLine()
+                    writer.doubleLine()
+                    val objectWriter = objectWriterBuilder.build("response.body", writer)
+                    objectWriter.writeHeader()
+                    objectWriter.writeObject(it, response.bodyDesc ?: "")
+                    writer.nextLine()
                 }
 
                 // handler json example
                 if (markdownSettingsHelper.outputDemo()) {
-                    handle(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_BODY_DEMO,
+                    writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_BODY_DEMO,
                         suvRuleContext,
                         request.resource())
                         ?: "**Response Demo:**")
-                    handle.doubleLine()
-                    parseToJson(handle, response.body)
-                    handle.nextLine()
+                    writer.doubleLine()
+                    parseToJson(writer, response.body)
+                    writer.nextLine()
                 }
             }
         }
     }
 
-    private fun parseToJson(handle: Handle, body: Any?) {
-        handle("```json\n")
+    private fun parseToJson(writer: Writer, body: Any?) {
+        writer("```json\n")
         body?.let {
             if (it != 0) {
-                handle(RequestUtils.parseRawBody(it))
+                writer(RequestUtils.parseRawBody(it))
             }
         }
-        handle("\n```\n")
+        writer("\n```\n")
     }
 
     private fun hN(n: Int): String {
@@ -425,272 +440,51 @@ class MarkdownFormatter {
         return info
     }
 
-    fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
+    private fun parseNameAndDesc(resource: Any, info: HashMap<String, Any?>) {
         if (resource is PsiClass) {
             val attr = ultimateDocHelper!!.findUltimateDescOfClass(resource)
             if (attr.isNullOrBlank()) {
                 info["name"] = resource.name!!
-                info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
+                info[DESC] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
             } else {
                 val lines = attr.lines()
                 if (lines.size == 1) {
                     info["name"] = attr
-                    info["description"] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
+                    info[DESC] = "exported from:${actionContext!!.callInReadUI { resource.qualifiedName }}"
                 } else {
                     info["name"] = lines[0]
-                    info["description"] = attr
+                    info[DESC] = attr
                 }
             }
         } else if (resource is Folder) {
             info["name"] = resource.name
-            info["description"] = resource.attr
+            info[DESC] = resource.attr
         } else if (resource is Pair<*, *>) {
             info["name"] = resource.first
-            info["description"] = resource.second
+            info[DESC] = resource.second
         } else {
             info["name"] = resource.toString()
-            info["description"] = "exported at ${DateUtils.formatYMD_HMS(DateUtils.now())}"
+            info[DESC] = "exported at ${DateUtils.formatYMD_HMS(systemProvider.currentTimeMillis().asDate())}"
         }
     }
 
-    private fun getObjectFormatter(handle: Handle): ObjectFormatter {
-        val markdownFormatType = markdownSettingsHelper.markdownFormatType()
-        return if (markdownFormatType == MarkdownFormatType.ULTIMATE) {
-            UltimateObjectFormatter(handle)
-        } else {
-            SimpleObjectFormatter(handle)
+    private val explicitCache = ConcurrentHashMap<PsiClass, ArrayList<ExplicitMethod>>()
+
+    private fun Doc.createMethodExportContext(): MethodExportContext? {
+        val resourceClass = this.resourceClass() ?: return null
+        val resourceMethod = this.resourceMethod() ?: return null
+        val explicitMethods = explicitCache.computeIfAbsent(resourceClass) {
+            return@computeIfAbsent actionContext!!.callInReadUI { duckTypeHelper.explicit(resourceClass).methods() }!!
         }
+        val explicitMethod = explicitMethods.find { it.psi() == resourceMethod } ?: return null
+        val classExportContext = ClassExportContext(resourceClass)
+        return MethodExportContext(classExportContext, explicitMethod)
     }
 
     companion object {
         private const val NAME = "name"
         private const val DESC = "desc"
         private const val ITEMS = "items"
+        private const val NULL_RESOURCE = "unknown"
     }
-
-}
-
-private typealias Handle = (String) -> Unit
-
-private fun Handle.nextLine() {
-    this("\n")
-}
-
-private fun Handle.doubleLine() {
-    this("\n\n")
-}
-
-private interface ObjectFormatter {
-
-    fun writeObject(obj: Any?, desc: String) {
-        writeObject(obj, "", desc)
-    }
-
-    fun writeObject(obj: Any?, name: String, desc: String)
-
-    fun transaction(action: (ObjectFormatter) -> Unit)
-}
-
-private abstract class AbstractObjectFormatter(val handle: Handle) : ObjectFormatter {
-
-    /**
-     * -1: always writeHeader, -> -1
-     * 0: writeHeader once, -> 1
-     * >0: not writeHeader
-     */
-    private var inStream = -1
-
-    override fun writeObject(obj: Any?, name: String, desc: String) {
-        if (inStream == -1 || inStream++ == 0) {
-            writeHeader()
-        }
-        writeBody(obj, name, desc)
-    }
-
-    abstract fun writeHeader()
-
-    abstract fun writeBody(obj: Any?, name: String, desc: String)
-
-    protected fun writeHeaders(vararg headers: String) {
-        headers.forEach { handle("| $it ") }
-        handle("|\n")
-        repeat(headers.size) { handle("| ------------ ") }
-        handle("|\n")
-    }
-
-    protected fun addBodyProperty(deep: Int, vararg columns: Any?) {
-        handle("| ")
-        if (deep > 1) {
-            handle("&ensp;&ensp;".repeat(deep - 1))
-            handle("&#124;─")
-        }
-        columns.forEach { handle("${format(it)} | ") }
-        handle("\n")
-    }
-
-    fun format(any: Any?): String {
-        if (any == null) {
-            return ""
-        }
-        if (any is Boolean) {
-            return if (any) "YES" else "NO"
-        }
-
-        return escape(any.toPrettyString())
-    }
-
-    override fun transaction(action: (ObjectFormatter) -> Unit) {
-        inStream = 0
-        try {
-            action(this)
-        } finally {
-            inStream = -1
-        }
-    }
-}
-
-private class SimpleObjectFormatter(handle: Handle) : AbstractObjectFormatter(handle) {
-
-    override fun writeHeader() {
-        writeHeaders("name", "type", "desc")
-    }
-
-    override fun writeBody(obj: Any?, name: String, desc: String) {
-        writeBody(obj, name, desc, 0)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun writeBody(obj: Any?, name: String, desc: String, deep: Int) {
-
-        var type: String? = null
-        when (obj) {
-            null -> type = "object"
-            is String -> type = "string"
-            is Number -> type = if (obj is Int || obj is Long) {
-                "integer"
-            } else {
-                "number"
-            }
-            is Boolean -> type = "boolean"
-        }
-        if (type != null) {
-            addBodyProperty(deep, name, type, desc)
-            return
-        }
-
-        if (obj is Array<*>) {
-            addBodyProperty(deep, name, "array", desc)
-
-            if (obj.size > 0) {
-                obj.forEach {
-                    writeBody(it, "", "", deep + 1)
-                }
-            } else {
-                writeBody(null, "", "", deep + 1)
-            }
-        } else if (obj is Collection<*>) {
-            addBodyProperty(deep, name, "array", desc)
-            if (obj.size > 0) {
-                obj.forEach {
-                    writeBody(it, "", "", deep + 1)
-                }
-            } else {
-                writeBody(null, "", "", deep + 1)
-            }
-        } else if (obj is Map<*, *>) {
-            if (deep > 0) {
-                addBodyProperty(deep, name, "object", desc)
-            }
-            var comment: Map<String, Any?>? = null
-            try {
-                comment = obj[Attrs.COMMENT_ATTR] as Map<String, Any?>?
-            } catch (e: Throwable) {
-            }
-            obj.forEachValid { k, v ->
-                val propertyDesc = KVUtils.getUltimateComment(comment, k)
-                writeBody(v, k.toString(), propertyDesc, deep + 1)
-            }
-        } else {
-            addBodyProperty(deep, name, "object", desc)
-        }
-    }
-
-}
-
-private class UltimateObjectFormatter(handle: Handle) : AbstractObjectFormatter(handle) {
-
-    override fun writeHeader() {
-        writeHeaders("name", "type", "required", "default", "desc")
-    }
-
-    override fun writeBody(obj: Any?, name: String, desc: String) {
-        writeBody(obj, name, null, null, desc, 0)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun writeBody(obj: Any?, name: String, required: Boolean?, default: String?, desc: String, deep: Int) {
-
-        var type: String? = null
-        when (obj) {
-            null -> type = "object"
-            is String -> type = "string"
-            is Number -> type = if (obj is Int || obj is Long) {
-                "integer"
-            } else {
-                "number"
-            }
-            is Boolean -> type = "boolean"
-        }
-        if (type != null) {
-            addBodyProperty(deep, name, type, required, default, desc)
-            return
-        }
-
-        if (obj is Array<*>) {
-            addBodyProperty(deep, name, "array", required, default, desc)
-            if (obj.size > 0) {
-                obj.forEach {
-                    writeBody(it, "", null, null, "", deep + 1)
-                }
-            } else {
-                writeBody(null, "", null, null, "", deep + 1)
-            }
-        } else if (obj is Collection<*>) {
-            addBodyProperty(deep, name, "array", desc)
-            if (obj.size > 0) {
-                obj.forEach {
-                    writeBody(it, "", null, null, "", deep + 1)
-                }
-            } else {
-                writeBody(null, "", null, null, "", deep + 1)
-            }
-        } else if (obj is Map<*, *>) {
-            if (deep > 0) {
-                addBodyProperty(deep, name, "object", required, default, desc)
-            }
-            val comments: HashMap<String, Any?>? = obj[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
-            val requireds: HashMap<String, Any?>? = obj[Attrs.REQUIRED_ATTR] as? HashMap<String, Any?>?
-            val defaults: HashMap<String, Any?>? = obj[Attrs.DEFAULT_VALUE_ATTR] as? HashMap<String, Any?>?
-            obj.forEachValid { k, v ->
-                val key = k.toString()
-                val propertyDesc: String? = KVUtils.getUltimateComment(comments, k)
-                writeBody(
-                    v, key,
-                    requireds?.get(key) as? Boolean,
-                    defaults?.get(key) as? String,
-                    propertyDesc ?: "",
-                    deep + 1
-                )
-            }
-        } else {
-            addBodyProperty(deep, name, "object", required, default, desc)
-        }
-    }
-
-}
-
-private fun escape(str: String?): String {
-    if (str.isNullOrBlank()) return ""
-    return str.replace("\n", "<br>")
-        .replace("|", "\\|")
 }

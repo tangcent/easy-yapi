@@ -1,5 +1,8 @@
 # rpc apis about user
 
+rpc apis about user
+access user info
+
 
 ---
 ## say hello
@@ -15,7 +18,7 @@ Non-Parameter
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-|  | string |  | 
+|  | string |  |
 
 
 
@@ -27,22 +30,22 @@ Non-Parameter
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
-| newName | string | new user name | 
-| slogon | string | personal slogon | 
-| times | integer |  | 
+| id | integer | user id |
+| newName | string | new user name |
+| slogon | string | personal slogon |
+| times | integer |  |
 
 **Return:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
-| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| name | string | user name | 
-| age | integer | user age | 
-| sex | integer |  | 
-| birthDay | string | user birthDay | 
-| regtime | string | user regtime | 
+| id | integer | user id |
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name | string | user name |
+| age | integer | user age |
+| sex | integer |  |
+| birthDay | string | user birthDay |
+| regtime | string | user regtime |
 
 
 
@@ -54,19 +57,19 @@ Non-Parameter
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
+| id | integer | user id |
 
 **Return:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
-| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| name | string | user name | 
-| age | integer | user age | 
-| sex | integer |  | 
-| birthDay | string | user birthDay | 
-| regtime | string | user regtime | 
+| id | integer | user id |
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name | string | user name |
+| age | integer | user age |
+| sex | integer |  |
+| birthDay | string | user birthDay |
+| regtime | string | user regtime |
 
 
 
@@ -78,25 +81,25 @@ Non-Parameter
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
-| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| name | string | user name | 
-| age | integer | user age | 
-| sex | integer |  | 
-| birthDay | string | user birthDay | 
-| regtime | string | user regtime | 
+| id | integer | user id |
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name | string | user name |
+| age | integer | user age |
+| sex | integer |  |
+| birthDay | string | user birthDay |
+| regtime | string | user regtime |
 
 **Return:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
-| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| name | string | user name | 
-| age | integer | user age | 
-| sex | integer |  | 
-| birthDay | string | user birthDay | 
-| regtime | string | user regtime | 
+| id | integer | user id |
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name | string | user name |
+| age | integer | user age |
+| sex | integer |  |
+| birthDay | string | user birthDay |
+| regtime | string | user regtime |
 
 
 
@@ -108,13 +111,13 @@ Non-Parameter
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
-| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| name | string | user name | 
-| age | integer | user age | 
-| sex | integer |  | 
-| birthDay | string | user birthDay | 
-| regtime | string | user regtime | 
+| id | integer | user id |
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name | string | user name |
+| age | integer | user age |
+| sex | integer |  |
+| birthDay | string | user birthDay |
+| regtime | string | user regtime |
 
 **Return:**
 

@@ -6,6 +6,14 @@ import com.itangcent.intellij.config.rule.StringRuleMode
 
 object MarkdownExportRuleKeys {
 
+    val HEADER: RuleKey<String> = SimpleRuleKey(
+        "md.header", StringRuleMode.SINGLE
+    )
+
+    val FOOTER: RuleKey<String> = SimpleRuleKey(
+        "md.footer", StringRuleMode.SINGLE
+    )
+
     val HN_TITLE: RuleKey<String> = SimpleRuleKey(
         "md.title", StringRuleMode.SINGLE
     )
