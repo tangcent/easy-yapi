@@ -1,5 +1,8 @@
 # apis about user
 
+apis about user
+access user info
+
 
 ---
 ## say hello
@@ -22,15 +25,15 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| content-type | application/json;charset=UTF-8 | NO |   |
+| content-type | application/json;charset=UTF-8 | NO |  |
 
 **Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-|  | string |  | 
+|  | string |  |
 
 **Response Demo:**
 
@@ -54,13 +57,13 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
 **Query:**
 
-| name  |  value  |  required | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
 | id | 0 | NO | user id |
 
@@ -70,24 +73,24 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| content-type | application/json;charset=UTF-8 | NO |   |
+| content-type | application/json;charset=UTF-8 | NO |  |
 
 **Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| code | integer | response code | 
-| msg | string | message | 
-| data | object | response data | 
-| &ensp;&ensp;&#124;─id | integer | user id | 
-| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| &ensp;&ensp;&#124;─name | string | user name | 
-| &ensp;&ensp;&#124;─age | integer | user age | 
-| &ensp;&ensp;&#124;─sex | integer |  | 
-| &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
-| &ensp;&ensp;&#124;─regtime | string | user regtime | 
+| code | integer | response code |
+| msg | string | message |
+| data | object | response data |
+| &ensp;&ensp;&#124;─id | integer | user id |
+| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| &ensp;&ensp;&#124;─name | string | user name |
+| &ensp;&ensp;&#124;─age | integer | user age |
+| &ensp;&ensp;&#124;─sex | integer |  |
+| &ensp;&ensp;&#124;─birthDay | string | user birthDay |
+| &ensp;&ensp;&#124;─regtime | string | user regtime |
 
 **Response Demo:**
 
@@ -123,7 +126,7 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
 | Content-Type | application/json | YES |  |
 | token |  | YES | auth token |
@@ -132,13 +135,13 @@
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| id | integer | user id | 
-| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| name | string | user name | 
-| age | integer | user age | 
-| sex | integer |  | 
-| birthDay | string | user birthDay | 
-| regtime | string | user regtime | 
+| id | integer | user id |
+| type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name | string | user name |
+| age | integer | user age |
+| sex | integer |  |
+| birthDay | string | user birthDay |
+| regtime | string | user regtime |
 
 **Request Demo:**
 
@@ -160,24 +163,24 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| content-type | application/json;charset=UTF-8 | NO |   |
+| content-type | application/json;charset=UTF-8 | NO |  |
 
 **Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| code | integer | response code | 
-| msg | string | message | 
-| data | object | response data | 
-| &ensp;&ensp;&#124;─id | integer | user id | 
-| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| &ensp;&ensp;&#124;─name | string | user name | 
-| &ensp;&ensp;&#124;─age | integer | user age | 
-| &ensp;&ensp;&#124;─sex | integer |  | 
-| &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
-| &ensp;&ensp;&#124;─regtime | string | user regtime | 
+| code | integer | response code |
+| msg | string | message |
+| data | object | response data |
+| &ensp;&ensp;&#124;─id | integer | user id |
+| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| &ensp;&ensp;&#124;─name | string | user name |
+| &ensp;&ensp;&#124;─age | integer | user age |
+| &ensp;&ensp;&#124;─sex | integer |  |
+| &ensp;&ensp;&#124;─birthDay | string | user birthDay |
+| &ensp;&ensp;&#124;─regtime | string | user regtime |
 
 **Response Demo:**
 
@@ -213,14 +216,14 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
 | Content-Type | multipart/form-data | YES |  |
 | token |  | YES | auth token |
 
 **Form:**
 
-| name  |  value  | required |  type  |  desc  |
+| name | value | required | type | desc |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
 | id |  | NO | text | user id |
 | type |  | NO | text | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
@@ -236,24 +239,24 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| content-type | application/json;charset=UTF-8 | NO |   |
+| content-type | application/json;charset=UTF-8 | NO |  |
 
 **Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-| code | integer | response code | 
-| msg | string | message | 
-| data | object | response data | 
-| &ensp;&ensp;&#124;─id | integer | user id | 
-| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor | 
-| &ensp;&ensp;&#124;─name | string | user name | 
-| &ensp;&ensp;&#124;─age | integer | user age | 
-| &ensp;&ensp;&#124;─sex | integer |  | 
-| &ensp;&ensp;&#124;─birthDay | string | user birthDay | 
-| &ensp;&ensp;&#124;─regtime | string | user regtime | 
+| code | integer | response code |
+| msg | string | message |
+| data | object | response data |
+| &ensp;&ensp;&#124;─id | integer | user id |
+| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| &ensp;&ensp;&#124;─name | string | user name |
+| &ensp;&ensp;&#124;─age | integer | user age |
+| &ensp;&ensp;&#124;─sex | integer |  |
+| &ensp;&ensp;&#124;─birthDay | string | user birthDay |
+| &ensp;&ensp;&#124;─regtime | string | user regtime |
 
 **Response Demo:**
 
@@ -289,7 +292,7 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
 | token |  | YES | auth token |
 
@@ -299,15 +302,15 @@
 
 **Headers:**
 
-| name  |  value  |  required  | desc  |
+| name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| content-type | application/json;charset=UTF-8 | NO |   |
+| content-type | application/json;charset=UTF-8 | NO |  |
 
 **Body:**
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-|  | string |  | 
+|  | string |  |
 
 **Response Demo:**
 
