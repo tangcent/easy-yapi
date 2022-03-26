@@ -279,7 +279,7 @@ class ObjectWriterBuilder() {
                     writeBody(null, "", null, null, "", deep + 1)
                 }
             } else if (obj is Collection<*>) {
-                addBodyProperty(deep, name, "array", desc)
+                addBodyProperty(deep, name, "array", required, default, desc)
                 if (obj.size > 0) {
                     obj.forEach {
                         writeBody(it, "", null, null, "", deep + 1)
