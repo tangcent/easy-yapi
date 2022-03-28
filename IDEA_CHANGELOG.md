@@ -1,3 +1,13 @@
+* 2.3.5
+
+	* chore: update version of intellij-kotlin to 1.1.7 [(#731)](https://github.com/tangcent/easy-yapi/pull/731)
+
+	* fix: fix Writer [(#726)](https://github.com/tangcent/easy-yapi/pull/726)
+
+	* feat: provide rules to customize tables in markdown [(#724)](https://github.com/tangcent/easy-yapi/pull/724)
+
+	* chore: update markdown.cn.config [(#721)](https://github.com/tangcent/easy-yapi/pull/721)
+
 * 2.3.4
 
 	* test: add test case for DataEventCollector [(#719)](https://github.com/tangcent/easy-yapi/pull/719)
