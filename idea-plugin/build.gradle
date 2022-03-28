@@ -78,17 +78,17 @@ dependencies {
 //    implementation fileTree(dir: 'libs', include: ['*.jar'])
 
 
-    implementation('com.itangcent:intellij-idea:1.1.6') {
+    implementation('com.itangcent:intellij-idea:1.1.7') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
 
-    implementation('com.itangcent:intellij-kotlin-support:1.1.6') {
+    implementation('com.itangcent:intellij-kotlin-support:1.1.7') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
 
-//    implementation('com.itangcent:intellij-scala-support:1.1.6') {
+//    implementation('com.itangcent:intellij-scala-support:1.1.7') {
 //        exclude group: 'com.google.inject'
 //        exclude group: 'com.google.code.gson'
 //    }
@@ -122,7 +122,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.mockito/mockito-inline
     testImplementation group: 'org.mockito', name: 'mockito-inline', version: '3.11.0'
 
-    testImplementation('com.itangcent:intellij-idea-test:1.1.6') {
+    testImplementation('com.itangcent:intellij-idea-test:1.1.7') {
         exclude group: 'com.nhaarman.mockitokotlin2', module: 'mockito-kotlin'
     }
 }

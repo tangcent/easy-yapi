@@ -1,13 +1,12 @@
 module=#module
 ignore=#ignore
-ignore=@Ignore
 field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
-field.name=@com.google.gson.annotations.SerializedName#value
 field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
-field.ignore=!@com.google.gson.annotations.Expose#serialize
-field.ignore=groovy:it.hasModifier("transient")
 field.mock[@com.fasterxml.jackson.annotation.JsonFormat]=groovy:
 return "@datetime(\"" + it.ann("com.fasterxml.jackson.annotation.JsonFormat","pattern") + "\")"
+field.name=@com.google.gson.annotations.SerializedName#value
+field.ignore=!@com.google.gson.annotations.Expose#serialize
+field.ignore=groovy:it.hasModifier("transient")
 field.required=@org.springframework.lang.NonNull
 param.ignore=groovy:it.type().isExtend("org.springframework.validation.BindingResult")
 field.mock[@org.springframework.format.annotation.DateTimeFormat]=groovy:
@@ -20,3 +19,4 @@ api.status[#todo]=undone
 field.mock=#mock
 constant.field.ignore=groovy:it.name()=="serialVersionUID"
 properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix
+ignore=@Ignore
