@@ -25,12 +25,15 @@ class DefaultSpringRequestMappingResolver : SpringRequestMappingResolver {
     }
 
     private fun resolveRequestMappingFromClass(psiClass: PsiClass): Map<String, Any?>? {
-        val requestMappingAnn = resolveRequestMappingFromElement(psiClass)
-        if (requestMappingAnn != null) return requestMappingAnn
+        resolveRequestMappingFromElement(psiClass)?.let { return it }
+
+        for (inter in psiClass.interfaces) {
+            resolveRequestMappingFromElement(inter)?.let { return it }
+        }
+
         var superCls = psiClass.superClass
         while (superCls != null) {
-            val requestMappingAnnInSuper = resolveRequestMappingFromElement(superCls)
-            if (requestMappingAnnInSuper != null) return requestMappingAnnInSuper
+            resolveRequestMappingFromElement(superCls)?.let { return it }
             superCls = superCls.superClass
         }
         return null

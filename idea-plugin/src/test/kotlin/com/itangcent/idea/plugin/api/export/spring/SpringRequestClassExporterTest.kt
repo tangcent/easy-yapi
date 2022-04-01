@@ -526,12 +526,14 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         (classExporter as Worker).waitCompleted()
         requests[0].let { request ->
             assertEquals("loginAuth", request.name)
+            assertEquals("user/auth/loginAuth", request.path!!.url())
             assertNull(request.desc)
             assertEquals("POST", request.method)
             assertEquals(iuserApiPsiClass.methods[0], (request.resource as PsiResource).resource())
         }
         requests[1].let { request ->
             assertEquals("A default api", request.name)
+            assertEquals("user/default", request.path!!.url())
             Assert.assertEquals("It is not necessary to implement it", request.desc)
             assertEquals("POST", request.method)
             assertEquals(iuserApiPsiClass.methods[1], (request.resource as PsiResource).resource())
