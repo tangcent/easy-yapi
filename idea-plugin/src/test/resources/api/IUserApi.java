@@ -3,16 +3,16 @@ package com.itangcent.api;
 
 
 import com.itangcent.model.Result;
-import com.itangcent.model.UserInfo;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.ArrayList;
 
 /**
  * api interface
  */
+@RequestMapping(value = "user")
 public interface IUserApi<Req, Res> {
 
     @PostMapping(value = "/auth/loginAuth")
