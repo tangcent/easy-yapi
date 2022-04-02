@@ -363,6 +363,18 @@ abstract class ScriptRuleParser : RuleParser {
             return jvmClassHelper!!.isNormalType(name())
         }
 
+        override fun isInterface(): Boolean {
+            return psiClass.isInterface
+        }
+
+        override fun isAnnotationType(): Boolean {
+            return psiClass.isAnnotationType
+        }
+
+        override fun isEnum(): Boolean {
+            return psiClass.isEnum
+        }
+
         @ScriptIgnore
         override fun asPsiModifierListOwner(): PsiModifierListOwner? {
             return psiClass
@@ -393,6 +405,40 @@ abstract class ScriptRuleParser : RuleParser {
                 )
             } ?: psiClassHelper!!.getFields(psiClass)).let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+            }
+        }
+
+        override fun superClass(): ScriptClassContext? {
+            if (psiClass.isInterface || psiClass.isAnnotationType
+                || psiClass.isEnum
+            ) {
+                return null
+            }
+            extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let {
+                return it
+            }
+            return psiClass.superClass?.let { ScriptPsiClassContext(it) }
+        }
+
+        /**
+         * Returns the list of classes that this class or interface extends.
+         *
+         * @return the extends list, or null for anonymous classes.
+         */
+        override fun extends(): Array<ScriptClassContext>? {
+            return psiClass.extendsList?.referencedTypes?.mapToTypedArray {
+                ScriptPsiTypeContext(it)
+            }
+        }
+
+        /**
+         * Returns the list of interfaces that this class implements.
+         *
+         * @return the implements list, or null for anonymous classes
+         */
+        override fun implements(): Array<ScriptClassContext>? {
+            return psiClass.implementsList?.referencedTypes?.mapToTypedArray {
+                ScriptPsiTypeContext(it)
             }
         }
 
@@ -430,6 +476,28 @@ abstract class ScriptRuleParser : RuleParser {
                 JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
                 ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+            }
+        }
+
+        /**
+         * Returns the list of classes that this class or interface extends.
+         *
+         * @return the extends list, or null for anonymous classes.
+         */
+        override fun extends(): Array<ScriptClassContext>? {
+            return explicitClass.extends()?.mapToTypedArray {
+                ScriptExplicitClassContext(it)
+            }
+        }
+
+        /**
+         * Returns the list of interfaces that this class implements.
+         *
+         * @return the implements list, or null for anonymous classes
+         */
+        override fun implements(): Array<ScriptClassContext>? {
+            return explicitClass.implements()?.mapToTypedArray {
+                ScriptExplicitClassContext(it)
             }
         }
 
@@ -615,7 +683,7 @@ abstract class ScriptRuleParser : RuleParser {
 
         open fun returnJson(
             needInfer: Boolean = false, readGetter: Boolean = true,
-            readSetter: Boolean = true
+            readSetter: Boolean = true,
         ): String? {
             val psiType = psiMethod.returnType ?: return null
             return when {
@@ -646,7 +714,7 @@ abstract class ScriptRuleParser : RuleParser {
 
         override fun returnJson(
             needInfer: Boolean, readGetter: Boolean,
-            readSetter: Boolean
+            readSetter: Boolean,
         ): String? {
             val duckType = explicitMethod.getReturnType() ?: return null
             return when {
@@ -792,6 +860,27 @@ abstract class ScriptRuleParser : RuleParser {
          */
         fun isNormalType(): Boolean
 
+        /**
+         * Checks if the class is an interface.
+         *
+         * @return true if the class is an interface, false otherwise.
+         */
+        fun isInterface(): Boolean
+
+        /**
+         * Checks if the class is an annotation type.
+         *
+         * @return true if the class is an annotation type, false otherwise
+         */
+        fun isAnnotationType(): Boolean
+
+        /**
+         * Checks if the class is an enumeration.
+         *
+         * @return true if the class is an enumeration, false otherwise.
+         */
+        fun isEnum(): Boolean
+
         fun fieldCnt(): Int
 
         fun methodCnt(): Int
@@ -799,6 +888,38 @@ abstract class ScriptRuleParser : RuleParser {
         fun toJson(readGetter: Boolean, readSetter: Boolean): String?
 
         fun toJson5(readGetter: Boolean, readSetter: Boolean): String?
+
+        /**
+         * Returns the base class of this class.
+         * If this class represents either the
+         * [Object] class, an interface, a primitive type, or void, then
+         * null is returned.
+         * {class A extend B} -> B
+         * {class A} -> java.lang.Object
+         * {class A implement IA} -> java.lang.Object
+         * {class A extend B implement IA} -> B
+         * {interface IA} -> null
+         * {interface IA extend IB} -> null
+         *
+         * @return the base class. May return null when jdk is not configured, so no java.lang.Object is found,
+         * or for java.lang.Object itself
+         */
+        fun superClass(): ScriptClassContext?
+
+        /**
+         * Returns the list of classes that this class or interface extends.
+         *
+         * @return the extends list, or null for anonymous classes.
+         */
+        fun extends(): Array<ScriptClassContext>?
+
+        /**
+         * Returns the list of interfaces that this class implements.
+         *
+         * @return the implements list, or null for anonymous classes
+         */
+        fun implements(): Array<ScriptClassContext>?
+
     }
 
     /**
@@ -880,6 +1001,18 @@ abstract class ScriptRuleParser : RuleParser {
             return jvmClassHelper!!.isNormalType(name())
         }
 
+        override fun isInterface(): Boolean {
+            return (getResource() as? PsiClass)?.isInterface ?: false
+        }
+
+        override fun isAnnotationType(): Boolean {
+            return (getResource() as? PsiClass)?.isAnnotationType ?: false
+        }
+
+        override fun isEnum(): Boolean {
+            return (getResource() as? PsiClass)?.isEnum ?: false
+        }
+
         /**
          * Returns whether this class is a primitive
          */
@@ -926,6 +1059,44 @@ abstract class ScriptRuleParser : RuleParser {
             }
         }
 
+        override fun superClass(): ScriptClassContext? {
+            val psiClass = getResource() as? PsiClass ?: return null
+            if (psiClass.isInterface || psiClass.isAnnotationType
+                || psiClass.isEnum
+            ) {
+                return null
+            }
+            extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let {
+                return it
+            }
+            return psiClass.superClass?.let { ScriptPsiClassContext(it) }
+        }
+
+        /**
+         * Returns the list of classes that this class or interface extends.
+         *
+         * @return the extends list, or null for anonymous classes.
+         */
+        override fun extends(): Array<ScriptClassContext>? {
+            val duckType = duckTypeHelper!!.resolve(psiType, getPsiContext()!!)
+                    as? SingleDuckType ?: return null
+            return duckTypeHelper.explicit(duckType).extends()?.mapToTypedArray {
+                ScriptExplicitClassContext(it)
+            }
+        }
+
+        /**
+         * Returns the list of interfaces that this class implements.
+         *
+         * @return the implements list, or null for anonymous classes
+         */
+        override fun implements(): Array<ScriptClassContext>? {
+            val duckType = duckTypeHelper!!.resolve(psiType, getPsiContext()!!)
+                    as? SingleDuckType ?: return null
+            return duckTypeHelper.explicit(duckType).implements()?.mapToTypedArray {
+                ScriptExplicitClassContext(it)
+            }
+        }
 
         override fun toString(): String {
             return name()
@@ -974,11 +1145,11 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         @ScriptIgnore
-        override fun getCore(): Any? {
+        override fun getCore(): Any {
             return duckType
         }
 
-        override fun getName(): String? {
+        override fun getName(): String {
             return duckType.canonicalText()
         }
 
@@ -1034,6 +1205,18 @@ abstract class ScriptRuleParser : RuleParser {
             return jvmClassHelper!!.isNormalType(name())
         }
 
+        override fun isInterface(): Boolean {
+            return duckType is SingleDuckType && duckType.psiClass().isInterface
+        }
+
+        override fun isAnnotationType(): Boolean {
+            return duckType is SingleDuckType && duckType.psiClass().isAnnotationType
+        }
+
+        override fun isEnum(): Boolean {
+            return duckType is SingleDuckType && duckType.psiClass().isEnum
+        }
+
         /**
          * Returns whether this class is a primitive
          */
@@ -1080,8 +1263,46 @@ abstract class ScriptRuleParser : RuleParser {
             }
         }
 
+        override fun superClass(): ScriptClassContext? {
+            val duckType = this.duckType as? SingleDuckType ?: return null
+            val psiClass = duckType.psiClass()
+            if (psiClass.isInterface || psiClass.isAnnotationType
+                || psiClass.isEnum
+            ) {
+                return null
+            }
+            extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let {
+                return it
+            }
+            return psiClass.superClass?.let { ScriptPsiClassContext(it) }
+        }
+
         override fun toString(): String {
             return name()
+        }
+
+        /**
+         * Returns the list of classes that this class or interface extends.
+         *
+         * @return the extends list, or null for anonymous classes.
+         */
+        override fun extends(): Array<ScriptClassContext>? {
+            val duckType = this.duckType as? SingleDuckType ?: return null
+            return duckTypeHelper!!.explicit(duckType).extends()?.mapToTypedArray {
+                ScriptExplicitClassContext(it)
+            }
+        }
+
+        /**
+         * Returns the list of interfaces that this class implements.
+         *
+         * @return the implements list, or null for anonymous classes
+         */
+        override fun implements(): Array<ScriptClassContext>? {
+            val duckType = this.duckType as? SingleDuckType ?: return null
+            return duckTypeHelper!!.explicit(duckType).implements()?.mapToTypedArray {
+                ScriptExplicitClassContext(it)
+            }
         }
     }
 }
