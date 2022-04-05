@@ -35,11 +35,15 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         super.beforeBind()
         objectPsiClass = loadSource(Object::class.java)!!
         loadSource(String::class.java)!!
+        loadSource(java.lang.Number::class.java)!!
+        loadSource(java.lang.Comparable::class.java)!!
         integerPsiClass = loadSource(java.lang.Integer::class)!!
         longPsiClass = loadSource(java.lang.Long::class)!!
+        loadSource(java.lang.Iterable::class)
         collectionPsiClass = loadSource(Collection::class.java)!!
         listPsiClass = loadSource(List::class.java)!!
         mapPsiClass = loadSource(Map::class.java)!!
+        loadSource(java.util.AbstractMap::class)
         hashMapPsiClass = loadSource(HashMap::class.java)!!
         loadSource(LocalDate::class)
         loadSource(LocalDateTime::class)
@@ -398,7 +402,6 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         assertFalse(resultPsiClass.asClassContext().isPrimitive())
     }
 
-
     fun testIsPrimitiveWrapper() {
         assertFalse(objectPsiClass.asClassContext().isPrimitiveWrapper())
         assertTrue(integerPsiClass.asClassContext().isPrimitiveWrapper())
@@ -487,10 +490,18 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "  \"\": null\n" +
                 "}", mapPsiClass.asClassContext().toJson(false, false))
 
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(true, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(true, false))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(false, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson(false, false))
+        assertTrue(arrayOf("[]", "[\n" +
+                "  {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson(true, true)))
+        assertTrue(arrayOf("[]", "[\n" +
+                "  {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson(true, false)))
+        assertTrue(arrayOf("[]", "[\n" +
+                "  {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson(false, true)))
+        assertTrue(arrayOf("[]", "[\n" +
+                "  {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson(false, false)))
 
         assertEquals("{\n" +
                 "  \"code\": 0,\n" +
@@ -586,10 +597,18 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "    \"key\": null\n" +
                 "}", mapPsiClass.asClassContext().toJson5(false, false))
 
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("[]", collectionPsiClass.asClassContext().toJson5(false, false))
+        assertTrue(arrayOf("[]", "[\n" +
+                "    {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson5(true, true)))
+        assertTrue(arrayOf("[]", "[\n" +
+                "    {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson5(true, false)))
+        assertTrue(arrayOf("[]", "[\n" +
+                "    {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson5(false, true)))
+        assertTrue(arrayOf("[]", "[\n" +
+                "    {}\n" +
+                "]").contains(collectionPsiClass.asClassContext().toJson5(false, false)))
 
         assertEquals("{\n" +
                 "    \"code\": 0, //response code\n" +
@@ -622,6 +641,85 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "}", iResultPsiClass.asClassContext().toJson5(true, false))
         assertEquals("{}", iResultPsiClass.asClassContext().toJson5(false, true))
         assertEquals("{}", iResultPsiClass.asClassContext().toJson5(false, false))
+    }
+
+    fun testIsInterface() {
+        assertFalse(objectPsiClass.asClassContext().isInterface())
+        assertFalse(integerPsiClass.asClassContext().isInterface())
+        assertFalse(longPsiClass.asClassContext().isInterface())
+        assertTrue(mapPsiClass.asClassContext().isInterface())
+        assertFalse(hashMapPsiClass.asClassContext().isInterface())
+        assertTrue(collectionPsiClass.asClassContext().isInterface())
+        assertTrue(listPsiClass.asClassContext().isInterface())
+        assertTrue(iResultPsiClass.asClassContext().isInterface())
+        assertFalse(resultPsiClass.asClassContext().isInterface())
+        assertFalse(modelPsiClass.asClassContext().isInterface())
+    }
+
+
+    fun testIsAnnotationType() {
+        assertFalse(objectPsiClass.asClassContext().isAnnotationType())
+        assertFalse(integerPsiClass.asClassContext().isAnnotationType())
+        assertFalse(longPsiClass.asClassContext().isAnnotationType())
+        assertFalse(mapPsiClass.asClassContext().isAnnotationType())
+        assertFalse(hashMapPsiClass.asClassContext().isAnnotationType())
+        assertFalse(collectionPsiClass.asClassContext().isAnnotationType())
+        assertFalse(listPsiClass.asClassContext().isAnnotationType())
+        assertFalse(iResultPsiClass.asClassContext().isAnnotationType())
+        assertFalse(resultPsiClass.asClassContext().isAnnotationType())
+        assertFalse(modelPsiClass.asClassContext().isAnnotationType())
+    }
+
+    fun testIsEnum() {
+        assertFalse(objectPsiClass.asClassContext().isEnum())
+        assertFalse(integerPsiClass.asClassContext().isEnum())
+        assertFalse(longPsiClass.asClassContext().isEnum())
+        assertFalse(mapPsiClass.asClassContext().isEnum())
+        assertFalse(hashMapPsiClass.asClassContext().isEnum())
+        assertFalse(collectionPsiClass.asClassContext().isEnum())
+        assertFalse(listPsiClass.asClassContext().isEnum())
+        assertFalse(iResultPsiClass.asClassContext().isEnum())
+        assertFalse(resultPsiClass.asClassContext().isEnum())
+        assertFalse(modelPsiClass.asClassContext().isEnum())
+    }
+
+    fun testSuperClass() {
+        assertNull(objectPsiClass.asClassContext().superClass())
+        assertNotNull(integerPsiClass.asClassContext().superClass())
+        assertNotNull(longPsiClass.asClassContext().superClass())
+        assertNull(mapPsiClass.asClassContext().superClass())
+        assertNotNull(hashMapPsiClass.asClassContext().superClass())
+        assertNull(collectionPsiClass.asClassContext().superClass())
+        assertNull(listPsiClass.asClassContext().superClass())
+        assertNull(iResultPsiClass.asClassContext().superClass())
+        assertNotNull(resultPsiClass.asClassContext().superClass())
+        assertNotNull(modelPsiClass.asClassContext().superClass())
+    }
+
+    fun testExtends() {
+        assertTrue(objectPsiClass.asClassContext().extends()!!.isEmpty())
+        assertFalse(integerPsiClass.asClassContext().extends()!!.isEmpty())
+        assertFalse(longPsiClass.asClassContext().extends()!!.isEmpty())
+        assertTrue(mapPsiClass.asClassContext().extends()!!.isEmpty())
+        assertFalse(hashMapPsiClass.asClassContext().extends()!!.isEmpty())
+        assertFalse(collectionPsiClass.asClassContext().extends()!!.isEmpty())
+        assertFalse(listPsiClass.asClassContext().extends()!!.isEmpty())
+        assertTrue(iResultPsiClass.asClassContext().extends()!!.isEmpty())
+        assertTrue(resultPsiClass.asClassContext().extends()!!.isEmpty())
+        assertTrue(modelPsiClass.asClassContext().extends()!!.isEmpty())
+    }
+
+    fun testImplements() {
+        assertTrue(objectPsiClass.asClassContext().implements()!!.isEmpty())
+        assertFalse(integerPsiClass.asClassContext().implements()!!.isEmpty())
+        assertFalse(longPsiClass.asClassContext().implements()!!.isEmpty())
+        assertTrue(mapPsiClass.asClassContext().implements()!!.isEmpty())
+        assertFalse(hashMapPsiClass.asClassContext().implements()!!.isEmpty())
+        assertTrue(collectionPsiClass.asClassContext().implements()!!.isEmpty())
+        assertTrue(listPsiClass.asClassContext().implements()!!.isEmpty())
+        assertTrue(iResultPsiClass.asClassContext().implements()!!.isEmpty())
+        assertFalse(resultPsiClass.asClassContext().implements()!!.isEmpty())
+        assertTrue(modelPsiClass.asClassContext().implements()!!.isEmpty())
     }
 
     //endregion
