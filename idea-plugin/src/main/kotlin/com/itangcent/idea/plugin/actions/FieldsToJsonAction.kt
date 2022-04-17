@@ -7,7 +7,7 @@ import com.itangcent.idea.plugin.format.MessageFormatter
 import com.itangcent.idea.plugin.format.SimpleJsonFormatter
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 
 /**
  * @author tangcent

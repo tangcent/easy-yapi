@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.config
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.invokeMethod
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.settings.helper.BuiltInConfigSettingsHelper
@@ -14,7 +15,6 @@ import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.utils.Initializable
-import java.io.File
 import java.util.concurrent.TimeUnit
 
 
@@ -34,13 +34,15 @@ class RecommendConfigReader : ConfigReader, Initializable {
     private lateinit var contextSwitchListener: ContextSwitchListener
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     private val devEnv: DevEnv? = null
 
     @Volatile
     private var loading: Thread? = null
+
+    private var notInit = true
 
     override fun first(key: String): String? {
         checkStatus()
@@ -68,6 +70,9 @@ class RecommendConfigReader : ConfigReader, Initializable {
     }
 
     private fun checkStatus() {
+        if (notInit) {
+            initDelegateAndRecommend()
+        }
         while (loading != null && loading != Thread.currentThread()) {
             TimeUnit.MILLISECONDS.sleep(100)
         }
@@ -80,7 +85,6 @@ class RecommendConfigReader : ConfigReader, Initializable {
             contextSwitchListener.onModuleChange { module ->
                 synchronized(this)
                 {
-                    loading = Thread.currentThread()
                     try {
                         configReader.reset()
                         module.filePath()?.let { configReader.put("module_path", it) }
@@ -96,16 +100,37 @@ class RecommendConfigReader : ConfigReader, Initializable {
     }
 
     private fun initDelegateAndRecommend() {
-        try {
-            if (configReader is Initializable) {
-                configReader.init()
-            } else {
-                configReader?.invokeMethod("init")
+        synchronized(this)
+        {
+            try {
+                if (loading != null && loading == Thread.currentThread()) {
+                    return
+                }
+                loading = Thread.currentThread()
+                try {
+                    if (configReader is Initializable) {
+                        configReader.init()
+                    } else {
+                        configReader?.invokeMethod("init")
+                    }
+                } catch (e: Throwable) {
+                    logger.traceError("failed init config", e)
+                }
+                try {
+                    tryLoadRecommend()
+                } catch (e: Throwable) {
+                    logger.traceError("failed load recommend config", e)
+                }
+                try {
+                    tryLoadBuiltIn()
+                } catch (e: Throwable) {
+                    logger.traceError("failed load built-in config", e)
+                }
+            } finally {
+                loading = null
+                notInit = false
             }
-        } catch (e: Throwable) {
         }
-        tryLoadRecommend()
-        tryLoadBuiltIn()
     }
 
     private fun tryLoadRecommend() {
@@ -114,7 +139,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 val recommendConfig = recommendConfigSettingsHelper.loadRecommendConfig()
 
                 if (recommendConfig.isEmpty()) {
-                    logger!!.info(
+                    logger.info(
                         "Even useRecommendConfig was true, but no recommend config be selected!\n" +
                                 "\n" +
                                 "If you need to enable the built-in recommended configuration." +
@@ -125,12 +150,12 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 }
 
                 configReader.loadConfigInfoContent(recommendConfig)
-                logger!!.info("use recommend config")
+                logger.info("use recommend config")
                 devEnv!!.dev {
                     logger.debug("----------------\n$recommendConfig\n----------------")
                 }
             } else {
-                logger!!.warn("failed to use recommend config")
+                logger.warn("failed to use recommend config")
             }
         }
     }
@@ -140,12 +165,12 @@ class RecommendConfigReader : ConfigReader, Initializable {
         if (builtInConfig.notNullOrBlank()) {
             if (configReader is MutableConfigReader) {
                 configReader.loadConfigInfoContent(builtInConfig!!)
-                logger!!.info("use built-in config")
+                logger.info("use built-in config")
                 devEnv!!.dev {
                     logger.debug("----------------\n$builtInConfig\n----------------")
                 }
             } else {
-                logger!!.warn("failed to use built-in config")
+                logger.warn("failed to use built-in config")
             }
         }
     }

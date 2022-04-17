@@ -27,7 +27,7 @@ import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import javax.script.ScriptContext
 import javax.script.ScriptEngine

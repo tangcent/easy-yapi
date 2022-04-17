@@ -8,7 +8,7 @@ import com.itangcent.idea.plugin.format.PropertiesFormatter
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 
 /**
  * @author tangcent

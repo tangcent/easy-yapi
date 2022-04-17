@@ -31,7 +31,7 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.order.Order
 import kotlin.reflect.KClass

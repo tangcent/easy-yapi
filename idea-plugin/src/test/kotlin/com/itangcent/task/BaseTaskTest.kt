@@ -2,7 +2,7 @@ package com.itangcent.task
 
 import com.itangcent.common.utils.ThreadPoolUtils
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import com.itangcent.utils.WaitHelper
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 /**
  * Test case of [BaseTask]
  */
-internal class BaseTaskTest : BaseContextTest() {
+internal class BaseTaskTest : EasyBaseContextTest() {
 
     private val taskManager = TaskManager()
 

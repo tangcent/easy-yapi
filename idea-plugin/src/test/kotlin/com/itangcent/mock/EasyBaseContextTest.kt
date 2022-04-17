@@ -9,6 +9,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.utils.Initializable
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.fail
@@ -17,7 +18,7 @@ import org.mockito.Mockito
 /**
  * Test case with [ActionContext]
  */
-abstract class BaseContextTest {
+abstract class EasyBaseContextTest {
 
     @Inject
     protected lateinit var actionContext: ActionContext

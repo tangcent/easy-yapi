@@ -4,14 +4,14 @@ import com.google.inject.Inject
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import org.junit.jupiter.api.BeforeEach
 import kotlin.reflect.KClass
 
 /**
  * Test case of [MessageFormatter]
  */
-internal abstract class MessageFormatterTest : BaseContextTest() {
+internal abstract class MessageFormatterTest : EasyBaseContextTest() {
 
     @Inject
     lateinit var messageFormatter: MessageFormatter

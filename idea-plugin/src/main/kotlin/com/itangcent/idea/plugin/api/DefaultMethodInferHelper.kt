@@ -11,12 +11,12 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.jvm.DuckTypeHelper
-import com.itangcent.intellij.jvm.JvmClassHelper
-import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.jvm.PsiResolver
+import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.*
+import com.itangcent.intellij.psi.ClassRuleKeys
+import com.itangcent.intellij.psi.ObjectHolder
+import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.psi.getOrResolve
 import com.itangcent.intellij.util.Magics
 import com.siyeh.ig.psiutils.ClassUtils
 import java.lang.reflect.Method
@@ -84,7 +84,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         psiMethod: PsiMethod,
         caller: Any? = null,
         args: Array<Any?>?,
-        option: Int = DEFAULT_OPTION
+        option: Int = DEFAULT_OPTION,
     ): Any? {
         actionContext!!.checkStatus()
         if (methodStack.size < intelligentSettingsHelper.inferMaxDeep()) {
@@ -211,7 +211,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         context: PsiElement?,
         psiMethod: PsiMethod,
         caller: Any? = null,
-        args: Array<Any?>?
+        args: Array<Any?>?,
     ): Any? {
         actionContext!!.checkStatus()
         try {
@@ -557,7 +557,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 return when {
                     !needCompute(obj) -> obj
                     obj is Variable -> valueOf(obj.getValue())
-                    obj is Delay -> valueOf(obj.unwrap())
+                    obj is ObjectHolder -> valueOf(obj.getOrResolve())
                     obj is MutableMap<*, *> -> {
                         val copy = KV.create<Any?, Any?>()
                         obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }
@@ -581,23 +581,25 @@ class DefaultMethodInferHelper : MethodInferHelper {
             }
         }
 
-        private fun needCompute(obj: Any?): Boolean {
+        private fun needCompute(obj: Any?, deep: Int = 0): Boolean {
+            if (deep > 10) {
+                return false
+            }
             return when (obj) {
                 null -> false
                 is Variable -> true
-                is Delay -> true
+                is ObjectHolder -> true
                 is MutableMap<*, *> -> {
-                    obj.entries.any { needCompute(it.key) || needCompute(it.value) }
+                    obj.entries.any { needCompute(it.key, deep + 1) || needCompute(it.value, deep + 1) }
                 }
                 is Array<*> -> {
-                    obj.any { needCompute(it) }
+                    obj.any { needCompute(it, deep + 1) }
                 }
                 is Collection<*> -> {
-                    obj.any { needCompute(it) }
+                    obj.any { needCompute(it, deep + 1) }
                 }
                 else -> false
             }
-
         }
 
         fun assignment(target: Any?, value: Any?) {
@@ -618,38 +620,6 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 return null
             }
             return obj as ArrayList<Any?>?
-        }
-
-        fun merge(a: Any?, b: Any?): Any? {
-            if (a == null) {
-                return valueOf(b)
-            } else if (b == null) {
-                return valueOf(a)
-            }
-
-            val ua = valueOf(a)
-            val ub = valueOf(b)
-
-            if (ua is Map<*, *> && ub is Map<*, *>) {
-                val res: HashMap<Any?, Any?> = LinkedHashMap()
-                res.putAll(ua)
-                res.putAll(ub)
-                return res
-            }
-
-            if (ua is Collection<*> && ub is Collection<*>) {
-                val res: ArrayList<Any?> = ArrayList()
-                res.addAll(ua)
-                res.addAll(ub)
-                return res
-            }
-
-            if (ub is Map<*, *>) {
-                return ub
-            }
-
-            //not merge
-            return ua
         }
 
         fun findComplexResult(a: Any?, b: Any?): Any? {
@@ -752,6 +722,10 @@ class DefaultMethodInferHelper : MethodInferHelper {
             }
             jvmClassHelper.isMap(psiType) -> {   //map type
                 return psiClassHelper.getTypeObject(psiType, context, simpleJsonOption)
+            }
+            jvmClassHelper.isEnum(psiType) -> {
+                //return "" by default
+                return ""
             }
             else -> {
                 val typeCanonicalText = psiType.canonicalText
@@ -901,7 +875,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
     abstract class AbstractMethodReturnInfer(
         var caller: Any? = null,
         val args: Array<Any?>?,
-        val methodReturnInferHelper: DefaultMethodInferHelper
+        val methodReturnInferHelper: DefaultMethodInferHelper,
     ) : Infer {
 
         var localParams: HashMap<String, Any?> = HashMap()
@@ -1424,7 +1398,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         private val psiMethod: PsiMethod,
         caller: Any? = null,
         args: Array<Any?>?,
-        methodReturnInferHelper: DefaultMethodInferHelper
+        methodReturnInferHelper: DefaultMethodInferHelper,
     ) : AbstractMethodReturnInfer(caller, args, methodReturnInferHelper) {
 
         override fun infer(): Any? {
@@ -1500,7 +1474,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
      */
     open inner class QuicklyMethodReturnInfer(
         private val psiMethod: PsiMethod,
-        methodReturnInferHelper: DefaultMethodInferHelper
+        methodReturnInferHelper: DefaultMethodInferHelper,
     ) : AbstractMethodReturnInfer(null, null, methodReturnInferHelper) {
 
         override fun infer(): Any? {
@@ -1617,7 +1591,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
     inner class NewExpressionInfer(
         private val psiNewExpression: PsiNewExpression,
         args: Array<Any?>?,
-        methodReturnInferHelper: DefaultMethodInferHelper
+        methodReturnInferHelper: DefaultMethodInferHelper,
     ) : AbstractMethodReturnInfer(null, args, methodReturnInferHelper) {
 
         override fun infer(): Any? {
@@ -1674,19 +1648,5 @@ class DefaultMethodInferHelper : MethodInferHelper {
 }
 
 private typealias LazyAction = () -> Unit
-
-class DisposableLazyAction(val delegate: LazyAction) : LazyAction {
-    private var disposed = false
-
-    override fun invoke() {
-        if (disposed) return
-        disposed = true
-        delegate()
-    }
-}
-
-fun LazyAction.disposable(): DisposableLazyAction {
-    return DisposableLazyAction(this)
-}
 
 private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(DefaultMethodInferHelper::class.java)

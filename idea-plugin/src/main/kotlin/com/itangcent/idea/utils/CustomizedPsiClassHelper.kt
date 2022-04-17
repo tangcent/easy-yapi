@@ -14,8 +14,9 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitField
-import com.itangcent.intellij.psi.unwrap
-import com.itangcent.intellij.psi.unwrapped
+import com.itangcent.intellij.psi.ObjectHolder
+import com.itangcent.intellij.psi.ResolveContext
+import com.itangcent.intellij.psi.getOrResolve
 
 /**
  * support rules:
@@ -32,8 +33,8 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         fieldType: DuckType,
         fieldOrMethod: ExplicitElement<*>,
         resourcePsiClass: ExplicitClass,
-        option: Int,
-        kv: KV<String, Any?>
+        resolveContext: ResolveContext,
+        kv: KV<String, Any?>,
     ) {
         //compute `field.required`
         ruleComputer.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
@@ -52,16 +53,16 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
             populateFieldValue(fieldName, fieldType, kv, defaultValue)
         }
 
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
+        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
     }
 
     override fun resolveAdditionalField(
         additionalField: AdditionalField,
         context: PsiElement,
-        option: Int,
-        kv: KV<String, Any?>
+        resolveContext: ResolveContext,
+        kv: KV<String, Any?>,
     ) {
-        super.resolveAdditionalField(additionalField, context, option, kv)
+        super.resolveAdditionalField(additionalField, context, resolveContext, kv)
         val fieldName = additionalField.name!!
         kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = additionalField.required
         kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = additionalField.defaultValue
@@ -77,7 +78,10 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         if (isOriginal(obj)) {
             return
         }
-        val oldValue = kv[fieldName].unwrap()
+        var oldValue = kv[fieldName]
+        if (oldValue is ObjectHolder) {
+            oldValue = oldValue.getOrResolve()
+        }
         if (isOriginal(oldValue)) {
             kv[fieldName] = obj
         } else {

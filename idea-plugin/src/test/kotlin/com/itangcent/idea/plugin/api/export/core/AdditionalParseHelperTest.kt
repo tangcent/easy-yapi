@@ -3,13 +3,13 @@ package com.itangcent.idea.plugin.api.export.core
 import com.google.inject.Inject
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import kotlin.reflect.KClass
 
 /**
  * Test case with [AdditionalParseHelper]
  */
-abstract class AdditionalParseHelperTest : BaseContextTest() {
+abstract class AdditionalParseHelperTest : EasyBaseContextTest() {
 
     @Inject
     protected lateinit var additionalParseHelper: AdditionalParseHelper

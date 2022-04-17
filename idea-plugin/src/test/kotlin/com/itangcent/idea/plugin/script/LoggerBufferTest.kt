@@ -5,14 +5,14 @@ import com.itangcent.debug.LoggerCollector
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
 /**
  * Test case of [LoggerBuffer]
  */
-internal class LoggerBufferTest : BaseContextTest() {
+internal class LoggerBufferTest : EasyBaseContextTest() {
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)

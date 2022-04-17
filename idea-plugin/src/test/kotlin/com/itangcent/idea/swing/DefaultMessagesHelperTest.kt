@@ -5,7 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.mock
@@ -17,7 +17,7 @@ import kotlin.test.assertNull
 /**
  * Test case of [DefaultMessagesHelper]
  */
-internal open class DefaultMessagesHelperTest : BaseContextTest() {
+internal open class DefaultMessagesHelperTest : EasyBaseContextTest() {
 
     @Inject
     protected lateinit var messagesHelper: MessagesHelper

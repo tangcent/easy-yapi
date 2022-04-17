@@ -5,7 +5,7 @@ import com.google.inject.Inject
 import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 /**
  * Test case of [YapiTokenCheckerSupport]
  */
-internal class YapiTokenCheckerSupportTest : BaseContextTest() {
+internal class YapiTokenCheckerSupportTest : EasyBaseContextTest() {
 
     @Inject
     private lateinit var yapiTokenChecker: YapiTokenChecker

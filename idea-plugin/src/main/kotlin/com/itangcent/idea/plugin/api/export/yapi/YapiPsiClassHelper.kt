@@ -16,6 +16,7 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.psi.ContextSwitchListener
+import com.itangcent.intellij.psi.ResolveContext
 
 /**
  * support rules:
@@ -44,7 +45,7 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         fieldType: DuckType,
         fieldOrMethod: ExplicitElement<*>,
         resourcePsiClass: ExplicitClass,
-        option: Int,
+        resolveContext: ResolveContext,
         kv: KV<String, Any?>
     ) {
         //compute `field.mock`
@@ -74,16 +75,16 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
             kv.sub(Attrs.ADVANCED_ATTR)[fieldName] = advancedValue
         }
 
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, option, kv)
+        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
     }
 
     override fun resolveAdditionalField(
         additionalField: AdditionalField,
         context: PsiElement,
-        option: Int,
+        resolveContext: ResolveContext,
         kv: KV<String, Any?>
     ) {
-        super.resolveAdditionalField(additionalField, context, option, kv)
+        super.resolveAdditionalField(additionalField, context, resolveContext, kv)
         val fieldName = additionalField.name!!
         additionalField.getExt<Any>(Attrs.MOCK_ATTR)?.let {
             kv.sub(Attrs.MOCK_ATTR)[fieldName] = it

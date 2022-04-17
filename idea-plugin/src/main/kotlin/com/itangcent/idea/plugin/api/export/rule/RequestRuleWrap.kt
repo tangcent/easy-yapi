@@ -13,7 +13,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 import java.util.*
 
 class RequestRuleWrap(private val methodExportContext: MethodExportContext?, private val request: Request) {

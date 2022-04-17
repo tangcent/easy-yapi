@@ -9,9 +9,8 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import com.itangcent.mock.SettingBinderAdaptor
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import kotlin.test.assertEquals
@@ -19,7 +18,7 @@ import kotlin.test.assertEquals
 /**
  * Test case of [ConfigurableLogger]
  */
-internal class ConfigurableLoggerTest : BaseContextTest() {
+internal class ConfigurableLoggerTest : EasyBaseContextTest() {
 
     private val settings = Settings()
 
