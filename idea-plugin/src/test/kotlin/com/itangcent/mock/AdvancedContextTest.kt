@@ -23,7 +23,7 @@ import java.nio.file.Path
 /**
  * BaseContextTest with [tempDir]
  */
-abstract class AdvancedContextTest : BaseContextTest() {
+abstract class AdvancedContextTest : EasyBaseContextTest() {
 
     @JvmField
     @TempDir

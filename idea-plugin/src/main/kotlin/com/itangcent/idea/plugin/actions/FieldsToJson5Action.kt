@@ -6,7 +6,7 @@ import com.intellij.psi.PsiType
 import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 
 /**
  * @author tangcent

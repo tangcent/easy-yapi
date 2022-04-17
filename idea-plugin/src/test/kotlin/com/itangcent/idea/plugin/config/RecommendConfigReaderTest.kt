@@ -20,7 +20,9 @@ import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
 import com.itangcent.test.mock
+import com.itangcent.utils.Initializable
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
@@ -125,11 +127,13 @@ internal abstract class RecommendConfigReaderTest : AdvancedContextTest() {
             builder.bind(
                 ConfigReader::class,
                 "delegate_config_reader"
-            ) { it.toInstance(mock()) }
+            ) { it.toInstance(mock(extraInterfaces = arrayOf(Initializable::class))) }
         }
 
         @Test
         fun test() {
+            var mock = Mockito.mock(ConfigReader::class.java, Mockito.withSettings()
+                .extraInterfaces(Initializable::class.java))
             assertEquals(ResultLoader.load("log"), LoggerCollector.getLog().toUnixString())
             assertNull(recommendConfigReader.first("ignore"))
         }

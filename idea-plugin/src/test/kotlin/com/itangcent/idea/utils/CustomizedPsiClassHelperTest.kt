@@ -6,7 +6,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.duck.SingleDuckType
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 
 /**
  * Test case of [CustomizedPsiClassHelper]

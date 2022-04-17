@@ -3,9 +3,8 @@ package com.itangcent.idea.plugin.render
 import com.google.inject.Inject
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.mock.BaseContextTest
+import com.itangcent.mock.EasyBaseContextTest
 import org.intellij.lang.annotations.Language
-import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -13,7 +12,7 @@ import kotlin.test.assertNull
 /**
  * Test case of [BundledMarkdownRender]
  */
-internal class BundledMarkdownRenderTest : BaseContextTest() {
+internal class BundledMarkdownRenderTest : EasyBaseContextTest() {
 
     @Inject
     private lateinit var markdownRender: MarkdownRender

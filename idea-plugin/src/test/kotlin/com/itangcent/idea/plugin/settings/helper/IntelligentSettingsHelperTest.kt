@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

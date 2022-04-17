@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.settings.helper
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.intellij.psi.JsonOption
+import com.itangcent.intellij.jvm.JsonOption
 
 @Singleton
 class IntelligentSettingsHelper {

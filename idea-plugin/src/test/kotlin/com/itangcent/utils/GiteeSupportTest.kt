@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * Test case for [GiteeSupport]
- * 
+ *
  * @author tangcent
  */
 internal class GiteeSupportTest {
