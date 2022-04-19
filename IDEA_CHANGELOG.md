@@ -1,3 +1,15 @@
+* 2.3.6
+
+	* chore: add Fastjson support [(#745)](https://github.com/tangcent/easy-yapi/pull/745)
+
+	* feat: init recommend config even if no module be switched [(#744)](https://github.com/tangcent/easy-yapi/pull/744)
+
+	* fix: set `readTimeout` for read resource by url [(#743)](https://github.com/tangcent/easy-yapi/pull/743)
+
+	* feat: new method for rule context `class` [(#739)](https://github.com/tangcent/easy-yapi/pull/739)
+
+	* feat: resolve RequestMapping from interfaces [(#738)](https://github.com/tangcent/easy-yapi/pull/738)
+
 * 2.3.5
 
 	* chore: update version of intellij-kotlin to 1.1.7 [(#731)](https://github.com/tangcent/easy-yapi/pull/731)
