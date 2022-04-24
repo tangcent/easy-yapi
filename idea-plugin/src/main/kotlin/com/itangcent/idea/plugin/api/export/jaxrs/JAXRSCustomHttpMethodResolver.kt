@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.api.export.quarkus
+package com.itangcent.idea.plugin.api.export.jaxrs
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -10,10 +10,10 @@ import com.itangcent.intellij.jvm.AnnotationHelper
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Support custom annotation which annotated with [QuarkusClassName.HTTP_METHOD_ANNOTATION]
+ * Support custom annotation which annotated with [JAXRSClassName.HTTP_METHOD_ANNOTATION]
  */
 @Singleton
-class QuarkusCustomHttpMethodResolver {
+class JAXRSCustomHttpMethodResolver {
 
     private val resolvedAnnotations = ConcurrentHashMap<String, String>()
 
@@ -42,10 +42,10 @@ class QuarkusCustomHttpMethodResolver {
 
     private fun resolveHttpMethodForAnnotation(annotation: PsiAnnotation): String {
         val annotationType = annotation.nameReferenceElement?.resolve() ?: return HttpMethod.NO_METHOD
-        annotationHelper.findAttrAsString(annotationType, QuarkusClassName.HTTP_METHOD_ANNOTATION)?.let {
+        annotationHelper.findAttrAsString(annotationType, JAXRSClassName.HTTP_METHOD_ANNOTATION)?.let {
             return it
         }
-        for (mappingAnnotation in QuarkusClassName.QUARKUS_SINGLE_MAPPING_ANNOTATIONS) {
+        for (mappingAnnotation in JAXRSClassName.SINGLE_MAPPING_ANNOTATIONS) {
             if (annotationHelper.hasAnn(annotationType, mappingAnnotation)) {
                 return mappingAnnotation.substringAfterLast('.')
             }

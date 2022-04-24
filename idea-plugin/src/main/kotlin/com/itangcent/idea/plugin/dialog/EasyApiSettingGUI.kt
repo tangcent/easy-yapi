@@ -113,7 +113,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     private var feignEnableCheckBox: JCheckBox? = null
 
-    private var quarkusEnableCheckBox: JCheckBox? = null
+    private var jaxrsEnableCheckBox: JCheckBox? = null
 
     private var globalCacheSizeLabel: JLabel? = null
 
@@ -266,7 +266,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         this.methodDocEnableCheckBox!!.isSelected = settings.methodDocEnable
         this.genericEnableCheckBox!!.isSelected = settings.genericEnable
         this.feignEnableCheckBox!!.isSelected = settings.feignEnable
-        this.quarkusEnableCheckBox!!.isSelected = settings.quarkusEnable
+        this.jaxrsEnableCheckBox!!.isSelected = settings.jaxrsEnable
         this.inferEnableCheckBox!!.isSelected = settings.inferEnable
         this.readGetterCheckBox!!.isSelected = settings.readGetter
         this.readSetterCheckBox!!.isSelected = settings.readSetter
@@ -575,7 +575,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.methodDocEnable = methodDocEnableCheckBox!!.isSelected
         settings.genericEnable = genericEnableCheckBox!!.isSelected
         settings.feignEnable = feignEnableCheckBox!!.isSelected
-        settings.quarkusEnable = quarkusEnableCheckBox!!.isSelected
+        settings.jaxrsEnable = jaxrsEnableCheckBox!!.isSelected
         settings.queryExpanded = queryExpandedCheckBox!!.isSelected
         settings.formExpanded = formExpandedCheckBox!!.isSelected
         settings.readGetter = readGetterCheckBox!!.isSelected

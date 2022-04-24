@@ -1,6 +1,7 @@
-package com.itangcent.idea.plugin.api.export.quarkus
+package com.itangcent.idea.plugin.api.export.jaxrs
 
-object QuarkusClassName {
+object JAXRSClassName {
+
     const val PATH_ANNOTATION = "javax.ws.rs.Path";
 
     const val DEFAULT_VALUE_ANNOTATION = "javax.ws.rs.DefaultValue";
@@ -23,7 +24,7 @@ object QuarkusClassName {
     const val HEAD_ANNOTATION = "javax.ws.rs.HEAD";
     const val OPTIONS_ANNOTATION = "javax.ws.rs.OPTIONS";
 
-    val QUARKUS_SINGLE_MAPPING_ANNOTATIONS: List<String> = listOf(
+    val SINGLE_MAPPING_ANNOTATIONS: List<String> = listOf(
         POST_ANNOTATION,
         GET_ANNOTATION,
         PUT_ANNOTATION,
@@ -33,7 +34,7 @@ object QuarkusClassName {
         OPTIONS_ANNOTATION,
     )
 
-    val QUARKUS_MAPPING_ANNOTATIONS: List<String> = listOf(
+    val MAPPING_ANNOTATIONS: List<String> = listOf(
         HTTP_METHOD_ANNOTATION,
         POST_ANNOTATION,
         GET_ANNOTATION,

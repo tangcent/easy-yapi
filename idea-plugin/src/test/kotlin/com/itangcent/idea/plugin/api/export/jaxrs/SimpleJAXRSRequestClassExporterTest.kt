@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.api.export.quarkus
+package com.itangcent.idea.plugin.api.export.jaxrs
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
@@ -28,9 +28,9 @@ import java.util.*
 
 
 /**
- * Test case of [SimpleQuarkusRequestClassExporter]
+ * Test case of [SimpleJAXRSRequestClassExporter]
  */
-internal class SimpleQuarkusRequestClassExporterTest : PluginContextLightCodeInsightFixtureTestCase() {
+internal class SimpleJAXRSRequestClassExporterTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     private lateinit var classExporter: ClassExporter
@@ -58,26 +58,26 @@ internal class SimpleQuarkusRequestClassExporterTest : PluginContextLightCodeIns
         loadFile("model/IResult.java")
         loadFile("model/Result.java")
         loadFile("model/UserInfo.java")
-        loadFile("quarkus/BeanParam.java")
-        loadFile("quarkus/CookieParam.java")
-        loadFile("quarkus/DefaultValue.java")
-        loadFile("quarkus/DELETE.java")
-        loadFile("quarkus/FormParam.java")
-        loadFile("quarkus/GET.java")
-        loadFile("quarkus/HEAD.java")
-        loadFile("quarkus/HeaderParam.java")
-        loadFile("quarkus/HttpMethod.java")
-        loadFile("quarkus/OPTIONS.java")
-        loadFile("quarkus/PATCH.java")
-        loadFile("quarkus/Path.java")
-        loadFile("quarkus/PathParam.java")
-        loadFile("quarkus/POST.java")
-        loadFile("quarkus/PUT.java")
-        loadFile("quarkus/QueryParam.java")
-        loadFile("api/quarkus/MyGet.java")
-        loadFile("api/quarkus/MyPut.java")
-        loadFile("api/quarkus/UserDTO.java")
-        userResourcePsiClass = loadClass("api/quarkus/UserResource.java")!!
+        loadFile("jaxrs/BeanParam.java")
+        loadFile("jaxrs/CookieParam.java")
+        loadFile("jaxrs/DefaultValue.java")
+        loadFile("jaxrs/DELETE.java")
+        loadFile("jaxrs/FormParam.java")
+        loadFile("jaxrs/GET.java")
+        loadFile("jaxrs/HEAD.java")
+        loadFile("jaxrs/HeaderParam.java")
+        loadFile("jaxrs/HttpMethod.java")
+        loadFile("jaxrs/OPTIONS.java")
+        loadFile("jaxrs/PATCH.java")
+        loadFile("jaxrs/Path.java")
+        loadFile("jaxrs/PathParam.java")
+        loadFile("jaxrs/POST.java")
+        loadFile("jaxrs/PUT.java")
+        loadFile("jaxrs/QueryParam.java")
+        loadFile("api/jaxrs/MyGet.java")
+        loadFile("api/jaxrs/MyPut.java")
+        loadFile("api/jaxrs/UserDTO.java")
+        userResourcePsiClass = loadClass("api/jaxrs/UserResource.java")!!
         settings.inferEnable = true
 
         //clear log
@@ -112,7 +112,7 @@ internal class SimpleQuarkusRequestClassExporterTest : PluginContextLightCodeIns
         super.bind(builder)
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
 
-        builder.bind(ClassExporter::class) { it.with(SimpleQuarkusRequestClassExporter::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(SimpleJAXRSRequestClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class) }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
@@ -225,7 +225,7 @@ internal class SimpleQuarkusRequestClassExporterTest : PluginContextLightCodeIns
         }
 
         assertEquals(
-            "[INFO]\tsearch api from:com.itangcent.quarkus.UserResource\n",
+            "[INFO]\tsearch api from:com.itangcent.jaxrs.UserResource\n",
             LoggerCollector.getLog().toUnixString()
         )
     }

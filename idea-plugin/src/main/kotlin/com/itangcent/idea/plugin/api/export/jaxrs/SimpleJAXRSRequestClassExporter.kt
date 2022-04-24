@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.api.export.quarkus
+package com.itangcent.idea.plugin.api.export.jaxrs
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -29,10 +29,10 @@ import kotlin.reflect.KClass
  */
 @Singleton
 @ConditionOnSimple
-@ConditionOnClass(QuarkusClassName.PATH_ANNOTATION)
+@ConditionOnClass(JAXRSClassName.PATH_ANNOTATION)
 @ConditionOnDoc("request")
-@ConditionOnSetting("quarkusEnable")
-open class SimpleQuarkusRequestClassExporter : ClassExporter, Worker {
+@ConditionOnSetting("jaxrsEnable")
+open class SimpleJAXRSRequestClassExporter : ClassExporter, Worker {
 
     @Inject
     protected lateinit var annotationHelper: AnnotationHelper
@@ -41,7 +41,7 @@ open class SimpleQuarkusRequestClassExporter : ClassExporter, Worker {
     protected lateinit var jvmClassHelper: JvmClassHelper
 
     @Inject
-    protected lateinit var quarkusBaseAnnotationParser: QuarkusBaseAnnotationParser
+    protected lateinit var JAXRSBaseAnnotationParser: JAXRSBaseAnnotationParser
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
@@ -82,7 +82,7 @@ open class SimpleQuarkusRequestClassExporter : ClassExporter, Worker {
         statusRecorder.newWork()
         try {
             when {
-                !quarkusBaseAnnotationParser.hasApi(cls) -> {
+                !JAXRSBaseAnnotationParser.hasApi(cls) -> {
                     completedHandle(cls)
                     return false
                 }
@@ -116,7 +116,7 @@ open class SimpleQuarkusRequestClassExporter : ClassExporter, Worker {
     private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, docHandle: DocHandle) {
 
         actionContext!!.checkStatus()
-        if (!quarkusBaseAnnotationParser.isApi(method)) {
+        if (!JAXRSBaseAnnotationParser.isApi(method)) {
             return
         }
 
