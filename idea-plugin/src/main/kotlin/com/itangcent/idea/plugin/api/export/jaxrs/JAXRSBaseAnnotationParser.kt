@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.api.export.quarkus
+package com.itangcent.idea.plugin.api.export.jaxrs
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -14,20 +14,20 @@ import com.itangcent.intellij.jvm.AnnotationHelper
  * @author tangcent
  */
 @Singleton
-class QuarkusBaseAnnotationParser {
+class JAXRSBaseAnnotationParser {
 
     @Inject
     private lateinit var annotationHelper: AnnotationHelper
 
     @Inject
-    private lateinit var quarkusCustomHttpMethodResolver: QuarkusCustomHttpMethodResolver
+    private lateinit var jaxrsCustomHttpMethodResolver: JAXRSCustomHttpMethodResolver
 
     @Inject
     private lateinit var ruleComputer: RuleComputer
 
     fun hasApi(psiClass: PsiClass): Boolean {
-        return annotationHelper.hasAnn(psiClass, QuarkusClassName.PATH_ANNOTATION)
-                || (ruleComputer.computer(ClassExportRuleKeys.IS_QUARKUS_CTRL, psiClass) == true)
+        return annotationHelper.hasAnn(psiClass, JAXRSClassName.PATH_ANNOTATION)
+                || (ruleComputer.computer(ClassExportRuleKeys.IS_JAXRS_CTRL, psiClass) == true)
     }
 
     fun isApi(psiMethod: PsiMethod): Boolean {
@@ -35,11 +35,11 @@ class QuarkusBaseAnnotationParser {
     }
 
     fun findHttpMethod(psiMethod: PsiMethod): String? {
-        for (mappingAnnotation in QuarkusClassName.QUARKUS_SINGLE_MAPPING_ANNOTATIONS) {
+        for (mappingAnnotation in JAXRSClassName.SINGLE_MAPPING_ANNOTATIONS) {
             if (annotationHelper.hasAnn(psiMethod, mappingAnnotation)) {
                 return mappingAnnotation.substringAfterLast('.')
             }
         }
-        return quarkusCustomHttpMethodResolver.findCustomAnnotatedHttpMethod(psiMethod)
+        return jaxrsCustomHttpMethodResolver.findCustomAnnotatedHttpMethod(psiMethod)
     }
 }

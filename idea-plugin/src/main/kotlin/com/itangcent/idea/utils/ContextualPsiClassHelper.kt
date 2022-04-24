@@ -108,7 +108,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     private fun clearCachePotentially() {
         if (configReader.first("json.cache.disable").asBool() == true) {
             devEnv?.dev {
-                logger!!.info("clear json cache")
+                logger.info("clear json cache")
             }
             resolvedInfo.clear()
         }

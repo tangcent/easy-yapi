@@ -25,8 +25,9 @@ object ClassExportRuleKeys {
         BooleanRuleMode.ANY
     )
 
-    val IS_QUARKUS_CTRL: RuleKey<Boolean> = SimpleRuleKey(
-        "class.is.quarkus.ctrl",
+    val IS_JAXRS_CTRL: RuleKey<Boolean> = SimpleRuleKey(
+        "class.is.jaxrs.ctrl",
+        arrayOf("class.is.quarkus.ctrl"),
         BooleanRuleMode.ANY
     )
 

@@ -1,13 +1,13 @@
-package com.itangcent.quarkus;
+package com.itangcent.jaxrs;
 
 import com.itangcent.annotation.Public;
-import com.itangcent.api.quarkus.UserDTO;
+import com.itangcent.api.jaxrs.UserDTO;
 import com.itangcent.constant.UserType;
 import com.itangcent.dto.IResult;
 import com.itangcent.model.Result;
 import com.itangcent.model.UserInfo;
-import com.itangcent.quarkus.MyGet;
-import com.itangcent.quarkus.MyPut;
+import com.itangcent.jaxrs.MyGet;
+import com.itangcent.jaxrs.MyPut;
 
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.CookieParam;

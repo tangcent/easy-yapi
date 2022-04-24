@@ -13,7 +13,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     override var feignEnable: Boolean = false
 
-    override var quarkusEnable: Boolean = true
+    override var jaxrsEnable: Boolean = true
 
     //postman
 
@@ -116,7 +116,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (methodDocEnable != other.methodDocEnable) return false
         if (genericEnable != other.genericEnable) return false
         if (feignEnable != other.feignEnable) return false
-        if (quarkusEnable != other.quarkusEnable) return false
+        if (jaxrsEnable != other.jaxrsEnable) return false
         if (postmanToken != other.postmanToken) return false
         if (postmanWorkspace != other.postmanWorkspace) return false
         if (postmanExportMode != other.postmanExportMode) return false
@@ -156,7 +156,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + methodDocEnable.hashCode()
         result = 31 * result + genericEnable.hashCode()
         result = 31 * result + feignEnable.hashCode()
-        result = 31 * result + quarkusEnable.hashCode()
+        result = 31 * result + jaxrsEnable.hashCode()
         result = 31 * result + (postmanToken?.hashCode() ?: 0)
         result = 31 * result + (postmanWorkspace?.hashCode() ?: 0)
         result = 31 * result + (postmanExportMode?.hashCode() ?: 0)
@@ -191,7 +191,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
     }
 
     override fun toString(): String {
-        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, feignEnable=$feignEnable, quarkusEnable=$quarkusEnable, pullNewestDataBefore=$pullNewestDataBefore, postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, postmanExportMode=$postmanExportMode, postmanCollections=$postmanCollections, wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, postmanJson5FormatType='$postmanJson5FormatType', queryExpanded=$queryExpanded, formExpanded=$formExpanded, readGetter=$readGetter, readSetter=$readSetter, inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, yapiServer=$yapiServer, yapiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, switchNotice=$switchNotice, loginMode=$loginMode, yapiReqBodyJson5=$yapiReqBodyJson5, yapiResBodyJson5=$yapiResBodyJson5, httpTimeOut=$httpTimeOut, trustHosts=${trustHosts.contentToString()}, useRecommendConfig=$useRecommendConfig, recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', outputDemo=$outputDemo, outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', builtInConfig=$builtInConfig)"
+        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, feignEnable=$feignEnable, jaxrsEnable=$jaxrsEnable, pullNewestDataBefore=$pullNewestDataBefore, postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, postmanExportMode=$postmanExportMode, postmanCollections=$postmanCollections, wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, postmanJson5FormatType='$postmanJson5FormatType', queryExpanded=$queryExpanded, formExpanded=$formExpanded, readGetter=$readGetter, readSetter=$readSetter, inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, yapiServer=$yapiServer, yapiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, switchNotice=$switchNotice, loginMode=$loginMode, yapiReqBodyJson5=$yapiReqBodyJson5, yapiResBodyJson5=$yapiResBodyJson5, httpTimeOut=$httpTimeOut, trustHosts=${trustHosts.contentToString()}, useRecommendConfig=$useRecommendConfig, recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', outputDemo=$outputDemo, outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', builtInConfig=$builtInConfig)"
     }
 
     companion object {

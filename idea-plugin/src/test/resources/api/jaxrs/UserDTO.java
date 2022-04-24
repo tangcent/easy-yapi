@@ -1,4 +1,4 @@
-package com.itangcent.api.quarkus;
+package com.itangcent.api.jaxrs;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;

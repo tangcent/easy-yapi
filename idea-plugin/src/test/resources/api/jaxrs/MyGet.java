@@ -1,4 +1,4 @@
-package com.itangcent.quarkus;
+package com.itangcent.jaxrs;
 
 import javax.ws.rs.HttpMethod;
 import java.lang.annotation.Documented;

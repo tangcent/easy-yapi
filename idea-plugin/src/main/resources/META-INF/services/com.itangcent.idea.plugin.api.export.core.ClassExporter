@@ -3,8 +3,8 @@ com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 com.itangcent.idea.plugin.api.export.yapi.YapiSpringRequestClassExporter
 com.itangcent.idea.plugin.api.export.feign.FeignRequestClassExporter
 com.itangcent.idea.plugin.api.export.feign.SimpleFeignRequestClassExporter
-com.itangcent.idea.plugin.api.export.quarkus.QuarkusRequestClassExporter
-com.itangcent.idea.plugin.api.export.quarkus.SimpleQuarkusRequestClassExporter
+com.itangcent.idea.plugin.api.export.jaxrs.JAXRSRequestClassExporter
+com.itangcent.idea.plugin.api.export.jaxrs.SimpleJAXRSRequestClassExporter
 com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 com.itangcent.idea.plugin.api.export.generic.SimpleGenericMethodDocClassExporter

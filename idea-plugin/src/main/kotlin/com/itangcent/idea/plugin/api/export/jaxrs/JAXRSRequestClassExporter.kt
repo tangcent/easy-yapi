@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.api.export.quarkus
+package com.itangcent.idea.plugin.api.export.jaxrs
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
@@ -22,16 +22,19 @@ import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitField
 
 /**
- * Support export apis from quarkus.
- * doc: [https://code.quarkus.io/]
+ * Support export apis from jax-rs.
+ * dosc:
+ * - https://www.oracle.com/technical-resources/articles/java/jax-rs.html
+ * - https://cxf.apache.org/docs/jax-rs.html
+ * - https://code.quarkus.io/
  *
  * @author tangcent
  */
 @Singleton
 @ConditionOnSimple(false)
-@ConditionOnClass(QuarkusClassName.PATH_ANNOTATION)
-@ConditionOnSetting("quarkusEnable")
-open class QuarkusRequestClassExporter : RequestClassExporter() {
+@ConditionOnClass(JAXRSClassName.PATH_ANNOTATION)
+@ConditionOnSetting("jaxrsEnable")
+open class JAXRSRequestClassExporter : RequestClassExporter() {
 
     @Inject
     protected lateinit var annotationHelper: AnnotationHelper
@@ -40,7 +43,7 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
     protected val commentResolver: CommentResolver? = null
 
     @Inject
-    protected lateinit var quarkusBaseAnnotationParser: QuarkusBaseAnnotationParser
+    protected lateinit var jaxrsBaseAnnotationParser: JAXRSBaseAnnotationParser
 
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
         var basePath = URL.of(findPath(cls))
@@ -52,11 +55,11 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
     }
 
     override fun hasApi(psiClass: PsiClass): Boolean {
-        return quarkusBaseAnnotationParser.hasApi(psiClass)
+        return jaxrsBaseAnnotationParser.hasApi(psiClass)
     }
 
     override fun isApi(psiMethod: PsiMethod): Boolean {
-        return quarkusBaseAnnotationParser.isApi(psiMethod)
+        return jaxrsBaseAnnotationParser.isApi(psiMethod)
     }
 
     override fun processMethod(methodExportContext: MethodExportContext, request: Request) {
@@ -65,7 +68,7 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
         val classExportContext = methodExportContext.classContext()
         val basePath: URL = classExportContext?.getExt("basePath") ?: URL.nil()
         val psiMethod = methodExportContext.psi()
-        request.method = quarkusBaseAnnotationParser.findHttpMethod(psiMethod) ?: HttpMethod.NO_METHOD
+        request.method = jaxrsBaseAnnotationParser.findHttpMethod(psiMethod) ?: HttpMethod.NO_METHOD
         val httpPath = basePath.concat(URL.of(findPath(psiMethod)))
         requestBuilderListener.setPath(methodExportContext, request, httpPath)
     }
@@ -84,7 +87,7 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
         paramDesc: String?
     ) {
         //@BeanParam
-        if (annotationHelper.hasAnn(exportContext.psi(), QuarkusClassName.BEAN_PARAM_ANNOTATION)) {
+        if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.BEAN_PARAM_ANNOTATION)) {
             val beanType = exportContext.type()?.unbox() as? SingleDuckType ?: return
             duckTypeHelper.explicit(beanType).collectFields {
                 processParameterOrField(request, FieldExportContext(exportContext, it), null)
@@ -112,8 +115,8 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
         }
 
         //@FormParam -> form
-        if (annotationHelper.hasAnn(exportContext.psi(), QuarkusClassName.FORM_PARAM_ANNOTATION)) {
-            findParamName(exportContext, QuarkusClassName.FORM_PARAM_ANNOTATION)
+        if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.FORM_PARAM_ANNOTATION)) {
+            findParamName(exportContext, JAXRSClassName.FORM_PARAM_ANNOTATION)
             if (request.method == HttpMethod.NO_METHOD) {
                 requestBuilderListener.setMethod(
                     exportContext, request,
@@ -129,22 +132,22 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
         }
 
         //@QueryParam
-        if (annotationHelper.hasAnn(exportContext.psi(), QuarkusClassName.QUERY_PARAM_ANNOTATION)) {
-            findParamName(exportContext, QuarkusClassName.QUERY_PARAM_ANNOTATION)
+        if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.QUERY_PARAM_ANNOTATION)) {
+            findParamName(exportContext, JAXRSClassName.QUERY_PARAM_ANNOTATION)
             addParamAsQuery(exportContext, request, exportContext.unbox(), ultimateComment)
             return
         }
 
         //@PathParam
-        if (annotationHelper.hasAnn(exportContext.psi(), QuarkusClassName.PATH_PARAM_ANNOTATION)) {
-            val paramName = findParamName(exportContext, QuarkusClassName.PATH_PARAM_ANNOTATION)
+        if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.PATH_PARAM_ANNOTATION)) {
+            val paramName = findParamName(exportContext, JAXRSClassName.PATH_PARAM_ANNOTATION)
             requestBuilderListener.addPathParam(exportContext, request, paramName, ultimateComment)
             return
         }
 
         //@HeaderParam
-        if (annotationHelper.hasAnn(exportContext.psi(), QuarkusClassName.HEADER_PARAM_ANNOTATION)) {
-            val paramName = findParamName(exportContext, QuarkusClassName.HEADER_PARAM_ANNOTATION)
+        if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.HEADER_PARAM_ANNOTATION)) {
+            val paramName = findParamName(exportContext, JAXRSClassName.HEADER_PARAM_ANNOTATION)
 
             val header = Header()
             header.name = paramName
@@ -156,8 +159,8 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
         }
 
         //@CookieParam
-        if (annotationHelper.hasAnn(exportContext.psi(), QuarkusClassName.COOKIE_PARAM_ANNOTATION)) {
-            val paramName = findParamName(exportContext, QuarkusClassName.COOKIE_PARAM_ANNOTATION)
+        if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.COOKIE_PARAM_ANNOTATION)) {
+            val paramName = findParamName(exportContext, JAXRSClassName.COOKIE_PARAM_ANNOTATION)
 
             requestBuilderListener.appendDesc(
                 exportContext,
@@ -176,7 +179,7 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
         }
 
         //@MatrixParam
-        if (annotationHelper.hasAnn(exportContext.psi(), QuarkusClassName.MATRIX_PARAM_ANNOTATION)) {
+        if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.MATRIX_PARAM_ANNOTATION)) {
             //todo:
             logger.info(
                 "@MatrixParam not be supported.\n" +
@@ -207,7 +210,7 @@ open class QuarkusRequestClassExporter : RequestClassExporter() {
     //region process spring annotation-------------------------------------------------------------------
 
     private fun findPath(ele: PsiElement): String? {
-        return annotationHelper.findAttrAsString(ele, QuarkusClassName.PATH_ANNOTATION)
+        return annotationHelper.findAttrAsString(ele, JAXRSClassName.PATH_ANNOTATION)
     }
 
     //endregion process spring annotation-------------------------------------------------------------------
