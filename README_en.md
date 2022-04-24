@@ -9,9 +9,9 @@
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/tangcent/easy-yapi.svg)](http://isitmaintained.com/project/tangcent/easy-yapi "Percentage of issues still open")
 [![Gitter](https://badges.gitter.im/Earth-1610/easy-yapi.svg)](https://gitter.im/Earth-1610/easy-yapi?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-- Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html)&[KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
+- Parsing based on [javadoc](https://docs.oracle.com/javase/8/docs/technotes/tools/windows/javadoc.html) & [KDoc](https://kotlinlang.org/docs/reference/kotlin-doc.html)
 
-- [demo](https://github.com/Earth-1610/spring-demo)
+- [demo](https://github.com/Earth-1610/web-demo)
 
 # Table of Contents
 
@@ -27,7 +27,7 @@
 |   |  support  |  additional  |
 | ------------ | ------------ | ------------ |
 | language | java, kotlin | scala |
-| web | [spring](https://spring.io/), [feign](https://spring.io/projects/spring-cloud-openfeign), [quarkus](https://quarkus.io/) | [dubbo](https://dubbo.apache.org) |
+| web | [spring](https://spring.io/), [feign](https://spring.io/projects/spring-cloud-openfeign), [jaxrs](https://www.oracle.com/technical-resources/articles/java/jax-rs.html) ([quarkus](https://quarkus.io/) or [jersey](https://eclipse-ee4j.github.io/jersey/)) | [dubbo](https://dubbo.apache.org) |
 | channels | [Postman](https://easyyapi.com/documents/export2postman.html), [Yapi](https://easyyapi.com/documents/export2yapi.html), [Markdown](https://easyyapi.com/documents/export2markdown.html) | - |
 | frameworks | javax.validation, Jackson, Gson |  [swagger](https://swagger.io/) |
 
@@ -51,7 +51,7 @@ Installation
 - IntelliJ IDEA
 - IntelliJ IDEA Community Edition
 
-**using IDE plugin system**
+**using IDE plugin market**
 - <kbd>Preferences(Settings)</kbd> > <kbd>Plugins</kbd> > <kbd>Browse repositories...</kbd> > <kbd>find"EasyYapi"</kbd> > <kbd>Install Plugin</kbd>
 
 **Manual:**
