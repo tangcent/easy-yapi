@@ -1,3 +1,9 @@
+* 2.3.7
+
+	* chore: update docs [(#752)](https://github.com/tangcent/easy-yapi/pull/752)
+
+	* feat: rename module quarkus to jaxrs [(#751)](https://github.com/tangcent/easy-yapi/pull/751)
+
 * 2.3.6
 
 	* chore: add Fastjson support [(#745)](https://github.com/tangcent/easy-yapi/pull/745)
