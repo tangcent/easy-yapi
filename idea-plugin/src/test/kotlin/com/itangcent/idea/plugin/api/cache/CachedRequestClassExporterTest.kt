@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.cache
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Request
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
@@ -99,10 +98,11 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
 
     fun testExport() {
         val requests = ArrayList<Request>()
+        val boundary = actionContext.createBoundary()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)
         })
-        (classExporter as Worker).waitCompleted()
+        boundary.waitComplete()
         requests[0].let { request ->
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)
@@ -116,20 +116,19 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals(userCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
         }
         Mockito.verify(delegateClassExporter, times(1))
-            .export(any(), any(), any())
+            .export(any(), any())
 
         TimeUnit.SECONDS.sleep(10)//wait 10s to save cache
-        (classExporter as Worker).waitCompleted()
 
         //export again
         val requestsAgain = ArrayList<Request>()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsAgain.add(it)
         })
-        (classExporter as Worker).waitCompleted()
+        boundary.waitComplete()
         assertEquals(requests, requestsAgain)
         Mockito.verify(delegateClassExporter, times(1))
-            .export(any(), any(), any())
+            .export(any(), any())
 
         //export thrice
         (classExporter as CachedRequestClassExporter).notUserCache()
@@ -137,10 +136,10 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsThrice.add(it)
         })
-        (classExporter as Worker).waitCompleted()
+        boundary.waitComplete()
         assertEquals(requests, requestsThrice)
         Mockito.verify(delegateClassExporter, times(2))
-            .export(any(), any(), any())
+            .export(any(), any())
 
         //export quartic
         (classExporter as CachedRequestClassExporter).userCache()
@@ -148,9 +147,9 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsQuartic.add(it)
         })
-        (classExporter as Worker).waitCompleted()
+        boundary.waitComplete()
         assertEquals(requests, requestsQuartic)
         Mockito.verify(delegateClassExporter, times(2))
-            .export(any(), any(), any())
+            .export(any(), any())
     }
 }

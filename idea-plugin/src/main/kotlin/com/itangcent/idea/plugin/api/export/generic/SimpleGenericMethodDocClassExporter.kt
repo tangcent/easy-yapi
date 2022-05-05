@@ -7,10 +7,6 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.utils.KV
-import com.itangcent.idea.plugin.StatusRecorder
-import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.WorkerStatus
-import com.itangcent.idea.plugin.api.export.core.MethodFilter
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
@@ -32,27 +28,13 @@ import kotlin.reflect.KClass
 @ConditionOnSimple
 @ConditionOnDoc("methodDoc")
 @ConditionOnSetting("genericEnable", "methodDocEnable")
-open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
+open class SimpleGenericMethodDocClassExporter : ClassExporter {
 
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class
-    }
-
-    private var statusRecorder: StatusRecorder = StatusRecorder()
-
-    override fun status(): WorkerStatus {
-        return statusRecorder.status()
-    }
-
-    override fun waitCompleted() {
-        return statusRecorder.waitCompleted()
-    }
-
-    override fun cancel() {
-        return statusRecorder.cancel()
     }
 
     @Inject
@@ -68,27 +50,24 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
     protected val methodFilter: MethodFilter? = null
 
     @Inject
-    protected var actionContext: ActionContext? = null
+    protected lateinit var actionContext: ActionContext
 
     @Inject
     protected var apiHelper: ApiHelper? = null
 
-    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
-            completedHandle(cls)
+
             return false
         }
-        actionContext!!.checkStatus()
-        statusRecorder.newWork()
+        actionContext.checkStatus()
         try {
             when {
                 !hasApi(cls) -> {
-                    completedHandle(cls)
                     return false
                 }
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
-                    completedHandle(cls)
                     return true
                 }
                 else -> {
@@ -107,10 +86,8 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
             }
         } catch (e: Exception) {
             logger!!.traceError(e)
-        } finally {
-            statusRecorder.endWork()
         }
-        completedHandle(cls)
+
         return true
     }
 
@@ -149,7 +126,7 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter, Worker {
 
     private fun exportMethodApi(
         psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
-        docHandle: DocHandle
+        docHandle: DocHandle,
     ) {
 
         actionContext!!.checkStatus()

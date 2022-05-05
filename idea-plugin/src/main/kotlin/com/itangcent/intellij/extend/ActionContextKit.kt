@@ -1,8 +1,10 @@
 package com.itangcent.intellij.extend
 
 import com.itangcent.common.concurrent.ValueHolder
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.TimeSpanUtils
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.logger.Logger
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -35,4 +37,14 @@ fun <T> ActionContext.callWithTimeout(timeout: Long, action: () -> T): T? {
         //ignore
     }
     return resultHolder.value()
+}
+
+fun ActionContext.withBoundary(action: () -> Unit) {
+    val boundary = this.createBoundary()
+    try {
+        action()
+    } catch (e: Exception) {
+        ActionContext.instance(Logger::class).traceError(e)
+    }
+    boundary.waitComplete()
 }

@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -16,6 +15,7 @@ import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.mock.SettingBinderAdaptor
@@ -114,10 +114,11 @@ internal class SimpleFeignRequestClassExporterTest : PluginContextLightCodeInsig
         settings.queryExpanded = true
         settings.formExpanded = true
         val requests = ArrayList<Request>()
-        classExporter.export(userClientPsiClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
+        actionContext.withBoundary {
+            classExporter.export(userClientPsiClass, requestOnly {
+                requests.add(it)
+            })
+        }
         requests[0].let { request ->
             assertEquals("say hello", request.name)
             assertNull(request.desc)

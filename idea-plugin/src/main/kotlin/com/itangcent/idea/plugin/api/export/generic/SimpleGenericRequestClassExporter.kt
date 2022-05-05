@@ -8,9 +8,6 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.stream
-import com.itangcent.idea.plugin.StatusRecorder
-import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
@@ -35,7 +32,7 @@ import kotlin.reflect.KClass
 @Order(Orders.GENERIC)
 @ConditionOnDoc("request")
 @ConditionOnSetting("genericEnable")
-open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
+open class SimpleGenericRequestClassExporter : ClassExporter {
 
     @Inject
     private val annotationHelper: AnnotationHelper? = null
@@ -45,20 +42,6 @@ open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
-    }
-
-    private var statusRecorder: StatusRecorder = StatusRecorder()
-
-    override fun status(): WorkerStatus {
-        return statusRecorder.status()
-    }
-
-    override fun waitCompleted() {
-        return statusRecorder.waitCompleted()
-    }
-
-    override fun cancel() {
-        return statusRecorder.cancel()
     }
 
     @Inject
@@ -73,27 +56,23 @@ open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
     @Inject
     protected var apiHelper: ApiHelper? = null
 
-    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
-            completedHandle(cls)
             return false
         }
         actionContext!!.checkStatus()
-        statusRecorder.newWork()
+
         try {
             when {
                 !hasApi(cls) -> {
-                    completedHandle(cls)
                     return false
                 }
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
-                    completedHandle(cls)
                     return true
                 }
                 else -> {
                     logger!!.info("search api from:${cls.qualifiedName}")
-                    completedHandle(cls)
 
                     foreachMethod(cls) { method ->
                         exportMethodApi(cls, method, docHandle)
@@ -102,9 +81,6 @@ open class SimpleGenericRequestClassExporter : ClassExporter, Worker {
             }
         } catch (e: Exception) {
             logger!!.traceError(e)
-        } finally {
-            statusRecorder.endWork()
-            completedHandle(cls)
         }
         return true
     }

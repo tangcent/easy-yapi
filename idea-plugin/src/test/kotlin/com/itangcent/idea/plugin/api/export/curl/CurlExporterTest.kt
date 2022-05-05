@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
@@ -13,6 +12,7 @@ import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.FileSaveHelperAdaptor
 import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -104,10 +104,12 @@ internal class CurlExporterTest : PluginContextLightCodeInsightFixtureTestCase()
 
     fun testExport() {
         val requests = ArrayList<Request>()
-        classExporter.export(userCtrlPsiClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
+
+        actionContext.withBoundary {
+            classExporter.export(userCtrlPsiClass, requestOnly {
+                requests.add(it)
+            })
+        }
 
         assertNoThrowable { curlExporter.export(emptyList()) }
 

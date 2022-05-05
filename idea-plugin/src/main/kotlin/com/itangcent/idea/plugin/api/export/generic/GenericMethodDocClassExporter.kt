@@ -9,12 +9,8 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.utils.append
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.idea.plugin.StatusRecorder
-import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.MethodInferHelper
-import com.itangcent.idea.plugin.api.export.core.MethodFilter
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
@@ -26,21 +22,23 @@ import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.jvm.JsonOption
+import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.order.Order
+import com.itangcent.utils.disposable
 import kotlin.reflect.KClass
 
 @Order(Orders.GENERIC + Orders.METHOD_DOC)
 @ConditionOnSimple(false)
 @ConditionOnDoc("methodDoc")
 @ConditionOnSetting("genericEnable", "methodDocEnable")
-open class GenericMethodDocClassExporter : ClassExporter, Worker {
+open class GenericMethodDocClassExporter : ClassExporter {
 
     @Inject
     private val docHelper: DocHelper? = null
@@ -56,20 +54,6 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class
-    }
-
-    private var statusRecorder: StatusRecorder = StatusRecorder()
-
-    override fun status(): WorkerStatus {
-        return statusRecorder.status()
-    }
-
-    override fun waitCompleted() {
-        return statusRecorder.waitCompleted()
-    }
-
-    override fun cancel() {
-        return statusRecorder.cancel()
     }
 
     @Inject
@@ -97,7 +81,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     protected val methodFilter: MethodFilter? = null
 
     @Inject
-    protected var actionContext: ActionContext? = null
+    protected lateinit var actionContext: ActionContext
 
     @Inject
     protected var apiHelper: ApiHelper? = null
@@ -105,22 +89,33 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     @Inject
     private lateinit var classApiExporterHelper: ClassApiExporterHelper
 
-    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+    @Inject
+    private val contextSwitchListener: ContextSwitchListener? = null
+
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
-            completedHandle(cls)
+
             return false
         }
-        actionContext!!.checkStatus()
-        statusRecorder.newWork()
+        contextSwitchListener?.switchTo(cls)
+
+        actionContext.checkStatus()
+
+        val disposable = {
+            actionContext.callInReadUI {
+                ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_AFTER, cls)
+            }
+        }.disposable()
+
         try {
             when {
                 !hasApi(cls) -> {
-                    completedHandle(cls)
+                    disposable()
                     return false
                 }
                 shouldIgnore(cls) -> {
                     logger.info("ignore class:" + cls.qualifiedName)
-                    completedHandle(cls)
+                    disposable()
                     return true
                 }
             }
@@ -129,32 +124,30 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
             ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_BEFORE, cls)
 
-            try {
-                val classExportContext = ClassExportContext(cls)
+            val classExportContext = ClassExportContext(cls)
 
-                processClass(cls, classExportContext)
+            processClass(cls, classExportContext)
 
-                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
-                    val method = explicitMethod.psi()
-                    if (isApi(method) && methodFilter?.checkMethod(method) != false) {
-                        try {
-                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_BEFORE, explicitMethod)
-                            exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
-                        } finally {
-                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
+            actionContext.runAsync {
+                actionContext.withBoundary {
+                    classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
+                        val method = explicitMethod.psi()
+                        if (isApi(method) && methodFilter?.checkMethod(method) != false) {
+                            try {
+                                ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_BEFORE, explicitMethod)
+                                exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
+                            } finally {
+                                ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
+                            }
                         }
                     }
                 }
-            } finally {
-                ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_AFTER, cls)
+                disposable()
             }
-
-        } catch (e: Exception) {
-            logger.traceError(e)
-        } finally {
-            statusRecorder.endWork()
+        } catch (e: Throwable) {
+            logger.traceError("error to export api from class:" + cls.name, e)
+            disposable()
         }
-        completedHandle(cls)
         return true
     }
 
@@ -194,7 +187,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
     private fun exportMethodApi(
         psiClass: PsiClass, method: ExplicitMethod,
         classExportContext: ClassExportContext,
-        docHandle: DocHandle
+        docHandle: DocHandle,
     ) {
 
         actionContext!!.checkStatus()
@@ -222,7 +215,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
 
     protected open fun processMethod(
         methodExportContext: MethodExportContext,
-        methodDoc: MethodDoc
+        methodDoc: MethodDoc,
     ) {
         apiHelper!!.nameAndAttrOfApi(methodExportContext.element(), {
             methodDocBuilderListener.setName(methodExportContext, methodDoc, it)
@@ -351,7 +344,7 @@ open class GenericMethodDocClassExporter : ClassExporter, Worker {
         methodExportContext: MethodExportContext,
         methodDoc: MethodDoc,
         param: ExplicitParameter,
-        paramDesc: String?
+        paramDesc: String?,
     ) {
         val paramType = param.getType() ?: return
         val typeObject = psiClassHelper!!.getTypeObject(

@@ -3,13 +3,13 @@ package com.itangcent.idea.plugin.api.export.curl
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.Request
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
@@ -87,10 +87,11 @@ internal class CurlFormatterTest : PluginContextLightCodeInsightFixtureTestCase(
 
     fun testParseRequest() {
         val requests = ArrayList<Request>()
-        classExporter.export(userCtrlPsiClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
+        actionContext.withBoundary {
+            classExporter.export(userCtrlPsiClass, requestOnly {
+                requests.add(it)
+            })
+        }
 
 
         assertEquals("curl -X GET http://localhost:8080/user/greeting", curlFormatter.parseRequest(requests[0]))
@@ -118,13 +119,15 @@ internal class CurlFormatterTest : PluginContextLightCodeInsightFixtureTestCase(
 
     fun testParseRequests() {
         val requests = ArrayList<Request>()
+        val boundary = actionContext.createBoundary()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)
         })
+        boundary.waitComplete()
         classExporter.export(testCtrlPsiClass, requestOnly {
             requests.add(it)
         })
-        (classExporter as Worker).waitCompleted()
+        boundary.waitComplete()
 
         assertEquals(ResultLoader.load(), curlFormatter.parseRequests(requests))
 

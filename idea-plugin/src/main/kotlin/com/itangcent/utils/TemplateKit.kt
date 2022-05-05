@@ -1,7 +1,5 @@
 package com.itangcent.utils
 
-import com.itangcent.common.utils.mapToTypedArray
-
 object TemplateKit {
 
     fun resolvePlaceHolder(placeHolder: Any?): Array<Char>? {

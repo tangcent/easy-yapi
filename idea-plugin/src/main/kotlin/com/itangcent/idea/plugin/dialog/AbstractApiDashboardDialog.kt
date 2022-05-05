@@ -17,7 +17,6 @@ import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompletedHandle
 import com.itangcent.idea.plugin.api.export.core.docs
 import com.itangcent.idea.plugin.api.export.curl.CurlExporter
 import com.itangcent.idea.psi.PsiResource
@@ -29,6 +28,7 @@ import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.idea.utils.reload
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.rx.AutoComputer
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.FileType
@@ -43,6 +43,7 @@ import java.io.Serializable
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Future
+import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
@@ -221,14 +222,16 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     }
 
     protected fun copyCurl(docContainer: DocContainer) {
-        val requests = arrayListOf<Request>()
-        docContainer.docs { doc -> (doc as? Request)?.let { requests.add(it) } }
-        actionContext.instance(CurlExporter::class).export(requests)
+        actionContext.runAsync {
+            val requests = arrayListOf<Request>()
+            docContainer.docs { doc -> (doc as? Request)?.let { requests.add(it) } }
+            actionContext.instance(CurlExporter::class).export(requests)
+        }
     }
 
     private fun loadApiInModule(
         moduleData: ModuleProjectNodeData,
-        completedHandle: () -> Unit = {}
+        completedHandle: () -> Unit = {},
     ) {
         val rootTreeModel = projectApiTree!!.model
         moduleData.removeAllSub()
@@ -320,33 +323,45 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         }
     }
 
+    private val apiLoaderConcurrency = Semaphore(8)
+
     private fun loadApiInClass(
         psiClass: PsiClass,
         classProjectNodeData: (ApiProjectNodeData) -> ClassProjectNodeData,
-        completedHandle: CompletedHandle
+        completedHandle: () -> Unit,
     ) {
-        classExporter!!.export(psiClass, docs {
-            filterDoc(it)?.let { doc ->
-                if (disposed) {
-                    LOG.info("interrupt export api from ${psiClass.name} because the action ${this::class.simpleName} was disposed")
-                    return@docs
+        apiLoaderConcurrency.acquire()
+        actionContext.runAsync {
+            try {
+                actionContext.withBoundary {
+                    classExporter!!.export(psiClass, docs {
+                        filterDoc(it)?.let { doc ->
+                            if (disposed) {
+                                LOG.info("interrupt export api from ${psiClass.name} because the action ${this::class.simpleName} was disposed")
+                                return@docs
+                            }
+                            if (doc.resource == null) {
+                                return@docs
+                            }
+                            val apiProjectNodeData = ApiProjectNodeData(this, doc)
+                            classProjectNodeData(apiProjectNodeData).addSubNodeData(
+                                apiProjectNodeData
+                            )
+                        }
+                    })
                 }
-                if (doc.resource == null) {
-                    return@docs
-                }
-                val apiProjectNodeData = ApiProjectNodeData(this, doc)
-                classProjectNodeData(apiProjectNodeData).addSubNodeData(
-                    apiProjectNodeData
-                )
+                completedHandle()
+            } finally {
+                apiLoaderConcurrency.release()
             }
-        }, completedHandle)
+        }
     }
 
     private fun traversal(
         psiDirectory: PsiDirectory,
         keepRunning: () -> Boolean,
         fileFilter: (PsiFile) -> Boolean,
-        fileHandle: (PsiFile) -> Unit
+        fileHandle: (PsiFile) -> Unit,
     ) {
         val dirStack: Stack<PsiDirectory> = Stack()
         var dir: PsiDirectory? = psiDirectory
@@ -431,9 +446,9 @@ abstract class AbstractApiDashboardDialog : JDialog() {
 
         @Suppress("UNCHECKED_CAST")
         fun removeFromParent() {
-            if(parentProjectNodeData==null){
+            if (parentProjectNodeData == null) {
                 treeNode?.removeFromParent()
-            }else {
+            } else {
                 parentProjectNodeData?.asNode()?.removeSub(this as T)
             }
         }
@@ -506,7 +521,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         }
 
         override fun refreshEnable(): Boolean {
-            return status ==NodeStatus.Loaded
+            return status == NodeStatus.Loaded
         }
 
         var status = NodeStatus.Unload
@@ -519,7 +534,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     class ClassProjectNodeData(
         private val apiDashboardDialog: AbstractApiDashboardDialog,
         var cls: PsiClass,
-        var attr: String?
+        var attr: String?,
     ) : ProjectNodeData(), IconCustomized, ToolTipAble {
         override fun toolTip(): String? {
             return cls.qualifiedName

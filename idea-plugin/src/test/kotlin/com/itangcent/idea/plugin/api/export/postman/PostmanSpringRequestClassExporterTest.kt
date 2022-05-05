@@ -3,12 +3,12 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
@@ -42,10 +42,11 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
 
     fun testExport() {
         val requests = ArrayList<Request>()
-        classExporter.export(userCtrlPsiClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
+        actionContext.withBoundary {
+            classExporter.export(userCtrlPsiClass, requestOnly {
+                requests.add(it)
+            })
+        }
         requests[0].let { request ->
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)

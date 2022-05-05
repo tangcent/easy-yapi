@@ -3,8 +3,6 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
@@ -41,13 +39,15 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
         assertFalse(classExporter.support(MethodDoc::class))
 
         val requests = ArrayList<Request>()
+        val boundary = actionContext.createBoundary()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)
         })
+        boundary.waitComplete()
         classExporter.export(defaultCtrlPsiClass, requestOnly {
             requests.add(it)
         })
-        (classExporter as Worker).waitCompleted()
+        boundary.waitComplete()
         requests[0].let { request ->
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)

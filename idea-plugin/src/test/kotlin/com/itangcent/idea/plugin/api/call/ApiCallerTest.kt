@@ -5,7 +5,6 @@ import com.intellij.psi.PsiFile
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.DocHandle
 import com.itangcent.intellij.context.ActionContext
@@ -13,6 +12,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
+import com.itangcent.test.assertLinesContain
 import com.itangcent.test.mock
 import com.itangcent.test.workAt
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -22,7 +22,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import java.util.concurrent.CountDownLatch
 
 /**
  * Test case with [ApiCaller]
@@ -49,16 +48,12 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
 
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
         builder.bindInstance(ClassExporter::class,
-            mock<ClassExporter>(extraInterfaces = arrayOf(Worker::class))
+            mock<ClassExporter>()
                 .also { classExporter ->
                     Mockito.`when`(classExporter.export(any(), any()))
                         .thenAnswer { invocationOnMock ->
                             val docHandle = invocationOnMock.getArgument<DocHandle>(1)
                             return@thenAnswer onExport(docHandle)
-                        }
-                    Mockito.`when`((classExporter as Worker).waitCompleted())
-                        .thenAnswer {
-                            waitCompleted()
                         }
                 })
         builder.mock(ApiCallUI::class) { apiCallUI ->
@@ -77,10 +72,6 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
         return true
     }
 
-    open fun waitCompleted() {
-        //NOP
-    }
-
     class NoRequestBeFoundApiCallerTest : ApiCallerTest() {
 
         fun testShowCallWindow() {
@@ -94,16 +85,16 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
         }
     }
 
-    class WaitExportFailedApiCallerTest : ApiCallerTest() {
+    class ExportFailedApiCallerTest : ApiCallerTest() {
 
-        override fun waitCompleted() {
+        override fun onExport(docHandle: DocHandle): Boolean {
             throw RuntimeException("export time out")
         }
 
         fun testShowCallWindow() {
             apiCaller.showCallWindow()
             actionContext.waitComplete()
-            assertEquals(
+            assertLinesContain(
                 ResultLoader.load(),
                 LoggerCollector.getLog().replace(Regex("\\d"), "").toUnixString()
             )
@@ -146,28 +137,15 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
             it.path = URL.of("/b")
         })
 
-        private val countDownLatch = CountDownLatch(1)
-
         override fun onExport(docHandle: DocHandle): Boolean {
             requests.forEach(docHandle)
             return true
         }
 
-        override fun waitCompleted() {
-            super.waitCompleted()
-            countDownLatch.countDown()
-        }
-
         fun testShowCallWindow() {
-            actionContext.hold()
-            try {
-                apiCaller.showCallWindow()
-                countDownLatch.await()
-                Thread.sleep(1000)
-                actionContext.instance(ApiCaller::class).showCallWindow()
-            } finally {
-                actionContext.unHold()
-            }
+            apiCaller.showCallWindow()
+            Thread.sleep(1000)
+            actionContext.instance(ApiCaller::class).showCallWindow()
             actionContext.waitComplete()
             assertEquals(
                 "[INFO]\tStart find apis...\n",
