@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
@@ -51,13 +50,15 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
          */
         fun testDoc2Items() {
             val requests = ArrayList<Request>()
+            val boundary = actionContext.createBoundary()
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
+            boundary.waitComplete()
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            (classExporter as Worker).waitCompleted()
+            boundary.waitComplete()
             assertEquals(
                 "[{\"res_body\":\"{\\\"type\\\":\\\"string\\\",\\\"\$schema\\\":\\\"http://json-schema.org/draft-04/schema#\\\"}\",\"query_path\":{\"path\":\"/user/greeting\",\"params\":[]},\"method\":\"GET\",\"res_body_type\":\"json\",\"index\":0,\"type\":\"static\",\"title\":\"say hello\",\"path\":\"/user/greeting\",\"req_body_is_json_schema\":false,\"__v\":0,\"markdown\":\"not update anything\",\"req_headers\":[],\"edit_uid\":0,\"up_time\":1618124194,\"tag\":[],\"req_query\":[],\"api_opened\":true,\"add_time\":1618124194,\"res_body_is_json_schema\":true,\"status\":\"done\",\"desc\":\"\\u003cp\\u003enot update anything\\u003c/p\\u003e\"}]",
                 yapiFormatter.doc2Items(requests[0]).toJson()
@@ -92,13 +93,15 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
             settings.yapiReqBodyJson5 = true
             settings.yapiResBodyJson5 = true
             val requests = ArrayList<Request>()
+            val boundary = actionContext.createBoundary()
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
+            boundary.waitComplete()
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            (classExporter as Worker).waitCompleted()
+            boundary.waitComplete()
             assertEquals(
                 "[{\"res_body\":\"\\\"\\\"\",\"query_path\":{\"path\":\"/user/greeting\",\"params\":[]},\"method\":\"GET\",\"res_body_type\":\"json\",\"index\":0,\"type\":\"static\",\"title\":\"say hello\",\"path\":\"/user/greeting\",\"req_body_is_json_schema\":false,\"__v\":0,\"markdown\":\"not update anything\",\"req_headers\":[],\"edit_uid\":0,\"up_time\":1618124194,\"tag\":[],\"req_query\":[],\"api_opened\":true,\"add_time\":1618124194,\"res_body_is_json_schema\":false,\"status\":\"done\",\"desc\":\"\\u003cp\\u003enot update anything\\u003c/p\\u003e\"}]",
                 yapiFormatter.doc2Items(requests[0]).toJson()!!.toUnixString()
@@ -150,13 +153,15 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
          */
         fun testDoc2Items() {
             val requests = ArrayList<Request>()
+            val boundary = actionContext.createBoundary()
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
+            boundary.waitComplete()
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            (classExporter as Worker).waitCompleted()
+            boundary.waitComplete()
             assertEquals(
                 "[{\"res_body\":\"{\\\"type\\\":\\\"string\\\",\\\"\$schema\\\":\\\"http://json-schema.org/draft-04/schema#\\\"}\",\"query_path\":{\"path\":\"/user/greeting\",\"params\":[]},\"method\":\"GET\",\"res_body_type\":\"json\",\"index\":0,\"type\":\"static\",\"title\":\"say hello\",\"path\":\"/user/greeting\",\"req_body_is_json_schema\":false,\"__v\":0,\"markdown\":\"not update anything\",\"req_headers\":[],\"edit_uid\":0,\"up_time\":1618124194,\"tag\":[],\"req_query\":[],\"api_opened\":true,\"add_time\":1618124194,\"res_body_is_json_schema\":true,\"status\":\"done\",\"desc\":\"\\u003cp\\u003enot update anything\\u003c/p\\u003e\"}]",
                 yapiFormatter.doc2Items(requests[0]).toJson()
@@ -191,13 +196,15 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
             settings.yapiReqBodyJson5 = true
             settings.yapiResBodyJson5 = true
             val requests = ArrayList<Request>()
+            val boundary = actionContext.createBoundary()
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
+            boundary.waitComplete()
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            (classExporter as Worker).waitCompleted()
+            boundary.waitComplete()
             assertEquals(
                 "[{\"res_body\":\"\\\"\\\"\",\"query_path\":{\"path\":\"/user/greeting\",\"params\":[]},\"method\":\"GET\",\"res_body_type\":\"json\",\"index\":0,\"type\":\"static\",\"title\":\"say hello\",\"path\":\"/user/greeting\",\"req_body_is_json_schema\":false,\"__v\":0,\"markdown\":\"not update anything\",\"req_headers\":[],\"edit_uid\":0,\"up_time\":1618124194,\"tag\":[],\"req_query\":[],\"api_opened\":true,\"add_time\":1618124194,\"res_body_is_json_schema\":false,\"status\":\"done\",\"desc\":\"\\u003cp\\u003enot update anything\\u003c/p\\u003e\"}]",
                 yapiFormatter.doc2Items(requests[0]).toJson()!!.toUnixString()

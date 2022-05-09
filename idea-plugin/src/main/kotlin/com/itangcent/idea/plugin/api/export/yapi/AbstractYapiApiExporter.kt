@@ -26,7 +26,7 @@ open class AbstractYapiApiExporter {
     protected lateinit var yapiSettingsHelper: YapiSettingsHelper
 
     @Inject
-    protected val actionContext: ActionContext? = null
+    protected lateinit var actionContext: ActionContext
 
     @Inject
     protected val classExporter: ClassExporter? = null
@@ -59,7 +59,7 @@ open class AbstractYapiApiExporter {
     protected open fun getCartForResource(resource: Any): CartInfo? {
 
         //get token
-        val module = actionContext!!.callInReadUI { moduleHelper!!.findModule(resource) } ?: return null
+        val module = actionContext.callInReadUI { moduleHelper!!.findModule(resource) } ?: return null
         val privateToken = getTokenOfModule(module)
         if (privateToken == null) {
             logger!!.info("No token be found for $module")

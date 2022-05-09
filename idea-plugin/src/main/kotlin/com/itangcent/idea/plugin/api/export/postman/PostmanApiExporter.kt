@@ -7,7 +7,6 @@ import com.itangcent.cache.CacheSwitcher
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.PostmanExportMode
@@ -21,7 +20,6 @@ import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType
 import java.util.*
-import kotlin.collections.HashMap
 
 
 @Singleton
@@ -37,7 +35,7 @@ class PostmanApiExporter {
     private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
     @Inject
-    private val actionContext: ActionContext? = null
+    private lateinit var actionContext: ActionContext
 
     @Inject
     private val classExporter: ClassExporter? = null
@@ -58,42 +56,44 @@ class PostmanApiExporter {
         logger.info("Start find apis...")
         val requests: MutableList<Request> = Collections.synchronizedList(ArrayList<Request>())
 
-        SelectedHelper.Builder()
-            .dirFilter { dir, callBack ->
-                actionContext!!.runInSwingUI {
-                    try {
-                        val yes = messagesHelper.showYesNoDialog(
-                            "Export the api in directory [${ActionUtils.findCurrentPath(dir)}]?",
-                            "Confirm",
-                            Messages.getQuestionIcon()
-                        )
-                        if (yes == Messages.YES) {
-                            callBack(true)
-                        } else {
-                            logger.debug("Cancel the operation export api from [${ActionUtils.findCurrentPath(dir)}]!")
+        val boundary = actionContext.createBoundary()
+        try {
+            SelectedHelper.Builder()
+                .dirFilter { dir, callBack ->
+                    actionContext.runInSwingUI {
+                        try {
+                            val yes = messagesHelper.showYesNoDialog(
+                                "Export the api in directory [${ActionUtils.findCurrentPath(dir)}]?",
+                                "Confirm",
+                                Messages.getQuestionIcon()
+                            )
+                            if (yes == Messages.YES) {
+                                callBack(true)
+                            } else {
+                                logger.debug("Cancel the operation export api from [${ActionUtils.findCurrentPath(dir)}]!")
+                                callBack(false)
+                            }
+                        } catch (e: Exception) {
                             callBack(false)
                         }
-                    } catch (e: Exception) {
-                        callBack(false)
                     }
                 }
-            }
-            .fileFilter { file -> FileType.acceptable(file.name) }
-            .classHandle {
-                classExporter!!.export(it, requestOnly { request -> requests.add(request) })
-            }
-            .onCompleted {
-                try {
-                    if (classExporter is Worker) {
-                        classExporter.waitCompleted()
-                    }
-                    export(requests)
-                } catch (e: Exception) {
-                    logger.traceError("Apis save failed", e)
+                .fileFilter { file -> FileType.acceptable(file.name) }
+                .classHandle {
+                    classExporter!!.export(it, requestOnly { request -> requests.add(request) })
+                }
+                .traversal()
+        } catch (e: Exception) {
+            logger.traceError("failed export apis!", e)
+        }
 
-                }
-            }
-            .traversal()
+        try {
+            boundary.waitComplete()
+            export(requests)
+        } catch (e: Exception) {
+            logger.traceError("Apis save failed", e)
+
+        }
     }
 
     fun export(requests: MutableList<Request>) {
@@ -143,7 +143,7 @@ class PostmanApiExporter {
 
     private fun createCollection(
         requests: MutableList<Request>,
-        workspaceId: String?
+        workspaceId: String?,
     ) {
         val postman = postmanFormatter.parseRequests(requests)
         val createdCollection = postmanApiHelper.createCollection(postman, workspaceId)
@@ -208,7 +208,7 @@ class PostmanApiExporter {
     private fun updateRequestsToCollection(
         collectionId: String,
         collectionInfo: HashMap<String, Any?>,
-        requests: ArrayList<Request>
+        requests: ArrayList<Request>,
     ) {
         postmanFormatter.parseRequestsToCollection(collectionInfo, requests)
         postmanApiHelper.updateCollection(collectionId, collectionInfo)

@@ -9,12 +9,12 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.stream
 import com.itangcent.idea.condition.annotation.ConditionOnClass
-import com.itangcent.idea.plugin.StatusRecorder
-import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
-import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.core.ApiHelper
+import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.DocHandle
 import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.intellij.config.rule.RuleComputer
@@ -32,7 +32,7 @@ import kotlin.reflect.KClass
 @ConditionOnClass(JAXRSClassName.PATH_ANNOTATION)
 @ConditionOnDoc("request")
 @ConditionOnSetting("jaxrsEnable")
-open class SimpleJAXRSRequestClassExporter : ClassExporter, Worker {
+open class SimpleJAXRSRequestClassExporter : ClassExporter {
 
     @Inject
     protected lateinit var annotationHelper: AnnotationHelper
@@ -47,20 +47,6 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter, Worker {
         return docType == Request::class
     }
 
-    private var statusRecorder: StatusRecorder = StatusRecorder()
-
-    override fun status(): WorkerStatus {
-        return statusRecorder.status()
-    }
-
-    override fun waitCompleted() {
-        return statusRecorder.waitCompleted()
-    }
-
-    override fun cancel() {
-        return statusRecorder.cancel()
-    }
-
     @Inject
     private val logger: Logger? = null
 
@@ -73,27 +59,27 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter, Worker {
     @Inject
     protected var apiHelper: ApiHelper? = null
 
-    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
-            completedHandle(cls)
+
             return false
         }
         actionContext!!.checkStatus()
-        statusRecorder.newWork()
+
         try {
             when {
                 !JAXRSBaseAnnotationParser.hasApi(cls) -> {
-                    completedHandle(cls)
+
                     return false
                 }
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class:" + cls.qualifiedName)
-                    completedHandle(cls)
+
                     return true
                 }
                 else -> {
                     logger!!.info("search api from:${cls.qualifiedName}")
-                    completedHandle(cls)
+
 
                     foreachMethod(cls) { method ->
                         exportMethodApi(cls, method, docHandle)
@@ -102,10 +88,7 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter, Worker {
             }
         } catch (e: Exception) {
             logger!!.traceError(e)
-        } finally {
-            statusRecorder.endWork()
         }
-        completedHandle(cls)
         return true
     }
 

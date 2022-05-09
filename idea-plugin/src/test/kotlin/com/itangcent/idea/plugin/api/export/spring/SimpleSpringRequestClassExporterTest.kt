@@ -4,18 +4,17 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.collections.ArrayList
 
 /**
  * Test case of [SimpleSpringRequestClassExporter]
@@ -67,10 +66,11 @@ internal class SimpleSpringRequestClassExporterTest
         assertFalse(classExporter.support(MethodDoc::class))
 
         val requests = ArrayList<Request>()
-        classExporter.export(userCtrlPsiClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
+        actionContext.withBoundary {
+            classExporter.export(userCtrlPsiClass, requestOnly {
+                requests.add(it)
+            })
+        }
         requests[0].let { request ->
             assertEquals("say hello", request.name)
             assertNull(request.desc)

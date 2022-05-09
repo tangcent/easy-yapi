@@ -19,6 +19,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.mock.*
 import com.itangcent.test.ResultLoader
 import com.itangcent.test.TimeZoneKit.STANDARD_TIME
+import com.itangcent.test.assertLinesEqualsIgnoreOrder
 import com.itangcent.test.mock
 import com.itangcent.test.workAt
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -140,7 +141,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
                 ResultLoader.load(),
                 GsonUtils.prettyJson(apis)
             )
-            assertEquals(
+            assertLinesEqualsIgnoreOrder(
                 ResultLoader.load("log"),
                 LoggerCollector.getLog().toUnixString()
             )
@@ -188,11 +189,12 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
         fun testExportSpring() {
             yapiApiExporter.export()
             actionContext.waitComplete()
+            apis.sortBy { it.toString() }
             assertEquals(
                 ResultLoader.load(),
                 GsonUtils.prettyJson(apis)
             )
-            assertEquals(
+            assertLinesEqualsIgnoreOrder(
                 ResultLoader.load("log"),
                 LoggerCollector.getLog().toUnixString()
             )

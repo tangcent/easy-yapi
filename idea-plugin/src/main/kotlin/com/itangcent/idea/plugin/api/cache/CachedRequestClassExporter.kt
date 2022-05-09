@@ -9,16 +9,13 @@ import com.itangcent.cache.CacheSwitcher
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.idea.plugin.StatusRecorder
-import com.itangcent.idea.plugin.Worker
-import com.itangcent.idea.plugin.WorkerStatus
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompletedHandle
 import com.itangcent.idea.plugin.api.export.core.DocHandle
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
@@ -27,34 +24,10 @@ import java.io.File
 import kotlin.reflect.KClass
 
 @Singleton
-class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
+class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
 
     override fun support(docType: KClass<*>): Boolean {
         return delegateClassExporter?.support(docType) ?: false
-    }
-
-    private var statusRecorder: StatusRecorder = StatusRecorder()
-
-    override fun status(): WorkerStatus {
-        return when (delegateClassExporter) {
-            is Worker -> statusRecorder.status().and(delegateClassExporter.status())
-            else -> statusRecorder.status()
-        }
-    }
-
-    override fun waitCompleted() {
-        when (delegateClassExporter) {
-            is Worker -> {
-                statusRecorder.waitCompleted()
-                delegateClassExporter.waitCompleted()
-            }
-            else -> {
-                statusRecorder.waitCompleted()
-            }
-        }
-    }
-
-    override fun cancel() {
     }
 
     @Inject
@@ -72,23 +45,22 @@ class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
     private val fileApiCacheRepository: FileApiCacheRepository? = null
 
     @Inject
-    private val actionContext: ActionContext? = null
+    private lateinit var actionContext: ActionContext
 
     //no use cache,no read,no write
     private var disabled: Boolean = false
 
-    override fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean {
+    override fun export(cls: Any, docHandle: DocHandle): Boolean {
 
         if (disabled || cls !is PsiClass) {
-            return delegateClassExporter!!.export(cls, docHandle, completedHandle)
+            return delegateClassExporter!!.export(cls, docHandle)
         }
 
-        val psiFile = cls.containingFile
-        val text = psiFile.text
+        val psiFile = actionContext.callInReadUI { cls.containingFile }!!
+        val text = actionContext.callInReadUI { psiFile.text } ?: ""
         val path = ActionUtils.findCurrentPath(psiFile)!!
             .replace(File.separator, "_")
-        statusRecorder.newWork()
-        actionContext!!.runAsync {
+        actionContext.runAsync {
             try {
                 val md5 = "${text.length}x${text.hashCode()}"//use length+hashcode
                 var fileApiCache: FileApiCache?
@@ -100,16 +72,10 @@ class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
                     ) {
 
                         if (fileApiCache.requests.notNullOrEmpty()) {
-                            statusRecorder.newWork()
                             actionContext.runInReadUI {
-                                try {
-                                    readApiFromCache(cls, fileApiCache!!, docHandle, completedHandle)
-                                } finally {
-                                    statusRecorder.endWork()
-                                }
+                                readApiFromCache(cls, fileApiCache!!, docHandle)
                             }
                         }
-                        completedHandle(cls)
                         return@runAsync
                     }
                 }
@@ -119,44 +85,31 @@ class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
                 val requests = ArrayList<RequestWithKey>()
                 fileApiCache.requests = requests
 
-                statusRecorder.newWork()
                 actionContext.runInReadUI {
-                    try {
+                    actionContext.withBoundary {
                         delegateClassExporter!!.export(cls, requestOnly { request ->
                             docHandle(request)
+                            val fullName = PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
                             requests.add(
                                 RequestWithKey(
-                                    PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!), request
+                                    fullName, request
                                 )
                             )
-                        }, completedHandle)
-                        actionContext.runAsync {
-                            fileApiCache.md5 = md5
-                            fileApiCache.lastModified = System.currentTimeMillis()
-                            fileApiCacheRepository!!.saveFileApiCache(path, fileApiCache)
-                        }
-                    } finally {
-                        statusRecorder.endWork()
+                        })
+                    }
+                    actionContext.runAsync {
+                        fileApiCache.md5 = md5
+                        fileApiCache.lastModified = System.currentTimeMillis()
+                        fileApiCacheRepository!!.saveFileApiCache(path, fileApiCache)
                     }
                 }
             } catch (e: ProcessCanceledException) {
-                //ignore cancel
-                completedHandle(cls)
+                return@runAsync
             } catch (e: Exception) {
                 logger.traceError("error to cache api info", e)
 
                 disabled = true
-
-                statusRecorder.newWork()
-                actionContext.runInReadUI {
-                    try {
-                        delegateClassExporter!!.export(cls, docHandle, completedHandle)
-                    } finally {
-                        statusRecorder.endWork()
-                    }
-                }
-            } finally {
-                statusRecorder.endWork()
+                delegateClassExporter!!.export(cls, docHandle)
             }
         }
         return true
@@ -164,7 +117,6 @@ class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
 
     private fun readApiFromCache(
         cls: PsiClass, fileApiCache: FileApiCache, requestHandle: DocHandle,
-        completedHandle: CompletedHandle
     ) {
         fileApiCache.requests?.forEach { request ->
             val method = request.key?.let { PsiClassUtils.findMethodFromFullName(it, cls as PsiElement) }
@@ -177,8 +129,6 @@ class CachedRequestClassExporter : ClassExporter, Worker, CacheSwitcher {
                 requestHandle(it)
             }
         }
-        completedHandle(cls)
-
     }
 
     override fun notUserCache() {

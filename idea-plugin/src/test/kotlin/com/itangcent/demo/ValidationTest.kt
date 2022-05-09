@@ -2,12 +2,10 @@ package com.itangcent.demo
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.ResourceUtils
 import com.itangcent.common.utils.appendln
-import com.itangcent.idea.plugin.Worker
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.api.export.yapi.YapiFormatter
 import com.itangcent.idea.plugin.api.export.yapi.YapiSpringClassExporterBaseTest
@@ -15,7 +13,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.toPrettyString
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.ImmutableSystemProvider
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.test.ResultLoader
@@ -86,10 +84,11 @@ internal class ValidationTest : YapiSpringClassExporterBaseTest() {
      */
     fun testDoc2Item() {
         val requests = ArrayList<Request>()
-        classExporter.export(validationCtrlPsiClass, requestOnly {
-            requests.add(it)
-        })
-        (classExporter as Worker).waitCompleted()
+        actionContext.withBoundary {
+            classExporter.export(validationCtrlPsiClass, requestOnly {
+                requests.add(it)
+            })
+        }
         assertEquals(
             ResultLoader.load(),
             GsonUtils.prettyJson(yapiFormatter.doc2Items(requests[0]))

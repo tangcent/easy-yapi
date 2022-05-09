@@ -10,10 +10,11 @@ import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.LinkResolver
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
-import java.util.*
+import kotlin.streams.toList
 
 @Singleton
 open class ClassApiExporterHelper {
@@ -39,6 +40,9 @@ open class ClassApiExporterHelper {
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
 
+    @Inject
+    protected lateinit var actionContext: ActionContext
+
     fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
         val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
 
@@ -55,7 +59,7 @@ open class ClassApiExporterHelper {
                     override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
                         psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name)
-                                ?.let { options.addAll(it) }
+                            ?.let { options.addAll(it) }
 
                         return super.linkToPsiElement(plainText, linkTo)
                     }
@@ -94,15 +98,30 @@ open class ClassApiExporterHelper {
         return methodParamComment
     }
 
-    fun foreachMethod(cls: PsiClass, handle: (ExplicitMethod) -> Unit) {
-        duckTypeHelper!!.explicit(cls)
+    /**
+     * @param handle the handle will be called in ReadUI
+     */
+    fun foreachMethod(
+        cls: PsiClass, handle: (ExplicitMethod) -> Unit,
+    ) {
+        actionContext.runInReadUI {
+            val methods = duckTypeHelper!!.explicit(cls)
                 .methods()
                 .stream()
                 .filter { !jvmClassHelper!!.isBasicMethod(it.psi().name) }
                 .filter { !it.psi().hasModifierProperty("static") }
                 .filter { !it.psi().isConstructor }
                 .filter { !shouldIgnore(it) }
-                .forEach(handle)
+                .toList()
+            actionContext.runAsync {
+                for (method in methods) {
+                    actionContext.callInReadUI {
+                        handle(method)
+                    }
+                    Thread.sleep(100)
+                }
+            }
+        }
     }
 
     protected open fun shouldIgnore(explicitElement: ExplicitElement<*>): Boolean {

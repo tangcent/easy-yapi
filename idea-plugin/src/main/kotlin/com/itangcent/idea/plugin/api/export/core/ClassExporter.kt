@@ -10,24 +10,13 @@ interface ClassExporter {
     /**
      * @return return true if this ClassExporter can parse the cls
      */
-    fun export(cls: Any, docHandle: DocHandle): Boolean {
-        return export(cls, docHandle, EMPTY_COMPLETED_HANDLE)
-    }
-
-    /**
-     * @return return true if any api be found
-     */
-    fun export(cls: Any, docHandle: DocHandle, completedHandle: CompletedHandle): Boolean
+    fun export(cls: Any, docHandle: DocHandle): Boolean
 
     /**
      * the document type which be generate
      */
     fun support(docType: KClass<*>): Boolean
 }
-
-typealias CompletedHandle = (Any) -> Unit
-
-private val EMPTY_COMPLETED_HANDLE: CompletedHandle = {}
 
 typealias DocHandle = (Doc) -> Unit
 

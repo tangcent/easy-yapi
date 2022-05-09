@@ -101,6 +101,7 @@ internal class GroovyRuleParserTest : RuleParserBaseTest() {
     }
 
     fun testParseEventRule() {
+        LoggerCollector.getLog()
         ruleParser.parseEventRule("groovy:logger.info(\"hello world\")")!!.compute(ruleParser.contextOf(listPsiClass, listPsiClass))
         assertEquals("[INFO]\thello world\n", LoggerCollector.getLog().toUnixString())
     }
