@@ -54,7 +54,7 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            boundary.waitComplete()
+            boundary.waitComplete(false)
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
@@ -97,7 +97,7 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            boundary.waitComplete()
+            boundary.waitComplete(false)
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
@@ -157,7 +157,7 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            boundary.waitComplete()
+            boundary.waitComplete(false)
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
@@ -200,7 +200,7 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
             classExporter.export(userCtrlPsiClass, requestOnly {
                 requests.add(it)
             })
-            boundary.waitComplete()
+            boundary.waitComplete(false)
             classExporter.export(defaultCtrlPsiClass, requestOnly {
                 requests.add(it)
             })

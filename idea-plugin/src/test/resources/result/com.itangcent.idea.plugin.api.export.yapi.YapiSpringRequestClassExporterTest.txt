@@ -1,4 +1,4 @@
-[INFO]	search api from:com.itangcent.api.UserCtrl
+[INFO]	search api from: com.itangcent.api.UserCtrl
 [INFO]	before parse class:com.itangcent.api.UserCtrl
 [INFO]	before parse method:com.itangcent.api.UserCtrl#greeting
 [INFO]	after parse method:com.itangcent.api.UserCtrl#greeting
@@ -24,7 +24,7 @@
 [INFO]	before parse method:com.itangcent.api.UserCtrl#ctrlName
 [INFO]	after parse method:com.itangcent.api.UserCtrl#ctrlName
 [INFO]	after parse class:com.itangcent.api.UserCtrl
-[INFO]	search api from:com.itangcent.api.DefaultCtrl
+[INFO]	search api from: com.itangcent.api.DefaultCtrl
 [INFO]	before parse class:com.itangcent.api.DefaultCtrl
 [INFO]	before parse method:com.itangcent.api.DefaultCtrl#query
 [INFO]	before parse param:body

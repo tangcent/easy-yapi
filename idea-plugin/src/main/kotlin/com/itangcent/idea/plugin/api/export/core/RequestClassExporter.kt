@@ -34,8 +34,8 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.*
-import com.itangcent.utils.disposable
 import kotlin.reflect.KClass
+
 
 /**
  * An abstract implementation of  [ClassExporter]
@@ -106,65 +106,56 @@ abstract class RequestClassExporter : ClassExporter {
         if (cls !is PsiClass) {
             return false
         }
-        return actionContext.callInReadUI { doExport(cls, docHandle) } ?: false
+        return doExport(cls, docHandle)
     }
 
     private fun doExport(cls: PsiClass, docHandle: DocHandle): Boolean {
 
         contextSwitchListener?.switchTo(cls)
-        val disposable = {
-            actionContext.callInReadUI {
-                ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_AFTER, cls)
-            }
-        }.disposable()
 
         actionContext.checkStatus()
-        try {
-            when {
-                !hasApi(cls) -> {
-                    disposable()
-                    return false
-                }
-                shouldIgnore(cls) -> {
-                    logger.info("ignore class:" + cls.qualifiedName)
-                    disposable()
-                    return true
-                }
+        val clsQualifiedName = actionContext.callInReadUI { cls.qualifiedName }
+        when {
+            !hasApi(cls) -> {
+                return false
             }
+            shouldIgnore(cls) -> {
+                logger.info("ignore class:$clsQualifiedName")
+                return true
+            }
+        }
 
-            logger.info("search api from:${cls.qualifiedName}")
+        logger.info("search api from: $clsQualifiedName")
 
-            val classExportContext = ClassExportContext(cls)
+        val classExportContext = ClassExportContext(cls)
 
-            ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_BEFORE, cls)
+        ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_BEFORE, cls)
 
+        try {
             processClass(cls, classExportContext)
-
-            actionContext.runAsync {
-                actionContext.withBoundary {
-                    val psiMethodSet = PsiMethodSet()
-                    classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
-                        val method = explicitMethod.psi()
-                        if (isApi(method)
-                            && methodFilter?.checkMethod(method) != false
-                            && psiMethodSet.add(method)
-                        ) {
-                            try {
-                                ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_BEFORE, explicitMethod)
-                                exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
-                            } catch (e: Exception) {
-                                logger.traceError("error to export api from method:" + method.name, e)
-                            } finally {
-                                ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
-                            }
+            actionContext.withBoundary {
+                val psiMethodSet = PsiMethodSet()
+                classApiExporterHelper.foreachMethod(cls) { explicitMethod ->
+                    val method = explicitMethod.psi()
+                    if (isApi(method)
+                        && methodFilter?.checkMethod(method) != false
+                        && psiMethodSet.add(method)
+                    ) {
+                        try {
+                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_BEFORE, explicitMethod)
+                            exportMethodApi(cls, explicitMethod, classExportContext, docHandle)
+                        } catch (e: Exception) {
+                            logger.traceError("error to export api from method:" + method.name, e)
+                        } finally {
+                            ruleComputer.computer(ClassExportRuleKeys.API_METHOD_PARSE_AFTER, explicitMethod)
                         }
                     }
                 }
-                disposable()
             }
         } catch (e: Throwable) {
             logger.traceError("error to export api from class:" + cls.name, e)
-            disposable()
+        } finally {
+            ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_AFTER, cls)
         }
         return true
     }

@@ -67,7 +67,8 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
                 if (readCache) {
                     fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
                     if (fileApiCache != null
-                        && fileApiCache.lastModified!! > FileUtils.getLastModified(psiFile) ?: System.currentTimeMillis()
+                        && fileApiCache.lastModified!! >= (FileUtils.getLastModified(psiFile)
+                            ?: System.currentTimeMillis())
                         && fileApiCache.md5 == md5
                     ) {
 
@@ -85,23 +86,21 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
                 val requests = ArrayList<RequestWithKey>()
                 fileApiCache.requests = requests
 
-                actionContext.runInReadUI {
-                    actionContext.withBoundary {
-                        delegateClassExporter!!.export(cls, requestOnly { request ->
-                            docHandle(request)
-                            val fullName = PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
-                            requests.add(
-                                RequestWithKey(
-                                    fullName, request
-                                )
+                actionContext.withBoundary {
+                    delegateClassExporter!!.export(cls, requestOnly { request ->
+                        docHandle(request)
+                        val fullName = PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
+                        requests.add(
+                            RequestWithKey(
+                                fullName, request
                             )
-                        })
-                    }
-                    actionContext.runAsync {
-                        fileApiCache.md5 = md5
-                        fileApiCache.lastModified = System.currentTimeMillis()
-                        fileApiCacheRepository!!.saveFileApiCache(path, fileApiCache)
-                    }
+                        )
+                    })
+                }
+                actionContext.runAsync {
+                    fileApiCache.md5 = md5
+                    fileApiCache.lastModified = System.currentTimeMillis()
+                    fileApiCacheRepository!!.saveFileApiCache(path, fileApiCache)
                 }
             } catch (e: ProcessCanceledException) {
                 return@runAsync

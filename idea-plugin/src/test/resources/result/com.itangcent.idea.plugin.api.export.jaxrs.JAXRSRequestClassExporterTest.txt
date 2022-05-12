@@ -1,4 +1,4 @@
-[INFO]	search api from:com.itangcent.jaxrs.UserResource
+[INFO]	search api from: com.itangcent.jaxrs.UserResource
 [INFO]	before parse class:com.itangcent.jaxrs.UserResource
 [INFO]	before parse method:com.itangcent.jaxrs.UserResource#greeting
 [INFO]	after parse method:com.itangcent.jaxrs.UserResource#greeting

@@ -1,4 +1,4 @@
 [INFO]	Start find apis...
-[INFO]	search api from:com.itangcent.client.UserClient
+[INFO]	search api from: com.itangcent.client.UserClient
 [INFO]	Export to http://127.0.0.1:3088/project/12345/interface/api/cat_333333 success
 [INFO]	Apis exported completed

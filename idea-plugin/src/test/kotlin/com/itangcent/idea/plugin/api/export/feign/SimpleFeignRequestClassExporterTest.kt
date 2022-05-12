@@ -133,7 +133,7 @@ internal class SimpleFeignRequestClassExporterTest : PluginContextLightCodeInsig
         }
 
         assertEquals(
-            "[INFO]\tsearch api from:com.itangcent.springboot.demo.client.UserClient\n",
+            "[INFO]\tsearch api from: com.itangcent.springboot.demo.client.UserClient\n",
             LoggerCollector.getLog().toUnixString()
         )
     }

@@ -70,7 +70,10 @@ class SqliteDataResourceHelper {
         fun delete(name: ByteArray)
     }
 
-    private inner class SimpleBeanDAOImpl(private val sqLiteDataSourceHandle: SQLiteDataSourceHandle, private var cacheName: String) : SimpleBeanDAO {
+    private inner class SimpleBeanDAOImpl(
+        private val sqLiteDataSourceHandle: SQLiteDataSourceHandle,
+        private var cacheName: String,
+    ) : SimpleBeanDAO {
         init {
             if (!checkTableExisted(sqLiteDataSourceHandle, cacheName)) {
                 val sql = "CREATE TABLE $cacheName\n" +
@@ -83,7 +86,13 @@ class SqliteDataResourceHelper {
                         ");" +
                         "\n" +
                         "CREATE INDEX ${cacheName}_MD5_INDEX ON $cacheName(HASH);"
-                sqLiteDataSourceHandle.write { it.execute(sql) {} }
+                try {
+                    sqLiteDataSourceHandle.write { it.execute(sql) {} }
+                } catch (e: Exception) {
+                    if (!checkTableExisted(sqLiteDataSourceHandle, cacheName)) {
+                        throw e
+                    }
+                }
             }
         }
 
@@ -92,7 +101,7 @@ class SqliteDataResourceHelper {
                 return sqLiteDataSourceHandle.read {
                     it.execute<String?>("SELECT * FROM $cacheName WHERE HASH = '${name.contentHashCode()}'" +
                             " AND NAME = '${name.encodeBase64()}' LIMIT 1") { resultSet -> resultSet.getString("VALUE") }
-                            ?.decodeBase64()
+                        ?.decodeBase64()
                 }
             } catch (e: Exception) {
                 null
@@ -134,7 +143,10 @@ class SqliteDataResourceHelper {
         fun delete(name: ByteArray)
     }
 
-    private inner class ExpiredBeanDAOImpl(private val sqLiteDataSourceHandle: SQLiteDataSourceHandle, private var cacheName: String) : ExpiredBeanDAO {
+    private inner class ExpiredBeanDAOImpl(
+        private val sqLiteDataSourceHandle: SQLiteDataSourceHandle,
+        private var cacheName: String,
+    ) : ExpiredBeanDAO {
         init {
             if (!checkTableExisted(sqLiteDataSourceHandle, cacheName)) {
                 val sql = "CREATE TABLE $cacheName\n" +
@@ -272,19 +284,19 @@ private class SQLiteDataSourceHandle(private val fileName: String) {
     }
 
     fun close() {
-        sqliteDataSource?.connection?.close()
     }
 }
 
 private val TIMESTAMP_OFFSET = SimpleDateFormat("yyyyMMdd").parse("20210101").time
 
 fun <T> SQLiteDataSource.execute(sql: String, result: (ResultSet) -> T): T? {
-    val statement = this.connection.createStatement()
-    statement.use {
-        statement.execute(sql)
-        statement.resultSet?.use { resultSet ->
-            if (resultSet.isClosed) return null
-            return result(resultSet)
+    this.connection.use { connection ->
+        connection.createStatement().use { statement ->
+            statement.execute(sql)
+            statement.resultSet?.use { resultSet ->
+                if (resultSet.isClosed) return null
+                return result(resultSet)
+            }
         }
     }
     return null

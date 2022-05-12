@@ -9,6 +9,7 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.stream
 import com.itangcent.idea.condition.annotation.ConditionOnClass
+import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.ApiHelper
@@ -43,6 +44,9 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter {
     @Inject
     protected lateinit var JAXRSBaseAnnotationParser: JAXRSBaseAnnotationParser
 
+    @Inject
+    protected lateinit var classApiExporterHelper: ClassApiExporterHelper
+
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
     }
@@ -54,34 +58,28 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter {
     private lateinit var ruleComputer: RuleComputer
 
     @Inject
-    private var actionContext: ActionContext? = null
+    private lateinit var actionContext: ActionContext
 
     @Inject
     protected var apiHelper: ApiHelper? = null
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
-
             return false
         }
-        actionContext!!.checkStatus()
-
+        val clsQualifiedName = actionContext.callInReadUI { cls.qualifiedName }
         try {
             when {
                 !JAXRSBaseAnnotationParser.hasApi(cls) -> {
-
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class:" + cls.qualifiedName)
-
+                    logger!!.info("ignore class: $clsQualifiedName")
                     return true
                 }
                 else -> {
-                    logger!!.info("search api from:${cls.qualifiedName}")
-
-
-                    foreachMethod(cls) { method ->
+                    logger!!.info("search api from: $clsQualifiedName")
+                    classApiExporterHelper.foreachPsiMethod(cls) { method ->
                         exportMethodApi(cls, method, docHandle)
                     }
                 }
@@ -107,15 +105,5 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter {
         request.resource = PsiMethodResource(method, psiClass)
         request.name = apiHelper!!.nameOfApi(method)
         docHandle(request)
-    }
-
-    private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        jvmClassHelper.getAllMethods(cls)
-            .stream()
-            .filter { !jvmClassHelper.isBasicMethod(it.name) }
-            .filter { !it.hasModifierProperty("static") }
-            .filter { !it.isConstructor }
-            .filter { !shouldIgnore(it) }
-            .forEach(handle)
     }
 }

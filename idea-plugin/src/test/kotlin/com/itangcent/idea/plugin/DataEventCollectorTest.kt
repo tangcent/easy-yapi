@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataKey
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.mock.EasyBaseContextTest
+import com.itangcent.mock.BaseContextTest
 import com.itangcent.test.mock
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -16,7 +16,7 @@ import org.mockito.Mockito
  *
  * @author tangcent
  */
-internal class DataEventCollectorTest : EasyBaseContextTest() {
+internal class DataEventCollectorTest : BaseContextTest() {
 
     @Inject
     private lateinit var dataEventCollector: DataEventCollector

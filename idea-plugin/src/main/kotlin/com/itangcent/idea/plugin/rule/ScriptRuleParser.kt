@@ -326,7 +326,9 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun isExtend(superClass: String): Boolean {
-            return jvmClassHelper!!.isInheritor(psiClass, superClass)
+            return ActionContext.getContext()!!.callInReadUI {
+                jvmClassHelper!!.isInheritor(psiClass, superClass)
+            } ?: false
         }
 
         override fun isMap(): Boolean {

@@ -9,6 +9,7 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.stream
 import com.itangcent.idea.condition.annotation.ConditionOnClass
+import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.ApiHelper
@@ -41,6 +42,9 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
     @Inject
     protected lateinit var springRequestMappingResolver: SpringRequestMappingResolver
 
+    @Inject
+    protected lateinit var classApiExporterHelper: ClassApiExporterHelper
+
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
     }
@@ -52,18 +56,16 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
     protected lateinit var ruleComputer: RuleComputer
 
     @Inject
-    private lateinit var actionContext: ActionContext
+    protected lateinit var actionContext: ActionContext
 
     @Inject
     protected var apiHelper: ApiHelper? = null
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
-
             return false
         }
-        actionContext.checkStatus()
-
+        val clsQualifiedName = actionContext.callInReadUI { cls.qualifiedName }
         try {
             when {
                 !isCtrl(cls) -> {
@@ -71,15 +73,14 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class:" + cls.qualifiedName)
-
+                    logger!!.info("ignore class: $clsQualifiedName")
                     return true
                 }
                 else -> {
-                    logger!!.info("search api from:${cls.qualifiedName}")
+                    logger!!.info("search api from: $clsQualifiedName")
 
 
-                    foreachMethod(cls) { method ->
+                    classApiExporterHelper.foreachPsiMethod(cls) { method ->
                         exportMethodApi(cls, method, docHandle)
                     }
                 }
@@ -91,8 +92,8 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
     }
 
     protected open fun isCtrl(psiClass: PsiClass): Boolean {
-        return psiClass.annotations.any {
-            SpringClassName.SPRING_CONTROLLER_ANNOTATION.contains(it.qualifiedName)
+        return SpringClassName.SPRING_CONTROLLER_ANNOTATION.any {
+            annotationHelper!!.hasAnn(psiClass, it)
         } || (ruleComputer.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
     }
 
@@ -102,7 +103,7 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
 
     private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, docHandle: DocHandle) {
 
-        actionContext!!.checkStatus()
+        actionContext.checkStatus()
         //todo:support other web annotation
         findRequestMappingInAnn(method) ?: return
 
@@ -114,15 +115,5 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Map<String, Any?>? {
         return springRequestMappingResolver.resolveRequestMapping(ele)
-    }
-
-    private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        jvmClassHelper!!.getAllMethods(cls)
-            .stream()
-            .filter { !jvmClassHelper.isBasicMethod(it.name) }
-            .filter { !it.hasModifierProperty("static") }
-            .filter { !it.isConstructor }
-            .filter { !shouldIgnore(it) }
-            .forEach(handle)
     }
 }

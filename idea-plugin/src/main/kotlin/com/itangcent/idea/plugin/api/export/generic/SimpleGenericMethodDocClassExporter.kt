@@ -61,17 +61,18 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
             return false
         }
         actionContext.checkStatus()
+        val clsQualifiedName = actionContext.callInReadUI { cls.qualifiedName }
         try {
             when {
                 !hasApi(cls) -> {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class:" + cls.qualifiedName)
+                    logger!!.info("ignore class: $clsQualifiedName")
                     return true
                 }
                 else -> {
-                    logger!!.info("search api from:${cls.qualifiedName}")
+                    logger!!.info("search api from: $clsQualifiedName")
 
                     val kv = KV.create<String, Any?>()
 

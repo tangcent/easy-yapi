@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.utils
 
 import com.google.inject.Inject
-import com.itangcent.mock.EasyBaseContextTest
+import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 /**
  * Test case of [StringDiffHelper]
  */
-internal class StringDiffHelperTest : EasyBaseContextTest() {
+internal class StringDiffHelperTest : BaseContextTest() {
 
     @Inject
     private lateinit var stringDiffHelper: StringDiffHelper

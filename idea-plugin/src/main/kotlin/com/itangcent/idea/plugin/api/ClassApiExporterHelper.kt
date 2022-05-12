@@ -2,18 +2,31 @@ package com.itangcent.idea.plugin.api
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.intellij.openapi.ui.Messages
 import com.intellij.psi.*
+import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.stream
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.LinkResolver
+import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
+import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.SelectedHelper
+import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.intellij.util.FileType
+import java.util.*
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
 import kotlin.streams.toList
 
 @Singleton
@@ -43,6 +56,14 @@ open class ClassApiExporterHelper {
     @Inject
     protected lateinit var actionContext: ActionContext
 
+    @Inject
+    protected lateinit var logger: Logger
+
+    @Inject
+    protected val classExporter: ClassExporter? = null
+
+    @Inject
+    protected lateinit var messagesHelper: MessagesHelper
     fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
         val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
 
@@ -114,11 +135,17 @@ open class ClassApiExporterHelper {
                 .filter { !shouldIgnore(it) }
                 .toList()
             actionContext.runAsync {
-                for (method in methods) {
-                    actionContext.callInReadUI {
-                        handle(method)
+                val boundary = actionContext.createBoundary()
+                try {
+                    for (method in methods) {
+                        actionContext.callInReadUI {
+                            handle(method)
+                        }
+                        boundary.waitComplete(false)
+                        Thread.sleep(100)
                     }
-                    Thread.sleep(100)
+                } finally {
+                    boundary.remove()
                 }
             }
         }
@@ -132,4 +159,77 @@ open class ClassApiExporterHelper {
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
     }
 
+    fun foreachPsiMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
+        actionContext.runInReadUI {
+            jvmClassHelper!!.getAllMethods(cls)
+                .stream()
+                .filter { !jvmClassHelper.isBasicMethod(it.name) }
+                .filter { !it.hasModifierProperty("static") }
+                .filter { !it.isConstructor }
+                .filter { !shouldIgnore(it) }
+                .forEach(handle)
+        }
+    }
+
+    fun export(): List<Doc> {
+        val docs: MutableList<Doc> = Collections.synchronizedList(java.util.ArrayList())
+        export { docs.add(it) }
+        return docs
+    }
+
+    fun export(handle: (Doc) -> Unit) {
+        logger.info("Start find apis...")
+        val psiClassQueue: BlockingQueue<PsiClass> = LinkedBlockingQueue()
+
+        val boundary = actionContext.createBoundary()
+
+        actionContext.runAsync {
+            SelectedHelper.Builder()
+                .dirFilter { dir, callBack ->
+                    try {
+                        val yes = messagesHelper.showYesNoDialog(
+                            "Export the api in directory [${ActionUtils.findCurrentPath(dir)}]?",
+                            "Confirm",
+                            Messages.getQuestionIcon()
+                        )
+                        if (yes == Messages.YES) {
+                            callBack(true)
+                        } else {
+                            logger.debug("Cancel the operation export api from [${
+                                ActionUtils.findCurrentPath(dir)
+                            }]!")
+                            callBack(false)
+                        }
+                    } catch (e: Exception) {
+                        callBack(false)
+                    }
+                }
+                .fileFilter { file -> FileType.acceptable(file.name) }
+                .classHandle {
+                    psiClassQueue.add(it)
+                }
+                .traversal()
+        }
+
+        while (true) {
+            val psiClass = psiClassQueue.poll()
+            if (psiClass == null) {
+                if (boundary.waitComplete(100, false)
+                    && psiClassQueue.isEmpty()
+                ) {
+                    boundary.remove()
+                    boundary.close()
+                    break
+                }
+            } else {
+                LOG.info("wait api parsing... $psiClass")
+                actionContext.withBoundary {
+                    classExporter!!.export(psiClass) { handle(it) }
+                }
+                LOG.info("api parse $psiClass completed.")
+            }
+        }
+    }
 }
+
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(ClassApiExporterHelper::class.java)

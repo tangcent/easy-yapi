@@ -1,6 +1,7 @@
 package com.itangcent.idea.psi
 
 import com.intellij.psi.PsiMethod
+import com.itangcent.intellij.context.ActionContext
 
 class PsiMethodSet {
 
@@ -8,7 +9,8 @@ class PsiMethodSet {
     private val parsedMethodNames = HashSet<String>()
 
     fun add(method: PsiMethod): Boolean {
-        if (parsedMethodNames.add(method.name)) {
+        val methodName = ActionContext.getContext()!!.callInReadUI { method.name }!!
+        if (parsedMethodNames.add(methodName)) {
             parsedMethods.add(method)
             return true
         }

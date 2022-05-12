@@ -150,7 +150,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 }
 
                 configReader.loadConfigInfoContent(recommendConfig)
-                logger.info("use recommend config")
+                logger.debug("use recommend config")
                 devEnv!!.dev {
                     logger.debug("----------------\n$recommendConfig\n----------------")
                 }
@@ -165,7 +165,7 @@ class RecommendConfigReader : ConfigReader, Initializable {
         if (builtInConfig.notNullOrBlank()) {
             if (configReader is MutableConfigReader) {
                 configReader.loadConfigInfoContent(builtInConfig!!)
-                logger.info("use built-in config")
+                logger.debug("use built-in config")
                 devEnv!!.dev {
                     logger.debug("----------------\n$builtInConfig\n----------------")
                 }

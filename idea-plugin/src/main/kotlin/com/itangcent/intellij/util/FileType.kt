@@ -20,8 +20,8 @@ enum class FileType(private val suffix: String) {
 
     companion object {
         private val SUPPORT_SUPPORT_TIP = OnlyOnceInContextTip(
-                "For support scala," +
-                        " please download plugin from https://github.com/tangcent/easy-yapi/releases"
+            "For support scala," +
+                    " please download plugin from https://github.com/tangcent/easy-yapi/releases"
         )
 
         fun acceptable(fileName: String): Boolean {

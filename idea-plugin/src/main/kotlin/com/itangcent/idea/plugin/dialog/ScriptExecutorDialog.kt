@@ -42,6 +42,7 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.*
 import java.util.Timer
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import javax.script.ScriptEngineManager
 import javax.swing.*
@@ -49,7 +50,7 @@ import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
 
 
-class ScriptExecutorDialog : JDialog() {
+class ScriptExecutorDialog : ContextDialog() {
     private var contentPane: JPanel? = null
     private var consoleTextArea: JTextArea? = null
     private var contextComboBox: JComboBox<ScriptContext>? = null
@@ -70,9 +71,6 @@ class ScriptExecutorDialog : JDialog() {
     private var context: ScriptContext? = null
 
     @Inject
-    private val actionContext: ActionContext? = null
-
-    @Inject
     private lateinit var duckTypeHelper: DuckTypeHelper
 
     @Inject
@@ -80,9 +78,6 @@ class ScriptExecutorDialog : JDialog() {
 
     @Inject
     private val project: Project? = null
-
-    @Inject
-    private val logger: Logger? = null
 
     @Inject
     private val contextSwitchListener: ContextSwitchListener? = null
@@ -124,9 +119,8 @@ class ScriptExecutorDialog : JDialog() {
 
     }
 
-    @PostConstruct
-    fun postConstruct() {
-        actionContext!!.hold()
+    override fun init() {
+        actionContext.keepAlive(TimeUnit.MINUTES.toMillis(5))
 
         this.scriptTypeComboBox!!.model =
             DefaultComboBoxModel(scriptSupports.filter { it.checkSupport() }.toTypedArray())
@@ -138,7 +132,9 @@ class ScriptExecutorDialog : JDialog() {
 
         resetButton!!.addActionListener {
             scriptInfo?.scriptType?.demoCode()?.let { code ->
-                editor?.document?.setText(code)
+                actionContext.runInWriteUI {
+                    editor?.document?.setText(code)
+                }
             }
         }
 
@@ -457,10 +453,12 @@ class ScriptExecutorDialog : JDialog() {
             ?.let { ToolUtils.copy2Clipboard(it) }
     }
 
-    private fun onCancel() {
-        evalTimer.cancel()
-        dispose()
-        actionContext!!.unHold()
+    override fun onDispose() {
+        try {
+            evalTimer.cancel()
+        } finally {
+            super.onDispose()
+        }
     }
 
     private fun onLoad() {
@@ -469,12 +467,12 @@ class ScriptExecutorDialog : JDialog() {
             val suffix = path.substringAfterLast('.', "")
             scriptSupports.firstOrNull { it.suffix() == suffix }
                 ?.let { scriptType ->
-                    actionContext!!.runInSwingUI {
+                    actionContext.runInSwingUI {
                         this.scriptTypeComboBox!!.selectedItem = scriptType
                     }
                 }
             val script = file.readText(Charsets.UTF_8)
-            actionContext!!.runInSwingUI {
+            actionContext.runInSwingUI {
                 editor?.document?.setText(script)
             }
         }, {
@@ -612,7 +610,7 @@ class ScriptExecutorDialog : JDialog() {
     class EvalTimer(
         private var actionContext: ActionContext,
         private var evalTimer: Timer,
-        private val task: (() -> Long?)
+        private val task: (() -> Long?),
     ) {
 
         private fun run() {

@@ -544,7 +544,7 @@ open class PostmanFormatter {
         }
     }
 
-    fun parseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
+    fun parseRequests(requests: List<Request>): HashMap<String, Any?> {
         val postmanCollection = doParseRequests(requests)
         if (postmanSettingsHelper.autoMergeScript()) {
             autoMerge(postmanCollection)
@@ -618,7 +618,7 @@ open class PostmanFormatter {
         return events
     }
 
-    private fun doParseRequests(requests: MutableList<Request>): HashMap<String, Any?> {
+    private fun doParseRequests(requests: List<Request>): HashMap<String, Any?> {
 
 
         //parse [request...] ->

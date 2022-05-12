@@ -123,7 +123,7 @@ internal class CurlFormatterTest : PluginContextLightCodeInsightFixtureTestCase(
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)
         })
-        boundary.waitComplete()
+        boundary.waitComplete(false)
         classExporter.export(testCtrlPsiClass, requestOnly {
             requests.add(it)
         })
