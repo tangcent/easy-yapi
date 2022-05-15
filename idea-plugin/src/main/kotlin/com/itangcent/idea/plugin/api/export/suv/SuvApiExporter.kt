@@ -13,6 +13,7 @@ import com.itangcent.common.utils.filterAs
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.config.CachedResourceResolver
+import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.cache.DefaultFileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
@@ -66,7 +67,7 @@ import kotlin.streams.toList
 open class SuvApiExporter {
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     private lateinit var actionContext: ActionContext
@@ -74,32 +75,16 @@ open class SuvApiExporter {
     @Inject
     private val classExporter: ClassExporter? = null
 
+    @Inject
+    private lateinit var classApiExporterHelper: ClassApiExporterHelper
+
     @Suppress("UNCHECKED_CAST")
     fun showExportWindow() {
-
-        logger!!.info("Start find apis...")
-
         LoggerCollector.getLog().takeIf { it.isNotBlank() }?.let { logger.debug(it) }
 
-        val docs: MutableList<DocWrapper> = Collections.synchronizedList(ArrayList<DocWrapper>())
-
-        val boundary = actionContext.createBoundary()
         try {
-            SelectedHelper.Builder()
-                .fileFilter { FileType.acceptable(it.name) }
-                .classHandle {
-                    actionContext.checkStatus()
-                    classExporter!!.export(it) { doc ->
-                        docs.add(DocWrapper(doc))
-                    }
-                }
-                .traversal()
-        } catch (e: Exception) {
-            logger.traceError("failed export apis!", e)
-        }
+            val docs = classApiExporterHelper.export().map { DocWrapper(it) }
 
-        try {
-            boundary.waitComplete()
             if (docs.isEmpty()) {
                 logger.info("No api be found!")
                 return
@@ -122,8 +107,6 @@ open class SuvApiExporter {
                         .toList())
                 }
 
-//                            multipleApiExportDialog.updateRequestList(docs)
-
                 multipleApiExportDialog.setChannels(EXPORTER_CHANNELS)
 
                 multipleApiExportDialog.setApisHandle { channel, requests ->
@@ -131,7 +114,7 @@ open class SuvApiExporter {
                 }
             }
         } catch (e: Exception) {
-            logger.error("Apis find failed" + ExceptionUtils.getStackTrace(e))
+            logger.traceError("Apis exported failed", e)
         }
     }
 
@@ -315,10 +298,10 @@ open class SuvApiExporter {
                 .distinct()
                 .toList()
 
-            val docs: MutableList<Doc> = ArrayList()
-
 
             actionContext.runAsync {
+                val docs: MutableList<Doc> = Collections.synchronizedList(ArrayList())
+
                 actionContext.withBoundary {
                     for (cls in classes) {
                         classExporter!!.export(cls!!) { doc ->
@@ -327,7 +310,7 @@ open class SuvApiExporter {
                     }
                 }
 
-                if (docs.isNullOrEmpty()) {
+                if (docs.isEmpty()) {
                     logger!!.info("no api has be found")
                 }
 
@@ -419,7 +402,7 @@ open class SuvApiExporter {
         }
 
         override fun doExportDocs(docs: MutableList<Doc>) {
-            actionContext!!.instance(PostmanApiExporter::class)
+            actionContext.instance(PostmanApiExporter::class)
                 .export(docs.filterAs())
         }
     }
@@ -656,8 +639,8 @@ open class SuvApiExporter {
     }
 
     private fun doExport(channel: ApiExporterWrapper, requests: List<DocWrapper>) {
-        if (requests.isNullOrEmpty()) {
-            logger!!.info("no api has be selected")
+        if (requests.isEmpty()) {
+            logger.info("no api has be selected")
             return
         }
         val adapter = channel.adapter.createInstance() as ApiExporterAdapter

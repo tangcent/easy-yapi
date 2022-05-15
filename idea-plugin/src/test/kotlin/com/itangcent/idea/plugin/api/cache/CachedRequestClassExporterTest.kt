@@ -102,7 +102,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)
         })
-        boundary.waitComplete()
+        boundary.waitComplete(false)
         requests[0].let { request ->
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)
@@ -125,7 +125,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsAgain.add(it)
         })
-        boundary.waitComplete()
+        boundary.waitComplete(false)
         assertEquals(requests, requestsAgain)
         Mockito.verify(delegateClassExporter, times(1))
             .export(any(), any())
@@ -136,7 +136,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsThrice.add(it)
         })
-        boundary.waitComplete()
+        boundary.waitComplete(false)
         assertEquals(requests, requestsThrice)
         Mockito.verify(delegateClassExporter, times(2))
             .export(any(), any())
@@ -147,7 +147,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsQuartic.add(it)
         })
-        boundary.waitComplete()
+        boundary.waitComplete(false)
         assertEquals(requests, requestsQuartic)
         Mockito.verify(delegateClassExporter, times(2))
             .export(any(), any())

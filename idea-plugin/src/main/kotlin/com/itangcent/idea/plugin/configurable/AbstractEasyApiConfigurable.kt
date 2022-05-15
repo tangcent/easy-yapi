@@ -87,7 +87,7 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
 
     override fun disposeUIResources() {
         super.disposeUIResources()
-        context?.stop(true)
+        context?.stop()
     }
 
     init {

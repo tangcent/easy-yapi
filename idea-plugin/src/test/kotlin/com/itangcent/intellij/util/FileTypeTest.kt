@@ -1,6 +1,6 @@
 package com.itangcent.intellij.util
 
-import com.itangcent.mock.EasyBaseContextTest
+import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 /**
  * Test case of [FileType]
  */
-internal class FileTypeTest : EasyBaseContextTest() {
+internal class FileTypeTest : BaseContextTest() {
 
     @Test
     fun suffix() {

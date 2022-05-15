@@ -1,6 +1,7 @@
 package com.itangcent.idea.sqlite
 
 import com.google.inject.Inject
+import com.itangcent.common.utils.FileUtils
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
@@ -41,6 +42,5 @@ internal class SqliteDataResourceHelperTest : AdvancedContextTest() {
         assertEquals("456", aDAO.get("abc"))
         Thread.sleep(1001)
         assertEquals(null, aDAO.get("abc"))
-
     }
 }

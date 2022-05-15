@@ -7,7 +7,6 @@ abstract class AbstractEasyApiSettingGUI : EasyApiSettingGUI {
     protected var settingsInstance: Settings? = null
 
     override fun onCreate() {
-        //NOP
     }
 
     override fun getSettings(): Settings {

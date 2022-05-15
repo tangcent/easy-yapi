@@ -107,6 +107,7 @@ open class GenericMethodDocClassExporter : ClassExporter {
             }
         }.disposable()
 
+        val clsQualifiedName = actionContext.callInReadUI { cls.qualifiedName }
         try {
             when {
                 !hasApi(cls) -> {
@@ -114,13 +115,13 @@ open class GenericMethodDocClassExporter : ClassExporter {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger.info("ignore class:" + cls.qualifiedName)
+                    logger.info("ignore class: $clsQualifiedName")
                     disposable()
                     return true
                 }
             }
 
-            logger.info("search api from:${cls.qualifiedName}")
+            logger.info("search api from: $clsQualifiedName")
 
             ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_BEFORE, cls)
 

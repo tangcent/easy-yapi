@@ -2,8 +2,11 @@ package com.itangcent.idea.utils
 
 import com.itangcent.intellij.context.ActionContext
 import java.awt.Component
+import java.awt.Container
 import java.awt.Dialog
 import java.awt.Toolkit
+import java.awt.event.ComponentEvent
+import java.awt.event.ComponentListener
 import java.awt.event.MouseEvent
 import javax.swing.BorderFactory
 import javax.swing.JComponent
@@ -109,4 +112,86 @@ fun TreeModel.remove(node: TreeNode) {
     if (node !is DefaultMutableTreeNode) return
     node.removeFromParent()
     this.reload(node)
+}
+
+fun Component.initAfterShown(init: () -> Unit) {
+    var notInit = true
+
+    this.addComponentListener(object : ComponentListener {
+        override fun componentResized(e: ComponentEvent?) {
+        }
+
+        override fun componentMoved(e: ComponentEvent?) {
+        }
+
+        override fun componentShown(e: ComponentEvent?) {
+            synchronized(this) {
+                if (notInit) {
+                    notInit = false
+                } else {
+                    return
+                }
+            }
+            init()
+        }
+
+        override fun componentHidden(e: ComponentEvent?) {
+        }
+    })
+}
+
+fun Component.onResized(handle: (ComponentEvent?) -> Unit) {
+    this.addComponentListener(object : ComponentListener {
+        override fun componentResized(e: ComponentEvent?) {
+            handle(e)
+        }
+
+        override fun componentMoved(e: ComponentEvent?) {
+            handle(e)
+        }
+
+        override fun componentShown(e: ComponentEvent?) {
+            handle(e)
+        }
+
+        override fun componentHidden(e: ComponentEvent?) {
+            handle(e)
+        }
+    })
+}
+
+fun Component.minusHeight(margin: Int, vararg components: Component): Int {
+    var h = this.height
+    for (component in components) {
+        if (component.isVisible) {
+            h -= component.height
+            h -= margin
+        }
+    }
+    return h
+}
+
+fun Component.bottomAlignTo(component: Component) {
+    val h = component.location.y + component.height - this.location.y
+    this.setSizeIfNecessary(this.width, h)
+}
+
+fun Component.setSizeIfNecessary(width: Int, height: Int) {
+    if (this.width != width || this.height != height) {
+        this.setSize(width, height)
+        this.doLayout()
+    }
+}
+
+fun Component.adjustWithIfNecessary(gap: Int) {
+    setSizeIfNecessary(this.width + gap, this.height)
+}
+
+fun Container.visit(handle: (Component) -> Unit) {
+    for (component in this.components) {
+        handle(component)
+        if (component is Container) {
+            component.visit(handle)
+        }
+    }
 }

@@ -8,6 +8,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.stream
+import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
@@ -35,10 +36,10 @@ import kotlin.reflect.KClass
 open class SimpleGenericRequestClassExporter : ClassExporter {
 
     @Inject
-    private val annotationHelper: AnnotationHelper? = null
+    protected val jvmClassHelper: JvmClassHelper? = null
 
     @Inject
-    protected val jvmClassHelper: JvmClassHelper? = null
+    protected lateinit var classApiExporterHelper: ClassApiExporterHelper
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
@@ -51,7 +52,7 @@ open class SimpleGenericRequestClassExporter : ClassExporter {
     private lateinit var ruleComputer: RuleComputer
 
     @Inject
-    private var actionContext: ActionContext? = null
+    private lateinit var actionContext: ActionContext
 
     @Inject
     protected var apiHelper: ApiHelper? = null
@@ -60,21 +61,22 @@ open class SimpleGenericRequestClassExporter : ClassExporter {
         if (cls !is PsiClass) {
             return false
         }
-        actionContext!!.checkStatus()
+        actionContext.checkStatus()
 
+        val clsQualifiedName = actionContext.callInReadUI { cls.qualifiedName }
         try {
             when {
                 !hasApi(cls) -> {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class:" + cls.qualifiedName)
+                    logger!!.info("ignore class: $clsQualifiedName")
                     return true
                 }
                 else -> {
-                    logger!!.info("search api from:${cls.qualifiedName}")
+                    logger!!.info("search api from: $clsQualifiedName")
 
-                    foreachMethod(cls) { method ->
+                    classApiExporterHelper.foreachPsiMethod(cls) { method ->
                         exportMethodApi(cls, method, docHandle)
                     }
                 }
@@ -108,15 +110,5 @@ open class SimpleGenericRequestClassExporter : ClassExporter {
 
     fun isApi(psiMethod: PsiMethod): Boolean {
         return (ruleComputer.computer(GenericClassExportRuleKeys.METHOD_HAS_API, psiMethod) ?: false)
-    }
-
-    private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        jvmClassHelper!!.getAllMethods(cls)
-            .stream()
-            .filter { !jvmClassHelper.isBasicMethod(it.name) }
-            .filter { !it.hasModifierProperty("static") }
-            .filter { !it.isConstructor }
-            .filter { !shouldIgnore(it) }
-            .forEach(handle)
     }
 }

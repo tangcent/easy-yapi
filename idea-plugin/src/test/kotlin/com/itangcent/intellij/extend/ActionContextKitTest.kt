@@ -1,6 +1,6 @@
 package com.itangcent.intellij.extend
 
-import com.itangcent.mock.EasyBaseContextTest
+import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.TimeoutException
@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 /**
  * Test case of [com.itangcent.intellij.extend.ActionContextKit]
  */
-internal class ActionContextKitTest : EasyBaseContextTest() {
+internal class ActionContextKitTest : BaseContextTest() {
 
     @Volatile
     private var x = 0

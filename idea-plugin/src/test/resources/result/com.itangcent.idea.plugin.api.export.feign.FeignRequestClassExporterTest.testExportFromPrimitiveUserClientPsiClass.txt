@@ -1,4 +1,4 @@
-[INFO]	search api from:com.itangcent.springboot.demo.client.PrimitiveUserClient
+[INFO]	search api from: com.itangcent.springboot.demo.client.PrimitiveUserClient
 [INFO]	before parse class:com.itangcent.springboot.demo.client.PrimitiveUserClient
 [INFO]	before parse method:com.itangcent.springboot.demo.client.PrimitiveUserClient#add
 [INFO]	before parse param:user

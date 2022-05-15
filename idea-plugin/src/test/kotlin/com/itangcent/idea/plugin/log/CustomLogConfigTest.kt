@@ -6,7 +6,7 @@ import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.LogConfig
-import com.itangcent.mock.EasyBaseContextTest
+import com.itangcent.mock.BaseContextTest
 import com.itangcent.mock.SettingBinderAdaptor
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -18,7 +18,7 @@ import org.junit.jupiter.params.provider.ValueSource
  *
  * @author tangcent
  */
-internal class CustomLogConfigTest : EasyBaseContextTest() {
+internal class CustomLogConfigTest : BaseContextTest() {
 
     private val settings = Settings()
 

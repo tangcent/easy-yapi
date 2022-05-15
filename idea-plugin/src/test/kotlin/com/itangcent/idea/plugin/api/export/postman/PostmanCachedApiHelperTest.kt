@@ -2,7 +2,9 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.itangcent.common.kit.toJson
+import com.itangcent.common.utils.FileUtils
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.forceDelete
 import com.itangcent.idea.plugin.settings.helper.SettingsHelperTest
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.asJsonElement
@@ -10,10 +12,12 @@ import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.sub
+import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.test.HttpClientProviderMockBuilder
 import com.itangcent.test.response404
 import org.apache.http.entity.ContentType
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
@@ -29,6 +33,9 @@ abstract class PostmanCachedApiHelperTest : SettingsHelperTest() {
 
     @Inject
     protected lateinit var postmanApiHelper: PostmanCachedApiHelper
+
+    @Inject
+    private lateinit var localFileRepository: LocalFileRepository
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)

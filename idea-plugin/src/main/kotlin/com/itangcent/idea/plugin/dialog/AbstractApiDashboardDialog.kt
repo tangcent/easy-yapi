@@ -27,6 +27,7 @@ import com.itangcent.idea.swing.*
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.idea.utils.reload
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.runWithContext
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.logger.Logger
@@ -50,7 +51,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
 
-abstract class AbstractApiDashboardDialog : JDialog() {
+abstract class AbstractApiDashboardDialog : ContextDialog() {
     protected abstract var contentPane: JPanel?
     protected abstract var projectApiTree: JTree?
     protected abstract var projectApiPanel: JPanel?
@@ -61,20 +62,12 @@ abstract class AbstractApiDashboardDialog : JDialog() {
 
     private var projectMode: ProjectMode = ProjectMode.Legible
 
-    @Inject
-    protected lateinit var logger: Logger
-
-    @Inject
-    protected lateinit var actionContext: ActionContext
 
     @Inject
     protected val classExporter: ClassExporter? = null
 
     @Inject
     protected val ultimateDocHelper: UltimateDocHelper? = null
-
-    @Volatile
-    protected var disposed = false
 
     protected var autoComputer: AutoComputer = AutoComputer()
 
@@ -86,12 +79,8 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     @Inject(optional = true)
     private var activeWindowProvider: ActiveWindowProvider? = null
 
-    protected var apiLoadFuture: Future<*>? = null
-
     //region project module-----------------------------------------------------
-
-    protected fun initProjectApiModule() {
-
+    override fun init() {
         (activeWindowProvider as? MutableActiveWindowProvider)?.setActiveWindow(this)
 
         projectApiTree!!.model = null
@@ -113,35 +102,6 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                     Cursor.getPredefinedCursor(Cursor.HAND_CURSOR),
                     SimpleTransferable(wrapData(projectNodeData), getWrapDataFlavor())
                 )
-            }
-        }
-
-        actionContext.runAsync {
-            actionContext.runInReadUI {
-
-                val moduleManager = ModuleManager.getInstance(project!!)
-                val rootTreeNode = DefaultMutableTreeNode()
-                val modules = moduleManager.sortedModules.reversed()
-
-                val moduleNodes: ArrayList<ModuleProjectNodeData> = ArrayList()
-                for (module in modules) {
-                    val moduleProjectNodeData = ModuleProjectNodeData(module)
-                    moduleNodes.add(moduleProjectNodeData)
-                    rootTreeNode.add(moduleProjectNodeData.asTreeNode())
-                }
-
-                actionContext.runInSwingUI {
-                    val rootTreeModel = DefaultTreeModel(rootTreeNode, true)
-                    projectApiTree!!.model = rootTreeModel
-                    apiLoadFuture = actionContext.runAsync {
-                        for (moduleNode in moduleNodes) {
-                            if (disposed) break
-                            loadApiInModule(moduleNode)
-                            rootTreeModel.reload(moduleNode.asTreeNode())
-                        }
-                        apiLoadFuture = null
-                    }
-                }
             }
         }
 
@@ -193,13 +153,50 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                 }
             }
         })
+
+        LOG.info("init project apis")
+        initProjectApiModule()
+    }
+
+    protected fun initProjectApiModule() {
+        actionContext.runWithContext {
+            val rootTreeNode = DefaultMutableTreeNode()
+            val moduleManager = actionContext.callInReadUI { ModuleManager.getInstance(project!!) }!!
+            val modules = actionContext.callInReadUI { moduleManager.sortedModules.reversed() }!!
+
+            val moduleNodes: ArrayList<ModuleProjectNodeData> = ArrayList()
+            for (module in modules) {
+                actionContext.checkStatus()
+                val moduleProjectNodeData = ModuleProjectNodeData(module)
+                moduleNodes.add(moduleProjectNodeData)
+                rootTreeNode.add(moduleProjectNodeData.asTreeNode())
+            }
+
+            actionContext.runInSwingUI {
+                val rootTreeModel = DefaultTreeModel(rootTreeNode, true)
+                projectApiTree!!.model = rootTreeModel
+                actionContext.runAsync {
+                    val boundary = actionContext.createBoundary()
+                    try {
+                        for (moduleNode in moduleNodes) {
+                            actionContext.checkStatus()
+                            loadApiInModule(moduleNode)
+                            boundary.waitComplete(false)
+                        }
+                    } finally {
+                        boundary.remove()
+                    }
+                }
+            }
+        }
     }
 
     private fun refreshProjectNode() {
         val projectNodeData = selectedProjectNode() ?: return
         if (projectNodeData is ModuleProjectNodeData) {
             (classExporter as? CachedRequestClassExporter)?.notUserCache()
-            loadApiInModule(projectNodeData) {
+            actionContext.runAsync {
+                loadApiInModule(projectNodeData)
                 (classExporter as? CachedRequestClassExporter)?.userCache()
             }
         } else if (projectNodeData is ClassProjectNodeData) {
@@ -207,7 +204,10 @@ abstract class AbstractApiDashboardDialog : JDialog() {
             projectNodeData.removeAllSub()
             rootTreeModel.reload(projectNodeData.asTreeNode())
             (classExporter as? CachedRequestClassExporter)?.notUserCache()
-            loadApiInClass(projectNodeData.cls, { projectNodeData }) {
+            actionContext.runAsync {
+                actionContext.withBoundary {
+                    loadApiInClass(projectNodeData.cls) { projectNodeData }
+                }
                 (classExporter as? CachedRequestClassExporter)?.userCache()
                 actionContext.runInSwingUI {
                     rootTreeModel.reload(projectNodeData.asTreeNode())
@@ -236,52 +236,34 @@ abstract class AbstractApiDashboardDialog : JDialog() {
         val rootTreeModel = projectApiTree!!.model
         moduleData.removeAllSub()
         val moduleNode = moduleData.asTreeNode()
-        rootTreeModel.reload(moduleNode)
-        val sourceRoots = moduleData.module.rootManager.getSourceRoots(false)
-        if (sourceRoots.isNullOrEmpty()) {
-            LOG.info("no source files be found in module:${moduleData.module.name}")
-            moduleData.status = NodeStatus.Loaded
-            moduleNode.removeFromParent()
-            return
-        }
-
-        val countLatch: CountLatch = AQSCountLatch()
-        moduleData.status = NodeStatus.Loading
-        var anyFound = false
-        for (contentRoot in sourceRoots) {
-            if (disposed) {
-                LOG.info("interrupt parsing api from ${contentRoot.path} because the action ${this::class.simpleName} was disposed")
-                return
+        actionContext.withBoundary(TimeUnit.SECONDS.toMillis(60)) {
+            actionContext.runInSwingUI { rootTreeModel.reload(moduleNode) }
+            val sourceRoots = moduleData.module.rootManager.getSourceRoots(false)
+            if (sourceRoots.isNullOrEmpty()) {
+                LOG.info("no source files be found in module:${moduleData.module.name}")
+                moduleData.status = NodeStatus.Loaded
+                moduleNode.removeFromParent()
+                return@withBoundary
             }
-            countLatch.down()
-            val classNodeMap: ConcurrentHashMap<PsiClass, ClassProjectNodeData> = ConcurrentHashMap()
-            actionContext.runInReadUI {
-                try {
-                    if (disposed) {
-                        LOG.info("interrupt parsing api from ${contentRoot.path} because the action ${this::class.simpleName} was disposed")
-                        return@runInReadUI
-                    }
+
+            moduleData.status = NodeStatus.Loading
+            var anyFound = false
+            for (contentRoot in sourceRoots) {
+                actionContext.checkStatus()
+                val classNodeMap: ConcurrentHashMap<PsiClass, ClassProjectNodeData> = ConcurrentHashMap()
+                actionContext.runInReadUI {
                     val rootDirectory =
                         PsiManager.getInstance(project!!).findDirectory(contentRoot) ?: return@runInReadUI
                     traversal(
                         rootDirectory,
-                        { !disposed },
                         {
-                            !disposed
-                                    && FileType.acceptable(it.name)
+                            FileType.acceptable(it.name)
                                     && (it is PsiClassOwner)
                         }) { psiFile ->
-                        if (disposed) {
-                            LOG.info("interrupt parsing api from ${rootDirectory.name} because the action ${this::class.simpleName} was disposed")
-                            return@traversal
-                        }
+                        actionContext.checkStatus()
                         for (psiClass in (psiFile as PsiClassOwner).classes) {
-                            if (disposed) {
-                                LOG.info("interrupt export api from ${contentRoot.path} because the action ${this::class.simpleName} was disposed")
-                                return@traversal
-                            }
-                            countLatch.down()
-                            loadApiInClass(psiClass, {
+                            actionContext.checkStatus()
+                            loadApiInClass(psiClass) {
                                 anyFound = true
                                 val resourceClass = it.doc.resourceClass()
                                 classNodeMap.safeComputeIfAbsent(resourceClass!!) {
@@ -293,33 +275,33 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                                     moduleData.addSubNodeData(classProjectNodeData)
                                     classProjectNodeData
                                 }!!
-                            }) { countLatch.up() }
+                            }
                         }
                     }
-                } finally {
-                    countLatch.up()
+                }
+            }
+            actionContext.runAsync {
+                TimeUnit.MILLISECONDS.sleep(2000)//wait 2s
+                if (anyFound) {
+                    LOG.info("load module [${moduleData.module.name}] completed")
+                    moduleData.status = NodeStatus.Loaded
+                } else {
+                    LOG.info("no api be found from module [${moduleData.module.name}]")
+                    moduleNode.removeFromParent()
+                }
+                KitUtils.safe { completedHandle() }
+                actionContext.runInSwingUI {
+                    KitUtils.safe(
+                        ArrayIndexOutOfBoundsException::class,
+                        NullPointerException::class
+                    ) {
+                        rootTreeModel.reload(moduleNode)
+                    }
                 }
             }
         }
-        actionContext.runAsync {
-            TimeUnit.MILLISECONDS.sleep(2000)//wait 2s
-            countLatch.waitFor(60000)//60s
-            if (anyFound) {
-                LOG.info("load module [${moduleData.module.name}] completed")
-                moduleData.status = NodeStatus.Loaded
-            } else {
-                LOG.info("no api be found from module [${moduleData.module.name}]")
-                moduleNode.removeFromParent()
-            }
-            KitUtils.safe { completedHandle() }
-            actionContext.runInSwingUI {
-                KitUtils.safe(
-                    ArrayIndexOutOfBoundsException::class,
-                    NullPointerException::class
-                ) {
-                    rootTreeModel.reload(moduleNode)
-                }
-            }
+        actionContext.runInSwingUI {
+            rootTreeModel.reload(moduleNode)
         }
     }
 
@@ -328,7 +310,6 @@ abstract class AbstractApiDashboardDialog : JDialog() {
     private fun loadApiInClass(
         psiClass: PsiClass,
         classProjectNodeData: (ApiProjectNodeData) -> ClassProjectNodeData,
-        completedHandle: () -> Unit,
     ) {
         apiLoaderConcurrency.acquire()
         actionContext.runAsync {
@@ -336,10 +317,7 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                 actionContext.withBoundary {
                     classExporter!!.export(psiClass, docs {
                         filterDoc(it)?.let { doc ->
-                            if (disposed) {
-                                LOG.info("interrupt export api from ${psiClass.name} because the action ${this::class.simpleName} was disposed")
-                                return@docs
-                            }
+                            actionContext.checkStatus()
                             if (doc.resource == null) {
                                 return@docs
                             }
@@ -350,7 +328,6 @@ abstract class AbstractApiDashboardDialog : JDialog() {
                         }
                     })
                 }
-                completedHandle()
             } finally {
                 apiLoaderConcurrency.release()
             }
@@ -359,27 +336,25 @@ abstract class AbstractApiDashboardDialog : JDialog() {
 
     private fun traversal(
         psiDirectory: PsiDirectory,
-        keepRunning: () -> Boolean,
         fileFilter: (PsiFile) -> Boolean,
         fileHandle: (PsiFile) -> Unit,
     ) {
         val dirStack: Stack<PsiDirectory> = Stack()
         var dir: PsiDirectory? = psiDirectory
-        while (dir != null && keepRunning()) {
+        while (dir != null) {
+            actionContext.checkStatus()
             for (file in dir.files) {
-                if (!keepRunning()) {
-                    return
-                }
+                actionContext.checkStatus()
                 if (fileFilter(file)) {
                     fileHandle(file)
                 }
             }
 
-            if (keepRunning()) {
-                for (subdirectory in dir.subdirectories) {
-                    dirStack.push(subdirectory)
-                }
+            actionContext.checkStatus()
+            for (subdirectory in dir.subdirectories) {
+                dirStack.push(subdirectory)
             }
+
             if (dirStack.isEmpty()) break
             dir = dirStack.pop()
             Thread.yield()

@@ -1,4 +1,4 @@
-[INFO]	search api from:com.itangcent.api.UserCtrl
+[INFO]	search api from: com.itangcent.api.UserCtrl
 [INFO]	before parse class:com.itangcent.api.UserCtrl
 [INFO]	before parse method:com.itangcent.api.UserCtrl#greeting
 [INFO]	after parse method:com.itangcent.api.UserCtrl#greeting

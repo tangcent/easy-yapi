@@ -143,7 +143,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                 var index = 1
                 var pathWithIndex: String?
                 while (true) {
-                    pathWithIndex = "$path-$index"
+                    pathWithIndex = pathWithIndex(path, index)
                     if (!FileUtil.exists(pathWithIndex)) {
                         break
                     }
@@ -151,9 +151,22 @@ class DefaultFileSaveHelper : FileSaveHelper {
                 }
                 pathWithIndex?.let { return it }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
         }
         return path
+    }
+
+    /**
+     * xxx -> xxx-$index
+     * xxx.txt -> xxx-$index.txt
+     */
+    private fun pathWithIndex(path: String, index: Int): String {
+        val dot = path.indexOf('.')
+        return if (dot == -1) {
+            "$path-$index"
+        } else {
+            path.substring(0, dot) + "-$index" + path.substring(dot)
+        }
     }
 
     private fun copyAndLog(info: String, onCopy: () -> Unit) {

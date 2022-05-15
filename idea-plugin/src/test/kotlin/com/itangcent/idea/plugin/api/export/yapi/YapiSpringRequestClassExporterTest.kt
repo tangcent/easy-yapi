@@ -43,7 +43,7 @@ internal class YapiSpringRequestClassExporterTest : YapiSpringClassExporterBaseT
         classExporter.export(userCtrlPsiClass, requestOnly {
             requests.add(it)
         })
-        boundary.waitComplete()
+        boundary.waitComplete(false)
         classExporter.export(defaultCtrlPsiClass, requestOnly {
             requests.add(it)
         })

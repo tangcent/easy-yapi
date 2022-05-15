@@ -1,19 +1,26 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.google.inject.Inject
 import com.intellij.openapi.ui.Messages
 import com.intellij.util.containers.ContainerUtil
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.swing.MessagesHelper
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
 
 class YapiApiExporter : AbstractYapiApiExporter() {
+
+    @Inject
+    private lateinit var classApiExporterHelper: ClassApiExporterHelper
 
     fun export() {
         val serverFound = yapiSettingsHelper.getServer(false).notNullOrBlank()
@@ -23,46 +30,20 @@ class YapiApiExporter : AbstractYapiApiExporter() {
     }
 
     private fun doExport() {
-
-        logger!!.info("Start find apis...")
-
-        val boundary = actionContext.createBoundary()
-        try {
-            SelectedHelper.Builder()
-                .dirFilter { dir, callBack ->
-                    actionContext.runInSwingUI {
-                        try {
-                            val yes = actionContext.instance(MessagesHelper::class).showYesNoDialog(
-                                "Export apis in directory [${ActionUtils.findCurrentPath(dir)}]?",
-                                "Please Confirm",
-                                Messages.getQuestionIcon()
-                            )
-                            if (yes == Messages.YES) {
-                                callBack(true)
-                            } else {
-                                logger.info("Cancel the operation export api from [${ActionUtils.findCurrentPath(dir)}]!")
-                                callBack(false)
-                            }
-                        } catch (e: Exception) {
-                            callBack(false)
-                        }
-                    }
-                }
-                .fileFilter { file -> FileType.acceptable(file.name) }
-                .classHandle {
-                    classExporter!!.export(it) { doc -> exportDoc(doc) }
-                }
-                .traversal()
-        } catch (e: Exception) {
-            logger.traceError("failed export apis!", e)
+        var anyFound = false
+        classApiExporterHelper.export {
+            anyFound = true
+            exportDoc(it)
         }
-
-        boundary.waitComplete()
-        logger.info("Apis exported completed")
+        if (anyFound) {
+            logger.info("Apis exported completed")
+        } else {
+            logger.info("No api be found to export!")
+        }
     }
 
     //privateToken+folderName -> CartInfo
-    private val folderNameCartMap: HashMap<String, CartInfo> = HashMap()
+    private val folderNameCartMap: ConcurrentHashMap<String, CartInfo> = ConcurrentHashMap()
 
     @Synchronized
     override fun getCartForFolder(folder: Folder, privateToken: String): CartInfo? {

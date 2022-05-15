@@ -226,7 +226,7 @@ internal class SimpleJAXRSRequestClassExporterTest : PluginContextLightCodeInsig
         }
 
         assertEquals(
-            "[INFO]\tsearch api from:com.itangcent.jaxrs.UserResource\n",
+            "[INFO]\tsearch api from: com.itangcent.jaxrs.UserResource\n",
             LoggerCollector.getLog().toUnixString()
         )
     }
