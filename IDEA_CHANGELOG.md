@@ -1,3 +1,11 @@
+* 2.3.8
+
+	* feat: wrap script result [(#762)](https://github.com/tangcent/easy-yapi/pull/762)
+
+	* fix: refactor the thread model [(#760)](https://github.com/tangcent/easy-yapi/pull/760)
+
+	* fix: interval sleep during parsing [(#757)](https://github.com/tangcent/easy-yapi/pull/757)
+
 * 2.3.7
 
 	* chore: update docs [(#752)](https://github.com/tangcent/easy-yapi/pull/752)
