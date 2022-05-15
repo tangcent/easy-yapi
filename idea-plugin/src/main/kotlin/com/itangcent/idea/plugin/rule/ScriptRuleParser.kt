@@ -29,6 +29,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
 import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
+import java.util.LinkedList
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
@@ -55,6 +56,9 @@ abstract class ScriptRuleParser : RuleParser {
 
     @Inject
     protected val methodReturnInferHelper: MethodInferHelper? = null
+
+    @Inject
+    protected lateinit var actionContext: ActionContext
 
     @Inject
     protected val logger: Logger? = null
@@ -176,6 +180,45 @@ abstract class ScriptRuleParser : RuleParser {
             return null
         }
 
+        @Suppress("UNCHECKED_CAST")
+        private fun <T> wrapAs(obj: Any?): T? {
+            return wrap(obj) as T?
+        }
+
+        private fun wrap(obj: Any?): Any? {
+            if (obj == null) {
+                return null
+            }
+
+            if (obj is RuleContext) {
+                return obj
+            }
+
+            val className = obj::class.qualifiedName ?: return obj
+            if (className.startsWith("com.intellij")
+                || className.startsWith("com.itangcent")
+            ) {
+                return contextOf(obj, getPsiContext())
+            }
+
+            if (obj is Map<*, *>) {
+                val copy = LinkedHashMap<Any?, Any?>()
+                for ((k, v) in obj.entries) {
+                    copy[k] = wrap(v)
+                }
+                return copy
+            }
+
+            if (obj is Collection<*>) {
+                val copy = LinkedList<Any?>()
+                for (ele in obj) {
+                    copy.add(wrap(ele))
+                }
+                return copy
+            }
+            return obj
+        }
+
         fun name(): String {
             return getName() ?: ""
         }
@@ -198,14 +241,14 @@ abstract class ScriptRuleParser : RuleParser {
          * it.annMap("annotation_name"):Map<String, Any?>?
          */
         fun annMap(name: String): Map<String, Any?>? {
-            return annotationHelper!!.findAnnMap(getResource(), name)
+            return wrapAs(annotationHelper!!.findAnnMap(getResource(), name))
         }
 
         /**
          * it.annMaps("annotation_name"):List<Map<String, Any?>>?
          */
         fun annMaps(name: String): List<Map<String, Any?>>? {
-            return annotationHelper!!.findAnnMaps(getResource(), name)
+            return wrapAs(annotationHelper!!.findAnnMaps(getResource(), name))
         }
 
         /**
@@ -226,7 +269,7 @@ abstract class ScriptRuleParser : RuleParser {
          * it.ann("annotation_name","attr"):Any?
          */
         fun annValue(name: String, attr: String): Any? {
-            return annotationHelper!!.findAttr(getResource(), name, attr)
+            return wrapAs(annotationHelper!!.findAttr(getResource(), name, attr))
         }
 
         /**
@@ -338,7 +381,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun isArray(): Boolean {
-            return psiClass.qualifiedName?.endsWith("[]") ?: false
+            return name().endsWith("[]")
         }
 
         /**
@@ -388,6 +431,10 @@ abstract class ScriptRuleParser : RuleParser {
             return psiClass.name
         }
 
+        override fun toJson(): String? {
+            return toJson(false, false)
+        }
+
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
                 psiClassHelper!!.getTypeObject(
@@ -397,6 +444,10 @@ abstract class ScriptRuleParser : RuleParser {
             } ?: psiClassHelper!!.getFields(psiClass)).let { RequestUtils.parseRawBody(it) }
         }
 
+        override fun toJson5(): String? {
+            return toJson5(false, false)
+        }
+
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             return (jvmClassHelper!!.resolveClassToType(psiClass)?.let {
                 psiClassHelper!!.getTypeObject(
@@ -404,7 +455,7 @@ abstract class ScriptRuleParser : RuleParser {
                     JsonOption.READ_COMMENT.or(readGetter, readSetter)
                 )
             } ?: psiClassHelper!!.getFields(psiClass)).let {
-                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+                actionContext.instance(Json5Formatter::class).format(it)
             }
         }
 
@@ -445,6 +496,16 @@ abstract class ScriptRuleParser : RuleParser {
         override fun toString(): String {
             return name()
         }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ScriptClassContext) return false
+            return toString() == other.toString()
+        }
+
+        override fun hashCode(): Int {
+            return toString().hashCode()
+        }
     }
 
     @ScriptTypeName("class")
@@ -463,6 +524,10 @@ abstract class ScriptRuleParser : RuleParser {
             return fields.mapToTypedArray { ScriptExplicitFieldContext(it) }
         }
 
+        override fun toJson(): String? {
+            return toJson(false, false)
+        }
+
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             return psiClassHelper!!.getTypeObject(
                 explicitClass.asDuckType(), psiClass,
@@ -470,12 +535,16 @@ abstract class ScriptRuleParser : RuleParser {
             )?.let { RequestUtils.parseRawBody(it) }
         }
 
+        override fun toJson5(): String? {
+            return toJson5(false, false)
+        }
+
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             return psiClassHelper!!.getTypeObject(
                 explicitClass.asDuckType(), psiClass,
                 JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
-                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+                actionContext.instance(Json5Formatter::class).format(it)
             }
         }
 
@@ -504,6 +573,16 @@ abstract class ScriptRuleParser : RuleParser {
         @ScriptIgnore
         override fun getCore(): Any {
             return explicitClass
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ScriptClassContext) return false
+            return toString() == other.toString()
+        }
+
+        override fun hashCode(): Int {
+            return toString().hashCode()
         }
     }
 
@@ -781,7 +860,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun getName(): String? {
-            return psiParameter.name
+            return actionContext.callInReadUI { psiParameter.name }
         }
 
         @ScriptIgnore
@@ -885,7 +964,11 @@ abstract class ScriptRuleParser : RuleParser {
 
         fun methodCnt(): Int
 
+        fun toJson(): String?
+
         fun toJson(readGetter: Boolean, readSetter: Boolean): String?
+
+        fun toJson5(): String?
 
         fun toJson5(readGetter: Boolean, readSetter: Boolean): String?
 
@@ -1041,6 +1124,10 @@ abstract class ScriptRuleParser : RuleParser {
             }?.size ?: 0
         }
 
+        override fun toJson(): String? {
+            return toJson(false, false)
+        }
+
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             return psiClassHelper!!.getTypeObject(
                 psiType, getResource()!!,
@@ -1050,12 +1137,16 @@ abstract class ScriptRuleParser : RuleParser {
             }
         }
 
+        override fun toJson5(): String? {
+            return toJson5(false, false)
+        }
+
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             return psiClassHelper!!.getTypeObject(
                 psiType, getResource()!!,
                 JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
-                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+                actionContext.instance(Json5Formatter::class).format(it)
             }
         }
 
@@ -1100,6 +1191,16 @@ abstract class ScriptRuleParser : RuleParser {
 
         override fun toString(): String {
             return name()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ScriptClassContext) return false
+            return toString() == other.toString()
+        }
+
+        override fun hashCode(): Int {
+            return toString().hashCode()
         }
 
         init {
@@ -1245,6 +1346,10 @@ abstract class ScriptRuleParser : RuleParser {
             }?.size ?: 0
         }
 
+        override fun toJson(): String? {
+            return toJson(false, false)
+        }
+
         override fun toJson(readGetter: Boolean, readSetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
             return psiClassHelper!!.getTypeObject(
@@ -1253,13 +1358,17 @@ abstract class ScriptRuleParser : RuleParser {
             )?.let { RequestUtils.parseRawBody(it) }
         }
 
+        override fun toJson5(): String? {
+            return toJson5(false, false)
+        }
+
         override fun toJson5(readGetter: Boolean, readSetter: Boolean): String? {
             val resource: PsiElement = getResource() ?: return null
             return psiClassHelper!!.getTypeObject(
                 duckType, resource,
                 JsonOption.READ_COMMENT.or(readGetter, readSetter)
             )?.let {
-                ActionContext.getContext()!!.instance(Json5Formatter::class).format(it)
+                actionContext.instance(Json5Formatter::class).format(it)
             }
         }
 
@@ -1303,6 +1412,16 @@ abstract class ScriptRuleParser : RuleParser {
             return duckTypeHelper!!.explicit(duckType).implements()?.mapToTypedArray {
                 ScriptExplicitClassContext(it)
             }
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ScriptClassContext) return false
+            return toString() == other.toString()
+        }
+
+        override fun hashCode(): Int {
+            return toString().hashCode()
         }
     }
 }

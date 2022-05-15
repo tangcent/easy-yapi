@@ -35,9 +35,6 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
     @Inject
     protected val sessionStorage: SessionStorage? = null
 
-    @Inject
-    protected val actionContext: ActionContext? = null
-
     private var scriptEngine: ScriptEngine? = null
 
     private var unsupported = false
