@@ -21,7 +21,7 @@ fun Extensible.setStatus(status: String?) {
     }
 }
 
-fun Extensible.getTags(): List<String>? {
+fun Extensible.getTags(): List<String> {
     return this.getExt("@tags") ?: EMPTY_TAGS
 }
 

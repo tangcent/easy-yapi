@@ -25,6 +25,8 @@ import com.itangcent.idea.psi.PsiMethodSet
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.takeIfNotOriginal
+import com.itangcent.intellij.extend.unbox
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.DuckType
@@ -434,14 +436,7 @@ abstract class RequestClassExporter : ClassExporter {
     /**
      * unbox queryParam
      */
-    protected fun tinyQueryParam(paramVal: String?): String? {
-        if (paramVal == null) return null
-        var pv = paramVal.trim()
-        while (pv.startsWith("[") && pv.endsWith("]")) {
-            pv = pv.removeSurrounding("[", "]")
-        }
-        return pv
-    }
+    protected fun tinyQueryParam(paramVal: Any?): Any? = paramVal.unbox()
 
     @Deprecated(message = "will be removed soon")
     protected open fun findAttrOfMethod(method: PsiMethod): String? {
@@ -578,7 +573,7 @@ abstract class RequestClassExporter : ClassExporter {
                     parameterExportContext,
                     request,
                     parameterExportContext.paramName(),
-                    tinyQueryParam(parameterExportContext.defaultVal() ?: typeObject?.toString()),
+                    tinyQueryParam(parameterExportContext.defaultVal() ?: typeObject),
                     parameterExportContext.required()
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.element())
                         ?: false,
@@ -597,10 +592,11 @@ abstract class RequestClassExporter : ClassExporter {
             }
 
             if (this.intelligentSettingsHelper.queryExpanded()) {
-                (typeObject as Map<*, *>).flatValid(object : FieldConsumer {
+                typeObject.flatValid(object : FieldConsumer {
                     override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
                         parameterExportContext.setExt("parent", parent)
                         parameterExportContext.setExt("key", key)
+                        parameterExportContext.setExt("path", path)
                         val fv = deepComponent(value)
                         if (fv == Magics.FILE_STR) {
                             logger.warn("confused file param [$path] for [GET]")
@@ -609,7 +605,8 @@ abstract class RequestClassExporter : ClassExporter {
                             parameterExportContext,
                             request,
                             path,
-                            tinyQueryParam((parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key) ?: value).toString()),
+                            tinyQueryParam((parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
+                                ?: value)?.toString()),
                             parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                             KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                         )
@@ -669,11 +666,12 @@ abstract class RequestClassExporter : ClassExporter {
                     parameterExportContext,
                     request, "Content-Type", "multipart/form-data"
                 )
-                if (this.intelligentSettingsHelper.formExpanded() && typeObject.isComplex()
-                    && (request.getContentType()?.contains("multipart/form-data") == true)
-                ) {
+                if (this.intelligentSettingsHelper.formExpanded()) {
                     typeObject.flatValid(object : FieldConsumer {
                         override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
+                            parameterExportContext.setExt("parent", parent)
+                            parameterExportContext.setExt("key", key)
+                            parameterExportContext.setExt("path", path)
                             val fv = deepComponent(value)
                             if (fv == Magics.FILE_STR) {
                                 requestBuilderListener.addFormFileParam(
@@ -687,8 +685,9 @@ abstract class RequestClassExporter : ClassExporter {
                                     parameterExportContext,
                                     request, path,
                                     tinyQueryParam(
-                                        (parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key) ?: value).toString()
-                                    ),
+                                        (parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
+                                            ?: value.takeIfNotOriginal())
+                                    )?.toString(),
                                     parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                                     KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                                 )
@@ -704,7 +703,9 @@ abstract class RequestClassExporter : ClassExporter {
                         parameterExportContext,
                         request, "Content-Type", "application/x-www-form-urlencoded"
                     )
+                    parameterExportContext.setExt("parent", fields)
                     fields.forEachValid { filedName, fieldVal ->
+                        parameterExportContext.setExt("key", filedName)
                         val fv = deepComponent(defaultVal?.get(filedName) ?: fieldVal)
                         if (fv == Magics.FILE_STR) {
                             requestBuilderListener.addFormFileParam(
@@ -716,7 +717,7 @@ abstract class RequestClassExporter : ClassExporter {
                         } else {
                             requestBuilderListener.addFormParam(
                                 parameterExportContext,
-                                request, filedName, null,
+                                request, filedName, fv?.takeIfNotOriginal()?.toString(),
                                 required?.getAs(filedName) ?: false,
                                 KVUtils.getUltimateComment(comment, filedName)
                             )
@@ -726,7 +727,7 @@ abstract class RequestClassExporter : ClassExporter {
             } else {
                 requestBuilderListener.addFormParam(
                     parameterExportContext,
-                    request, parameterExportContext.paramName(), tinyQueryParam(typeObject?.toString()),
+                    request, parameterExportContext.paramName(), tinyQueryParam(typeObject)?.toString(),
                     parameterExportContext.required()
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.element())
                         ?: false, paramDesc
@@ -825,15 +826,6 @@ abstract class RequestClassExporter : ClassExporter {
         return this.cache("unbox") {
             return@cache raw().unbox()
         }
-    }
-
-    private fun Any?.unbox(): Any? {
-        if (this is Array<*>) {
-            return this.firstOrNull().unbox()
-        } else if (this is Collection<*>) {
-            return this.firstOrNull().unbox()
-        }
-        return this
     }
 
     //endregion

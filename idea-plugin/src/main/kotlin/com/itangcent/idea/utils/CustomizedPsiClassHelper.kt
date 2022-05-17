@@ -75,14 +75,17 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
             LOG.warn("failed parse json:\n$valueText\n", e)
             return
         }
-        if (isOriginal(obj)) {
+        if (obj.isOriginal()) {
             return
         }
         var oldValue = kv[fieldName]
         if (oldValue is ObjectHolder) {
             oldValue = oldValue.getOrResolve()
         }
-        if (isOriginal(oldValue)) {
+        if (oldValue == obj) {
+            return
+        }
+        if (oldValue.isOriginal()) {
             kv[fieldName] = obj
         } else {
             kv[fieldName] = oldValue.copy()
@@ -90,43 +93,6 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         }
     }
 
-    /**
-     * check if the object is original
-     * like:
-     * default primary: 0, 0.0
-     * default blank string: ""
-     * array with original: [0],[0.0],[""]
-     * list with original: [0],[0.0],[""]
-     * map with original: {"key":0}
-     */
-    private fun isOriginal(obj: Any?): Boolean {
-        when (obj) {
-            null -> {
-                return true
-            }
-            is Array<*> -> {
-                return obj.size == 0 || (obj.size == 1 && isOriginal(obj[0]))
-            }
-            is Collection<*> -> {
-                return obj.size == 0 || (obj.size == 1 && isOriginal(obj.first()))
-            }
-            is Map<*, *> -> {
-                return obj.size == 0 || (obj.size == 1 && obj.entries.first().let {
-                    (it.key == "key" || isOriginal(it.key)) && isOriginal(it.value)
-                })
-            }
-            is Boolean -> {
-                return obj
-            }
-            is Number -> {
-                return obj.toDouble() == 0.0
-            }
-            is String -> {
-                return obj.isBlank()
-            }
-            else -> return false
-        }
-    }
 
     override fun ignoreField(psiField: PsiField): Boolean {
         if (configReader.first("ignore_static_and_final")?.asBool() == false) {

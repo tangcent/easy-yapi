@@ -77,7 +77,7 @@ test apis
 | name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
 | strings |  | NO | string array |
-| ints | 0 | NO | integer array |
+| ints |  | NO | integer array |
 
 
 
@@ -796,7 +796,7 @@ access user info
 
 | name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| id | 0 | NO | user id |
+| id |  | NO | user id |
 
 
 

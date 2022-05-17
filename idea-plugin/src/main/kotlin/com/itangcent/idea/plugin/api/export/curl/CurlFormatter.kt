@@ -7,6 +7,8 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.model.getContentType
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.http.RequestUtils
+import com.itangcent.intellij.extend.takeIfNotOriginal
+import com.itangcent.intellij.extend.takeIfSpecial
 
 /**
  * see https://curl.se/docs/manual.html
@@ -73,7 +75,7 @@ class CurlFormatter {
                             }
                             sb.append(param.name)
                                 .append("=")
-                            param.value?.escape()?.let { sb.append(it) }
+                            param.value.takeIfSpecial()?.escape()?.let { sb.append(it) }
                         }
                         sb.append("'")
                     }
@@ -83,7 +85,7 @@ class CurlFormatter {
                         sb.append(" -F '")
                         sb.append(param.name)
                             .append("=")
-                        param.value?.escape()?.let { sb.append(it) }
+                        param.value.takeIfSpecial()?.escape()?.let { sb.append(it) }
                         sb.append("'")
                     }
                 }
@@ -102,7 +104,7 @@ class CurlFormatter {
                     query.append("\\&")
                 }
                 query.append(param.name).append("=")
-                param.value?.let { query.append(it) }
+                param.value?.takeIfNotOriginal()?.let { query.append(it) }
             }
             urlBuild.query(query.toString())
         }

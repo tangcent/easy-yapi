@@ -118,7 +118,7 @@ internal class CurlExporterTest : PluginContextLightCodeInsightFixtureTestCase()
 
         command = ""
         curlExporter.export(listOf(requests[1]))
-        assertEquals("curl -X GET http://localhost:8080/user/get/{id}?id=0", command)
+        assertEquals("curl -X GET http://localhost:8080/user/get/{id}?id=", command)
 
         command = ""
         curlExporter.export(requests)

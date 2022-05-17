@@ -1,5 +1,7 @@
 package com.itangcent.intellij.extend
 
+import com.itangcent.common.utils.isOriginal
+
 fun Boolean.toInt(): Int {
     return if (this) 1 else 0
 }
@@ -45,4 +47,50 @@ fun Any.asHashMap(): HashMap<String, Any?> {
         return map
     }
     return HashMap()
+}
+
+fun Any?.takeIfNotOriginal(): Any? {
+    if (this.isOriginal()) {
+        return null
+    } else {
+        return this
+    }
+}
+
+/**
+ * check if the object is original
+ * like:
+ * default primary: 0, 0.0
+ * default blank string: "","0"
+ * array with original: [0],[0.0],[""]
+ * list with original: [0],[0.0],[""]
+ * map with original: {"key":0}
+ */
+fun Any?.isSpecial(): Boolean {
+    return when (val obj = this) {
+        null -> {
+            false
+        }
+        is String -> {
+            obj.isNotBlank() && obj != "0" && obj != "0.0"
+        }
+        else -> !this.isOriginal()
+    }
+}
+
+fun String?.takeIfSpecial(): String? {
+    return if (this.isSpecial()) {
+        this
+    } else {
+        null
+    }
+}
+
+fun Any?.unbox(): Any? {
+    if (this is Array<*>) {
+        return this.firstOrNull().unbox()
+    } else if (this is Collection<*>) {
+        return this.firstOrNull().unbox()
+    }
+    return this
 }

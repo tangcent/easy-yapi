@@ -88,7 +88,7 @@
           "query": [
             {
               "key": "id",
-              "value": "0",
+              "value": "",
               "equals": true,
               "description": "user id"
             }
@@ -119,7 +119,7 @@
               "query": [
                 {
                   "key": "id",
-                  "value": "0",
+                  "value": "",
                   "equals": true,
                   "description": "user id"
                 }

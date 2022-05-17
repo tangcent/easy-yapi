@@ -20,6 +20,8 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.takeIfNotOriginal
+import com.itangcent.intellij.extend.takeIfSpecial
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -318,7 +320,7 @@ open class YapiFormatter {
                     .set("name", it.name)
                     .set("value", it.value)
                     .set("desc", it.desc)
-                    .set("example", it.getExample() ?: it.value)
+                    .set("example", it.getExample() ?: it.value.takeIfSpecial())
                     .set("required", it.required.asInt())
             )
         }
@@ -330,7 +332,7 @@ open class YapiFormatter {
                 KV.create<String, Any?>()
                     .set("name", it.name)
                     .set("value", it.value)
-                    .set("example", it.getExample() ?: it.value?.toString())
+                    .set("example", it.getExample() ?: it.value.takeIfNotOriginal()?.toString())
                     .set("desc", it.desc)
                     .set("required", it.required.asInt())
             )
@@ -344,7 +346,7 @@ open class YapiFormatter {
                 urlencodeds.add(
                     KV.create<String, Any?>()
                         .set("name", it.name)
-                        .set("example", it.getExample() ?: it.value)
+                        .set("example", it.getExample() ?: it.value.takeIfSpecial())
                         .set("type", it.type)
                         .set("required", it.required.asInt())
                         .set("desc", it.desc)
@@ -359,7 +361,7 @@ open class YapiFormatter {
                 pathParmas.add(
                     KV.create<String, Any?>()
                         .set("name", it.name)
-                        .set("example", it.getExample() ?: it.value)
+                        .set("example", it.getExample() ?: it.value.takeIfSpecial())
                         .set("desc", it.desc)
                 )
             }
@@ -550,9 +552,9 @@ open class YapiFormatter {
             } else {
                 item["items"] = unknownObject()
             }
-        } else if (typedObject is List<*>) {
+        } else if (typedObject is Collection<*>) {
             if (typedObject.size > 0) {
-                item["items"] = parseObject(contactPath(path, "[]"), typedObject[0])
+                item["items"] = parseObject(contactPath(path, "[]"), typedObject.first())
             } else {
                 item["items"] = unknownObject()
             }
@@ -567,7 +569,7 @@ open class YapiFormatter {
                 requireds = LinkedList()
             }
             val mocks: HashMap<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? HashMap<String, Any?>?
-            val advancedList: HashMap<String, Any?>? = typedObject[Attrs.ADVANCED_ATTR] as? HashMap<String, Any?>?
+            val advancedInfo: HashMap<String, Any?>? = typedObject[Attrs.ADVANCED_ATTR] as? HashMap<String, Any?>?
             typedObject.forEachValid { k, v ->
                 try {
                     val key = k.toString()
@@ -607,9 +609,8 @@ open class YapiFormatter {
                         requireds?.add(key)
                     }
                     mocks?.get(key)?.let { addMock(propertyInfo, it) }
-                    advancedList?.get(key)?.let { addAdvanced(propertyInfo, it) }
-
-                    default?.get(k)?.takeUnless { it.anyIsNullOrBlank() }
+                    advancedInfo?.get(key)?.let { addAdvanced(propertyInfo, it) }
+                    default?.get(k)?.takeIf { !it.anyIsNullOrBlank() }
                         ?.let { propertyInfo["default"] = it }
 
                     properties[key] = propertyInfo
@@ -924,7 +925,7 @@ open class YapiFormatter {
     class MockRule(
         val pathPredict: (String?) -> Boolean,
         val typePredict: (String?) -> Boolean,
-        val mockStr: String
+        val mockStr: String,
     )
 
     //endregion mock rules---------------------------------------------------------

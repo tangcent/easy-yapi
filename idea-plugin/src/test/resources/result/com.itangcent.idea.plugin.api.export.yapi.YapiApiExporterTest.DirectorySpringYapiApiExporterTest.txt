@@ -25,7 +25,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -70,7 +69,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -155,7 +153,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -191,7 +188,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -228,7 +224,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -265,7 +260,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -290,7 +284,6 @@
       {
         "name": "name",
         "value": "",
-        "example": "",
         "desc": "user name",
         "required": 0
       },
@@ -311,14 +304,12 @@
       {
         "name": "birthDay",
         "value": "",
-        "example": "",
         "desc": "user birthDay",
         "required": 0
       },
       {
         "name": "regtime",
         "value": "",
-        "example": "",
         "desc": "user regtime",
         "required": 0
       }
@@ -352,7 +343,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -362,8 +352,7 @@
     "req_query": [
       {
         "name": "id",
-        "value": "0",
-        "example": "0",
+        "value": 0,
         "desc": "user id",
         "required": 0
       }
@@ -397,7 +386,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -440,7 +428,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -483,7 +470,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -520,7 +506,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -557,7 +542,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -594,7 +578,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -631,7 +614,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -642,7 +624,6 @@
       {
         "name": "token",
         "value": "",
-        "example": "",
         "desc": "input token",
         "required": 0
       }
@@ -676,7 +657,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -687,14 +667,12 @@
       {
         "name": "strings",
         "value": "",
-        "example": "",
         "desc": "string array",
         "required": 0
       },
       {
         "name": "ints",
-        "value": "0",
-        "example": "0",
+        "value": 0,
         "desc": "integer array",
         "required": 0
       }
@@ -728,7 +706,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -765,7 +742,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -802,7 +778,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -839,7 +814,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],
@@ -876,7 +850,6 @@
         "name": "token",
         "value": "",
         "desc": "auth token",
-        "example": "",
         "required": 1
       }
     ],

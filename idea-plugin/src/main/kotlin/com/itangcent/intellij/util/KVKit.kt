@@ -65,24 +65,46 @@ fun Map<*, *>.flatValid(consumer: FieldConsumer) {
 
 private fun flatValid(parent: Map<*, *>?, path: String, key: String, value: Any?, consumer: FieldConsumer) {
     when (value) {
-        null -> return
-        is Collection<*> -> value.forEachIndexed { index, it ->
-            if (it != null) {
-                flatValid(parent, "$path[$index]", key, it, consumer)
+        null -> {
+            consumer.consume(parent, path, key, null)
+            return
+        }
+        is Collection<*> -> {
+            if (value.isEmpty()) {
+                flatValid(parent, "$path[0]", key, null, consumer)
+            } else {
+                value.forEachIndexed { index, it ->
+                    if (it != null) {
+                        flatValid(parent, "$path[$index]", key, it, consumer)
+                    }
+                }
             }
         }
-        is Array<*> -> value.forEachIndexed { index, it ->
-            if (it != null) {
-                flatValid(parent, "$path[$index]", key, it, consumer)
+        is Array<*> ->
+            if (value.isEmpty()) {
+                flatValid(parent, "$path[0]", key, null, consumer)
+            } else {
+                value.forEachIndexed { index, it ->
+                    if (it != null) {
+                        flatValid(parent, "$path[$index]", key, it, consumer)
+                    }
+                }
             }
-        }
         is Map<*, *> -> {
-            value.forEachValid { k, v ->
-                k.toPrettyString()?.let { flatValid(value, "$path.$it", it, v, consumer) }
+            if (value.isEmpty()) {
+                flatValid(parent, "$path.key", "key", null, consumer)
+            } else {
+                value.forEachValid { k, v ->
+                    k.toPrettyString()?.let { flatValid(value, "$path.$it", it, v, consumer) }
+                }
             }
         }
-        is String -> consumer.consume(parent, path, key, value)
-        else -> consumer.consume(parent, path, key, GsonUtils.toJson(value))
+        is String -> {
+            consumer.consume(parent, path, key, value)
+        }
+        else -> {
+            consumer.consume(parent, path, key, GsonUtils.toJson(value))
+        }
     }
 }
 
