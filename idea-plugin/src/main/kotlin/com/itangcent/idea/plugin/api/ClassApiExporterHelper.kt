@@ -185,25 +185,25 @@ open class ClassApiExporterHelper {
 
         actionContext.runAsync {
             SelectedHelper.Builder()
-                .dirFilter { dir, callBack ->
-                    try {
-                        val yes = messagesHelper.showYesNoDialog(
-                            "Export the api in directory [${ActionUtils.findCurrentPath(dir)}]?",
-                            "Confirm",
-                            Messages.getQuestionIcon()
-                        )
-                        if (yes == Messages.YES) {
-                            callBack(true)
-                        } else {
-                            logger.debug("Cancel the operation export api from [${
-                                ActionUtils.findCurrentPath(dir)
-                            }]!")
-                            callBack(false)
-                        }
-                    } catch (e: Exception) {
-                        callBack(false)
-                    }
-                }
+//                .dirFilter { dir, callBack ->
+//                    try {
+//                        val yes = messagesHelper.showYesNoDialog(
+//                            "Export the api in directory [${ActionUtils.findCurrentPath(dir)}]?",
+//                            "Confirm",
+//                            Messages.getQuestionIcon()
+//                        )
+//                        if (yes == Messages.YES) {
+//                            callBack(true)
+//                        } else {
+//                            logger.debug("Cancel the operation export api from [${
+//                                ActionUtils.findCurrentPath(dir)
+//                            }]!")
+//                            callBack(false)
+//                        }
+//                    } catch (e: Exception) {
+//                        callBack(false)
+//                    }
+//                }
                 .fileFilter { file -> FileType.acceptable(file.name) }
                 .classHandle {
                     psiClassQueue.add(it)
@@ -222,11 +222,12 @@ open class ClassApiExporterHelper {
                     break
                 }
             } else {
-                LOG.info("wait api parsing... $psiClass")
+                val classQualifiedName = actionContext.callInReadUI { psiClass.qualifiedName }
+                LOG.info("wait api parsing... $classQualifiedName")
                 actionContext.withBoundary {
                     classExporter!!.export(psiClass) { handle(it) }
                 }
-                LOG.info("api parse $psiClass completed.")
+                LOG.info("api parse $classQualifiedName completed.")
             }
         }
     }
