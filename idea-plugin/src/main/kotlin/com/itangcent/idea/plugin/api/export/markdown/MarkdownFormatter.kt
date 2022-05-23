@@ -25,6 +25,8 @@ import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.takeIfNotOriginal
+import com.itangcent.intellij.extend.takeIfSpecial
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import java.util.concurrent.ConcurrentHashMap
@@ -289,7 +291,7 @@ class MarkdownFormatter {
             writer.doubleLine()
             val tableRender = tableWriterBuilder.build(writer, "request.pathParams", arrayOf("name", "value", "desc"))
             tableRender.writeHeaders()
-            tableRender.addRows(request.paths, { it.name }, { it.value }, { it.desc })
+            tableRender.addRows(request.paths, { it.name }, { it.value.takeIfNotOriginal() }, { it.desc })
             writer.nextLine()
         }
 
@@ -301,7 +303,7 @@ class MarkdownFormatter {
             val tableRender =
                 tableWriterBuilder.build(writer, "request.headers", arrayOf("name", "value", "required", "desc"))
             tableRender.writeHeaders()
-            tableRender.addRows(request.headers, { it.name }, { it.value }, { it.required ?: false }, { it.desc })
+            tableRender.addRows(request.headers, { it.name }, { it.value.takeIfSpecial() }, { it.required ?: false }, { it.desc })
             writer.nextLine()
         }
 
@@ -313,7 +315,7 @@ class MarkdownFormatter {
             val tableRender =
                 tableWriterBuilder.build(writer, "request.querys", arrayOf("name", "value", "required", "desc"))
             tableRender.writeHeaders()
-            tableRender.addRows(request.querys, { it.name }, { it.value }, { it.required ?: false }, { it.desc })
+            tableRender.addRows(request.querys, { it.name }, { it.value.takeIfNotOriginal() }, { it.required ?: false }, { it.desc })
             writer.nextLine()
         }
 
@@ -349,7 +351,7 @@ class MarkdownFormatter {
             tableRender.writeHeaders()
             tableRender.addRows(request.formParams,
                 { it.name },
-                { it.value },
+                { it.value.takeIfSpecial() },
                 { it.required ?: false },
                 { it.type },
                 { it.desc })
@@ -385,7 +387,7 @@ class MarkdownFormatter {
                     tableRender.writeHeaders()
                     tableRender.addRows(responseHeaders,
                         { it.name },
-                        { it.value },
+                        { it.value.takeIfNotOriginal() },
                         { it.required ?: false },
                         { it.desc })
 

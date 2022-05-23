@@ -79,7 +79,7 @@ test apis
 | `name` | `value` | `required` | `desc` |
 | ------------ | ------------ | ------------ | ----: |
 | strings |  | N | string array |
-| ints | 0 | N | integer array |
+| ints |  | N | integer array |
 
 
 
@@ -796,7 +796,7 @@ access user info
 
 | `name` | `value` | `required` | `desc` |
 | ------------ | ------------ | ------------ | ----: |
-| id | 0 | N | user id |
+| id |  | N | user id |
 
 
 

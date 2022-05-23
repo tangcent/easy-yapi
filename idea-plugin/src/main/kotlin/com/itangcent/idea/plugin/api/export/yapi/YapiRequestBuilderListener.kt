@@ -3,15 +3,13 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.model.*
-import com.itangcent.common.utils.Extensible
-import com.itangcent.common.utils.getAs
-import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnChannel
 import com.itangcent.idea.plugin.api.export.core.ExportContext
 import com.itangcent.idea.plugin.api.export.core.MethodExportContext
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.paramContext
+import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
@@ -58,7 +56,12 @@ class YapiRequestBuilderListener : RequestBuilderListener {
             trySetDemo(exportContext, formParam)
         } else {
             val parent = exportContext.getExt<Any>("parent") as? Map<*, *> ?: return
-            parent.getAs<String>(Attrs.EXAMPLE_ATTR, key)?.let { formParam.setExample(it) }
+            val example = parent.getAs<String>(Attrs.EXAMPLE_ATTR, key) ?: return
+            val path = exportContext.getExt<String>("path")
+            if (!path.isNullOrEmpty() && !path.endsWith(key) && formParam.value.notNullOrBlank()) {
+                return
+            }
+            formParam.setExample(example)
         }
     }
 
@@ -68,7 +71,12 @@ class YapiRequestBuilderListener : RequestBuilderListener {
             trySetDemo(exportContext, param)
         } else {
             val parent = exportContext.getExt<Any>("parent") as? Map<*, *> ?: return
-            parent.getAs<String>(Attrs.EXAMPLE_ATTR, key)?.let { param.setExample(it) }
+            val example = parent.getAs<String>(Attrs.EXAMPLE_ATTR, key) ?: return
+            val path = exportContext.getExt<String>("path")
+            if (!path.isNullOrEmpty() && !path.endsWith(key) && !param.value.anyIsNullOrEmpty()) {
+                return
+            }
+            param.setExample(example)
         }
     }
 
@@ -129,9 +137,9 @@ class YapiRequestBuilderListener : RequestBuilderListener {
         val tags = ruleComputer.computer(YapiClassExportRuleKeys.TAG, methodExportContext.element())
         if (tags.notNullOrEmpty()) {
             request.setTags(StringUtils.split(tags, configReader.first("api.tag.delimiter")?.let { it + "\n" }
-                    ?: ",\n")
-                    .map { it.trim() }
-                    .filter { it.isNotBlank() })
+                ?: ",\n")
+                .map { it.trim() }
+                .filter { it.isNotBlank() })
         }
 
         val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, methodExportContext.element())

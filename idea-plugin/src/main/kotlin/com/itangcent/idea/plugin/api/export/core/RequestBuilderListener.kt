@@ -91,16 +91,16 @@ interface RequestBuilderListener {
 //region utils------------------------------------------------------------------
 
 fun RequestBuilderListener.addParam(exportContext: ExportContext, request: Request,
-                                    paramName: String, defaultVal: String?, attr: String?) {
+                                    paramName: String, value: Any?, attr: String?) {
     addParam(exportContext, request,
-            paramName, defaultVal, false, attr)
+            paramName, value, false, attr)
 }
 
 fun RequestBuilderListener.addParam(exportContext: ExportContext, request: Request,
-                                    paramName: String, defaultVal: String?, required: Boolean, desc: String?): Param {
+                                    paramName: String, value: Any?, required: Boolean, desc: String?): Param {
     val param = Param()
     param.name = paramName
-    param.value = defaultVal
+    param.value = value
     param.required = required
     param.desc = desc
     this.addParam(exportContext, request,
@@ -115,10 +115,10 @@ fun RequestBuilderListener.addFormParam(exportContext: ExportContext, request: R
 }
 
 fun RequestBuilderListener.addFormParam(exportContext: ExportContext, request: Request,
-                                        paramName: String, defaultVal: String?, required: Boolean, desc: String?): FormParam {
+                                        paramName: String, value: String?, required: Boolean, desc: String?): FormParam {
     val param = FormParam()
     param.name = paramName
-    param.value = defaultVal
+    param.value = value
     param.required = required
     param.desc = desc
     param.type = "text"

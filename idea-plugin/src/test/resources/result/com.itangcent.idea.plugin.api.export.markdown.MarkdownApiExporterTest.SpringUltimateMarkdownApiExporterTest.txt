@@ -65,7 +65,7 @@ access user info
 
 | name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| id | 0 | NO | user id |
+| id |  | NO | user id |
 
 
 

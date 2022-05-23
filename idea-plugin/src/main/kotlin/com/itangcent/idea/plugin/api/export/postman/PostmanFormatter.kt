@@ -23,6 +23,8 @@ import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.takeIfNotOriginal
+import com.itangcent.intellij.extend.takeIfSpecial
 import com.itangcent.intellij.util.ActionUtils
 import org.apache.commons.lang3.RandomUtils
 import java.util.*
@@ -188,7 +190,7 @@ open class PostmanFormatter {
             queryList.add(
                 KV.create<String, Any?>()
                     .set(KEY, it.name)
-                    .set(VALUE, it.value)
+                    .set(VALUE, it.value?.takeIfNotOriginal() ?: "")
                     .set("equals", true)
                     .set(DESCRIPTION, it.desc)
             )
@@ -204,7 +206,7 @@ open class PostmanFormatter {
                     formdatas.add(
                         KV.create<String, Any?>()
                             .set(KEY, it.name)
-                            .set(VALUE, it.value)
+                            .set(VALUE, it.value.takeIfSpecial())
                             .set(TYPE, it.type)
                             .set(DESCRIPTION, it.desc)
                     )
@@ -218,7 +220,7 @@ open class PostmanFormatter {
                     urlEncodeds.add(
                         KV.create<String, Any?>()
                             .set(KEY, it.name)
-                            .set(VALUE, it.value)
+                            .set(VALUE, it.value.takeIfSpecial())
                             .set(TYPE, it.type)
                             .set(DESCRIPTION, it.desc)
                     )
@@ -318,7 +320,7 @@ open class PostmanFormatter {
                         KV.create<String, Any?>()
                             .set(NAME, it.name)
                             .set(KEY, it.name)
-                            .set(VALUE, it.value)
+                            .set(VALUE, it.value.takeIfSpecial())
                             .set(DESCRIPTION, it.desc)
                     )
                 }

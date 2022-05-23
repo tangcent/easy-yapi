@@ -97,10 +97,10 @@
             "description": "",
             "header": [
               {
-                "key": "token",
-                "value": "",
+                "description": "auth token",
                 "type": "text",
-                "description": "auth token"
+                "value": "",
+                "key": "token"
               }
             ],
             "url": {
@@ -111,10 +111,10 @@
               ],
               "query": [
                 {
-                  "key": "id",
-                  "value": "0",
                   "equals": true,
-                  "description": "user id"
+                  "description": "user id",
+                  "value": "0",
+                  "key": "id"
                 }
               ],
               "host": "{{test_default}}",
@@ -128,10 +128,10 @@
                 "description": "",
                 "header": [
                   {
-                    "key": "token",
-                    "value": "",
+                    "description": "auth token",
                     "type": "text",
-                    "description": "auth token"
+                    "value": "",
+                    "key": "token"
                   }
                 ],
                 "url": {
@@ -142,10 +142,10 @@
                   ],
                   "query": [
                     {
-                      "key": "id",
-                      "value": "0",
                       "equals": true,
-                      "description": "user id"
+                      "description": "user id",
+                      "value": "0",
+                      "key": "id"
                     }
                   ],
                   "host": "{{test_default}}",
@@ -160,26 +160,26 @@
               "header": [
                 {
                   "name": "date",
-                  "key": "date",
+                  "description": "The date and time that the message was sent",
                   "value": "Sun, 11 Apr 202106:56:34 GMT",
-                  "description": "The date and time that the message was sent"
+                  "key": "date"
                 },
                 {
                   "name": "server",
-                  "key": "server",
+                  "description": "A name for the server",
                   "value": "Apache-Coyote/1.1",
-                  "description": "A name for the server"
+                  "key": "server"
                 },
                 {
                   "name": "transfer-encoding",
-                  "key": "transfer-encoding",
+                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.",
                   "value": "chunked",
-                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                  "key": "transfer-encoding"
                 },
                 {
                   "name": "content-type",
-                  "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset\u003dUTF-8",
+                  "key": "content-type"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
@@ -539,6 +539,103 @@
               }
             }
           ]
+        },
+        {
+          "request": {
+            "method": "GET",
+            "description": "",
+            "header": [
+              {
+                "key": "token",
+                "value": "",
+                "type": "text",
+                "description": "auth token"
+              }
+            ],
+            "url": {
+              "path": [
+                "user",
+                "get",
+                ":id"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "",
+                  "equals": true,
+                  "description": "user id"
+                }
+              ],
+              "host": "{{test_default}}",
+              "raw": "{{test_default}}/user/get/{id}"
+            }
+          },
+          "response": [
+            {
+              "originalRequest": {
+                "method": "GET",
+                "description": "",
+                "header": [
+                  {
+                    "key": "token",
+                    "value": "",
+                    "type": "text",
+                    "description": "auth token"
+                  }
+                ],
+                "url": {
+                  "path": [
+                    "user",
+                    "get",
+                    ":id"
+                  ],
+                  "query": [
+                    {
+                      "key": "id",
+                      "value": "",
+                      "equals": true,
+                      "description": "user id"
+                    }
+                  ],
+                  "host": "{{test_default}}",
+                  "raw": "{{test_default}}/user/get/{id}"
+                }
+              },
+              "_postman_previewlanguage": "json",
+              "code": 200,
+              "_postman_previewtype": "text",
+              "responseTime": 50,
+              "name": "get user info-Example",
+              "header": [
+                {
+                  "name": "date",
+                  "key": "date",
+                  "value": "Sun, 11 Apr 202106:56:34 GMT",
+                  "description": "The date and time that the message was sent"
+                },
+                {
+                  "name": "server",
+                  "key": "server",
+                  "value": "Apache-Coyote/1.1",
+                  "description": "A name for the server"
+                },
+                {
+                  "name": "transfer-encoding",
+                  "key": "transfer-encoding",
+                  "value": "chunked",
+                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                },
+                {
+                  "name": "content-type",
+                  "key": "content-type",
+                  "value": "application/json;charset\u003dUTF-8"
+                }
+              ],
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
+              "status": "OK"
+            }
+          ],
+          "name": "get user info"
         },
         {
           "request": {
