@@ -34,7 +34,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     override fun beforeBind() {
         super.beforeBind()
         objectPsiClass = loadSource(Object::class.java)!!
-        loadSource(String::class.java)!!
+        loadSource(java.lang.String::class.java)!!
         loadSource(java.lang.Number::class.java)!!
         loadSource(java.lang.Comparable::class.java)!!
         integerPsiClass = loadSource(java.lang.Integer::class)!!
