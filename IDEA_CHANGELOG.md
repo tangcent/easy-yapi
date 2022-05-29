@@ -1,3 +1,13 @@
+* 2.3.9
+
+	* fix: not use '0' as example [(#771)](https://github.com/tangcent/easy-yapi/pull/771)
+
+	* fix: fix resize of ApiCallDialog [(#770)](https://github.com/tangcent/easy-yapi/pull/770)
+
+	* fix: fix  rule `field.default.value` [(#765)](https://github.com/tangcent/easy-yapi/pull/765)
+
+	* feat: not require confirmation to export apis from directory [(#766)](https://github.com/tangcent/easy-yapi/pull/766)
+
 * 2.3.8
 
 	* feat: wrap script result [(#762)](https://github.com/tangcent/easy-yapi/pull/762)
