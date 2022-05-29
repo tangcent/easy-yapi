@@ -629,11 +629,11 @@ test apis
 
 | name | value | required | desc |
 | ------------ | ------------ | ------------ | ------------ |
-| id | 0 | NO | user id |
-| type | 0 | NO | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| id |  | NO | user id |
+| type |  | NO | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
 | name |  | NO | user name |
-| age | 0 | NO | user age |
-| sex | 0 | NO |  |
+| age |  | NO | user age |
+| sex |  | NO |  |
 | birthDay |  | NO | user birthDay |
 | regtime |  | NO | user regtime |
 

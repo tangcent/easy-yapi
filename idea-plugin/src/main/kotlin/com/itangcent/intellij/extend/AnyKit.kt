@@ -50,10 +50,10 @@ fun Any.asHashMap(): HashMap<String, Any?> {
 }
 
 fun Any?.takeIfNotOriginal(): Any? {
-    if (this.isOriginal()) {
-        return null
+    return if (this.isOriginal()) {
+        null
     } else {
-        return this
+        this
     }
 }
 

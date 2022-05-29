@@ -116,7 +116,7 @@ open class YapiFormatter {
                         KV.create<String, Any?>()
                             .set("name", it.name)
                             .set("value", parseQueryValueAsJson5(it.value))
-                            .set("example", parseQueryValueAsJson5(it.getExample() ?: it.value))
+                            .set("example", parseQueryValueAsJson5(it.getExample() ?: it.value.takeIfNotOriginal()))
                             .set("desc", it.desc)
                             .set("required", it.required.asInt())
                     )

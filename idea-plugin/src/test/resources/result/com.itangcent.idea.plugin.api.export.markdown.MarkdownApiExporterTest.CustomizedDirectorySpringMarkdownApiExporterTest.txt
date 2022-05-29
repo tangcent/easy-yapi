@@ -631,11 +631,11 @@ test apis
 
 | `name` | `value` | `required` | `desc` |
 | ------------ | ------------ | ------------ | ----: |
-| id | 0 | N | user id |
-| type | 0 | N | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| id |  | N | user id |
+| type |  | N | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
 | name |  | N | user name |
-| age | 0 | N | user age |
-| sex | 0 | N |  |
+| age |  | N | user age |
+| sex |  | N |  |
 | birthDay |  | N | user birthDay |
 | regtime |  | N | user regtime |
 
