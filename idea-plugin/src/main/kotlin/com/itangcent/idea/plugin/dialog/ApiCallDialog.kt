@@ -1,6 +1,5 @@
 package com.itangcent.idea.plugin.dialog
 
-import com.google.common.util.concurrent.RateLimiter
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
@@ -26,10 +25,10 @@ import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.call.ApiCallUI
+import com.itangcent.idea.plugin.utils.CompensateRateLimiter
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.utils.*
-import com.itangcent.intellij.extend.notReentrant
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.Mode
 import com.itangcent.intellij.extend.rx.ThrottleHelper
@@ -112,6 +111,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     }
 
     init {
+        LOG.info("create ApiCallDialog")
         setContentPane(contentPane)
         getRootPane().defaultButton = callButton
 
@@ -182,10 +182,14 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     }
 
     override fun init() {
+        LOG.info("init ApiCallDialog")
         actionContext.keepAlive(TimeUnit.HOURS.toMillis(1))
 
+        LOG.info("init ApisModule")
         initApisModule()
+        LOG.info("init RequestModule")
         initRequestModule()
+        LOG.info("init ResponseModule")
         initResponseModule()
         resize()
         this.onResized {
@@ -199,10 +203,10 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         }
     }
 
-    private val rateLimiter = RateLimiter.create(12.0)
+    private val rateLimiter = CompensateRateLimiter.create(10)
 
     private fun resize() {
-        if (rateLimiter.tryAcquire()) {
+        rateLimiter.tryAcquire {
             actionContext.runInSwingUI {
                 val rightWidth = this.contentPane!!.width - this.apisListPanel!!.width
 
@@ -1351,3 +1355,5 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         }
     }
 }
+
+private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(ApiCallDialog::class.java)
