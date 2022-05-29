@@ -120,7 +120,7 @@ curl -X GET -H 'token: ' http://localhost:8080/test/return/customMap?key=
 
 ## user page query
 ```bash
-curl -X GET -H 'token: ' http://localhost:8080/test/call/page/user?size=\&user.id=0\&user.type=0\&user.name=\&user.age=0\&user.sex=0\&user.birthDay=\&user.regtime=\&users[0].id=0\&users[0].type=0\&users[0].name=\&users[0].age=0\&users[0].sex=0\&users[0].birthDay=\&users[0].regtime=\&t.id=0\&t.type=0\&t.name=\&t.age=0\&t.sex=0\&t.birthDay=\&t.regtime=
+curl -X GET -H 'token: ' http://localhost:8080/test/call/page/user?size=\&user.id=\&user.type=\&user.name=\&user.age=\&user.sex=\&user.birthDay=\&user.regtime=\&users[0].id=\&users[0].type=\&users[0].name=\&users[0].age=\&users[0].sex=\&users[0].birthDay=\&users[0].regtime=\&t.id=\&t.type=\&t.name=\&t.age=\&t.sex=\&t.birthDay=\&t.regtime=
 ```
 
 ---
@@ -141,7 +141,7 @@ curl -X POST -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'size=' -F '
 
 ## user page query with array
 ```bash
-curl -X GET -H 'token: ' http://localhost:8080/test/call/page/user/array?id=0\&type=0\&name=\&age=0\&sex=0\&birthDay=\&regtime=
+curl -X GET -H 'token: ' http://localhost:8080/test/call/page/user/array?id=\&type=\&name=\&age=\&sex=\&birthDay=\&regtime=
 ```
 
 ---

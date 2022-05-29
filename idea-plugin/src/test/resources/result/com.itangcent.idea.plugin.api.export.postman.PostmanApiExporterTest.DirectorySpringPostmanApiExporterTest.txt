@@ -1253,13 +1253,13 @@
               "query": [
                 {
                   "key": "id",
-                  "value": "0",
+                  "value": "",
                   "equals": true,
                   "description": "user id"
                 },
                 {
                   "key": "type",
-                  "value": "0",
+                  "value": "",
                   "equals": true,
                   "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
                 },
@@ -1271,13 +1271,13 @@
                 },
                 {
                   "key": "age",
-                  "value": "0",
+                  "value": "",
                   "equals": true,
                   "description": "user age"
                 },
                 {
                   "key": "sex",
-                  "value": "0",
+                  "value": "",
                   "equals": true,
                   "description": ""
                 },
@@ -1322,13 +1322,13 @@
                   "query": [
                     {
                       "key": "id",
-                      "value": "0",
+                      "value": "",
                       "equals": true,
                       "description": "user id"
                     },
                     {
                       "key": "type",
-                      "value": "0",
+                      "value": "",
                       "equals": true,
                       "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
                     },
@@ -1340,13 +1340,13 @@
                     },
                     {
                       "key": "age",
-                      "value": "0",
+                      "value": "",
                       "equals": true,
                       "description": "user age"
                     },
                     {
                       "key": "sex",
-                      "value": "0",
+                      "value": "",
                       "equals": true,
                       "description": ""
                     },

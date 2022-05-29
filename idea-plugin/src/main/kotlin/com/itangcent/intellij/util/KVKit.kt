@@ -99,11 +99,8 @@ private fun flatValid(parent: Map<*, *>?, path: String, key: String, value: Any?
                 }
             }
         }
-        is String -> {
-            consumer.consume(parent, path, key, value)
-        }
         else -> {
-            consumer.consume(parent, path, key, GsonUtils.toJson(value))
+            consumer.consume(parent, path, key, value)
         }
     }
 }

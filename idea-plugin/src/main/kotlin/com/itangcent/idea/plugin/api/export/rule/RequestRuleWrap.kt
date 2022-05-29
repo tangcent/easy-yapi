@@ -146,15 +146,15 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         requestBuilderListener.setJsonBody(methodExportContext!!, request, body, bodyAttr)
     }
 
-    fun addParam(paramName: String, defaultVal: String?, desc: String?) {
+    fun addParam(paramName: String, defaultVal: Any?, desc: String?) {
         requestBuilderListener.addParam(methodExportContext!!, request, paramName, defaultVal, desc)
     }
 
-    fun addParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
+    fun addParam(paramName: String, defaultVal: Any?, required: Boolean?, desc: String?) {
         requestBuilderListener.addParam(methodExportContext!!, request, paramName, defaultVal, required ?: true, desc)
     }
 
-    fun setParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
+    fun setParam(paramName: String, defaultVal: Any?, required: Boolean?, desc: String?) {
         val param = request.querys?.firstOrNull { it.name == paramName }
         if (param == null) {
             requestBuilderListener.addParam(methodExportContext!!,

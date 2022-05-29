@@ -234,7 +234,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 parameterExportContext,
                 request,
                 parameterExportContext.paramName(),
-                parameterExportContext.defaultVal().toString(),
+                parameterExportContext.defaultVal(),
                 parameterExportContext.required()
                     ?: false,
                 ultimateComment

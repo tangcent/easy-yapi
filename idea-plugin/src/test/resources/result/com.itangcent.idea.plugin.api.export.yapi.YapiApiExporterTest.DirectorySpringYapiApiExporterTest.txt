@@ -269,15 +269,13 @@
     "req_query": [
       {
         "name": "id",
-        "value": "0",
-        "example": "0",
+        "value": 0,
         "desc": "user id",
         "required": 0
       },
       {
         "name": "type",
-        "value": "0",
-        "example": "0",
+        "value": 0,
         "desc": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor",
         "required": 0
       },
@@ -289,15 +287,13 @@
       },
       {
         "name": "age",
-        "value": "0",
-        "example": "0",
+        "value": 0,
         "desc": "user age",
         "required": 0
       },
       {
         "name": "sex",
-        "value": "0",
-        "example": "0",
+        "value": 0,
         "desc": "",
         "required": 0
       },

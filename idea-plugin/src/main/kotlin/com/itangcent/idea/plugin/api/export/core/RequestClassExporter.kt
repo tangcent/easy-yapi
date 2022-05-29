@@ -605,8 +605,8 @@ abstract class RequestClassExporter : ClassExporter {
                             parameterExportContext,
                             request,
                             path,
-                            tinyQueryParam((parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
-                                ?: value)?.toString()),
+                            tinyQueryParam(parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
+                                ?: value),
                             parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                             KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                         )
@@ -626,7 +626,7 @@ abstract class RequestClassExporter : ClassExporter {
                     }
                     requestBuilderListener.addParam(
                         parameterExportContext,
-                        request, filedName, tinyQueryParam(fv?.toString()),
+                        request, filedName, tinyQueryParam(fv),
                         required?.getAs(filedName) ?: false,
                         KVUtils.getUltimateComment(comment, filedName)
                     )
