@@ -57,5 +57,5 @@ abstract class AnnotatedCondition<T : Annotation> : Condition, ConditionSupporte
         throw IllegalArgumentException("failed get condition class of ${this::class}")
     }
 
-    abstract protected fun matches(actionContext: ActionContext, annotation: T): Boolean
+    protected abstract fun matches(actionContext: ActionContext, annotation: T): Boolean
 }

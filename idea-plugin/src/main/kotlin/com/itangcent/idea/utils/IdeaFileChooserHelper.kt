@@ -48,22 +48,24 @@ class IdeaFileChooserHelper private constructor(
         onSelect: (VirtualFile) -> Unit,
         onCancel: () -> Unit,
     ) {
+        var toSelect: VirtualFile? = null
+        val lastLocation = PropertiesComponent.getInstance().getValue(getLastImportedLocation())
+        if (lastLocation != null) {
+            toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
+        }
         actionContext.runInSwingUI {
             val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
-            var toSelect: VirtualFile? = null
-            val lastLocation = PropertiesComponent.getInstance().getValue(getLastImportedLocation())
-            if (lastLocation != null) {
-                toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
-            }
             val files = chooser.choose(project, toSelect)
             if (files.isNotEmpty()) {
-                actionContext.runInWriteUI {
-                    val file = files[0]
-                    PropertiesComponent.getInstance().setValue(getLastImportedLocation(), file.path)
+                val file = files[0]
+                PropertiesComponent.getInstance().setValue(getLastImportedLocation(), file.path)
+                actionContext.runAsync {
                     onSelect(file)
                 }
             } else {
-                onCancel()
+                actionContext.runAsync {
+                    onCancel()
+                }
             }
         }
     }

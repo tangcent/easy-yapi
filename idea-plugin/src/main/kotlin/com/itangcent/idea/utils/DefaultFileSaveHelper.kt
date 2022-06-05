@@ -9,6 +9,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.FileUtils
 import com.itangcent.intellij.util.ToolUtils
+import com.itangcent.utils.localPath
 import java.awt.HeadlessException
 import java.io.File
 import java.nio.charset.Charset
@@ -74,7 +75,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                         var filePath = "${file.path}${File.separator}$defaultFile"
                         filePath = availablePath(filePath)
                         FileUtils.forceSave(filePath, content.toByteArray(charset))
-                        onSaveSuccess(filePath)
+                        onSaveSuccess(filePath.localPath())
                     } catch (e: Exception) {
                         onSaveFailed(e.message)
                         actionContext.runAsync {
@@ -84,7 +85,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                 } else {
                     try {
                         FileUtils.forceSave(file, content.toByteArray(charset))
-                        onSaveSuccess(file.path)
+                        onSaveSuccess(file.path.localPath())
                     } catch (e: Exception) {
                         onSaveFailed(e.message)
                         actionContext.runAsync {

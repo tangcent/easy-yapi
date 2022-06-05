@@ -131,6 +131,8 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     private var inferEnableCheckBox: JCheckBox? = null
 
+    private var selectedOnlyCheckBox: JCheckBox? = null
+
     private var maxDeepTextField: JTextField? = null
 
     private var readGetterCheckBox: JCheckBox? = null
@@ -268,6 +270,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         this.feignEnableCheckBox!!.isSelected = settings.feignEnable
         this.jaxrsEnableCheckBox!!.isSelected = settings.jaxrsEnable
         this.inferEnableCheckBox!!.isSelected = settings.inferEnable
+        this.selectedOnlyCheckBox!!.isSelected = settings.selectedOnly
         this.readGetterCheckBox!!.isSelected = settings.readGetter
         this.readSetterCheckBox!!.isSelected = settings.readSetter
         this.formExpandedCheckBox!!.isSelected = settings.formExpanded
@@ -581,6 +584,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.readGetter = readGetterCheckBox!!.isSelected
         settings.readSetter = readSetterCheckBox!!.isSelected
         settings.inferEnable = inferEnableCheckBox!!.isSelected
+        settings.selectedOnly = selectedOnlyCheckBox!!.isSelected
         settings.inferMaxDeep = maxDeepTextField!!.text.toIntOrNull() ?: Settings.DEFAULT_INFER_MAX_DEEP
         settings.yapiServer = yapiServerTextField!!.text
         settings.yapiTokens = yapiTokenTextArea!!.text

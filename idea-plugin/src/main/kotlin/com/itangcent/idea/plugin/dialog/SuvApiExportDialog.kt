@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.dialog
 
-import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.psi.PsiMethod
 import com.intellij.ui.components.JBCheckBox
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
@@ -9,7 +9,6 @@ import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.SwingUtils
-import com.itangcent.intellij.jvm.PsiClassHelper
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -31,9 +30,6 @@ class SuvApiExportDialog : ContextDialog() {
     private var apisHandle: ((Any?, List<*>) -> Unit)? = null
 
     private var onChannelChanged: ((Any?) -> Unit)? = null
-
-    @Inject
-    var psiClassHelper: PsiClassHelper? = null
 
     init {
         this.isUndecorated = false
@@ -61,14 +57,18 @@ class SuvApiExportDialog : ContextDialog() {
         EasyIcons.OK.iconOnly(this.buttonOK)
 
         // call onCancel() on ESCAPE
-        contentPane!!.registerKeyboardAction({ onCancel() },
+        contentPane!!.registerKeyboardAction(
+            { onCancel() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+        )
 
         // call onCallClick() on ENTER
-        contentPane!!.registerKeyboardAction({ onOK() },
+        contentPane!!.registerKeyboardAction(
+            { onOK() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
-            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+        )
 
         selectAllCheckBox!!.addChangeListener {
             onSelectedAll()
@@ -90,10 +90,18 @@ class SuvApiExportDialog : ContextDialog() {
     fun updateRequestList(requestList: List<*>) {
         this.docList = requestList
         this.apiList!!.model = DefaultComboBoxModel(requestList.toTypedArray())
+    }
 
+    fun selectAll(){
         this.selectAllCheckBox!!.isSelected = true
-
         onSelectedAll()
+    }
+
+    fun selectMethod(api: Any?){
+        this.selectAllCheckBox!!.isSelected = false
+        this.docList?.indexOf(api)?.let {
+            apiList!!.selectedIndex = it
+        }
     }
 
     fun setChannels(channels: List<*>) {

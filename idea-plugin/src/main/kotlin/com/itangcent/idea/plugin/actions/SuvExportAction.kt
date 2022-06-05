@@ -7,9 +7,7 @@ import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.DataEventCollector
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.condition.markAsSimple
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
-import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
+import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
@@ -54,6 +52,8 @@ class SuvExportAction : ApiExportAction("Export Api") {
 
         builder.bind(SuvApiExporter::class) { it.singleton() }
 
+        builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }
+
         builder.cache("DATA_EVENT_COLLECTOR", dataEventCollector)
 
         dataEventCollector = null
@@ -68,6 +68,7 @@ class SuvExportAction : ApiExportAction("Export Api") {
         dataContext.getData(CommonDataKeys.NAVIGATABLE_ARRAY)
         dataContext.getData(CommonDataKeys.NAVIGATABLE)
         dataContext.getData(CommonDataKeys.EDITOR)
+        dataContext.getData(CommonDataKeys.PSI_ELEMENT)
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

@@ -5,9 +5,7 @@ import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
-import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
+import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.generic.GenericMethodDocClassExporter
 import com.itangcent.idea.plugin.api.export.generic.GenericRequestClassExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownApiExporter
@@ -34,7 +32,9 @@ class MarkdownExportAction : ApiExportAction("Export Markdown") {
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("markdown"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
-        
+
+        builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }
+
         //always not read api from cache
         builder.bindInstance("class.exporter.read.cache", false)
 

@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
@@ -30,10 +31,7 @@ import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
+import com.itangcent.idea.plugin.settings.helper.*
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
@@ -45,6 +43,7 @@ import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.findCurrentMethod
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
@@ -73,10 +72,10 @@ open class SuvApiExporter {
     private lateinit var actionContext: ActionContext
 
     @Inject
-    private val classExporter: ClassExporter? = null
+    private lateinit var classApiExporterHelper: ClassApiExporterHelper
 
     @Inject
-    private lateinit var classApiExporterHelper: ClassApiExporterHelper
+    private lateinit var intelligentSettingsHelper: IntelligentSettingsHelper
 
     @Suppress("UNCHECKED_CAST")
     fun showExportWindow() {
@@ -98,11 +97,11 @@ open class SuvApiExporter {
 
                 multipleApiExportDialog.setOnChannelChanged { channel ->
                     if (channel == null) {
-                        multipleApiExportDialog.updateRequestList(docs)
+                        multipleApiExportDialog.updateRequestListToUI(docs)
                         return@setOnChannelChanged
                     }
                     val apiExporterAdapter = channel as ApiExporterWrapper
-                    multipleApiExportDialog.updateRequestList(docs
+                    multipleApiExportDialog.updateRequestListToUI(docs
                         .filter { apiExporterAdapter.support(it.docType) }
                         .toList())
                 }
@@ -116,6 +115,21 @@ open class SuvApiExporter {
         } catch (e: Exception) {
             logger.traceError("Apis exported failed", e)
         }
+    }
+
+    private fun SuvApiExportDialog.updateRequestListToUI(docs: List<DocWrapper>) {
+        this.updateRequestList(docs)
+        if (intelligentSettingsHelper.selectedOnly()) {
+            val currentMethod = actionContext.findCurrentMethod()
+            if (currentMethod != null) {
+                docs.firstOrNull { it.resourceMethod() == currentMethod }
+                    ?.let {
+                        this.selectMethod(it)
+                        return
+                    }
+            }
+        }
+        this.selectAll()
     }
 
     private var customActionExtLoader: ((String, ActionContext.ActionContextBuilder) -> Unit)? = null
@@ -149,6 +163,10 @@ open class SuvApiExporter {
         override fun toString(): String {
             return name ?: ""
         }
+    }
+
+    fun DocWrapper.resourceMethod(): PsiMethod? {
+        return (this.resource as? PsiResource)?.resource() as? PsiMethod
     }
 
     abstract class ApiExporterAdapter {

@@ -26,7 +26,7 @@ dependencies {
 
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
-    implementation('com.itangcent:commons:1.2.4') {
+    implementation('com.itangcent:commons:1.2.5') {
         exclude group: 'com.google.inject'
         exclude group: 'com.google.code.gson'
     }
