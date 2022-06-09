@@ -22,6 +22,8 @@ interface ApplicationSettingsSupport {
     var readSetter: Boolean
     var inferEnable: Boolean
     var inferMaxDeep: Int
+    var selectedOnly: Boolean
+
     var yapiServer: String?
     var yapiTokens: String?
     var enableUrlTemplating: Boolean
@@ -60,6 +62,7 @@ interface ApplicationSettingsSupport {
         newSetting.readSetter = this.readSetter
         newSetting.inferEnable = this.inferEnable
         newSetting.inferMaxDeep = this.inferMaxDeep
+        newSetting.selectedOnly = this.selectedOnly
         newSetting.yapiServer = this.yapiServer
         newSetting.yapiTokens = this.yapiTokens
         newSetting.enableUrlTemplating = this.enableUrlTemplating
@@ -115,6 +118,8 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var inferEnable: Boolean = false
 
     override var inferMaxDeep: Int = Settings.DEFAULT_INFER_MAX_DEEP
+
+    override var selectedOnly: Boolean = false
 
     //endregion
 

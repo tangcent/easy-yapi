@@ -37,6 +37,8 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
 
         builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
+
+        builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }
         //always not read api from cache
         builder.bindInstance("class.exporter.read.cache", false)
 

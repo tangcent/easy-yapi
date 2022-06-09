@@ -40,6 +40,8 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
         builder.bind(MethodDocBuilderListener::class) { it.with(CompositeMethodDocBuilderListener::class).singleton() }
 
+        builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }
+
         builder.bindInstance("file.save.default", "yapi.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.yapi.export.path")
 

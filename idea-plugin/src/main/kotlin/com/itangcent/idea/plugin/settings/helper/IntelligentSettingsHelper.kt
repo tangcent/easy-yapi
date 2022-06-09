@@ -35,6 +35,10 @@ class IntelligentSettingsHelper {
         return settingBinder.read().inferMaxDeep
     }
 
+    fun selectedOnly(): Boolean {
+        return settingBinder.read().selectedOnly
+    }
+
     fun jsonOptionForInput(jsonOption: Int): Int {
         return if (readSetter()) {
             jsonOption.or(JsonOption.READ_SETTER)

@@ -1137,7 +1137,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="max deep:"/>
+                          <text value="max infer deep:"/>
                         </properties>
                       </component>
                       <component id="9bab4" class="javax.swing.JTextField" binding="maxDeepTextField">
@@ -1277,7 +1277,16 @@
                     </constraints>
                     <properties/>
                     <border type="none"/>
-                    <children/>
+                    <children>
+                      <component id="dbb01" class="javax.swing.JCheckBox" binding="selectedOnlyCheckBox">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="export current method only"/>
+                        </properties>
+                      </component>
+                    </children>
                   </grid>
                 </children>
               </grid>
