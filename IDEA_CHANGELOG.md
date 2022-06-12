@@ -1,3 +1,11 @@
+* 2.4.0
+
+	* feat: get resource with timeout [(#786)](https://github.com/tangcent/easy-yapi/pull/786)
+
+	* chore: remove usages of KitUtils.safe [(#785)](https://github.com/tangcent/easy-yapi/pull/785)
+
+	* feat: support new setting 'export selected method only' [(#783)](https://github.com/tangcent/easy-yapi/pull/783)
+
 * 2.3.9
 
 	* fix: not use '0' as example [(#771)](https://github.com/tangcent/easy-yapi/pull/771)
