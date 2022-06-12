@@ -6,10 +6,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.safe
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
@@ -103,7 +103,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         val headerStr = findRequestHeader(parameterExportContext.psi())
         if (headerStr != null) {
             cacheAble!!.cache("header" to headerStr) {
-                val header = KitUtils.safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
+                val header = safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                 when {
                     header == null -> {
                         logger.error("error to parse additional header: $headerStr")

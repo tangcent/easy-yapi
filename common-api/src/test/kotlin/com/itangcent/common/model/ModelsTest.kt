@@ -1,7 +1,6 @@
 package com.itangcent.common.model
 
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.utils.Extensible
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.extension.ExtendWith
@@ -16,11 +15,9 @@ import kotlin.test.*
 class ModelsTest {
 
     @ParameterizedTest
-    @ValueSource(classes = [Doc::class, FormParam::class,
-        Header::class, MethodDoc::class,
-        Param::class, PathParam::class,
-        Request::class, Response::class
-    ])
+    @ValueSource(
+        classes = [Doc::class, FormParam::class, Header::class, MethodDoc::class, Param::class, PathParam::class, Request::class, Response::class]
+    )
     fun testExtensible(cls: Class<Extensible>) {
         val extensible = cls.newInstance() as Extensible//{}
         assertFalse(extensible.hasExt("a"))

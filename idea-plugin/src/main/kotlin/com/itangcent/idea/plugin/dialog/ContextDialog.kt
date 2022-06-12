@@ -1,8 +1,8 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.utils.safe
 import com.itangcent.idea.utils.initAfterShown
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
@@ -87,7 +87,7 @@ abstract class ContextDialog : JDialog() {
         if (!disposed) {
             disposed = true
             dispose()
-            KitUtils.safe { onDispose() }
+            safe { onDispose() }
         }
     }
 

@@ -11,15 +11,11 @@ import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
 import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.hasBodyOrForm
-import com.itangcent.common.utils.appendlnIfNotEmpty
-import com.itangcent.common.utils.firstOrNull
-import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.*
 import com.itangcent.http.*
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.icons.EasyIcons
@@ -1141,7 +1137,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
         private fun formatResponse(): String? {
             return try {
-                val contentType = KitUtils.safe { response.contentType()?.let { ContentType.parse(it) } }
+                val contentType = safe { response.contentType()?.let { ContentType.parse(it) } }
                 if (contentType != null) {
                     if (contentType.mimeType.startsWith("text/html") ||
                         contentType.mimeType.startsWith("text/xml")

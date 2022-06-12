@@ -2,9 +2,9 @@ package com.itangcent.idea.plugin.api.export.curl
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.safe
 import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.utils.FileSaveHelper
@@ -66,7 +66,7 @@ class CurlExporter {
 
     fun export(request: Request) {
         val curlCommand = curlFormatter.parseRequest(request)
-        KitUtils.safe { ToolUtils.copy2Clipboard(curlCommand) }
+        safe { ToolUtils.copy2Clipboard(curlCommand) }
         messagesHelper.showInfoDialog(curlCommand, "Curl")
     }
 }
