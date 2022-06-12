@@ -11,6 +11,7 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.resource.DefaultResourceResolver
 import com.itangcent.intellij.config.resource.URLResource
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.callWithTimeout
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.utils.GiteeSupport
@@ -38,14 +39,17 @@ open class CachedResourceResolver : DefaultResourceResolver() {
     private lateinit var httpSettingsHelper: HttpSettingsHelper
 
     @Inject
+    private lateinit var actionContext: ActionContext
+
+    @Inject
     private lateinit var logger: Logger
 
     private val beanDAO: SqliteDataResourceHelper.ExpiredBeanDAO by lazy {
-        val context = ActionContext.getContext()
-        val sqliteDataResourceHelper = context!!.instance(SqliteDataResourceHelper::class)
+        val sqliteDataResourceHelper = actionContext.instance(SqliteDataResourceHelper::class)
         sqliteDataResourceHelper.getExpiredBeanDAO(
             (projectCacheRepository
-                ?: localFileRepository)!!.getOrCreateFile(".url.cache.v2.1.db").path, "DB_BEAN_BINDER")
+                ?: localFileRepository)!!.getOrCreateFile(".url.cache.v2.1.db").path, "DB_BEAN_BINDER"
+        )
     }
 
     override fun createUrlResource(url: String): URLResource {
@@ -65,16 +69,22 @@ open class CachedResourceResolver : DefaultResourceResolver() {
                     return byteArrayOf()
                 }
                 try {
-                    valueBytes = super.inputStream?.use { it.readBytes() }
+                    valueBytes = actionContext.callWithTimeout(timeOut().toLong()) {
+                        super.inputStream?.use { it.readBytes() }
+                    }
                 } catch (e: Exception) {
                     if (url.host.contains("githubusercontent.com")) {
                         GiteeSupport.convertUrlFromGithub(rawUrl)?.let { giteeUrl ->
-                            if(e is SocketTimeoutException){
-                                logger.error("failed fetch:[$url]\n" +
-                                        "Maybe you can use [$giteeUrl] instead")
-                            }else {
-                                logger.traceError("failed fetch:[$url]\n" +
-                                        "Maybe you can use [$giteeUrl] instead", e)
+                            if (e is SocketTimeoutException) {
+                                logger.error(
+                                    "failed fetch:[$url]\n" +
+                                            "Maybe you can use [$giteeUrl] instead"
+                                )
+                            } else {
+                                logger.traceError(
+                                    "failed fetch:[$url]\n" +
+                                            "Maybe you can use [$giteeUrl] instead", e
+                                )
                             }
                             return null
                         }
@@ -103,10 +113,12 @@ open class CachedResourceResolver : DefaultResourceResolver() {
             get() = loadCache()?.let { String(it, Charsets.UTF_8) }
 
         override fun onConnection(connection: URLConnection) {
-            val httpTimeOut = httpSettingsHelper.httpTimeOut(TimeUnit.MILLISECONDS)
+            val httpTimeOut = timeOut()
             connection.connectTimeout = httpTimeOut
             connection.readTimeout = httpTimeOut
         }
+
+        private fun timeOut() = httpSettingsHelper.httpTimeOut(TimeUnit.MILLISECONDS)
     }
 }
 
