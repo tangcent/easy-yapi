@@ -13,13 +13,11 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.mock.SettingBinderAdaptor
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
-import java.net.SocketTimeoutException
+import java.io.IOException
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -27,7 +25,7 @@ import kotlin.test.assertTrue
 /**
  * Test case of [CachedResourceResolver]
  */
-@DisabledOnOs(OS.WINDOWS)
+//@DisabledOnOs(OS.WINDOWS)
 internal class CachedResourceResolverTest : AdvancedContextTest() {
 
     @Inject
@@ -77,7 +75,7 @@ internal class CachedResourceResolverTest : AdvancedContextTest() {
     }
 
     @Test
-    fun testCachedResource() {
+    fun testCachedResourceFromGithub() {
         settings.httpTimeOut = 5
 
         try {
@@ -107,9 +105,14 @@ internal class CachedResourceResolverTest : AdvancedContextTest() {
                 assertNotNull(it)
                 assertEquals(content, it.use { input -> input.readString() })
             }
-        } catch (e: SocketTimeoutException) {
+        } catch (e: IOException) {
             logger.warn("failed connect raw.githubusercontent.com")
         }
+    }
+
+    @Test
+    fun testCachedResourceFromApache() {
+        settings.httpTimeOut = 5
 
         try {
             //test forbidden
@@ -127,7 +130,7 @@ internal class CachedResourceResolverTest : AdvancedContextTest() {
                 assertNotNull(it)
                 assertEquals("", it.use { input -> input.readString() })
             }
-        } catch (e: SocketTimeoutException) {
+        } catch (e: IOException) {
             logger.warn("failed connect apache.org")
         }
     }

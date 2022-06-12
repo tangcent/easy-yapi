@@ -1,15 +1,9 @@
 package com.itangcent.intellij.extend
 
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.util.PsiTreeUtil
 import com.itangcent.common.concurrent.ValueHolder
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.TimeSpanUtils
-import com.itangcent.common.utils.cast
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.context.ThreadFlag
 import com.itangcent.intellij.logger.Logger
