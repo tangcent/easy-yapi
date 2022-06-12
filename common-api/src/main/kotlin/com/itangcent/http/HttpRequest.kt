@@ -1,8 +1,8 @@
 package com.itangcent.http
 
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.kit.equalIgnoreCase
+import com.itangcent.common.utils.safe
 import org.apache.http.Consts
 import org.apache.http.entity.ContentType
 import java.io.ByteArrayInputStream
@@ -1084,7 +1084,7 @@ abstract class AbstractHttpResponse : HttpResponse {
      *          {@code null} if there is none
      */
     override fun string(): String? {
-        val charset: Charset? = KitUtils.safe { ContentType.parse(this.contentType())?.charset }
+        val charset: Charset? = safe { ContentType.parse(this.contentType())?.charset }
             ?: Consts.UTF_8
         return this.string(charset!!)
     }

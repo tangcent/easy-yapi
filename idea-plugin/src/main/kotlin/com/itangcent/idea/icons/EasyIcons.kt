@@ -2,8 +2,8 @@ package com.itangcent.idea.icons
 
 import com.intellij.openapi.util.IconLoader
 import com.intellij.util.ReflectionUtil
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.utils.invokeMethod
+import com.itangcent.common.utils.safe
 import org.jetbrains.annotations.NonNls
 import java.awt.Component
 import java.net.URL
@@ -97,14 +97,14 @@ fun Icon?.iconOnly(component: Component?) {
     if (this == null || component == null) {
         return
     }
-    KitUtils.safe { component.invokeMethod("setIcon", this) }
-    KitUtils.safe { component.invokeMethod("setText", "") }
+    safe { component.invokeMethod("setIcon", this) }
+    safe { component.invokeMethod("setText", "") }
 }
 
 fun Icon?.iconOnly(component: AbstractButton?) {
     if (this == null || component == null) {
         return
     }
-    KitUtils.safe { component.icon = this }
-    KitUtils.safe { component.text = "" }
+    safe { component.icon = this }
+    safe { component.text = "" }
 }

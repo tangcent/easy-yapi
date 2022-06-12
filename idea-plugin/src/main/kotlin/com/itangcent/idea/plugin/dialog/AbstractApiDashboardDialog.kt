@@ -7,12 +7,10 @@ import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.rootManager
 import com.intellij.psi.*
-import com.itangcent.common.concurrent.AQSCountLatch
-import com.itangcent.common.concurrent.CountLatch
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
+import com.itangcent.common.utils.safe
 import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
@@ -26,11 +24,9 @@ import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.*
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.idea.utils.reload
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.runWithContext
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.withBoundary
-import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.FileType
 import java.awt.Cursor
@@ -43,7 +39,6 @@ import java.awt.event.MouseEvent
 import java.io.Serializable
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Future
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import javax.swing.*
@@ -289,9 +284,9 @@ abstract class AbstractApiDashboardDialog : ContextDialog() {
                     LOG.info("no api be found from module [${moduleData.module.name}]")
                     moduleNode.removeFromParent()
                 }
-                KitUtils.safe { completedHandle() }
+                safe { completedHandle() }
                 actionContext.runInSwingUI {
-                    KitUtils.safe(
+                    safe(
                         ArrayIndexOutOfBoundsException::class,
                         NullPointerException::class
                     ) {

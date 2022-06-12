@@ -6,11 +6,9 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.kit.KitUtils
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.Response
-import com.itangcent.common.model.getContentType
 import com.itangcent.common.model.hasBodyOrForm
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
@@ -238,7 +236,7 @@ abstract class RequestClassExporter : ClassExporter {
             val additionalHeaders = additionalHeader!!.lines()
             for (headerStr in additionalHeaders) {
                 cacheAble!!.cache("header" to headerStr) {
-                    val header = KitUtils.safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
+                    val header = safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                     when {
                         header == null -> {
                             logger.error("error to parse additional header: $headerStr")
@@ -263,7 +261,7 @@ abstract class RequestClassExporter : ClassExporter {
             val additionalParams = additionalParam!!.lines()
             for (paramStr in additionalParams) {
                 cacheAble!!.cache("param" to paramStr) {
-                    val param = KitUtils.safe { additionalParseHelper.parseParamFromJson(paramStr) }
+                    val param = safe { additionalParseHelper.parseParamFromJson(paramStr) }
                     when {
                         param == null -> {
                             logger.error("error to parse additional param: $paramStr")
@@ -292,7 +290,7 @@ abstract class RequestClassExporter : ClassExporter {
                 val additionalHeaders = additionalResponseHeader!!.lines()
                 for (headerStr in additionalHeaders) {
                     cacheAble!!.cache("header" to headerStr) {
-                        val header = KitUtils.safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
+                        val header = safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                         when {
                             header == null -> {
                                 logger.error("error to parse additional response header: $headerStr")
@@ -605,8 +603,10 @@ abstract class RequestClassExporter : ClassExporter {
                             parameterExportContext,
                             request,
                             path,
-                            tinyQueryParam(parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
-                                ?: value),
+                            tinyQueryParam(
+                                parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
+                                    ?: value
+                            ),
                             parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                             KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                         )

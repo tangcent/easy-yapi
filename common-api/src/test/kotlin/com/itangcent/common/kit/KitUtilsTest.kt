@@ -1,6 +1,7 @@
 package com.itangcent.common.kit
 
 import com.itangcent.common.utils.KV
+import com.itangcent.common.utils.safe
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -14,27 +15,6 @@ class KitUtilsTest {
     fun testFromBool() {
         assertEquals("true", KitUtils.fromBool(true, "true", "false"))
         assertEquals("false", KitUtils.fromBool(false, "true", "false"))
-    }
-
-    @Test
-    fun testSafe() {
-        assertDoesNotThrow { KitUtils.safe { throw RuntimeException() } }
-        assertDoesNotThrow { KitUtils.safe(RuntimeException::class) { throw RuntimeException() } }
-        assertThrows(RuntimeException::class.java) { KitUtils.safe(IllegalArgumentException::class) { throw RuntimeException() } }
-        assertDoesNotThrow { KitUtils.safe(RuntimeException::class) { throw IllegalArgumentException() } }
-        assertDoesNotThrow {
-            KitUtils.safe(
-                RuntimeException::class,
-                IllegalArgumentException::class
-            ) { throw IllegalArgumentException() }
-        }
-        assertThrows(RuntimeException::class.java) {
-            KitUtils.safe(
-                IllegalStateException::class,
-                IllegalArgumentException::class
-            ) { throw RuntimeException() }
-        }
-
     }
 
     @Test

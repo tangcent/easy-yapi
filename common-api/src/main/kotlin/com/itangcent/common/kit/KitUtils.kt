@@ -3,7 +3,6 @@ package com.itangcent.common.kit
 import com.itangcent.common.spi.SpiUtils
 import com.itangcent.utils.DefaultJsonSupport
 import com.itangcent.utils.JsonSupport
-import kotlin.reflect.KClass
 
 object KitUtils {
 
@@ -11,39 +10,6 @@ object KitUtils {
         return when (boolean) {
             true -> whenTrue
             false -> whenFalse
-        }
-    }
-
-    fun <T> safe(action: () -> T): T? {
-        return try {
-            action()
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    fun <T> safe(ignoreThrowable: KClass<*>, action: () -> T): T? {
-        return try {
-            action()
-        } catch (e: Exception) {
-            if (ignoreThrowable.isInstance(e)) {
-                null
-            } else {
-                throw e
-            }
-        }
-    }
-
-    fun <T> safe(vararg ignoreThrowable: KClass<*>, action: () -> T): T? {
-        return try {
-            action()
-        } catch (e: Exception) {
-            for (throwable in ignoreThrowable) {
-                if (throwable.isInstance(e)) {
-                    return null
-                }
-            }
-            throw e
         }
     }
 }
