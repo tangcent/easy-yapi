@@ -689,7 +689,7 @@ abstract class ScriptRuleParser : RuleParser {
          * @return the method return type, or null if the method is a constructor.
          */
         open fun returnType(): ScriptClassContext? {
-            return (psiElement as PsiMethod).returnType?.let { ScriptPsiTypeContext(it) }
+            return (psiElement as PsiMethod).getResolvedReturnType()?.let { ScriptPsiTypeContext(it) }
         }
 
         /**
@@ -766,7 +766,7 @@ abstract class ScriptRuleParser : RuleParser {
             needInfer: Boolean = false, readGetter: Boolean = true,
             readSetter: Boolean = true,
         ): String? {
-            val psiType = psiMethod.returnType ?: return null
+            val psiType = psiMethod.getResolvedReturnType() ?: return null
             return when {
                 needInfer && (!duckTypeHelper!!.isQualified(psiType, psiMethod) ||
                         PsiClassUtils.isInterface(psiType)) -> {
