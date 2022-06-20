@@ -1,3 +1,7 @@
+* 2.4.1
+
+	* feat: resolve suspend function in kotlin [(#790)](https://github.com/tangcent/easy-yapi/pull/790)
+
 * 2.4.0
 
 	* feat: get resource with timeout [(#786)](https://github.com/tangcent/easy-yapi/pull/786)
