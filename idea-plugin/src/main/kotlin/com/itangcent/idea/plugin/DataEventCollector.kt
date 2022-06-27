@@ -32,19 +32,6 @@ class DataEventCollector : DataContext {
         return data
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Any?> getData(key: DataKey<T>): T? {
-        if (cache.containsKey(key.name)) {
-            return cache[key.name] as T?
-        }
-        if (!dataReachable) {
-            return null
-        }
-        val data = anActionEvent!!.getData(key)
-        cache[key.name] = data
-        return data
-    }
-
     fun disableDataReach() {
         dataReachable = false
     }
