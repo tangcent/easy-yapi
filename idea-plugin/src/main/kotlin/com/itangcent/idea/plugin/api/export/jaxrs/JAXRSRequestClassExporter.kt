@@ -17,6 +17,7 @@ import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.jvm.AnnotationHelper
+import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitField
@@ -41,6 +42,9 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
 
     @Inject
     protected val commentResolver: CommentResolver? = null
+
+    @Inject
+    protected lateinit var docHelper: DocHelper
 
     @Inject
     protected lateinit var jaxrsBaseAnnotationParser: JAXRSBaseAnnotationParser
@@ -90,7 +94,8 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
         if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.BEAN_PARAM_ANNOTATION)) {
             val beanType = exportContext.type()?.unbox() as? SingleDuckType ?: return
             duckTypeHelper.explicit(beanType).collectFields {
-                processParameterOrField(request, FieldExportContext(exportContext, it), null)
+                processParameterOrField(request, FieldExportContext(exportContext, it),
+                    docHelper.getAttrOfField(it.psi()))
             }
             return
         }
