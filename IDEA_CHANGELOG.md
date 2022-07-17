@@ -1,3 +1,11 @@
+* 2.4.2
+
+	* feat: enum auto select field by type [(#797)](https://github.com/tangcent/easy-yapi/pull/797)
+
+	* fix: resolve doc of fields for param annotated with @BeanParam [(#796)](https://github.com/tangcent/easy-yapi/pull/796)
+
+	* chore: remove DataEventCollector.getData(DataKey) [(#792)](https://github.com/tangcent/easy-yapi/pull/792)
+
 * 2.4.1
 
 	* feat: resolve suspend function in kotlin [(#790)](https://github.com/tangcent/easy-yapi/pull/790)
