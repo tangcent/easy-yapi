@@ -21,7 +21,7 @@
 | ------------ | ------------ | ------------ |
 | 语言 | java, kotlin | scala |
 | web | [spring](https://spring.io/), [feign](https://spring.io/projects/spring-cloud-openfeign), [jaxrs](https://www.oracle.com/technical-resources/articles/java/jax-rs.html) ([quarkus](https://quarkus.io/) or [jersey](https://eclipse-ee4j.github.io/jersey/)) | [dubbo](https://dubbo.apache.org) |
-| 导出到 | [Postman](https://easyyapi.com/documents/export2postman.html), [Yapi](https://easyyapi.com/documents/export2yapi.html), [Markdown](https://easyyapi.com/documents/export2markdown.html) | - |
+| 导出到 | [Postman](https://easyyapi.com/documents/export2postman.html), [Yapi](https://easyyapi.com/documents/export2yapi.html), [Markdown](https://easyyapi.com/documents/export2markdown.html) , [Curl](https://curl.se/) | - |
 | 常用框架 | javax.validation, Jackson, Gson |  [swagger](https://swagger.io/) |
 
 ## 导航
@@ -35,17 +35,20 @@
 ## 贡献
 
 ***您可以通过以下途径帮助easy-yapi变得更好***
-  
-* 讨论 [新的功能](https://github.com/tangcent/easy-yapi/issues?q=label%3Aenhancement) or提交 [BUG](https://github.com/tangcent/easy-yapi/issues?q=label%3Abug): [Issues](https://github.com/tangcent/easy-yapi/issues)
 
-* 开发 [新的功能](https://github.com/tangcent/easy-yapi/pulls?q=+label%3Aenhancement) or修复 [BUG](https://github.com/tangcent/easy-yapi/pulls?q=label%3Abug): [PR](https://github.com/tangcent/easy-yapi/pulls)
+* 讨论 [新的功能](https://github.com/tangcent/easy-yapi/issues?q=label%3Aenhancement)
+  or提交 [BUG](https://github.com/tangcent/easy-yapi/issues?q=label%3Abug): [Issues](https://github.com/tangcent/easy-yapi/issues)
+
+* 开发 [新的功能](https://github.com/tangcent/easy-yapi/pulls?q=+label%3Aenhancement)
+  or修复 [BUG](https://github.com/tangcent/easy-yapi/pulls?q=label%3Abug): [PR](https://github.com/tangcent/easy-yapi/pulls)
 
 * 完善测试 [codecov](https://codecov.io/gh/tangcent/easy-yapi)
 
 * 帮助维护文档: [easyyapi.com](https://github.com/easyyapi/easyyapi.github.io/tree/dev)
   请将您的PR提交到dev分支
-  
-* 维护推荐配置: [.recommend.easy.api.config](https://github.com/tangcent/easy-yapi/blob/master/idea-plugin/src/main/resources/.recommend.easy.api.config)
+
+*
+维护推荐配置: [.recommend.easy.api.config](https://github.com/tangcent/easy-yapi/blob/master/idea-plugin/src/main/resources/.recommend.easy.api.config)
 
 * 丰富支持的三方配置: [third](https://github.com/tangcent/easy-yapi/tree/master/third)
 

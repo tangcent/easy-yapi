@@ -190,7 +190,7 @@ open class PostmanFormatter {
             queryList.add(
                 KV.create<String, Any?>()
                     .set(KEY, it.name)
-                    .set(VALUE, it.value?.takeIfNotOriginal() ?: "")
+                    .set(VALUE, it.value?.takeIfNotOriginal()?.toString() ?: "")
                     .set("equals", true)
                     .set(DESCRIPTION, it.desc)
             )
@@ -239,8 +239,7 @@ open class PostmanFormatter {
             requestInfo["body"] = body
         }
 
-
-        if (request.response.notNullOrEmpty()) {
+        if (postmanSettingsHelper.buildExample() && request.response.notNullOrEmpty()) {
 
             val responses: ArrayList<HashMap<String, Any?>> = ArrayList()
             val exampleName = request.name + "-Example"
@@ -263,7 +262,7 @@ open class PostmanFormatter {
                 responseInfo["status"] = "OK"
                 responseInfo["code"] = 200
                 responseInfo["_postman_previewlanguage"] = "json"
-                responseInfo["_postman_previewtype"] = "text"
+//                responseInfo["_postman_previewtype"] = "text"
                 val responseHeader = ArrayList<Map<String, Any?>>()
                 responseInfo["header"] = responseHeader
 

@@ -27,6 +27,8 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     override var postmanCollections: String? = null
 
+    override var postmanBuildExample: Boolean = true
+
     override var wrapCollection: Boolean = false
 
     override var autoMergeScript: Boolean = false
@@ -123,6 +125,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (postmanWorkspace != other.postmanWorkspace) return false
         if (postmanExportMode != other.postmanExportMode) return false
         if (postmanCollections != other.postmanCollections) return false
+        if (postmanBuildExample != other.postmanBuildExample) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
         if (postmanJson5FormatType != other.postmanJson5FormatType) return false
@@ -164,6 +167,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + (postmanWorkspace?.hashCode() ?: 0)
         result = 31 * result + (postmanExportMode?.hashCode() ?: 0)
         result = 31 * result + (postmanCollections?.hashCode() ?: 0)
+        result = 31 * result + postmanBuildExample.hashCode()
         result = 31 * result + wrapCollection.hashCode()
         result = 31 * result + autoMergeScript.hashCode()
         result = 31 * result + postmanJson5FormatType.hashCode()

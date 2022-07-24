@@ -33,7 +33,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "_postman_previewtype": "text",
           "responseTime": 50,
           "name": "say hello-Example",
           "header": [
@@ -130,7 +129,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "_postman_previewtype": "text",
           "responseTime": 50,
           "name": "get user info-Example",
           "header": [
@@ -236,7 +234,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "_postman_previewtype": "text",
           "responseTime": 50,
           "name": "create an user-Example",
           "header": [
@@ -409,7 +406,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "_postman_previewtype": "text",
           "responseTime": 50,
           "name": "update user info-Example",
           "header": [

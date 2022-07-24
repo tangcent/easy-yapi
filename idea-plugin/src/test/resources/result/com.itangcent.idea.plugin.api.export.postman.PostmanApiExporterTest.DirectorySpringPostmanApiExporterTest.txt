@@ -63,7 +63,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test RequestHeader-Example",
               "header": [
@@ -170,7 +169,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test query with array parameters-Example",
               "header": [
@@ -251,7 +249,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test ignored method-Example",
               "header": [
@@ -332,7 +329,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test query with javax.servlet.http.HttpServletRequest-Example",
               "header": [
@@ -413,7 +409,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test query with javax.servlet.http.HttpServletResponse-Example",
               "header": [
@@ -496,7 +491,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test api return void-Example",
               "header": [
@@ -579,7 +573,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test api return Void-Example",
               "header": [
@@ -664,7 +657,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "test api return Result\u003cVoid\u003e-Example",
               "header": [
@@ -747,7 +739,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "return nested node-Example",
               "header": [
@@ -830,7 +821,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "return root with nested nodes-Example",
               "header": [
@@ -913,7 +903,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "return customMap-Example",
               "header": [
@@ -998,7 +987,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "user page query-Example",
               "header": [
@@ -1097,7 +1085,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "user page query with ModelAttribute-Example",
               "header": [
@@ -1196,7 +1183,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "user page query with POST-Example",
               "header": [
@@ -1369,7 +1355,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "user page query with array-Example",
               "header": [
@@ -1452,7 +1437,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "current ctrl name-Example",
               "header": [
@@ -1525,7 +1509,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "say hello-Example",
               "header": [
@@ -1622,7 +1605,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "get user info-Example",
               "header": [
@@ -1728,7 +1710,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "create an user-Example",
               "header": [
@@ -1901,7 +1882,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "update user info-Example",
               "header": [
@@ -1984,7 +1964,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "_postman_previewtype": "text",
               "responseTime": 50,
               "name": "current ctrl name-Example",
               "header": [

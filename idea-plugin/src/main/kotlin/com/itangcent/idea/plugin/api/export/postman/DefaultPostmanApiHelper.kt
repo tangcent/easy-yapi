@@ -72,6 +72,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             logger.error("Authentication failed!")
             return
         }
+
+        if (returnValue.contains("WLError")
+            || returnValue.contains("attribute is invalid")
+        ) {
+            logger.error("Please try after turning off [build example] at Preferences(Settings) > Other Settings > EasyApi > Postman > build example")
+            return
+        }
+
         val returnObj = returnValue.asJsonElement()
         val errorName = returnObj
             .sub("error")
