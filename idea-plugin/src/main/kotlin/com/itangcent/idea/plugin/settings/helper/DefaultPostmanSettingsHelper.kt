@@ -90,6 +90,10 @@ open class DefaultPostmanSettingsHelper : PostmanSettingsHelper {
         return settingBinder.read().autoMergeScript
     }
 
+    override fun buildExample(): Boolean {
+        return settingBinder.read().postmanBuildExample
+    }
+
     override fun postmanJson5FormatType(): PostmanJson5FormatType {
         return PostmanJson5FormatType.valueOf(settingBinder.read().postmanJson5FormatType)
     }

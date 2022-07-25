@@ -12,12 +12,15 @@ interface ProjectSettingsSupport {
 
     var postmanCollections: String?
 
+    var postmanBuildExample: Boolean
+
     var yapiTokens: String?
 
     fun copyTo(newSetting: ProjectSettingsSupport) {
         newSetting.postmanWorkspace = this.postmanWorkspace
         newSetting.postmanExportMode = this.postmanExportMode
         newSetting.postmanCollections = this.postmanCollections
+        newSetting.postmanBuildExample = this.postmanBuildExample
         this.yapiTokens?.let { newSetting.yapiTokens = it }
     }
 }
@@ -64,6 +67,8 @@ class ProjectSettings : ProjectSettingsSupport {
     override var postmanExportMode: String? = PostmanExportMode.COPY.name
 
     override var postmanCollections: String? = null
+
+    override var postmanBuildExample: Boolean = true
 
     override var yapiTokens: String? = null
 

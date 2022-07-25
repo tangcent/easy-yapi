@@ -17,6 +17,8 @@ interface PostmanSettingsHelper {
 
     fun autoMergeScript(): Boolean
 
+    fun buildExample(): Boolean
+
     fun postmanJson5FormatType(): PostmanJson5FormatType
 
     fun postmanExportMode(): PostmanExportMode
