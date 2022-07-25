@@ -1,3 +1,7 @@
+* 2.4.3
+
+	* feat: new setting  `Postman > build example` [(#802)](https://github.com/tangcent/easy-yapi/pull/802)
+
 * 2.4.2
 
 	* feat: enum auto select field by type [(#797)](https://github.com/tangcent/easy-yapi/pull/797)
