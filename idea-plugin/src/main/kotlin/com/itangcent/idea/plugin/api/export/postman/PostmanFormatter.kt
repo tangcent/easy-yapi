@@ -687,7 +687,7 @@ open class PostmanFormatter {
         return wrapRootInfo(rootModule, modules)
     }
 
-    private fun parseRequestsToFolder(requests: MutableList<Request>): HashMap<Folder, ArrayList<HashMap<String, Any?>>> {
+    private fun parseRequestsToFolder(requests: List<Request>): HashMap<Folder, ArrayList<HashMap<String, Any?>>> {
         //parse [request...] ->
         //                      {
         //                          "folder":[request...]
@@ -704,7 +704,7 @@ open class PostmanFormatter {
         return folderGroupedMap
     }
 
-    fun parseRequestsToCollection(collectionInfo: HashMap<String, Any?>, requests: MutableList<Request>) {
+    fun parseRequestsToCollection(collectionInfo: HashMap<String, Any?>, requests: List<Request>) {
         val folderGroupedMap = parseRequestsToFolder(requests)
         val folders = collectionInfo.getEditableItem()
         folderGroupedMap.entries.forEach { (folder, items) ->
