@@ -138,7 +138,7 @@ class PostmanApiExporter {
         (postmanApiHelper as? CacheSwitcher)?.notUserCache()
 
         //collectionId -> collectionInfo to requests
-        val collectionGroupedMap = HashMap<String, Pair<HashMap<String, Any?>, ArrayList<Request>>>()
+        val collectionGroupedMap = HashMap<String, Pair<HashMap<String, Any?>, List<Request>>>()
         moduleGroupedMap.forEach { (module, requests) ->
             for (i in 0..3) {
                 val collectionId = postmanSettingsHelper.getCollectionId(module, false) ?: break
@@ -147,7 +147,12 @@ class PostmanApiExporter {
                     logger.error("collection $collectionId may be deleted.")
                     continue
                 }
-                collectionGroupedMap[collectionId] = collectionInfo to requests
+                if (collectionGroupedMap.containsKey(collectionId)) {
+                    collectionGroupedMap[collectionId] =
+                        collectionInfo to (collectionGroupedMap[collectionId]!!.second + requests)
+                } else {
+                    collectionGroupedMap[collectionId] = collectionInfo to requests
+                }
                 return@forEach
             }
             logger.info("no collection be selected for $module")
@@ -164,7 +169,7 @@ class PostmanApiExporter {
     private fun updateRequestsToCollection(
         collectionId: String,
         collectionInfo: HashMap<String, Any?>,
-        requests: ArrayList<Request>,
+        requests: List<Request>,
     ) {
         postmanFormatter.parseRequestsToCollection(collectionInfo, requests)
         postmanApiHelper.updateCollection(collectionId, collectionInfo)
