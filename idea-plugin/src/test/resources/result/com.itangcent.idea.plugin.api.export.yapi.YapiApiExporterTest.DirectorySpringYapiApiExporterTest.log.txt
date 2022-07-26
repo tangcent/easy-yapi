@@ -10,7 +10,7 @@
 [WARN]	error to resolve class:Root
 [INFO]	try infer return type of method[com.itangcent.api.TestCtrl#returnAjaxResult(CustomMap)]
 [WARN]	error to resolve class:CustomMap
-[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#PageRequest(PageRequest<UserInfo>)]
-[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#PageRequestWithModelAttribute(PageRequest<UserInfo>)]
-[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#PageRequestWithPost(PageRequest<UserInfo>)]
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequest(PageRequest<UserInfo>)]
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequestWithModelAttribute(PageRequest<UserInfo>)]
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequestWithPost(PageRequest<UserInfo>)]
 [INFO]	Apis exported completed

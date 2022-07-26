@@ -111,7 +111,9 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 "api.method.parse.before=groovy:logger.info(\"before parse method:\"+it)\n" +
                 "api.method.parse.after=groovy:logger.info(\"after parse method:\"+it)\n" +
                 "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n" +
-                "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n"
+                "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n" +
+                "method.return.main[groovy:it.returnType().isExtend(\"com.itangcent.model.Result\")]=data\n" +
+                "enum.use.by.type=true\n"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -236,6 +238,61 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         }
         requests[7].let { request ->
             assertEquals(testCtrlPsiClass.methods[8], (request.resource as PsiResource).resource())
+            assertEquals("test api return Enum", request.name)
+            assertEquals("/test/return/enum", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "",
+                request.response!![0].body.toJson()
+            )
+            assertEquals(
+                "ADMIN :administration\n" +
+                        "MEM :a person, an animal or a plant\n" +
+                        "GUEST :Anonymous visitor",
+                request.response!![0].bodyDesc
+            )
+        }
+        requests[8].let { request ->
+            assertEquals(testCtrlPsiClass.methods[9], (request.resource as PsiResource).resource())
+            assertEquals("test api return Result<Enum>", request.name)
+            assertEquals("/test/return/result/enum", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nADMIN :administration\\nMEM :a person, an animal or a plant\\nGUEST :Anonymous visitor\"},\"msg\":\"\",\"data\":\"\"}",
+                request.response!![0].body.toJson()
+            )
+            assertNull(request.response!![0].bodyDesc)
+        }
+        requests[9].let { request ->
+            assertEquals(testCtrlPsiClass.methods[10], (request.resource as PsiResource).resource())
+            assertEquals("test api return Enum field", request.name)
+            assertEquals("/test/return/enum/field", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "0",
+                request.response!![0].body.toJson()
+            )
+            assertEquals(
+                "user type [type of user]\n" +
+                        "1 :administration\n" +
+                        "2 :a person, an animal or a plant\n" +
+                        "3 :Anonymous visitor",
+                request.response!![0].bodyDesc
+            )
+        }
+        requests[10].let { request ->
+            assertEquals(testCtrlPsiClass.methods[11], (request.resource as PsiResource).resource())
+            assertEquals("test api return Result<Enum field>", request.name)
+            assertEquals("/test/return/result/enum/field", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nuser type [type of user]\\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\"},\"msg\":\"\",\"data\":0}",
+                request.response!![0].body.toJson()
+            )
+            assertNull(request.response!![0].bodyDesc)
+        }
+        requests[11].let { request ->
+            assertEquals(testCtrlPsiClass.methods[12], (request.resource as PsiResource).resource())
             assertEquals("return nested node", request.name)
             assertEquals("/test/return/node", request.path.toString())
             assertEquals("POST", request.method)
@@ -248,8 +305,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[8].let { request ->
-            assertEquals(testCtrlPsiClass.methods[9], (request.resource as PsiResource).resource())
+        requests[12].let { request ->
+            assertEquals(testCtrlPsiClass.methods[13], (request.resource as PsiResource).resource())
             assertEquals("return root with nested nodes", request.name)
             assertEquals("/test/return/root", request.path.toString())
             assertEquals("GET", request.method)
@@ -262,8 +319,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[9].let { request ->
-            assertEquals(testCtrlPsiClass.methods[10], (request.resource as PsiResource).resource())
+        requests[13].let { request ->
+            assertEquals(testCtrlPsiClass.methods[14], (request.resource as PsiResource).resource())
             assertEquals("return customMap", request.name)
             assertEquals("/test/return/customMap", request.path.toString())
             assertEquals("GET", request.method)
@@ -276,8 +333,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[10].let { request ->
-            assertEquals(testCtrlPsiClass.methods[11], (request.resource as PsiResource).resource())
+        requests[14].let { request ->
+            assertEquals(testCtrlPsiClass.methods[15], (request.resource as PsiResource).resource())
             assertEquals("user page query", request.name)
             assertEquals("/test/call/page/user", request.path.toString())
             assertEquals("GET", request.method)
@@ -290,8 +347,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[11].let { request ->
-            assertEquals(testCtrlPsiClass.methods[12], (request.resource as PsiResource).resource())
+        requests[15].let { request ->
+            assertEquals(testCtrlPsiClass.methods[16], (request.resource as PsiResource).resource())
             assertEquals("user page query with ModelAttribute", request.name)
             assertEquals("/test/call/page/user/form", request.path.toString())
             assertEquals("POST", request.method)
@@ -304,8 +361,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[12].let { request ->
-            assertEquals(testCtrlPsiClass.methods[13], (request.resource as PsiResource).resource())
+        requests[16].let { request ->
+            assertEquals(testCtrlPsiClass.methods[17], (request.resource as PsiResource).resource())
             assertEquals("user page query with POST", request.name)
             assertEquals("/test/call/page/user/post", request.path.toString())
             assertEquals("POST", request.method)
@@ -318,8 +375,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[13].let { request ->
-            assertEquals(testCtrlPsiClass.methods[14], (request.resource as PsiResource).resource())
+        requests[17].let { request ->
+            assertEquals(testCtrlPsiClass.methods[18], (request.resource as PsiResource).resource())
             assertEquals("user page query with array", request.name)
             assertEquals("/test/call/page/user/array", request.path.toString())
             assertEquals("GET", request.method)
@@ -420,6 +477,61 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         }
         requests[7].let { request ->
             assertEquals(testCtrlPsiClass.methods[8], (request.resource as PsiResource).resource())
+            assertEquals("test api return Enum", request.name)
+            assertEquals("/test/return/enum", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "",
+                request.response!![0].body.toJson()
+            )
+            assertEquals(
+                "ADMIN :administration\n" +
+                        "MEM :a person, an animal or a plant\n" +
+                        "GUEST :Anonymous visitor",
+                request.response!![0].bodyDesc
+            )
+        }
+        requests[8].let { request ->
+            assertEquals(testCtrlPsiClass.methods[9], (request.resource as PsiResource).resource())
+            assertEquals("test api return Result<Enum>", request.name)
+            assertEquals("/test/return/result/enum", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nADMIN :administration\\nMEM :a person, an animal or a plant\\nGUEST :Anonymous visitor\"},\"msg\":\"\",\"data\":\"\"}",
+                request.response!![0].body.toJson()
+            )
+            assertNull(request.response!![0].bodyDesc)
+        }
+        requests[9].let { request ->
+            assertEquals(testCtrlPsiClass.methods[10], (request.resource as PsiResource).resource())
+            assertEquals("test api return Enum field", request.name)
+            assertEquals("/test/return/enum/field", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "0",
+                request.response!![0].body.toJson()
+            )
+            assertEquals(
+                "user type [type of user]\n" +
+                        "1 :administration\n" +
+                        "2 :a person, an animal or a plant\n" +
+                        "3 :Anonymous visitor",
+                request.response!![0].bodyDesc
+            )
+        }
+        requests[10].let { request ->
+            assertEquals(testCtrlPsiClass.methods[11], (request.resource as PsiResource).resource())
+            assertEquals("test api return Result<Enum field>", request.name)
+            assertEquals("/test/return/result/enum/field", request.path.toString())
+            assertEquals("GET", request.method)
+            assertEquals(
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nuser type [type of user]\\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\"},\"msg\":\"\",\"data\":0}",
+                request.response!![0].body.toJson()
+            )
+            assertNull(request.response!![0].bodyDesc)
+        }
+        requests[11].let { request ->
+            assertEquals(testCtrlPsiClass.methods[12], (request.resource as PsiResource).resource())
             assertEquals("return nested node", request.name)
             assertEquals("/test/return/node", request.path.toString())
             assertEquals("POST", request.method)
@@ -432,8 +544,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[8].let { request ->
-            assertEquals(testCtrlPsiClass.methods[9], (request.resource as PsiResource).resource())
+        requests[12].let { request ->
+            assertEquals(testCtrlPsiClass.methods[13], (request.resource as PsiResource).resource())
             assertEquals("return root with nested nodes", request.name)
             assertEquals("/test/return/root", request.path.toString())
             assertEquals("GET", request.method)
@@ -446,8 +558,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[9].let { request ->
-            assertEquals(testCtrlPsiClass.methods[10], (request.resource as PsiResource).resource())
+        requests[13].let { request ->
+            assertEquals(testCtrlPsiClass.methods[14], (request.resource as PsiResource).resource())
             assertEquals("return customMap", request.name)
             assertEquals("/test/return/customMap", request.path.toString())
             assertEquals("GET", request.method)
@@ -460,8 +572,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[10].let { request ->
-            assertEquals(testCtrlPsiClass.methods[11], (request.resource as PsiResource).resource())
+        requests[14].let { request ->
+            assertEquals(testCtrlPsiClass.methods[15], (request.resource as PsiResource).resource())
             assertEquals("user page query", request.name)
             assertEquals("/test/call/page/user", request.path.toString())
             assertEquals("GET", request.method)
@@ -474,8 +586,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[11].let { request ->
-            assertEquals(testCtrlPsiClass.methods[12], (request.resource as PsiResource).resource())
+        requests[15].let { request ->
+            assertEquals(testCtrlPsiClass.methods[16], (request.resource as PsiResource).resource())
             assertEquals("user page query with ModelAttribute", request.name)
             assertEquals("/test/call/page/user/form", request.path.toString())
             assertEquals("POST", request.method)
@@ -488,8 +600,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[12].let { request ->
-            assertEquals(testCtrlPsiClass.methods[13], (request.resource as PsiResource).resource())
+        requests[16].let { request ->
+            assertEquals(testCtrlPsiClass.methods[17], (request.resource as PsiResource).resource())
             assertEquals("user page query with POST", request.name)
             assertEquals("/test/call/page/user/post", request.path.toString())
             assertEquals("POST", request.method)
@@ -502,8 +614,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
         }
-        requests[13].let { request ->
-            assertEquals(testCtrlPsiClass.methods[14], (request.resource as PsiResource).resource())
+        requests[17].let { request ->
+            assertEquals(testCtrlPsiClass.methods[18], (request.resource as PsiResource).resource())
             assertEquals("user page query with array", request.name)
             assertEquals("/test/call/page/user/array", request.path.toString())
             assertEquals("GET", request.method)

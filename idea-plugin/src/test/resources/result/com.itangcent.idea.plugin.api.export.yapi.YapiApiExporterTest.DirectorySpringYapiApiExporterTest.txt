@@ -202,6 +202,42 @@
     "desc": "\u003cp\u003e\u003c/p\u003e"
   },
   {
+    "res_body": "{\"type\":\"integer\",\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"user type {@link com.itangcent.constant.UserType}\"}",
+    "query_path": {
+      "path": "/test/return/enum/field",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Enum field",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/enum/field",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "\u003cp\u003e\u003c/p\u003e"
+  },
+  {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"description\":\"response data\",\"type\":\"null\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
     "query_path": {
       "path": "/test/return/result/Void",
@@ -310,6 +346,42 @@
         "required": 0
       }
     ],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "\u003cp\u003e\u003c/p\u003e"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"integer\",\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"user type {@link com.itangcent.constant.UserType}\"}",
+    "query_path": {
+      "path": "/test/return/result/enum/field",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Result\u003cEnum field\u003e",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/result/enum/field",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
     "api_opened": false,
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
@@ -588,6 +660,42 @@
     "desc": "\u003cp\u003e\u003c/p\u003e"
   },
   {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"string\",\"description\":\"response data\",\"enum\":[\"ADMIN\",\"MEM\",\"GUEST\"],\"enumDesc\":\"ADMIN :administration\\nMEM :a person, an animal or a plant\\nGUEST :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([\\\"ADMIN\\\",\\\"MEM\\\",\\\"GUEST\\\"])\"}}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/result/enum",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Result\u003cEnum\u003e",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/result/enum",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "\u003cp\u003e\u003c/p\u003e"
+  },
+  {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"token output\"}",
     "query_path": {
       "path": "/test/header",
@@ -801,6 +909,42 @@
     "switch_notice": true,
     "token": "token111111",
     "path": "/test/ignore",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "\u003cp\u003e\u003c/p\u003e"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/enum",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Enum",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/enum",
     "catid": "222222",
     "req_body_is_json_schema": false,
     "__v": 0,

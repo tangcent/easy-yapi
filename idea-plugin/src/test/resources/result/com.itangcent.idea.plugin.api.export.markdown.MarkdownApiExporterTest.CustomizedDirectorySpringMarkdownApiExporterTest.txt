@@ -321,7 +321,187 @@ test apis
 
 
 ---
-### 1.1.9 return nested node
+### 1.1.9 test api return Enum
+
+> `BASIC`
+
+**`Path params`:** /test/return/enum
+
+**`Method`:** GET
+
+> `QUERY`
+
+**Headers:**
+
+| `name` | `value` | `desc` |
+| ------------ | ------------ | ----: |
+| token |  | auth token |
+
+
+
+> `Response`
+
+**Headers:**
+
+| `name` | `value` | `required` | `desc` |
+| ------------ | ------------ | ------------ | :----: |
+| content-type | application/json;charset=UTF-8 | N |  |
+
+**Body:**
+
+| `name` | `type` | `desc` |
+| ------------ | :----: | ------------ |
+|  | string | ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
+
+**`Response demo`:**
+
+```json
+
+```
+
+
+
+
+---
+### 1.1.10 test api return Result<Enum>
+
+> `BASIC`
+
+**`Path params`:** /test/return/result/enum
+
+**`Method`:** GET
+
+> `QUERY`
+
+**Headers:**
+
+| `name` | `value` | `desc` |
+| ------------ | ------------ | ----: |
+| token |  | auth token |
+
+
+
+> `Response`
+
+**Headers:**
+
+| `name` | `value` | `required` | `desc` |
+| ------------ | ------------ | ------------ | :----: |
+| content-type | application/json;charset=UTF-8 | N |  |
+
+**Body:**
+
+| `name` | `type` | `desc` |
+| ------------ | :----: | ------------ |
+| code | integer | response code |
+| msg | string | message |
+| data | string | response data<br>ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
+
+**`Response demo`:**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": ""
+}
+```
+
+
+
+
+---
+### 1.1.11 test api return Enum field
+
+> `BASIC`
+
+**`Path params`:** /test/return/enum/field
+
+**`Method`:** GET
+
+> `QUERY`
+
+**Headers:**
+
+| `name` | `value` | `desc` |
+| ------------ | ------------ | ----: |
+| token |  | auth token |
+
+
+
+> `Response`
+
+**Headers:**
+
+| `name` | `value` | `required` | `desc` |
+| ------------ | ------------ | ------------ | :----: |
+| content-type | application/json;charset=UTF-8 | N |  |
+
+**Body:**
+
+| `name` | `type` | `desc` |
+| ------------ | :----: | ------------ |
+|  | integer | user type [type of user]<br>ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
+
+**`Response demo`:**
+
+```json
+
+```
+
+
+
+
+---
+### 1.1.12 test api return Result<Enum field>
+
+> `BASIC`
+
+**`Path params`:** /test/return/result/enum/field
+
+**`Method`:** GET
+
+> `QUERY`
+
+**Headers:**
+
+| `name` | `value` | `desc` |
+| ------------ | ------------ | ----: |
+| token |  | auth token |
+
+
+
+> `Response`
+
+**Headers:**
+
+| `name` | `value` | `required` | `desc` |
+| ------------ | ------------ | ------------ | :----: |
+| content-type | application/json;charset=UTF-8 | N |  |
+
+**Body:**
+
+| `name` | `type` | `desc` |
+| ------------ | :----: | ------------ |
+| code | integer | response code |
+| msg | string | message |
+| data | integer | response data |
+
+**`Response demo`:**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": 0
+}
+```
+
+
+
+
+---
+### 1.1.13 return nested node
 
 > `BASIC`
 
@@ -369,7 +549,7 @@ test apis
 
 
 ---
-### 1.1.10 return root with nested nodes
+### 1.1.14 return root with nested nodes
 
 > `BASIC`
 
@@ -417,7 +597,7 @@ test apis
 
 
 ---
-### 1.1.11 return customMap
+### 1.1.15 return customMap
 
 > `BASIC`
 
@@ -465,7 +645,7 @@ test apis
 
 
 ---
-### 1.1.12 user page query
+### 1.1.16 user page query
 
 > `BASIC`
 
@@ -513,7 +693,7 @@ test apis
 
 
 ---
-### 1.1.13 user page query with ModelAttribute
+### 1.1.17 user page query with ModelAttribute
 
 > `BASIC`
 
@@ -562,7 +742,7 @@ test apis
 
 
 ---
-### 1.1.14 user page query with POST
+### 1.1.18 user page query with POST
 
 > `BASIC`
 
@@ -611,7 +791,7 @@ test apis
 
 
 ---
-### 1.1.15 user page query with array
+### 1.1.19 user page query with array
 
 > `BASIC`
 
@@ -689,7 +869,7 @@ test apis
 
 
 ---
-### 1.1.16 current ctrl name
+### 1.1.20 current ctrl name
 
 > `BASIC`
 
@@ -738,7 +918,7 @@ access user info
 
 
 ---
-### 1.2.17 say hello
+### 1.2.21 say hello
 
 > `BASIC`
 
@@ -776,7 +956,7 @@ access user info
 
 
 ---
-### 1.2.18 get user info
+### 1.2.22 get user info
 
 > `BASIC`
 
@@ -845,7 +1025,7 @@ access user info
 
 
 ---
-### 1.2.19 create an user
+### 1.2.23 create an user
 
 > `BASIC`
 
@@ -935,7 +1115,7 @@ access user info
 
 
 ---
-### 1.2.20 update user info
+### 1.2.24 update user info
 
 > `BASIC`
 
@@ -1011,7 +1191,7 @@ access user info
 
 
 ---
-### 1.2.21 current ctrl name
+### 1.2.25 current ctrl name
 
 > `BASIC`
 

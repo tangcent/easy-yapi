@@ -97,6 +97,34 @@ curl -X GET -H 'token: ' http://localhost:8080/test/return/result/Void
 
 ---
 
+## test api return Enum
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/enum
+```
+
+---
+
+## test api return Result<Enum>
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/result/enum
+```
+
+---
+
+## test api return Enum field
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/enum/field
+```
+
+---
+
+## test api return Result<Enum field>
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/result/enum/field
+```
+
+---
+
 ## return nested node
 ```bash
 curl -X POST -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'id=' -F 'code=' -F 'parent.id=' -F 'parent.code=' -F 'parent.parent.key=' -F 'parent.sub[0].key=' -F 'parent.siblings[0].key=' -F 'sub[0].id=' -F 'sub[0].code=' -F 'sub[0].parent.key=' -F 'sub[0].sub[0].key=' -F 'sub[0].siblings[0].key=' -F 'siblings[0].id=' -F 'siblings[0].code=' -F 'siblings[0].parent.key=' -F 'siblings[0].sub[0].key=' -F 'siblings[0].siblings[0].key=' http://localhost:8080/test/return/node
