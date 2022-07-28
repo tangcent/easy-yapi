@@ -1,6 +1,5 @@
 package com.itangcent.idea.plugin.api.export.generic
 
-import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
@@ -38,9 +37,6 @@ import com.itangcent.order.Order
 @ConditionOnSimple(false)
 @ConditionOnSetting("genericEnable")
 open class GenericRequestClassExporter : RequestClassExporter() {
-
-    @Inject
-    protected val commentResolver: CommentResolver? = null
 
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
         val pathAndMethodOfClass = findPathAndMethod(cls)

@@ -1,6 +1,8 @@
 package com.itangcent.api;
 
 
+import com.itangcent.api.BaseController;
+import com.itangcent.constant.UserType;
 import com.itangcent.model.CustomMap;
 import com.itangcent.model.Node;
 import com.itangcent.model.PageRequest;
@@ -15,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.itangcent.api.BaseController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -105,6 +106,43 @@ public class TestCtrl extends BaseController {
     }
 
     /**
+     * test api return Enum
+     */
+    @RequestMapping("/return/enum")
+    public UserType returnEnum() {
+        return null;
+    }
+
+    /**
+     * test api return Result<Enum>
+     */
+    @RequestMapping("/return/result/enum")
+    public Result<UserType> returnResultEnum() {
+        return null;
+    }
+
+    /**
+     * test api return Enum field
+     *
+     * @return user type {@link com.itangcent.constant.UserType}
+     */
+    @RequestMapping("/return/enum/field")
+    public int returnEnumField() {
+        return null;
+    }
+
+
+    /**
+     * test api return Result<Enum field>
+     *
+     * @return user type {@link com.itangcent.constant.UserType}
+     */
+    @RequestMapping("/return/result/enum/field")
+    public Result<Integer> returnResultEnumField() {
+        return null;
+    }
+
+    /**
      * return nested node
      */
     @RequestMapping("/return/node")
@@ -132,7 +170,7 @@ public class TestCtrl extends BaseController {
      * user page query
      */
     @GetMapping("/call/page/user")
-    public Result<CustomMap> PageRequest(PageRequest<UserInfo> userInfoPageRequest) {
+    public Result<CustomMap> pageRequest(PageRequest<UserInfo> userInfoPageRequest) {
         return null;
     }
 
@@ -140,7 +178,7 @@ public class TestCtrl extends BaseController {
      * user page query with ModelAttribute
      */
     @PostMapping("/call/page/user/form")
-    public Result<CustomMap> PageRequestWithModelAttribute(@ModelAttribute PageRequest<UserInfo> userInfoPageRequest) {
+    public Result<CustomMap> pageRequestWithModelAttribute(@ModelAttribute PageRequest<UserInfo> userInfoPageRequest) {
         return null;
     }
 
@@ -148,7 +186,7 @@ public class TestCtrl extends BaseController {
      * user page query with POST
      */
     @PostMapping("/call/page/user/post")
-    public Result<CustomMap> PageRequestWithPost(PageRequest<UserInfo> userInfoPageRequest) {
+    public Result<CustomMap> pageRequestWithPost(PageRequest<UserInfo> userInfoPageRequest) {
         return null;
     }
 

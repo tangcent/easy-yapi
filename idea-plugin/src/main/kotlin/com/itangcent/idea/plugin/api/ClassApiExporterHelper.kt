@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.intellij.openapi.ui.Messages
 import com.intellij.psi.*
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.KV
@@ -22,7 +21,6 @@ import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
-import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileType
 import java.util.*
 import java.util.concurrent.BlockingQueue
@@ -66,12 +64,15 @@ open class ClassApiExporterHelper {
     protected lateinit var messagesHelper: MessagesHelper
     fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
         val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
+        if (subTagMap.isEmpty()) {
+            return null
+        }
 
-        var methodParamComment: KV<String, Any>? = null
+        val methodParamComment: KV<String, Any> = KV.create()
+        val parameters = psiMethod.parameterList.parameters
         subTagMap.entries.forEach { entry ->
             val name: String = entry.key
             val value: String? = entry.value
-            if (methodParamComment == null) methodParamComment = KV.create()
             if (value.notNullOrBlank()) {
 
                 val options: ArrayList<HashMap<String, Any?>> = ArrayList()
@@ -79,7 +80,11 @@ open class ClassApiExporterHelper {
 
                     override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
-                        psiClassHelper!!.resolveEnumOrStatic(plainText, psiMethod, name)
+                        psiClassHelper!!.resolveEnumOrStatic(
+                            plainText,
+                            parameters.firstOrNull { it.name == name } ?: psiMethod,
+                            name
+                        )
                             ?.let { options.addAll(it) }
 
                         return super.linkToPsiElement(plainText, linkTo)
@@ -108,9 +113,9 @@ open class ClassApiExporterHelper {
                     }
                 })
 
-                methodParamComment!![name] = comment ?: ""
+                methodParamComment[name] = comment ?: ""
                 if (options.notNullOrEmpty()) {
-                    methodParamComment!!["$name@options"] = options
+                    methodParamComment["$name@options"] = options
                 }
             }
 

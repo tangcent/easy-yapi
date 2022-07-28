@@ -319,6 +319,186 @@ test apis
 
 
 ---
+### test api return Enum
+
+> BASIC
+
+**Path:** /test/return/enum
+
+**Method:** GET
+
+> REQUEST
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+> RESPONSE
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |  |
+
+**Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string | ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
+
+**Response Demo:**
+
+```json
+
+```
+
+
+
+
+---
+### test api return Result<Enum>
+
+> BASIC
+
+**Path:** /test/return/result/enum
+
+**Method:** GET
+
+> REQUEST
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+> RESPONSE
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |  |
+
+**Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code |
+| msg | string | message |
+| data | string | response data<br>ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
+
+**Response Demo:**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": ""
+}
+```
+
+
+
+
+---
+### test api return Enum field
+
+> BASIC
+
+**Path:** /test/return/enum/field
+
+**Method:** GET
+
+> REQUEST
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+> RESPONSE
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |  |
+
+**Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | integer | user type [type of user]<br>ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
+
+**Response Demo:**
+
+```json
+
+```
+
+
+
+
+---
+### test api return Result<Enum field>
+
+> BASIC
+
+**Path:** /test/return/result/enum/field
+
+**Method:** GET
+
+> REQUEST
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+> RESPONSE
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |  |
+
+**Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code |
+| msg | string | message |
+| data | integer | response data |
+
+**Response Demo:**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": 0
+}
+```
+
+
+
+
+---
 ### return nested node
 
 > BASIC

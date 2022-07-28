@@ -32,9 +32,6 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     protected lateinit var annotationHelper: AnnotationHelper
 
     @Inject
-    protected val commentResolver: CommentResolver? = null
-
-    @Inject
     protected lateinit var springRequestMappingResolver: SpringRequestMappingResolver
 
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
@@ -65,7 +62,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     override fun processMethodParameter(
         request: Request,
         parameterExportContext: ParameterExportContext,
-        paramDesc: String?
+        paramDesc: String?,
     ) {
 
         //RequestBody(json)
@@ -332,7 +329,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
     protected open fun resolveParamInRequestMapping(
         methodExportContext: MethodExportContext,
-        request: Request, requestMappingAnn: Map<String, Any?>
+        request: Request, requestMappingAnn: Map<String, Any?>,
     ) {
         val params = requestMappingAnn["params"] ?: return
         if (params is Array<*>) {
@@ -349,7 +346,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
     protected open fun resolveParamStr(
         methodExportContext: MethodExportContext,
-        request: Request, params: String
+        request: Request, params: String,
     ) {
         when {
             params.startsWith("!") -> {
@@ -402,7 +399,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
     protected open fun resolveHeaderInRequestMapping(
         methodExportContext: MethodExportContext,
-        request: Request, requestMappingAnn: Map<String, Any?>
+        request: Request, requestMappingAnn: Map<String, Any?>,
     ) {
         val headers = requestMappingAnn["headers"] ?: return
         if (headers is Array<*>) {

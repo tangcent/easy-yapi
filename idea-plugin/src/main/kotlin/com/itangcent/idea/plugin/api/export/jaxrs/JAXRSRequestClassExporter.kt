@@ -41,9 +41,6 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
     protected lateinit var annotationHelper: AnnotationHelper
 
     @Inject
-    protected val commentResolver: CommentResolver? = null
-
-    @Inject
     protected lateinit var docHelper: DocHelper
 
     @Inject
@@ -80,7 +77,7 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
     override fun processMethodParameter(
         request: Request,
         parameterExportContext: ParameterExportContext,
-        paramDesc: String?
+        paramDesc: String?,
     ) {
         processParameterOrField(request, parameterExportContext, paramDesc)
     }
@@ -88,7 +85,7 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
     private fun processParameterOrField(
         request: Request,
         exportContext: VariableExportContext,
-        paramDesc: String?
+        paramDesc: String?,
     ) {
         //@BeanParam
         if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.BEAN_PARAM_ANNOTATION)) {
@@ -222,7 +219,7 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
 
     class FieldExportContext(
         val parent: ExportContext,
-        val field: ExplicitField
+        val field: ExplicitField,
     ) : AbstractExportContext(parent), VariableExportContext {
 
         /**

@@ -28,6 +28,7 @@ import com.itangcent.intellij.extend.unbox
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.DuckType
+import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.logger.Logger
@@ -101,6 +102,9 @@ abstract class RequestClassExporter : ClassExporter {
 
     @Inject
     private lateinit var classApiExporterHelper: ClassApiExporterHelper
+
+    @Inject
+    protected lateinit var commentResolver: CommentResolver
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
         if (cls !is PsiClass) {
@@ -345,68 +349,97 @@ abstract class RequestClassExporter : ClassExporter {
                     response, 200
                 )
 
+                val ultimateComment = StringBuilder()
+
                 val typedResponse = parseResponseBody(returnType, fromRule, methodExportContext.element())
 
                 val descOfReturn = docHelper!!.findDocByTag(methodExportContext.psi(), "return")
+
+                val methodReturnMain =
+                    ruleComputer.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, methodExportContext.element())
+
+                var context: PsiElement = methodExportContext.psi()
+                val methodReturnMainType: DuckType?
+                if (methodReturnMain.isNullOrBlank()) {
+                    methodReturnMainType = methodExportContext.type()
+                } else {
+                    val explicitReturnType = duckTypeHelper.explicit(returnType.unbox() as SingleDuckType)
+                    val explicitField = explicitReturnType.fields().firstOrNull { it.name() == methodReturnMain }
+                    methodReturnMainType = explicitField?.getType()
+                    methodReturnMainType.unbox().cast(SingleDuckType::class)
+                        ?.psiClass()?.let {
+                            context = it
+                        }
+                }
+
                 if (descOfReturn.notNullOrBlank()) {
-                    val methodReturnMain =
-                        ruleComputer.computer(ClassExportRuleKeys.METHOD_RETURN_MAIN, methodExportContext.element())
+
+                    val options: ArrayList<HashMap<String, Any?>> = ArrayList()
+                    val comment = linkExtractor!!.extract(
+                        descOfReturn,
+                        context,
+                        object : AbstractLinkResolve() {
+
+                            override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
+
+                                psiClassHelper!!.resolveEnumOrStatic(plainText, context, "")
+                                    ?.let { options.addAll(it) }
+
+                                return super.linkToPsiElement(plainText, linkTo)
+                            }
+
+                            override fun linkToType(plainText: String, linkType: PsiType): String? {
+                                return jvmClassHelper!!.resolveClassInType(linkType)?.let {
+                                    linkResolver!!.linkToClass(it)
+                                }
+                            }
+
+                            override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
+                                return linkResolver!!.linkToClass(linkClass)
+                            }
+
+                            override fun linkToField(plainText: String, linkField: PsiField): String? {
+                                return linkResolver!!.linkToProperty(linkField)
+                            }
+
+                            override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
+                                return linkResolver!!.linkToMethod(linkMethod)
+                            }
+
+                            override fun linkToUnresolved(plainText: String): String {
+                                return plainText
+                            }
+                        })
+
+                    if (comment != null) {
+                        ultimateComment.appendLine(comment)
+                    } else {
+                        ultimateComment.appendLine(descOfReturn)
+                    }
+
+                    if (options.notNullOrEmpty()) {
+                        ultimateComment.appendLine(KVUtils.getOptionDesc(options))
+                    }
+                }
+
+                if (methodReturnMainType != null) {
+                    commentResolver.resolveCommentForType(methodReturnMainType, methodExportContext.psi())?.let {
+                        ultimateComment.appendLine(it)
+                    }
+                }
+
+                val ultimateCommentStr = ultimateComment.toString().trimEnd()
+                if (ultimateCommentStr.isNotEmpty()) {
                     if (methodReturnMain.isNullOrBlank()) {
                         requestBuilderListener.appendResponseBodyDesc(
                             methodExportContext,
-                            response, descOfReturn
+                            response, ultimateCommentStr
                         )
                     } else {
-                        val options: ArrayList<HashMap<String, Any?>> = ArrayList()
-                        val comment = linkExtractor!!.extract(
-                            descOfReturn,
-                            methodExportContext.psi(),
-                            object : AbstractLinkResolve() {
-
-                                override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
-
-                                    psiClassHelper!!.resolveEnumOrStatic(plainText, methodExportContext.psi(), "")
-                                        ?.let { options.addAll(it) }
-
-                                    return super.linkToPsiElement(plainText, linkTo)
-                                }
-
-                                override fun linkToType(plainText: String, linkType: PsiType): String? {
-                                    return jvmClassHelper!!.resolveClassInType(linkType)?.let {
-                                        linkResolver!!.linkToClass(it)
-                                    }
-                                }
-
-                                override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
-                                    return linkResolver!!.linkToClass(linkClass)
-                                }
-
-                                override fun linkToField(plainText: String, linkField: PsiField): String? {
-                                    return linkResolver!!.linkToProperty(linkField)
-                                }
-
-                                override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
-                                    return linkResolver!!.linkToMethod(linkMethod)
-                                }
-
-                                override fun linkToUnresolved(plainText: String): String {
-                                    return plainText
-                                }
-                            })
-
-                        if (comment.notNullOrBlank()) {
-                            if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, comment!!)) {
-                                requestBuilderListener.appendResponseBodyDesc(methodExportContext, response, comment)
-                            }
-                        }
-                        if (options.notNullOrEmpty()) {
-                            if (!KVUtils.addKeyOptions(typedResponse, methodReturnMain, options)) {
-                                requestBuilderListener.appendResponseBodyDesc(
-                                    methodExportContext,
-                                    response,
-                                    KVUtils.getOptionDesc(options)
-                                )
-                            }
+                        if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, ultimateCommentStr)) {
+                            requestBuilderListener.appendResponseBodyDesc(methodExportContext,
+                                response,
+                                ultimateCommentStr)
                         }
                     }
                 }
