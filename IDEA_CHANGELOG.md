@@ -1,3 +1,9 @@
+* 2.4.4
+
+	* fix: resolve desc of return type [(#807)](https://github.com/tangcent/easy-yapi/pull/807)
+
+	* fix: support parse apis in several modules to one collection [(#806)](https://github.com/tangcent/easy-yapi/pull/806)
+
 * 2.4.3
 
 	* feat: new setting  `Postman > build example` [(#802)](https://github.com/tangcent/easy-yapi/pull/802)
