@@ -5,7 +5,10 @@ import com.google.inject.Singleton
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.YesNoResult
+import com.itangcent.idea.plugin.dialog.ChooseWithTipDialog
+import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.util.UIUtils
 import org.jetbrains.annotations.Nls
 import javax.swing.Icon
 
@@ -28,7 +31,7 @@ class DefaultMessagesHelper : MessagesHelper {
     override fun showYesNoDialog(
         message: String?,
         @Nls(capitalization = Nls.Capitalization.Title) title: String,
-        icon: Icon?
+        icon: Icon?,
     ): Int {
         val activeWindow = activeWindowProvider?.activeWindow()
         return actionContext.callInSwingUI {
@@ -46,7 +49,7 @@ class DefaultMessagesHelper : MessagesHelper {
     override fun showInputDialog(
         message: String?,
         @Nls(capitalization = Nls.Capitalization.Title) title: String?,
-        icon: Icon?
+        icon: Icon?,
     ): String? {
         val activeWindow = activeWindowProvider?.activeWindow()
         return actionContext.callInSwingUI {
@@ -63,7 +66,7 @@ class DefaultMessagesHelper : MessagesHelper {
         @Nls(capitalization = Nls.Capitalization.Title) title: String?,
         icon: Icon?,
         values: Array<String>?,
-        initialValue: String?
+        initialValue: String?,
     ): String? {
         return actionContext.callInSwingUI {
             Messages.showEditableChooseDialog(message, title, icon, values, initialValue ?: "", null)
@@ -76,7 +79,7 @@ class DefaultMessagesHelper : MessagesHelper {
         icon: Icon?,
         values: Array<T>?,
         showAs: (T) -> String,
-        initialValue: T?
+        initialValue: T?,
     ): T? {
         if (values.isNullOrEmpty()) {
             return null
@@ -108,7 +111,7 @@ class DefaultMessagesHelper : MessagesHelper {
      */
     override fun showInfoDialog(
         message: String?,
-        @Nls(capitalization = Nls.Capitalization.Title) title: String?
+        @Nls(capitalization = Nls.Capitalization.Title) title: String?,
     ) {
         val activeWindow = activeWindowProvider?.activeWindow()
         actionContext.runInSwingUI {
@@ -120,4 +123,17 @@ class DefaultMessagesHelper : MessagesHelper {
         }
     }
 
+    override fun <T> showChooseWithTipDialog(
+        message: String?,
+        items: List<T>?,
+        showAs: ((T) -> String?)?,
+        tipAs: ((T) -> String?)?,
+        callBack: ((T?) -> Unit)?,
+    ) {
+        actionContext.runInSwingUI {
+            val chooseWithTipDialog = ChooseWithTipDialog<T>(SwingUtils.preferableWindow())
+            UIUtils.show(chooseWithTipDialog)
+            chooseWithTipDialog.updateItems(message, items, showAs, tipAs, callBack)
+        }
+    }
 }

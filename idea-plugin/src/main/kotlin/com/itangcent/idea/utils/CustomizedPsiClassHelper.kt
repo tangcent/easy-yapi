@@ -1,12 +1,14 @@
 package com.itangcent.idea.utils
 
 import com.google.inject.Inject
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.settings.EventRecords
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.PsiExpressionResolver
@@ -93,6 +95,17 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    override fun resolveEnumOrStatic(
+        context: PsiElement,
+        cls: PsiClass?,
+        property: String?,
+        defaultPropertyName: String,
+        valueTypeHandle: ((DuckType) -> Unit)?,
+    ): java.util.ArrayList<java.util.HashMap<String, Any?>>? {
+        EventRecords.record(EventRecords.ENUM_RESOLVE)
+        return super.resolveEnumOrStatic(context, cls, property, defaultPropertyName, valueTypeHandle)
+    }
 
     override fun ignoreField(psiField: PsiField): Boolean {
         if (configReader.first("ignore_static_and_final")?.asBool() == false) {
@@ -101,5 +114,6 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         return super.ignoreField(psiField)
     }
 }
+
 
 private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(CustomizedPsiClassHelper::class.java)

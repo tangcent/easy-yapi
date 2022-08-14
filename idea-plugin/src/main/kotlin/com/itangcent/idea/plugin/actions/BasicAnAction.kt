@@ -2,15 +2,14 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.itangcent.common.spi.Setup
+import com.itangcent.common.spi.SpiUtils
 import com.itangcent.idea.config.CachedResourceResolver
+import com.itangcent.idea.plugin.Initializer
 import com.itangcent.idea.plugin.log.CustomLogConfig
 import com.itangcent.idea.plugin.script.GroovyActionExtLoader
 import com.itangcent.idea.plugin.script.LoggerBuffer
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.lazy
 import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.actions.ActionEventDataContextAdaptor
 import com.itangcent.intellij.actions.KotlinAnAction
@@ -19,8 +18,6 @@ import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.intellij.file.DefaultLocalFileRepository
-import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
 import com.itangcent.intellij.logger.ConsoleRunnerLogger
 import com.itangcent.intellij.logger.LogConfig
@@ -58,11 +55,14 @@ abstract class BasicAnAction : KotlinAnAction {
         val loggerBuffer: LoggerBuffer? = actionContext.getCache<LoggerBuffer>("LOGGER_BUF")
         loggerBuffer?.drainTo(actionContext.instance(Logger::class))
         val actionExtLoader: GroovyActionExtLoader? =
-                actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
+            actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
         actionExtLoader?.let { extLoader ->
             actionContext.on(EventKey.ON_COMPLETED) {
                 extLoader.close()
             }
+        }
+        SpiUtils.loadServices(Initializer::class)?.forEach {
+            it.init()
         }
     }
 
@@ -71,15 +71,15 @@ abstract class BasicAnAction : KotlinAnAction {
     }
 
     protected fun loadCustomActionExt(
-            actionName: String, event: DataContext,
-            builder: ActionContext.ActionContextBuilder
+        actionName: String, event: DataContext,
+        builder: ActionContext.ActionContextBuilder,
     ) {
         val logger = LoggerBuffer()
         builder.cache("LOGGER_BUF", logger)
         val actionExtLoader = GroovyActionExtLoader()
         builder.cache("GROOVY_ACTION_EXT_LOADER", actionExtLoader)
         val loadActionExt = actionExtLoader.loadActionExt(event, actionName, logger)
-                ?: return
+            ?: return
         loadActionExt.init(builder)
     }
 

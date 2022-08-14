@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.itangcent.common.utils.appendln
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.update
 import com.itangcent.utils.ResourceUtils
 import java.util.*
 
@@ -21,6 +22,18 @@ class RecommendConfigSettingsHelper {
     fun loadRecommendConfig(): String {
         return RecommendConfigLoader.buildRecommendConfig(settingBinder.read().recommendConfigs)
     }
+
+    fun addConfig(code: String) {
+        settingBinder.update {
+            it.recommendConfigs = RecommendConfigLoader.addSelectedConfig(it.recommendConfigs, code)
+        }
+    }
+
+    fun removeConfig(vararg code: String) {
+        settingBinder.update {
+            it.recommendConfigs = RecommendConfigLoader.removeSelectedConfig(it.recommendConfigs, *code)
+        }
+    }
 }
 
 @Singleton
@@ -33,21 +46,21 @@ object RecommendConfigLoader {
     fun buildRecommendConfig(codes: String, separator: CharSequence = "\n"): String {
         val set = codes.split(",").toSet()
         return RECOMMEND_CONFIGS
-                .filter { set.contains(it.code) || (it.default && !set.contains("-${it.code}")) }
-                .joinToString(separator) { it.content }
+            .filter { set.contains(it.code) || (it.default && !set.contains("-${it.code}")) }
+            .joinToString(separator) { it.content }
     }
 
-    fun addSelectedConfig(codes: String, code: String): String {
+    fun addSelectedConfig(codes: String, vararg code: String): String {
         val set = codes.split(",").toHashSet()
-        set.add(code)
-        set.remove("-$code")
+        set.addAll(code)
+        code.map { "-$it" }.forEach { set.remove(it) }
         return set.joinToString(",")
     }
 
-    fun removeSelectedConfig(codes: String, code: String): String {
+    fun removeSelectedConfig(codes: String, vararg code: String): String {
         val set = codes.split(",").toHashSet()
-        set.remove(code)
-        set.add("-$code")
+        set.removeAll(code)
+        code.map { "-$it" }.forEach { set.add(it) }
         return set.joinToString(",")
     }
 
@@ -58,15 +71,15 @@ object RecommendConfigLoader {
     fun selectedCodes(codes: String): Array<String> {
         val set = codes.split(",").toSet()
         return RECOMMEND_CONFIGS
-                .filter { set.contains(it.code) || (it.default && !set.contains("-${it.code}")) }
-                .map { it.code }
-                .toTypedArray()
+            .filter { set.contains(it.code) || (it.default && !set.contains("-${it.code}")) }
+            .map { it.code }
+            .toTypedArray()
     }
 
     fun defaultCodes(): String {
         return RECOMMEND_CONFIGS
-                .filter { it.default }
-                .joinToString(",") { it.code }
+            .filter { it.default }
+            .joinToString(",") { it.code }
     }
 
     init {
@@ -134,7 +147,9 @@ object RecommendConfigLoader {
     private lateinit var RECOMMEND_CONFIG_PLAINT: String
     private lateinit var RECOMMEND_CONFIGS: Array<RecommendConfig>
 
-    data class RecommendConfig(val code: String,
-                               val default: Boolean,
-                               val content: String)
+    data class RecommendConfig(
+        val code: String,
+        val default: Boolean,
+        val content: String,
+    )
 }

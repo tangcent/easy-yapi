@@ -1,10 +1,11 @@
 package com.itangcent.idea.utils
 
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.WindowManager
+import com.itangcent.common.utils.cast
+import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.intellij.context.ActionContext
-import java.awt.Component
-import java.awt.Container
-import java.awt.Dialog
-import java.awt.Toolkit
+import java.awt.*
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.MouseEvent
@@ -70,6 +71,16 @@ object SwingUtils {
         )
     }
 
+    fun preferableWindow(): Window? {
+        val context = ActionContext.getContext() ?: return null
+        try {
+            context.instance(ActiveWindowProvider::class).activeWindow().cast(Window::class)?.let { return it }
+        } catch (e: com.google.inject.ConfigurationException) {
+        }
+        WindowManager.getInstance().suggestParentWindow(context.instance(Project::class))
+            ?.let { return it }
+        return null
+    }
 }
 
 fun MouseEvent?.isDoubleClick(): Boolean {
