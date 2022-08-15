@@ -18,7 +18,7 @@ class EmptyMessagesHelper : MessagesHelper {
         title: String?,
         icon: Icon?,
         values: Array<String>?,
-        initialValue: String?
+        initialValue: String?,
     ): String? {
         return null
     }
@@ -29,11 +29,21 @@ class EmptyMessagesHelper : MessagesHelper {
         icon: Icon?,
         values: Array<T>?,
         showAs: (T) -> String,
-        initialValue: T?
+        initialValue: T?,
     ): T? {
         return null
     }
 
     override fun showInfoDialog(message: String?, title: String?) {
+    }
+
+    override fun <T> showChooseWithTipDialog(
+        message: String?,
+        items: List<T>?,
+        showAs: ((T) -> String?)?,
+        tipAs: ((T) -> String?)?,
+        callBack: ((T?) -> Unit)?,
+    ) {
+        callBack?.invoke(null)
     }
 }
