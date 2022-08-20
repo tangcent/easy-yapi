@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.settings.SettingBinder
+import com.itangcent.idea.plugin.settings.YapiExportMode
 import com.itangcent.idea.plugin.settings.update
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.ConfigReader
@@ -51,22 +52,22 @@ class YapiSettingsHelper {
     fun getServer(dumb: Boolean = true): String? {
         if (server.notNullOrBlank()) return server
         configReader!!.first("yapi.server")?.trim()?.removeSuffix("/")
-                ?.takeIf { it.notNullOrBlank() }
-                ?.let {
-                    server = it
-                    return server
-                }
+            ?.takeIf { it.notNullOrBlank() }
+            ?.let {
+                server = it
+                return server
+            }
         settingBinder.read().yapiServer?.trim()?.removeSuffix("/")
-                ?.takeIf { it.notNullOrBlank() }
-                ?.let {
-                    server = it
-                    return server
-                }
+            ?.takeIf { it.notNullOrBlank() }
+            ?.let {
+                server = it
+                return server
+            }
         if (!dumb) {
             val yapiServer =
-                    messagesHelper.showInputDialog("Input server of yapi",
-                            "Server Of Yapi", Messages.getInformationIcon())
-                            ?.removeSuffix("/")
+                messagesHelper.showInputDialog("Input server of yapi",
+                    "Server Of Yapi", Messages.getInformationIcon())
+                    ?.removeSuffix("/")
             if (yapiServer.isNullOrBlank()) return null
             server = yapiServer
             settingBinder.update {
@@ -105,7 +106,8 @@ class YapiSettingsHelper {
             if (!dumb && tryInputTokenOfModule.add(module)) {
                 val modulePrivateToken = inputNewToken(module)
                 if (modulePrivateToken.notNullOrBlank()
-                        && yapiTokenChecker?.checkToken(modulePrivateToken!!) != false) {
+                    && yapiTokenChecker?.checkToken(modulePrivateToken!!) != false
+                ) {
                     setToken(module, modulePrivateToken!!)
                     return modulePrivateToken
                 }
@@ -117,13 +119,13 @@ class YapiSettingsHelper {
     private fun inputNewToken(module: String): String? {
         val inputTitle = if (loginMode()) "ProjectId" else "Private Token"
         return messagesHelper.showInputDialog("Input $inputTitle Of Module:$module",
-                "Yapi $inputTitle", Messages.getInformationIcon())
+            "Yapi $inputTitle", Messages.getInformationIcon())
     }
 
     fun inputNewToken(): String? {
         val inputTitle = if (loginMode()) "ProjectId" else "Private Token"
         return messagesHelper.showInputDialog("Input $inputTitle",
-                "Yapi $inputTitle", Messages.getInformationIcon())
+            "Yapi $inputTitle", Messages.getInformationIcon())
     }
 
     private fun Pair<String, Boolean?>.checked(): String? {
@@ -216,9 +218,9 @@ class YapiSettingsHelper {
     fun removeToken(token: String) {
         updateTokens { properties ->
             val removedKeys = properties.entries
-                    .filter { it.value == token }
-                    .map { it.key }
-                    .toList()
+                .filter { it.value == token }
+                .map { it.key }
+                .toList()
             removedKeys.forEach {
                 properties.remove(it)
                 tokenMap?.remove(it)
@@ -249,6 +251,12 @@ class YapiSettingsHelper {
     fun loginMode(): Boolean {
         return settingBinder.read().loginMode
     }
+
+    fun exportMode(): YapiExportMode {
+        return YapiExportMode.valueOf(settingBinder.read().yapiExportMode)
+    }
+
+//    fun overwrite()
 
     fun switchNotice(): Boolean {
         return settingBinder.read().switchNotice

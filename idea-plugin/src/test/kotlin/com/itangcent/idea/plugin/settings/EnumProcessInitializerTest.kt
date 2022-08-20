@@ -5,6 +5,7 @@ import com.intellij.ide.util.PropertiesComponent
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.SettingBinderAdaptor
+import com.itangcent.mock.any
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import org.mockito.Mockito
 import org.mockito.kotlin.mock
@@ -42,7 +43,7 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
                     Mockito.any(),
                     Mockito.any(),
                     Mockito.any(),
-                    Mockito.any()
+                    any {}
                 )
             ).then {
                 if (selectedEnumOption?.first == "error") {

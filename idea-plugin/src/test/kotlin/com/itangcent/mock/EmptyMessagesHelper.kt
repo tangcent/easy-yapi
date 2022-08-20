@@ -42,8 +42,16 @@ class EmptyMessagesHelper : MessagesHelper {
         items: List<T>?,
         showAs: ((T) -> String?)?,
         tipAs: ((T) -> String?)?,
-        callBack: ((T?) -> Unit)?,
+        callBack: ((T?) -> Unit),
     ) {
-        callBack?.invoke(null)
+        callBack.invoke(null)
+    }
+
+    override fun showAskWithApplyAllDialog(
+        message: String?,
+        buttonNames: Array<String>?,
+        callBack: (Int, Boolean) -> Unit,
+    ) {
+        callBack(Messages.YES, true)
     }
 }

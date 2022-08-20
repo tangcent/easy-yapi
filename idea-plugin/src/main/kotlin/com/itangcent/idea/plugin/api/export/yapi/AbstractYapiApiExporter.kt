@@ -83,7 +83,7 @@ open class AbstractYapiApiExporter {
 
         //try find existed cart.
         try {
-            cartId = yapiApiHelper!!.findCat(privateToken, name)
+            cartId = yapiApiHelper!!.findCart(privateToken, name)
         } catch (e: Exception) {
             logger.traceError("error to find cart [$name]", e)
             return null
@@ -92,7 +92,7 @@ open class AbstractYapiApiExporter {
         //create new cart.
         if (cartId == null) {
             if (yapiApiHelper.addCart(privateToken, name, folder.attr ?: "")) {
-                cartId = yapiApiHelper.findCat(privateToken, name)
+                cartId = yapiApiHelper.findCart(privateToken, name)
             } else {
                 //failed
                 return null

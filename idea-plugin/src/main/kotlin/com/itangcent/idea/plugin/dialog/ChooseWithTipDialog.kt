@@ -26,7 +26,7 @@ class ChooseWithTipDialog<T>(owner: Window? = null) : JDialog(owner) {
         items: List<T>?,
         showAs: ((T) -> String?)?,
         tipAs: ((T) -> String?)?,
-        callBack: ((T?) -> Unit)?,
+        callBack: ((T?) -> Unit),
     ) {
         this.items = items
         this.tipAs = tipAs

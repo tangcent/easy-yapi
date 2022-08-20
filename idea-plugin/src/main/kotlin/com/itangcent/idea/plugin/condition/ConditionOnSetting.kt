@@ -8,4 +8,4 @@ import com.itangcent.idea.plugin.settings.Settings
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class ConditionOnSetting(vararg val value: String)
+annotation class ConditionOnSetting(vararg val value: String, val havingValue: String = "")
