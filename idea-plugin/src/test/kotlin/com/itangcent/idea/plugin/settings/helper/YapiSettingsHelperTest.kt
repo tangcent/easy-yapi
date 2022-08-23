@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.settings.helper
 import com.google.inject.Inject
 import com.itangcent.common.kit.toJson
 import com.itangcent.debug.LoggerCollector
+import com.itangcent.idea.plugin.settings.YapiExportMode
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
@@ -31,14 +32,14 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
 
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
-                Mockito.eq("Server Of Yapi"), Mockito.any()))
-                .thenReturn(null, "http://127.0.0.1:3000")
+            Mockito.eq("Server Of Yapi"), Mockito.any()))
+            .thenReturn(null, "http://127.0.0.1:3000")
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
-                Mockito.eq("Yapi ProjectId"), Mockito.any()))
-                .thenReturn(null, "66")
+            Mockito.eq("Yapi ProjectId"), Mockito.any()))
+            .thenReturn(null, "66")
         Mockito.`when`(messagesHelper.showInputDialog(Mockito.anyString(),
-                Mockito.eq("Yapi Private Token"), Mockito.any()))
-                .thenReturn(null, "123456789")
+            Mockito.eq("Yapi Private Token"), Mockito.any()))
+            .thenReturn(null, "123456789")
         builder.bindInstance(MessagesHelper::class, messagesHelper)
 
         val yapiTokenChecker = object : YapiTokenChecker {
@@ -196,7 +197,8 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
 
         settings.yapiTokens = ByteArrayOutputStream().also { properties.store(it, "") }.toString()
 
-        assertEquals("{\"demo3\":\"987654321\",\"demo\":\"123456789\",\"demo2\":\"123456789\"}", yapiSettingsHelper.readTokens().toJson())
+        assertEquals("{\"demo3\":\"987654321\",\"demo\":\"123456789\",\"demo2\":\"123456789\"}",
+            yapiSettingsHelper.readTokens().toJson())
     }
 
     @Test
@@ -209,7 +211,8 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
         assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo"))
         assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo2"))
         assertEquals("987654321", yapiSettingsHelper.getPrivateToken("demo3"))
-        assertEquals("{\"demo3\":\"987654321\",\"demo\":\"123456789\",\"demo2\":\"123456789\"}", yapiSettingsHelper.readTokens().toJson())
+        assertEquals("{\"demo3\":\"987654321\",\"demo\":\"123456789\",\"demo2\":\"123456789\"}",
+            yapiSettingsHelper.readTokens().toJson())
     }
 
     @Test
@@ -235,6 +238,17 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
         assertFalse(yapiSettingsHelper.loginMode())
         settings.loginMode = true
         assertTrue(yapiSettingsHelper.loginMode())
+    }
+
+    @Test
+    fun testExportMode() {
+        assertEquals(YapiExportMode.ALWAYS_UPDATE, yapiSettingsHelper.exportMode())
+        settings.yapiExportMode = YapiExportMode.ALWAYS_ASK.name
+        assertEquals(YapiExportMode.ALWAYS_ASK, yapiSettingsHelper.exportMode())
+        settings.yapiExportMode = YapiExportMode.NEVER_UPDATE.name
+        assertEquals(YapiExportMode.NEVER_UPDATE, yapiSettingsHelper.exportMode())
+        settings.yapiExportMode = YapiExportMode.ALWAYS_UPDATE.name
+        assertEquals(YapiExportMode.ALWAYS_UPDATE, yapiSettingsHelper.exportMode())
     }
 
     @Test

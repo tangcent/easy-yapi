@@ -14,10 +14,7 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanUrls.INTEGRATIONS_DASHBOARD
 import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspace
 import com.itangcent.idea.plugin.configurable.AbstractEasyApiSettingGUI
-import com.itangcent.idea.plugin.settings.MarkdownFormatType
-import com.itangcent.idea.plugin.settings.PostmanExportMode
-import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
-import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.plugin.settings.*
 import com.itangcent.idea.plugin.settings.helper.*
 import com.itangcent.idea.plugin.settings.xml.postmanCollectionsAsPairs
 import com.itangcent.idea.plugin.settings.xml.setPostmanCollectionsPairs
@@ -153,6 +150,8 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     private var loginModeCheckBox: JCheckBox? = null
 
+    private var yapiExportModeComboBox: JComboBox<String>? = null
+
     private var yapiReqBodyJson5CheckBox: JCheckBox? = null
 
     private var yapiResBodyJson5CheckBox: JCheckBox? = null
@@ -239,6 +238,9 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
             this.yapiTokenLabel!!.text = if (it) "projectIds:" else "tokens:"
         }
 
+        yapiExportModeComboBox!!.model =
+            DefaultComboBoxModel(YapiExportMode.values().mapToTypedArray { it.name })
+
         logLevelComboBox!!.model = DefaultComboBoxModel(CommonSettingsHelper.CoarseLogLevel.editableValues())
 
         logCharsetComboBox!!.model = DefaultComboBoxModel(Charsets.SUPPORTED_CHARSETS)
@@ -287,6 +289,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         this.enableUrlTemplatingCheckBox!!.isSelected = settings.enableUrlTemplating
         this.switchNoticeCheckBox!!.isSelected = settings.switchNotice
         this.loginModeCheckBox!!.isSelected = settings.loginMode
+        this.yapiExportModeComboBox!!.selectedItem = settings.yapiExportMode
         this.yapiReqBodyJson5CheckBox!!.isSelected = settings.yapiReqBodyJson5
         this.yapiResBodyJson5CheckBox!!.isSelected = settings.yapiResBodyJson5
 
@@ -595,6 +598,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.enableUrlTemplating = enableUrlTemplatingCheckBox!!.isSelected
         settings.switchNotice = switchNoticeCheckBox!!.isSelected
         settings.loginMode = loginModeCheckBox!!.isSelected
+        settings.yapiExportMode = yapiExportModeComboBox!!.selectedItem as? String ?: YapiExportMode.ALWAYS_UPDATE.name
         settings.yapiReqBodyJson5 = yapiReqBodyJson5CheckBox!!.isSelected
         settings.yapiResBodyJson5 = yapiResBodyJson5CheckBox!!.isSelected
         settings.httpTimeOut =

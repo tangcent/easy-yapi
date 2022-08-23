@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.settings.xml
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.Settings
+import com.itangcent.idea.plugin.settings.YapiExportMode
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
 import com.itangcent.idea.utils.Charsets
 
@@ -29,6 +30,7 @@ interface ApplicationSettingsSupport {
     var enableUrlTemplating: Boolean
     var switchNotice: Boolean
     var loginMode: Boolean
+    var yapiExportMode: String
     var yapiReqBodyJson5: Boolean
     var yapiResBodyJson5: Boolean
 
@@ -68,6 +70,7 @@ interface ApplicationSettingsSupport {
         newSetting.enableUrlTemplating = this.enableUrlTemplating
         newSetting.switchNotice = this.switchNotice
         newSetting.loginMode = this.loginMode
+        newSetting.yapiExportMode = this.yapiExportMode
         newSetting.yapiReqBodyJson5 = this.yapiReqBodyJson5
         newSetting.yapiResBodyJson5 = this.yapiResBodyJson5
         newSetting.httpTimeOut = this.httpTimeOut
@@ -134,6 +137,8 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var switchNotice: Boolean = true
 
     override var loginMode: Boolean = false
+
+    override var yapiExportMode: String = YapiExportMode.ALWAYS_UPDATE.name
 
     override var yapiReqBodyJson5: Boolean = false
 

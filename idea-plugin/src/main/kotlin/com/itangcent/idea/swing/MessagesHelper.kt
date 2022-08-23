@@ -3,6 +3,7 @@ package com.itangcent.idea.swing
 import com.google.inject.ImplementedBy
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.concurrent.ValueHolder
+import com.itangcent.intellij.context.ActionContext
 import org.jetbrains.annotations.Nls
 import javax.swing.Icon
 
@@ -56,7 +57,18 @@ interface MessagesHelper {
         items: List<T>?,
         showAs: ((T) -> String?)?,
         tipAs: ((T) -> String?)?,
-        callBack: ((T?) -> Unit)?,
+        callBack: ((T?) -> Unit),
+    )
+
+    /**
+     * @param message tip at the top
+     * @param buttonNames [YES,NO,CANCEL]
+     * @param callBack callback when button be clicked
+     */
+    fun showAskWithApplyAllDialog(
+        message: String?,
+        buttonNames: Array<String>?,
+        callBack: (Int, Boolean) -> Unit,
     )
 }
 
@@ -70,6 +82,27 @@ fun <T> MessagesHelper.showChooseWithTipDialog(
     this.showChooseWithTipDialog(message, items, showAs, tipAs) {
         valueHolder.success(it)
     }
-//    return null
+
     return valueHolder.value()
+}
+
+fun MessagesHelper.showAskWithApplyAllDialog(
+    message: String?,
+    buttonNames: Array<String>?,
+    key: String,
+    callBack: (Int) -> Unit,
+) {
+    val actionContext = ActionContext.getContext()
+    actionContext?.getCache<Int>(key)
+        ?.let {
+            callBack(it)
+            return
+        }
+
+    this.showAskWithApplyAllDialog(message, buttonNames) { ret, applyAll ->
+        if (applyAll) {
+            actionContext?.cache(key, ret)
+        }
+        callBack(ret)
+    }
 }

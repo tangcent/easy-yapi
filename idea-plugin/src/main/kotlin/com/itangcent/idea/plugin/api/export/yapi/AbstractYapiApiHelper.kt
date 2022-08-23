@@ -60,8 +60,8 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         if (StringUtils.isNotBlank(res) && res.contains("errmsg")) {
             val returnObj = GsonUtils.parseToJsonTree(res)
             val errMsg = returnObj
-                    .sub("errmsg")
-                    ?.asString
+                .sub("errmsg")
+                ?.asString
             if (StringUtils.isNotBlank(errMsg) && !errMsg!!.contains("成功")) {
                 return errMsg
             }
@@ -77,9 +77,9 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         if (projectId != null) return projectId
         try {
             projectId = getProjectInfo(token, null)
-                    ?.sub("data")
-                    ?.sub("_id")
-                    ?.asString
+                ?.sub("data")
+                ?.sub("_id")
+                ?.asString
         } catch (e: IllegalStateException) {
             logger.error("invalid token:$token")
         }
@@ -91,14 +91,14 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         return projectId
     }
 
-    override fun getProjectInfo(token: String, projectId: String?): JsonElement? {
+    override fun getProjectInfo(token: String, projectId: String?): JsonObject? {
         if (projectId != null) {
             val cachedProjectInfo = cacheLock.readLock().withLock { projectInfoCache[projectId] }
             if (cachedProjectInfo != null) {
                 if (cachedProjectInfo == NULL_PROJECT) {
                     return null
                 }
-                return cachedProjectInfo
+                return cachedProjectInfo as? JsonObject
             }
         }
 
@@ -145,7 +145,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             {
                 if (!init) {
                     ruleComputer!!.computer(YapiClassExportRuleKeys.BEFORE_EXPORT, SuvRuleContext(),
-                            null)
+                        null)
                     init = true
                 }
             }
@@ -159,9 +159,9 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         }
         return try {
             httpClientProvide!!.getHttpClient()
-                    .get(rawUrl)
-                    .call()
-                    .use { it.string() }
+                .get(rawUrl)
+                .call()
+                .use { it.string() }
         } catch (e: SocketTimeoutException) {
             if (!dumb) {
                 logger.trace("$rawUrl connect timeout")

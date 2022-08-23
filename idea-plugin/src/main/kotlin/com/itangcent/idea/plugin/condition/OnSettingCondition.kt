@@ -12,12 +12,21 @@ import com.itangcent.intellij.context.ActionContext
 class OnSettingCondition : AnnotatedCondition<ConditionOnSetting>() {
 
     override fun matches(actionContext: ActionContext, annotation: ConditionOnSetting): Boolean {
+        val valueChecker = getValueChecker(annotation.havingValue)
         val settingBinder = actionContext.instance(SettingBinder::class)
         annotation.value.forEach { property ->
-            if (settingBinder.read().getPropertyValue(property).asBool() != true) {
+            if (!valueChecker(settingBinder.read().getPropertyValue(property))) {
                 return false
             }
         }
         return true
+    }
+
+    private fun getValueChecker(havingValue: String): (Any?) -> Boolean {
+        if (havingValue == "") {
+            return { it.asBool() == true }
+        }
+        return { it?.toString() == havingValue }
+
     }
 }

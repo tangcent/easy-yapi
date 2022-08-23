@@ -35,7 +35,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     override var postmanJson5FormatType: String = PostmanJson5FormatType.EXAMPLE_ONLY.name
 
-    //region intelligent
+    //region intelligent--------------------------
 
     override var queryExpanded: Boolean = true
 
@@ -53,7 +53,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     //endregion
 
-    //yapi
+    //region yapi--------------------------
 
     override var yapiServer: String? = null
 
@@ -65,9 +65,13 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     override var loginMode: Boolean = false
 
+    override var yapiExportMode: String = YapiExportMode.ALWAYS_UPDATE.name
+
     override var yapiReqBodyJson5: Boolean = false
 
     override var yapiResBodyJson5: Boolean = false
+
+    //endregion
 
     //region http--------------------------
 
@@ -78,7 +82,9 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     //endregion
 
-    //enable to use recommend config
+    /**
+     * enable to use recommend config
+     */
     override var useRecommendConfig: Boolean = true
 
     override var recommendConfigs: String = RecommendConfigLoader.defaultCodes()
@@ -141,6 +147,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (enableUrlTemplating != other.enableUrlTemplating) return false
         if (switchNotice != other.switchNotice) return false
         if (loginMode != other.loginMode) return false
+        if (yapiExportMode != other.yapiExportMode) return false
         if (yapiReqBodyJson5 != other.yapiReqBodyJson5) return false
         if (yapiResBodyJson5 != other.yapiResBodyJson5) return false
         if (httpTimeOut != other.httpTimeOut) return false
@@ -183,6 +190,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + enableUrlTemplating.hashCode()
         result = 31 * result + switchNotice.hashCode()
         result = 31 * result + loginMode.hashCode()
+        result = 31 * result + yapiExportMode.hashCode()
         result = 31 * result + yapiReqBodyJson5.hashCode()
         result = 31 * result + yapiResBodyJson5.hashCode()
         result = 31 * result + httpTimeOut
@@ -199,7 +207,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
     }
 
     override fun toString(): String {
-        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, feignEnable=$feignEnable, jaxrsEnable=$jaxrsEnable, pullNewestDataBefore=$pullNewestDataBefore, postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, postmanExportMode=$postmanExportMode, postmanCollections=$postmanCollections, wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, postmanJson5FormatType='$postmanJson5FormatType', queryExpanded=$queryExpanded, formExpanded=$formExpanded, readGetter=$readGetter, readSetter=$readSetter, inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, selectedOnly=$selectedOnly, yapiServer=$yapiServer, yapiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, switchNotice=$switchNotice, loginMode=$loginMode, yapiReqBodyJson5=$yapiReqBodyJson5, yapiResBodyJson5=$yapiResBodyJson5, httpTimeOut=$httpTimeOut, trustHosts=${trustHosts.contentToString()}, useRecommendConfig=$useRecommendConfig, recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', outputDemo=$outputDemo, outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', builtInConfig=$builtInConfig)"
+        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, feignEnable=$feignEnable, jaxrsEnable=$jaxrsEnable, pullNewestDataBefore=$pullNewestDataBefore, postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, postmanExportMode=$postmanExportMode, postmanCollections=$postmanCollections, wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, postmanJson5FormatType='$postmanJson5FormatType', queryExpanded=$queryExpanded, formExpanded=$formExpanded, readGetter=$readGetter, readSetter=$readSetter, inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, selectedOnly=$selectedOnly, yapiServer=$yapiServer, yapiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, switchNotice=$switchNotice, loginMode=$loginMode, yapiExportMode=$yapiExportMode, yapiReqBodyJson5=$yapiReqBodyJson5, yapiResBodyJson5=$yapiResBodyJson5, httpTimeOut=$httpTimeOut, trustHosts=${trustHosts.contentToString()}, useRecommendConfig=$useRecommendConfig, recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', outputDemo=$outputDemo, outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', builtInConfig=$builtInConfig)"
     }
 
     companion object {
