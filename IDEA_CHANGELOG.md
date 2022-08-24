@@ -1,3 +1,11 @@
+* 2.4.5
+
+	* fix: set resolveMulti to first in javax.validation.config [(#821)](https://github.com/tangcent/easy-yapi/pull/821)
+
+	* feat: add an option to update or skip existed apis in yapi [(#817)](https://github.com/tangcent/easy-yapi/pull/817)
+
+	* feat: asks how to convert enum on the first use [(#813)](https://github.com/tangcent/easy-yapi/pull/813)
+
 * 2.4.4
 
 	* fix: resolve desc of return type [(#807)](https://github.com/tangcent/easy-yapi/pull/807)
