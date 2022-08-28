@@ -37,53 +37,32 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     @Inject
     internal lateinit var actionContext: ActionContext
 
-    override fun findCartWeb(module: String, cartName: String): String? {
-        val token = yapiSettingsHelper.getPrivateToken(module)
-        val projectId = getProjectIdByToken(token!!) ?: return null
-        val catId = findCart(token, cartName) ?: return null
-        return getCartWeb(projectId, catId)
+    override fun findApi(token: String, catId: String, apiName: String): String? {
+        return listApis(token, catId)
+            ?.firstOrNull { api ->
+                api.sub("title")
+                    ?.asString == apiName
+            }?.sub("_id")?.asString
     }
 
-    override fun getCartWeb(projectId: String, catId: String): String? {
-        return "${yapiSettingsHelper.getServer()}/project/$projectId/interface/api/cat_$catId"
+    override fun findApis(token: String, catId: String): ArrayList<Any?>? {
+        return listApis(token, catId)
+            ?.asList()
     }
 
-    override fun getApiWeb(module: String, cartName: String, apiName: String): String? {
-        val token = yapiSettingsHelper.getPrivateToken(module)
-        val projectId = getProjectIdByToken(token!!) ?: return null
-        val catId = findCart(token, cartName) ?: return null
-        val apiId = findApi(token, catId, apiName)
-        return "${yapiSettingsHelper.getServer()}/project/$projectId/interface/api/$apiId"
-    }
-
-    override fun findCart(token: String, name: String): String? {
-        val projectId: String = getProjectIdByToken(token) ?: return null
-        val key = "$projectId$name"
-        var cachedCartId = cacheLock.readLock().withLock { cartIdCache[key] }
-        if (cachedCartId != null) return cachedCartId
-        var projectInfo: JsonElement? = null
-        try {
-            projectInfo = getProjectInfo(token, projectId)
-            val cats = projectInfo
-                ?.sub("data")
-                ?.sub("cat")
-                ?.asJsonArray
-            cats?.forEach { cat ->
-                if (cat.sub("name")?.asString == name) {
-                    cachedCartId = cat.sub("_id")!!
-                        .asString
-                    if (cachedCartId != null) {
-                        cacheLock.writeLock().withLock {
-                            cartIdCache[key] = cachedCartId!!
-                        }
-                    }
-                    return cachedCartId
-                }
-            }
-        } catch (e: Exception) {
-            logger.traceError("error to find cat. projectId:$projectId, info: ${projectInfo?.toString()}", e)
+    override fun listApis(token: String, catId: String, limit: Int?): JsonArray? {
+        var apiLimit = limit ?: localStorage.get("__internal__", "yapi.api.limit").asInt() ?: 1000
+        val url = "${yapiSettingsHelper.getServer()}$GET_CAT?token=$token&catid=$catId&limit=$apiLimit"
+        val jsonArray = GsonUtils.parseToJsonTree(getByApi(url))
+            ?.sub("data")
+            ?.sub("list")
+            ?.asJsonArray
+        if (jsonArray?.size() == apiLimit && apiLimit < 5000) {
+            apiLimit = (apiLimit * 1.4).toInt()
+            localStorage.set("__internal__", "yapi.api.limit", apiLimit)
+            return listApis(token, catId, apiLimit)
         }
-        return null
+        return jsonArray
     }
 
     private val saveInterceptor: YapiSaveInterceptor by lazy {
@@ -120,6 +99,55 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
         }
     }
 
+    override fun getApiWeb(module: String, cartName: String, apiName: String): String? {
+        val token = yapiSettingsHelper.getPrivateToken(module)
+        val projectId = getProjectIdByToken(token!!) ?: return null
+        val catId = findCart(token, cartName) ?: return null
+        val apiId = findApi(token, catId, apiName) ?: return null
+        return "${yapiSettingsHelper.getServer()}/project/$projectId/interface/api/$apiId"
+    }
+
+    override fun findCartWeb(module: String, cartName: String): String? {
+        val token = yapiSettingsHelper.getPrivateToken(module)
+        val projectId = getProjectIdByToken(token!!) ?: return null
+        val catId = findCart(token, cartName) ?: return null
+        return getCartWeb(projectId, catId)
+    }
+
+    override fun getCartWeb(projectId: String, catId: String): String? {
+        return "${yapiSettingsHelper.getServer()}/project/$projectId/interface/api/cat_$catId"
+    }
+
+    override fun findCart(token: String, name: String): String? {
+        val projectId: String = getProjectIdByToken(token) ?: return null
+        val key = "$projectId$name"
+        var cachedCartId = cacheLock.readLock().withLock { cartIdCache[key] }
+        if (cachedCartId != null) return cachedCartId
+        var projectInfo: JsonElement? = null
+        try {
+            projectInfo = getProjectInfo(token, projectId)
+            val cats = projectInfo
+                ?.sub("data")
+                ?.sub("cat")
+                ?.asJsonArray
+            cats?.forEach { cat ->
+                if (cat.sub("name")?.asString == name) {
+                    cachedCartId = cat.sub("_id")!!
+                        .asString
+                    if (cachedCartId != null) {
+                        cacheLock.writeLock().withLock {
+                            cartIdCache[key] = cachedCartId!!
+                        }
+                    }
+                    return cachedCartId
+                }
+            }
+        } catch (e: Exception) {
+            logger.traceError("error to find cat. projectId:$projectId, info: ${projectInfo?.toString()}", e)
+        }
+        return null
+    }
+
     override fun addCart(privateToken: String, name: String, desc: String): Boolean {
         val projectId = getProjectIdByToken(privateToken) ?: return false
         return addCart(projectId, privateToken, name, desc)
@@ -130,11 +158,13 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
             val returnValue = httpClientProvide!!.getHttpClient()
                 .post(yapiSettingsHelper.getServer(false) + ADD_CART)
                 .contentType(ContentType.APPLICATION_JSON)
-                .body(KV.create<Any?, Any?>()
-                    .set("desc", desc)
-                    .set("project_id", projectId)
-                    .set("name", name)
-                    .set("token", yapiSettingsHelper.rawToken(token)))
+                .body(
+                    KV.create<Any?, Any?>()
+                        .set("desc", desc)
+                        .set("project_id", projectId)
+                        .set("name", name)
+                        .set("token", yapiSettingsHelper.rawToken(token))
+                )
                 .call()
                 .use { it.string() }
 
@@ -161,34 +191,6 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
             logger.error("Post failed:" + ExceptionUtils.getStackTrace(e))
             return false
         }
-    }
-
-    override fun findApi(token: String, catId: String, apiName: String): String? {
-        return listApis(token, catId)
-            ?.firstOrNull { api ->
-                api.sub("title")
-                    ?.asString == apiName
-            }?.sub("_id")?.asString
-    }
-
-    override fun findApis(token: String, catId: String): ArrayList<Any?>? {
-        return listApis(token, catId)
-            ?.asList()
-    }
-
-    override fun listApis(token: String, catId: String, limit: Int?): JsonArray? {
-        var apiLimit = limit ?: localStorage.get("__internal__", "yapi.api.limit").asInt() ?: 1000
-        val url = "${yapiSettingsHelper.getServer()}$GET_CAT?token=$token&catid=$catId&limit=$apiLimit"
-        val jsonArray = GsonUtils.parseToJsonTree(getByApi(url))
-            ?.sub("data")
-            ?.sub("list")
-            ?.asJsonArray
-        if (jsonArray?.size() == apiLimit && apiLimit < 5000) {
-            apiLimit = (apiLimit * 1.4).toInt()
-            localStorage.set("__internal__", "yapi.api.limit", apiLimit)
-            return listApis(token, catId, apiLimit)
-        }
-        return jsonArray
     }
 
     override fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
