@@ -94,12 +94,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
             return
         }
 
-        var ultimateComment = (paramDesc ?: "")
-        parameterExportContext.type()?.let { duckType ->
-            commentResolver!!.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
-                ultimateComment = "$ultimateComment $it"
-            }
-        }
+        val ultimateComment = getUltimateCommentOfParam(paramDesc, parameterExportContext)
 
         //head
         val requestHeaderAnn = findRequestHeader(parameterExportContext.psi())
@@ -286,6 +281,19 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         addParamAsQuery(parameterExportContext, request, parameterExportContext.unbox(), ultimateComment)
     }
 
+    protected fun getUltimateCommentOfParam(
+        paramDesc: String?,
+        parameterExportContext: ParameterExportContext
+    ): String {
+        var ultimateComment = (paramDesc ?: "")
+        parameterExportContext.type()?.let { duckType ->
+            commentResolver.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
+                ultimateComment = "$ultimateComment $it"
+            }
+        }
+        return ultimateComment
+    }
+
     override fun processMethod(methodExportContext: MethodExportContext, request: Request) {
         super.processMethod(methodExportContext, request)
 
@@ -301,8 +309,8 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         ) {
             httpMethod = ctrlHttpMethod
         }
-        request.method = httpMethod
 
+        requestBuilderListener.setMethodIfMissed(methodExportContext, request, httpMethod)
         val httpPath = basePath.concat(findHttpPath(requestMapping))
         requestBuilderListener.setPath(methodExportContext, request, httpPath)
     }
