@@ -158,7 +158,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             })
         }
         requests[0].let { request ->
-            assertEquals("/user", request.path!!.url())
+            assertEquals("/primitive/user/add", request.path!!.url())
             assertEquals("create an user", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
@@ -171,7 +171,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             )
         }
         requests[1].let { request ->
-            assertEquals("/user/list/{type}", request.path!!.url())
+            assertEquals("/primitive/user/list/{type}", request.path!!.url())
             assertEquals("list users", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)

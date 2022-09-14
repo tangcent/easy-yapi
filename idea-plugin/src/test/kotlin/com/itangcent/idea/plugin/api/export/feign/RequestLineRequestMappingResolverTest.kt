@@ -54,11 +54,11 @@ internal class RequestLineRequestMappingResolverTest : PluginContextLightCodeIns
 
     fun testResolveRequestMapping() {
         assertEquals(
-            "{\"method\":\"POST\",\"value\":\"/user\"}",
+            "{\"method\":\"POST\",\"value\":\"/add\"}",
             requestLineRequestMappingResolver.resolveRequestMapping(primitiveUserClientPsiClass.methods[0]).toJson()
         )
         assertEquals(
-            "{\"method\":\"POST\",\"value\":\"/user/list/{type}\"}",
+            "{\"method\":\"POST\",\"value\":\"/list/{type}\"}",
             requestLineRequestMappingResolver.resolveRequestMapping(primitiveUserClientPsiClass.methods[1]).toJson()
         )
     }

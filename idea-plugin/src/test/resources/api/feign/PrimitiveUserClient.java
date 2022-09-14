@@ -7,11 +7,13 @@ import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
 
-@FeignClient("user")
+@FeignClient(value = "user", path = "/primitive")
+@RequestMapping(value = "/user")
 public interface PrimitiveUserClient {
 
     /**
@@ -19,7 +21,7 @@ public interface PrimitiveUserClient {
      *
      * @param user user info
      */
-    @RequestLine("POST /user")
+    @RequestLine("POST /add")
     @Headers("content-type: application/x-www-form-urlencoded")
     Result<UserInfo> add(UserInfo user);
 
@@ -32,7 +34,7 @@ public interface PrimitiveUserClient {
      * @param id    user id
      * @return
      */
-    @RequestLine("POST /user/list/{type}")
+    @RequestLine("POST /list/{type}")
     @Headers({"content-type: application/json",
             "token: {token} ",
             "id: {id} "

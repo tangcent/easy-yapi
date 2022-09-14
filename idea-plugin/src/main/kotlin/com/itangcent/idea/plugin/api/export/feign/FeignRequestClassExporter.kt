@@ -6,7 +6,9 @@ import com.itangcent.common.kit.equalIgnoreCase
 import com.itangcent.common.model.Header
 import com.itangcent.common.model.PathParam
 import com.itangcent.common.model.Request
+import com.itangcent.common.model.URL
 import com.itangcent.common.utils.Extensible
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
@@ -29,6 +31,30 @@ open class FeignRequestClassExporter : SpringRequestClassExporter() {
     override fun hasApi(psiClass: PsiClass): Boolean {
         return annotationHelper.hasAnn(psiClass, SpringFeignClassName.FEIGN_CLIENT_ANNOTATION)
                 || (ruleComputer.computer(ClassExportRuleKeys.IS_FEIGN_CTRL, psiClass) ?: false)
+    }
+
+    override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
+
+        var basePath: URL = URL.nil()
+
+        val pathInFeignClient =
+            annotationHelper.findAttrAsString(cls, SpringFeignClassName.FEIGN_CLIENT_ANNOTATION, "path")
+        if (pathInFeignClient.notNullOrEmpty()) {
+            basePath = basePath.concat(URL.of(pathInFeignClient))
+        }
+
+        val ctrlRequestMappingAnn = findRequestMappingInAnn(cls)
+        if (ctrlRequestMappingAnn.notNullOrEmpty()) {
+            basePath = basePath.concat(findHttpPath(ctrlRequestMappingAnn))
+            val ctrlHttpMethod = findHttpMethod(ctrlRequestMappingAnn)
+            classExportContext.setExt("ctrlHttpMethod", ctrlHttpMethod)
+        }
+
+        val prefixPath = ruleComputer.computer(ClassExportRuleKeys.CLASS_PREFIX_PATH, cls)
+        if (prefixPath.notNullOrBlank()) {
+            basePath = URL.of(prefixPath).concat(basePath)
+        }
+        classExportContext.setExt("basePath", basePath)
     }
 
     override fun processMethod(methodExportContext: MethodExportContext, request: Request) {
@@ -125,7 +151,7 @@ open class FeignRequestClassExporter : SpringRequestClassExporter() {
 
             var ultimateComment = (paramDesc ?: "")
             parameterExportContext.type()?.let { duckType ->
-                commentResolver!!.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
+                commentResolver.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
                     ultimateComment = "$ultimateComment $it"
                 }
             }
@@ -136,6 +162,7 @@ open class FeignRequestClassExporter : SpringRequestClassExporter() {
                     is Header -> {
                         ref.desc = ultimateComment
                     }
+
                     is PathParam -> {
                         ref.desc = ultimateComment
                     }
