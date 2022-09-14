@@ -67,6 +67,7 @@ open class DefaultRequestBuilderListener : RequestBuilderListener {
     override fun setJsonBody(exportContext: ExportContext, request: Request, body: Any?, bodyAttr: String?) {
         request.body = body
         request.bodyAttr = bodyAttr
+        request.bodyType = "json"
     }
 
     override fun appendDesc(exportContext: ExportContext, request: Request, desc: String?) {

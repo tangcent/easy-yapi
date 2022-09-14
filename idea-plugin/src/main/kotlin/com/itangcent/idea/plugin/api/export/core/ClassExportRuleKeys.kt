@@ -114,6 +114,11 @@ object ClassExportRuleKeys {
         StringRuleMode.SINGLE
     )
 
+    val ENDPOINT_PREFIX_PATH: RuleKey<String> = SimpleRuleKey(
+        "endpoint.prefix.path",
+        StringRuleMode.SINGLE
+    )
+
     /**
      * the main goal of the {@return}
      */

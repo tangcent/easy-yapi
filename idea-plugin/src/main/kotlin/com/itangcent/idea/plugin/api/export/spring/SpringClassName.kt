@@ -53,4 +53,28 @@ object SpringClassName {
     const val REQUEST_HEADER_DEFAULT_NONE = "\n\t\t\n\t\t\n\uE000\uE001\uE002\n\t\t\t\t\n"
 
     const val ESCAPE_REQUEST_HEADER_DEFAULT_NONE = "\\n\\t\\t\\n\\t\\t\\n\\uE000\\uE001\\uE002\\n\\t\\t\\t\\t\\n"
+
+
+    //Spring Boot Actuator Annotations
+    const val ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.Endpoint"
+    const val WEB_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.WebEndpoint"
+    const val CONTROLLER_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpoint"
+    const val REST_CONTROLLER_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.RestControllerEndpoint"
+
+    const val READ_OPERATION_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.ReadOperation"
+    const val WRITE_OPERATION_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.WriteOperation"
+    const val DELETE_OPERATION_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.DeleteOperation"
+    const val SELECTOR_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.Selector"
+
+    val ENDPOINT_ANNOTATIONS: Set<String> = setOf(
+        ENDPOINT_ANNOTATION,
+        WEB_ENDPOINT_ANNOTATION,
+        CONTROLLER_ENDPOINT_ANNOTATION,
+        REST_CONTROLLER_ENDPOINT_ANNOTATION
+    )
+    val ENDPOINT_OPERATION_ANNOTATIONS: Set<String> = setOf(
+        READ_OPERATION_ANNOTATION,
+        WRITE_OPERATION_ANNOTATION,
+        DELETE_OPERATION_ANNOTATION
+    )
 }

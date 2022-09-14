@@ -60,11 +60,10 @@ interface URL {
     fun flatMap(transform: (String) -> URL?): URL
 
     companion object {
-        private val NULL_URL: NullURL = NullURL()
 
         fun of(url: String?): URL {
             return if (url == null) {
-                NULL_URL
+                NullURL
             } else {
                 SingleURL(url)
             }
@@ -72,7 +71,7 @@ interface URL {
 
         fun of(vararg urls: String?): URL {
             return when {
-                urls.isNullOrEmpty() -> NULL_URL
+                urls.isEmpty() -> NullURL
                 urls.size == 1 -> of(urls[0])
                 else -> MultiURL(urls.filterNotNull())
             }
@@ -80,14 +79,14 @@ interface URL {
 
         fun of(urls: List<String>?): URL {
             return when {
-                urls.isNullOrEmpty() -> NULL_URL
+                urls.isNullOrEmpty() -> NullURL
                 urls.size == 1 -> of(urls.first())
                 else -> MultiURL(urls)
             }
         }
 
         fun nil(): URL {
-            return NULL_URL
+            return NullURL
         }
     }
 }
@@ -96,7 +95,7 @@ interface URL {
  * This url is null.
  * Create it by [URL.nil]
  */
-private class NullURL : URL {
+private object NullURL : URL {
 
     override fun url(): String? {
         return null
@@ -213,7 +212,7 @@ private class MultiURL : URL {
         this.urls = urls
     }
 
-    override fun url(): String? {
+    override fun url(): String {
         return this.urls.first { it.notNullOrEmpty() }
     }
 
