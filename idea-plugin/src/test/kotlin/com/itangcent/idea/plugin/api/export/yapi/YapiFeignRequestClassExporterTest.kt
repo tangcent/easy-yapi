@@ -83,7 +83,7 @@ internal class YapiFeignRequestClassExporterTest : YapiSpringClassExporterBaseTe
 
             assertFalse(request.isOpen())
             assertEquals("undone", request.getStatus())
-            assertTrue(request.getTags()!!.contains("deprecated"))
+            assertTrue(request.getTags().contains("deprecated"))
         }
         assertEquals(ResultLoader.load(), LoggerCollector.getLog().toUnixString())
     }

@@ -327,7 +327,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
 
     //region process spring annotation-------------------------------------------------------------------
 
-    private fun findHttpPath(requestMappingAnn: Map<String, Any?>?): URL {
+    protected fun findHttpPath(requestMappingAnn: Map<String, Any?>?): URL {
         return when (val path = requestMappingAnn?.any("path", "value")) {
             null -> URL.nil()
             is Array<*> -> URL.of(path.mapNotNull { it?.toString() })
@@ -467,7 +467,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         }
     }
 
-    private fun findHttpMethod(requestMappingAnn: Map<String, Any?>?): String {
+    protected fun findHttpMethod(requestMappingAnn: Map<String, Any?>?): String {
         if (requestMappingAnn == null) {
             return HttpMethod.NO_METHOD
         }
@@ -489,7 +489,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
         }
     }
 
-    private fun findRequestMappingInAnn(ele: PsiElement): Map<String, Any?>? {
+    protected fun findRequestMappingInAnn(ele: PsiElement): Map<String, Any?>? {
         return springRequestMappingResolver.resolveRequestMapping(ele)
     }
 
