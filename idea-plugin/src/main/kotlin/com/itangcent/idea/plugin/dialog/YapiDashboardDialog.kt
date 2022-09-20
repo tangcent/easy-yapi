@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.intellij.openapi.ui.Messages
+import com.itangcent.common.logger.Log
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.icons.EasyIcons
@@ -15,22 +16,18 @@ import com.itangcent.idea.swing.EasyApiTreeCellRenderer
 import com.itangcent.idea.swing.IconCustomized
 import com.itangcent.idea.swing.ToolTipAble
 import com.itangcent.idea.utils.SwingUtils
-import com.itangcent.idea.utils.initAfterShown
 import com.itangcent.idea.utils.isDoubleClick
 import com.itangcent.idea.utils.reload
-import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.*
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.from
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetAdapter
 import java.awt.dnd.DropTargetDropEvent
-import java.awt.event.*
-import java.util.*
-import java.util.concurrent.Future
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.util.concurrent.TimeUnit
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
@@ -505,12 +502,14 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 is YapiApiNodeData -> {
                     syncYapiNode(yapiNodeData.getParentNodeData())
                 }
+
                 is YapiProjectNodeData -> {
                     //clear
                     yapiNodeData.removeAllSub()
                     //reload
                     loadYapiProject(yapiNodeData)
                 }
+
                 is YapiCartNodeData -> {
                     //clear
                     yapiNodeData.removeAllSub()
@@ -751,6 +750,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                                         Thread.sleep(200)
                                         syncYapiNode(targetNodeData.getRootNodeData())
                                     }
+
                                     Messages.NO -> {
                                         export(fromProjectData, targetNodeData, cartId)
                                         Thread.sleep(200)
@@ -793,6 +793,5 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     }
 
     //endregion handle drop--------------------------------------------------------
+    companion object : Log()
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(YapiDashboardDialog::class.java)

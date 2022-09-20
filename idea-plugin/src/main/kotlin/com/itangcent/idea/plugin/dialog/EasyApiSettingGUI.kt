@@ -7,6 +7,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.MutableCollectionComboBoxModel
 import com.intellij.ui.table.JBTable
 import com.itangcent.cache.withoutCache
+import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
@@ -623,7 +624,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         readPostmanCollections(settings)
     }
 
-    companion object {
+    companion object : Log() {
         const val basePath = ".easy_api"
 
         const val setting_path = "easy.api.setting.path"
@@ -635,5 +636,3 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         private var DEFAULT_WORKSPACE = PostmanWorkspaceData(null, "")
     }
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(YapiDashboardDialog::class.java)

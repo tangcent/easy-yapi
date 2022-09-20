@@ -99,8 +99,10 @@ class SqliteDataResourceHelper {
         override fun get(name: ByteArray): ByteArray? {
             return try {
                 return sqLiteDataSourceHandle.read {
-                    it.execute<String?>("SELECT * FROM $cacheName WHERE HASH = '${name.contentHashCode()}'" +
-                            " AND NAME = '${name.encodeBase64()}' LIMIT 1") { resultSet -> resultSet.getString("VALUE") }
+                    it.execute<String?>(
+                        "SELECT * FROM $cacheName WHERE HASH = '${name.contentHashCode()}'" +
+                                " AND NAME = '${name.encodeBase64()}' LIMIT 1"
+                    ) { resultSet -> resultSet.getString("VALUE") }
                         ?.decodeBase64()
                 }
             } catch (e: Exception) {
@@ -170,8 +172,10 @@ class SqliteDataResourceHelper {
                 val hash = name.contentHashCode()
                 var expired: Long? = null
                 val value = sqLiteDataSourceHandle.read { sqLiteDataSource ->
-                    sqLiteDataSource.execute<String?>("SELECT * FROM $cacheName WHERE HASH = '$hash'" +
-                            " AND NAME = '$base64Name' LIMIT 1") { resultSet ->
+                    sqLiteDataSource.execute<String?>(
+                        "SELECT * FROM $cacheName WHERE HASH = '$hash'" +
+                                " AND NAME = '$base64Name' LIMIT 1"
+                    ) { resultSet ->
                         val expiredInResult = resultSet.getLong("EXPIRED")
                         return@execute if (notExpired(expiredInResult)) {
                             resultSet.getString("VALUE")
@@ -184,10 +188,11 @@ class SqliteDataResourceHelper {
                 if (expired != null) {//delete expired row
                     try {
                         sqLiteDataSourceHandle.write {
-                            it.execute("DELETE FROM $cacheName WHERE " +
-                                    "HASH = $hash " +
-                                    "AND NAME = '$base64Name'" +
-                                    "AND EXPIRED = '$expired'"
+                            it.execute(
+                                "DELETE FROM $cacheName WHERE " +
+                                        "HASH = $hash " +
+                                        "AND NAME = '$base64Name'" +
+                                        "AND EXPIRED = '$expired'"
                             ) {}
                         }
                     } catch (e: Exception) {
@@ -331,5 +336,3 @@ fun SqliteDataResourceHelper.ExpiredBeanDAO.set(key: String, value: String, expi
 fun SqliteDataResourceHelper.ExpiredBeanDAO.delete(str: String) {
     this.delete(str.toByteArray(Charsets.UTF_8))
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(SqliteDataResourceHelper::class.java)

@@ -2,10 +2,14 @@ package com.itangcent.idea.plugin.dialog
 
 import com.google.inject.Inject
 import com.intellij.openapi.ui.Messages
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.*
+import com.itangcent.common.utils.DateUtils
+import com.itangcent.common.utils.mapNotNull
+import com.itangcent.common.utils.mapToTypedArray
+import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
@@ -22,16 +26,15 @@ import com.itangcent.idea.utils.reload
 import com.itangcent.idea.utils.remove
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.context.Boundary
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.runWithContext
 import com.itangcent.intellij.extend.rx.eval
 import com.itangcent.intellij.extend.rx.from
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetAdapter
 import java.awt.dnd.DropTargetDropEvent
-import java.awt.event.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.swing.*
@@ -433,10 +436,12 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             return
         }
         actionContext.runInSwingUI {
-            val newCollectionName = Messages.showInputDialog(this,
+            val newCollectionName = Messages.showInputDialog(
+                this,
                 "Input New Collection Name",
                 "New Collection",
-                Messages.getInformationIcon())
+                Messages.getInformationIcon()
+            )
             if (newCollectionName.isNullOrBlank()) return@runInSwingUI
 
             actionContext.runAsync {
@@ -477,10 +482,12 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         if (lastSelectedPathComponent != null) {
             val postmanNodeData = lastSelectedPathComponent.userObject ?: return
             actionContext.runInSwingUI {
-                val newCollectionName = Messages.showInputDialog(this,
+                val newCollectionName = Messages.showInputDialog(
+                    this,
                     "Input Sub Collection Name",
                     "Collection Name",
-                    Messages.getInformationIcon())
+                    Messages.getInformationIcon()
+                )
                 if (newCollectionName.isNullOrBlank()) return@runInSwingUI
 
                 actionContext.runAsync {
@@ -889,6 +896,6 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     override fun filterDoc(doc: Doc): Doc? {
         return doc.takeIf { it is Request }
     }
-}
 
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(ApiDashboardDialog::class.java)
+    companion object : Log()
+}

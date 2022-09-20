@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.dialog
 
+import com.itangcent.common.logger.Log
 import com.itangcent.idea.utils.SwingUtils
 import java.awt.EventQueue
 import java.awt.Window
@@ -80,10 +81,12 @@ class AskWithApplyAllDialog(owner: Window? = null) : JDialog(owner) {
         })
 
         // call onCancel() on ESCAPE
-        contentPane!!.registerKeyboardAction({ onCancel() },
+        contentPane!!.registerKeyboardAction(
+            { onCancel() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+        )
     }
-}
 
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(AskWithApplyAllDialog::class.java)
+    companion object : Log()
+}

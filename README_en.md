@@ -14,13 +14,13 @@
 - [demo](https://github.com/Earth-1610/web-demo)
 
 # Table of Contents
-
-* 1 [Feature](#Feature)
-* 2 Doc
-  * 2.1 [Javadoc](#Javadoc)
-  * 2.2 [KDoc](#KDoc)
-* 3 [Installation](#Installation)
-* 4 [Guide](#Guide)
+<!-- TOC -->
+* [Feature](#feature)
+* [Javadoc](#javadoc)
+* [KDoc](#kdoc)
+* [Installation](#installation)
+* [Contributing](#contributing)
+<!-- TOC -->
 
 ## Feature
 
@@ -60,72 +60,12 @@ Installation
 restart **IDE**.
 
 
-## Guide
+## Contributing
 
-* ExportApi(0.8.2.1+)
-```textCode
-    1. Open existed Spring Controller File Or Select files or directories from project navigation
-    You can use by this : "alt shift E(windows)/ctrl E(mac)"
-    2. Select apis and channel
-    3. Click [✔️] button or press enter key
-```
+You can propose a feature request opening an issue or a pull request.
 
-* ExportYapi
-```textCode
-    There are two ways to export api.
-    1. Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
-    choose the action "ExportYapi"
-    2. Select files or directories from project navigation
-    You can use by this : "Click [Code -> ExportYapi] in top"
-```
+Here is a list of contributors:
 
-* ExportPostman
-```textCode
-    There are two ways to export api.
-    1. Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
-    choose the action "ExportPostman"
-    2. Select files or directories from project navigation
-    You can use by this : "Click [Code -> ExportPostman] in top"
-```
-
-* How to export to postman automatically?
-
-```text
-    Click [Preference -> Other Setting -> EasyApi]
-    set postman privateToken
-    If you do not have a privateToken of postman,
-    you can easily generate one by heading over to the Postman Integrations Dashboard
-    [https://go.postman.co/integrations/services/pm_pro_api]
-```
-
-* Quick API requests from code
-
-```textCode
-    Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
-    choose the action "Call"
-```
-
-* ApiDashBoard
-```textCode
-    It is easily to export api in current project to postman by dragging
-    You can use by this : "Click [Code -> ApiDashBoard] in top"
-```
-
-* YApiDashBoard
-```textCode
-    It is easily to export api in current project to yapi by dragging
-    You can use by this : "Click [Code -> YApiDashBoard] in top"
-```
-
-* ExportMarkdown(Beta)
-```textCode
-    There are two ways to export api.
-    1. Open existed Spring Controller File
-    You can use by this : "Right click in the file -> generate... " or use its shortcuts "[Alt + Insert]/[Ctrl+Enter]" , then
-    choose the action "ExportMarkdown"
-    2. Select files or directories from project navigation
-    You can use by this : "Click [Code -> ExportMarkdown] in top"
-```
+<a href="https://github.com/tangcent/easy-yapi/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=tangcent/easy-yapi" />
+</a>

@@ -14,7 +14,6 @@ import kotlin.reflect.full.findAnnotation
 
 object SpiCompositeLoader {
 
-    @Suppress("UNCHECKED_CAST")
     inline fun <reified S : Any> loadComposite(): S {
         val cls = S::class
         val loadServices = load<S>(ActionContext.getContext()!!)

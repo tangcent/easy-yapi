@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.cache.CacheSwitcher
+import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
@@ -337,9 +338,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         var workspaceDetail: PostmanWorkspace? = null
     )
 
-    companion object {
+    companion object : Log() {
         val NULL_POSTMAN_INFO_CACHE = PostmanInfoCache()
     }
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(PostmanCachedApiHelper::class.java)
