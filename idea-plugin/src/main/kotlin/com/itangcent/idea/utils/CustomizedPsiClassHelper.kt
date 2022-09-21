@@ -5,6 +5,8 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.logger.Log
+import com.itangcent.common.logger.traceWarn
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
@@ -74,7 +76,7 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         val obj = try {
             GsonExUtils.fromJson<Any>(valueText)
         } catch (e: Exception) {
-            LOG.warn("failed parse json:\n$valueText\n", e)
+            LOG.traceWarn("failed parse json:\n$valueText\n", e)
             return
         }
         if (obj.isOriginal()) {
@@ -113,7 +115,6 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         }
         return super.ignoreField(psiField)
     }
+
+    companion object : Log()
 }
-
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(CustomizedPsiClassHelper::class.java)

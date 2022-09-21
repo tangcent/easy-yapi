@@ -5,10 +5,11 @@ import com.fasterxml.jackson.annotation.PropertyAccessor
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
+import com.itangcent.common.logger.Log
+import com.itangcent.common.logger.traceError
 
 
-object JacksonUtils {
+object JacksonUtils : Log() {
 
     private val objectMapper: ObjectMapper = ObjectMapper()
 
@@ -42,10 +43,8 @@ object JacksonUtils {
                 Class.forName(json.substring(0, split)) as Class<T>
             )
         } catch (e: Exception) {
-            LOG.error("failed parse json: [$json]", e)
+            LOG.traceError("failed parse json: [$json]", e)
             null
         }
     }
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(JacksonUtils::class.java)

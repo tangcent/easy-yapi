@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.render
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -85,6 +86,6 @@ class AdaptiveMarkdownRender : MarkdownRender {
         }
         return null
     }
-}
 
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(AdaptiveMarkdownRender::class.java)
+    companion object : Log()
+}

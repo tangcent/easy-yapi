@@ -11,6 +11,7 @@ import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
 import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.constant.HttpMethod
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
@@ -1083,6 +1084,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                         val suffix = url.substring(dotIndex).substringBefore("\\//?&")
                         "$name.$suffix"
                     }
+
                     else -> url.substringAfterLast("/").substringBefore("?")
                 }
             }
@@ -1131,6 +1133,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                     formatResult = formatResponse()
                     formatResult
                 }
+
                 else -> getRawResult()
             }
         }
@@ -1322,7 +1325,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         return requestRawInfo
     }
 
-    companion object {
+    companion object : Log() {
         var CONTENT_TYPES: Array<String> = arrayOf(
             "",
             "application/json",
@@ -1351,5 +1354,3 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         }
     }
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(ApiCallDialog::class.java)

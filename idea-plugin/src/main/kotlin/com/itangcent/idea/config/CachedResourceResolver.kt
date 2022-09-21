@@ -3,6 +3,7 @@ package com.itangcent.idea.config
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.TimeSpanUtils
 import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelper
@@ -24,6 +25,9 @@ import java.util.concurrent.TimeUnit
 
 @Singleton
 open class CachedResourceResolver : DefaultResourceResolver() {
+    companion object : Log() {
+        private const val URL_CACHE_EXPIRE = "url.cache.expire"
+    }
 
     @Inject(optional = true)
     @Named("projectCacheRepository")
@@ -121,6 +125,3 @@ open class CachedResourceResolver : DefaultResourceResolver() {
         private fun timeOut() = httpSettingsHelper.httpTimeOut(TimeUnit.MILLISECONDS)
     }
 }
-
-private const val URL_CACHE_EXPIRE = "url.cache.expire"
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(CachedResourceResolver::class.java)

@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.*
+import com.itangcent.common.logger.Log
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
@@ -62,6 +63,9 @@ open class ClassApiExporterHelper {
 
     @Inject
     protected lateinit var messagesHelper: MessagesHelper
+
+    companion object : Log()
+
     fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
         val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
         if (subTagMap.isEmpty()) {
@@ -237,5 +241,3 @@ open class ClassApiExporterHelper {
         }
     }
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(ClassApiExporterHelper::class.java)

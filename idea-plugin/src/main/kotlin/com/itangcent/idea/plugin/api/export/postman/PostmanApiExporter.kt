@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.cache.CacheSwitcher
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
@@ -41,6 +42,8 @@ class PostmanApiExporter {
 
     @Inject
     private val classApiExporterHelper: ClassApiExporterHelper? = null
+
+    companion object : Log()
 
     fun export() {
         try {
@@ -175,5 +178,3 @@ class PostmanApiExporter {
         postmanApiHelper.updateCollection(collectionId, collectionInfo)
     }
 }
-
-private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(PostmanApiExporter::class.java)
