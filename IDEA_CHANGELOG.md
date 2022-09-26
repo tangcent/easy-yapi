@@ -1,3 +1,15 @@
+* 2.4.6
+
+	* amend: use :Log() instead of define [(#837)](https://github.com/tangcent/easy-yapi/pull/837)
+
+	* fix: parse FeignClient#path [(#835)](https://github.com/tangcent/easy-yapi/pull/835)
+
+	* feat: support export apis from actuator [(#834)](https://github.com/tangcent/easy-yapi/pull/834)
+
+	* fix: convert java.math.BigInteger to java.lang.Long [(#828)](https://github.com/tangcent/easy-yapi/pull/828)
+
+	* test: DefaultYapiApiHelperTest [(#824)](https://github.com/tangcent/easy-yapi/pull/824)
+
 * 2.4.5
 
 	* fix: set resolveMulti to first in javax.validation.config [(#821)](https://github.com/tangcent/easy-yapi/pull/821)
