@@ -10,6 +10,16 @@ object YapiClassExportRuleKeys {
         EventRuleMode.THROW_IN_ERROR
     )
 
+    val BEFORE_SAVE: RuleKey<String> = SimpleRuleKey(
+        "yapi.save.before",
+        EventRuleMode.THROW_IN_ERROR
+    )
+
+    val AFTER_SAVE: RuleKey<String> = SimpleRuleKey(
+        "yapi.save.after",
+        EventRuleMode.THROW_IN_ERROR
+    )
+
     val TAG: RuleKey<String> = SimpleRuleKey(
         "api.tag",
         StringRuleMode.MERGE_DISTINCT

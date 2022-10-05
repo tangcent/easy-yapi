@@ -1,6 +1,5 @@
 package com.itangcent.idea.plugin.api.export.core
 
-import com.itangcent.idea.plugin.api.export.reserved
 import org.apache.http.HttpResponse
 import org.apache.http.StatusLine
 import org.apache.http.entity.ByteArrayEntity
