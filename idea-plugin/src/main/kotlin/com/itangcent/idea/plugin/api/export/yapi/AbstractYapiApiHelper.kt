@@ -6,9 +6,9 @@ import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.plugin.api.export.ReservedResponseHandle
+import com.itangcent.idea.plugin.api.export.core.ReservedResponseHandle
 import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
-import com.itangcent.idea.plugin.api.export.reserved
+import com.itangcent.idea.plugin.api.export.core.reserved
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.intellij.config.ConfigReader
@@ -140,16 +140,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     }
 
     open fun getByApi(url: String, dumb: Boolean = true): String? {
-        if (!init) {
-            synchronized(this)
-            {
-                if (!init) {
-                    ruleComputer!!.computer(YapiClassExportRuleKeys.BEFORE_EXPORT, SuvRuleContext(),
-                        null)
-                    init = true
-                }
-            }
-        }
+        initBeforeCallApi()
         var rawUrl = url
         if (yapiSettingsHelper.loginMode()) {
             //token is insignificant in loginMode
@@ -183,6 +174,21 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             }
             logger.traceError("request $rawUrl failed", e)
             null
+        }
+    }
+
+    private fun initBeforeCallApi() {
+        if (!init) {
+            synchronized(this)
+            {
+                if (!init) {
+                    ruleComputer!!.computer(
+                        YapiClassExportRuleKeys.BEFORE_EXPORT, SuvRuleContext(),
+                        null
+                    )
+                    init = true
+                }
+            }
         }
     }
 

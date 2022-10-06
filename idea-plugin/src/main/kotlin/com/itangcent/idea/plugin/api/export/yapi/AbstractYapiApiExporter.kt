@@ -7,9 +7,13 @@ import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
+import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.rule.setDoc
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
+import com.itangcent.idea.psi.resource
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 
@@ -45,6 +49,9 @@ open class AbstractYapiApiExporter {
 
     @Inject
     protected val formatFolderHelper: FormatFolderHelper? = null
+
+    @Inject
+    protected lateinit var ruleComputer: RuleComputer
 
     /**
      * Get the token of the special module.
@@ -120,7 +127,22 @@ open class AbstractYapiApiExporter {
             apiInfo["token"] = privateToken
             apiInfo["catid"] = cartId
             apiInfo["switch_notice"] = yapiSettingsHelper.switchNotice()
+
+            val suvRuleContext = SuvRuleContext()
+            suvRuleContext.setDoc(doc)
+            suvRuleContext.setExt("yapiInfo", apiInfo)
+
+            ruleComputer.computer(
+                YapiClassExportRuleKeys.BEFORE_SAVE, suvRuleContext,
+                doc.resource()
+            )
+
             ret = ret or yapiApiHelper!!.saveApiInfo(apiInfo)
+
+            ruleComputer.computer(
+                YapiClassExportRuleKeys.AFTER_SAVE, suvRuleContext,
+                doc.resource()
+            )
         }
         return ret
     }

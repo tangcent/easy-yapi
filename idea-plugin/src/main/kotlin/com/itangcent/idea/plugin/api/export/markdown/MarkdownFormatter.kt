@@ -8,18 +8,13 @@ import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
-import com.itangcent.idea.plugin.api.export.core.ClassExportContext
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
-import com.itangcent.idea.plugin.api.export.core.MethodExportContext
-import com.itangcent.idea.plugin.api.export.rule.MethodDocRuleWrap
-import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.rule.setDoc
 import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
 import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.idea.psi.resource
-import com.itangcent.idea.psi.resourceClass
-import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.config.ConfigReader
@@ -28,8 +23,6 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.takeIfNotOriginal
 import com.itangcent.intellij.extend.takeIfSpecial
 import com.itangcent.intellij.jvm.DuckTypeHelper
-import com.itangcent.intellij.jvm.element.ExplicitMethod
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * format [com.itangcent.common.model.Doc] to `markdown`.
@@ -178,12 +171,16 @@ class MarkdownFormatter {
 
     private fun parseInfo(info: Map<*, *>, deep: Int, writer: Writer) {
         val title = info[NAME].toString()
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE,
-            SuvRuleContext().also {
-                it.setExt("title", title)
-                it.setExt("deep", deep)
-            }, null)
-            ?: "${hN(deep)} $title")
+        writer(
+            ruleComputer.computer(
+                MarkdownExportRuleKeys.HN_TITLE,
+                SuvRuleContext().also {
+                    it.setExt("title", title)
+                    it.setExt("deep", deep)
+                }, null
+            )
+                ?: "${hN(deep)} $title"
+        )
         writer.doubleLine()
         info[DESC]?.let {
             writer(it.toString())
@@ -195,25 +192,29 @@ class MarkdownFormatter {
     private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, writer: Writer) {
 
         val suvRuleContext = SuvRuleContext()
-        suvRuleContext.setExt("type", "methodDoc")
-        suvRuleContext.setExt("doc", methodDoc)//for compatible
-        suvRuleContext.setExt("methodDoc", MethodDocRuleWrap(methodDoc.createMethodExportContext(), methodDoc))
+        suvRuleContext.setDoc(methodDoc)
         suvRuleContext.setExt("deep", deep)
         suvRuleContext.setExt("title", methodDoc.name)
 
         writer("\n---\n")
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, methodDoc.resource())
-            ?: "${hN(deep)} ${methodDoc.name}")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, methodDoc.resource())
+                ?: "${hN(deep)} ${methodDoc.name}"
+        )
         writer.doubleLine()
 
         if (methodDoc.desc.notNullOrBlank()) {
-            writer(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_DESC, suvRuleContext, methodDoc.resource())
-                ?: "**Desc:**\n\n ${methodDoc.desc}")
+            writer(
+                ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_DESC, suvRuleContext, methodDoc.resource())
+                    ?: "**Desc:**\n\n ${methodDoc.desc}"
+            )
             writer.doubleLine()
         }
 
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_PARAMS, suvRuleContext, methodDoc.resource())
-            ?: "**Params:**")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_PARAMS, suvRuleContext, methodDoc.resource())
+                ?: "**Params:**"
+        )
         writer.doubleLine()
         if (methodDoc.params.isNullOrEmpty()) {
             writer("Non-Parameter\n")
@@ -226,8 +227,10 @@ class MarkdownFormatter {
             writer.nextLine()
         }
 
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_RETURN, suvRuleContext, methodDoc.resource())
-            ?: "**Return:**")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.METHOD_DOC_RETURN, suvRuleContext, methodDoc.resource())
+                ?: "**Return:**"
+        )
         writer.doubleLine()
         if (methodDoc.ret == null) {
             writer("Non-Return\n")
@@ -244,35 +247,43 @@ class MarkdownFormatter {
     private fun parseRequest(request: Request, deep: Int, writer: Writer) {
 
         val suvRuleContext = SuvRuleContext()
-        suvRuleContext.setExt("type", "request")
-        suvRuleContext.setExt("doc", request)//for compatible
-        suvRuleContext.setExt("api", RequestRuleWrap(request.createMethodExportContext(), request))
+        suvRuleContext.setDoc(request)
         suvRuleContext.setExt("deep", deep)
         suvRuleContext.setExt("title", request.name)
 
         writer("\n---\n")
 
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, request.resource())
-            ?: "${hN(deep)} ${request.name}")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.HN_TITLE, suvRuleContext, request.resource())
+                ?: "${hN(deep)} ${request.name}"
+        )
         writer.doubleLine()
 
         //region basic info
 
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC, suvRuleContext, request.resource())
-            ?: "> BASIC")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.BASIC, suvRuleContext, request.resource())
+                ?: "> BASIC"
+        )
         writer.doubleLine()
 
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_PATH, suvRuleContext, request.resource())
-            ?: "**Path:** ${request.path}")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.BASIC_PATH, suvRuleContext, request.resource())
+                ?: "**Path:** ${request.path}"
+        )
         writer.doubleLine()
 
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_METHOD, suvRuleContext, request.resource())
-            ?: "**Method:** ${request.method}")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.BASIC_METHOD, suvRuleContext, request.resource())
+                ?: "**Method:** ${request.method}"
+        )
         writer.doubleLine()
 
         if (request.desc.notNullOrBlank()) {
-            writer(ruleComputer.computer(MarkdownExportRuleKeys.BASIC_DESC, suvRuleContext, request.resource())
-                ?: "**Desc:**\n\n ${request.desc}")
+            writer(
+                ruleComputer.computer(MarkdownExportRuleKeys.BASIC_DESC, suvRuleContext, request.resource())
+                    ?: "**Desc:**\n\n ${request.desc}"
+            )
             writer.doubleLine()
         }
 
@@ -280,14 +291,18 @@ class MarkdownFormatter {
 
         //region request
 
-        writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST, suvRuleContext, request.resource())
-            ?: "> REQUEST")
+        writer(
+            ruleComputer.computer(MarkdownExportRuleKeys.REQUEST, suvRuleContext, request.resource())
+                ?: "> REQUEST"
+        )
         writer.doubleLine()
 
         //path
         if (request.paths.notNullOrEmpty()) {
-            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_PATH, suvRuleContext, request.resource())
-                ?: "**Path Params:**")
+            writer(
+                ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_PATH, suvRuleContext, request.resource())
+                    ?: "**Path Params:**"
+            )
             writer.doubleLine()
             val tableRender = tableWriterBuilder.build(writer, "request.pathParams", arrayOf("name", "value", "desc"))
             tableRender.writeHeaders()
@@ -297,31 +312,47 @@ class MarkdownFormatter {
 
         //header
         if (request.headers.notNullOrEmpty()) {
-            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_HEADERS, suvRuleContext, request.resource())
-                ?: "**Headers:**")
+            writer(
+                ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_HEADERS, suvRuleContext, request.resource())
+                    ?: "**Headers:**"
+            )
             writer.doubleLine()
             val tableRender =
                 tableWriterBuilder.build(writer, "request.headers", arrayOf("name", "value", "required", "desc"))
             tableRender.writeHeaders()
-            tableRender.addRows(request.headers, { it.name }, { it.value.takeIfSpecial() }, { it.required ?: false }, { it.desc })
+            tableRender.addRows(
+                request.headers,
+                { it.name },
+                { it.value.takeIfSpecial() },
+                { it.required ?: false },
+                { it.desc })
             writer.nextLine()
         }
 
         //query
         if (request.querys.notNullOrEmpty()) {
-            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_QUERY, suvRuleContext, request.resource())
-                ?: "**Query:**")
+            writer(
+                ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_QUERY, suvRuleContext, request.resource())
+                    ?: "**Query:**"
+            )
             writer.doubleLine()
             val tableRender =
                 tableWriterBuilder.build(writer, "request.querys", arrayOf("name", "value", "required", "desc"))
             tableRender.writeHeaders()
-            tableRender.addRows(request.querys, { it.name }, { it.value.takeIfNotOriginal() }, { it.required ?: false }, { it.desc })
+            tableRender.addRows(
+                request.querys,
+                { it.name },
+                { it.value.takeIfNotOriginal() },
+                { it.required ?: false },
+                { it.desc })
             writer.nextLine()
         }
 
         if (request.body != null) {
-            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_BODY, suvRuleContext, request.resource())
-                ?: "**Request Body:**")
+            writer(
+                ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_BODY, suvRuleContext, request.resource())
+                    ?: "**Request Body:**"
+            )
             writer.doubleLine()
 
             val objectWriter = objectWriterBuilder.build("request.body", writer)
@@ -330,10 +361,14 @@ class MarkdownFormatter {
 
             if (markdownSettingsHelper.outputDemo()) {
                 writer("\n")
-                writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_BODY_DEMO,
-                    suvRuleContext,
-                    request.resource())
-                    ?: "**Request Demo:**")
+                writer(
+                    ruleComputer.computer(
+                        MarkdownExportRuleKeys.REQUEST_BODY_DEMO,
+                        suvRuleContext,
+                        request.resource()
+                    )
+                        ?: "**Request Demo:**"
+                )
                 writer.doubleLine()
 
                 parseToJson(writer, request.body)
@@ -342,8 +377,10 @@ class MarkdownFormatter {
         }
 
         if (request.formParams.notNullOrEmpty()) {
-            writer(ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_FORM, suvRuleContext, request.resource())
-                ?: "**Form:**")
+            writer(
+                ruleComputer.computer(MarkdownExportRuleKeys.REQUEST_FORM, suvRuleContext, request.resource())
+                    ?: "**Form:**"
+            )
             writer.doubleLine()
 
             val tableRender =
@@ -367,23 +404,31 @@ class MarkdownFormatter {
             //todo:support multiple response
             if (response != null) {
                 writer.doubleLine()
-                writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE, suvRuleContext, request.resource())
-                    ?: "> RESPONSE")
+                writer(
+                    ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE, suvRuleContext, request.resource())
+                        ?: "> RESPONSE"
+                )
                 writer.doubleLine()
 
                 //response headers
                 val responseHeaders = response.headers
                 if (responseHeaders.notNullOrEmpty()) {
-                    writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_HEADERS,
-                        suvRuleContext,
-                        request.resource())
-                        ?: "**Headers:**")
+                    writer(
+                        ruleComputer.computer(
+                            MarkdownExportRuleKeys.RESPONSE_HEADERS,
+                            suvRuleContext,
+                            request.resource()
+                        )
+                            ?: "**Headers:**"
+                    )
                     writer.doubleLine()
 
                     val tableRender =
-                        tableWriterBuilder.build(writer,
+                        tableWriterBuilder.build(
+                            writer,
                             "response.headers",
-                            arrayOf("name", "value", "required", "desc"))
+                            arrayOf("name", "value", "required", "desc")
+                        )
                     tableRender.writeHeaders()
                     tableRender.addRows(responseHeaders,
                         { it.name },
@@ -396,10 +441,14 @@ class MarkdownFormatter {
 
                 //response body
                 response.body?.let {
-                    writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_BODY,
-                        suvRuleContext,
-                        request.resource())
-                        ?: "**Body:**")
+                    writer(
+                        ruleComputer.computer(
+                            MarkdownExportRuleKeys.RESPONSE_BODY,
+                            suvRuleContext,
+                            request.resource()
+                        )
+                            ?: "**Body:**"
+                    )
                     writer.doubleLine()
                     val objectWriter = objectWriterBuilder.build("response.body", writer)
                     objectWriter.writeHeader()
@@ -409,10 +458,14 @@ class MarkdownFormatter {
 
                 // handler json example
                 if (markdownSettingsHelper.outputDemo()) {
-                    writer(ruleComputer.computer(MarkdownExportRuleKeys.RESPONSE_BODY_DEMO,
-                        suvRuleContext,
-                        request.resource())
-                        ?: "**Response Demo:**")
+                    writer(
+                        ruleComputer.computer(
+                            MarkdownExportRuleKeys.RESPONSE_BODY_DEMO,
+                            suvRuleContext,
+                            request.resource()
+                        )
+                            ?: "**Response Demo:**"
+                    )
                     writer.doubleLine()
                     parseToJson(writer, response.body)
                     writer.nextLine()
@@ -468,19 +521,6 @@ class MarkdownFormatter {
             info["name"] = resource.toString()
             info[DESC] = "exported at ${DateUtils.formatYMD_HMS(systemProvider.currentTimeMillis().asDate())}"
         }
-    }
-
-    private val explicitCache = ConcurrentHashMap<PsiClass, ArrayList<ExplicitMethod>>()
-
-    private fun Doc.createMethodExportContext(): MethodExportContext? {
-        val resourceClass = this.resourceClass() ?: return null
-        val resourceMethod = this.resourceMethod() ?: return null
-        val explicitMethods = explicitCache.computeIfAbsent(resourceClass) {
-            return@computeIfAbsent actionContext!!.callInReadUI { duckTypeHelper.explicit(resourceClass).methods() }!!
-        }
-        val explicitMethod = explicitMethods.find { it.psi() == resourceMethod } ?: return null
-        val classExportContext = ClassExportContext(resourceClass)
-        return MethodExportContext(classExportContext, explicitMethod)
     }
 
     companion object {

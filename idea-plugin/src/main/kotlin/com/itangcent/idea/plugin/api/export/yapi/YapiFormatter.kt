@@ -159,14 +159,17 @@ open class YapiFormatter {
                 return actionContext.instance(Json5Formatter::class)
                     .format(value)
             }
+
             is Collection<*> -> {
                 return actionContext.instance(Json5Formatter::class)
                     .format(value)
             }
+
             is Map<*, *> -> {
                 return actionContext.instance(Json5Formatter::class)
                     .format(value)
             }
+
             else -> {
                 return value?.toString()
             }
@@ -253,15 +256,19 @@ open class YapiFormatter {
                 ResolveMultiPath.FIRST -> {
                     pathInRequest.urls().firstOrNull()
                 }
+
                 ResolveMultiPath.LAST -> {
                     pathInRequest.urls().lastOrNull()
                 }
+
                 ResolveMultiPath.LONGEST -> {
                     pathInRequest.urls().longest()
                 }
+
                 ResolveMultiPath.SHORTEST -> {
                     pathInRequest.urls().shortest()
                 }
+
                 else -> ""
             }
 
@@ -485,9 +492,9 @@ open class YapiFormatter {
             path.startsWith("/") -> path
             else -> "/$path"
         }.let {
-            Regex("[^a-zA-Z0-9-/_:.{}?=!]").replace(it, "/")
+            REGEX_URL_CONSIST.replace(it, "/")
         }.let {
-            Regex("//+").replace(it, "/")
+            REGEX_URL_REDUNDANT_SLASH.replace(it, "/")
         }
     }
 
@@ -500,9 +507,11 @@ open class YapiFormatter {
             null -> {
                 return "null"
             }
+
             is String -> {
                 return "string"
             }
+
             is Number -> {
                 return if (typedObject is Int || typedObject is Long) {
                     "integer"
@@ -510,18 +519,23 @@ open class YapiFormatter {
                     "number"
                 }
             }
+
             is Boolean -> {
                 return "boolean"
             }
+
             is Array<*> -> {
                 return "array"
             }
+
             is List<*> -> {
                 return "array"
             }
+
             is Map<*, *> -> {
                 return "object"
             }
+
             else -> return "object"
         }
     }
@@ -664,6 +678,7 @@ open class YapiFormatter {
             null -> {
                 return
             }
+
             is MutableMap<*, *> -> {
                 typedObject as MutableMap<Any?, Any?>
                 val mocks: HashMap<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? HashMap<String, Any?>?
@@ -695,6 +710,7 @@ open class YapiFormatter {
                     }
                 }
             }
+
             is List<*> -> {
                 for ((index, item) in typedObject.withIndex()) {
                     addMockAsProperty(contactPath(path, "[]"), item) {
@@ -702,6 +718,7 @@ open class YapiFormatter {
                     }
                 }
             }
+
             is Collection<*> -> {
                 val ret = typedObject::class.newInstance() as? MutableCollection<Any?> ?: return
                 typedObject.forEach {
@@ -709,6 +726,7 @@ open class YapiFormatter {
                 }
                 retSet(ret)
             }
+
             is Array<*> -> {
                 for ((index, item) in typedObject.withIndex()) {
                     addMockAsProperty(contactPath(path, "[]"), item) {
@@ -716,6 +734,7 @@ open class YapiFormatter {
                     }
                 }
             }
+
             else -> {
                 val jsonType = jsonTypeOf(typedObject)
                 if (jsonType != "object" && jsonType != "array") {
@@ -742,16 +761,19 @@ open class YapiFormatter {
                 logger.warn("should not set mock to map!!")
                 return
             }
+
             is Array<*> -> {
                 setMock(value, mockStr) {
                     typedObject[key] = it
                 }
             }
+
             is Collection<*> -> {
                 setMock(value, mockStr) {
                     typedObject[key] = it
                 }
             }
+
             else -> {
                 typedObject[key] = mockStr
             }
@@ -768,6 +790,7 @@ open class YapiFormatter {
                 }
                 (typedObject as? Array<Any?>)?.set(0, mockStr)
             }
+
             is Collection<*> -> {
                 if (typedObject.size == 0) {
                     retSet(arrayListOf(mockStr))
@@ -779,6 +802,7 @@ open class YapiFormatter {
                     retSet(arrayListOf(mockStr))
                 }
             }
+
             else -> {
                 retSet(mockStr)
             }
@@ -937,6 +961,9 @@ open class YapiFormatter {
     companion object {
         val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!
         val EMPTY_PARAMS: List<String> = Collections.emptyList<String>()
+
+        val REGEX_URL_CONSIST = Regex("[^a-zA-Z0-9-/_:.{}?=!]")
+        val REGEX_URL_REDUNDANT_SLASH = Regex("//+")
 
         // TODO: support parse yapi body
         private val YAPI_BODY_PARSE_TIP = OnlyOnceInContextTip(
