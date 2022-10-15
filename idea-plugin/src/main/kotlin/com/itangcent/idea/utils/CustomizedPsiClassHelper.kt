@@ -5,8 +5,8 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.logger.Log
-import com.itangcent.common.logger.traceWarn
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
@@ -21,6 +21,7 @@ import com.itangcent.intellij.jvm.element.ExplicitField
 import com.itangcent.intellij.psi.ObjectHolder
 import com.itangcent.intellij.psi.ResolveContext
 import com.itangcent.intellij.psi.getOrResolve
+import com.itangcent.utils.isCollections
 
 /**
  * support rules:
@@ -54,7 +55,9 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
             }
         } else {
             kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
-            populateFieldValue(fieldName, fieldType, kv, defaultValue)
+            parseAsFieldValue(defaultValue)
+                ?.also { KVUtils.useFieldAsAttrs(it, Attrs.DEFAULT_VALUE_ATTR) }
+                ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
         }
 
         super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
@@ -72,28 +75,35 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = additionalField.defaultValue
     }
 
-    protected fun populateFieldValue(fieldName: String, fieldType: DuckType, kv: KV<String, Any?>, valueText: String) {
-        val obj = try {
-            GsonExUtils.fromJson<Any>(valueText)
+    protected fun parseAsFieldValue(
+        valueText: String
+    ): Any? {
+        return try {
+            GsonExUtils.fromJson<Any>(valueText)?.takeIf { it.isCollections() && !it.isOriginal() }
+                ?.let { it.copyUnsafe() }
         } catch (e: Exception) {
-            LOG.traceWarn("failed parse json:\n$valueText\n", e)
-            return
+            null
         }
-        if (obj.isOriginal()) {
-            return
-        }
+    }
+
+    protected fun populateFieldValue(
+        fieldName: String,
+        fieldType: DuckType,
+        kv: KV<String, Any?>,
+        fieldValue: Any
+    ) {
         var oldValue = kv[fieldName]
         if (oldValue is ObjectHolder) {
             oldValue = oldValue.getOrResolve()
         }
-        if (oldValue == obj) {
+        if (oldValue == fieldValue) {
             return
         }
         if (oldValue.isOriginal()) {
-            kv[fieldName] = obj
+            kv[fieldName] = fieldValue
         } else {
             kv[fieldName] = oldValue.copy()
-            kv.merge(fieldName, obj)
+            kv.merge(fieldName, fieldValue)
         }
     }
 

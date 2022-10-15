@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.intellij.psi.PsiElement
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
@@ -54,6 +55,9 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
             ?.let { if (resolveProperty) configReader.resolveProperty(it) else it }
             ?.let { mockInfo ->
                 kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
+                parseAsFieldValue(mockInfo)
+                    ?.also { KVUtils.useFieldAsAttrs(it, Attrs.MOCK_ATTR) }
+                    ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
             }
 
         //compute `field.demo`
@@ -63,7 +67,9 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         )
         if (demoValue.notNullOrBlank()) {
             kv.sub(Attrs.EXAMPLE_ATTR)[fieldName] = demoValue
-            populateFieldValue(fieldName, fieldType, kv, demoValue!!)
+            demoValue?.let { parseAsFieldValue(it) }
+                ?.also { KVUtils.useFieldAsAttrs(it, Attrs.EXAMPLE_ATTR) }
+                ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
         }
 
         //compute `field.advanced`
