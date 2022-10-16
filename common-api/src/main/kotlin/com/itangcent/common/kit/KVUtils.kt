@@ -4,8 +4,8 @@ import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.joinToString
 import com.itangcent.common.utils.notNullOrEmpty
-import java.util.*
-import kotlin.collections.ArrayList
+import com.itangcent.utils.isCollections
+import com.itangcent.utils.subMutable
 
 object KVUtils {
 
@@ -41,9 +41,9 @@ object KVUtils {
      */
     fun getOptionDesc(options: List<Map<String, Any?>>): String? {
         return options.stream()
-                .map { concat(it["value"]?.toString(), it["desc"]?.toString()) }
-                .filter { it != null }
-                .joinToString("\n")
+            .map { concat(it["value"]?.toString(), it["desc"]?.toString()) }
+            .filter { it != null }
+            .joinToString("\n")
     }
 
     /**
@@ -51,9 +51,9 @@ object KVUtils {
      */
     fun getConstantDesc(constants: List<Map<String, Any?>>): String? {
         return constants.stream()
-                .map { concat(it["name"]?.toString(), it["desc"]?.toString()) }
-                .filter { it != null }
-                .joinToString("\n")
+            .map { concat(it["name"]?.toString(), it["desc"]?.toString()) }
+            .filter { it != null }
+            .joinToString("\n")
     }
 
     private fun concat(name: String?, desc: String?): String? {
@@ -161,6 +161,42 @@ object KVUtils {
                 val mergeOptions: ArrayList<Any?> = ArrayList(oldOptions as ArrayList<*>)
                 mergeOptions.addAll(options)
                 comments["$field@options"] = mergeOptions
+            }
+        }
+    }
+
+    fun useFieldAsAttrs(model: Any?, attr: String) {
+        when (model) {
+            null -> {
+                return
+            }
+
+            is Collection<*> -> {
+                if (model.isEmpty()) {
+                    return
+                }
+                return useFieldAsAttrs(model.first(), attr)
+            }
+
+            is Array<*> -> {
+                if (model.isEmpty()) {
+                    return
+                }
+                return useFieldAsAttrs(model.first(), attr)
+            }
+
+            is Map<*, *> -> {
+                val keys = model.keys.toList()
+                keys.forEach { key->
+                    if (key !is String) {
+                        return@forEach
+                    }
+                    val value = model[key]
+                    if (!value.isCollections()) {
+                        model.subMutable(attr)?.set(key, value)
+                    }
+                    useFieldAsAttrs(value, attr)
+                }
             }
         }
     }

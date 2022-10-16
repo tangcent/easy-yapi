@@ -557,7 +557,7 @@ open class YapiFormatter {
 
     @Suppress("UNCHECKED_CAST")
     private fun parseObject(path: String?, typedObject: Any?): HashMap<String, Any?> {
-        if (typedObject == null) return nullObject()
+        typedObject ?: return nullObject()
         val item: HashMap<String, Any?> = LinkedHashMap()
         item["type"] = jsonTypeOf(typedObject)
         if (typedObject is Array<*>) {
@@ -847,6 +847,9 @@ open class YapiFormatter {
     }
 
     private fun addMock(item: HashMap<String, Any?>, mockStr: Any) {
+        if (item.containsKey("mock")) {
+            return
+        }
         val mock: HashMap<String, Any?> = HashMap()
         mock["mock"] = mockStr
         item["mock"] = mock
