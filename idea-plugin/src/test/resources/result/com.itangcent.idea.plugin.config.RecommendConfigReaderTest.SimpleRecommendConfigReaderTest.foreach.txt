@@ -21,4 +21,5 @@ constant.field.ignore=groovy:it.name()=="serialVersionUID"
 properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix
 field.name=@com.alibaba.fastjson.annotation.JSONField#value
 enum.use.by.type=true
+json.rule.enum.convert=~#name()
 ignore=@Ignore

@@ -37,3 +37,4 @@ properties.prefix=@org.springframework.boot.context.properties.ConfigurationProp
 field.name=@com.alibaba.fastjson.annotation.JSONField#value
 #Auto map enum to a type matched field in it
 enum.use.by.type=true
+json.rule.enum.convert=~#name()
