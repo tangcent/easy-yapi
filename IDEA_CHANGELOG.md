@@ -1,3 +1,11 @@
+* 2.4.7
+
+	* feat: provider json.rule.enum.convert in recommendation [(#848)](https://github.com/tangcent/easy-yapi/pull/848)
+
+	* feat: populate field from mock [(#847)](https://github.com/tangcent/easy-yapi/pull/847)
+
+	* feat: new rule `yapi.save.before` & `yapi.save.after` [(#842)](https://github.com/tangcent/easy-yapi/pull/842)
+
 * 2.4.6
 
 	* amend: use :Log() instead of define [(#837)](https://github.com/tangcent/easy-yapi/pull/837)
