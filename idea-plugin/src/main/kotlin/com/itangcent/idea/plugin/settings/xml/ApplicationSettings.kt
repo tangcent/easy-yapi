@@ -49,6 +49,8 @@ interface ApplicationSettingsSupport {
     var markdownFormatType: String
     var builtInConfig: String?
 
+    var remoteConfig: Array<String>
+
     fun copyTo(newSetting: ApplicationSettingsSupport) {
         newSetting.postmanToken = this.postmanToken
         newSetting.wrapCollection = this.wrapCollection
@@ -85,6 +87,7 @@ interface ApplicationSettingsSupport {
         newSetting.markdownFormatType = this.markdownFormatType
         newSetting.builtInConfig = this.builtInConfig
         newSetting.trustHosts = this.trustHosts
+        newSetting.remoteConfig = this.remoteConfig
     }
 }
 
@@ -178,6 +181,8 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name
 
     override var builtInConfig: String? = null
+
+    override var remoteConfig: Array<String> = emptyArray()
 
     fun copy(): ApplicationSettings {
         val applicationSettings = ApplicationSettings()

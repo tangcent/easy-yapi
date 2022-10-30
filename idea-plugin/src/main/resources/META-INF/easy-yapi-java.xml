@@ -135,6 +135,11 @@
                              instance="com.itangcent.idea.plugin.configurable.EasyApiRecommendConfigurable"/>
 
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
+                             displayName="Remote"
+                             id="easyapi.settings.EasyApiConfigurable.Remote"
+                             instance="com.itangcent.idea.plugin.configurable.EasyApiRemoteConfigurable"/>
+
+        <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
                              displayName="BuildInConfig"
                              id="easyapi.settings.EasyApiConfigurable.BuiltInConfig"
                              instance="com.itangcent.idea.plugin.configurable.EasyApiSettingBuiltInConfigConfigurable"/>

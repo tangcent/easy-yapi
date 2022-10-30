@@ -629,10 +629,6 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
         const val setting_path = "easy.api.setting.path"
 
-        private const val built_in_config_name = ".default.built.in.easy.api.config"
-
-        val DEFAULT_BUILT_IN_CONFIG = ResourceUtils.readResource(built_in_config_name)
-
         private var DEFAULT_WORKSPACE = PostmanWorkspaceData(null, "")
     }
 }

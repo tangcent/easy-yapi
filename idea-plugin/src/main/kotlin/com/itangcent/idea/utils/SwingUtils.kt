@@ -9,10 +9,7 @@ import java.awt.*
 import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.MouseEvent
-import javax.swing.BorderFactory
-import javax.swing.JComponent
-import javax.swing.JTable
-import javax.swing.JTree
+import javax.swing.*
 import javax.swing.table.TableColumn
 import javax.swing.tree.*
 
@@ -204,5 +201,31 @@ fun Container.visit(handle: (Component) -> Unit) {
         if (component is Container) {
             component.visit(handle)
         }
+    }
+}
+
+
+@Suppress("UNCHECKED_CAST")
+fun <T> JList<T>.getModelElements(): List<T> {
+    val model = this.model
+    if (model is List<*>) {
+        return model as List<T>
+    }
+    val modelElements: ArrayList<T> = ArrayList(model.size)
+    (0 until model.size).forEach { modelElements.add(model.getElementAt(it)) }
+    return modelElements
+}
+
+fun <T> JList<T>.getMutableComboBoxModel(): MutableComboBoxModel<T>? {
+    return this.model as? MutableComboBoxModel
+}
+
+fun <T> JList<T>.addElement(element: T) {
+    getMutableComboBoxModel()?.addElement(element)
+}
+
+fun <T> JList<T>.removeElementAt(index: Int) {
+    if (index > -1 && index < this.model.size) {
+        getMutableComboBoxModel()?.removeElementAt(index)
     }
 }
