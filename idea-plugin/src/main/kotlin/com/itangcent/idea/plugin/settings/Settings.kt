@@ -111,6 +111,8 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     override var builtInConfig: String? = null
 
+    override var remoteConfig: Array<String> = emptyArray()
+
     fun copy(): Settings {
         val newSetting = Settings()
         this.copyTo(newSetting as ProjectSettingsSupport)
@@ -163,6 +165,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (outputCharset != other.outputCharset) return false
         if (markdownFormatType != other.markdownFormatType) return false
         if (builtInConfig != other.builtInConfig) return false
+        if (!remoteConfig.contentEquals(other.remoteConfig)) return false
 
         return true
     }
@@ -207,11 +210,12 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + outputCharset.hashCode()
         result = 31 * result + markdownFormatType.hashCode()
         result = 31 * result + (builtInConfig?.hashCode() ?: 0)
+        result = 31 * result + remoteConfig.contentHashCode()
         return result
     }
 
     override fun toString(): String {
-        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, feignEnable=$feignEnable, jaxrsEnable=$jaxrsEnable, actuatorEnable=$actuatorEnable, pullNewestDataBefore=$pullNewestDataBefore, postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, postmanExportMode=$postmanExportMode, postmanCollections=$postmanCollections, wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, postmanJson5FormatType='$postmanJson5FormatType', queryExpanded=$queryExpanded, formExpanded=$formExpanded, readGetter=$readGetter, readSetter=$readSetter, inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, selectedOnly=$selectedOnly, yapiServer=$yapiServer, yapiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, switchNotice=$switchNotice, loginMode=$loginMode, yapiExportMode=$yapiExportMode, yapiReqBodyJson5=$yapiReqBodyJson5, yapiResBodyJson5=$yapiResBodyJson5, httpTimeOut=$httpTimeOut, trustHosts=${trustHosts.contentToString()}, useRecommendConfig=$useRecommendConfig, recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', outputDemo=$outputDemo, outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', builtInConfig=$builtInConfig)"
+        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, feignEnable=$feignEnable, jaxrsEnable=$jaxrsEnable, actuatorEnable=$actuatorEnable, pullNewestDataBefore=$pullNewestDataBefore, postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, postmanExportMode=$postmanExportMode, postmanCollections=$postmanCollections, wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, postmanJson5FormatType='$postmanJson5FormatType', queryExpanded=$queryExpanded, formExpanded=$formExpanded, readGetter=$readGetter, readSetter=$readSetter, inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, selectedOnly=$selectedOnly, yapiServer=$yapiServer, yapiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, switchNotice=$switchNotice, loginMode=$loginMode, yapiExportMode=$yapiExportMode, yapiReqBodyJson5=$yapiReqBodyJson5, yapiResBodyJson5=$yapiResBodyJson5, httpTimeOut=$httpTimeOut, trustHosts=${trustHosts.contentToString()}, useRecommendConfig=$useRecommendConfig, recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', outputDemo=$outputDemo, outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', builtInConfig=$builtInConfig), remoteConfig=$remoteConfig)"
     }
 
     companion object {

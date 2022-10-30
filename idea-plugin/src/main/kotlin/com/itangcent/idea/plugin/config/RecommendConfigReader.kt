@@ -7,6 +7,7 @@ import com.itangcent.common.utils.invokeMethod
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.settings.helper.BuiltInConfigSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.RemoteConfigSettingsHelper
 import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.MutableConfigReader
@@ -26,6 +27,10 @@ class RecommendConfigReader : ConfigReader, Initializable {
 
     @Inject(optional = true)
     private val builtInConfigSettingsHelper: BuiltInConfigSettingsHelper? = null
+
+
+    @Inject(optional = true)
+    private val remoteConfigSettingsHelper: RemoteConfigSettingsHelper? = null
 
     @Inject(optional = true)
     private val recommendConfigSettingsHelper: RecommendConfigSettingsHelper? = null
@@ -126,6 +131,11 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 } catch (e: Throwable) {
                     logger.traceError("failed load built-in config", e)
                 }
+                try {
+                    tryLoadRemote()
+                } catch (e: Throwable) {
+                    logger.traceError("failed load remote config", e)
+                }
             } finally {
                 loading = null
                 notInit = false
@@ -171,6 +181,21 @@ class RecommendConfigReader : ConfigReader, Initializable {
                 }
             } else {
                 logger.warn("failed to use built-in config")
+            }
+        }
+    }
+
+    private fun tryLoadRemote() {
+        val remoteConfig = remoteConfigSettingsHelper?.remoteConfigContent()
+        if (remoteConfig.notNullOrBlank()) {
+            if (configReader is MutableConfigReader) {
+                configReader.loadConfigInfoContent(remoteConfig!!)
+                logger.debug("load remote config")
+                devEnv!!.dev {
+                    logger.debug("----------------\n$remoteConfig\n----------------")
+                }
+            } else {
+                logger.warn("failed to load remote config")
             }
         }
     }
