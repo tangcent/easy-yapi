@@ -18,6 +18,7 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.SystemLogger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
+import java.util.concurrent.TimeUnit
 import javax.swing.JComponent
 
 abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : SearchableConfigurable {
@@ -67,6 +68,8 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
         val context = builder.build()
 
         this.context = context
+
+        context.keepAlive(TimeUnit.HOURS.toMillis(1))
 
         context.init(this)
 
