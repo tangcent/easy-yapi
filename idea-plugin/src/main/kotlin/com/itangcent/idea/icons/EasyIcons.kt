@@ -44,25 +44,28 @@ object EasyIcons {
         "/notification/close.png",
         "/actions/close.png"
     )
-        ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/close.png"))
+        ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/blob/master/assets/close.png"))
 
     val OK = tryLoad(
         "/general/inspectionsOK.png",
         "/process/state/GreenOK.png"
     )
-        ?: tryLoadByUrl(URL("https://github.com/tangcent/easy-api/blob/master/assets/ok.png"))
+        ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/blob/master/assets/ok.png"))
 
     val Export = tryLoad(
-        "/actions/export.png",
+        "/toolbarDecorator/export.svg",
+        "/toolbarDecorator/export.png",
+        "/general/ExportSettings.png",
         "/graph/export.png",
-        "/general/ExportSettings.png"
+        "/actions/export.png"
     )
 
     val Import = tryLoad(
-        "/css/import.png",
+        "/toolbarDecorator/import.svg",
         "/toolbarDecorator/import.png",
+        "/general/ImportSettings.png",
         "/welcome/importProject.png",
-        "/general/ImportSettings.png"
+        "/css/import.png"
     )
 
     private fun tryLoad(vararg paths: String): Icon? {
