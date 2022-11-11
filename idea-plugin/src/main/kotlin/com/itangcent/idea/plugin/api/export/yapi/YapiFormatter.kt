@@ -574,16 +574,16 @@ open class YapiFormatter {
             }
         } else if (typedObject is Map<*, *>) {
             val properties: HashMap<String, Any?> = LinkedHashMap()
-            val comment: HashMap<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
-            val required: HashMap<String, Any?>? = typedObject[Attrs.REQUIRED_ATTR] as? HashMap<String, Any?>?
-            val default: HashMap<String, Any?>? = typedObject[Attrs.DEFAULT_VALUE_ATTR] as? HashMap<String, Any?>?
+            val comment: Map<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? Map<String, Any?>?
+            val required: Map<String, Any?>? = typedObject[Attrs.REQUIRED_ATTR] as? Map<String, Any?>?
+            val default: Map<String, Any?>? = typedObject[Attrs.DEFAULT_VALUE_ATTR] as? Map<String, Any?>?
 
             var requireds: LinkedList<String>? = null
             if (!required.isNullOrEmpty()) {
                 requireds = LinkedList()
             }
-            val mocks: HashMap<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? HashMap<String, Any?>?
-            val advancedInfo: HashMap<String, Any?>? = typedObject[Attrs.ADVANCED_ATTR] as? HashMap<String, Any?>?
+            val mocks: Map<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? Map<String, Any?>?
+            val advancedInfo: Map<String, Any?>? = typedObject[Attrs.ADVANCED_ATTR] as? Map<String, Any?>?
             typedObject.forEachValid { k, v ->
                 try {
                     val key = k.toString()
@@ -681,8 +681,8 @@ open class YapiFormatter {
 
             is MutableMap<*, *> -> {
                 typedObject as MutableMap<Any?, Any?>
-                val mocks: HashMap<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? HashMap<String, Any?>?
-                val comment: HashMap<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? HashMap<String, Any?>?
+                val mocks: Map<String, Any?>? = typedObject[Attrs.MOCK_ATTR] as? Map<String, Any?>?
+                val comment: Map<String, Any?>? = typedObject[Attrs.COMMENT_ATTR] as? Map<String, Any?>?
                 val keys = ArrayList(typedObject.keys)
                 for (key in keys) {
                     if (key is String && key.startsWith("@")) {
