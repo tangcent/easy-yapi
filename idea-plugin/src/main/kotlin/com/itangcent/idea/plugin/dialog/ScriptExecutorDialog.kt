@@ -24,12 +24,10 @@ import com.itangcent.idea.utils.FileSelectHelper
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.element.ExplicitElement
-import com.itangcent.intellij.jvm.element.jvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -317,7 +315,7 @@ class ScriptExecutorDialog : ContextDialog() {
     private var editorFactory: EditorFactory? = null
 
     private fun buildEditor(scriptType: ScriptSupport?) {
-        actionContext!!.runInSwingUI {
+        actionContext.runInSwingUI {
 
             if (editorFactory == null) {
                 editorFactory = EditorFactory.getInstance()
