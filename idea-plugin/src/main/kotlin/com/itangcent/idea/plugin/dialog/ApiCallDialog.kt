@@ -25,11 +25,10 @@ import com.itangcent.idea.plugin.api.call.ApiCallUI
 import com.itangcent.idea.plugin.utils.CompensateRateLimiter
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.psi.resourceMethod
+import com.itangcent.idea.swing.onSelect
+import com.itangcent.idea.swing.onTextChange
 import com.itangcent.idea.utils.*
-import com.itangcent.intellij.extend.rx.AutoComputer
-import com.itangcent.intellij.extend.rx.Mode
 import com.itangcent.intellij.extend.rx.ThrottleHelper
-import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -48,48 +47,49 @@ import javax.swing.event.TableModelListener
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableColumn
 import javax.swing.table.TableModel
+import javax.swing.text.JTextComponent
 
 
 @Suppress("UnstableApiUsage")
 class ApiCallDialog : ContextDialog(), ApiCallUI {
-    private var contentPane: JPanel? = null
+    private lateinit var contentPane: JPanel
 
-    private var apisListPanel: JPanel? = null
-    private var apisJList: JList<*>? = null
-    private var apisPopMenu: JPopupMenu? = null
+    private lateinit var apisListPanel: JPanel
+    private lateinit var apisJList: JList<*>
+    private lateinit var apisPopMenu: JPopupMenu
 
-    private var rightPanel: JPanel? = null
+    private lateinit var rightPanel: JPanel
 
-    private var topPanel: JPanel? = null
+    private lateinit var topPanel: JPanel
 
-    private var callButton: JButton? = null
-    private var requestBodyTextArea: JTextArea? = null
-    private var responseTextArea: JTextArea? = null
-    private var pathTextField: JTextField? = null
+    private lateinit var callButton: JButton
+    private lateinit var requestBodyTextArea: JTextArea
+    private lateinit var responseTextArea: JTextArea
+    private lateinit var pathTextField: JTextField
 
-    private var methodLabel: JLabel? = null
-    private var requestPanel: JBTabbedPane? = null
-    private var requestBodyPanel: JPanel? = null
-    private var requestHeaderPanel: JPanel? = null
-    private var formTable: JBTable? = null
+    private lateinit var methodLabel: JLabel
+    private lateinit var requestPanel: JBTabbedPane
+    private lateinit var requestBodyPanel: JPanel
+    private lateinit var requestHeaderPanel: JPanel
+    private lateinit var formTable: JBTable
 
-    private var responsePanel: JBTabbedPane? = null
-    private var formatOrRawButton: JButton? = null
-    private var saveButton: JButton? = null
-    private var responseActionPanel: JPanel? = null
-    private var responseHeadersTextArea: JTextArea? = null
-    private var requestHeadersTextArea: JTextArea? = null
-    private var statusLabel: JLabel? = null
+    private lateinit var responsePanel: JBTabbedPane
+    private lateinit var formatOrRawButton: JButton
+    private lateinit var saveButton: JButton
+    private lateinit var responseActionPanel: JPanel
+    private lateinit var responseHeadersTextArea: JTextArea
+    private lateinit var requestHeadersTextArea: JTextArea
+    private lateinit var statusLabel: JLabel
 
-    private var paramPanel: JPanel? = null
-    private var paramsLabel: JLabel? = null
-    private var paramsTextField: JTextField? = null
+    private lateinit var paramPanel: JPanel
+    private lateinit var paramsLabel: JLabel
+    private lateinit var paramsTextField: JTextField
 
-    private var contentTypePanel: JPanel? = null
-    private var contentTypeLabel: JLabel? = null
-    private var contentTypeComboBox: JComboBox<String>? = null
+    private lateinit var contentTypePanel: JPanel
+    private lateinit var contentTypeLabel: JLabel
+    private lateinit var contentTypeComboBox: JComboBox<String>
 
-    private val autoComputer: AutoComputer = AutoComputer()
+//    private val autoComputer: AutoComputer = AutoComputer()
 
     private var apiList: List<ApiInfo>? = null
     private var requestRawViewList: List<RequestRawInfo>? = null
@@ -107,12 +107,20 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         { NULL_REQUEST_INFO_CACHE }
     }
 
+    private val rateLimiter = CompensateRateLimiter.create(10)
+
+    private val throttleHelper = ThrottleHelper()
+
+    private val requestChangeThrottle = throttleHelper.build("request")
+
+    private val contentTypeChangeThrottle = throttleHelper.build("content_type")
+
     init {
         LOG.info("create ApiCallDialog")
         setContentPane(contentPane)
         getRootPane().defaultButton = callButton
 
-        contentTypeComboBox!!.model = DefaultComboBoxModel(CONTENT_TYPES)
+        contentTypeComboBox.model = DefaultComboBoxModel(CONTENT_TYPES)
 
         // call onCancel() when cross is clicked
         defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
@@ -123,31 +131,31 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         })
 
         // call onCancel() on ESCAPE
-        contentPane!!.registerKeyboardAction(
+        contentPane.registerKeyboardAction(
             { onCancel() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
             JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
         )
 
         // call onCallClick() on ENTER
-        contentPane!!.registerKeyboardAction(
+        contentPane.registerKeyboardAction(
             { onCallClick() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
             JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
         )
 
-        callButton!!.addActionListener { onCallClick() }
+        callButton.addActionListener { onCallClick() }
 
-        formatOrRawButton!!.addActionListener { onFormatClick() }
+        formatOrRawButton.addActionListener { onFormatClick() }
 
-        saveButton!!.addActionListener { onSaveClick() }
+        saveButton.addActionListener { onSaveClick() }
 
-        paramsTextField!!.registerKeyboardAction({
+        paramsTextField.registerKeyboardAction({
             try {
-                val paramsTex: String = paramsTextField!!.text
+                val paramsTex: String = paramsTextField.text
                 if (paramsTex.isBlank()) return@registerKeyboardAction
 
-                val caretPosition = paramsTextField!!.caretPosition
+                val caretPosition = paramsTextField.caretPosition
                 val indexOfEqual = paramsTex.indexOf('=', caretPosition)
                 if (indexOfEqual == -1) {
                     return@registerKeyboardAction
@@ -157,23 +165,23 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                     else -> indexOfAnd
                 }
                 if (index > 0) {
-                    paramsTextField!!.caretPosition = index
+                    paramsTextField.caretPosition = index
                 }
             } catch (e: Exception) {
                 logger.traceError("error process tab", e)
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), JComponent.WHEN_FOCUSED)
-        paramsTextField!!.focusTraversalKeysEnabled = false
+        paramsTextField.focusTraversalKeysEnabled = false
 
         setLocationRelativeTo(owner)
 
-        callButton!!.isFocusPainted = false
-        formatOrRawButton!!.isFocusPainted = false
-        saveButton!!.isFocusPainted = false
+        callButton.isFocusPainted = false
+        formatOrRawButton.isFocusPainted = false
+        saveButton.isFocusPainted = false
 
         SwingUtils.underLine(this.hostComboBox!!)
-        SwingUtils.underLine(this.pathTextField!!)
-        SwingUtils.underLine(this.paramsTextField!!)
+        SwingUtils.underLine(this.pathTextField)
+        SwingUtils.underLine(this.paramsTextField)
 
         EasyIcons.Run.iconOnly(this.callButton)
     }
@@ -192,30 +200,28 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         this.onResized {
             resize()
         }
-        this.requestPanel!!.onResized {
+        this.requestPanel.onResized {
             resize()
         }
-        this.responsePanel!!.onResized {
+        this.responsePanel.onResized {
             resize()
         }
     }
 
-    private val rateLimiter = CompensateRateLimiter.create(10)
-
     private fun resize() {
         rateLimiter.tryAcquire {
             actionContext.runInSwingUI {
-                val rightWidth = this.contentPane!!.width - this.apisListPanel!!.width
+                val rightWidth = this.contentPane.width - this.apisListPanel.width
 
-                val rightPanel = this.rightPanel!!
-                rightPanel.setSizeIfNecessary(rightWidth, this.contentPane!!.height - 6)
+                val rightPanel = this.rightPanel
+                rightPanel.setSizeIfNecessary(rightWidth, this.contentPane.height - 6)
 
-                val requestPanel = this.requestPanel!!
+                val requestPanel = this.requestPanel
                 requestPanel.setSizeIfNecessary(rightWidth - 30, requestPanel.height)
 
-                this.responsePanel!!.let {
+                this.responsePanel.let {
                     it.setSizeIfNecessary(rightWidth - 30, it.height)
-                    it.bottomAlignTo(this.apisJList!!)
+                    it.bottomAlignTo(this.apisJList)
                 }
             }
         }
@@ -224,27 +230,12 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     //region api module
     private fun initApisModule() {
 
-        autoComputer.bind(this.apisJList!!)
-            .with(this::requestRawViewList)
-            .eval { requests ->
-                requests?.mapIndexed { index: Int, _: RequestRawInfo -> RequestNameWrapper(index) }
-                    ?.toList()
+        this.apisJList.addListSelectionListener {
+            if (requestChangeThrottle.acquire(100L)) {
+                refreshDataFromUI()
+                changeRequest()
             }
-
-        autoComputer.bindIndex(this.apisJList!!)
-            .with(this::requestRawViewList)
-            .eval {
-                if (it.isNullOrEmpty()) -1 else 0
-            }
-
-        autoComputer.listenIndex(this.apisJList!!)
-            .action { index ->
-                if (index != null && index > -1) {
-                    autoComputer.withMode(Mode.REPAINT_UI_ONLY) {
-                        autoComputer.value(this::currRequest, this.requestRawViewList!![index])
-                    }
-                }
-            }
+        }
 
         apisPopMenu = JPopupMenu()
 
@@ -254,16 +245,35 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             resetCurrentRequestView()
         }
 
-        apisPopMenu!!.add(resetItem)
+        apisPopMenu.add(resetItem)
 
-        this.apisJList!!.addMouseListener(object : MouseAdapter() {
+        this.apisJList.addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent?) {
                 if (e == null) return
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    apisPopMenu!!.show(e.component!!, e.x, e.y)
+                    apisPopMenu.show(e.component!!, e.x, e.y)
                 }
             }
         })
+    }
+
+    private fun changeRequest() {
+        val selectedIndex = this.apisJList.selectedIndex.takeIf { it > -1 } ?: return
+        val currRequest = this.requestRawViewList!![selectedIndex]
+
+        this.currRequest = currRequest
+        this.pathTextField.text = currRequest.path
+        this.requestBodyTextArea.text = currRequest.body
+        this.methodLabel.text = currRequest.method
+        this.paramsTextField.text = currRequest.querys
+        this.requestHeadersTextArea.text = currRequest.headers
+        this.requestBodyTextArea.isEnabled = this.apiList!![selectedIndex].origin.hasBodyOrForm()
+        this.contentTypePanel.isVisible = currRequest.method?.toUpperCase() != "GET"
+        this.paramPanel.isVisible = currRequest.querys.notNullOrEmpty()
+        this.contentTypeComboBox.selectedItem = currRequest.contentType()
+        updateResponse(null)
+        formatForm(currRequest)
+        resize()
     }
 
     override fun updateRequestList(requestList: List<Request>?) {
@@ -279,14 +289,21 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                 val beanBinder = this.requestRawInfoBinderFactory.getBeanBinder(rawInfo.cacheKey())
                 requestRawViewList.add(beanBinder.tryRead() ?: rawInfo.copy())
             }
-            autoComputer.value(this::apiList, requestRawList)
-            autoComputer.value(this::requestRawViewList, requestRawViewList)
+            this.apiList = requestRawList
+            this.requestRawViewList = requestRawViewList
+            this.apisJList.model = DefaultComboBoxModel(
+                List(requestRawViewList.size) { index: Int -> RequestNameWrapper(index) }
+                    .toTypedArray()
+            )
+            if (requestRawViewList.isNotEmpty()) {
+                this.apisJList.selectedIndex = 0
+            }
             resize()
         }
     }
 
     private fun resetCurrentRequestView() {
-        val index = this.apisJList!!.selectedIndex
+        val index = this.apisJList.selectedIndex
         if (index < 0) {
             return
         }
@@ -294,12 +311,10 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         val requestRawInfo = apiInfo.raw
         val requestView = requestRawInfo.copy()
         (this.requestRawViewList as MutableList<RequestRawInfo>)[index] = requestView
-        autoComputer.withMode(Mode.REPAINT_UI_ONLY) {
-            autoComputer.value(this::currRequest, requestView)
-        }
+        changeRequest()
         requestRawInfoBinderFactory.getBeanBinder(requestRawInfo.cacheKey())
             .save(null)
-        this.apisJList!!.repaint()
+        this.apisJList.repaint()
     }
 
     //endregion
@@ -338,103 +353,76 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         return httpClient!!
     }
 
-    private val throttleHelper = ThrottleHelper()
 
     private fun initRequestModule() {
-        val contentTypeChangeThrottle = throttleHelper.build("content_type")
-        val requestChangeThrottle = throttleHelper.build("request")
-
-        autoComputer.bindEnable(this.requestBodyTextArea!!)
-            .withIndex(this.apisJList!!)
-            .eval { if (it == null) false else this.apiList!![it].origin.hasBodyOrForm() }
-
-        val bodyLabel = this.requestPanel!!.getTabComponentAt(0) as? JLabel
-        if (bodyLabel != null) {
-            autoComputer.bind(bodyLabel)
-                .with<String>(this, "this.currRequest.body")
-                .eval { body -> if (body == selectedRequestRawInfo()?.body) "Body" else "Body*" }
-        }
-
-        val headerLabel = this.requestPanel!!.getTabComponentAt(2) as? JLabel
-        if (headerLabel != null) {
-            autoComputer.bind(headerLabel)
-                .with<String>(this, "this.currRequest.headers")
-                .eval { headers -> if (headers == selectedRequestRawInfo()?.headers) "Header" else "Header*" }
-        }
-
-        autoComputer.bind(this.requestBodyTextArea!!)
-            .mutual(this, "this.currRequest.body")
-
-        autoComputer.bind(this.methodLabel!!)
-            .mutual(this, "this.currRequest.method")
-
-        autoComputer.bindVisible(this.paramPanel!!)
-            .with(this::currRequest)
-            .eval { it?.querys.notNullOrEmpty() }
-
-        autoComputer.bind(this.paramsTextField!!)
-            .mutual(this, "this.currRequest.querys")
-
-        autoComputer.bind(this.paramsLabel!!)
-            .with<String>(this, "this.currRequest.querys")
-            .eval { queries -> if (queries == selectedRequestRawInfo()?.querys) "Params" else "Params*" }
-
-        autoComputer.bind(this.requestHeadersTextArea!!)
-            .mutual(this, "this.currRequest.headers")
-
-        autoComputer.bind<String?>(this, "this.currRequest.headers")
-            .with(this.contentTypeComboBox!!)
-            .throttle(200)
-            .eval { changeHeaderForContentType(it) }
-
-        autoComputer.bind(this.contentTypeComboBox!!)
-            .with(this::currRequest)
-            .eval {
-                contentTypeChangeThrottle.refresh()
-                it?.contentType() ?: ""
+        (this.requestPanel.getTabComponentAt(0) as? JLabel)
+            ?.listenModify(requestBodyTextArea) {
+                selectedRequestRawInfo()?.body
             }
 
-        autoComputer.bind(this.contentTypeLabel!!)
-            .with(this.contentTypeComboBox!!)
-            .eval { contentType -> if (contentType == selectedRequestRawInfo()?.contentType()) "ContentType" else "ContentType*" }
+        (this.requestPanel.getTabComponentAt(2) as? JLabel)
+            ?.listenModify(requestHeadersTextArea) {
+                selectedRequestRawInfo()?.headers
+            }
 
-        autoComputer.bind(this.pathTextField!!)
-            .mutual(this, "currRequest.path")
+        this.paramsLabel.listenModify(this.paramsTextField) {
+            selectedRequestRawInfo()?.querys
+        }
 
-        autoComputer.bindVisible(this.contentTypePanel!!)
-            .with(this::currRequest)
-            .eval { it != null && it.method?.toUpperCase() != "GET" }
-
-        autoComputer.listen(this::currRequest).action {
-            if (requestChangeThrottle.acquire(100)) {
-                contentTypeChangeThrottle.refresh()
-                formatForm(it)
-                resize()
+        this.requestHeadersTextArea.onTextChange { header ->
+            if (contentTypeChangeThrottle.acquire(500)
+                && requestChangeThrottle.acquire(100)
+            ) {
+                this.currRequest?.headers = header
+                this.currRequest?.contentType()?.let {
+                    if (this.contentTypeComboBox.selectedItem != it) {
+                        this.contentTypeComboBox.selectedItem = it
+                    }
+                }
             }
         }
 
-        autoComputer.listen(this.contentTypeComboBox!!)
-            .filter { contentTypeChangeThrottle.acquire(500) }
-            .action { changeFormForContentType(it) }
+        this.contentTypeComboBox.onSelect {
+            if (contentTypeChangeThrottle.acquire(500)) {
+                logger.info("before:" + this.requestHeadersTextArea.text)
+                changeHeaderForContentType(it)?.let { headers ->
+                    this.requestHeadersTextArea.text = headers
+                }
+                logger.info("after:" + this.requestHeadersTextArea.text)
+                changeFormForContentType(it)
+                this.contentTypeLabel.text =
+                    if (it == selectedRequestRawInfo()?.contentType()) "ContentType" else "ContentType*"
+            }
+        }
 
         refreshHosts()
     }
 
+    private fun JLabel.listenModify(
+        ui: JTextComponent,
+        original: () -> String?,
+    ) {
+        val name = this.text
+        ui.onTextChange {
+            this.text = if (it == original()) name else "$name*"
+        }
+    }
+
     private fun selectedRequestRawInfo(): RequestRawInfo? {
-        return this.apisJList!!.selectedIndex.takeIf { it > -1 }?.let { this.apiList!![it].raw }
+        return this.apisJList.selectedIndex.takeIf { it > -1 }?.let { this.apiList!![it].raw }
     }
 
     private fun changeHeaderForContentType(contentType: String?): String? {
 
-        val header = this.currRequest?.headers
-        if (contentType.isNullOrBlank()) return header
-
         if (this.currRequest == null) {
-            return header
+            return null
         }
         if (!this.currRequest!!.hasBodyOrForm()) {
-            return header
+            return null
         }
+        val header = this.requestHeadersTextArea.text
+        if (contentType.isNullOrBlank()) return header
+
         val newHeader = StringBuilder()
         var found = false
         if (header != null) {
@@ -515,14 +503,16 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     private fun formatForm(request: RequestRawInfo?) {
         val findFormTableBinder = findFormTableBinder(request?.contentType())
         changeFormTableBinder(findFormTableBinder)
-        findFormTableBinder.refreshTable(this.formTable!!, request!!)
+        findFormTableBinder.refreshTable(this.formTable, request!!)
     }
 
     private fun changeFormForContentType(contentType: String?) {
         val newFormTableBinder = findFormTableBinder(contentType)
         try {
             changeFormTableBinder(newFormTableBinder)
-            newFormTableBinder.refreshTable(this.formTable!!, currRequest!!)
+            if (currRequest != null) {
+                newFormTableBinder.refreshTable(this.formTable, currRequest!!)
+            }
         } catch (e: Throwable) {
             logger.traceError("failed to refresh form", e)
         }
@@ -530,7 +520,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
     private fun changeFormTableBinder(formTableBinder: FormTableBinder) {
         if (this.formTableBinder != formTableBinder) {
-            this.formTableBinder.cleanTable(this.formTable!!)
+            this.formTableBinder.cleanTable(this.formTable)
             this.formTableBinder = formTableBinder
         }
     }
@@ -912,17 +902,18 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
     private fun onCallClick() {
         if (currRequest == null) {
-            actionContext.runInSwingUI { responseTextArea!!.text = "No api be selected" }
+            actionContext.runInSwingUI { responseTextArea.text = "No api be selected" }
             return
         }
+        refreshDataFromUI()
         val request = currRequest!!
         val host = this.hostComboBox!!.editor.item as String
-        val path = this.pathTextField!!.text
-        val query = this.paramsTextField!!.text
+        val path = this.pathTextField.text
+        val query = this.paramsTextField.text
 
-        val requestHeader = this.requestHeadersTextArea!!.text
-        val requestBodyOrForm = this.requestBodyTextArea!!.text
-        val contentType = this.contentTypeComboBox!!.selectedItem?.toString() ?: ""
+        val requestHeader = this.requestHeadersTextArea.text
+        val requestBodyOrForm = this.requestBodyTextArea.text
+        val contentType = this.contentTypeComboBox.selectedItem?.toString() ?: ""
         actionContext.runAsync {
             onNewHost(host)
             var url: String? = null
@@ -944,7 +935,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
                     if (request.formParams.notNullOrEmpty()) {
 
-                        val formParams = formTableBinder.readAvailableForm(this.formTable!!)
+                        val formParams = formTableBinder.readAvailableForm(this.formTable)
                         if (formParams != null) {
                             if (contentType.startsWith("application/x-www-form-urlencoded")) {
                                 for (param in formParams) {
@@ -974,13 +965,13 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                 val response = httpRequest.call()
 
                 actionContext.runInSwingUI {
-                    autoComputer.value(this::currResponse, ResponseStatus(response))
+                    updateResponse(ResponseStatus(response))
                     SwingUtils.focus(this)
                 }
 
             } catch (e: Exception) {
                 actionContext.runInSwingUI {
-                    responseTextArea!!.text = "Could not get any response" +
+                    responseTextArea.text = "Could not get any response" +
                             "\nThere was an error connecting:" + url +
                             "\nThe stackTrace is:" +
                             ExceptionUtils.getStackTrace(e)
@@ -992,47 +983,26 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     //endregion
 
     //region response module
+
     private fun initResponseModule() {
+        this.apisJList.addListSelectionListener {
+            val index = this.apisJList.selectedIndex.takeIf { it != -1 }
+            PromptSupport.setPrompt(index?.let {
+                apiList?.get(index)?.origin?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
+            } ?: "", responseTextArea)
+        }
+    }
 
-        autoComputer.bind(this::currResponse)
-            .with(this::currRequest)
-            .eval { null }
-
-        autoComputer.bind(this.responseTextArea!!)
-            .with(this::currResponse)
-            .eval {
-                resize()
-                it?.getResponseAsString() ?: ""
-            }
-
-        autoComputer.bindVisible(this.responseActionPanel!!)
-            .with(this::currResponse)
-            .eval { it != null }
-
-        autoComputer.bind(this.responseHeadersTextArea!!)
-            .with(this::currResponse)
-            .eval { formatResponseHeaders(it?.response) }
-
-        autoComputer.bind(this.statusLabel!!)
-            .with(this::currResponse)
-            .eval { "status:" + it?.response?.code()?.toString() }
-
-        autoComputer.bindText(this.formatOrRawButton!!)
-            .with(this::currResponse)
-            .eval {
-                when {
-                    it?.isFormat == true -> "raw"
-                    else -> "format"
-                }
-            }
-
-        autoComputer.listenIndex(this.apisJList!!)
-            .action { index ->
-                PromptSupport.setPrompt(index?.let {
-                    apiList?.get(index)?.origin?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
-                } ?: "", responseTextArea)
-            }
-
+    private fun updateResponse(responseStatus: ResponseStatus?) {
+        this.currResponse = responseStatus
+        this.responseActionPanel.isVisible = responseStatus != null
+        this.responseTextArea.text = responseStatus?.getResponseAsString() ?: ""
+        this.responseHeadersTextArea.text = formatResponseHeaders(responseStatus?.response)
+        this.statusLabel.text = "status:" + responseStatus?.response?.code()?.toString()
+        this.formatOrRawButton.text = when (responseStatus?.isFormat) {
+            true -> "raw"
+            else -> "format"
+        }
     }
 
     private fun formatResponseHeaders(response: HttpResponse?): String {
@@ -1049,10 +1019,11 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
     private fun onFormatClick() {
         this.currResponse!!.isFormat = !this.currResponse!!.isFormat
-        this.autoComputer.value(this::currResponse, this.currResponse)//refresh
+        updateResponse(this.currResponse)
     }
 
     private fun onSaveClick() {
+        refreshDataFromUI()
         if (this.currResponse == null) {
             Messages.showMessageDialog(
                 this, "No Response",
@@ -1100,6 +1071,17 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
     //endregion
 
+    private fun refreshDataFromUI() {
+        val currRequest = this.currRequest ?: return
+
+        currRequest.path = this.pathTextField.text
+        currRequest.body = this.requestBodyTextArea.text
+
+        currRequest.method = this.methodLabel.text
+        currRequest.querys = this.paramsTextField.text
+        currRequest.headers = this.requestHeadersTextArea.text
+    }
+
     override fun onDispose() {
         try {
             httpClient?.cookieStore()?.cookies()?.let { httpContextCacheHelper.addCookies(it) }
@@ -1109,9 +1091,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                         .save(requestRawInfo)
                 }
             }
-            if (httpClient != null && httpClient is Closeable) {
-                (httpClient!! as Closeable).close()
-            }
+            (httpClient as? Closeable)?.close()
         } catch (e: Exception) {
             logger.traceError("failed save cookie", e)
         }
