@@ -1,3 +1,17 @@
+* 2.4.8
+
+	* polish: remove usage of AutoComputer in ApiCallDialog [(#860)](https://github.com/tangcent/easy-yapi/pull/860)
+
+	* fix: YapiFormatter#parseObject resolve attrs as Map [(#857)](https://github.com/tangcent/easy-yapi/pull/857)
+
+	* polish: update icons [(#855)](https://github.com/tangcent/easy-yapi/pull/855)
+
+	* feat: highlight new content in Settings->Recommend [(#853)](https://github.com/tangcent/easy-yapi/pull/853)
+
+	* feat: support remote config setting [(#852)](https://github.com/tangcent/easy-yapi/pull/852)
+
+	* release v2.4.7 [(#849)](https://github.com/tangcent/easy-yapi/pull/849)
+
 * 2.4.7
 
 	* feat: provider json.rule.enum.convert in recommendation [(#848)](https://github.com/tangcent/easy-yapi/pull/848)
