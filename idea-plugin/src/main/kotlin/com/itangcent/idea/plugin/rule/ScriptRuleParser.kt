@@ -27,9 +27,8 @@ import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
-import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.psi.PsiClassUtils
-import java.util.LinkedList
+import java.util.*
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
@@ -319,7 +318,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         fun sourceCode(): String? {
-            return psiElement?.text
+            return actionContext.callInReadUI { psiElement?.text }
         }
 
         fun defineCode(): String? {
@@ -426,11 +425,11 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun getName(): String? {
-            return psiClass.qualifiedName
+            return actionContext.callInReadUI { psiClass.qualifiedName }
         }
 
         override fun getSimpleName(): String? {
-            return psiClass.name
+            return actionContext.callInReadUI { psiClass.name }
         }
 
         override fun toJson(): String? {
@@ -746,7 +745,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         override fun getName(): String? {
-            return psiMethod.name
+            return actionContext.callInReadUI { psiMethod.name }
         }
 
         fun jsonName(): String? {
