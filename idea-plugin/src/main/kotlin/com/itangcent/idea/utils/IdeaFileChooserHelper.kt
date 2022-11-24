@@ -53,7 +53,7 @@ class IdeaFileChooserHelper private constructor(
         if (lastLocation != null) {
             toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
         }
-        actionContext.runInSwingUI {
+        actionContext.runInAWT {
             val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
             val files = chooser.choose(project, toSelect)
             if (files.isNotEmpty()) {
