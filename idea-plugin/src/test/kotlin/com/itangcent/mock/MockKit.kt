@@ -1,6 +1,11 @@
 package com.itangcent.mock
 
 import com.itangcent.common.utils.getPropertyValue
+import com.itangcent.intellij.jvm.adapt.getterPropertyName
+import com.itangcent.intellij.jvm.adapt.maybeGetterMethodPropertyName
+import com.itangcent.intellij.jvm.adapt.maybeSetterMethodPropertyName
+import com.itangcent.intellij.jvm.adapt.setterPropertyName
+import org.mockito.stubbing.Answer
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import kotlin.reflect.KClass
@@ -65,5 +70,20 @@ fun withMockCompanion(clazz: KClass<*>, mockInstance: Any, block: () -> Unit) {
     } finally {
         companionField.set(clazz, originalInstance)
         lazyValValueField.set(objectInstanceDelegate, originalInstance)
+    }
+}
+
+fun mockFields(): Answer<*> {
+    val data = hashMapOf<String, Any?>()
+    return Answer<Any?> {
+        val name = it.method.name
+        if (name.maybeGetterMethodPropertyName()) {
+            return@Answer data[name.getterPropertyName()]
+        } else if (name.maybeSetterMethodPropertyName()) {
+            data[name.setterPropertyName()] = it.arguments[0]
+            return@Answer null
+        } else {
+            return@Answer null
+        }
     }
 }

@@ -36,7 +36,6 @@ import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
-import org.jdesktop.swingx.prompt.PromptSupport
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.awt.event.*
@@ -187,6 +186,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     }
 
     override fun init() {
+        logger.info("EasyIcons.Run:${EasyIcons.Run}")
         LOG.info("init ApiCallDialog")
         actionContext.keepAlive(TimeUnit.HOURS.toMillis(1))
 
@@ -194,8 +194,6 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         initApisModule()
         LOG.info("init RequestModule")
         initRequestModule()
-        LOG.info("init ResponseModule")
-        initResponseModule()
         resize()
         this.onResized {
             resize()
@@ -272,6 +270,10 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         this.paramPanel.isVisible = currRequest.querys.notNullOrEmpty()
         this.contentTypeComboBox.selectedItem = currRequest.contentType()
         updateResponse(null)
+        this.responseTextArea.text =
+            apiList?.get(selectedIndex)?.origin
+                ?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
+                ?: ""
         formatForm(currRequest)
         resize()
     }
@@ -384,11 +386,9 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
         this.contentTypeComboBox.onSelect {
             if (contentTypeChangeThrottle.acquire(500)) {
-                logger.info("before:" + this.requestHeadersTextArea.text)
                 changeHeaderForContentType(it)?.let { headers ->
                     this.requestHeadersTextArea.text = headers
                 }
-                logger.info("after:" + this.requestHeadersTextArea.text)
                 changeFormForContentType(it)
                 this.contentTypeLabel.text =
                     if (it == selectedRequestRawInfo()?.contentType()) "ContentType" else "ContentType*"
@@ -983,15 +983,6 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     //endregion
 
     //region response module
-
-    private fun initResponseModule() {
-        this.apisJList.addListSelectionListener {
-            val index = this.apisJList.selectedIndex.takeIf { it != -1 }
-            PromptSupport.setPrompt(index?.let {
-                apiList?.get(index)?.origin?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
-            } ?: "", responseTextArea)
-        }
-    }
 
     private fun updateResponse(responseStatus: ResponseStatus?) {
         this.currResponse = responseStatus
