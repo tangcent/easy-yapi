@@ -63,7 +63,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test RequestHeader-Example",
               "header": [
                 {
@@ -90,8 +89,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "test RequestHeader"
@@ -169,7 +167,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test query with array parameters-Example",
               "header": [
                 {
@@ -196,8 +193,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "test query with array parameters"
@@ -249,7 +245,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test ignored method-Example",
               "header": [
                 {
@@ -276,8 +271,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "test ignored method"
@@ -329,7 +323,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test query with javax.servlet.http.HttpServletRequest-Example",
               "header": [
                 {
@@ -356,8 +349,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "test query with javax.servlet.http.HttpServletRequest"
@@ -409,7 +401,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test query with javax.servlet.http.HttpServletResponse-Example",
               "header": [
                 {
@@ -436,8 +427,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "test query with javax.servlet.http.HttpServletResponse"
@@ -491,7 +481,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test api return void-Example",
               "header": [
                 {
@@ -518,8 +507,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "null",
-              "status": "OK"
+              "body": "null"
             }
           ],
           "name": "test api return void"
@@ -573,7 +561,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test api return Void-Example",
               "header": [
                 {
@@ -600,8 +587,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "null",
-              "status": "OK"
+              "body": "null"
             }
           ],
           "name": "test api return Void"
@@ -657,7 +643,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test api return Result\u003cVoid\u003e-Example",
               "header": [
                 {
@@ -684,8 +669,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": null //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": null //response data\n}"
             }
           ],
           "name": "test api return Result\u003cVoid\u003e"
@@ -739,7 +723,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test api return Enum-Example",
               "header": [
                 {
@@ -766,8 +749,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "test api return Enum"
@@ -823,7 +805,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test api return Result\u003cEnum\u003e-Example",
               "header": [
                 {
@@ -850,8 +831,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    /**\n     * response data\n     * ADMIN :administration\n     * MEM :a person, an animal or a plant\n     * GUEST :Anonymous visitor\n     */\n    \"data\": \"\"\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    /**\n     * response data\n     * ADMIN :administration\n     * MEM :a person, an animal or a plant\n     * GUEST :Anonymous visitor\n     */\n    \"data\": \"\"\n}"
             }
           ],
           "name": "test api return Result\u003cEnum\u003e"
@@ -907,7 +887,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test api return Enum field-Example",
               "header": [
                 {
@@ -934,8 +913,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "0",
-              "status": "OK"
+              "body": "0"
             }
           ],
           "name": "test api return Enum field"
@@ -993,7 +971,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "test api return Result\u003cEnum field\u003e-Example",
               "header": [
                 {
@@ -1020,8 +997,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": 0 //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": 0 //response data\n}"
             }
           ],
           "name": "test api return Result\u003cEnum field\u003e"
@@ -1075,7 +1051,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "return nested node-Example",
               "header": [
                 {
@@ -1102,8 +1077,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
             }
           ],
           "name": "return nested node"
@@ -1157,7 +1131,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "return root with nested nodes-Example",
               "header": [
                 {
@@ -1184,8 +1157,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
             }
           ],
           "name": "return root with nested nodes"
@@ -1239,7 +1211,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "return customMap-Example",
               "header": [
                 {
@@ -1266,8 +1237,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
             }
           ],
           "name": "return customMap"
@@ -1323,7 +1293,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "user page query-Example",
               "header": [
                 {
@@ -1350,8 +1319,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
             }
           ],
           "name": "user page query"
@@ -1421,7 +1389,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "user page query with ModelAttribute-Example",
               "header": [
                 {
@@ -1448,8 +1415,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
             }
           ],
           "name": "user page query with ModelAttribute"
@@ -1519,7 +1485,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "user page query with POST-Example",
               "header": [
                 {
@@ -1546,8 +1511,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
             }
           ],
           "name": "user page query with POST"
@@ -1691,7 +1655,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "user page query with array-Example",
               "header": [
                 {
@@ -1718,8 +1681,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": [ //response data\n        {\n            \"id\": 0, //user id\n            /**\n             * user type\n             * 1 :administration\n             * 2 :a person, an animal or a plant\n             * 3 :Anonymous visitor\n             */\n            \"type\": 0,\n            \"name\": \"\", //user name\n            \"age\": 0, //user age\n            \"sex\": 0,\n            \"birthDay\": \"\", //user birthDay\n            \"regtime\": \"\" //user regtime\n        }\n    ]\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": [ //response data\n        {\n            \"id\": 0, //user id\n            /**\n             * user type\n             * 1 :administration\n             * 2 :a person, an animal or a plant\n             * 3 :Anonymous visitor\n             */\n            \"type\": 0,\n            \"name\": \"\", //user name\n            \"age\": 0, //user age\n            \"sex\": 0,\n            \"birthDay\": \"\", //user birthDay\n            \"regtime\": \"\" //user regtime\n        }\n    ]\n}"
             }
           ],
           "name": "user page query with array"
@@ -1773,7 +1735,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "current ctrl name-Example",
               "header": [
                 {
@@ -1800,8 +1761,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "current ctrl name"
@@ -1845,7 +1805,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "say hello-Example",
               "header": [
                 {
@@ -1872,8 +1831,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "say hello"
@@ -1941,7 +1899,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "get user info-Example",
               "header": [
                 {
@@ -1968,8 +1925,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
             }
           ],
           "name": "get user info"
@@ -2046,7 +2002,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "create an user-Example",
               "header": [
                 {
@@ -2073,8 +2028,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
             }
           ],
           "name": "create an user"
@@ -2218,7 +2172,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "update user info-Example",
               "header": [
                 {
@@ -2245,8 +2198,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
-              "status": "OK"
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
             }
           ],
           "name": "update user info"
@@ -2300,7 +2252,6 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "responseTime": 50,
               "name": "current ctrl name-Example",
               "header": [
                 {
@@ -2327,8 +2278,7 @@
                   "value": "application/json;charset\u003dUTF-8"
                 }
               ],
-              "body": "\"\"",
-              "status": "OK"
+              "body": "\"\""
             }
           ],
           "name": "current ctrl name"

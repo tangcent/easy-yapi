@@ -26,9 +26,6 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.takeIfNotOriginal
 import com.itangcent.intellij.extend.takeIfSpecial
 import com.itangcent.intellij.util.ActionUtils
-import org.apache.commons.lang3.RandomUtils
-import java.util.*
-import kotlin.collections.HashMap
 import kotlin.collections.set
 
 @Singleton
@@ -54,10 +51,6 @@ open class PostmanFormatter {
 
     @Inject
     protected lateinit var systemProvider: SystemProvider
-
-    internal var responseTimeGenerator: () -> Int = {
-        RandomUtils.nextInt(10, 100)
-    }
 
     fun request2Items(request: Request): List<HashMap<String, Any?>> {
 
@@ -259,10 +252,8 @@ open class PostmanFormatter {
                 } else {
                     responseInfo["originalRequest"] = requestInfo//need clone?request.clone()?
                 }
-                responseInfo["status"] = "OK"
                 responseInfo["code"] = 200
                 responseInfo["_postman_previewlanguage"] = "json"
-//                responseInfo["_postman_previewtype"] = "text"
                 val responseHeader = ArrayList<Map<String, Any?>>()
                 responseInfo["header"] = responseHeader
 
@@ -323,9 +314,6 @@ open class PostmanFormatter {
                             .set(DESCRIPTION, it.desc)
                     )
                 }
-
-
-                responseInfo["responseTime"] = this.responseTimeGenerator()
 
                 responseInfo["body"] = getBodyFormatter(8).format(response.body)
 

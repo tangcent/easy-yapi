@@ -33,7 +33,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "responseTime": 50,
           "name": "say hello-Example",
           "header": [
             {
@@ -60,8 +59,7 @@
               "value": "application/json;charset\u003dUTF-8"
             }
           ],
-          "body": "\"\"",
-          "status": "OK"
+          "body": "\"\""
         }
       ],
       "name": "say hello"
@@ -129,7 +127,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "responseTime": 50,
           "name": "get user info-Example",
           "header": [
             {
@@ -156,8 +153,7 @@
               "value": "application/json;charset\u003dUTF-8"
             }
           ],
-          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
-          "status": "OK"
+          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
         }
       ],
       "name": "get user info"
@@ -234,7 +230,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "responseTime": 50,
           "name": "create an user-Example",
           "header": [
             {
@@ -261,8 +256,7 @@
               "value": "application/json;charset\u003dUTF-8"
             }
           ],
-          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
-          "status": "OK"
+          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
         }
       ],
       "name": "create an user"
@@ -406,7 +400,6 @@
           },
           "_postman_previewlanguage": "json",
           "code": 200,
-          "responseTime": 50,
           "name": "update user info-Example",
           "header": [
             {
@@ -433,8 +426,7 @@
               "value": "application/json;charset\u003dUTF-8"
             }
           ],
-          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}",
-          "status": "OK"
+          "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
         }
       ],
       "name": "update user info"
