@@ -1,3 +1,11 @@
+* 2.4.9
+
+	* fix: fix the icons and buttons disappeared [(#869)](https://github.com/tangcent/easy-yapi/pull/869)
+
+	* fix: remove invalid attributes for create postman collections [(#868)](https://github.com/tangcent/easy-yapi/pull/868)
+
+	* fix: open FileChooser at AWT Thread [(#863)](https://github.com/tangcent/easy-yapi/pull/863)
+
 * 2.4.8
 
 	* polish: remove usage of AutoComputer in ApiCallDialog [(#860)](https://github.com/tangcent/easy-yapi/pull/860)
