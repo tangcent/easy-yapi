@@ -1,5 +1,6 @@
 package com.itangcent.idea.icons
 
+import com.itangcent.mock.mockFields
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
@@ -7,8 +8,10 @@ import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.*
 import java.awt.Component
+import java.awt.Dimension
 import javax.swing.AbstractButton
 import javax.swing.Icon
+import kotlin.test.assertEquals
 
 internal class EasyIconsTest {
 
@@ -72,7 +75,7 @@ internal class EasyIconsTest {
 
         //icon.iconOnly(component)
         EasyIcons.OK.iconOnly(textSupportOnly)
-        (verify(textSupportOnly, times(1)) as SetTextSupport)
+        (verify(textSupportOnly, times(0)) as SetTextSupport)
             .setText(eq(""))
         (verify(textSupportOnly, times(0)) as SetTextSupport)
             .setText(argThat { this != "" })
@@ -105,33 +108,63 @@ internal class EasyIconsTest {
             .setIcon(same(EasyIcons.OK))
         (verify(suvComponent, times(0)) as SetIconSupport)
             .setIcon(argThat { this != EasyIcons.OK })
-        (verify(suvComponent, times(1)) as SetTextSupport)
+        (verify(suvComponent, times(0)) as SetTextSupport)
             .setText(eq(""))
         (verify(suvComponent, times(0)) as SetTextSupport)
             .setText(argThat { this != "" })
 
-        val button = Mockito.mock(
+        val button = mock<AbstractButton> {
+            val fields = mockFields()
+            this.on { it.icon = any() }
+                .then(fields)
+            this.on { it.icon }.then(fields)
+            this.on { it.minimumSize = any() }
+                .then(fields)
+            this.on { it.minimumSize }.then(fields)
+            this.on { it.preferredSize = any() }
+                .then(fields)
+            this.on { it.preferredSize }.then(fields)
+            this.on { it.maximumSize = any() }
+                .then(fields)
+            this.on { it.maximumSize }.then(fields)
+        }
+
+        button.minimumSize = Dimension(10, 10)
+        button.preferredSize = Dimension(20, 20)
+        button.maximumSize = Dimension(30, 30)
+        EasyIcons.OK.iconOnly(button)
+        assertEquals(EasyIcons.OK, button.icon)
+        assertEquals(Dimension(10, 10), button.minimumSize)
+        assertEquals(Dimension(20, 20), button.preferredSize)
+        assertEquals(Dimension(30, 30), button.maximumSize)
+        EasyIcons.Close.iconOnly(button, true)
+        assertEquals(EasyIcons.Close, button.icon)
+        assertEquals(Dimension(29, 29), button.minimumSize)
+        assertEquals(Dimension(29, 29), button.preferredSize)
+        assertEquals(Dimension(29, 29), button.maximumSize)
+
+        val invalidButton = Mockito.mock(
             AbstractButton::class.java
         )
-        `when`(button.setIcon(any()))
+        `when`(invalidButton.setIcon(any()))
             .thenThrow(IllegalArgumentException())
-        `when`(button.setText(any()))
+        `when`(invalidButton.setText(any()))
             .thenThrow(IllegalArgumentException())
 
         //null.iconOnly(button)
-        (null as Icon?).iconOnly(button)
-        verify(button, times(0)).icon = any()
-        verify(button, times(0)).text = any()
+        (null as Icon?).iconOnly(invalidButton)
+        verify(invalidButton, times(0)).icon = any()
+        verify(invalidButton, times(0)).text = any()
 
         //icon.iconOnly(null)
         assertDoesNotThrow { EasyIcons.OK.iconOnly(null as AbstractButton?) }
 
         //icon.iconOnly(button)
-        EasyIcons.OK.iconOnly(button)
-        verify(button, times(1)).icon = same(EasyIcons.OK)
-        verify(button, times(0)).icon = argThat { this != EasyIcons.OK }
-        verify(button, times(1)).text = eq("")
-        verify(button, times(0)).text = argThat { this != "" }
+        EasyIcons.OK.iconOnly(invalidButton)
+        verify(invalidButton, times(1)).icon = same(EasyIcons.OK)
+        verify(invalidButton, times(0)).icon = argThat { this != EasyIcons.OK }
+        verify(invalidButton, times(0)).text = eq("")
+        verify(invalidButton, times(0)).text = argThat { this != "" }
     }
 }
 
