@@ -1,3 +1,11 @@
+* 2.5.0
+
+	* fix: check group with `javax.validation.groups.Default` [(#877)](https://github.com/tangcent/easy-yapi/pull/877)
+
+	* chore: update log [(#878)](https://github.com/tangcent/easy-yapi/pull/878)
+
+	* amend: group actions in pop [(#876)](https://github.com/tangcent/easy-yapi/pull/876)
+
 * 2.4.9
 
 	* fix: fix the icons and buttons disappeared [(#869)](https://github.com/tangcent/easy-yapi/pull/869)
