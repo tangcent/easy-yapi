@@ -1,4 +1,6 @@
 package com.itangcent.constant;
 
-public interface Update {
+import javax.validation.groups.Default;
+
+public interface Update extends Default {
 }

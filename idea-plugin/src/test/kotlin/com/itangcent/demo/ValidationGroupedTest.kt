@@ -33,12 +33,13 @@ internal class ValidationGroupedTest : YapiSpringClassExporterBaseTest() {
     override fun beforeBind() {
         super.beforeBind()
         loadSource(java.lang.Class::class)
-        loadClass("constant/Add.java")
-        loadClass("constant/Update.java")
+        loadClass("validation/Default.java")
         loadClass("validation/Validated.java")
         loadClass("validation/NotBlank.java")
         loadClass("validation/NotEmpty.java")
         loadClass("validation/NotNull.java")
+        loadClass("constant/Add.java")
+        loadClass("constant/Update.java")
         loadClass("model/ValidationGroupedDemoDto.java")
         validationCtrlPsiClass = loadClass("api/ValidationCtrl.java")!!
     }
@@ -58,14 +59,31 @@ internal class ValidationGroupedTest : YapiSpringClassExporterBaseTest() {
                     "param.required=@javax.validation.constraints.NotBlank\n" +
                     "param.required=@javax.validation.constraints.NotNull\n" +
                     "param.required=@javax.validation.constraints.NotEmpty\n" +
+                    "check_groups=groovy:```\n" +
+                    "    for(annMap in annMaps){\n" +
+                    "        def fieldGroups = annMap[\"groups\"] ?: [helper.findClass(\"javax.validation.groups.Default\")]\n" +
+                    "        def paramGroups = session.get(\"json-group\") ?: [helper.findClass(\"javax.validation.groups.Default\")]\n" +
+                    "        for(fieldGroup in fieldGroups){\n" +
+                    "            for(paramGroup in paramGroups){\n" +
+                    "                if(fieldGroup.isExtend(paramGroup.name())){\n" +
+                    "                    return true\n" +
+                    "                }\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    return false\n" +
+                    "```\n" +
                     "field.required[@javax.validation.constraints.NotBlank]=groovy:```\n" +
-                    "    it.annMaps(\"javax.validation.constraints.NotBlank\")?.any{tool.equalOrIntersect(session.get(\"json-group\"),it[\"groups\"])}\n" +
+                    "    def annMaps = it.annMaps(\"javax.validation.constraints.NotBlank\")\n" +
+                    "    \${check_groups}\n" +
                     "```\n" +
                     "field.required[@javax.validation.constraints.NotNull]=groovy:```\n" +
-                    "    it.annMaps(\"javax.validation.constraints.NotNull\")?.any{tool.equalOrIntersect(session.get(\"json-group\"),it[\"groups\"])}\n" +
+                    "    def annMaps = it.annMaps(\"javax.validation.constraints.NotNull\")\n" +
+                    "    \${check_groups}\n" +
                     "```\n" +
                     "field.required[@javax.validation.constraints.NotEmpty]=groovy:```\n" +
-                    "    it.annMaps(\"javax.validation.constraints.NotEmpty\")?.any{tool.equalOrIntersect(session.get(\"json-group\"),it[\"groups\"])}\n" +
+                    "    def annMaps = it.annMaps(\"javax.validation.constraints.NotEmpty\")\n" +
+                    "    \${check_groups}\n" +
                     "```")!!
     }
 
@@ -97,5 +115,7 @@ internal class ValidationGroupedTest : YapiSpringClassExporterBaseTest() {
             yapiFormatter.doc2Items(requests[1]).toJson())
         assertEquals("[{\"query_path\":{\"path\":\"/test/validation/demo/update\",\"params\":[]},\"method\":\"POST\",\"req_body_type\":\"json\",\"res_body_type\":\"json\",\"index\":0,\"req_body_other\":\"{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"strForAdd\\\":{\\\"type\\\":\\\"string\\\"},\\\"notEmptyForUpdate\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"notEmptyForUpdate\\\"],\\\"\$schema\\\":\\\"http://json-schema.org/draft-04/schema#\\\"}\",\"type\":\"static\",\"title\":\"demo-update\",\"req_body_form\":[],\"path\":\"/test/validation/demo/update\",\"req_body_is_json_schema\":true,\"__v\":0,\"markdown\":\"\",\"req_headers\":[{\"name\":\"Content-Type\",\"value\":\"application/json\",\"example\":\"application/json\",\"required\":1},{\"name\":\"token\",\"value\":\"\",\"desc\":\"auth token\",\"example\":\"123456\",\"required\":1}],\"edit_uid\":0,\"up_time\":1618124194,\"tag\":[],\"req_query\":[],\"api_opened\":false,\"add_time\":1618124194,\"res_body_is_json_schema\":true,\"status\":\"done\",\"desc\":\"\\u003cp\\u003e\\u003c/p\\u003e\"}]",
             yapiFormatter.doc2Items(requests[2]).toJson())
+        assertEquals("[{\"query_path\":{\"path\":\"/test/validation/demo/nogroup\",\"params\":[]},\"method\":\"POST\",\"req_body_type\":\"json\",\"res_body_type\":\"json\",\"index\":0,\"req_body_other\":\"{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"strForAdd\\\":{\\\"type\\\":\\\"string\\\"},\\\"notEmptyForUpdate\\\":{\\\"type\\\":\\\"string\\\"}},\\\"required\\\":[\\\"strForAdd\\\",\\\"notEmptyForUpdate\\\"],\\\"\$schema\\\":\\\"http://json-schema.org/draft-04/schema#\\\"}\",\"type\":\"static\",\"title\":\"demo-no-group\",\"req_body_form\":[],\"path\":\"/test/validation/demo/nogroup\",\"req_body_is_json_schema\":true,\"__v\":0,\"markdown\":\"\",\"req_headers\":[{\"name\":\"Content-Type\",\"value\":\"application/json\",\"example\":\"application/json\",\"required\":1},{\"name\":\"token\",\"value\":\"\",\"desc\":\"auth token\",\"example\":\"123456\",\"required\":1}],\"edit_uid\":0,\"up_time\":1618124194,\"tag\":[],\"req_query\":[],\"api_opened\":false,\"add_time\":1618124194,\"res_body_is_json_schema\":true,\"status\":\"done\",\"desc\":\"\\u003cp\\u003e\\u003c/p\\u003e\"}]",
+            yapiFormatter.doc2Items(requests[3]).toJson())
     }
 }
