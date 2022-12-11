@@ -1,7 +1,6 @@
 package com.itangcent.springboot.demo.controller;
 
 
-import com.itangcent.api.BaseController;
 import com.itangcent.constant.Add;
 import com.itangcent.constant.Update;
 import com.itangcent.model.ValidationDemoDto;
@@ -44,6 +43,15 @@ public class ValidationCtrl {
     @PostMapping("/demo/update")
     public void demoUpdate(
             @Validated(Update.class) @RequestBody ValidationGroupedDemoDto validationGroupedDemoDto) {
+        return;
+    }
+
+    /**
+     * demo-no-group
+     */
+    @PostMapping("/demo/nogroup")
+    public void demoNoGroup(
+            @Validated @RequestBody ValidationGroupedDemoDto validationGroupedDemoDto) {
         return;
     }
 
