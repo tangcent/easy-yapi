@@ -3,14 +3,15 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
+import com.itangcent.common.logger.Log
 import com.itangcent.idea.plugin.api.export.core.DefaultLinkResolver
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.jvm.DocHelper
-import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import org.apache.commons.lang3.StringUtils
 
 class YapiLinkResolver : DefaultLinkResolver() {
+
     @Inject
     private val yapiApiHelper: YapiApiHelper? = null
 
@@ -19,9 +20,6 @@ class YapiLinkResolver : DefaultLinkResolver() {
 
     @Inject
     protected val docHelper: DocHelper? = null
-
-    @Inject
-    private val logger: Logger? = null
 
     override fun linkToClass(linkClass: Any): String? {
         if (linkClass !is PsiClass) {
@@ -51,7 +49,7 @@ class YapiLinkResolver : DefaultLinkResolver() {
                 }
             }
         } catch (e: Exception) {
-            logger!!.warn("error to linkToClass:" + linkClass.qualifiedName)
+            LOG.warn("error to linkToClass:" + linkClass.qualifiedName)
         }
         return super.linkToClass(linkClass)
     }
@@ -102,7 +100,7 @@ class YapiLinkResolver : DefaultLinkResolver() {
                 }
             }
         } catch (e: Exception) {
-            logger!!.warn("error to linkToMethod:" + PsiClassUtils.fullNameOfMethod(linkMethod))
+            LOG.warn("error to linkToMethod:" + PsiClassUtils.fullNameOfMethod(linkMethod))
         }
         return super.linkToMethod(linkMethod)
     }
@@ -122,4 +120,6 @@ class YapiLinkResolver : DefaultLinkResolver() {
             else -> docText
         }
     }
+
+    companion object : Log()
 }
