@@ -186,7 +186,6 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     }
 
     override fun init() {
-        logger.info("EasyIcons.Run:${EasyIcons.Run}")
         LOG.info("init ApiCallDialog")
         actionContext.keepAlive(TimeUnit.HOURS.toMillis(1))
 
