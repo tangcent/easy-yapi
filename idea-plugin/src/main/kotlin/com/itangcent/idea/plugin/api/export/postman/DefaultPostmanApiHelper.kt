@@ -5,10 +5,7 @@ import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.asInt
-import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.*
 import com.itangcent.http.HttpClient
 import com.itangcent.http.HttpRequest
 import com.itangcent.http.HttpResponse
@@ -207,7 +204,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         val request = getHttpClient().put("$COLLECTION/$collectionId")
             .contentType(ContentType.APPLICATION_JSON)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-            .body(GsonExUtils.toJson(KV.by("collection", apiInfo)).resolveGsonLazily())
+            .body(GsonUtils.toJson(KV.by("collection", apiInfo)).resolveGsonLazily())
 
         try {
             beforeRequest(request)

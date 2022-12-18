@@ -36,13 +36,13 @@ class GsonExUtilsTest {
     }
 
     @Test
-    fun prettyJson() {
-        assertEquals("{\n  \"a\": 1\n}", GsonExUtils.prettyJson("{a:1}"))
+    fun prettyJsonStr() {
+        assertEquals("{\n  \"a\": 1\n}", GsonExUtils.prettyJsonStr("{a:1}"))
         assertEquals(
             "{\n" +
                     "  \"a\": 1.0,\n" +
                     "  \"b\": \"1.1f\"\n" +
-                    "}", GsonExUtils.prettyJson("{a:1.0,b:1.1f}")
+                    "}", GsonExUtils.prettyJsonStr("{a:1.0,b:1.1f}")
         )
     }
 }
