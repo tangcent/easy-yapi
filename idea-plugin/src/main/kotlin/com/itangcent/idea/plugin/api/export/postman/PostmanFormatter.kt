@@ -367,7 +367,7 @@ open class PostmanFormatter {
                 "raw" -> {//json
                     val jsonBody = body.getAs<String>("raw")
                     if (jsonBody.notNullOrBlank()) {
-                        request.body = GsonExUtils.fromJson(jsonBody!!)
+                        request.body = GsonUtils.fromJson(jsonBody!!)
                         request.bodyType = "json"
                     }
                 }

@@ -1121,7 +1121,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                     }
                 }
 
-                getRawResult()?.let { GsonExUtils.prettyJson(it) }
+                getRawResult()?.let { GsonUtils.prettyJsonStr(it) }
             } catch (e: Exception) {
                 getRawResult()
             }

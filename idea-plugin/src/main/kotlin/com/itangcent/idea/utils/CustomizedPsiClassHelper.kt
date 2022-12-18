@@ -79,7 +79,7 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         valueText: String
     ): Any? {
         return try {
-            GsonExUtils.fromJson<Any>(valueText)?.takeIf { it.isCollections() && !it.isOriginal() }
+            GsonUtils.fromJson<Any>(valueText)?.takeIf { it.isCollections() && !it.isOriginal() }
                 ?.let { it.copyUnsafe() }
         } catch (e: Exception) {
             null
