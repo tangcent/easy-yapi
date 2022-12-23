@@ -32,6 +32,7 @@ field.mock=#mock
 #ignore serialVersionUID
 constant.field.ignore=groovy:it.name()=="serialVersionUID"
 # @ConfigurationProperties
+properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties
 properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix
 #Support for Fastjson annotations
 field.name=@com.alibaba.fastjson.annotation.JSONField#value
