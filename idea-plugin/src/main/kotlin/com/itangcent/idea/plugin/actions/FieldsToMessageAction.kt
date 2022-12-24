@@ -69,11 +69,11 @@ abstract class FieldsToMessageAction : BasicAnAction {
         super.actionPerformed(actionContext, project, anActionEvent)
 
         try {
-            actionContext.runInWriteUI {
+            actionContext.runInReadUI {
                 val currentClass = ActionUtils.findCurrentClass()
                 if (currentClass == null) {
                     logger!!.info("no class be selected!")
-                    return@runInWriteUI
+                    return@runInReadUI
                 }
                 contextSwitchListener!!.switchTo(currentClass)
                 val psiType = jvmClassHelper!!.resolveClassToType(currentClass)
@@ -84,7 +84,7 @@ abstract class FieldsToMessageAction : BasicAnAction {
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError("To json failed", e)
+            logger!!.traceError("parse fields failed", e)
         }
     }
 
