@@ -1,3 +1,13 @@
+* 2.5.1
+
+	* chore: polish ContextualPsiClassHelper [(#889)](https://github.com/tangcent/easy-yapi/pull/889)
+
+	* fix: support ConfigurationProperties("prefix") [(#888)](https://github.com/tangcent/easy-yapi/pull/888)
+
+	* fix: Gson no longer always parse number to double [(#885)](https://github.com/tangcent/easy-yapi/pull/885)
+
+	* chore: remove unnecessary log [(#881)](https://github.com/tangcent/easy-yapi/pull/881)
+
 * 2.5.0
 
 	* fix: check group with `javax.validation.groups.Default` [(#877)](https://github.com/tangcent/easy-yapi/pull/877)

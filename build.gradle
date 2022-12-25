@@ -15,7 +15,7 @@ plugins {
 }
 
 group 'com.itangcent'
-version '2.5.0.191.0'
+version '2.5.1.191.0'
 
 @SuppressWarnings("GroovyAssignabilityCheck")
 static def majorVersion(version) {
