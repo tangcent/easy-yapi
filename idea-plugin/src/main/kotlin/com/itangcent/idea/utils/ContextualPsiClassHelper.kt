@@ -47,9 +47,6 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     @Inject
     private lateinit var additionalParseHelper: AdditionalParseHelper
 
-    @Inject
-    private val devEnv: DevEnv? = null
-
     private val parseContext: ThreadLocal<Deque<String>> = ThreadLocal()
     private val parseScriptContext = ParseScriptContext()
 
@@ -135,7 +132,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     private fun pushField(fieldName: String) {
         parseContext.get()?.add(fieldName)
         devEnv?.dev {
-            logger!!.info("path -> ${parseScriptContext.path()}")
+            logger.info("path -> ${parseScriptContext.path()}")
         }
     }
 
@@ -183,12 +180,12 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
                 if (field.name.isNullOrBlank()
                     || field.type.isNullOrBlank()
                 ) {
-                    logger!!.error("Illegal additional field: $additionalField")
+                    logger.error("Illegal additional field: $additionalField")
                     return
                 }
                 val fieldName = field.name
                 if (kv.containsKey(fieldName)) {
-                    logger!!.debug("additional field [$fieldName] is already existed.")
+                    logger.debug("additional field [$fieldName] is already existed.")
                     continue
                 }
                 resolveAdditionalField(field, context, resolveContext, kv)
@@ -217,7 +214,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     private fun popField(fieldName: String) {
         parseContext.get()?.removeLast()
         devEnv?.dev {
-            logger!!.info("path -> ${parseScriptContext.path()}")
+            logger.info("path -> ${parseScriptContext.path()}")
         }
     }
 
