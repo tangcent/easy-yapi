@@ -8,7 +8,7 @@ import javax.validation.constraints.NotNull;
 
 public class ValidationGroupedDemoDto {
 
-    @NotNull(groups = Add.class)
+    @NotNull(groups = {Add.class})
     private String strForAdd;
 
     @NotEmpty(groups = Update.class)
