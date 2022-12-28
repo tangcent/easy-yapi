@@ -30,6 +30,9 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     internal lateinit var iResultPsiClass: PsiClass
     internal lateinit var userCtrlPsiClass: PsiClass
     internal lateinit var commentDemoPsiClass: PsiClass
+    internal lateinit var addPsiClass: PsiClass
+    internal lateinit var updatePsiClass: PsiClass
+    internal lateinit var validationGroupedDemoDtoPsiClass: PsiClass
 
     override fun beforeBind() {
         super.beforeBind()
@@ -54,6 +57,11 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         loadFile("spring/RestController.java")
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
         commentDemoPsiClass = loadClass("model/CommentDemo.java")!!
+        loadClass("validation/NotEmpty.java")
+        loadClass("validation/NotNull.java")
+        addPsiClass = loadClass("constant/Add.java")!!
+        updatePsiClass = loadClass("constant/Update.java")!!
+        validationGroupedDemoDtoPsiClass = loadClass("model/ValidationGroupedDemoDto.java")!!
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -93,8 +101,10 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     fun testHasAnn() {
         assertFalse(objectPsiClass.asScriptContext().hasAnn("org.springframework.web.bind.annotation.RestController"))
         assertFalse(integerPsiClass.asScriptContext().hasAnn("org.springframework.web.bind.annotation.RestController"))
-        assertFalse(collectionPsiClass.asScriptContext()
-            .hasAnn("org.springframework.web.bind.annotation.RestController"))
+        assertFalse(
+            collectionPsiClass.asScriptContext()
+                .hasAnn("org.springframework.web.bind.annotation.RestController")
+        )
         assertFalse(modelPsiClass.asScriptContext().hasAnn("org.springframework.web.bind.annotation.RestController"))
         assertTrue(userCtrlPsiClass.asScriptContext().hasAnn("org.springframework.web.bind.annotation.RestController"))
     }
@@ -104,8 +114,10 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnn() {
         assertNull(objectPsiClass.asScriptContext().ann("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals("user",
-            userCtrlPsiClass.asScriptContext().ann("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals(
+            "user",
+            userCtrlPsiClass.asScriptContext().ann("org.springframework.web.bind.annotation.RequestMapping")
+        )
     }
 
     /**
@@ -113,8 +125,20 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnnMap() {
         assertNull(objectPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals(mapOf("value" to "user"),
-            userCtrlPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals(
+            mapOf("value" to "user"),
+            userCtrlPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping")
+        )
+        assertEquals(
+            mapOf("groups" to listOf(addPsiClass.asScriptContext())),
+            validationGroupedDemoDtoPsiClass.asClassContext()
+                .fields()[0].annMap("javax.validation.constraints.NotNull")
+        )
+        assertEquals(
+            mapOf("groups" to updatePsiClass.asScriptContext()),
+            validationGroupedDemoDtoPsiClass.asClassContext()
+                .fields()[1].annMap("javax.validation.constraints.NotEmpty")
+        )
     }
 
     /**
@@ -122,8 +146,10 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnnMaps() {
         assertNull(objectPsiClass.asScriptContext().annMap("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals(listOf(mapOf("value" to "user")),
-            userCtrlPsiClass.asScriptContext().annMaps("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals(
+            listOf(mapOf("value" to "user")),
+            userCtrlPsiClass.asScriptContext().annMaps("org.springframework.web.bind.annotation.RequestMapping")
+        )
     }
 
     /**
@@ -131,8 +157,10 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
      */
     fun testAnnValue() {
         assertNull(objectPsiClass.asScriptContext().annValue("org.springframework.web.bind.annotation.RequestMapping"))
-        assertEquals("user",
-            userCtrlPsiClass.asScriptContext().annValue("org.springframework.web.bind.annotation.RequestMapping"))
+        assertEquals(
+            "user",
+            userCtrlPsiClass.asScriptContext().annValue("org.springframework.web.bind.annotation.RequestMapping")
+        )
     }
 
     /**
@@ -172,145 +200,149 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     }
 
     fun testSourceCode() {
-        assertEquals("class Model {\n" +
-                "\n" +
-                "    /**\n" +
-                "     * string field\n" +
-                "     */\n" +
-                "    @JsonProperty(\"s\")\n" +
-                "    private String str;\n" +
-                "\n" +
-                "    /**\n" +
-                "     * integer field\n" +
-                "     */\n" +
-                "    private Integer integer;\n" +
-                "\n" +
-                "    /**\n" +
-                "     * stringList field\n" +
-                "     */\n" +
-                "    private List<String> stringList;\n" +
-                "\n" +
-                "    /**\n" +
-                "     * integerArray field\n" +
-                "     */\n" +
-                "    private Integer[] integerArray;\n" +
-                "\n" +
-                "    public String getStr() {\n" +
-                "        return str;\n" +
-                "    }\n" +
-                "\n" +
-                "    public void setStr(String str) {\n" +
-                "        this.str = str;\n" +
-                "    }\n" +
-                "\n" +
-                "    public Integer getInteger() {\n" +
-                "        return integer;\n" +
-                "    }\n" +
-                "\n" +
-                "    public void setInteger(Integer integer) {\n" +
-                "        this.integer = integer;\n" +
-                "    }\n" +
-                "\n" +
-                "    public List<String> getStringList() {\n" +
-                "        return stringList;\n" +
-                "    }\n" +
-                "\n" +
-                "    public void setStringList(List<String> stringList) {\n" +
-                "        this.stringList = stringList;\n" +
-                "    }\n" +
-                "\n" +
-                "    public Integer[] getIntegerArray() {\n" +
-                "        return integerArray;\n" +
-                "    }\n" +
-                "\n" +
-                "    public void setIntegerArray(Integer[] integerArray) {\n" +
-                "        this.integerArray = integerArray;\n" +
-                "    }\n" +
-                "\n" +
-                "    public void setOnlySet(String onlySet) {\n" +
-                "\n" +
-                "    }\n" +
-                "\n" +
-                "    public String getOnlyGet() {\n" +
-                "\n" +
-                "    }\n" +
-                "}", modelPsiClass.asScriptContext().sourceCode())
-        assertEquals("/**\n" +
-                " * A demo class for test comments\n" +
-                " *\n" +
-                " * @author tangcent\n" +
-                " */\n" +
-                "public class CommentDemo {\n" +
-                "\n" +
-                "    /**\n" +
-                "     * single line\n" +
-                "     *\n" +
-                "     * @single\n" +
-                "     * @desc low case of A\n" +
-                "     */\n" +
-                "    private String a;\n" +
-                "\n" +
-                "    /**\n" +
-                "     * multi-line\n" +
-                "     * second line\n" +
-                "     *\n" +
-                "     * @multi\n" +
-                "     * @module x\n" +
-                "     * x1 x2 x3\n" +
-                "     * @module y\n" +
-                "     */\n" +
-                "    private String b;\n" +
-                "\n" +
-                "    /**\n" +
-                "     * head line\n" +
-                "     * second line\n" +
-                "     * <pre>\n" +
-                "     *     {\n" +
-                "     *         \"a\":\"b\",\n" +
-                "     *         \"c\":{\n" +
-                "     *              \"x\":[\"y\"]\n" +
-                "     *         }\n" +
-                "     *     }\n" +
-                "     * </pre>\n" +
-                "     * see @{link somelink}\n" +
-                "     * tail line\n" +
-                "     */\n" +
-                "    private String c;\n" +
-                "\n" +
-                "    /**\n" +
-                "     * head line\n" +
-                "     * second line\n" +
-                "     * <pre>\n" +
-                "     *\n" +
-                "     *     {\n" +
-                "     *         \"a\":\"b\",\n" +
-                "     *         \"c\":{\n" +
-                "     *              \"x\":[\"y\"]\n" +
-                "     *         }\n" +
-                "     *     }\n" +
-                "     *\n" +
-                "     * </pre>\n" +
-                "     * <p>\n" +
-                "     * see @{link somelink}\n" +
-                "     * tail line\n" +
-                "     */\n" +
-                "    private String d;\n" +
-                "\n" +
-                "    private String e;//E is a mathematical constant approximately equal to 2.71828\n" +
-                "\n" +
-                "    /**\n" +
-                "     * R, or r, is the eighteenth letter of the modern English alphabet and the ISO basic Latin alphabet.\n" +
-                "     */\n" +
-                "    private String r;//It's before s\n" +
-                "\n" +
-                "    /**\n" +
-                "     * @param a A\n" +
-                "     * @param b B\n" +
-                "     */\n" +
-                "    private String methodA(int a, int b) {\n" +
-                "\n" +
-                "    }\n" +
-                "}", commentDemoPsiClass.asScriptContext().sourceCode())
+        assertEquals(
+            "class Model {\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * string field\n" +
+                    "     */\n" +
+                    "    @JsonProperty(\"s\")\n" +
+                    "    private String str;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * integer field\n" +
+                    "     */\n" +
+                    "    private Integer integer;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * stringList field\n" +
+                    "     */\n" +
+                    "    private List<String> stringList;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * integerArray field\n" +
+                    "     */\n" +
+                    "    private Integer[] integerArray;\n" +
+                    "\n" +
+                    "    public String getStr() {\n" +
+                    "        return str;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public void setStr(String str) {\n" +
+                    "        this.str = str;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public Integer getInteger() {\n" +
+                    "        return integer;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public void setInteger(Integer integer) {\n" +
+                    "        this.integer = integer;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public List<String> getStringList() {\n" +
+                    "        return stringList;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public void setStringList(List<String> stringList) {\n" +
+                    "        this.stringList = stringList;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public Integer[] getIntegerArray() {\n" +
+                    "        return integerArray;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public void setIntegerArray(Integer[] integerArray) {\n" +
+                    "        this.integerArray = integerArray;\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public void setOnlySet(String onlySet) {\n" +
+                    "\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public String getOnlyGet() {\n" +
+                    "\n" +
+                    "    }\n" +
+                    "}", modelPsiClass.asScriptContext().sourceCode()
+        )
+        assertEquals(
+            "/**\n" +
+                    " * A demo class for test comments\n" +
+                    " *\n" +
+                    " * @author tangcent\n" +
+                    " */\n" +
+                    "public class CommentDemo {\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * single line\n" +
+                    "     *\n" +
+                    "     * @single\n" +
+                    "     * @desc low case of A\n" +
+                    "     */\n" +
+                    "    private String a;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * multi-line\n" +
+                    "     * second line\n" +
+                    "     *\n" +
+                    "     * @multi\n" +
+                    "     * @module x\n" +
+                    "     * x1 x2 x3\n" +
+                    "     * @module y\n" +
+                    "     */\n" +
+                    "    private String b;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * head line\n" +
+                    "     * second line\n" +
+                    "     * <pre>\n" +
+                    "     *     {\n" +
+                    "     *         \"a\":\"b\",\n" +
+                    "     *         \"c\":{\n" +
+                    "     *              \"x\":[\"y\"]\n" +
+                    "     *         }\n" +
+                    "     *     }\n" +
+                    "     * </pre>\n" +
+                    "     * see @{link somelink}\n" +
+                    "     * tail line\n" +
+                    "     */\n" +
+                    "    private String c;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * head line\n" +
+                    "     * second line\n" +
+                    "     * <pre>\n" +
+                    "     *\n" +
+                    "     *     {\n" +
+                    "     *         \"a\":\"b\",\n" +
+                    "     *         \"c\":{\n" +
+                    "     *              \"x\":[\"y\"]\n" +
+                    "     *         }\n" +
+                    "     *     }\n" +
+                    "     *\n" +
+                    "     * </pre>\n" +
+                    "     * <p>\n" +
+                    "     * see @{link somelink}\n" +
+                    "     * tail line\n" +
+                    "     */\n" +
+                    "    private String d;\n" +
+                    "\n" +
+                    "    private String e;//E is a mathematical constant approximately equal to 2.71828\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * R, or r, is the eighteenth letter of the modern English alphabet and the ISO basic Latin alphabet.\n" +
+                    "     */\n" +
+                    "    private String r;//It's before s\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * @param a A\n" +
+                    "     * @param b B\n" +
+                    "     */\n" +
+                    "    private String methodA(int a, int b) {\n" +
+                    "\n" +
+                    "    }\n" +
+                    "}", commentDemoPsiClass.asScriptContext().sourceCode()
+        )
     }
 
     fun testDefineCode() {
@@ -432,106 +464,150 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     fun testToJson() {
         assertEquals("{}", objectPsiClass.asClassContext().toJson(true, true))
 
-        assertEquals("{\n" +
-                "  \"str\": \"\",\n" +
-                "  \"integer\": 0,\n" +
-                "  \"stringList\": [\n" +
-                "    \"\"\n" +
-                "  ],\n" +
-                "  \"integerArray\": [\n" +
-                "    0\n" +
-                "  ],\n" +
-                "  \"onlySet\": \"\",\n" +
-                "  \"onlyGet\": \"\"\n" +
-                "}", modelPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{\n" +
-                "  \"str\": \"\",\n" +
-                "  \"integer\": 0,\n" +
-                "  \"stringList\": [\n" +
-                "    \"\"\n" +
-                "  ],\n" +
-                "  \"integerArray\": [\n" +
-                "    0\n" +
-                "  ],\n" +
-                "  \"onlyGet\": \"\"\n" +
-                "}", modelPsiClass.asClassContext().toJson(true, false))
-        assertEquals("{\n" +
-                "  \"str\": \"\",\n" +
-                "  \"integer\": 0,\n" +
-                "  \"stringList\": [\n" +
-                "    \"\"\n" +
-                "  ],\n" +
-                "  \"integerArray\": [\n" +
-                "    0\n" +
-                "  ],\n" +
-                "  \"onlySet\": \"\"\n" +
-                "}", modelPsiClass.asClassContext().toJson(false, true))
-        assertEquals("{\n" +
-                "  \"str\": \"\",\n" +
-                "  \"integer\": 0,\n" +
-                "  \"stringList\": [\n" +
-                "    \"\"\n" +
-                "  ],\n" +
-                "  \"integerArray\": [\n" +
-                "    0\n" +
-                "  ]\n" +
-                "}", modelPsiClass.asClassContext().toJson(false, false))
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ],\n" +
+                    "  \"onlySet\": \"\",\n" +
+                    "  \"onlyGet\": \"\"\n" +
+                    "}", modelPsiClass.asClassContext().toJson(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ],\n" +
+                    "  \"onlyGet\": \"\"\n" +
+                    "}", modelPsiClass.asClassContext().toJson(true, false)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ],\n" +
+                    "  \"onlySet\": \"\"\n" +
+                    "}", modelPsiClass.asClassContext().toJson(false, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ]\n" +
+                    "}", modelPsiClass.asClassContext().toJson(false, false)
+        )
 
-        assertEquals("{\n" +
-                "  \"\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{\n" +
-                "  \"\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson(true, false))
-        assertEquals("{\n" +
-                "  \"\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson(false, true))
-        assertEquals("{\n" +
-                "  \"\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson(false, false))
+        assertEquals(
+            "{\n" +
+                    "  \"\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson(true, false)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson(false, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson(false, false)
+        )
 
-        assertTrue(arrayOf("[]", "[\n" +
-                "  {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson(true, true)))
-        assertTrue(arrayOf("[]", "[\n" +
-                "  {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson(true, false)))
-        assertTrue(arrayOf("[]", "[\n" +
-                "  {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson(false, true)))
-        assertTrue(arrayOf("[]", "[\n" +
-                "  {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson(false, false)))
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "  {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson(true, true))
+        )
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "  {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson(true, false))
+        )
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "  {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson(false, true))
+        )
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "  {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson(false, false))
+        )
 
-        assertEquals("{\n" +
-                "  \"code\": 0,\n" +
-                "  \"msg\": \"\",\n" +
-                "  \"data\": {}\n" +
-                "}", resultPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{\n" +
-                "  \"code\": 0,\n" +
-                "  \"msg\": \"\",\n" +
-                "  \"data\": {}\n" +
-                "}", resultPsiClass.asClassContext().toJson(true, false))
-        assertEquals("{\n" +
-                "  \"code\": 0,\n" +
-                "  \"msg\": \"\",\n" +
-                "  \"data\": {}\n" +
-                "}", resultPsiClass.asClassContext().toJson(false, true))
-        assertEquals("{\n" +
-                "  \"code\": 0,\n" +
-                "  \"msg\": \"\",\n" +
-                "  \"data\": {}\n" +
-                "}", resultPsiClass.asClassContext().toJson(false, false))
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"msg\": \"\",\n" +
+                    "  \"data\": {}\n" +
+                    "}", resultPsiClass.asClassContext().toJson(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"msg\": \"\",\n" +
+                    "  \"data\": {}\n" +
+                    "}", resultPsiClass.asClassContext().toJson(true, false)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"msg\": \"\",\n" +
+                    "  \"data\": {}\n" +
+                    "}", resultPsiClass.asClassContext().toJson(false, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"msg\": \"\",\n" +
+                    "  \"data\": {}\n" +
+                    "}", resultPsiClass.asClassContext().toJson(false, false)
+        )
 
-        assertEquals("{\n" +
-                "  \"code\": 0,\n" +
-                "  \"msg\": \"\"\n" +
-                "}", iResultPsiClass.asClassContext().toJson(true, true))
-        assertEquals("{\n" +
-                "  \"code\": 0,\n" +
-                "  \"msg\": \"\"\n" +
-                "}", iResultPsiClass.asClassContext().toJson(true, false))
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"msg\": \"\"\n" +
+                    "}", iResultPsiClass.asClassContext().toJson(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"msg\": \"\"\n" +
+                    "}", iResultPsiClass.asClassContext().toJson(true, false)
+        )
         assertEquals("{}", iResultPsiClass.asClassContext().toJson(false, true))
         assertEquals("{}", iResultPsiClass.asClassContext().toJson(false, false))
     }
@@ -539,106 +615,150 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     fun testToJson5() {
         assertEquals("{}", objectPsiClass.asClassContext().toJson5(true, true))
 
-        assertEquals("{\n" +
-                "    \"str\": \"\", //string field\n" +
-                "    \"integer\": 0, //integer field\n" +
-                "    \"stringList\": [ //stringList field\n" +
-                "        \"\"\n" +
-                "    ],\n" +
-                "    \"integerArray\": [ //integerArray field\n" +
-                "        0\n" +
-                "    ],\n" +
-                "    \"onlySet\": \"\",\n" +
-                "    \"onlyGet\": \"\"\n" +
-                "}", modelPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
-                "    \"str\": \"\", //string field\n" +
-                "    \"integer\": 0, //integer field\n" +
-                "    \"stringList\": [ //stringList field\n" +
-                "        \"\"\n" +
-                "    ],\n" +
-                "    \"integerArray\": [ //integerArray field\n" +
-                "        0\n" +
-                "    ],\n" +
-                "    \"onlyGet\": \"\"\n" +
-                "}", modelPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("{\n" +
-                "    \"str\": \"\", //string field\n" +
-                "    \"integer\": 0, //integer field\n" +
-                "    \"stringList\": [ //stringList field\n" +
-                "        \"\"\n" +
-                "    ],\n" +
-                "    \"integerArray\": [ //integerArray field\n" +
-                "        0\n" +
-                "    ],\n" +
-                "    \"onlySet\": \"\"\n" +
-                "}", modelPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("{\n" +
-                "    \"str\": \"\", //string field\n" +
-                "    \"integer\": 0, //integer field\n" +
-                "    \"stringList\": [ //stringList field\n" +
-                "        \"\"\n" +
-                "    ],\n" +
-                "    \"integerArray\": [ //integerArray field\n" +
-                "        0\n" +
-                "    ]\n" +
-                "}", modelPsiClass.asClassContext().toJson5(false, false))
+        assertEquals(
+            "{\n" +
+                    "    \"str\": \"\", //string field\n" +
+                    "    \"integer\": 0, //integer field\n" +
+                    "    \"stringList\": [ //stringList field\n" +
+                    "        \"\"\n" +
+                    "    ],\n" +
+                    "    \"integerArray\": [ //integerArray field\n" +
+                    "        0\n" +
+                    "    ],\n" +
+                    "    \"onlySet\": \"\",\n" +
+                    "    \"onlyGet\": \"\"\n" +
+                    "}", modelPsiClass.asClassContext().toJson5(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"str\": \"\", //string field\n" +
+                    "    \"integer\": 0, //integer field\n" +
+                    "    \"stringList\": [ //stringList field\n" +
+                    "        \"\"\n" +
+                    "    ],\n" +
+                    "    \"integerArray\": [ //integerArray field\n" +
+                    "        0\n" +
+                    "    ],\n" +
+                    "    \"onlyGet\": \"\"\n" +
+                    "}", modelPsiClass.asClassContext().toJson5(true, false)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"str\": \"\", //string field\n" +
+                    "    \"integer\": 0, //integer field\n" +
+                    "    \"stringList\": [ //stringList field\n" +
+                    "        \"\"\n" +
+                    "    ],\n" +
+                    "    \"integerArray\": [ //integerArray field\n" +
+                    "        0\n" +
+                    "    ],\n" +
+                    "    \"onlySet\": \"\"\n" +
+                    "}", modelPsiClass.asClassContext().toJson5(false, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"str\": \"\", //string field\n" +
+                    "    \"integer\": 0, //integer field\n" +
+                    "    \"stringList\": [ //stringList field\n" +
+                    "        \"\"\n" +
+                    "    ],\n" +
+                    "    \"integerArray\": [ //integerArray field\n" +
+                    "        0\n" +
+                    "    ]\n" +
+                    "}", modelPsiClass.asClassContext().toJson5(false, false)
+        )
 
-        assertEquals("{\n" +
-                "    \"key\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
-                "    \"key\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("{\n" +
-                "    \"key\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("{\n" +
-                "    \"key\": null\n" +
-                "}", mapPsiClass.asClassContext().toJson5(false, false))
+        assertEquals(
+            "{\n" +
+                    "    \"key\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson5(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"key\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson5(true, false)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"key\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson5(false, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"key\": null\n" +
+                    "}", mapPsiClass.asClassContext().toJson5(false, false)
+        )
 
-        assertTrue(arrayOf("[]", "[\n" +
-                "    {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson5(true, true)))
-        assertTrue(arrayOf("[]", "[\n" +
-                "    {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson5(true, false)))
-        assertTrue(arrayOf("[]", "[\n" +
-                "    {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson5(false, true)))
-        assertTrue(arrayOf("[]", "[\n" +
-                "    {}\n" +
-                "]").contains(collectionPsiClass.asClassContext().toJson5(false, false)))
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "    {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson5(true, true))
+        )
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "    {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson5(true, false))
+        )
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "    {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson5(false, true))
+        )
+        assertTrue(
+            arrayOf(
+                "[]", "[\n" +
+                        "    {}\n" +
+                        "]"
+            ).contains(collectionPsiClass.asClassContext().toJson5(false, false))
+        )
 
-        assertEquals("{\n" +
-                "    \"code\": 0, //response code\n" +
-                "    \"msg\": \"\", //message\n" +
-                "    \"data\": {} //response data\n" +
-                "}", resultPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
-                "    \"code\": 0, //response code\n" +
-                "    \"msg\": \"\", //message\n" +
-                "    \"data\": {} //response data\n" +
-                "}", resultPsiClass.asClassContext().toJson5(true, false))
-        assertEquals("{\n" +
-                "    \"code\": 0, //response code\n" +
-                "    \"msg\": \"\", //message\n" +
-                "    \"data\": {} //response data\n" +
-                "}", resultPsiClass.asClassContext().toJson5(false, true))
-        assertEquals("{\n" +
-                "    \"code\": 0, //response code\n" +
-                "    \"msg\": \"\", //message\n" +
-                "    \"data\": {} //response data\n" +
-                "}", resultPsiClass.asClassContext().toJson5(false, false))
+        assertEquals(
+            "{\n" +
+                    "    \"code\": 0, //response code\n" +
+                    "    \"msg\": \"\", //message\n" +
+                    "    \"data\": {} //response data\n" +
+                    "}", resultPsiClass.asClassContext().toJson5(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"code\": 0, //response code\n" +
+                    "    \"msg\": \"\", //message\n" +
+                    "    \"data\": {} //response data\n" +
+                    "}", resultPsiClass.asClassContext().toJson5(true, false)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"code\": 0, //response code\n" +
+                    "    \"msg\": \"\", //message\n" +
+                    "    \"data\": {} //response data\n" +
+                    "}", resultPsiClass.asClassContext().toJson5(false, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"code\": 0, //response code\n" +
+                    "    \"msg\": \"\", //message\n" +
+                    "    \"data\": {} //response data\n" +
+                    "}", resultPsiClass.asClassContext().toJson5(false, false)
+        )
 
-        assertEquals("{\n" +
-                "    \"code\": 0,\n" +
-                "    \"msg\": \"\"\n" +
-                "}", iResultPsiClass.asClassContext().toJson5(true, true))
-        assertEquals("{\n" +
-                "    \"code\": 0,\n" +
-                "    \"msg\": \"\"\n" +
-                "}", iResultPsiClass.asClassContext().toJson5(true, false))
+        assertEquals(
+            "{\n" +
+                    "    \"code\": 0,\n" +
+                    "    \"msg\": \"\"\n" +
+                    "}", iResultPsiClass.asClassContext().toJson5(true, true)
+        )
+        assertEquals(
+            "{\n" +
+                    "    \"code\": 0,\n" +
+                    "    \"msg\": \"\"\n" +
+                    "}", iResultPsiClass.asClassContext().toJson5(true, false)
+        )
         assertEquals("{}", iResultPsiClass.asClassContext().toJson5(false, true))
         assertEquals("{}", iResultPsiClass.asClassContext().toJson5(false, false))
     }

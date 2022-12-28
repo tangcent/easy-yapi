@@ -131,7 +131,8 @@ abstract class ScriptRuleParser : RuleParser {
     }
 
     /**
-     * support is js:
+     * support usages:
+     *
      * it.name():String
      * it.hasAnn("annotation_name"):Boolean
      * it.ann("annotation_name"):String?
@@ -209,6 +210,14 @@ abstract class ScriptRuleParser : RuleParser {
             }
 
             if (obj is Collection<*>) {
+                val copy = LinkedList<Any?>()
+                for (ele in obj) {
+                    copy.add(wrap(ele))
+                }
+                return copy
+            }
+
+            if (obj is Array<*>) {
                 val copy = LinkedList<Any?>()
                 for (ele in obj) {
                     copy.add(wrap(ele))
@@ -349,7 +358,7 @@ abstract class ScriptRuleParser : RuleParser {
             return "class"
         }
 
-        open fun methods(): Array<ScriptPsiMethodContext> {
+        override fun methods(): Array<ScriptPsiMethodContext> {
             return jvmClassHelper!!.getAllMethods(psiClass)
                 .mapToTypedArray { ScriptPsiMethodContext(it) }
         }
@@ -358,7 +367,7 @@ abstract class ScriptRuleParser : RuleParser {
             return jvmClassHelper!!.getAllMethods(psiClass).size
         }
 
-        open fun fields(): Array<ScriptPsiFieldContext> {
+        override fun fields(): Array<ScriptPsiFieldContext> {
             return jvmClassHelper!!.getAllFields(psiClass)
                 .mapToTypedArray { ScriptPsiFieldContext(it) }
         }
@@ -772,6 +781,7 @@ abstract class ScriptRuleParser : RuleParser {
                     logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper!!.inferReturn(psiMethod)
                 }
+
                 else -> psiClassHelper!!.getTypeObject(
                     psiType, psiMethod,
                     JsonOption.NONE.or(readGetter, readSetter)
@@ -802,6 +812,7 @@ abstract class ScriptRuleParser : RuleParser {
                     logger!!.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper!!.inferReturn(psiMethod)
                 }
+
                 else -> psiClassHelper!!.getTypeObject(
                     duckType, psiMethod, JsonOption.NONE
                         .or(readGetter, readSetter)
@@ -900,11 +911,11 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         @ScriptIgnore
-        override fun getCore(): Any? {
+        override fun getCore(): Any {
             return explicitParam
         }
 
-        override fun method(): ScriptPsiMethodContext? {
+        override fun method(): ScriptPsiMethodContext {
             return ScriptExplicitMethodContext(explicitParam.containMethod())
         }
 
@@ -915,6 +926,10 @@ abstract class ScriptRuleParser : RuleParser {
 
     @ScriptTypeName("class")
     interface ScriptClassContext {
+
+        fun methods(): Array<ScriptPsiMethodContext>
+
+        fun fields(): Array<ScriptPsiFieldContext>
 
         fun isExtend(superClass: String): Boolean
 
@@ -1047,14 +1062,14 @@ abstract class ScriptRuleParser : RuleParser {
             }
         }
 
-        fun methods(): Array<ScriptPsiMethodContext> {
+        override fun methods(): Array<ScriptPsiMethodContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllMethods(psiElement)
                     .mapToTypedArray { ScriptPsiMethodContext(it) }
             } ?: emptyArray()
         }
 
-        fun fields(): Array<ScriptPsiFieldContext> {
+        override fun fields(): Array<ScriptPsiFieldContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllFields(psiElement)
                     .mapToTypedArray { ScriptPsiFieldContext(it) }
@@ -1269,14 +1284,14 @@ abstract class ScriptRuleParser : RuleParser {
             }
         }
 
-        fun methods(): Array<ScriptPsiMethodContext> {
+        override fun methods(): Array<ScriptPsiMethodContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllMethods(psiElement)
                     .mapToTypedArray { ScriptPsiMethodContext(it) }
             } ?: emptyArray()
         }
 
-        fun fields(): Array<ScriptPsiFieldContext> {
+        override fun fields(): Array<ScriptPsiFieldContext> {
             return (getResource() as? PsiClass)?.let { psiElement ->
                 return@let jvmClassHelper!!.getAllFields(psiElement)
                     .mapToTypedArray { ScriptPsiFieldContext(it) }
