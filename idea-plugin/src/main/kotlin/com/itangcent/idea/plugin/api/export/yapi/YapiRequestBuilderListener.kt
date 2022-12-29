@@ -9,10 +9,10 @@ import com.itangcent.idea.plugin.api.export.core.ExportContext
 import com.itangcent.idea.plugin.api.export.core.MethodExportContext
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.paramContext
-import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
+import com.itangcent.utils.unescape
 import org.apache.commons.lang3.StringUtils
 
 /**
@@ -136,10 +136,11 @@ class YapiRequestBuilderListener : RequestBuilderListener {
 
         val tags = ruleComputer.computer(YapiClassExportRuleKeys.TAG, methodExportContext.element())
         if (tags.notNullOrEmpty()) {
-            request.setTags(StringUtils.split(tags, configReader.first("api.tag.delimiter")?.let { it + "\n" }
-                ?: ",\n")
+            request.setTags(StringUtils.split(tags,
+                configReader.first("api.tag.delimiter")?.let { it.unescape() + "\n" } ?: ",\n")
                 .map { it.trim() }
-                .filter { it.isNotBlank() })
+                .filter { it.isNotBlank() }
+            )
         }
 
         val status = ruleComputer.computer(YapiClassExportRuleKeys.STATUS, methodExportContext.element())
