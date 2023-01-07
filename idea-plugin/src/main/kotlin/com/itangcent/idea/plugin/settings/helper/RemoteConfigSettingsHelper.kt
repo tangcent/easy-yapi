@@ -41,14 +41,15 @@ class RemoteConfigSettingsHelper {
     }
 
     fun loadConfig(url: String): String {
-        var bytes = beanDAO.get(url.toByteArray())
-        if (bytes == null) {
-            resourceResolver.resolve(url).bytes?.let {
-                beanDAO.set(url.toByteArray(), it)
-                bytes = it
-            }
-        }
+        val bytes = beanDAO.get(url.toByteArray()) ?: refreshConfig(url)
         return bytes?.toString(Charsets.UTF_8) ?: ""
+    }
+
+    fun refreshConfig(url: String): ByteArray? {
+        return resourceResolver.resolve(url).bytes?.let {
+            beanDAO.set(url.toByteArray(), it)
+            it
+        }
     }
 }
 
