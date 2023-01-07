@@ -3,6 +3,8 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.CheckBoxList
+import com.itangcent.idea.icons.EasyIcons
+import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.configurable.AbstractEasyApiSettingGUI
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.helper.*
@@ -19,6 +21,8 @@ import javax.swing.JTextArea
 class EasyApiSettingRemoteConfigGUI : AbstractEasyApiSettingGUI() {
 
     private lateinit var rootPanel: JPanel
+
+    private lateinit var refreshConfigButton: JButton
 
     private lateinit var addConfigButton: JButton
 
@@ -42,7 +46,6 @@ class EasyApiSettingRemoteConfigGUI : AbstractEasyApiSettingGUI() {
     @Inject
     private lateinit var remoteConfigSettingsHelper: RemoteConfigSettingsHelper
 
-
     override fun onCreate() {
         (activeWindowProvider as? MutableActiveWindowProvider)?.setActiveWindow(this.rootPanel)
         this.addConfigButton.addActionListener {
@@ -51,6 +54,12 @@ class EasyApiSettingRemoteConfigGUI : AbstractEasyApiSettingGUI() {
         this.removeConfigButton.addActionListener {
             this.deleteConfig()
         }
+        this.refreshConfigButton.addActionListener {
+            this.refreshAll()
+        }
+        EasyIcons.Add.iconOnly(this.addConfigButton)
+        EasyIcons.Remove.iconOnly(this.removeConfigButton)
+        EasyIcons.Refresh.iconOnly(this.refreshConfigButton)
     }
 
     override fun getRootPanel(): JComponent {
@@ -95,7 +104,6 @@ class EasyApiSettingRemoteConfigGUI : AbstractEasyApiSettingGUI() {
         }
     }
 
-
     override fun readSettings(settings: Settings) {
         settings.remoteConfig = this.remoteConfig.toConfig()
     }
@@ -115,6 +123,14 @@ class EasyApiSettingRemoteConfigGUI : AbstractEasyApiSettingGUI() {
             this.remoteConfig.removeAt(it)
         }
         refreshConfigList()
+    }
+
+    private fun refreshAll() {
+        this.remoteConfig.forEach {
+            actionContext.runAsync {
+                remoteConfigSettingsHelper.refreshConfig(it.second)
+            }
+        }
     }
 
     companion object {

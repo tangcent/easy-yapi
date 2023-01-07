@@ -31,6 +31,8 @@ object EasyIcons : Log() {
 
     val Add = tryLoad("/general/add.png") // 16x16
 
+    val Remove = tryLoad("/general/remove.png") // 16x16
+
     val Refresh = tryLoad("/actions/refresh.png") // 16x16
 
     val Link = tryLoad("/ide/link.png") // 12x12
