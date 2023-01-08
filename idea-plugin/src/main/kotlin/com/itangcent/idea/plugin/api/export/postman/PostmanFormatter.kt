@@ -18,7 +18,6 @@ import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
-import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.SystemProvider
 import com.itangcent.intellij.config.rule.RuleComputer
@@ -84,15 +83,19 @@ open class PostmanFormatter {
                 ResolveMultiPath.FIRST -> {
                     pathInRequest.urls().firstOrNull()
                 }
+
                 ResolveMultiPath.LAST -> {
                     pathInRequest.urls().lastOrNull()
                 }
+
                 ResolveMultiPath.LONGEST -> {
                     pathInRequest.urls().longest()
                 }
+
                 ResolveMultiPath.SHORTEST -> {
                     pathInRequest.urls().shortest()
                 }
+
                 else -> ""
             }
 
@@ -199,7 +202,7 @@ open class PostmanFormatter {
                     formdatas.add(
                         KV.create<String, Any?>()
                             .set(KEY, it.name)
-                            .set(VALUE, it.value.takeIfSpecial())
+                            .set(VALUE, it.value.takeIfSpecial() ?: "")
                             .set(TYPE, it.type)
                             .set(DESCRIPTION, it.desc)
                     )
@@ -213,7 +216,7 @@ open class PostmanFormatter {
                     urlEncodeds.add(
                         KV.create<String, Any?>()
                             .set(KEY, it.name)
-                            .set(VALUE, it.value.takeIfSpecial())
+                            .set(VALUE, it.value.takeIfSpecial() ?: "")
                             .set(TYPE, it.type)
                             .set(DESCRIPTION, it.desc)
                     )
@@ -310,7 +313,7 @@ open class PostmanFormatter {
                         KV.create<String, Any?>()
                             .set(NAME, it.name)
                             .set(KEY, it.name)
-                            .set(VALUE, it.value.takeIfSpecial())
+                            .set(VALUE, it.value.takeIfSpecial() ?: "")
                             .set(DESCRIPTION, it.desc)
                     )
                 }
@@ -371,6 +374,7 @@ open class PostmanFormatter {
                         request.bodyType = "json"
                     }
                 }
+
                 "formdata" -> {
                     val formdatas: ArrayList<HashMap<String, Any?>>? = body.getAs("formdata")
                     if (formdatas != null) {
@@ -386,6 +390,7 @@ open class PostmanFormatter {
                         request.formParams = formParams
                     }
                 }
+
                 "urlencoded" -> {
                     val urlEncodeds: ArrayList<HashMap<String, Any?>>? = body.getAs("urlencoded")
                     if (urlEncodeds != null) {
