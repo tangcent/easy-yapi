@@ -2056,36 +2056,43 @@
               "formdata": [
                 {
                   "key": "id",
+                  "value": "",
                   "type": "text",
                   "description": "user id"
                 },
                 {
                   "key": "type",
+                  "value": "",
                   "type": "text",
                   "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
                 },
                 {
                   "key": "name",
+                  "value": "",
                   "type": "text",
                   "description": "user name"
                 },
                 {
                   "key": "age",
+                  "value": "",
                   "type": "text",
                   "description": "user age"
                 },
                 {
                   "key": "sex",
+                  "value": "",
                   "type": "text",
                   "description": ""
                 },
                 {
                   "key": "birthDay",
+                  "value": "",
                   "type": "text",
                   "description": "user birthDay"
                 },
                 {
                   "key": "regtime",
+                  "value": "",
                   "type": "text",
                   "description": "user regtime"
                 }
@@ -2125,36 +2132,43 @@
                   "formdata": [
                     {
                       "key": "id",
+                      "value": "",
                       "type": "text",
                       "description": "user id"
                     },
                     {
                       "key": "type",
+                      "value": "",
                       "type": "text",
                       "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
                     },
                     {
                       "key": "name",
+                      "value": "",
                       "type": "text",
                       "description": "user name"
                     },
                     {
                       "key": "age",
+                      "value": "",
                       "type": "text",
                       "description": "user age"
                     },
                     {
                       "key": "sex",
+                      "value": "",
                       "type": "text",
                       "description": ""
                     },
                     {
                       "key": "birthDay",
+                      "value": "",
                       "type": "text",
                       "description": "user birthDay"
                     },
                     {
                       "key": "regtime",
+                      "value": "",
                       "type": "text",
                       "description": "user regtime"
                     }
