@@ -1,3 +1,13 @@
+* 2.5.2
+
+	* feat: support swagger3 [(#897)](https://github.com/tangcent/easy-yapi/pull/897)
+
+	* feat: refresh button in [EasyApi > Remote] [(#895)](https://github.com/tangcent/easy-yapi/pull/895)
+
+	* fix: unescape api.tag.delimiter [(#894)](https://github.com/tangcent/easy-yapi/pull/894)
+
+	* fix: wrap annotation array parameter in script rule execute [(#893)](https://github.com/tangcent/easy-yapi/pull/893)
+
 * 2.5.1
 
 	* chore: polish ContextualPsiClassHelper [(#889)](https://github.com/tangcent/easy-yapi/pull/889)
