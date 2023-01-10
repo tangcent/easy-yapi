@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.rule
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiMember
 import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.text.TemplateEvaluator
@@ -15,7 +14,6 @@ import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleContext
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.LinkExtractor
 import com.itangcent.intellij.jvm.LinkResolver
 import com.itangcent.intellij.util.FileUtils
@@ -93,9 +91,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
 
         @ScriptReturn("array<class/method/field>")
         fun resolveLinks(canonicalText: String): List<RuleContext>? {
-            val psiMember = context as? PsiMember ?: return null
+            context ?: return null
             var linkTargets: ArrayList<Any>? = null
-            linkExtractor!!.extract(canonicalText, psiMember, object : LinkResolver {
+            linkExtractor!!.extract(canonicalText, context, object : LinkResolver {
                 override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
                     if (linkTo != null) {
                         if (linkTargets == null) {
@@ -109,14 +107,14 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             if (linkTargets.isNullOrEmpty()) {
                 return emptyList()
             }
-            return linkTargets!!.map { contextOf(it, psiMember) }
+            return linkTargets!!.map { contextOf(it, context) }
         }
 
         @ScriptReturn("class/method/field")
         fun resolveLink(canonicalText: String): RuleContext? {
-            val psiMember = context as? PsiMember ?: return null
+            context ?: return null
             var linkTarget: Any? = null
-            linkExtractor!!.extract(canonicalText, psiMember, object : LinkResolver {
+            linkExtractor!!.extract(canonicalText, context, object : LinkResolver {
                 override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
                     if (linkTarget == null && linkTo != null) {
                         linkTarget = linkTo
@@ -124,7 +122,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
                     return null
                 }
             })
-            return linkTarget?.let { contextOf(it, psiMember) }
+            return linkTarget?.let { contextOf(it, context) }
         }
 
     }
