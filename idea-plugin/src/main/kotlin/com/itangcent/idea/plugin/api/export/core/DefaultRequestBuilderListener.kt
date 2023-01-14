@@ -1,15 +1,22 @@
 package com.itangcent.idea.plugin.api.export.core
 
+import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.appendln
 import com.itangcent.intellij.extend.toPrettyString
+import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.util.forEachValid
 import java.util.*
 
 @Singleton
 open class DefaultRequestBuilderListener : RequestBuilderListener {
+
+    @Inject
+    private lateinit var logger: Logger
+
     override fun setName(exportContext: ExportContext, request: Request, name: String) {
         request.name = name
     }
@@ -30,12 +37,29 @@ open class DefaultRequestBuilderListener : RequestBuilderListener {
         if (model is Map<*, *>) {
             val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
             val default = model[Attrs.DEFAULT_VALUE_ATTR] as Map<*, *>?
-            model.forEach { (k, v) ->
+            model.forEachValid { k, v ->
+                addParam(
+                    exportContext, request, k.toString(), (default?.get(k) ?: v).toPrettyString(),
+                    KVUtils.getUltimateComment(comment, k)
+                )
+            }
+        } else {
+            logger.warn("addModelAsParam failed, invalid model:$model, type: ${model::class.qualifiedName}")
+        }
+    }
+
+    override fun addModelAsFormParam(exportContext: ExportContext, request: Request, model: Any) {
+        if (model is Map<*, *>) {
+            val comment = model[Attrs.COMMENT_ATTR] as Map<*, *>?
+            val default = model[Attrs.DEFAULT_VALUE_ATTR] as Map<*, *>?
+            model.forEachValid { k, v ->
                 addFormParam(
                     exportContext, request, k.toString(), (default?.get(k) ?: v).toPrettyString(),
                     KVUtils.getUltimateComment(comment, k)
                 )
             }
+        } else {
+            logger.warn("addModelAsFormParam failed, invalid model:$model, type: ${model::class.qualifiedName}")
         }
     }
 

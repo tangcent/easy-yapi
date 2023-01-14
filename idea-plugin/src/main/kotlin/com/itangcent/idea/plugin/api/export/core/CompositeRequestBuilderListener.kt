@@ -32,6 +32,10 @@ class CompositeRequestBuilderListener :
         delegate.addModelAsParam(exportContext, request, model)
     }
 
+    override fun addModelAsFormParam(exportContext: ExportContext, request: Request, model: Any) {
+        delegate.addModelAsFormParam(exportContext, request, model)
+    }
+
     override fun addFormParam(exportContext: ExportContext, request: Request, formParam: FormParam) {
         delegate.addFormParam(exportContext, request, formParam)
     }

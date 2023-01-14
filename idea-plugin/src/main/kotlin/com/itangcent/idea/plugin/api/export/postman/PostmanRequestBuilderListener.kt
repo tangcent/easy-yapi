@@ -43,6 +43,10 @@ class PostmanRequestBuilderListener : RequestBuilderListener {
         //NOP
     }
 
+    override fun addModelAsFormParam(exportContext: ExportContext, request: Request, model: Any) {
+        //NOP
+    }
+
     override fun addFormParam(exportContext: ExportContext, request: Request, formParam: FormParam) {
         //NOP
     }

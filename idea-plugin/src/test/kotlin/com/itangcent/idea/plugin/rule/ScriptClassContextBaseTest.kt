@@ -2,6 +2,8 @@ package com.itangcent.idea.plugin.rule
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.common.kit.toJson
+import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.rule.ScriptRuleParser.ScriptClassContext
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
@@ -763,6 +765,191 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         assertEquals("{}", iResultPsiClass.asClassContext().toJson5(false, false))
     }
 
+    fun testToObject() {
+        assertEquals(
+            "{}", objectPsiClass.asClassContext().toObject(
+                readGetter = true,
+                readSetter = true,
+                readComment = true
+            ).toJson()
+        )
+
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"@comment\": {\n" +
+                    "    \"str\": \"string field\",\n" +
+                    "    \"integer\": \"integer field\",\n" +
+                    "    \"stringList\": \"stringList field\",\n" +
+                    "    \"integerArray\": \"integerArray field\"\n" +
+                    "  },\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ],\n" +
+                    "  \"onlySet\": \"\",\n" +
+                    "  \"onlyGet\": \"\"\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                modelPsiClass.asClassContext().toObject(
+                    readGetter = true,
+                    readSetter = true,
+                    readComment = true
+                )
+            )
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"@comment\": {\n" +
+                    "    \"str\": \"string field\",\n" +
+                    "    \"integer\": \"integer field\",\n" +
+                    "    \"stringList\": \"stringList field\",\n" +
+                    "    \"integerArray\": \"integerArray field\"\n" +
+                    "  },\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ],\n" +
+                    "  \"onlyGet\": \"\"\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                modelPsiClass.asClassContext().toObject(
+                    readGetter = true,
+                    readSetter = false,
+                    readComment = true
+                )
+            )
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"@comment\": {\n" +
+                    "    \"str\": \"string field\",\n" +
+                    "    \"integer\": \"integer field\",\n" +
+                    "    \"stringList\": \"stringList field\",\n" +
+                    "    \"integerArray\": \"integerArray field\"\n" +
+                    "  },\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ],\n" +
+                    "  \"onlySet\": \"\"\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                modelPsiClass.asClassContext().toObject(false, true, true)
+            )
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"@comment\": {\n" +
+                    "    \"str\": \"string field\",\n" +
+                    "    \"integer\": \"integer field\",\n" +
+                    "    \"stringList\": \"stringList field\",\n" +
+                    "    \"integerArray\": \"integerArray field\"\n" +
+                    "  },\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ]\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                modelPsiClass.asClassContext().toObject(false, false, true)
+            )
+        )
+
+        assertEquals(
+            "{\n" +
+                    "  \"str\": \"\",\n" +
+                    "  \"integer\": 0,\n" +
+                    "  \"stringList\": [\n" +
+                    "    \"\"\n" +
+                    "  ],\n" +
+                    "  \"integerArray\": [\n" +
+                    "    0\n" +
+                    "  ],\n" +
+                    "  \"onlySet\": \"\",\n" +
+                    "  \"onlyGet\": \"\"\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                modelPsiClass.asClassContext().toObject(true, true, false)
+            )
+        )
+
+        assertEquals(
+            "{}",
+            GsonUtils.prettyJson(
+                mapPsiClass.asClassContext().toObject(true, true, true)
+            )
+        )
+
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"@comment\": {\n" +
+                    "    \"code\": \"response code\",\n" +
+                    "    \"msg\": \"message\",\n" +
+                    "    \"data\": \"response data\"\n" +
+                    "  },\n" +
+                    "  \"msg\": \"\",\n" +
+                    "  \"data\": {}\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                resultPsiClass.asClassContext().toObject(true, true, true)
+            )
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"msg\": \"\",\n" +
+                    "  \"data\": {}\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                resultPsiClass.asClassContext().toObject(true, false, false)
+            )
+        )
+
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"@comment\": {},\n" +
+                    "  \"msg\": \"\"\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                iResultPsiClass.asClassContext().toObject(true, true, true)
+            )
+        )
+        assertEquals(
+            "{\n" +
+                    "  \"code\": 0,\n" +
+                    "  \"@comment\": {},\n" +
+                    "  \"msg\": \"\"\n" +
+                    "}",
+            GsonUtils.prettyJson(
+                iResultPsiClass.asClassContext().toObject(true, false, true)
+            )
+        )
+        assertEquals(
+            "{}",
+            GsonUtils.prettyJson(
+                iResultPsiClass.asClassContext().toObject(false, true, false)
+            )
+        )
+    }
+
     fun testIsInterface() {
         assertFalse(objectPsiClass.asClassContext().isInterface())
         assertFalse(integerPsiClass.asClassContext().isInterface())
@@ -775,7 +962,6 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         assertFalse(resultPsiClass.asClassContext().isInterface())
         assertFalse(modelPsiClass.asClassContext().isInterface())
     }
-
 
     fun testIsAnnotationType() {
         assertFalse(objectPsiClass.asClassContext().isAnnotationType())
