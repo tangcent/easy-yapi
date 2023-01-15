@@ -207,6 +207,16 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         request.resource = userCtrlPsiClass
         requestRuleWrap.addModelAsParam(mapOf<String?, Any?>("x" to "1", "y" to 2))
         assertEquals(
+            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"\",\"required\":false},{\"name\":\"y\",\"value\":\"2\",\"desc\":\"\",\"required\":false}]",
+            request.querys.toJson()
+        )
+    }
+
+    fun testAddModelAsFormParam() {
+        assertNull(request.formParams)
+        request.resource = userCtrlPsiClass
+        requestRuleWrap.addModelAsFormParam(mapOf<String?, Any?>("x" to "1", "y" to 2))
+        assertEquals(
             "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"\",\"required\":false,\"type\":\"text\"},{\"name\":\"y\",\"value\":\"2\",\"desc\":\"\",\"required\":false,\"type\":\"text\"}]",
             request.formParams.toJson()
         )
@@ -221,7 +231,21 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         request.resource = userCtrlPsiClass
         requestRuleWrap.addModelClass("com.itangcent.model.UserInfo")
         assertEquals(
-            "[{\"name\":\"id\",\"value\":\"0\",\"desc\":\"user id\",\"required\":false,\"type\":\"text\"},{\"name\":\"@comment\",\"value\":\"{id: user id, type: user type, name: user name, age: user age, sex: null, birthDay: user birthDay, regtime: user regtime}\",\"desc\":\"\",\"required\":false,\"type\":\"text\"},{\"name\":\"type\",\"value\":\"0\",\"desc\":\"user type\",\"required\":false,\"type\":\"text\"},{\"name\":\"name\",\"value\":\"\",\"desc\":\"user name\",\"required\":false,\"type\":\"text\"},{\"name\":\"age\",\"value\":\"0\",\"desc\":\"user age\",\"required\":false,\"type\":\"text\"},{\"name\":\"sex\",\"value\":\"0\",\"desc\":\"\",\"required\":false,\"type\":\"text\"},{\"name\":\"birthDay\",\"value\":\"\",\"desc\":\"user birthDay\",\"required\":false,\"type\":\"text\"},{\"name\":\"regtime\",\"value\":\"\",\"desc\":\"user regtime\",\"required\":false,\"type\":\"text\"}]",
+            "[{\"name\":\"id\",\"value\":\"0\",\"desc\":\"user id\",\"required\":false,\"type\":\"text\"},{\"name\":\"type\",\"value\":\"0\",\"desc\":\"user type\",\"required\":false,\"type\":\"text\"},{\"name\":\"name\",\"value\":\"\",\"desc\":\"user name\",\"required\":false,\"type\":\"text\"},{\"name\":\"age\",\"value\":\"0\",\"desc\":\"user age\",\"required\":false,\"type\":\"text\"},{\"name\":\"sex\",\"value\":\"0\",\"desc\":\"\",\"required\":false,\"type\":\"text\"},{\"name\":\"birthDay\",\"value\":\"\",\"desc\":\"user birthDay\",\"required\":false,\"type\":\"text\"},{\"name\":\"regtime\",\"value\":\"\",\"desc\":\"user regtime\",\"required\":false,\"type\":\"text\"}]",
+            request.formParams.toJson()
+        )
+    }
+
+    fun testAddModelClassAsFormParam() {
+        assertNull(request.formParams)
+        requestRuleWrap.addModelClassAsFormParam(null)
+        assertNull(request.formParams)
+        requestRuleWrap.addModelClassAsFormParam("com.itangcent.model.Model")
+        assertNull(request.formParams)
+        request.resource = userCtrlPsiClass
+        requestRuleWrap.addModelClassAsFormParam("com.itangcent.model.UserInfo")
+        assertEquals(
+            "[{\"name\":\"id\",\"value\":\"0\",\"desc\":\"user id\",\"required\":false,\"type\":\"text\"},{\"name\":\"type\",\"value\":\"0\",\"desc\":\"user type\",\"required\":false,\"type\":\"text\"},{\"name\":\"name\",\"value\":\"\",\"desc\":\"user name\",\"required\":false,\"type\":\"text\"},{\"name\":\"age\",\"value\":\"0\",\"desc\":\"user age\",\"required\":false,\"type\":\"text\"},{\"name\":\"sex\",\"value\":\"0\",\"desc\":\"\",\"required\":false,\"type\":\"text\"},{\"name\":\"birthDay\",\"value\":\"\",\"desc\":\"user birthDay\",\"required\":false,\"type\":\"text\"},{\"name\":\"regtime\",\"value\":\"\",\"desc\":\"user regtime\",\"required\":false,\"type\":\"text\"}]",
             request.formParams.toJson()
         )
     }

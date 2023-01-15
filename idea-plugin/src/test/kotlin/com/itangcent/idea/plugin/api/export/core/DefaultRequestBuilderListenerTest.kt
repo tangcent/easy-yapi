@@ -38,43 +38,64 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
 
     @Test
     fun testSetName() {
-        requestBuilderListener.setName(FakeExportContext.INSTANCE,
-                request, "name")
+        requestBuilderListener.setName(
+            FakeExportContext.INSTANCE,
+            request, "name"
+        )
         assertEquals("name", request.name)
     }
 
     @Test
     fun testSetMethod() {
-        requestBuilderListener.setMethod(FakeExportContext.INSTANCE,
-                request, "POST")
+        requestBuilderListener.setMethod(
+            FakeExportContext.INSTANCE,
+            request, "POST"
+        )
         assertEquals("POST", request.method)
     }
 
     @Test
     fun testSetPath() {
-        requestBuilderListener.setPath(FakeExportContext.INSTANCE,
-                request, URL.of("/login"))
+        requestBuilderListener.setPath(
+            FakeExportContext.INSTANCE,
+            request, URL.of("/login")
+        )
         assertEquals(URL.of("/login"), request.path)
     }
 
     @Test
     fun testSetModelAsBody() {
-        requestBuilderListener.setModelAsBody(FakeExportContext.INSTANCE,
-                request, "body")
+        requestBuilderListener.setModelAsBody(
+            FakeExportContext.INSTANCE,
+            request, "body"
+        )
         assertEquals("body", request.body)
     }
 
     @Test
     fun testAddModelAsParam() {
-        requestBuilderListener.addModelAsParam(FakeExportContext.INSTANCE,
-                request, mapOf("a" to 1))
+        requestBuilderListener.addModelAsParam(
+            FakeExportContext.INSTANCE,
+            request, mapOf("a" to 1)
+        )
+        assertEquals("a", request.querys!![0].name)
+    }
+
+    @Test
+    fun testAddModelAsFormParam() {
+        requestBuilderListener.addModelAsFormParam(
+            FakeExportContext.INSTANCE,
+            request, mapOf("a" to 1)
+        )
         assertEquals("a", request.formParams!![0].name)
     }
 
     @Test
     fun testAddFormParam() {
-        requestBuilderListener.addFormParam(FakeExportContext.INSTANCE,
-                request, "token", "123", "token for auth")
+        requestBuilderListener.addFormParam(
+            FakeExportContext.INSTANCE,
+            request, "token", "123", "token for auth"
+        )
         request.formParams!![0].let {
             assertEquals("token", it.name)
             assertEquals("123", it.value)
@@ -84,8 +105,10 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
 
     @Test
     fun testAddParam() {
-        requestBuilderListener.addParam(FakeExportContext.INSTANCE,
-                request, "token", "123", "token for auth")
+        requestBuilderListener.addParam(
+            FakeExportContext.INSTANCE,
+            request, "token", "123", "token for auth"
+        )
         request.querys!![0].let {
             assertEquals("token", it.name)
             assertEquals("123", it.value)
@@ -95,18 +118,24 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
 
     @Test
     fun testRemoveParam() {
-        requestBuilderListener.addParam(FakeExportContext.INSTANCE,
-                request, "token", "123", "token for auth")
+        requestBuilderListener.addParam(
+            FakeExportContext.INSTANCE,
+            request, "token", "123", "token for auth"
+        )
         val param = request.querys!!.find { it.name == "token" }!!
-        requestBuilderListener.removeParam(FakeExportContext.INSTANCE,
-                request, param)
+        requestBuilderListener.removeParam(
+            FakeExportContext.INSTANCE,
+            request, param
+        )
         assertTrue(request.querys!!.isEmpty())
     }
 
     @Test
     fun testAddPathParam() {
-        requestBuilderListener.addPathParam(FakeExportContext.INSTANCE,
-                request, "token", "123", "token for auth")
+        requestBuilderListener.addPathParam(
+            FakeExportContext.INSTANCE,
+            request, "token", "123", "token for auth"
+        )
         request.paths!![0].let {
             assertEquals("token", it.name)
             assertEquals("123", it.value)
@@ -116,26 +145,34 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
 
     @Test
     fun testSetJsonBody() {
-        requestBuilderListener.setJsonBody(FakeExportContext.INSTANCE,
-                request, "token", "token for auth")
+        requestBuilderListener.setJsonBody(
+            FakeExportContext.INSTANCE,
+            request, "token", "token for auth"
+        )
         assertEquals("token", request.body)
         assertEquals("token for auth", request.bodyAttr)
     }
 
     @Test
     fun testAppendDesc() {
-        requestBuilderListener.appendDesc(FakeExportContext.INSTANCE,
-                request, "abc")
+        requestBuilderListener.appendDesc(
+            FakeExportContext.INSTANCE,
+            request, "abc"
+        )
         assertEquals("abc", request.desc)
-        requestBuilderListener.appendDesc(FakeExportContext.INSTANCE,
-                request, "def")
+        requestBuilderListener.appendDesc(
+            FakeExportContext.INSTANCE,
+            request, "def"
+        )
         assertEquals("abc\ndef", request.desc)
     }
 
     @Test
     fun testAddHeader() {
-        requestBuilderListener.addHeader(FakeExportContext.INSTANCE,
-                request, "token", "123")
+        requestBuilderListener.addHeader(
+            FakeExportContext.INSTANCE,
+            request, "token", "123"
+        )
         request.headers!![0].let {
             assertEquals("token", it.name)
             assertEquals("123", it.value)
@@ -145,16 +182,20 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
     @Test
     fun testAddResponse() {
         val response = Response()
-        requestBuilderListener.addResponse(FakeExportContext.INSTANCE,
-                request, response)
+        requestBuilderListener.addResponse(
+            FakeExportContext.INSTANCE,
+            request, response
+        )
         assertSame(response, request.response!!.first())
     }
 
     @Test
     fun testAddResponseHeader() {
         val response = Response()
-        requestBuilderListener.addResponseHeader(FakeExportContext.INSTANCE,
-                response, "token", "123")
+        requestBuilderListener.addResponseHeader(
+            FakeExportContext.INSTANCE,
+            response, "token", "123"
+        )
         response.headers!![0].let {
             assertEquals("token", it.name)
             assertEquals("123", it.value)
@@ -164,8 +205,10 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
     @Test
     fun testSetResponseBody() {
         val response = Response()
-        requestBuilderListener.setResponseBody(FakeExportContext.INSTANCE,
-                response, "raw", "123")
+        requestBuilderListener.setResponseBody(
+            FakeExportContext.INSTANCE,
+            response, "raw", "123"
+        )
         assertEquals("raw", response.bodyType)
         assertEquals("123", response.body)
     }
@@ -173,19 +216,25 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
     @Test
     fun testSetResponseCode() {
         val response = Response()
-        requestBuilderListener.setResponseCode(FakeExportContext.INSTANCE,
-                response, 200)
+        requestBuilderListener.setResponseCode(
+            FakeExportContext.INSTANCE,
+            response, 200
+        )
         assertEquals(200, response.code)
     }
 
     @Test
     fun testAppendResponseBodyDesc() {
         val response = Response()
-        requestBuilderListener.appendResponseBodyDesc(FakeExportContext.INSTANCE,
-                response, "abc")
+        requestBuilderListener.appendResponseBodyDesc(
+            FakeExportContext.INSTANCE,
+            response, "abc"
+        )
         assertEquals("abc", response.bodyDesc)
-        requestBuilderListener.appendResponseBodyDesc(FakeExportContext.INSTANCE,
-                response, "def")
+        requestBuilderListener.appendResponseBodyDesc(
+            FakeExportContext.INSTANCE,
+            response, "def"
+        )
         assertEquals("abc\ndef", response.bodyDesc)
     }
 }

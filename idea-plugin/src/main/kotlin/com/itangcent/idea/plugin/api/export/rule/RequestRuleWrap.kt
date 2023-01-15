@@ -11,9 +11,9 @@ import com.itangcent.idea.psi.resource
 import com.itangcent.idea.utils.setExts
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DuckTypeHelper
+import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.jvm.JsonOption
 import java.util.*
 
 class RequestRuleWrap(private val methodExportContext: MethodExportContext?, private val request: Request) {
@@ -115,7 +115,11 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         requestBuilderListener.addModelAsParam(methodExportContext!!, request, model)
     }
 
-    fun addModelClass(modelClass: String?) {
+    fun addModelAsFormParam(model: Any) {
+        requestBuilderListener.addModelAsFormParam(methodExportContext!!, request, model)
+    }
+
+    fun addModelClassAsParam(modelClass: String?) {
         if (modelClass == null) {
             return
         }
@@ -128,6 +132,32 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         val responseType = context.instance(DuckTypeHelper::class).findType(modelClass, resource)
         val res = context.instance(PsiClassHelper::class).getTypeObject(responseType, resource, JsonOption.ALL)
         res?.let { requestBuilderListener.addModelAsParam(methodExportContext!!, this.request, it) }
+    }
+
+    fun addModelClassAsFormParam(modelClass: String?) {
+        if (modelClass == null) {
+            return
+        }
+        val context = ActionContext.getContext()!!
+        val resource = request.resource()
+        if (resource == null) {
+            context.instance(Logger::class).warn("no resource be related with:${request}")
+            return
+        }
+        val responseType = context.instance(DuckTypeHelper::class).findType(modelClass, resource)
+        val res = context.instance(PsiClassHelper::class).getTypeObject(responseType, resource, JsonOption.ALL)
+        res?.let { requestBuilderListener.addModelAsFormParam(methodExportContext!!, this.request, it) }
+    }
+
+    @Deprecated(
+        message = "use addModelClassAsFormParam instead",
+        replaceWith = ReplaceWith("addModelClassAsFormParam(modelClass)")
+    )
+    fun addModelClass(modelClass: String?) {
+        ActionContext.getContext()
+            ?.instance(Logger::class)
+            ?.warn("addModelClass is deprecated, please use addModelClassAsFormParam instead of addModelClass")
+        addModelClassAsFormParam(modelClass)
     }
 
     fun addFormParam(formParam: FormParam) {
@@ -157,12 +187,14 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
     fun setParam(paramName: String, defaultVal: Any?, required: Boolean?, desc: String?) {
         val param = request.querys?.firstOrNull { it.name == paramName }
         if (param == null) {
-            requestBuilderListener.addParam(methodExportContext!!,
+            requestBuilderListener.addParam(
+                methodExportContext!!,
                 request,
                 paramName,
                 defaultVal,
                 required ?: true,
-                desc)
+                desc
+            )
         } else {
             param.value = defaultVal
             param.desc = desc
@@ -175,12 +207,14 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
     }
 
     fun addFormParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
-        requestBuilderListener.addFormParam(methodExportContext!!,
+        requestBuilderListener.addFormParam(
+            methodExportContext!!,
             request,
             paramName,
             defaultVal,
             required ?: true,
-            desc)
+            desc
+        )
     }
 
     fun setFormParam(paramName: String, defaultVal: String?, required: Boolean?, desc: String?) {
