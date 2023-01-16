@@ -1,3 +1,11 @@
+* 2.5.3
+
+	* chore: update swagger config [(#904)](https://github.com/tangcent/easy-yapi/pull/904)
+
+	* feat: new script method `class.toObject` [(#903)](https://github.com/tangcent/easy-yapi/pull/903)
+
+	* fix: fix helper.resolveLink(s) [(#900)](https://github.com/tangcent/easy-yapi/pull/900)
+
 * 2.5.2
 
 	* feat: support swagger3 [(#897)](https://github.com/tangcent/easy-yapi/pull/897)
