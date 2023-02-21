@@ -10,7 +10,8 @@ import com.itangcent.intellij.tip.TipsHelper
 enum class FileType(private val suffix: String) {
 
     JAVA("java"),
-    KOTLIN("kt")
+    KOTLIN("kt"),
+    GROOVY("groovy")
     //, SCALA("scala")
     ;
 
