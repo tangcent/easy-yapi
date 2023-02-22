@@ -19,6 +19,13 @@ param.ignore=groovy:it.type().isExtend("org.springframework.validation.BindingRe
 field.mock[@org.springframework.format.annotation.DateTimeFormat]=groovy:```
     return "@datetime(\"" + it.ann("org.springframework.format.annotation.DateTimeFormat","pattern") + "\")"
 ```
+#Support for jakarta.validation annotations
+param.required=@jakarta.validation.constraints.NotBlank
+field.required=@jakarta.validation.constraints.NotBlank
+param.required=@jakarta.validation.constraints.NotNull
+field.required=@jakarta.validation.constraints.NotNull
+param.required=@jakarta.validation.constraints.NotEmpty
+field.required=@jakarta.validation.constraints.NotEmpty
 #Support spring file
 type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
 #yapi tag for kotlin

@@ -11,6 +11,12 @@ field.required=@org.springframework.lang.NonNull
 param.ignore=groovy:it.type().isExtend("org.springframework.validation.BindingResult")
 field.mock[@org.springframework.format.annotation.DateTimeFormat]=groovy:
 return "@datetime(\"" + it.ann("org.springframework.format.annotation.DateTimeFormat","pattern") + "\")"
+param.required=@jakarta.validation.constraints.NotBlank
+field.required=@jakarta.validation.constraints.NotBlank
+param.required=@jakarta.validation.constraints.NotNull
+field.required=@jakarta.validation.constraints.NotNull
+param.required=@jakarta.validation.constraints.NotEmpty
+field.required=@jakarta.validation.constraints.NotEmpty
 type.is_file=groovy:it.isExtend("org.springframework.web.multipart.MultipartFile")
 api.tag[@kotlin.Deprecated]=deprecated
 api.tag[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=deprecated
