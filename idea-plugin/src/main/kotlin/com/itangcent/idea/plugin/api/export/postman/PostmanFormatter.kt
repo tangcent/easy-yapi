@@ -6,17 +6,16 @@ import com.intellij.psi.PsiClass
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
+import com.itangcent.idea.plugin.api.export.UrlSelector
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
-import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
 import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.idea.plugin.format.MessageFormatter
 import com.itangcent.idea.plugin.format.SimpleJsonFormatter
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.psi.UltimateDocHelper
-import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.SystemProvider
@@ -51,57 +50,43 @@ open class PostmanFormatter {
     @Inject
     protected lateinit var systemProvider: SystemProvider
 
+    @Inject
+    protected lateinit var urlSelector: UrlSelector
+
     fun request2Items(request: Request): List<HashMap<String, Any?>> {
 
         val item = formatRequest2Item(request)
 
         val url: HashMap<String, Any?> = item.getAs("request", "url")!!
 
-        val pathInRequest = request.path ?: URL.nil()
-        if (pathInRequest.single()) {
-            val path = pathInRequest.url() ?: ""
+        val urls = urlSelector.selectUrls(request)
+        if (urls.single()) {
+            val path = urls.url() ?: ""
             url["path"] = parsePath(path)
             url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
+            fixResponse(item)
             return listOf(item)
-        }
-
-        val pathMultiResolve = ruleComputer!!.computer(ClassExportRuleKeys.PATH_MULTI, request.resource()!!)?.let {
-            ResolveMultiPath.valueOf(it.toUpperCase())
-        } ?: ResolveMultiPath.FIRST
-
-        if (pathMultiResolve == ResolveMultiPath.ALL) {
+        } else {
             val host = item.getAs<String>("request", "url", "host") ?: ""
-            return pathInRequest.urls().map {
+            return urls.urls().map {
                 val copyItem = copyItem(item)
                 val copyUrl: HashMap<String, Any?> = copyItem.getAs("request", "url")!!
                 copyUrl["path"] = parsePath(it)
                 copyUrl["raw"] = RequestUtils.concatPath(host, it)
+                fixResponse(copyItem)
                 return@map copyItem
             }
-        } else {
-            val path: String? = when (pathMultiResolve) {
-                ResolveMultiPath.FIRST -> {
-                    pathInRequest.urls().firstOrNull()
-                }
+        }
+    }
 
-                ResolveMultiPath.LAST -> {
-                    pathInRequest.urls().lastOrNull()
-                }
-
-                ResolveMultiPath.LONGEST -> {
-                    pathInRequest.urls().longest()
-                }
-
-                ResolveMultiPath.SHORTEST -> {
-                    pathInRequest.urls().shortest()
-                }
-
-                else -> ""
-            }
-
-            url["path"] = parsePath(path ?: "")
-            url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
-            return listOf(item)
+    private fun fixResponse(item: HashMap<String, Any?>) {
+        val responses = item.getAs<ArrayList<HashMap<String, Any?>>>("response")
+            ?: return
+        val url: HashMap<String, Any?> = item.getAs("request", "url") ?: return
+        for (response in responses) {
+            val originalRequest = response.getAs<HashMap<String, Any?>>("originalRequest")
+                ?: continue
+            originalRequest["url"] = url
         }
     }
 

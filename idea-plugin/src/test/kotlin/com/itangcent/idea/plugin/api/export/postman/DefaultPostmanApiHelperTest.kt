@@ -41,7 +41,6 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
         settings.postmanToken = "PMAK-XXXXXXXXXXXXXXXXXXXXXXXX-XXXXXXXX"
     }
 
-    @DisabledOnOs(OS.WINDOWS)
     class SuccessDefaultPostmanApiHelperTest : DefaultPostmanApiHelperTest() {
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -248,7 +247,6 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
         }
     }
 
-    @DisabledOnOs(OS.WINDOWS)
     class AuthenticationFailedDefaultPostmanApiHelperTest : FailedDefaultPostmanApiHelperTest() {
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -269,7 +267,6 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
 
     }
 
-    @DisabledOnOs(OS.WINDOWS)
     class ServiceLimitExhaustedFailedDefaultPostmanApiHelperTest : FailedDefaultPostmanApiHelperTest() {
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -290,7 +287,6 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
         }
     }
 
-    @DisabledOnOs(OS.WINDOWS)
     class UnreachableFailedDefaultPostmanApiHelperTest : FailedDefaultPostmanApiHelperTest() {
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {
