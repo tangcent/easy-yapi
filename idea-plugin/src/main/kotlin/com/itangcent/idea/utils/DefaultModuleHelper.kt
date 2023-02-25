@@ -15,6 +15,7 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.ActionUtils
+import com.itangcent.utils.NonReentrant
 import org.apache.commons.lang3.StringUtils
 import java.io.File
 
@@ -37,8 +38,11 @@ class DefaultModuleHelper : ModuleHelper {
     override fun findModule(resource: Any): String? {
         return actionContext!!.callInReadUI {
             when (resource) {
-                is PsiResource -> findModule(resource.resource() ?: resource.resourceClass()
-                ?: return@callInReadUI null)
+                is PsiResource -> findModule(
+                    resource.resource() ?: resource.resourceClass()
+                    ?: return@callInReadUI null
+                )
+
                 is PsiMethod -> findModule(resource)
                 is PsiClass -> findModule(resource)
                 is PsiFile -> findModule(resource)
@@ -48,8 +52,9 @@ class DefaultModuleHelper : ModuleHelper {
     }
 
     override fun findModule(psiMethod: PsiMethod): String? {
-
-        val moduleByRule = ruleComputer!!.computer(ClassExportRuleKeys.MODULE, psiMethod)
+        val moduleByRule = NonReentrant.call("findModule") {
+            ruleComputer!!.computer(ClassExportRuleKeys.MODULE, psiMethod)
+        }
         if (moduleByRule.notNullOrBlank()) {
             return moduleByRule
         }
