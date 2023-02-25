@@ -1,19 +1,23 @@
 package com.itangcent.idea.plugin.rule
 
 import com.google.inject.Inject
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.itangcent.annotation.script.ScriptReturn
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.text.TemplateEvaluator
 import com.itangcent.common.text.TemplateUtils
 import com.itangcent.common.text.union
+import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.utils.LocalStorage
 import com.itangcent.idea.plugin.utils.RegexUtils
 import com.itangcent.idea.plugin.utils.SessionStorage
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.FileSaveHelper
+import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleContext
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.LinkExtractor
 import com.itangcent.intellij.jvm.LinkResolver
 import com.itangcent.intellij.util.FileUtils
@@ -73,8 +77,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         engineBindings["session"] = sessionStorage
         engineBindings["helper"] = Helper(context.getPsiContext())
         engineBindings["httpClient"] = httpClientProvider!!.getHttpClient()
-        engineBindings["files"] = actionContext!!.instance(Files::class)
+        engineBindings["files"] = actionContext.instance(Files::class)
         engineBindings["config"] = actionContext.instance(Config::class)
+        engineBindings["runtime"] = Runtime(context)
     }
 
     @Inject
@@ -254,6 +259,30 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             FileUtils.forceSave(path, content.toByteArray(charset))
         }
 
+    }
+
+    @ScriptTypeName("runtime")
+    class Runtime(private val context: RuleContext) {
+
+        private val actionContext by lazy { ActionContext.getContext() }
+
+        fun channel(): String? {
+            return actionContext?.instance(ExportChannel::class)?.channel()
+        }
+
+        fun projectName(): String? {
+            return actionContext?.instance(Project::class)?.name
+        }
+
+        fun projectPath(): String? {
+            return actionContext?.instance(Project::class)?.basePath
+        }
+
+        fun module(): String? {
+            return context.getResource()?.let {
+                actionContext?.instance(ModuleHelper::class)?.findModule(it)
+            }
+        }
     }
 
     companion object {
