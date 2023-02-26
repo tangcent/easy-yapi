@@ -45,14 +45,16 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
         builder.bindInstance(ExportChannel::class, ExportChannel.of("markdown"))
     }
 
-    override fun customConfig(): String? {
+    override fun customConfig(): String {
         return "x=123\nx=456\ny=666"
     }
 
     fun testLogger() {
-        LoggerCollector.getLog()//clear
-        ruleParser.parseEventRule("groovy:logger.info(\"hello world\")")!!.compute(ruleContext)
-        assertEquals("[INFO]\thello world\n", LoggerCollector.getLog().toUnixString())
+        arrayOf("logger", "LOG").forEach { logger ->
+            LoggerCollector.getLog()//clear
+            ruleParser.parseEventRule("groovy:$logger.info(\"hello world\")")!!.compute(ruleContext)
+            assertEquals("[INFO]\thello world\n", LoggerCollector.getLog().toUnixString())
+        }
     }
 
     fun testLocalStorage() {
@@ -61,8 +63,12 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
     }
 
     fun testSessionStorage() {
-        ruleParser.parseEventRule("groovy:session.set(\"demo\",1)")!!.compute(ruleContext)
-        assertEquals(1, sessionStorage.get("demo"))
+        arrayOf("session", "S").forEach { session ->
+            ruleParser.parseEventRule("groovy:$session.set(\"demo\",1)")!!.compute(ruleContext)
+            assertEquals(1, sessionStorage.get("demo"))
+            ruleParser.parseEventRule("groovy:$session.set(\"demo\",2)")!!.compute(ruleContext)
+            assertEquals(2, sessionStorage.get("demo"))
+        }
     }
 
     fun testHttpClient() {
@@ -77,96 +83,104 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
      * Test case of [com.itangcent.idea.plugin.rule.StandardJdkRuleParser.Helper]
      */
     fun testHelper() {
-        assertEquals(
-            "com.itangcent.model.Model",
-            ruleParser.parseStringRule("groovy:helper.findClass(\"com.itangcent.model.Model\")")!!
-                .compute(ruleParser.contextOf(userCtrlPsiClass, userCtrlPsiClass))
-        )
-        assertEquals(
-            "com.itangcent.model.Model#str",
-            ruleParser.parseStringRule("groovy:helper.resolveLink(\"{@link com.itangcent.model.Model#str}\")")!!
-                .compute(ruleParser.contextOf(userCtrlPsiClass, userCtrlPsiClass))
-        )
-        assertEquals(
-            "[com.itangcent.model.Model, com.itangcent.model.Model#str]",
-            ruleParser.parseStringRule("groovy:helper.resolveLinks(\"{@link com.itangcent.model.Model},{@link com.itangcent.model.Model#str}\")")!!
-                .compute(ruleParser.contextOf(userCtrlPsiClass, userCtrlPsiClass))
-        )
+        arrayOf("helper", "H").forEach { helper ->
+            assertEquals(
+                "com.itangcent.model.Model",
+                ruleParser.parseStringRule("groovy:$helper.findClass(\"com.itangcent.model.Model\")")!!
+                    .compute(ruleParser.contextOf(userCtrlPsiClass, userCtrlPsiClass))
+            )
+            assertEquals(
+                "com.itangcent.model.Model#str",
+                ruleParser.parseStringRule("groovy:$helper.resolveLink(\"{@link com.itangcent.model.Model#str}\")")!!
+                    .compute(ruleParser.contextOf(userCtrlPsiClass, userCtrlPsiClass))
+            )
+            assertEquals(
+                "[com.itangcent.model.Model, com.itangcent.model.Model#str]",
+                ruleParser.parseStringRule("groovy:$helper.resolveLinks(\"{@link com.itangcent.model.Model},{@link com.itangcent.model.Model#str}\")")!!
+                    .compute(ruleParser.contextOf(userCtrlPsiClass, userCtrlPsiClass))
+            )
+        }
     }
 
     /**
      * Test case of [com.itangcent.idea.plugin.rule.StandardJdkRuleParser.Config]
      */
     fun testConfig() {
-        assertEquals(
-            "123",
-            ruleParser.parseStringRule("groovy:config.get(\"x\")")!!
-                .compute(ruleContext)
-        )
-        assertEquals(
-            "123456",
-            ruleParser.parseStringRule("groovy:config.getValues(\"x\").join()")!!
-                .compute(ruleContext)
-        )
-        assertEquals(
-            "666",
-            ruleParser.parseStringRule("groovy:config.resolveProperty(\"\\\${y}\")")!!
-                .compute(ruleContext)
-        )
-        assertNull(
-            ruleParser.parseStringRule("groovy:config.resolvePropertyWith(null,\"#\\\$\",[z:888])")!!
-                .compute(ruleContext)
-        )
-        assertEquals(
-            "#{x},888",
-            ruleParser.parseStringRule("groovy:config.resolvePropertyWith(\"#{x},\\\${z}\",null,[z:888])")!!
-                .compute(ruleContext)
-        )
-        assertEquals(
-            "123,",
-            ruleParser.parseStringRule("groovy:config.resolvePropertyWith(\"#{x},\\\${z}\",\"#\\\$\",null)")!!
-                .compute(ruleContext)
-        )
-        assertEquals(
-            "123,888",
-            ruleParser.parseStringRule("groovy:config.resolvePropertyWith(\"#{x},\\\${z}\",\"#\\\$\",[z:888])")!!
-                .compute(ruleContext)
-        )
+        arrayOf("config", "C").forEach { config ->
+            assertEquals(
+                "123",
+                ruleParser.parseStringRule("groovy:$config.get(\"x\")")!!
+                    .compute(ruleContext)
+            )
+            assertEquals(
+                "123456",
+                ruleParser.parseStringRule("groovy:$config.getValues(\"x\").join()")!!
+                    .compute(ruleContext)
+            )
+            assertEquals(
+                "666",
+                ruleParser.parseStringRule("groovy:$config.resolveProperty(\"\\\${y}\")")!!
+                    .compute(ruleContext)
+            )
+            assertNull(
+                ruleParser.parseStringRule("groovy:$config.resolvePropertyWith(null,\"#\\\$\",[z:888])")!!
+                    .compute(ruleContext)
+            )
+            assertEquals(
+                "#{x},888",
+                ruleParser.parseStringRule("groovy:$config.resolvePropertyWith(\"#{x},\\\${z}\",null,[z:888])")!!
+                    .compute(ruleContext)
+            )
+            assertEquals(
+                "123,",
+                ruleParser.parseStringRule("groovy:$config.resolvePropertyWith(\"#{x},\\\${z}\",\"#\\\$\",null)")!!
+                    .compute(ruleContext)
+            )
+            assertEquals(
+                "123,888",
+                ruleParser.parseStringRule("groovy:$config.resolvePropertyWith(\"#{x},\\\${z}\",\"#\\\$\",[z:888])")!!
+                    .compute(ruleContext)
+            )
+        }
     }
 
     /**
      * Test case of [com.itangcent.idea.plugin.rule.StandardJdkRuleParser.Files]
      */
     fun testFiles() {
-        val demoPath = tempDir.sub("demo.txt").escapeBackslash()
-        ruleParser.parseEventRule("groovy:files.save(\"hello world\",\"$demoPath\")")!!
-            .compute(ruleContext)
-        Assert.assertEquals("hello world", FileUtils.read(File(demoPath)))
-        ruleParser.parseEventRule("groovy:files.saveWithUI({\"hello world!\"},\"demo2.txt\",{},{},{})")!!
-            .compute(ruleContext)
-        Assert.assertEquals("hello world!",
-            (fileSaveHelper as FileSaveHelperAdaptor).bytes()?.let { String(it, Charsets.UTF_8) })
+        arrayOf("files", "F").forEach { files ->
+            val demoPath = tempDir.sub("demo.txt").escapeBackslash()
+            ruleParser.parseEventRule("groovy:$files.save(\"hello world\",\"$demoPath\")")!!
+                .compute(ruleContext)
+            Assert.assertEquals("hello world", FileUtils.read(File(demoPath)))
+            ruleParser.parseEventRule("groovy:$files.saveWithUI({\"hello world!\"},\"demo2.txt\",{},{},{})")!!
+                .compute(ruleContext)
+            Assert.assertEquals("hello world!",
+                (fileSaveHelper as FileSaveHelperAdaptor).bytes()?.let { String(it, Charsets.UTF_8) })
+        }
     }
 
     /**
      * Test case of [com.itangcent.idea.plugin.rule.StandardJdkRuleParser.Runtime]
      */
     fun testRuntime() {
-        Assert.assertEquals(
-            "markdown", ruleParser.parseStringRule("groovy:runtime.channel()")!!
-                .compute(ruleContext)
-        )
-        Assert.assertEquals(
-            project.name, ruleParser.parseStringRule("groovy:runtime.projectName()")!!
-                .compute(ruleContext)
-        )
-        Assert.assertEquals(
-            project.basePath, ruleParser.parseStringRule("groovy:runtime.projectPath()")!!
-                .compute(ruleContext)
-        )
-        Assert.assertEquals(
-            "test_default", ruleParser.parseStringRule("groovy:runtime.module()")!!
-                .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
-        )
+        arrayOf("runtime", "R").forEach { runtime ->
+            Assert.assertEquals(
+                "markdown", ruleParser.parseStringRule("groovy:$runtime.channel()")!!
+                    .compute(ruleContext)
+            )
+            Assert.assertEquals(
+                project.name, ruleParser.parseStringRule("groovy:$runtime.projectName()")!!
+                    .compute(ruleContext)
+            )
+            Assert.assertEquals(
+                project.basePath, ruleParser.parseStringRule("groovy:$runtime.projectPath()")!!
+                    .compute(ruleContext)
+            )
+            Assert.assertEquals(
+                "test_default", ruleParser.parseStringRule("groovy:$runtime.module()")!!
+                    .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+        }
     }
 }

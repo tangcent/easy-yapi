@@ -11,7 +11,7 @@ import java.util.regex.Pattern
  * Refactoring from {@url https://github.com/aoju/bus/blob/master/bus-core/src/main/java/org/aoju/bus/core/utils/PatternUtils.java}
  */
 @ScriptTypeName("regex")
-class RegexUtils {
+object RegexUtils {
 
     private val cache = WeakHashMap<RegexWithFlag, Pattern>()
     private val cacheLock = ReentrantReadWriteLock()
@@ -191,7 +191,12 @@ class RegexUtils {
         return findAll(pattern, content, group, collection)
     }
 
-    private fun <T : MutableCollection<String>> findAll(pattern: Pattern?, content: String?, group: Int, collection: T?): T? {
+    private fun <T : MutableCollection<String>> findAll(
+        pattern: Pattern?,
+        content: String?,
+        group: Int,
+        collection: T?,
+    ): T? {
         if (null == pattern || null == content) {
             return null
         }
@@ -293,17 +298,6 @@ class RegexUtils {
         return value
     }
 
-    companion object {
-
-        private const val GROUP_VAR_PATTERN = "\\$(\\d+)"
-        val GROUP_VAR = Pattern.compile(GROUP_VAR_PATTERN)!!
-
-        val REGEX_KEYWORD = setOf('$', '(', ')', '*', '+', '.',
-                '[', ']', '?', '\\', '^', '{', '}', '|')
-
-        val INSTANCE = RegexUtils()
-    }
-
     private class RegexWithFlag(private val regex: String?, private val flag: Int) {
 
         override fun hashCode(): Int {
@@ -335,5 +329,12 @@ class RegexUtils {
         }
 
     }
+    
+    private const val GROUP_VAR_PATTERN = "\\$(\\d+)"
+    private val GROUP_VAR = Pattern.compile(GROUP_VAR_PATTERN)!!
 
+    private val REGEX_KEYWORD = setOf(
+        '$', '(', ')', '*', '+', '.',
+        '[', ']', '?', '\\', '^', '{', '}', '|'
+    )
 }

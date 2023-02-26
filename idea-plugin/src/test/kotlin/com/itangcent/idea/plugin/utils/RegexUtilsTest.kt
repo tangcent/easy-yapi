@@ -13,87 +13,85 @@ class RegexUtilsTest {
 
     @Test
     fun testGet() {
-        assertEquals("123", REGEX_UTILS.getGroup0("\\d+", "abc123efg"))
-        assertEquals("123", REGEX_UTILS.getGroup1("(\\d+)", "abc123efg"))
-        assertEquals(null, REGEX_UTILS.getGroup1("\\d[a-z]\\d+", "abc123efg"))
-        assertEquals(null, REGEX_UTILS.get(null, "abc123efg", 1))
-        assertEquals(null, REGEX_UTILS.get("(\\d+)", null, 1))
-        assertEquals("efg", REGEX_UTILS.get("(\\d+)(.*?)$", "abc123efg", 2))
-        assertEquals(arrayListOf("123", "efg", "456"), REGEX_UTILS.getAllGroups("(\\d+)(.*?)(\\d+)\$", "abc123efg456"))
-        assertEquals(emptyList<String>(), REGEX_UTILS.getAllGroups("(\\d+F\\d+)\$", "abc123efg456"))
-        assertEquals(null, REGEX_UTILS.getAllGroups(null, "abc123efg456"))
-        assertEquals(null, REGEX_UTILS.getAllGroups("(\\d+F\\d+)\$", null))
+        assertEquals("123", RegexUtils.getGroup0("\\d+", "abc123efg"))
+        assertEquals("123", RegexUtils.getGroup1("(\\d+)", "abc123efg"))
+        assertEquals(null, RegexUtils.getGroup1("\\d[a-z]\\d+", "abc123efg"))
+        assertEquals(null, RegexUtils.get(null, "abc123efg", 1))
+        assertEquals(null, RegexUtils.get("(\\d+)", null, 1))
+        assertEquals("efg", RegexUtils.get("(\\d+)(.*?)$", "abc123efg", 2))
+        assertEquals(arrayListOf("123", "efg", "456"), RegexUtils.getAllGroups("(\\d+)(.*?)(\\d+)\$", "abc123efg456"))
+        assertEquals(emptyList<String>(), RegexUtils.getAllGroups("(\\d+F\\d+)\$", "abc123efg456"))
+        assertEquals(null, RegexUtils.getAllGroups(null, "abc123efg456"))
+        assertEquals(null, RegexUtils.getAllGroups("(\\d+F\\d+)\$", null))
     }
 
     @Test
     fun testFind() {
-        assertEquals(listOf("c123", "g456"), REGEX_UTILS.findAllGroup0("[a-z]\\d+", "abc123efg456"))
-        assertEquals(listOf("123", "456"), REGEX_UTILS.findAllGroup1("[a-z](\\d+)", "abc123efg456"))
-        assertEquals(listOf("c", "g"), REGEX_UTILS.findAll("([a-z])(\\d+)", "abc123efg456", 1))
+        assertEquals(listOf("c123", "g456"), RegexUtils.findAllGroup0("[a-z]\\d+", "abc123efg456"))
+        assertEquals(listOf("123", "456"), RegexUtils.findAllGroup1("[a-z](\\d+)", "abc123efg456"))
+        assertEquals(listOf("c", "g"), RegexUtils.findAll("([a-z])(\\d+)", "abc123efg456", 1))
     }
 
     @Test
     fun testExtract() {
-        assertEquals("abcxefgx", REGEX_UTILS.extract("\\d+", "abc123efg456", "x"))
-        assertEquals("ab123-cef456-g", REGEX_UTILS.extract("([a-z])(\\d+)", "abc123efg456", "$2-$1"))
-        assertThrows<IndexOutOfBoundsException> { REGEX_UTILS.extract("[a-z]\\d+", "abc123efg456", "$2-$1") }
-        assertEquals(null, REGEX_UTILS.extract(null, "abc123efg456", "$2-$1"))
-        assertEquals(null, REGEX_UTILS.extract("([a-z])(\\d+)", null, "$2-$1"))
-        assertEquals(null, REGEX_UTILS.extract("([a-z])(\\d+)", "abc123efg456", null))
-        assertEquals("ab123-cef456-g", REGEX_UTILS.replaceAll("abc123efg456", "([a-z])(\\d+)", "$2-$1"))
+        assertEquals("abcxefgx", RegexUtils.extract("\\d+", "abc123efg456", "x"))
+        assertEquals("ab123-cef456-g", RegexUtils.extract("([a-z])(\\d+)", "abc123efg456", "$2-$1"))
+        assertThrows<IndexOutOfBoundsException> { RegexUtils.extract("[a-z]\\d+", "abc123efg456", "$2-$1") }
+        assertEquals(null, RegexUtils.extract(null, "abc123efg456", "$2-$1"))
+        assertEquals(null, RegexUtils.extract("([a-z])(\\d+)", null, "$2-$1"))
+        assertEquals(null, RegexUtils.extract("([a-z])(\\d+)", "abc123efg456", null))
+        assertEquals("ab123-cef456-g", RegexUtils.replaceAll("abc123efg456", "([a-z])(\\d+)", "$2-$1"))
     }
 
     @Test
     fun testDel() {
-        assertEquals("abcefg", REGEX_UTILS.delAll("\\d+", "abc123efg456"))
-        assertEquals("123456", REGEX_UTILS.delAll("[a-z]", "abc123efg456"))
-        assertEquals("", REGEX_UTILS.delAll("[a-z]", ""))
-        assertEquals("abc123efg456", REGEX_UTILS.delAll("", "abc123efg456"))
-        assertEquals("123efg456", REGEX_UTILS.delBefore("\\d", "abc123efg456"))
-        assertEquals("", REGEX_UTILS.delBefore("\\d", ""))
-        assertEquals("abc123efg456", REGEX_UTILS.delBefore("\\d[a-z]\\d", "abc123efg456"))
-        assertEquals("bc123efg456", REGEX_UTILS.delFirst("[a-z]", "abc123efg456"))
-        assertEquals("", REGEX_UTILS.delFirst("[a-z]", ""))
-        assertEquals("123efg456", REGEX_UTILS.delFirst("[a-z]+", "abc123efg456"))
+        assertEquals("abcefg", RegexUtils.delAll("\\d+", "abc123efg456"))
+        assertEquals("123456", RegexUtils.delAll("[a-z]", "abc123efg456"))
+        assertEquals("", RegexUtils.delAll("[a-z]", ""))
+        assertEquals("abc123efg456", RegexUtils.delAll("", "abc123efg456"))
+        assertEquals("123efg456", RegexUtils.delBefore("\\d", "abc123efg456"))
+        assertEquals("", RegexUtils.delBefore("\\d", ""))
+        assertEquals("abc123efg456", RegexUtils.delBefore("\\d[a-z]\\d", "abc123efg456"))
+        assertEquals("bc123efg456", RegexUtils.delFirst("[a-z]", "abc123efg456"))
+        assertEquals("", RegexUtils.delFirst("[a-z]", ""))
+        assertEquals("123efg456", RegexUtils.delFirst("[a-z]+", "abc123efg456"))
     }
 
     @Test
     fun testCount() {
-        assertEquals(2, REGEX_UTILS.count("\\d+", "abc123efg456"))
-        assertEquals(6, REGEX_UTILS.count("\\d", "abc123efg456"))
-        assertEquals(0, REGEX_UTILS.count(null, "abc123efg456"))
-        assertEquals(0, REGEX_UTILS.count("\\d", null))
+        assertEquals(2, RegexUtils.count("\\d+", "abc123efg456"))
+        assertEquals(6, RegexUtils.count("\\d", "abc123efg456"))
+        assertEquals(0, RegexUtils.count(null, "abc123efg456"))
+        assertEquals(0, RegexUtils.count("\\d", null))
     }
 
     @Test
     fun testContains() {
-        assertTrue(REGEX_UTILS.contains("\\d+", "abc123efg456"))
-        assertTrue(REGEX_UTILS.contains("\\d", "abc123efg456"))
-        assertTrue(REGEX_UTILS.contains("[a-z]\\d", "abc123efg456"))
-        assertFalse(REGEX_UTILS.contains("\\d[a-z]\\d", "abc123efg456"))
-        assertFalse(REGEX_UTILS.contains(null, "abc123efg456"))
-        assertFalse(REGEX_UTILS.contains("\\d", null))
+        assertTrue(RegexUtils.contains("\\d+", "abc123efg456"))
+        assertTrue(RegexUtils.contains("\\d", "abc123efg456"))
+        assertTrue(RegexUtils.contains("[a-z]\\d", "abc123efg456"))
+        assertFalse(RegexUtils.contains("\\d[a-z]\\d", "abc123efg456"))
+        assertFalse(RegexUtils.contains(null, "abc123efg456"))
+        assertFalse(RegexUtils.contains("\\d", null))
     }
 
     @Test
     fun testIsMatch() {
-        assertFalse(REGEX_UTILS.isMatch("\\d+", "abc123efg456"))
-        assertFalse(REGEX_UTILS.isMatch("\\d", "abc123efg456"))
-        assertFalse(REGEX_UTILS.isMatch("[a-z]\\d", "abc123efg456"))
-        assertTrue(REGEX_UTILS.isMatch("[a-z]+\\d+[a-z]+\\d+", "abc123efg456"))
-        assertFalse(REGEX_UTILS.isMatch("\\d[a-z]\\d", "abc123efg456"))
-        assertFalse(REGEX_UTILS.isMatch(null, "abc123efg456"))
-        assertFalse(REGEX_UTILS.isMatch("\\d", null))
+        assertFalse(RegexUtils.isMatch("\\d+", "abc123efg456"))
+        assertFalse(RegexUtils.isMatch("\\d", "abc123efg456"))
+        assertFalse(RegexUtils.isMatch("[a-z]\\d", "abc123efg456"))
+        assertTrue(RegexUtils.isMatch("[a-z]+\\d+[a-z]+\\d+", "abc123efg456"))
+        assertFalse(RegexUtils.isMatch("\\d[a-z]\\d", "abc123efg456"))
+        assertFalse(RegexUtils.isMatch(null, "abc123efg456"))
+        assertFalse(RegexUtils.isMatch("\\d", null))
     }
 
     @Test
     fun testEscape() {
-        assertEquals(null, REGEX_UTILS.escape(null))
-        assertEquals("", REGEX_UTILS.escape(""))
-        assertEquals("abc123efg456", REGEX_UTILS.escape("abc123efg456"))
-        assertEquals("\\\$\\(a\\)bc123efg456", REGEX_UTILS.escape("\$(a)bc123efg456"))
-        assertEquals("\\\$\\(\\)\\*\\+\\.\\[\\]\\?\\\\\\\\\\^\\{\\}\\|", REGEX_UTILS.escape("\$()*+.[]?\\\\^{}|"))
+        assertEquals(null, RegexUtils.escape(null))
+        assertEquals("", RegexUtils.escape(""))
+        assertEquals("abc123efg456", RegexUtils.escape("abc123efg456"))
+        assertEquals("\\\$\\(a\\)bc123efg456", RegexUtils.escape("\$(a)bc123efg456"))
+        assertEquals("\\\$\\(\\)\\*\\+\\.\\[\\]\\?\\\\\\\\\\^\\{\\}\\|", RegexUtils.escape("\$()*+.[]?\\\\^{}|"))
     }
 }
-
-private val REGEX_UTILS = RegexUtils();
