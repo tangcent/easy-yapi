@@ -276,8 +276,13 @@
                   "raw": "{\n  \"id\": 0,\n  \"type\": 0,\n  \"name\": \"\",\n  \"age\": 0,\n  \"sex\": 0,\n  \"birthDay\": \"\",\n  \"regtime\": \"\"\n}"
                 },
                 "url": {
+                  "path": [
+                    "user",
+                    "add"
+                  ],
                   "query": [],
-                  "host": "{{test_default}}"
+                  "host": "{{test_default}}",
+                  "raw": "{{test_default}}/user/add"
                 }
               },
               "_postman_previewlanguage": "json",

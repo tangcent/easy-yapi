@@ -8,8 +8,8 @@ import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.logger.traceWarn
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
+import com.itangcent.idea.plugin.api.export.UrlSelector
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
-import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
 import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.idea.plugin.render.MarkdownRender
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
@@ -58,6 +58,9 @@ open class YapiFormatter {
 
     @Inject
     protected lateinit var yapiSettingsHelper: YapiSettingsHelper
+
+    @Inject
+    protected lateinit var urlSelector: UrlSelector
 
     fun doc2Items(doc: Doc): List<HashMap<String, Any?>> {
         if (doc is Request) {
@@ -229,21 +232,15 @@ open class YapiFormatter {
 
         val item = request2Item(request)
 
-        val pathInRequest = request.path ?: URL.nil()
-        if (pathInRequest.single()) {
-            val path = formatPath(pathInRequest.url() ?: "")
+        val urls = urlSelector.selectUrls(request)
+        if (urls.single()) {
+            val path = formatPath(urls.url() ?: "")
             val queryPath: HashMap<String, Any?> = item.getAs("query_path")!!
             queryPath["path"] = path
             item["path"] = path
             return listOf(item)
-        }
-
-        val pathMultiResolve = ruleComputer!!.computer(ClassExportRuleKeys.PATH_MULTI, request.resource()!!)?.let {
-            ResolveMultiPath.valueOf(it.toUpperCase())
-        } ?: ResolveMultiPath.FIRST
-
-        if (pathMultiResolve == ResolveMultiPath.ALL) {
-            return pathInRequest.urls().map {
+        } else {
+            return urls.urls().map {
                 val copyItem = copyItem(item)
                 val path = formatPath(it)
                 val queryPath: HashMap<String, Any?> = copyItem.getAs("query_path")!!
@@ -251,33 +248,7 @@ open class YapiFormatter {
                 queryPath["path"] = path
                 return@map copyItem
             }
-        } else {
-            val path: String? = when (pathMultiResolve) {
-                ResolveMultiPath.FIRST -> {
-                    pathInRequest.urls().firstOrNull()
-                }
-
-                ResolveMultiPath.LAST -> {
-                    pathInRequest.urls().lastOrNull()
-                }
-
-                ResolveMultiPath.LONGEST -> {
-                    pathInRequest.urls().longest()
-                }
-
-                ResolveMultiPath.SHORTEST -> {
-                    pathInRequest.urls().shortest()
-                }
-
-                else -> ""
-            }
-
-            val queryPath: HashMap<String, Any?> = item.getAs("query_path")!!
-            queryPath["path"] = path
-            item["path"] = path
-            return listOf(item)
         }
-
     }
 
     protected open fun copyItem(item: HashMap<String, Any?>): HashMap<String, Any?> {

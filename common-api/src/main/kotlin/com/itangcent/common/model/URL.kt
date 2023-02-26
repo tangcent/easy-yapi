@@ -77,7 +77,7 @@ interface URL {
             }
         }
 
-        fun of(urls: List<String>?): URL {
+        fun of(urls: Collection<String>?): URL {
             return when {
                 urls.isNullOrEmpty() -> NullURL
                 urls.size == 1 -> of(urls.first())
@@ -204,7 +204,7 @@ private class SingleURL(private val url: String) : URL {
 private class MultiURL : URL {
     private val urls: Array<String>
 
-    constructor(urls: List<String>) {
+    constructor(urls: Collection<String>) {
         this.urls = urls.toTypedArray()
     }
 
@@ -237,7 +237,7 @@ private class MultiURL : URL {
     }
 
     override fun union(url: URL): URL {
-        val urls = LinkedList<String>()
+        val urls = LinkedHashSet<String>()
         urls.addAll(this.urls)
         urls.addAll(url.urls())
         return URL.of(urls)

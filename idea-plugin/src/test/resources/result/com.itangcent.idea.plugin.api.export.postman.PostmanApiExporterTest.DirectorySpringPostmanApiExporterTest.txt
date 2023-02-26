@@ -1996,8 +1996,13 @@
                   "raw": "{\n    \"id\": 0, //user id\n    /**\n     * user type\n     * 1 :administration\n     * 2 :a person, an animal or a plant\n     * 3 :Anonymous visitor\n     */\n    \"type\": 0,\n    \"name\": \"\", //user name\n    \"age\": 0, //user age\n    \"sex\": 0,\n    \"birthDay\": \"\", //user birthDay\n    \"regtime\": \"\" //user regtime\n}"
                 },
                 "url": {
+                  "path": [
+                    "user",
+                    "add"
+                  ],
                   "query": [],
-                  "host": "{{test_default}}"
+                  "host": "{{test_default}}",
+                  "raw": "{{test_default}}/user/add"
                 }
               },
               "_postman_previewlanguage": "json",
