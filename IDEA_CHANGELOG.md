@@ -1,3 +1,17 @@
+* 2.5.4
+
+	* feat: provide aliases for several rule tools [(#925)](https://github.com/tangcent/easy-yapi/pull/925)
+
+	* chore: update version of intellij-kotlin to 1.4.5 [(#924)](https://github.com/tangcent/easy-yapi/pull/924)
+
+	* fix: fix api response in postman [(#923)](https://github.com/tangcent/easy-yapi/pull/923)
+
+	* feat: new rule tool: runtime [(#922)](https://github.com/tangcent/easy-yapi/pull/922)
+
+	* feat: support jakarta.validation [(#918)](https://github.com/tangcent/easy-yapi/pull/918)
+
+	* feat: support export apis from groovy [(#912)](https://github.com/tangcent/easy-yapi/pull/912)
+
 * 2.5.3
 
 	* chore: update swagger config [(#904)](https://github.com/tangcent/easy-yapi/pull/904)
