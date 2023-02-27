@@ -21,7 +21,6 @@ import kotlin.reflect.*
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.functions
-import kotlin.text.appendLine
 
 /**
  * <p>Util operations for rule.</p>
@@ -29,7 +28,7 @@ import kotlin.text.appendLine
  * @see StandardJdkRuleParser
  */
 @ScriptTypeName("tool")
-class RuleToolUtils {
+object RuleToolUtils {
 
     //region any
 
@@ -46,12 +45,15 @@ class RuleToolUtils {
             null -> {
                 null
             }
+
             is Array<*> -> {
                 any
             }
+
             is Collection<*> -> {
                 any.toTypedArray()
             }
+
             else -> {
                 arrayOf(any)
             }
@@ -63,15 +65,19 @@ class RuleToolUtils {
             null -> {
                 null
             }
+
             is Array<*> -> {
                 any.toMutableList()
             }
+
             is List<*> -> {
                 any
             }
+
             is Collection<*> -> {
                 any.toMutableList()
             }
+
             else -> {
                 listOf(any)
             }
@@ -1032,43 +1038,37 @@ class RuleToolUtils {
         ToolUtils.copy2Clipboard(str)
     }
 
-    companion object {
+    private val excludedMethods = listOf(
+        "hashCode",
+        "toString",
+        "equals",
+        "getClass",
+        "clone",
+        "notify",
+        "notifyAll",
+        "wait",
+        "finalize"
+    )
 
-        val INSTANCE = RuleToolUtils()
+    private val TO_LINE_PATTERN = Pattern.compile("[A-Z]+")
 
-        private val excludedMethods = Arrays.asList(
-            "hashCode",
-            "toString",
-            "equals",
-            "getClass",
-            "clone",
-            "notify",
-            "notifyAll",
-            "wait",
-            "finalize"
-        )
-
-        private val TO_LINE_PATTERN = Pattern.compile("[A-Z]+")
-
-        private val typeMapper = KV.create<String, String>()
-            .set("java.lang.String", "string")
-            .set("java.lang.Long", "long")
-            .set("java.lang.Double", "double")
-            .set("java.lang.Short", "short")
-            .set("java.lang.Integer", "int")
-            .set("java.lang.Object", "object")
-            .set("kotlin.String", "string")
-            .set("kotlin.Array", "array")
-            .set("kotlin.Int", "int")
-            .set("kotlin.Unit", "void")
-            .set("kotlin.collections.List", "array")
-            .set("kotlin.Any", "object")
-            .set("kotlin.Boolean", "bool")
-            .set("kotlin.collections.Map", "map")
-            .set("kotlin.collections.Set", "array")
-            .set("kotlin.CharArray", "array<char>")
-            .set("kotlin.Function0", "func")
-            .set("kotlin.Function1", "func")
-
-    }
+    private val typeMapper = KV.create<String, String>()
+        .set("java.lang.String", "string")
+        .set("java.lang.Long", "long")
+        .set("java.lang.Double", "double")
+        .set("java.lang.Short", "short")
+        .set("java.lang.Integer", "int")
+        .set("java.lang.Object", "object")
+        .set("kotlin.String", "string")
+        .set("kotlin.Array", "array")
+        .set("kotlin.Int", "int")
+        .set("kotlin.Unit", "void")
+        .set("kotlin.collections.List", "array")
+        .set("kotlin.Any", "object")
+        .set("kotlin.Boolean", "bool")
+        .set("kotlin.collections.Map", "map")
+        .set("kotlin.collections.Set", "array")
+        .set("kotlin.CharArray", "array<char>")
+        .set("kotlin.Function0", "func")
+        .set("kotlin.Function1", "func")
 }

@@ -25,17 +25,18 @@ import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.TemplateKit
 import java.nio.charset.Charset
 import javax.script.*
+import kotlin.collections.set
 
 abstract class StandardJdkRuleParser : ScriptRuleParser() {
 
     @Inject
-    private var httpClientProvider: HttpClientProvider? = null
+    private lateinit var httpClientProvider: HttpClientProvider
 
     @Inject
-    protected val localStorage: LocalStorage? = null
+    protected lateinit var localStorage: LocalStorage
 
     @Inject
-    protected val sessionStorage: SessionStorage? = null
+    protected lateinit var sessionStorage: SessionStorage
 
     private var scriptEngine: ScriptEngine? = null
 
@@ -56,12 +57,12 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         synchronized(this) {
             if (scriptEngine != null) return scriptEngine!!
             scriptEngine = buildScriptEngine()
+            initScripEngine(scriptEngine!!)
         }
         if (scriptEngine == null) {
             unsupported = true
             throw UnsupportedScriptException(scriptType())
         }
-        initScripEngine(scriptEngine!!)
         return scriptEngine!!
     }
 
@@ -72,14 +73,14 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
     override fun initScriptContext(scriptContext: ScriptContext, context: RuleContext) {
         val engineBindings = scriptContext.getBindings(ScriptContext.ENGINE_SCOPE)
         engineBindings.putAll(toolBindings)
-        engineBindings["logger"] = logger
+        engineBindings.set("logger", "LOG", logger!!)
         engineBindings["localStorage"] = localStorage
-        engineBindings["session"] = sessionStorage
-        engineBindings["helper"] = Helper(context.getPsiContext())
-        engineBindings["httpClient"] = httpClientProvider!!.getHttpClient()
-        engineBindings["files"] = actionContext.instance(Files::class)
-        engineBindings["config"] = actionContext.instance(Config::class)
-        engineBindings["runtime"] = Runtime(context)
+        engineBindings.set("session", "S", sessionStorage)
+        engineBindings.set("helper", "H", Helper(context.getPsiContext()))
+        engineBindings["httpClient"] = httpClientProvider.getHttpClient()
+        engineBindings.set("files", "F", actionContext.instance(Files::class))
+        engineBindings.set("config", "C", actionContext.instance(Config::class))
+        engineBindings.set("runtime", "R", Runtime(context))
     }
 
     @Inject
@@ -183,7 +184,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             defaultFileName: String?,
             onSaveSuccess: () -> Unit,
             onSaveFailed: (String?) -> Unit,
-            onSaveCancel: () -> Unit
+            onSaveCancel: () -> Unit,
         ) {
             saveWithUI(
                 content,
@@ -204,7 +205,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             defaultFileName: String?,
             onSaveSuccess: () -> Unit,
             onSaveFailed: (String?) -> Unit,
-            onSaveCancel: () -> Unit
+            onSaveCancel: () -> Unit,
         ) {
             saveWithUI(
                 content,
@@ -226,7 +227,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             defaultFileName: String?,
             onSaveSuccess: () -> Unit,
             onSaveFailed: (String?) -> Unit,
-            onSaveCancel: () -> Unit
+            onSaveCancel: () -> Unit,
         ) {
             fileSaveHelper!!.saveBytes(
                 {
@@ -246,7 +247,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         fun save(
             content: String,
             charset: String,
-            path: String
+            path: String,
         ) {
             save(content, Charsets.forName(charset)!!.charset(), path)
         }
@@ -254,7 +255,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         private fun save(
             content: String,
             charset: Charset,
-            path: String
+            path: String,
         ) {
             FileUtils.forceSave(path, content.toByteArray(charset))
         }
@@ -290,9 +291,14 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
 
         init {
             val bindings: Bindings = SimpleBindings()
-            bindings["tool"] = RuleToolUtils.INSTANCE
-            bindings["regex"] = RegexUtils.INSTANCE
+            bindings.set("tool", "T", RuleToolUtils)
+            bindings.set("regex", "RE", RegexUtils)
             toolBindings = bindings
+        }
+
+        fun Bindings.set(name: String, alias: String, value: Any) {
+            this[name] = value
+            this[alias] = value
         }
     }
 }

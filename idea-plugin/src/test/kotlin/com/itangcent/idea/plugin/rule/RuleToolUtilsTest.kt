@@ -16,380 +16,378 @@ import kotlin.test.assertTrue
  */
 internal class RuleToolUtilsTest {
 
-    private val ruleToolUtils = RuleToolUtils()
-
     @Test
     fun testIsNullOrEmpty() {
-        assertTrue(ruleToolUtils.isNullOrEmpty(null))
-        assertTrue(ruleToolUtils.isNullOrEmpty(""))
-        assertFalse(ruleToolUtils.isNullOrEmpty(" "))
-        assertFalse(ruleToolUtils.isNullOrEmpty("a"))
-        assertTrue(ruleToolUtils.isNullOrEmpty(emptyArray<String>()))
-        assertFalse(ruleToolUtils.isNullOrEmpty(arrayOf("a")))
-        assertTrue(ruleToolUtils.isNullOrEmpty(emptyList<String>()))
-        assertFalse(ruleToolUtils.isNullOrEmpty(listOf("a")))
-        assertTrue(ruleToolUtils.isNullOrEmpty(emptyMap<String, String>()))
-        assertFalse(ruleToolUtils.isNullOrEmpty(mapOf("a" to 1)))
-        assertFalse(ruleToolUtils.isNullOrEmpty(RuleToolUtilsTestPoint(1, 2, 3)))
+        assertTrue(RuleToolUtils.isNullOrEmpty(null))
+        assertTrue(RuleToolUtils.isNullOrEmpty(""))
+        assertFalse(RuleToolUtils.isNullOrEmpty(" "))
+        assertFalse(RuleToolUtils.isNullOrEmpty("a"))
+        assertTrue(RuleToolUtils.isNullOrEmpty(emptyArray<String>()))
+        assertFalse(RuleToolUtils.isNullOrEmpty(arrayOf("a")))
+        assertTrue(RuleToolUtils.isNullOrEmpty(emptyList<String>()))
+        assertFalse(RuleToolUtils.isNullOrEmpty(listOf("a")))
+        assertTrue(RuleToolUtils.isNullOrEmpty(emptyMap<String, String>()))
+        assertFalse(RuleToolUtils.isNullOrEmpty(mapOf("a" to 1)))
+        assertFalse(RuleToolUtils.isNullOrEmpty(RuleToolUtilsTestPoint(1, 2, 3)))
     }
 
     @Test
     fun testNotNullOrEmpty() {
-        assertFalse(ruleToolUtils.notNullOrEmpty(null))
-        assertFalse(ruleToolUtils.notNullOrEmpty(""))
-        assertTrue(ruleToolUtils.notNullOrEmpty(" "))
-        assertTrue(ruleToolUtils.notNullOrEmpty("a"))
-        assertFalse(ruleToolUtils.notNullOrEmpty(emptyArray<String>()))
-        assertTrue(ruleToolUtils.notNullOrEmpty(arrayOf("a")))
-        assertFalse(ruleToolUtils.notNullOrEmpty(emptyList<String>()))
-        assertTrue(ruleToolUtils.notNullOrEmpty(listOf("a")))
-        assertFalse(ruleToolUtils.notNullOrEmpty(emptyMap<String, String>()))
-        assertTrue(ruleToolUtils.notNullOrEmpty(mapOf("a" to 1)))
-        assertTrue(ruleToolUtils.notNullOrEmpty(RuleToolUtilsTestPoint(1, 2, 3)))
+        assertFalse(RuleToolUtils.notNullOrEmpty(null))
+        assertFalse(RuleToolUtils.notNullOrEmpty(""))
+        assertTrue(RuleToolUtils.notNullOrEmpty(" "))
+        assertTrue(RuleToolUtils.notNullOrEmpty("a"))
+        assertFalse(RuleToolUtils.notNullOrEmpty(emptyArray<String>()))
+        assertTrue(RuleToolUtils.notNullOrEmpty(arrayOf("a")))
+        assertFalse(RuleToolUtils.notNullOrEmpty(emptyList<String>()))
+        assertTrue(RuleToolUtils.notNullOrEmpty(listOf("a")))
+        assertFalse(RuleToolUtils.notNullOrEmpty(emptyMap<String, String>()))
+        assertTrue(RuleToolUtils.notNullOrEmpty(mapOf("a" to 1)))
+        assertTrue(RuleToolUtils.notNullOrEmpty(RuleToolUtilsTestPoint(1, 2, 3)))
     }
 
     @Test
     fun testAsArray() {
-        assertNull(ruleToolUtils.asArray(null))
-        assertArrayEquals(arrayOf(1), ruleToolUtils.asArray(1))
-        assertArrayEquals(arrayOf(1, 2), ruleToolUtils.asArray(arrayOf(1, 2)))
-        assertArrayEquals(arrayOf(1, 2), ruleToolUtils.asArray(listOf(1, 2)))
+        assertNull(RuleToolUtils.asArray(null))
+        assertArrayEquals(arrayOf(1), RuleToolUtils.asArray(1))
+        assertArrayEquals(arrayOf(1, 2), RuleToolUtils.asArray(arrayOf(1, 2)))
+        assertArrayEquals(arrayOf(1, 2), RuleToolUtils.asArray(listOf(1, 2)))
     }
 
     @Test
     fun testAsList() {
-        assertNull(ruleToolUtils.asList(null))
-        assertEquals(arrayListOf(1), ruleToolUtils.asList(1))
-        assertEquals(arrayListOf(1, 2), ruleToolUtils.asList(arrayOf(1, 2)))
-        assertEquals(arrayListOf(1, 2), ruleToolUtils.asList(setOf(1, 2)))
-        assertEquals(arrayListOf(1, 2), ruleToolUtils.asList(listOf(1, 2)))
+        assertNull(RuleToolUtils.asList(null))
+        assertEquals(arrayListOf(1), RuleToolUtils.asList(1))
+        assertEquals(arrayListOf(1, 2), RuleToolUtils.asList(arrayOf(1, 2)))
+        assertEquals(arrayListOf(1, 2), RuleToolUtils.asList(setOf(1, 2)))
+        assertEquals(arrayListOf(1, 2), RuleToolUtils.asList(listOf(1, 2)))
     }
 
     @Test
     fun testIntersect() {
-        assertNull(ruleToolUtils.intersect(null, null))
-        assertNull(ruleToolUtils.intersect(listOf(1, 2), null))
-        assertNull(ruleToolUtils.intersect(null, arrayOf(1, 2)))
-        assertArrayEquals(arrayOf(2, 3), ruleToolUtils.intersect(listOf(1, 2, 3), arrayOf(2, 3, 4)))
+        assertNull(RuleToolUtils.intersect(null, null))
+        assertNull(RuleToolUtils.intersect(listOf(1, 2), null))
+        assertNull(RuleToolUtils.intersect(null, arrayOf(1, 2)))
+        assertArrayEquals(arrayOf(2, 3), RuleToolUtils.intersect(listOf(1, 2, 3), arrayOf(2, 3, 4)))
     }
 
     @Test
     fun testAnyIntersect() {
-        assertFalse(ruleToolUtils.anyIntersect(null, null))
-        assertFalse(ruleToolUtils.anyIntersect(listOf(1, 2), null))
-        assertFalse(ruleToolUtils.anyIntersect(null, arrayOf(1, 2)))
-        assertTrue(ruleToolUtils.anyIntersect(listOf(1, 2, 3), arrayOf(2, 3, 4)))
+        assertFalse(RuleToolUtils.anyIntersect(null, null))
+        assertFalse(RuleToolUtils.anyIntersect(listOf(1, 2), null))
+        assertFalse(RuleToolUtils.anyIntersect(null, arrayOf(1, 2)))
+        assertTrue(RuleToolUtils.anyIntersect(listOf(1, 2, 3), arrayOf(2, 3, 4)))
     }
 
     @Test
     fun testEqualOrIntersect() {
-        assertTrue(ruleToolUtils.equalOrIntersect(null, null))
-        assertFalse(ruleToolUtils.equalOrIntersect(listOf(1, 2), null))
-        assertFalse(ruleToolUtils.equalOrIntersect(null, arrayOf(1, 2)))
-        assertTrue(ruleToolUtils.equalOrIntersect(listOf(1, 2, 3), arrayOf(2, 3, 4)))
+        assertTrue(RuleToolUtils.equalOrIntersect(null, null))
+        assertFalse(RuleToolUtils.equalOrIntersect(listOf(1, 2), null))
+        assertFalse(RuleToolUtils.equalOrIntersect(null, arrayOf(1, 2)))
+        assertTrue(RuleToolUtils.equalOrIntersect(listOf(1, 2, 3), arrayOf(2, 3, 4)))
     }
 
     @Test
     fun testNewSet() {
-        assertEquals(hashSetOf(1), ruleToolUtils.newSet(1))
-        assertEquals(hashSetOf(1, 2), ruleToolUtils.newSet(1, 2))
+        assertEquals(hashSetOf(1), RuleToolUtils.newSet(1))
+        assertEquals(hashSetOf(1, 2), RuleToolUtils.newSet(1, 2))
     }
 
     @Test
     fun testNewList() {
-        assertEquals(arrayListOf(1), ruleToolUtils.newList(1))
-        assertEquals(arrayListOf(1, 2), ruleToolUtils.newList(1, 2))
+        assertEquals(arrayListOf(1), RuleToolUtils.newList(1))
+        assertEquals(arrayListOf(1, 2), RuleToolUtils.newList(1, 2))
     }
 
     @Test
     fun testNewMap() {
-        assertEquals(LinkedHashMap<Any?, Any?>(), ruleToolUtils.newMap())
+        assertEquals(LinkedHashMap<Any?, Any?>(), RuleToolUtils.newMap())
     }
 
     @Test
     fun testParseJson() {
-        assertNull(ruleToolUtils.parseJson(null))
-        assertNull(ruleToolUtils.parseJson(""))
-        assertEquals(mapOf("a" to "b"), ruleToolUtils.parseJson("{\"a\": \"b\"}"))
+        assertNull(RuleToolUtils.parseJson(null))
+        assertNull(RuleToolUtils.parseJson(""))
+        assertEquals(mapOf("a" to "b"), RuleToolUtils.parseJson("{\"a\": \"b\"}"))
     }
 
     @Test
     fun testToJson() {
-        assertEquals(null, ruleToolUtils.toJson(null))
-        assertEquals("{\"a\":1}", ruleToolUtils.toJson(mapOf("a" to 1)))
+        assertEquals(null, RuleToolUtils.toJson(null))
+        assertEquals("{\"a\":1}", RuleToolUtils.toJson(mapOf("a" to 1)))
     }
 
     @Test
     fun testPrettyJson() {
-        assertEquals(null, ruleToolUtils.prettyJson(null))
-        assertEquals("{\n  \"a\": 1\n}", ruleToolUtils.prettyJson(mapOf("a" to 1)))
+        assertEquals(null, RuleToolUtils.prettyJson(null))
+        assertEquals("{\n  \"a\": 1\n}", RuleToolUtils.prettyJson(mapOf("a" to 1)))
     }
 
     @Test
     fun testNullOrEmpty() {
-        assertTrue(ruleToolUtils.nullOrEmpty(null))
-        assertTrue(ruleToolUtils.nullOrEmpty(""))
-        assertFalse(ruleToolUtils.nullOrEmpty(" "))
-        assertFalse(ruleToolUtils.nullOrEmpty("123"))
+        assertTrue(RuleToolUtils.nullOrEmpty(null))
+        assertTrue(RuleToolUtils.nullOrEmpty(""))
+        assertFalse(RuleToolUtils.nullOrEmpty(" "))
+        assertFalse(RuleToolUtils.nullOrEmpty("123"))
     }
 
     @Test
     fun testNullOrBlank() {
-        assertTrue(ruleToolUtils.nullOrBlank(null))
-        assertTrue(ruleToolUtils.nullOrBlank(""))
-        assertTrue(ruleToolUtils.nullOrBlank(" "))
-        assertFalse(ruleToolUtils.nullOrBlank("123"))
+        assertTrue(RuleToolUtils.nullOrBlank(null))
+        assertTrue(RuleToolUtils.nullOrBlank(""))
+        assertTrue(RuleToolUtils.nullOrBlank(" "))
+        assertFalse(RuleToolUtils.nullOrBlank("123"))
     }
 
     @Test
     fun testNotNullOrBlank() {
-        assertFalse(ruleToolUtils.notNullOrEmpty(null))
-        assertFalse(ruleToolUtils.notNullOrEmpty(""))
-        assertTrue(ruleToolUtils.notNullOrEmpty(" "))
-        assertTrue(ruleToolUtils.notNullOrEmpty("123"))
+        assertFalse(RuleToolUtils.notNullOrEmpty(null))
+        assertFalse(RuleToolUtils.notNullOrEmpty(""))
+        assertTrue(RuleToolUtils.notNullOrEmpty(" "))
+        assertTrue(RuleToolUtils.notNullOrEmpty("123"))
 
     }
 
     @Test
     fun testHeadLine() {
-        assertNull(ruleToolUtils.headLine(null))
-        assertEquals(null, ruleToolUtils.headLine(""))
-        assertEquals("str", ruleToolUtils.headLine("str"))
-        assertEquals("first", ruleToolUtils.headLine("first\nsecond"))
-        assertEquals("first", ruleToolUtils.headLine("\nfirst\nsecond"))
+        assertNull(RuleToolUtils.headLine(null))
+        assertEquals(null, RuleToolUtils.headLine(""))
+        assertEquals("str", RuleToolUtils.headLine("str"))
+        assertEquals("first", RuleToolUtils.headLine("first\nsecond"))
+        assertEquals("first", RuleToolUtils.headLine("\nfirst\nsecond"))
     }
 
     @Test
     fun testCapitalize() {
-        assertNull(ruleToolUtils.capitalize(null))
-        assertEquals("Abc", ruleToolUtils.capitalize("abc"))
-        assertEquals("ABC", ruleToolUtils.capitalize("ABC"))
+        assertNull(RuleToolUtils.capitalize(null))
+        assertEquals("Abc", RuleToolUtils.capitalize("abc"))
+        assertEquals("ABC", RuleToolUtils.capitalize("ABC"))
     }
 
     @Test
     fun testUncapitalize() {
-        assertNull(ruleToolUtils.uncapitalize(null))
-        assertEquals("abc", ruleToolUtils.uncapitalize("Abc"))
-        assertEquals("abc", ruleToolUtils.uncapitalize("abc"))
+        assertNull(RuleToolUtils.uncapitalize(null))
+        assertEquals("abc", RuleToolUtils.uncapitalize("Abc"))
+        assertEquals("abc", RuleToolUtils.uncapitalize("abc"))
     }
 
     @Test
     fun testSwapCase() {
-        assertNull(ruleToolUtils.swapCase(null))
-        assertEquals("ABC", ruleToolUtils.swapCase("abc"))
-        assertEquals("AbC", ruleToolUtils.swapCase("aBc"))
+        assertNull(RuleToolUtils.swapCase(null))
+        assertEquals("ABC", RuleToolUtils.swapCase("abc"))
+        assertEquals("AbC", RuleToolUtils.swapCase("aBc"))
     }
 
     @Test
     fun testUpperCase() {
-        assertNull(ruleToolUtils.upperCase(null))
-        assertEquals("ABC", ruleToolUtils.upperCase("abc"))
-        assertEquals("ABC", ruleToolUtils.upperCase("aBc"))
+        assertNull(RuleToolUtils.upperCase(null))
+        assertEquals("ABC", RuleToolUtils.upperCase("abc"))
+        assertEquals("ABC", RuleToolUtils.upperCase("aBc"))
     }
 
     @Test
     fun testLowerCase() {
-        assertNull(ruleToolUtils.lowerCase(null))
-        assertEquals("abc", ruleToolUtils.lowerCase("abc"))
-        assertEquals("abc", ruleToolUtils.lowerCase("aBc"))
+        assertNull(RuleToolUtils.lowerCase(null))
+        assertEquals("abc", RuleToolUtils.lowerCase("abc"))
+        assertEquals("abc", RuleToolUtils.lowerCase("aBc"))
     }
 
     @Test
     fun testReverse() {
-        assertNull(ruleToolUtils.reverse(null))
-        assertEquals("cba", ruleToolUtils.reverse("abc"))
-        assertEquals("cBa", ruleToolUtils.reverse("aBc"))
+        assertNull(RuleToolUtils.reverse(null))
+        assertEquals("cba", RuleToolUtils.reverse("abc"))
+        assertEquals("cBa", RuleToolUtils.reverse("aBc"))
     }
 
     @Test
     fun testRepeat() {
-        assertNull(ruleToolUtils.repeat(null, 10))
-        assertEquals("", ruleToolUtils.repeat("", 10))
-        assertEquals("abc", ruleToolUtils.repeat("abc", 1))
-        assertEquals("abcabc", ruleToolUtils.repeat("abc", 2))
-        assertEquals("abc,abc", ruleToolUtils.repeat("abc", ",", 2))
+        assertNull(RuleToolUtils.repeat(null, 10))
+        assertEquals("", RuleToolUtils.repeat("", 10))
+        assertEquals("abc", RuleToolUtils.repeat("abc", 1))
+        assertEquals("abcabc", RuleToolUtils.repeat("abc", 2))
+        assertEquals("abc,abc", RuleToolUtils.repeat("abc", ",", 2))
     }
 
     @Test
     fun testIsNumeric() {
-        assertFalse(ruleToolUtils.isNumeric(null))
-        assertFalse(ruleToolUtils.isNumeric(""))
-        assertFalse(ruleToolUtils.isNumeric("  "))
-        assertTrue(ruleToolUtils.isNumeric("123"))
-        assertTrue(ruleToolUtils.isNumeric("\u0967\u0968\u0969"))
-        assertFalse(ruleToolUtils.isNumeric("12 3"))
-        assertFalse(ruleToolUtils.isNumeric("ab2c"))
-        assertFalse(ruleToolUtils.isNumeric("12-3"))
-        assertFalse(ruleToolUtils.isNumeric("12.3"))
-        assertFalse(ruleToolUtils.isNumeric("-123"))
-        assertFalse(ruleToolUtils.isNumeric("+123"))
+        assertFalse(RuleToolUtils.isNumeric(null))
+        assertFalse(RuleToolUtils.isNumeric(""))
+        assertFalse(RuleToolUtils.isNumeric("  "))
+        assertTrue(RuleToolUtils.isNumeric("123"))
+        assertTrue(RuleToolUtils.isNumeric("\u0967\u0968\u0969"))
+        assertFalse(RuleToolUtils.isNumeric("12 3"))
+        assertFalse(RuleToolUtils.isNumeric("ab2c"))
+        assertFalse(RuleToolUtils.isNumeric("12-3"))
+        assertFalse(RuleToolUtils.isNumeric("12.3"))
+        assertFalse(RuleToolUtils.isNumeric("-123"))
+        assertFalse(RuleToolUtils.isNumeric("+123"))
     }
 
     @Test
     fun testIsAlpha() {
-        assertFalse(ruleToolUtils.isAlpha(null))
-        assertFalse(ruleToolUtils.isAlpha(""))
-        assertFalse(ruleToolUtils.isAlpha("  "))
-        assertTrue(ruleToolUtils.isAlpha("abc"))
-        assertFalse(ruleToolUtils.isAlpha("ab2c"))
-        assertFalse(ruleToolUtils.isAlpha("ab-c"))
+        assertFalse(RuleToolUtils.isAlpha(null))
+        assertFalse(RuleToolUtils.isAlpha(""))
+        assertFalse(RuleToolUtils.isAlpha("  "))
+        assertTrue(RuleToolUtils.isAlpha("abc"))
+        assertFalse(RuleToolUtils.isAlpha("ab2c"))
+        assertFalse(RuleToolUtils.isAlpha("ab-c"))
     }
 
     @Test
     fun testSubstringBefore() {
-        assertNull(ruleToolUtils.substringBefore(null, null))
-        assertEquals("abc", ruleToolUtils.substringBefore("abc", null))
-        assertNull(ruleToolUtils.substringBefore(null, "abc"))
-        assertEquals("", ruleToolUtils.substringBefore("abc", "abc"))
-        assertEquals("abcd", ruleToolUtils.substringBefore("abcdefg", "e"))
+        assertNull(RuleToolUtils.substringBefore(null, null))
+        assertEquals("abc", RuleToolUtils.substringBefore("abc", null))
+        assertNull(RuleToolUtils.substringBefore(null, "abc"))
+        assertEquals("", RuleToolUtils.substringBefore("abc", "abc"))
+        assertEquals("abcd", RuleToolUtils.substringBefore("abcdefg", "e"))
     }
 
     @Test
     fun testSubstringAfter() {
-        assertNull(ruleToolUtils.substringAfter(null, null))
-        assertEquals("", ruleToolUtils.substringAfter("abc", null))
-        assertNull(ruleToolUtils.substringAfter(null, "abc"))
-        assertEquals("", ruleToolUtils.substringAfter("abc", "abc"))
-        assertEquals("fg", ruleToolUtils.substringAfter("abcdefg", "e"))
+        assertNull(RuleToolUtils.substringAfter(null, null))
+        assertEquals("", RuleToolUtils.substringAfter("abc", null))
+        assertNull(RuleToolUtils.substringAfter(null, "abc"))
+        assertEquals("", RuleToolUtils.substringAfter("abc", "abc"))
+        assertEquals("fg", RuleToolUtils.substringAfter("abcdefg", "e"))
     }
 
     @Test
     fun testSubstringBeforeLast() {
-        assertNull(ruleToolUtils.substringBeforeLast(null, null))
-        assertEquals("abc", ruleToolUtils.substringBeforeLast("abc", null))
-        assertNull(ruleToolUtils.substringBeforeLast(null, "abc"))
-        assertEquals("", ruleToolUtils.substringBeforeLast("abc", "abc"))
-        assertEquals("abcd", ruleToolUtils.substringBeforeLast("abcdefg", "e"))
-        assertEquals("abcdefg", ruleToolUtils.substringBeforeLast("abcdefgefg", "e"))
+        assertNull(RuleToolUtils.substringBeforeLast(null, null))
+        assertEquals("abc", RuleToolUtils.substringBeforeLast("abc", null))
+        assertNull(RuleToolUtils.substringBeforeLast(null, "abc"))
+        assertEquals("", RuleToolUtils.substringBeforeLast("abc", "abc"))
+        assertEquals("abcd", RuleToolUtils.substringBeforeLast("abcdefg", "e"))
+        assertEquals("abcdefg", RuleToolUtils.substringBeforeLast("abcdefgefg", "e"))
     }
 
     @Test
     fun testSubstringAfterLast() {
-        assertNull(ruleToolUtils.substringAfterLast(null, null))
-        assertEquals("", ruleToolUtils.substringAfterLast("abc", null))
-        assertNull(ruleToolUtils.substringAfterLast(null, "abc"))
-        assertEquals("", ruleToolUtils.substringAfterLast("abc", "abc"))
-        assertEquals("fg", ruleToolUtils.substringAfterLast("abcdefg", "e"))
-        assertEquals("fg", ruleToolUtils.substringAfterLast("abcdefgefg", "e"))
+        assertNull(RuleToolUtils.substringAfterLast(null, null))
+        assertEquals("", RuleToolUtils.substringAfterLast("abc", null))
+        assertNull(RuleToolUtils.substringAfterLast(null, "abc"))
+        assertEquals("", RuleToolUtils.substringAfterLast("abc", "abc"))
+        assertEquals("fg", RuleToolUtils.substringAfterLast("abcdefg", "e"))
+        assertEquals("fg", RuleToolUtils.substringAfterLast("abcdefgefg", "e"))
     }
 
     @Test
     fun testSubstringBetween() {
-        assertNull(ruleToolUtils.substringBetween(null, null))
-        assertNull(ruleToolUtils.substringBetween("abccba", null))
-        assertNull(ruleToolUtils.substringBetween(null, "abccba"))
-        assertNull(ruleToolUtils.substringBetween(null, null, null))
-        assertNull(ruleToolUtils.substringBetween("abccba", null, null))
-        assertNull(ruleToolUtils.substringBetween(null, "abc", "abc"))
-        assertEquals("bccb", ruleToolUtils.substringBetween("abccbad", "a"))
-        assertEquals("cc", ruleToolUtils.substringBetween("abccbad", "b"))
-        assertEquals("", ruleToolUtils.substringBetween("abccbad", "c"))
-        assertEquals(null, ruleToolUtils.substringBetween("abccbad", "d"))
-        assertEquals("ccb", ruleToolUtils.substringBetween("abccbad", "ab", "ad"))
+        assertNull(RuleToolUtils.substringBetween(null, null))
+        assertNull(RuleToolUtils.substringBetween("abccba", null))
+        assertNull(RuleToolUtils.substringBetween(null, "abccba"))
+        assertNull(RuleToolUtils.substringBetween(null, null, null))
+        assertNull(RuleToolUtils.substringBetween("abccba", null, null))
+        assertNull(RuleToolUtils.substringBetween(null, "abc", "abc"))
+        assertEquals("bccb", RuleToolUtils.substringBetween("abccbad", "a"))
+        assertEquals("cc", RuleToolUtils.substringBetween("abccbad", "b"))
+        assertEquals("", RuleToolUtils.substringBetween("abccbad", "c"))
+        assertEquals(null, RuleToolUtils.substringBetween("abccbad", "d"))
+        assertEquals("ccb", RuleToolUtils.substringBetween("abccbad", "ab", "ad"))
     }
 
     @Test
     fun testSubstringsBetween() {
-        assertNull(ruleToolUtils.substringsBetween(null, null, null))
-        assertNull(ruleToolUtils.substringsBetween("abccba", null, null))
-        assertNull(ruleToolUtils.substringsBetween(null, "abccba", "abccba"))
-        assertArrayEquals(arrayOf("cc", "cca"), ruleToolUtils.substringsBetween("abccdabccaddbadb", "ab", "d"))
+        assertNull(RuleToolUtils.substringsBetween(null, null, null))
+        assertNull(RuleToolUtils.substringsBetween("abccba", null, null))
+        assertNull(RuleToolUtils.substringsBetween(null, "abccba", "abccba"))
+        assertArrayEquals(arrayOf("cc", "cca"), RuleToolUtils.substringsBetween("abccdabccaddbadb", "ab", "d"))
     }
 
     @Test
     fun testSplit() {
-        assertNull(ruleToolUtils.split(null))
-        assertArrayEquals(emptyArray(), ruleToolUtils.split(""))
-        assertArrayEquals(arrayOf("abc"), ruleToolUtils.split("abc"))
-        assertArrayEquals(arrayOf("abc", "def"), ruleToolUtils.split("abc\ndef"))
-        assertArrayEquals(arrayOf("abc\nd", "ff", "d\ncba"), ruleToolUtils.split("abc\ndeffed\ncba", "e"))
+        assertNull(RuleToolUtils.split(null))
+        assertArrayEquals(emptyArray(), RuleToolUtils.split(""))
+        assertArrayEquals(arrayOf("abc"), RuleToolUtils.split("abc"))
+        assertArrayEquals(arrayOf("abc", "def"), RuleToolUtils.split("abc\ndef"))
+        assertArrayEquals(arrayOf("abc\nd", "ff", "d\ncba"), RuleToolUtils.split("abc\ndeffed\ncba", "e"))
     }
 
     @Test
     fun testToCamelCase() {
-        assertNull(ruleToolUtils.toCamelCase(null, true))
-        assertEquals("", ruleToolUtils.toCamelCase("", true))
-        assertEquals(null, ruleToolUtils.toCamelCase(null, false))
-        assertEquals("", ruleToolUtils.toCamelCase("", false, '*'))
-        assertEquals("*", ruleToolUtils.toCamelCase("*", false))
-        assertEquals("*", ruleToolUtils.toCamelCase("*", true))
-        assertEquals("toCamelCase", ruleToolUtils.toCamelCase("To.Camel.Case", false, '.'))
-        assertEquals("ToCamelCase", ruleToolUtils.toCamelCase(" to @ Camel case", true, '@'))
-        assertEquals("toCamelCase", ruleToolUtils.toCamelCase(" @to @ Camel case", false, '@'))
+        assertNull(RuleToolUtils.toCamelCase(null, true))
+        assertEquals("", RuleToolUtils.toCamelCase("", true))
+        assertEquals(null, RuleToolUtils.toCamelCase(null, false))
+        assertEquals("", RuleToolUtils.toCamelCase("", false, '*'))
+        assertEquals("*", RuleToolUtils.toCamelCase("*", false))
+        assertEquals("*", RuleToolUtils.toCamelCase("*", true))
+        assertEquals("toCamelCase", RuleToolUtils.toCamelCase("To.Camel.Case", false, '.'))
+        assertEquals("ToCamelCase", RuleToolUtils.toCamelCase(" to @ Camel case", true, '@'))
+        assertEquals("toCamelCase", RuleToolUtils.toCamelCase(" @to @ Camel case", false, '@'))
     }
 
     @Test
     fun testCamel2Underline() {
-        assertNull(ruleToolUtils.camel2Underline(null))
-        assertEquals("", ruleToolUtils.camel2Underline(""))
-        assertEquals("abcdefg", ruleToolUtils.camel2Underline("abcdefg"))
-        assertEquals("ab_cde_fg", ruleToolUtils.camel2Underline("abCdeFg"))
-        assertEquals("ab_cde_fg", ruleToolUtils.camel2Underline("AbCdeFg"))
+        assertNull(RuleToolUtils.camel2Underline(null))
+        assertEquals("", RuleToolUtils.camel2Underline(""))
+        assertEquals("abcdefg", RuleToolUtils.camel2Underline("abcdefg"))
+        assertEquals("ab_cde_fg", RuleToolUtils.camel2Underline("abCdeFg"))
+        assertEquals("ab_cde_fg", RuleToolUtils.camel2Underline("AbCdeFg"))
     }
 
     @Test
     fun testRemovePrefix() {
-        assertNull(ruleToolUtils.removePrefix(null, null))
-        assertNull(ruleToolUtils.removePrefix("abc", null))
-        assertNull(ruleToolUtils.removePrefix(null, "abc"))
-        assertEquals("", ruleToolUtils.removePrefix("abc", "abc"))
-        assertEquals("abc", ruleToolUtils.removePrefix("abc", "def"))
-        assertEquals("def", ruleToolUtils.removePrefix("abcdef", "abc"))
+        assertNull(RuleToolUtils.removePrefix(null, null))
+        assertNull(RuleToolUtils.removePrefix("abc", null))
+        assertNull(RuleToolUtils.removePrefix(null, "abc"))
+        assertEquals("", RuleToolUtils.removePrefix("abc", "abc"))
+        assertEquals("abc", RuleToolUtils.removePrefix("abc", "def"))
+        assertEquals("def", RuleToolUtils.removePrefix("abcdef", "abc"))
     }
 
     @Test
     fun testRemoveSuffix() {
-        assertNull(ruleToolUtils.removeSuffix(null, null))
-        assertNull(ruleToolUtils.removeSuffix("abc", null))
-        assertNull(ruleToolUtils.removeSuffix(null, "abc"))
-        assertEquals("", ruleToolUtils.removeSuffix("abc", "abc"))
-        assertEquals("abc", ruleToolUtils.removeSuffix("abc", "def"))
-        assertEquals("abc", ruleToolUtils.removeSuffix("abcdef", "def"))
+        assertNull(RuleToolUtils.removeSuffix(null, null))
+        assertNull(RuleToolUtils.removeSuffix("abc", null))
+        assertNull(RuleToolUtils.removeSuffix(null, "abc"))
+        assertEquals("", RuleToolUtils.removeSuffix("abc", "abc"))
+        assertEquals("abc", RuleToolUtils.removeSuffix("abc", "def"))
+        assertEquals("abc", RuleToolUtils.removeSuffix("abcdef", "def"))
     }
 
     @Test
     fun testResolveProperty() {
-        assertNull(ruleToolUtils.resolveProperty(null, null, null))
+        assertNull(RuleToolUtils.resolveProperty(null, null, null))
         assertEquals(
             ",\${y}",
-            ruleToolUtils.resolveProperty("#{x},\${y}", "#", emptyMap<Any?, Any?>())
+            RuleToolUtils.resolveProperty("#{x},\${y}", "#", emptyMap<Any?, Any?>())
         )
         assertEquals(
-            "111,\${y}", ruleToolUtils.resolveProperty("#{x},\${y}", "#", mapOf("x" to 111))
+            "111,\${y}", RuleToolUtils.resolveProperty("#{x},\${y}", "#", mapOf("x" to 111))
         )
         assertEquals(
-            "111,\${y}", ruleToolUtils.resolveProperty("#{x},\${y}", "#", mapOf("x" to 111, "y" to 222))
+            "111,\${y}", RuleToolUtils.resolveProperty("#{x},\${y}", "#", mapOf("x" to 111, "y" to 222))
         )
         assertEquals(
             ",",
-            ruleToolUtils.resolveProperty("#{x},\${y}", "#$", emptyMap<Any?, Any?>())
+            RuleToolUtils.resolveProperty("#{x},\${y}", "#$", emptyMap<Any?, Any?>())
         )
         assertEquals(
-            "111,", ruleToolUtils.resolveProperty("#{x},\${y}", "#$", mapOf("x" to 111))
+            "111,", RuleToolUtils.resolveProperty("#{x},\${y}", "#$", mapOf("x" to 111))
         )
         assertEquals(
-            "111,222", ruleToolUtils.resolveProperty("#{x},\${y}", "#$", mapOf("x" to 111, "y" to 222))
+            "111,222", RuleToolUtils.resolveProperty("#{x},\${y}", "#$", mapOf("x" to 111, "y" to 222))
         )
     }
 
     @Test
     fun testNow() {
         assertTrue(
-            Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d").matcher(ruleToolUtils.now()).matches()
+            Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d").matcher(RuleToolUtils.now()).matches()
         )
-        assertTrue(Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d").matcher(ruleToolUtils.now("yyyy-MM-dd")).matches())
+        assertTrue(Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d").matcher(RuleToolUtils.now("yyyy-MM-dd")).matches())
 
     }
 
     @Test
     fun testToday() {
-        assertTrue(Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d").matcher(ruleToolUtils.today()).matches())
+        assertTrue(Pattern.compile("\\d\\d\\d\\d-\\d\\d-\\d\\d").matcher(RuleToolUtils.today()).matches())
     }
 
     @Test
     fun testFormat() {
         val date = DateUtils.parse("2020-01-01")
-        assertEquals("2020-01-01 02:23:20", ruleToolUtils.format(date.time + 8600000, "yyyy-MM-dd HH:mm:ss"))
+        assertEquals("2020-01-01 02:23:20", RuleToolUtils.format(date.time + 8600000, "yyyy-MM-dd HH:mm:ss"))
     }
 
     @Test
@@ -445,21 +443,21 @@ internal class RuleToolUtilsTest {
                     "string today()\n" +
                     "string traversal(object)\n" +
                     "string uncapitalize(string)\n" +
-                    "string upperCase(string)\n", ruleToolUtils.debug(ruleToolUtils)
+                    "string upperCase(string)\n", RuleToolUtils.debug(RuleToolUtils)
         )
     }
 
     @Test
     fun testTraversal() {
-        assertEquals("null", ruleToolUtils.traversal(null))
-        assertEquals("unable traversal abc", ruleToolUtils.traversal("abc"))
+        assertEquals("null", RuleToolUtils.traversal(null))
+        assertEquals("unable traversal abc", RuleToolUtils.traversal("abc"))
     }
 
     @Test
     fun testCopy2Clipboard() {
         assertDoesNotThrow {
             try {
-                ruleToolUtils.copy2Clipboard("abc")
+                RuleToolUtils.copy2Clipboard("abc")
             } catch (e: HeadlessException) {
                 //ignore HeadlessException
             }

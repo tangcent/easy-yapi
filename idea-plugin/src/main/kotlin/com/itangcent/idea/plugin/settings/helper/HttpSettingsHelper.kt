@@ -108,7 +108,7 @@ class HttpSettingsHelper {
         val HOST_RESOLVERS: Array<(String) -> String?> = arrayOf({
             if (it.startsWith("https://raw.githubusercontent.com")) {
                 val url = if (it.endsWith("/")) it else "$it/"
-                return@arrayOf RegexUtils.INSTANCE.extract("https://raw.githubusercontent.com/(.*?)/.*",
+                return@arrayOf RegexUtils.extract("https://raw.githubusercontent.com/(.*?)/.*",
                         url, "https://raw.githubusercontent.com/$1")
             }
             return@arrayOf null
