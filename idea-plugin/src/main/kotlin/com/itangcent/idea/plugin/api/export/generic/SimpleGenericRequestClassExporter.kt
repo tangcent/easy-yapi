@@ -97,7 +97,7 @@ open class SimpleGenericRequestClassExporter : ClassExporter {
 
     private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, docHandle: DocHandle) {
 
-        actionContext!!.checkStatus()
+        actionContext.checkStatus()
         if (!isApi(method)) {
             return
         }

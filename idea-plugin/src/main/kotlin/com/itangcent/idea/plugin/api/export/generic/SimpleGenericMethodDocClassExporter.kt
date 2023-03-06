@@ -7,6 +7,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.utils.KV
+import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
@@ -32,6 +33,9 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
 
     @Inject
     protected val jvmClassHelper: JvmClassHelper? = null
+
+    @Inject
+    protected lateinit var classApiExporterHelper: ClassApiExporterHelper
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == MethodDoc::class
@@ -67,10 +71,12 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
                 !hasApi(cls) -> {
                     return false
                 }
+
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class: $clsQualifiedName")
                     return true
                 }
+
                 else -> {
                     logger!!.info("search api from: $clsQualifiedName")
 
@@ -78,7 +84,7 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
 
                     processClass(cls, kv)
 
-                    foreachMethod(cls) { method ->
+                    classApiExporterHelper.foreachPsiMethod(cls) { method ->
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
                             exportMethodApi(cls, method, kv, docHandle)
                         }
@@ -143,14 +149,5 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
 
     protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, methodDoc: MethodDoc) {
         methodDoc.name = apiHelper!!.nameOfApi(method)
-    }
-
-    private fun foreachMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
-        jvmClassHelper!!.getAllMethods(cls)
-            .filter { !jvmClassHelper.isBasicMethod(it.name) }
-            .filter { !it.hasModifierProperty("static") }
-            .filter { !it.isConstructor }
-            .filter { !shouldIgnore(it) }
-            .forEach(handle)
     }
 }

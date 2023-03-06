@@ -2,23 +2,23 @@ package com.itangcent.idea.plugin.api
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.intellij.psi.*
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiType
 import com.itangcent.common.logger.Log
 import com.itangcent.common.model.Doc
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.notNullOrBlank
-import com.itangcent.common.utils.notNullOrEmpty
-import com.itangcent.common.utils.stream
+import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.LinkResolver
 import com.itangcent.idea.swing.MessagesHelper
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.jvm.*
-import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.SelectedHelper
@@ -63,6 +63,9 @@ open class ClassApiExporterHelper {
 
     @Inject
     protected lateinit var messagesHelper: MessagesHelper
+
+    @Inject
+    private lateinit var configReader: ConfigReader
 
     companion object : Log()
 
@@ -138,9 +141,6 @@ open class ClassApiExporterHelper {
             val methods = duckTypeHelper!!.explicit(cls)
                 .methods()
                 .stream()
-                .filter { !jvmClassHelper!!.isBasicMethod(it.psi().name) }
-                .filter { !it.psi().hasModifierProperty("static") }
-                .filter { !it.psi().isConstructor }
                 .filter { !shouldIgnore(it) }
                 .toList()
             actionContext.runAsync {
@@ -160,21 +160,30 @@ open class ClassApiExporterHelper {
         }
     }
 
-    protected open fun shouldIgnore(explicitElement: ExplicitElement<*>): Boolean {
+    protected open fun shouldIgnore(explicitElement: ExplicitMethod): Boolean {
+        if (ignoreIrregularApiMethod() && (jvmClassHelper!!.isBasicMethod(explicitElement.psi().name)
+                    || explicitElement.psi().hasModifierProperty("static")
+                    || explicitElement.psi().isConstructor)
+        ) {
+            return true
+        }
         return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, explicitElement) ?: false
     }
 
-    protected open fun shouldIgnore(psiElement: PsiElement): Boolean {
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiElement) ?: false
+    protected open fun shouldIgnore(psiMethod: PsiMethod): Boolean {
+        if (ignoreIrregularApiMethod() && (jvmClassHelper!!.isBasicMethod(psiMethod.name)
+                    || psiMethod.hasModifierProperty("static")
+                    || psiMethod.isConstructor)
+        ) {
+            return true
+        }
+        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiMethod) ?: false
     }
 
     fun foreachPsiMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         actionContext.runInReadUI {
             jvmClassHelper!!.getAllMethods(cls)
                 .stream()
-                .filter { !jvmClassHelper.isBasicMethod(it.name) }
-                .filter { !it.hasModifierProperty("static") }
-                .filter { !it.isConstructor }
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
         }
@@ -239,5 +248,9 @@ open class ClassApiExporterHelper {
                 LOG.info("api parse $classQualifiedName completed.")
             }
         }
+    }
+
+    private fun ignoreIrregularApiMethod(): Boolean {
+        return (configReader.first("ignore_irregular_api_method")?.toBool() != false)
     }
 }

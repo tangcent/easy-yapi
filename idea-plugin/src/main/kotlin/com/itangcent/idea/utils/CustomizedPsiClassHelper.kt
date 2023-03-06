@@ -120,7 +120,7 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     }
 
     override fun ignoreField(psiField: PsiField): Boolean {
-        if (configReader.first("ignore_static_and_final")?.asBool() == false) {
+        if (configReader.first("ignore_static_and_final_field")?.asBool() == false) {
             return false
         }
         return super.ignoreField(psiField)
