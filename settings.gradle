@@ -1,6 +1,0 @@
-rootProject.name = 'easy-yapi'
-include 'idea-plugin'
-include 'common-api'
-include 'plugin-adapter:plugin-adapter-markdown'
-findProject(':plugin-adapter:plugin-adapter-markdown')?.name = 'plugin-adapter-markdown'
-

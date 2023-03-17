@@ -17,7 +17,6 @@ import kotlin.test.assertSame
  */
 internal class ReservedResponseHandleTest {
 
-    @Suppress("TYPE_INFERENCE_ONLY_INPUT_TYPES_WARNING")
     @Test
     fun testHandleResponse() {
         val httpResponse = Mockito.mock(HttpResponse::class.java)
@@ -34,7 +33,7 @@ internal class ReservedResponseHandleTest {
         val stringResponseHandler = StringResponseHandler()
         val reservedResponseHandle = stringResponseHandler.reserved()
         assertSame(reservedResponseHandle, stringResponseHandler.reserved())
-        assertSame(reservedResponseHandle, reservedResponseHandle.reserved())
+        assertSame<Any>(reservedResponseHandle, reservedResponseHandle.reserved())
         val reservedResult = reservedResponseHandle.handleResponse(httpResponse)
         assertEquals("hello world", reservedResult.result())
         assertEquals("hello world", reservedResult.result())//again
