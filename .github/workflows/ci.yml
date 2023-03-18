@@ -20,9 +20,9 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v1
         with:
-          java-version: 1.8
+          java-version: 11
       - name: test
-        run: ./gradlew clean test --stacktrace
+        run: ./gradlew test --stacktrace
 
       - name: package plugin
         run: ./plugin-script/package_plugin.sh

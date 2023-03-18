@@ -45,3 +45,5 @@ src/main/resources/META-INF/services/com.itangcent.common.spi.SetupAble
 out/
 
 plugin-adapter/plugin-adapter-markdown/build/
+gradle/wrapper/caches
+gradle/wrapper/daemon

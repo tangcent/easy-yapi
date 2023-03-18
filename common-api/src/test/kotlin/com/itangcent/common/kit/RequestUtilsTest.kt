@@ -3,13 +3,12 @@ package com.itangcent.common.kit
 import com.itangcent.common.utils.asArrayList
 import com.itangcent.common.utils.asHashMap
 import com.itangcent.http.RequestUtils
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import java.util.*
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 /**
  * Test case for [KitUtils]
@@ -73,7 +72,7 @@ class RequestUtilsTest {
     )
     fun testConcatPathToA(
         pre: String?,
-        after: String?
+        after: String?,
     ) {
         assertEquals("a", RequestUtils.concatPath(pre, after))
     }
