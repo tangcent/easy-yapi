@@ -21,6 +21,8 @@ cd $scriptDir
 cd ${basedir}
 echo "switch to"`pwd`
 
+./gradlew clean
+
 git add .
 version=`cat ${basedir}/gradle.properties | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
 echo "version:${version}"

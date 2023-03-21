@@ -11,10 +11,8 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.ConstantModuleHelper
 import com.itangcent.mock.EmptyMessagesHelper
 import com.itangcent.mock.SettingBinderAdaptor
-import org.junit.jupiter.api.condition.DisabledOnJre
 
 
-@DisabledOnJre
 abstract class PluginContextLightCodeInsightFixtureTestCase : ContextLightCodeInsightFixtureTestCase() {
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {

@@ -13,16 +13,20 @@ public class UserInfo {
     private Long id = 0;//user id
 
     /**
+     * user type
+     *
      * @see com.itangcent.constant.UserType
      */
-    private int type;//user type
+    private int type;
 
     /**
+     * user name
+     *
      * @default tangcent
      * @mock tangcent
      */
     @NotBlank
-    private String name;//user name
+    private String name;
 
     /**
      * user age
@@ -38,10 +42,14 @@ public class UserInfo {
      */
     private Integer sex;
 
-    //user birthDay
+    /**
+     * user birthDay
+     */
     private LocalDate birthDay;
 
-    //user regtime
+    /**
+     * user regtime
+     */
     private LocalDateTime regtime;
 
     public Long getId() {
