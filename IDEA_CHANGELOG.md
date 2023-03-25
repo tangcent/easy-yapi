@@ -1,3 +1,9 @@
+* 2.5.5
+
+	* build: use Kotlin DSL script build project [(#933)](https://github.com/tangcent/easy-yapi/pull/933)
+
+	* feat: support config ignore_irregular_api_method [(#929)](https://github.com/tangcent/easy-yapi/pull/929)
+
 * 2.5.4
 
 	* feat: provide aliases for several rule tools [(#925)](https://github.com/tangcent/easy-yapi/pull/925)

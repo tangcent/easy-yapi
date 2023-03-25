@@ -17,6 +17,22 @@ dependencies {
     implementation(project(":plugin-adapter:plugin-adapter-markdown"))
 
 
+    implementation("com.itangcent:commons:${properties["itangcent_intellij_version"]}") {
+        exclude("com.google.inject")
+        exclude("com.google.code.gson")
+    }
+
+
+    implementation("com.itangcent:guice-action:${properties["itangcent_intellij_version"]}") {
+        exclude("com.google.inject")
+        exclude("com.google.code.gson")
+    }
+
+    implementation("com.itangcent:intellij-jvm:${properties["itangcent_intellij_version"]}") {
+        exclude("com.google.inject")
+        exclude("com.google.code.gson")
+    }
+
     implementation("com.itangcent:intellij-idea:${properties["itangcent_intellij_version"]}") {
         exclude("com.google.inject")
         exclude("com.google.code.gson")
@@ -53,9 +69,6 @@ dependencies {
     // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
     implementation("org.xerial:sqlite-jdbc:3.34.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${properties["junit_version"]}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${properties["junit_version"]}")
-
     // https://search.maven.org/artifact/org.mockito.kotlin/mockito-kotlin/3.2.0/jar
     testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
 
@@ -63,6 +76,14 @@ dependencies {
     testImplementation("org.mockito:mockito-inline:3.11.0")
 
     testImplementation("com.itangcent:intellij-idea-test:${properties["itangcent_intellij_version"]}")
+
+    testImplementation("org.jetbrains.kotlin:kotlin-test")
+
+    testImplementation("org.junit.jupiter:junit-jupiter-params:${properties["junit_version"]}")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${properties["junit_version"]}")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${properties["junit_version"]}")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.7.1")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.8.0")
 }
 
 tasks.getByName<Test>("test") {
