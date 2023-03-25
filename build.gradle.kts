@@ -73,7 +73,7 @@ val patchUpdate by tasks.registering(Task::class) {
         val majorVersion = majorVersion(version.toString())
         println("current version:$majorVersion")
         val nextVersion = nextVersion(version.toString())
-        val nextVersionFull = "$nextVersion.191.0"
+        val nextVersionFull = "$nextVersion.212.0"
         println("next version:$nextVersion")
 
         val commitsFile = File("plugin-script/commits.txt")
@@ -114,7 +114,7 @@ val patchUpdate by tasks.registering(Task::class) {
         pluginChangesFile.createNewFile()
         pluginChangesFile.outputStream().use {
             it.write(
-                "<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${nextVersion}\">v${nextVersion}.191.0(${
+                "<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${nextVersion}\">v${nextVersion}.212.0(${
                     SimpleDateFormat("yyyy-MM-dd").format(Date())
                 })</a>\n".encodeToByteArray()
             )
