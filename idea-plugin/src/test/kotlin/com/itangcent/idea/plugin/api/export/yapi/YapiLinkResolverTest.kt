@@ -41,23 +41,23 @@ internal class YapiLinkResolverTest : PluginContextLightCodeInsightFixtureTestCa
     }
 
     fun testLinkToClass() {
-        Assert.assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/cat_2345\">apis about user</a>]", linkResolver.linkToClass(userCtrlPsiClass))
-        Assert.assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/cat_2345\">test apis</a>]", linkResolver.linkToClass(testCtrlPsiClass))
-        Assert.assertEquals("[PsiMethod:greeting]", linkResolver.linkToClass(userCtrlPsiClass.methods[0]))
-        Assert.assertEquals("[PsiField:id]", linkResolver.linkToClass(userInfoPsiClass.fields[0]))
+        assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/cat_2345\">apis about user</a>]", linkResolver.linkToClass(userCtrlPsiClass))
+        assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/cat_2345\">test apis</a>]", linkResolver.linkToClass(testCtrlPsiClass))
+        assertEquals("[PsiMethod:greeting]", linkResolver.linkToClass(userCtrlPsiClass.methods[0]))
+        assertEquals("[PsiField:id]", linkResolver.linkToClass(userInfoPsiClass.fields[0]))
     }
 
     fun testLinkToMethod() {
-        Assert.assertEquals("[PsiClass:UserCtrl]", linkResolver.linkToMethod(userCtrlPsiClass))
-        Assert.assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/1234\">say hello</a>]", linkResolver.linkToMethod(userCtrlPsiClass.methods[0]))
-        Assert.assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/1234\">get user info</a>]", linkResolver.linkToMethod(userCtrlPsiClass.methods[1]))
-        Assert.assertEquals("[PsiField:id]", linkResolver.linkToMethod(userInfoPsiClass.fields[0]))
+        assertEquals("[PsiClass:UserCtrl]", linkResolver.linkToMethod(userCtrlPsiClass))
+        assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/1234\">say hello</a>]", linkResolver.linkToMethod(userCtrlPsiClass.methods[0]))
+        assertEquals("[<a href=\"http://yapi.itangcent.com/project/123/interface/api/1234\">get user info</a>]", linkResolver.linkToMethod(userCtrlPsiClass.methods[1]))
+        assertEquals("[PsiField:id]", linkResolver.linkToMethod(userInfoPsiClass.fields[0]))
     }
 
     fun testLinkToProperty() {
-        Assert.assertEquals("[PsiClass:UserCtrl]", linkResolver.linkToProperty(userCtrlPsiClass))
-        Assert.assertEquals("[PsiMethod:greeting]", linkResolver.linkToProperty(userCtrlPsiClass.methods[0]))
-        Assert.assertEquals("[user id]", linkResolver.linkToProperty(userInfoPsiClass.fields[0]))
+        assertEquals("[PsiClass:UserCtrl]", linkResolver.linkToProperty(userCtrlPsiClass))
+        assertEquals("[PsiMethod:greeting]", linkResolver.linkToProperty(userCtrlPsiClass.methods[0]))
+        assertEquals("[user id]", linkResolver.linkToProperty(userInfoPsiClass.fields[0]))
     }
 
 }

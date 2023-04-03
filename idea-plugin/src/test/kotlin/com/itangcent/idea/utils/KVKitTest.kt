@@ -2,7 +2,8 @@ package com.itangcent.idea.utils
 
 import com.itangcent.common.utils.KV
 import com.itangcent.intellij.util.*
-import org.junit.Assert.*
+import org.junit.*
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.function.BiConsumer
 
@@ -73,25 +74,28 @@ class KVKitTest {
     fun testFlatValid() {
 
         val sb = StringBuilder()
-        mapOf<Any?, Any?>("a" to "A",
-                null to mapOf("x" to 1, "y" to null),
-                "map" to mapOf("e" to 2, "l" to listOf("a"), "arr" to arrayOf("arr1")),
-                "list" to listOf("e", mapOf("a" to "b")),
-                listOf("a") to "y",
-                mapOf("a" to "b") to "z"
+        mapOf<Any?, Any?>(
+            "a" to "A",
+            null to mapOf("x" to 1, "y" to null),
+            "map" to mapOf("e" to 2, "l" to listOf("a"), "arr" to arrayOf("arr1")),
+            "list" to listOf("e", mapOf("a" to "b")),
+            listOf("a") to "y",
+            mapOf("a" to "b") to "z"
         ).flatValid(object : FieldConsumer {
             override fun consume(parent: Map<*, *>?, path: String, key: String, value: Any?) {
                 sb.append("$path $key $value\n")
             }
         })
-        assertEquals("a a A\n" +
-                "map.e e 2\n" +
-                "map.l[0] l a\n" +
-                "map.arr[0] arr arr1\n" +
-                "list[0] list e\n" +
-                "list[1].a a b\n" +
-                "[\"a\"] [\"a\"] y\n" +
-                "{\"a\":\"b\"} {\"a\":\"b\"} z\n", sb.toString())
+        assertEquals(
+            "a a A\n" +
+                    "map.e e 2\n" +
+                    "map.l[0] l a\n" +
+                    "map.arr[0] arr arr1\n" +
+                    "list[0] list e\n" +
+                    "list[1].a a b\n" +
+                    "[\"a\"] [\"a\"] y\n" +
+                    "{\"a\":\"b\"} {\"a\":\"b\"} z\n", sb.toString()
+        )
     }
 
 

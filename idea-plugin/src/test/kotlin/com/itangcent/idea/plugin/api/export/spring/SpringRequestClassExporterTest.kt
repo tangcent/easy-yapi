@@ -650,7 +650,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         requests[1].let { request ->
             assertEquals("A default api", request.name)
             assertEquals("user/default", request.path!!.url())
-            Assert.assertEquals("It is not necessary to implement it", request.desc)
+            assertEquals("It is not necessary to implement it", request.desc)
             assertEquals("POST", request.method)
             assertEquals(iuserApiPsiClass.methods[1], (request.resource as PsiResource).resource())
         }

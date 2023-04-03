@@ -6,13 +6,12 @@ import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.plugin.api.export.core.ReservedResponseHandle
-import com.itangcent.idea.plugin.api.export.core.StringResponseHandler
-import com.itangcent.idea.plugin.api.export.core.reserved
+import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
+import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
@@ -136,7 +135,56 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
 
     override fun getProjectInfo(token: String): JsonObject? {
         val projectId = getProjectIdByToken(token) ?: return null
-        return getProjectInfo(token, projectId) as? JsonObject ?: return null
+        return getProjectInfo(token, projectId)
+    }
+
+    override fun copyApi(from: Map<String, String>, target: Map<String, String>) {
+        val fromToken = from["token"] ?: throw IllegalArgumentException("no token be found in from")
+        val targetToken = target["token"] ?: throw IllegalArgumentException("no token be found in target")
+        val targetCatId = target["catId"]
+        listApis(from) { api ->
+            val copyApi = HashMap(api)
+            copyApi.remove("_id")
+            if (targetCatId == null) {
+                val fromCatId = api["catid"]!!
+                val fromCartInfo = findCartById(fromToken, fromCatId.toString()) ?: return@listApis
+                val cartName = fromCartInfo["name"] ?: return@listApis
+                val cartInfo = getCartForFolder(
+                    Folder(
+                        name = cartName.toString(),
+                        attr = api["desc"]?.toString() ?: ""
+                    ), targetToken
+                ) ?: return@listApis
+                copyApi["catid"] = cartInfo.cartId
+            } else {
+                copyApi["catid"] = targetCatId
+            }
+            copyApi["token"] = targetToken
+            copyApi["switch_notice"] = yapiSettingsHelper.switchNotice()
+            saveApiInfo(copyApi)
+        }
+    }
+
+    private fun listApis(from: Map<String, String>, api: (HashMap<String, Any?>) -> Unit) {
+        val fromToken = from["token"] ?: throw IllegalArgumentException("no token be found in from")
+        val id = from["id"]
+        if (id != null) {
+            getApiInfo(fromToken, id)?.asMap()?.let(api)
+            return
+        }
+
+        val catId = from["catId"]
+        if (catId != null) {
+            listApis(fromToken, catId)?.map { it.asMap() }?.forEach(api)
+            return
+        }
+
+        val projectId = getProjectIdByToken(fromToken) ?: throw IllegalArgumentException("invalid token $fromToken")
+        val carts = findCarts(projectId, fromToken) ?: return
+        for (cart in carts) {
+            val cartId = (cart as? Map<*, *>)?.get("_id")?.toString() ?: continue
+            listApis(fromToken, cartId)?.map { it.asMap() }?.forEach(api)
+        }
     }
 
     open fun getByApi(url: String, dumb: Boolean = true): String? {
@@ -192,13 +240,21 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         }
     }
 
-    protected fun reservedResponseHandle(): ReservedResponseHandle<String> {
-        return StringResponseHandler.DEFAULT_RESPONSE_HANDLER.reserved()
-    }
-
     companion object {
         const val GET_PROJECT_URL = "/api/project/get"
         val NULL_PROJECT: JsonElement = JsonNull.INSTANCE
         val TOKEN_REGEX = Regex("(token=.*?)(?=&|$)")
     }
+}
+
+fun YapiApiHelper.findCartById(token: String, catId: String): Map<*, *>? {
+    val projectId = getProjectIdByToken(token) ?: throw IllegalArgumentException("invalid token $token")
+    val carts = findCarts(projectId, token) ?: throw IllegalArgumentException("invalid token $token")
+    for (cart in carts) {
+        val cartId = (cart as? Map<*, *>)?.get("_id")?.toString() ?: continue
+        if (cartId == catId) {
+            return cart
+        }
+    }
+    return null
 }

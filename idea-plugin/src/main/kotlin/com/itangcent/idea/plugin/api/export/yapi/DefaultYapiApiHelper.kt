@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.common.logger.traceError
@@ -36,6 +37,12 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
     @Inject
     internal lateinit var actionContext: ActionContext
+
+    override fun getApiInfo(token: String, id: String): JsonObject? {
+        val url = "${yapiSettingsHelper.getServer()}$GET_INTERFACE?token=$token&id=$id"
+        return GsonUtils.parseToJsonTree(getByApi(url))
+            ?.sub("data")?.asJsonObject
+    }
 
     override fun findApi(token: String, catId: String, apiName: String): String? {
         return listApis(token, catId)
@@ -88,13 +95,19 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 .use { it.string() }
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
-                logger.info("Post failed:$errMsg")
+                logger.info("save apiInfo failed:$errMsg")
                 logger.info("api info:${GsonUtils.toJson(apiInfo)}")
                 return false
             }
+            GsonUtils.parseToJsonTree(returnValue)
+                .sub("data")
+                .sub("_id")
+                ?.asString?.let {
+                    apiInfo["_id"] = it
+                }
             return true
         } catch (e: Throwable) {
-            logger.error("Post failed:" + ExceptionUtils.getStackTrace(e))
+            logger.error("save apiInfo failed:" + ExceptionUtils.getStackTrace(e))
             return false
         }
     }
@@ -193,14 +206,15 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
         }
     }
 
-    override fun findCarts(project_id: String, token: String): ArrayList<Any?>? {
-        val url = "${yapiSettingsHelper.getServer()}$GET_CAT_MENU?project_id=$project_id&token=$token"
+    override fun findCarts(projectId: String, token: String): ArrayList<Any?>? {
+        val url = "${yapiSettingsHelper.getServer()}$GET_CAT_MENU?project_id=$projectId&token=$token"
         return GsonUtils.parseToJsonTree(getByApi(url))
             ?.sub("data")
             ?.asList()
     }
 
     companion object {
+        const val GET_INTERFACE = "/api/interface/get"
         const val ADD_CART = "/api/interface/add_cat"
         const val GET_CAT_MENU = "/api/interface/getCatMenu"
         const val SAVE_API = "/api/interface/save"

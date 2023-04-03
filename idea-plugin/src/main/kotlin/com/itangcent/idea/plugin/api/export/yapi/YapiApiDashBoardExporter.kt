@@ -35,7 +35,7 @@ class YapiApiDashBoardExporter : AbstractYapiApiExporter() {
     override fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
         if (super.exportDoc(doc, privateToken, cartId)) {
             if (successExportedCarts.add(cartId)) {
-                logger!!.info("Export to ${yapiApiHelper!!.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
+                logger.info("Export to ${yapiApiHelper.getCartWeb(yapiApiHelper.getProjectIdByToken(privateToken)!!, cartId)} success")
             }
             return true
         }

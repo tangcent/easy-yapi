@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
@@ -51,13 +50,10 @@ import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.SelectedHelper
 import com.itangcent.intellij.tip.TipsHelper
-import com.itangcent.intellij.util.FileType
 import com.itangcent.intellij.util.UIUtils
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
@@ -165,7 +161,7 @@ open class SuvApiExporter {
         }
     }
 
-    fun DocWrapper.resourceMethod(): PsiMethod? {
+    private fun DocWrapper.resourceMethod(): PsiMethod? {
         return (this.resource as? PsiResource)?.resource() as? PsiMethod
     }
 
@@ -479,7 +475,7 @@ open class SuvApiExporter {
         }
 
         override fun doExportDocs(docs: MutableList<Doc>) {
-            val suvYapiApiExporter = actionContext!!.init(SuvYapiApiExporter())
+            val suvYapiApiExporter = actionContext.init(SuvYapiApiExporter())
 
             try {
                 docs.forEach { suvYapiApiExporter.exportDoc(it) }
@@ -512,9 +508,9 @@ open class SuvApiExporter {
                 if (super.exportDoc(doc, privateToken, cartId)) {
                     synchronized(successExportedCarts) {
                         if (successExportedCarts.add(cartId)) {
-                            logger!!.info(
+                            logger.info(
                                 "Export to ${
-                                    yapiApiHelper!!.getCartWeb(
+                                    yapiApiHelper.getCartWeb(
                                         yapiApiHelper.getProjectIdByToken(
                                             privateToken
                                         )!!, cartId
@@ -579,7 +575,7 @@ open class SuvApiExporter {
                 logger!!.info("Start parse apis")
                 val apiInfo = markdownFormatter!!.parseRequests(docs)
                 docs.clear()
-                actionContext!!.runAsync {
+                actionContext.runAsync {
                     try {
                         fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
                             logger!!.info("Exported data are copied to clipboard,you can paste to a md file now")

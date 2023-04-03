@@ -123,7 +123,7 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
                 "[INFO]\tStart find apis...\n",
                 LoggerCollector.getLog().replace(Regex("\\d"), "").toUnixString()
             )
-            Assert.assertEquals(requests, requestListInUI)
+            assertEquals(requests, requestListInUI)
         }
     }
 
@@ -151,7 +151,7 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
                 "[INFO]\tStart find apis...\n",
                 LoggerCollector.getLog().replace(Regex("\\d"), "").toUnixString()
             )
-            Assert.assertEquals(requests, requestListInUI)
+            assertEquals(requests, requestListInUI)
             verify(apiCallUI, times(1)).focusUI()
             verify(apiCallUI, times(1)).showUI()
         }

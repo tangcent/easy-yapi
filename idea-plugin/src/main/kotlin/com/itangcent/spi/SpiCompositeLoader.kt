@@ -73,5 +73,5 @@ object SpiCompositeLoader {
         return exclusions
     }
 
-    val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(SpiCompositeLoader::class.java)!!
+    val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(SpiCompositeLoader::class.java)
 }

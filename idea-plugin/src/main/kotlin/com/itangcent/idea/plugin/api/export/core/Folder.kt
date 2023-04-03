@@ -4,12 +4,13 @@ import com.itangcent.common.utils.SimpleExtensible
 
 class Folder : SimpleExtensible {
 
-    var name: String? = null
+    val name: String?
 
-    var attr: String? = null
+    val attr: String?
 
     constructor(name: String?) {
         this.name = name?.trim()
+        this.attr = null
     }
 
     constructor(name: String?, attr: String?) {
