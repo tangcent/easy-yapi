@@ -94,7 +94,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
     override var logLevel: Int = 50
 
     /**
-     * Charset for out put file
+     * Charset for output file
      */
     override var logCharset: String = Charsets.UTF_8.displayName()
 

@@ -11,11 +11,13 @@ import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.mock.FileSaveHelperAdaptor
 import com.itangcent.mock.toUnixString
+import com.itangcent.test.ResultLoader
+import com.itangcent.test.assertLinesContain
 import com.itangcent.testFramework.escapeBackslash
 import com.itangcent.testFramework.sub
-import junit.framework.Assert
 import java.io.File
 
 /**
@@ -29,6 +31,9 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
 
     @Inject
     protected lateinit var sessionStorage: SessionStorage
+
+    @Inject
+    private lateinit var contextSwitchListener: ContextSwitchListener
 
     protected val ruleContext: RuleContext
         get() = SuvRuleContext()
@@ -152,10 +157,10 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
             val demoPath = tempDir.sub("demo.txt").escapeBackslash()
             ruleParser.parseEventRule("groovy:$files.save(\"hello world\",\"$demoPath\")")!!
                 .compute(ruleContext)
-            Assert.assertEquals("hello world", FileUtils.read(File(demoPath)))
+            assertEquals("hello world", FileUtils.read(File(demoPath)))
             ruleParser.parseEventRule("groovy:$files.saveWithUI({\"hello world!\"},\"demo2.txt\",{},{},{})")!!
                 .compute(ruleContext)
-            Assert.assertEquals("hello world!",
+            assertEquals("hello world!",
                 (fileSaveHelper as FileSaveHelperAdaptor).bytes()?.let { String(it, Charsets.UTF_8) })
         }
     }
@@ -165,21 +170,53 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
      */
     fun testRuntime() {
         arrayOf("runtime", "R").forEach { runtime ->
-            Assert.assertEquals(
+            contextSwitchListener.switchTo(userCtrlPsiClass)
+            LoggerCollector.getLog()//clear
+
+            assertEquals(
                 "markdown", ruleParser.parseStringRule("groovy:$runtime.channel()")!!
                     .compute(ruleContext)
             )
-            Assert.assertEquals(
+            assertEquals(
                 project.name, ruleParser.parseStringRule("groovy:$runtime.projectName()")!!
                     .compute(ruleContext)
             )
-            Assert.assertEquals(
+            assertEquals(
                 project.basePath, ruleParser.parseStringRule("groovy:$runtime.projectPath()")!!
                     .compute(ruleContext)
             )
-            Assert.assertEquals(
+            assertEquals(
                 "test_default", ruleParser.parseStringRule("groovy:$runtime.module()")!!
                     .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+            assertEquals(
+                "light_idea_test_case", ruleParser.parseStringRule("groovy:$runtime.moduleName()")!!
+                    .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+            assertEquals(
+                "/src", ruleParser.parseStringRule("groovy:$runtime.modulePath()")!!
+                    .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+            assertEquals(
+                "/src/api/UserCtrl.java", ruleParser.parseStringRule("groovy:$runtime.filePath()")!!
+                    .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+            assertEquals(
+                fileSaveHelper.toString(),
+                ruleParser.parseStringRule("groovy:$runtime.getBean(\"com.itangcent.idea.utils.FileSaveHelper\")")!!
+                    .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+            assertNull(
+                ruleParser.parseStringRule("groovy:$runtime.getBean(\"java.lang.String\")")!!
+                    .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+            assertNull(
+                ruleParser.parseStringRule("groovy:$runtime.getBean(\"com.itangcent.Unknown\")")!!
+                    .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            )
+
+            assertLinesContain(
+                ResultLoader.load("runtime.log"), LoggerCollector.getLog().toUnixString()
             )
         }
     }

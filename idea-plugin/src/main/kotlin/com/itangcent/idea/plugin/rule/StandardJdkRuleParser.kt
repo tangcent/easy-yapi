@@ -15,11 +15,13 @@ import com.itangcent.idea.plugin.utils.SessionStorage
 import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.LinkExtractor
 import com.itangcent.intellij.jvm.LinkResolver
+import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.util.FileUtils
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.utils.TemplateKit
@@ -283,6 +285,38 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             return context.getResource()?.let {
                 actionContext?.instance(ModuleHelper::class)?.findModule(it)
             }
+        }
+
+        fun moduleName(): String? {
+            return actionContext?.instance(ContextSwitchListener::class)
+                ?.getModule()?.name
+        }
+
+        fun modulePath(): String? {
+            return actionContext?.instance(ContextSwitchListener::class)
+                ?.getModule()?.filePath()
+        }
+
+        fun filePath(): String? {
+            return context.getResource()?.containingFile?.virtualFile?.path
+        }
+
+        fun getBean(className: String): Any? {
+            if (actionContext == null) return null
+            if (!className.startsWith("com.itangcent")) {
+                throw IllegalArgumentException(
+                    "permission denied! " +
+                            "runtime.getBean only support com.itangcent.*"
+                )
+            }
+            val cls = try {
+                Class.forName(className)
+            } catch (e: ClassNotFoundException) {
+                throw IllegalArgumentException(
+                    "class $className not be found"
+                )
+            }
+            return actionContext?.instance(cls.kotlin)
         }
     }
 
