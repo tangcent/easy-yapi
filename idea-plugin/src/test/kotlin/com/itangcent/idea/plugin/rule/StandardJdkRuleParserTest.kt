@@ -10,6 +10,7 @@ import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.mock.FileSaveHelperAdaptor
@@ -214,6 +215,14 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
                 ruleParser.parseStringRule("groovy:$runtime.getBean(\"com.itangcent.Unknown\")")!!
                     .compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
             )
+
+            actionContext.withBoundary {
+                ruleParser.parseStringRule(
+                    "groovy:$runtime.async{" +
+                            "logger.info(\"log in async\")" +
+                            "}"
+                )!!.compute(ruleParser.contextOf("userCtrlPsiClass", userCtrlPsiClass))
+            }
 
             assertLinesContain(
                 ResultLoader.load("runtime.log"), LoggerCollector.getLog().toUnixString()

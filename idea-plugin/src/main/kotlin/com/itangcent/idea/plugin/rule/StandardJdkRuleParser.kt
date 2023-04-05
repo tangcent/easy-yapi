@@ -318,6 +318,10 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
             }
             return actionContext?.instance(cls.kotlin)
         }
+
+        fun async(runnable: Runnable) {
+            actionContext!!.runAsync(runnable)
+        }
     }
 
     companion object {
