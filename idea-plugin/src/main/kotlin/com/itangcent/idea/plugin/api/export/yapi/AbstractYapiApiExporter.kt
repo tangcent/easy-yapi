@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
-import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.Folder
@@ -24,7 +23,7 @@ open class AbstractYapiApiExporter {
     protected lateinit var logger: Logger
 
     @Inject
-    protected val yapiApiHelper: YapiApiHelper? = null
+    protected lateinit var yapiApiHelper: YapiApiHelper
 
     @Inject
     protected lateinit var yapiSettingsHelper: YapiSettingsHelper
@@ -83,35 +82,7 @@ open class AbstractYapiApiExporter {
     }
 
     protected open fun getCartForFolder(folder: Folder, privateToken: String): CartInfo? {
-
-        val name: String = folder.name ?: "anonymous"
-
-        var cartId: String?
-
-        //try find existed cart.
-        try {
-            cartId = yapiApiHelper!!.findCart(privateToken, name)
-        } catch (e: Exception) {
-            logger.traceError("error to find cart [$name]", e)
-            return null
-        }
-
-        //create new cart.
-        if (cartId == null) {
-            if (yapiApiHelper.addCart(privateToken, name, folder.attr ?: "")) {
-                cartId = yapiApiHelper.findCart(privateToken, name)
-            } else {
-                //failed
-                return null
-            }
-        }
-
-        val cartInfo = CartInfo()
-        cartInfo.cartId = cartId
-        cartInfo.cartName = name
-        cartInfo.privateToken = privateToken
-
-        return cartInfo
+        return yapiApiHelper.getCartForFolder(folder, privateToken)
     }
 
     fun exportDoc(doc: Doc): Boolean {
@@ -137,7 +108,7 @@ open class AbstractYapiApiExporter {
                 doc.resource()
             )
 
-            ret = ret or yapiApiHelper!!.saveApiInfo(apiInfo)
+            ret = ret or yapiApiHelper.saveApiInfo(apiInfo)
 
             ruleComputer.computer(
                 YapiClassExportRuleKeys.AFTER_SAVE, suvRuleContext,

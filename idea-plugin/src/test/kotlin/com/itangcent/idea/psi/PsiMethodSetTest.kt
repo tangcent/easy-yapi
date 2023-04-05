@@ -30,14 +30,14 @@ internal class PsiMethodSetTest : PluginContextLightCodeInsightFixtureTestCase()
                 ++duplicateCnt
             }
         }
-        Assert.assertEquals(11, cnt)
-        Assert.assertEquals(2, duplicateCnt)
+        assertEquals(11, cnt)
+        assertEquals(2, duplicateCnt)
 
         for (method in resultPsiClass.methods) {
-            Assert.assertFalse(psiMethodSet.add(method))
+            assertFalse(psiMethodSet.add(method))
         }
         for (method in iResultPsiClass.methods) {
-            Assert.assertFalse(psiMethodSet.add(method))
+            assertFalse(psiMethodSet.add(method))
         }
     }
 }

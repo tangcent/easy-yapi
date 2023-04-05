@@ -3,13 +3,19 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.inject.ImplementedBy
+import com.itangcent.common.logger.traceError
+import com.itangcent.idea.plugin.api.export.core.Folder
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.sub
+import com.itangcent.intellij.logger.Logger
 
 
 @ImplementedBy(DefaultYapiApiHelper::class)
 interface YapiApiHelper {
 
     //apis--------------------------------------------------------------
+
+    fun getApiInfo(token: String, id: String): JsonObject?
 
     fun findApi(token: String, catId: String, apiName: String): String?
 
@@ -25,7 +31,7 @@ interface YapiApiHelper {
 
     fun findCart(token: String, name: String): String?
 
-    fun findCarts(project_id: String, token: String): ArrayList<Any?>?
+    fun findCarts(projectId: String, token: String): ArrayList<Any?>?
 
     fun addCart(privateToken: String, name: String, desc: String): Boolean
 
@@ -42,6 +48,8 @@ interface YapiApiHelper {
     fun getProjectInfo(token: String, projectId: String?): JsonObject?
 
     fun getProjectInfo(token: String): JsonObject?
+
+    fun copyApi(from: Map<String, String>, target: Map<String, String>)
 
 }
 
@@ -64,4 +72,37 @@ fun YapiApiHelper.existed(apiInfo: HashMap<String, Any?>): Boolean {
         }
     }
     return false
+}
+
+fun YapiApiHelper.getCartForFolder(folder: Folder, privateToken: String): CartInfo? {
+
+    val name: String = folder.name ?: "anonymous"
+
+    var cartId: String?
+
+    //try find existed cart.
+    try {
+        cartId = findCart(privateToken, name)
+    } catch (e: Exception) {
+        ActionContext.getContext()?.instance(Logger::class)
+            ?.traceError("error to find cart [$name]", e)
+        return null
+    }
+
+    //create new cart.
+    if (cartId == null) {
+        if (addCart(privateToken, name, folder.attr ?: "")) {
+            cartId = findCart(privateToken, name)
+        } else {
+            //failed
+            return null
+        }
+    }
+
+    val cartInfo = CartInfo()
+    cartInfo.cartId = cartId
+    cartInfo.cartName = name
+    cartInfo.privateToken = privateToken
+
+    return cartInfo
 }

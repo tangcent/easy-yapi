@@ -20,11 +20,11 @@ internal class PsiMethodUtilTest : PluginContextLightCodeInsightFixtureTestCase(
     }
 
     fun testIsSuperMethod() {
-        Assert.assertTrue(PsiMethodUtil.isSuperMethod(
+        assertTrue(PsiMethodUtil.isSuperMethod(
             resultPsiClass.methods.first { it.name == "getCode" },
             iResultPsiClass.methods.first { it.name == "getCode" }
         ))
-        Assert.assertFalse(PsiMethodUtil.isSuperMethod(
+        assertFalse(PsiMethodUtil.isSuperMethod(
             resultPsiClass.methods.first { it.name == "fail" },
             resultPsiClass.methods.last { it.name == "fail" }
         ))

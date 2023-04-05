@@ -64,7 +64,7 @@ class YapiApiExporter : AbstractYapiApiExporter() {
             if (successExportedCarts.add(cartId)) {
                 logger.info(
                     "Export to ${
-                        yapiApiHelper!!.getCartWeb(
+                        yapiApiHelper.getCartWeb(
                             yapiApiHelper.getProjectIdByToken(privateToken)!!,
                             cartId
                         )

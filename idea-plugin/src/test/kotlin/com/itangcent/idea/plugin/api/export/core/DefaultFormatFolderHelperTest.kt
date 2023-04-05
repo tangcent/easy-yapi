@@ -44,26 +44,26 @@ internal class DefaultFormatFolderHelperTest : PluginContextLightCodeInsightFixt
     fun testResolveFolder() {
 
         //test of PsiClass & PsiMethod
-        Assert.assertEquals(Folder("apis about user", "apis about user\n" +
+        assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(userCtrlPsiClass))
-        Assert.assertEquals(Folder("apis about user", "apis about user\n" +
+        assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(userCtrlPsiClass.methods[0]))
-        Assert.assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(userCtrlPsiClass.methods[1]))
+        assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(userCtrlPsiClass.methods[1]))
 
         //test of ExplicitClass & ExplicitMethod
         val explicitClass = duckTypeHelper.explicit(userCtrlPsiClass)
-        Assert.assertEquals(Folder("apis about user", "apis about user\n" +
+        assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(explicitClass))
-        Assert.assertEquals(Folder("apis about user", "apis about user\n" +
+        assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(explicitClass.methods()[0]))
-        Assert.assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(explicitClass.methods()[1]))
+        assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(explicitClass.methods()[1]))
 
         //test of PsiClassResource & PsiMethodResource
-        Assert.assertEquals(Folder("apis about user", "apis about user\n" +
+        assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(PsiClassResource(userCtrlPsiClass)))
-        Assert.assertEquals(Folder("apis about user", "apis about user\n" +
+        assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(PsiMethodResource(userCtrlPsiClass.methods[0], userCtrlPsiClass)))
-        Assert.assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(PsiMethodResource(userCtrlPsiClass.methods[1], userCtrlPsiClass)))
+        assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(PsiMethodResource(userCtrlPsiClass.methods[1], userCtrlPsiClass)))
 
 
     }

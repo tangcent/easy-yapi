@@ -47,41 +47,41 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
         withMockCompanion(IdeaFileChooserHelper::class, ideaFileChooserHelperCompanion) {
             var success = 0
             fileSaveHelper.saveOrCopy("testSaveOrCopyDirectorySuccess", {
-                Assert.fail()
+                fail()
             }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(1, success)
-            Assert.assertEquals("testSaveOrCopyDirectorySuccess",
+            assertEquals(1, success)
+            assertEquals("testSaveOrCopyDirectorySuccess",
                 File("$tempDir${File.separator}untitled").readText(Charsets.UTF_8))
 
             //twice
             fileSaveHelper.saveOrCopy("testSaveOrCopyDirectorySuccess", {
-                Assert.fail()
+                fail()
             }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(2, success)
-            Assert.assertEquals("testSaveOrCopyDirectorySuccess",
+            assertEquals(2, success)
+            assertEquals("testSaveOrCopyDirectorySuccess",
                 File("$tempDir${File.separator}untitled-1").readText(Charsets.UTF_8))
 
             //thrice
             fileSaveHelper.saveOrCopy("testSaveOrCopyDirectorySuccess", {
-                Assert.fail()
+                fail()
             }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(3, success)
-            Assert.assertEquals("testSaveOrCopyDirectorySuccess",
+            assertEquals(3, success)
+            assertEquals("testSaveOrCopyDirectorySuccess",
                 File("$tempDir${File.separator}untitled-2").readText(Charsets.UTF_8))
         }
     }
@@ -112,10 +112,10 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
                 ++failed
             })
 
-            Assert.assertEquals(1, failed)
+            assertEquals(1, failed)
             WaitHelper.waitUtil(5000) { copy == 1 }
-            Assert.assertEquals(1, copy)
-            Assert.assertEquals("testSaveOrCopyDirectoryFailed",
+            assertEquals(1, copy)
+            assertEquals("testSaveOrCopyDirectoryFailed",
                 File("$tempDir${File.separator}untitled").readText(Charsets.UTF_8))
         }
     }
@@ -144,41 +144,41 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
         withMockCompanion(IdeaFileChooserHelper::class, ideaFileChooserHelperCompanion) {
             var success = 0
             fileSaveHelper.saveOrCopy("testSaveOrCopyFileSuccess", {
-                Assert.fail()
+                fail()
             }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(1, success)
-            Assert.assertEquals("testSaveOrCopyFileSuccess",
+            assertEquals(1, success)
+            assertEquals("testSaveOrCopyFileSuccess",
                 file.readText(Charsets.UTF_8))
 
             //twice
             fileSaveHelper.saveOrCopy("testSaveOrCopyFileSuccess-2", {
-                Assert.fail()
+                fail()
             }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(2, success)
-            Assert.assertEquals("testSaveOrCopyFileSuccess-2",
+            assertEquals(2, success)
+            assertEquals("testSaveOrCopyFileSuccess-2",
                 file.readText(Charsets.UTF_8))
 
             //thrice
             fileSaveHelper.saveOrCopy("testSaveOrCopyFileSuccess-3", {
-                Assert.fail()
+                fail()
             }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(3, success)
-            Assert.assertEquals("testSaveOrCopyFileSuccess-3",
+            assertEquals(3, success)
+            assertEquals("testSaveOrCopyFileSuccess-3",
                 file.readText(Charsets.UTF_8))
         }
     }
@@ -214,10 +214,10 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, {
                 ++failed
             })
-            Assert.assertEquals(1, failed)
+            assertEquals(1, failed)
             WaitHelper.waitUtil(5000) { copy == 1 }
-            Assert.assertEquals(1, copy)
-            Assert.assertEquals("testSaveOrCopyFileFailed".repeat(2000),
+            assertEquals(1, copy)
+            assertEquals("testSaveOrCopyFileFailed".repeat(2000),
                 file.readText(Charsets.UTF_8))
         }
     }
@@ -238,36 +238,36 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             fileSaveHelper.saveOrCopy("testSaveOrCopyFileFailed", {
                 ++copy
             }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             })
             WaitHelper.waitUtil(5000) { copy == 1 }
-            Assert.assertEquals(1, copy)
+            assertEquals(1, copy)
         }
     }
 
     fun testSaveOrCopyNull() {
         fileSaveHelper.saveOrCopy(null, {
-            Assert.fail()
+            fail()
         }, {
-            Assert.fail()
+            fail()
         }, {
-            Assert.fail()
+            fail()
         })
         fileSaveHelper.saveOrCopy(null, Charsets.UTF_8, {
-            Assert.fail()
+            fail()
         }, {
-            Assert.fail()
+            fail()
         }, {
-            Assert.fail()
+            fail()
         })
         fileSaveHelper.saveOrCopy(null, Charsets.UTF_8, { "name" }, {
-            Assert.fail()
+            fail()
         }, {
-            Assert.fail()
+            fail()
         }, {
-            Assert.fail()
+            fail()
         })
     }
 
@@ -293,13 +293,13 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, { null }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(1, success)
-            Assert.assertEquals("save testSaveBytesDirectorySuccess to $tempDir${File.separator}untitled",
+            assertEquals(1, success)
+            assertEquals("save testSaveBytesDirectorySuccess to $tempDir${File.separator}untitled",
                 File("$tempDir${File.separator}untitled").readText(Charsets.UTF_8))
 
             //twice
@@ -308,13 +308,13 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, { null }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(2, success)
-            Assert.assertEquals("save testSaveBytesDirectorySuccess to $tempDir${File.separator}untitled-1",
+            assertEquals(2, success)
+            assertEquals("save testSaveBytesDirectorySuccess to $tempDir${File.separator}untitled-1",
                 File("$tempDir${File.separator}untitled-1").readText(Charsets.UTF_8))
 
             //thrice
@@ -323,13 +323,13 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, { null }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(3, success)
-            Assert.assertEquals("save testSaveBytesDirectorySuccess to $tempDir${File.separator}untitled-2",
+            assertEquals(3, success)
+            assertEquals("save testSaveBytesDirectorySuccess to $tempDir${File.separator}untitled-2",
                 File("$tempDir${File.separator}untitled-2").readText(Charsets.UTF_8))
         }
     }
@@ -358,11 +358,11 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, {
                 ++failed
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(1, failed)
-            Assert.assertEquals("save testSaveBytesDirectoryFailed to $tempDir${File.separator}untitled",
+            assertEquals(1, failed)
+            assertEquals("save testSaveBytesDirectoryFailed to $tempDir${File.separator}untitled",
                 File("$tempDir${File.separator}untitled").readText(Charsets.UTF_8))
         }
     }
@@ -395,13 +395,13 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, { null }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(1, success)
-            Assert.assertEquals("save testSaveBytesFileSuccess to $tempDir${File.separator}file",
+            assertEquals(1, success)
+            assertEquals("save testSaveBytesFileSuccess to $tempDir${File.separator}file",
                 file.readText(Charsets.UTF_8))
 
             //twice
@@ -410,13 +410,13 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, { null }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(2, success)
-            Assert.assertEquals("save testSaveBytesFileSuccess-2 to $tempDir${File.separator}file",
+            assertEquals(2, success)
+            assertEquals("save testSaveBytesFileSuccess-2 to $tempDir${File.separator}file",
                 file.readText(Charsets.UTF_8))
 
             //thrice
@@ -425,13 +425,13 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, { null }, {
                 ++success
             }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(3, success)
-            Assert.assertEquals("save testSaveBytesFileSuccess-3 to $tempDir${File.separator}file",
+            assertEquals(3, success)
+            assertEquals("save testSaveBytesFileSuccess-3 to $tempDir${File.separator}file",
                 file.readText(Charsets.UTF_8))
         }
     }
@@ -466,11 +466,11 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             }, {
                 ++failed
             }, {
-                Assert.fail()
+                fail()
             })
 
-            Assert.assertEquals(1, failed)
-            Assert.assertEquals("save testSaveBytesFileFailed to $tempDir${File.separator}file",
+            assertEquals(1, failed)
+            assertEquals("save testSaveBytesFileFailed to $tempDir${File.separator}file",
                 file.readText(Charsets.UTF_8))
         }
     }
@@ -491,13 +491,13 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
             fileSaveHelper.saveBytes({
                 "save testSaveBytesFileFailed to $it".toByteArray(Charsets.UTF_8)
             }, { null }, {
-                Assert.fail()
+                fail()
             }, {
-                Assert.fail()
+                fail()
             }, {
                 ++cancel
             })
-            Assert.assertEquals(1, cancel)
+            assertEquals(1, cancel)
         }
     }
 }

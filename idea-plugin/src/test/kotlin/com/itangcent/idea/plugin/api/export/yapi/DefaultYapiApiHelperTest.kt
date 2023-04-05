@@ -5,6 +5,7 @@ import com.itangcent.common.kit.toJson
 import com.itangcent.idea.plugin.api.export.yapi.AbstractYapiApiHelper.Companion.GET_PROJECT_URL
 import com.itangcent.idea.plugin.api.export.yapi.DefaultYapiApiHelper.Companion.ADD_CART
 import com.itangcent.idea.plugin.api.export.yapi.DefaultYapiApiHelper.Companion.GET_CAT_MENU
+import com.itangcent.idea.plugin.api.export.yapi.DefaultYapiApiHelper.Companion.GET_INTERFACE
 import com.itangcent.idea.plugin.api.export.yapi.DefaultYapiApiHelper.Companion.SAVE_API
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
@@ -94,10 +95,37 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
                         content = ADD_CART_SUCCESS,
                         contentType = ContentType.APPLICATION_JSON
                     )
+                    .url("$VALID_YAPI_SERVER$GET_INTERFACE?token=$VALID_TOKEN_1&id=$INTER_1")
+                    .method("GET")
+                    .response(
+                        content = INTER_1_INFO,
+                        contentType = ContentType.APPLICATION_JSON
+                    )
                     .notFound().response404()
                     .build()
             )
         }
+    }
+
+    @Test
+    fun testGetApiInfo() {
+        settings.yapiServer = VALID_YAPI_SERVER
+        assertEquals(
+            "{\"query_path\":{\"path\":\"/demo/user/update\",\"params\":[]},\"edit_uid\":0,\"status\":\"done\",\"type\":\"static\",\"req_body_is_json_schema\":false,\"res_body_is_json_schema\":true,\"api_opened\":false,\"index\":0,\"tag\":[],\"_id\":2109671,\"res_body\":\"{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"code\\\":{\\\"type\\\":\\\"integer\\\",\\\"mock\\\":{\\\"mock\\\":\\\"200\\\"},\\\"description\\\":\\\"响应码\\\"},\\\"msg\\\":{\\\"type\\\":\\\"string\\\",\\\"description\\\":\\\"响应消息\\\"},\\\"day\\\":{\\\"type\\\":\\\"integer\\\",\\\"mock\\\":{\\\"mock\\\":\\\"20230103\\\"},\\\"description\\\":\\\"outer\\\"},\\\"data\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"day\\\":{\\\"type\\\":\\\"integer\\\",\\\"mock\\\":{\\\"mock\\\":\\\"20230103\\\"}},\\\"field\\\":{\\\"type\\\":\\\"integer\\\"},\\\"id\\\":{\\\"type\\\":\\\"integer\\\"},\\\"type\\\":{\\\"type\\\":\\\"integer\\\"},\\\"name\\\":{\\\"type\\\":\\\"string\\\"},\\\"age\\\":{\\\"type\\\":\\\"integer\\\"},\\\"sex\\\":{\\\"type\\\":\\\"integer\\\"},\\\"birthDay\\\":{\\\"type\\\":\\\"string\\\"},\\\"regtime\\\":{\\\"type\\\":\\\"string\\\"}},\\\"description\\\":\\\"响应数据\\\"}},\\\"\$schema\\\":\\\"http://json-schema.org/draft-04/schema#\\\"}\",\"method\":\"PUT\",\"res_body_type\":\"json\",\"title\":\"更新用户信息\",\"path\":\"/demo/user/update\",\"catid\":470385,\"markdown\":\"\",\"req_headers\":[{\"required\":\"1\",\"_id\":\"6429775698ac560015115ed5\",\"name\":\"Content-Type\",\"value\":\"application/x-www-form-urlencoded\",\"example\":\"application/x-www-form-urlencoded\"}],\"req_query\":[],\"desc\":\"<p></p>\",\"project_id\":155080,\"req_params\":[],\"uid\":214663,\"add_time\":1680439126,\"up_time\":1680439126,\"req_body_form\":[],\"__v\":0,\"username\":\"tangcent\"}",
+            yapiApiHelper.getApiInfo(VALID_TOKEN_1, INTER_1).toString()
+        )
+        assertNull(yapiApiHelper.getApiInfo(VALID_TOKEN_1, "2109999"))
+        assertNull(yapiApiHelper.getApiInfo(INVALID_TOKEN, "2209999"))
+    }
+
+    @Test
+    fun testGetProjectWeb() {
+        settings.yapiServer = VALID_YAPI_SERVER
+        assertEquals(
+            "http://yapi.itangcent.com/project/155080/interface/api",
+            (yapiApiHelper as AbstractYapiApiHelper).getProjectWeb("module1")
+        )
+        assertNull((yapiApiHelper as AbstractYapiApiHelper).getProjectWeb("module3"))
     }
 
     @Test
@@ -220,6 +248,33 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
         )
     }
 
+    @Test
+    fun testFindCartById() {
+        settings.yapiServer = VALID_YAPI_SERVER
+        assertEquals(
+            "{\"uid\":214663,\"project_id\":155080,\"__v\":0,\"name\":\"用户相关Client\",\"index\":0,\"up_time\":1661265770,\"_id\":528244,\"add_time\":1661265770,\"desc\":\"用户相关Client\"}",
+            yapiApiHelper.findCartById(VALID_TOKEN_1, "528244").toJson()
+        )
+    }
+
+    @Test
+    fun testCopyApi() {
+        settings.yapiServer = VALID_YAPI_SERVER
+
+        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1), mapOf("token" to VALID_TOKEN_2))
+        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1), mapOf("token" to VALID_TOKEN_2, "catId" to "470386"))
+        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1, "catId" to "470386"), mapOf("token" to VALID_TOKEN_2))
+        yapiApiHelper.copyApi(
+            mapOf("token" to VALID_TOKEN_1, "catId" to CART_1),
+            mapOf("token" to VALID_TOKEN_2, "catId" to "470386")
+        )
+        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1, "id" to INTER_1), mapOf("token" to VALID_TOKEN_2))
+        yapiApiHelper.copyApi(
+            mapOf("token" to VALID_TOKEN_1, "id" to INTER_1),
+            mapOf("token" to VALID_TOKEN_2, "catId" to "470386")
+        )
+    }
+
     companion object {
         const val VALID_YAPI_SERVER = "http://yapi.itangcent.com"
         const val VALID_TOKEN_1 = "83bbd4a265eb021b136b94c2ebeabdfcdf7faa44dd660734bfe485d10cce111"
@@ -227,6 +282,53 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
         const val INVALID_TOKEN = "83bbd4a265eb021b136b94c2ebeabdfcdf7faa44dd660734bfe485d10cce7333"
         const val PROJECT_1 = "155080"
         const val CART_1 = "470385"
+        const val INTER_1 = "2109671"
+
+        const val INTER_1_INFO: String = "{\n" +
+                "    \"errcode\": 0,\n" +
+                "    \"errmsg\": \"成功！\",\n" +
+                "    \"data\": {\n" +
+                "        \"query_path\": {\n" +
+                "            \"path\": \"/demo/user/update\",\n" +
+                "            \"params\": []\n" +
+                "        },\n" +
+                "        \"edit_uid\": 0,\n" +
+                "        \"status\": \"done\",\n" +
+                "        \"type\": \"static\",\n" +
+                "        \"req_body_is_json_schema\": false,\n" +
+                "        \"res_body_is_json_schema\": true,\n" +
+                "        \"api_opened\": false,\n" +
+                "        \"index\": 0,\n" +
+                "        \"tag\": [],\n" +
+                "        \"_id\": 2109671,\n" +
+                "        \"res_body\": \"{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"code\\\":{\\\"type\\\":\\\"integer\\\",\\\"mock\\\":{\\\"mock\\\":\\\"200\\\"},\\\"description\\\":\\\"响应码\\\"},\\\"msg\\\":{\\\"type\\\":\\\"string\\\",\\\"description\\\":\\\"响应消息\\\"},\\\"day\\\":{\\\"type\\\":\\\"integer\\\",\\\"mock\\\":{\\\"mock\\\":\\\"20230103\\\"},\\\"description\\\":\\\"outer\\\"},\\\"data\\\":{\\\"type\\\":\\\"object\\\",\\\"properties\\\":{\\\"day\\\":{\\\"type\\\":\\\"integer\\\",\\\"mock\\\":{\\\"mock\\\":\\\"20230103\\\"}},\\\"field\\\":{\\\"type\\\":\\\"integer\\\"},\\\"id\\\":{\\\"type\\\":\\\"integer\\\"},\\\"type\\\":{\\\"type\\\":\\\"integer\\\"},\\\"name\\\":{\\\"type\\\":\\\"string\\\"},\\\"age\\\":{\\\"type\\\":\\\"integer\\\"},\\\"sex\\\":{\\\"type\\\":\\\"integer\\\"},\\\"birthDay\\\":{\\\"type\\\":\\\"string\\\"},\\\"regtime\\\":{\\\"type\\\":\\\"string\\\"}},\\\"description\\\":\\\"响应数据\\\"}},\\\"\$schema\\\":\\\"http://json-schema.org/draft-04/schema#\\\"}\",\n" +
+                "        \"method\": \"PUT\",\n" +
+                "        \"res_body_type\": \"json\",\n" +
+                "        \"title\": \"更新用户信息\",\n" +
+                "        \"path\": \"/demo/user/update\",\n" +
+                "        \"catid\": 470385,\n" +
+                "        \"markdown\": \"\",\n" +
+                "        \"req_headers\": [\n" +
+                "            {\n" +
+                "                \"required\": \"1\",\n" +
+                "                \"_id\": \"6429775698ac560015115ed5\",\n" +
+                "                \"name\": \"Content-Type\",\n" +
+                "                \"value\": \"application/x-www-form-urlencoded\",\n" +
+                "                \"example\": \"application/x-www-form-urlencoded\"\n" +
+                "            }\n" +
+                "        ],\n" +
+                "        \"req_query\": [],\n" +
+                "        \"desc\": \"<p></p>\",\n" +
+                "        \"project_id\": 155080,\n" +
+                "        \"req_params\": [],\n" +
+                "        \"uid\": 214663,\n" +
+                "        \"add_time\": 1680439126,\n" +
+                "        \"up_time\": 1680439126,\n" +
+                "        \"req_body_form\": [],\n" +
+                "        \"__v\": 0,\n" +
+                "        \"username\": \"tangcent\"\n" +
+                "    }\n" +
+                "}"
 
         const val LIST_CART_1 = "{\n" +
                 "  \"errcode\": 0,\n" +
