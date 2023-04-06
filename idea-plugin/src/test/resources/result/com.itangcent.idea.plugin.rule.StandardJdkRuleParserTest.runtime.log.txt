@@ -4,3 +4,4 @@ Caused by: java.lang.IllegalArgumentException: permission denied! runtime.getBea
 [TRACE]	javax.script.ScriptException: javax.script.ScriptException: java.lang.IllegalArgumentException: class com.itangcent.Unknown not be found
 Caused by: javax.script.ScriptException: java.lang.IllegalArgumentException: class com.itangcent.Unknown not be found
 Caused by: java.lang.IllegalArgumentException: class com.itangcent.Unknown not be found
+[INFO]	log in async
