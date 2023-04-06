@@ -6,9 +6,7 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.logger.traceError
-import com.itangcent.common.utils.SimpleExtensible
 import com.itangcent.common.utils.asBool
-import com.itangcent.common.utils.getPropertyValue
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
@@ -145,40 +143,9 @@ abstract class ScriptRuleParser : RuleParser {
      * it.sourceCode():String
      */
     @ScriptIgnore("getResource", "getCore", "asPsiDocCommentOwner", "asPsiModifierListOwner")
-    open inner class BaseScriptRuleContext : SimpleExtensible, RuleContext {
-
-        protected var psiElement: PsiElement? = null
-
-        constructor(psiElement: PsiElement) {
-            this.psiElement = psiElement
-        }
-
-        constructor()
-
-        @ScriptIgnore
-        override fun getResource(): PsiElement? {
-            return psiElement
-        }
-
-        override fun getName(): String? {
-            return getResource()!!.getPropertyValue("name")?.toString()
-        }
-
-        @ScriptIgnore
-        override fun asPsiDocCommentOwner(): PsiDocCommentOwner? {
-            if (getResource() is PsiDocCommentOwner) {
-                return getResource() as PsiDocCommentOwner
-            }
-            return null
-        }
-
-        @ScriptIgnore
-        override fun asPsiModifierListOwner(): PsiModifierListOwner? {
-            if (getResource() is PsiModifierListOwner) {
-                return getResource() as PsiModifierListOwner
-            }
-            return null
-        }
+    open inner class BaseScriptRuleContext : SuvRuleContext {
+        constructor(psiElement: PsiElement?) : super(psiElement)
+        constructor() : super()
 
         @Suppress("UNCHECKED_CAST")
         private fun <T> wrapAs(obj: Any?): T? {

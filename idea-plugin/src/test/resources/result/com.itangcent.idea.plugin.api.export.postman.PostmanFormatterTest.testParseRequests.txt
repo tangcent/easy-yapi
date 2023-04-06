@@ -88,7 +88,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n  \"code\": 0,\n  \"msg\": \"success\",\n  \"data\": {\n    \"id\": 0,\n    \"type\": 0,\n    \"name\": \"Tony Stark\",\n    \"age\": 45,\n    \"sex\": 0,\n    \"birthDay\": \"\",\n    \"regtime\": \"\"\n  }\n}"
@@ -180,7 +180,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": ""
@@ -310,7 +310,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n  \"code\": 0,\n  \"msg\": \"\",\n  \"data\": {\n    \"id\": 0,\n    \"type\": 0,\n    \"name\": \"\",\n    \"age\": 0,\n    \"sex\": 0,\n    \"birthDay\": \"\",\n    \"regtime\": \"\"\n  }\n}"
@@ -516,7 +516,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n  \"code\": 0,\n  \"msg\": \"\",\n  \"data\": {\n    \"id\": 0,\n    \"type\": 0,\n    \"name\": \"\",\n    \"age\": 0,\n    \"sex\": 0,\n    \"birthDay\": \"\",\n    \"regtime\": \"\"\n  }\n}"
@@ -618,7 +618,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": ""

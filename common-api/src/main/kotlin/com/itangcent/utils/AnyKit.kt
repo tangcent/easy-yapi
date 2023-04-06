@@ -1,5 +1,6 @@
 package com.itangcent.utils
 
+import com.itangcent.common.utils.isMutableMap
 import com.itangcent.common.utils.mutable
 
 fun Any?.isCollections(): Boolean {
@@ -29,18 +30,26 @@ fun Any?.isCollections(): Boolean {
 @Suppress("UNCHECKED_CAST")
 fun Map<*, *>.subMutable(key: String): MutableMap<String, Any?>? {
     val sub = this[key]
-    if (sub != null && sub is MutableMap<*, *>) {
-        return this as MutableMap<String, Any?>
+    if (sub != null && sub.isMutableMap()) {
+        return sub as MutableMap<String, Any?>
     }
-    if (this is MutableMap<*, *>) {
+    if (this.isMutableMap()) {
         if (sub == null) {
             val mutableSub = LinkedHashMap<String, Any?>()
-            (this as MutableMap<String, Any?>)[key] = mutableSub
+            try {
+                (this as MutableMap<String, Any?>)[key] = mutableSub
+            } catch (e: UnsupportedOperationException) {
+                return null
+            }
             return mutableSub
         }
         if (sub is Map<*, *>) {
             val mutableSub = sub.mutable()
-            (this as MutableMap<String, Any?>)[key] = mutableSub
+            try {
+                (this as MutableMap<String, Any?>)[key] = mutableSub
+            } catch (e: UnsupportedOperationException) {
+                return null
+            }
             return mutableSub as MutableMap<String, Any?>?
         }
     }

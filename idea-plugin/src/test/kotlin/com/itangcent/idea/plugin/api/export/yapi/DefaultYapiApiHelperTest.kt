@@ -65,6 +65,12 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
                         content = PROJECT_INFO,
                         contentType = ContentType.APPLICATION_JSON
                     )
+                    .url("$VALID_YAPI_SERVER$GET_PROJECT_URL?token=$VALID_TOKEN_2")
+                    .method("GET")
+                    .response(
+                        content = PROJECT_INFO_2,
+                        contentType = ContentType.APPLICATION_JSON
+                    )
                     .url("$VALID_YAPI_SERVER$GET_PROJECT_URL?token=$INVALID_TOKEN")
                     .method("GET")
                     .response(
@@ -75,6 +81,12 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
                     .method("GET")
                     .response(
                         content = PROJECT_INFO,
+                        contentType = ContentType.APPLICATION_JSON
+                    )
+                    .url("$VALID_YAPI_SERVER$GET_PROJECT_URL?token=$VALID_TOKEN_2&id=$PROJECT_2")
+                    .method("GET")
+                    .response(
+                        content = PROJECT_INFO_2,
                         contentType = ContentType.APPLICATION_JSON
                     )
                     .url("$VALID_YAPI_SERVER$SAVE_API")
@@ -273,6 +285,19 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
             mapOf("token" to VALID_TOKEN_1, "id" to INTER_1),
             mapOf("token" to VALID_TOKEN_2, "catId" to "470386")
         )
+
+        yapiApiHelper.copyApi(mapOf("module" to "module1"), mapOf("module" to "module2"))
+        yapiApiHelper.copyApi(mapOf("module" to "module1"), mapOf("module" to "module2", "catId" to "470386"))
+        yapiApiHelper.copyApi(mapOf("module" to "module1", "catId" to "470386"), mapOf("module" to "module2"))
+        yapiApiHelper.copyApi(
+            mapOf("module" to "module1", "catId" to CART_1),
+            mapOf("module" to "module2", "catId" to "470386")
+        )
+        yapiApiHelper.copyApi(mapOf("module" to "module1", "id" to INTER_1), mapOf("module" to "module2"))
+        yapiApiHelper.copyApi(
+            mapOf("module" to "module1", "id" to INTER_1),
+            mapOf("module" to "module2", "catId" to "470386")
+        )
     }
 
     companion object {
@@ -281,6 +306,7 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
         const val VALID_TOKEN_2 = "83bbd4a265eb021b136b94c2ebeabdfcdf7faa44dd660734bfe485d10cce7222"
         const val INVALID_TOKEN = "83bbd4a265eb021b136b94c2ebeabdfcdf7faa44dd660734bfe485d10cce7333"
         const val PROJECT_1 = "155080"
+        const val PROJECT_2 = "218466"
         const val CART_1 = "470385"
         const val INTER_1 = "2109671"
 
@@ -615,6 +641,74 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
                 "    ],\n" +
                 "    \"role\": \"owner\"\n" +
                 "  }\n" +
+                "}"
+
+        const val PROJECT_INFO_2 = "{\n" +
+                "    \"errcode\": 0,\n" +
+                "    \"errmsg\": \"成功！\",\n" +
+                "    \"data\": {\n" +
+                "        \"switch_notice\": true,\n" +
+                "        \"is_mock_open\": false,\n" +
+                "        \"strice\": false,\n" +
+                "        \"is_json5\": false,\n" +
+                "        \"_id\": 218466,\n" +
+                "        \"name\": \"test3\",\n" +
+                "        \"desc\": \"\",\n" +
+                "        \"basepath\": \"\",\n" +
+                "        \"project_type\": \"private\",\n" +
+                "        \"uid\": 214663,\n" +
+                "        \"group_id\": 214692,\n" +
+                "        \"icon\": \"code-o\",\n" +
+                "        \"color\": \"yellow\",\n" +
+                "        \"add_time\": 1680437983,\n" +
+                "        \"up_time\": 1680677555,\n" +
+                "        \"env\": [\n" +
+                "            {\n" +
+                "                \"header\": [],\n" +
+                "                \"global\": [],\n" +
+                "                \"_id\": \"642972dfb3b5e40015b8c70f\",\n" +
+                "                \"name\": \"local\",\n" +
+                "                \"domain\": \"http://127.0.0.1\"\n" +
+                "            }\n" +
+                "        ],\n" +
+                "        \"tag\": [],\n" +
+                "        \"cat\": [\n" +
+                "            {\n" +
+                "                \"index\": 0,\n" +
+                "                \"_id\": 728774,\n" +
+                "                \"name\": \"公共分类\",\n" +
+                "                \"project_id\": 218466,\n" +
+                "                \"desc\": \"公共分类\",\n" +
+                "                \"uid\": 214663,\n" +
+                "                \"add_time\": 1680437983,\n" +
+                "                \"up_time\": 1680437983,\n" +
+                "                \"__v\": 0\n" +
+                "            },\n" +
+                "            {\n" +
+                "                \"index\": 0,\n" +
+                "                \"_id\": 730856,\n" +
+                "                \"name\": \"用户相关\",\n" +
+                "                \"project_id\": 218466,\n" +
+                "                \"desc\": \"\",\n" +
+                "                \"uid\": 214663,\n" +
+                "                \"add_time\": 1680567149,\n" +
+                "                \"up_time\": 1680567149,\n" +
+                "                \"__v\": 0\n" +
+                "            },\n" +
+                "            {\n" +
+                "                \"index\": 0,\n" +
+                "                \"_id\": 730863,\n" +
+                "                \"name\": \"Json字段测试相关\",\n" +
+                "                \"project_id\": 218466,\n" +
+                "                \"desc\": \"\",\n" +
+                "                \"uid\": 214663,\n" +
+                "                \"add_time\": 1680567171,\n" +
+                "                \"up_time\": 1680567171,\n" +
+                "                \"__v\": 0\n" +
+                "            }\n" +
+                "        ],\n" +
+                "        \"role\": \"owner\"\n" +
+                "    }\n" +
                 "}"
 
         const val CART_MENU = "{\n" +

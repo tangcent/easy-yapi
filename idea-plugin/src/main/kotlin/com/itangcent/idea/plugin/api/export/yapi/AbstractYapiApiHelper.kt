@@ -6,6 +6,7 @@ import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.common.utils.trySet
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
@@ -139,8 +140,8 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     }
 
     override fun copyApi(from: Map<String, String>, target: Map<String, String>) {
-        val fromToken = from["token"] ?: throw IllegalArgumentException("no token be found in from")
-        val targetToken = target["token"] ?: throw IllegalArgumentException("no token be found in target")
+        val fromToken = from.getToken() ?: throw IllegalArgumentException("no token be found in from")
+        val targetToken = target.getToken() ?: throw IllegalArgumentException("no token be found in target")
         val targetCatId = target["catId"]
         listApis(from) { api ->
             val copyApi = HashMap(api)
@@ -165,8 +166,24 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         }
     }
 
+    private fun Map<String, String>.getToken(): String? {
+        val token = this["token"]
+        if (token != null) {
+            return token
+        }
+
+        val module = this["module"]
+        if (module != null) {
+            return yapiSettingsHelper.getPrivateToken(module, false).also {
+                this.trySet("token", it)
+            }
+        }
+
+        return null
+    }
+
     private fun listApis(from: Map<String, String>, api: (HashMap<String, Any?>) -> Unit) {
-        val fromToken = from["token"] ?: throw IllegalArgumentException("no token be found in from")
+        val fromToken = from.getToken() ?: throw IllegalArgumentException("no token be found in from")
         val id = from["id"]
         if (id != null) {
             getApiInfo(fromToken, id)?.asMap()?.let(api)

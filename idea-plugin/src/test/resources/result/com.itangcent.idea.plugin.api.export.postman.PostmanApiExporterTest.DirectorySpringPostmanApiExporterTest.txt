@@ -86,7 +86,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -190,7 +190,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -268,7 +268,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -346,7 +346,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -424,7 +424,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -504,7 +504,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "null"
@@ -584,7 +584,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "null"
@@ -643,7 +643,7 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "name": "test api return Result\u003cVoid\u003e-Example",
+              "name": "test api return Result<Void>-Example",
               "header": [
                 {
                   "name": "date",
@@ -666,13 +666,13 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": null //response data\n}"
             }
           ],
-          "name": "test api return Result\u003cVoid\u003e"
+          "name": "test api return Result<Void>"
         },
         {
           "request": {
@@ -746,7 +746,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -805,7 +805,7 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "name": "test api return Result\u003cEnum\u003e-Example",
+              "name": "test api return Result<Enum>-Example",
               "header": [
                 {
                   "name": "date",
@@ -828,13 +828,13 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    /**\n     * response data\n     * ADMIN :administration\n     * MEM :a person, an animal or a plant\n     * GUEST :Anonymous visitor\n     */\n    \"data\": \"\"\n}"
             }
           ],
-          "name": "test api return Result\u003cEnum\u003e"
+          "name": "test api return Result<Enum>"
         },
         {
           "request": {
@@ -910,7 +910,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "0"
@@ -971,7 +971,7 @@
               },
               "_postman_previewlanguage": "json",
               "code": 200,
-              "name": "test api return Result\u003cEnum field\u003e-Example",
+              "name": "test api return Result<Enum field>-Example",
               "header": [
                 {
                   "name": "date",
@@ -994,13 +994,13 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": 0 //response data\n}"
             }
           ],
-          "name": "test api return Result\u003cEnum field\u003e"
+          "name": "test api return Result<Enum field>"
         },
         {
           "request": {
@@ -1074,7 +1074,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
@@ -1154,7 +1154,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
@@ -1234,7 +1234,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
@@ -1316,7 +1316,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
@@ -1412,7 +1412,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
@@ -1508,7 +1508,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": {} //response data\n}"
@@ -1678,7 +1678,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": [ //response data\n        {\n            \"id\": 0, //user id\n            /**\n             * user type\n             * 1 :administration\n             * 2 :a person, an animal or a plant\n             * 3 :Anonymous visitor\n             */\n            \"type\": 0,\n            \"name\": \"\", //user name\n            \"age\": 0, //user age\n            \"sex\": 0,\n            \"birthDay\": \"\", //user birthDay\n            \"regtime\": \"\" //user regtime\n        }\n    ]\n}"
@@ -1758,7 +1758,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -1828,7 +1828,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
@@ -1922,7 +1922,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
@@ -2030,7 +2030,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
@@ -2214,7 +2214,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
@@ -2294,7 +2294,7 @@
                 {
                   "name": "content-type",
                   "key": "content-type",
-                  "value": "application/json;charset\u003dUTF-8"
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "\"\""
