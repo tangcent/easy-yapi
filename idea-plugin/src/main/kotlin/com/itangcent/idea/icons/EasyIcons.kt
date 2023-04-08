@@ -5,7 +5,10 @@ import com.itangcent.common.logger.Log
 import com.itangcent.common.spi.SpiUtils
 import com.itangcent.common.utils.invokeMethod
 import com.itangcent.common.utils.safe
+import com.itangcent.idea.sqlite.encodeBase64
 import com.itangcent.idea.utils.setSizeIfNecessary
+import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.file.DefaultLocalFileRepository
 import org.jetbrains.annotations.NonNls
 import java.awt.Component
 import java.awt.Dimension
@@ -24,68 +27,99 @@ object EasyIcons : Log() {
     }
 
     val WebFolder by lazyLoad(
-        "/nodes/webFolder.png",
-        "nodes/folder.png"
+        "/nodes/webFolder.svg",
+        "/nodes/folder.svg",
+        "/assets/webFolder.svg",
     ) // 16x16
 
-    val Class by lazyLoad("/nodes/class.png")  // 16x16
+    val Class by lazyLoad(
+        "/nodes/class.svg",
+        "/assets/class.svg"
+    )  // 16x16
 
-    val Method by lazyLoad("/nodes/method.png")// 16x16
+    val Method by lazyLoad(
+        "/nodes/method.svg",
+        "/assets/method.svg",
+    )// 16x16
 
     val CollapseAll by lazyLoad(
         "/general/collapseAll.png",
-        "actions/collapseall.png"
+        "/actions/collapseall.svg",
+        "/assets/collapseall.svg"
     ) // 11x16
 
-    val Add by lazyLoad("/general/add.png") // 16x16
+    val Add by lazyLoad(
+        "/general/add.svg",
+        "/assets/add.svg"
+    ) // 16x16
 
-    val Remove by lazyLoad("/general/remove.png") // 16x16
+    val Remove by lazyLoad(
+        "/general/remove.svg",
+        "/assets/remove.svg"
+    ) // 16x16
 
-    val Refresh by lazyLoad("/actions/refresh.png") // 16x16
+    val Refresh by lazyLoad(
+        "/actions/refresh.svg",
+        "/assets/refresh.svg",
+    ) // 16x16
 
-    val Link by lazyLoad("/ide/link.png") // 12x12
+    val Link by lazyLoad(
+        "/ide/link.svg",
+        "/assets/link.svg"
+    ) // 12x12
 
     val Run by lazyLoad(
         "/general/run.png",
         "/general/run@2x.png",
-        "/runConfigurations/testState/run.png",
-        "/runConfigurations/testState/run@2x.png"
+        "/runConfigurations/testState/run.svg",
+        "/assets/run.svg"
     ) // 7x10
 
-    val Module by lazyLoad("/nodes/Module.png") // 16x16
+    val Module by lazyLoad(
+        "/nodes/Module.svg",
+        "/assets/module.svg"
+    ) // 16x16
 
-    val ModuleGroup by lazyLoad("/nodes/moduleGroup.png") // 16x16
+    val ModuleGroup by lazyLoad(
+        "/nodes/moduleGroup.svg",
+        "/assets/moduleGroup.svg"
+    ) // 16x16
 
-    val UpFolder by lazyLoad("/nodes/upFolder.png") // 16x16
+    val UpFolder by lazyLoad(
+        "/nodes/upFolder.svg",
+        "/assets/upFolder.svg",
+    ) // 16x16
 
     val Close by lazy {
         tryLoad(
             "/notification/close.png",
-            "/actions/close.png"
-        ) ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/blob/master/assets/close.png"))
+            "/actions/close.svg",
+            "/assets/close.svg"
+        ) ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/master/assets/close.png"))
     }
 
     val OK by lazy {
         tryLoad(
-            "/general/inspectionsOK.png",
-            "/process/state/GreenOK.png"
-        ) ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/blob/master/assets/ok.png"))
+            "/general/inspectionsOK.svg",
+            "/process/state/GreenOK.png",
+            "/assets/ok.svg",
+        ) ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/master/assets/ok.png"))
     }
 
     val Export by lazyLoad(
         "/toolbarDecorator/export.svg",
-        "/toolbarDecorator/export.png",
         "/general/ExportSettings.png",
         "/graph/export.png",
-        "/actions/export.png"
+        "/actions/export.png",
+        "/assets/export.svg"
     )
 
     val Import by lazyLoad(
         "/toolbarDecorator/import.svg",
-        "/toolbarDecorator/import.png",
         "/general/ImportSettings.png",
         "/welcome/importProject.png",
-        "/css/import.png"
+        "/css/import.png",
+        "/assets/import.svg"
     )
 
     private fun lazyLoad(vararg paths: String): Lazy<Icon?> = lazy { tryLoad(*paths) }
@@ -97,11 +131,14 @@ object EasyIcons : Log() {
                     ?.takeIf {
                         it.iconWidth > 2 && it.iconHeight > 2
                     }
-                    ?.let { return it }
+                    ?.let {
+                        LOG.info("load icon: $path")
+                        return it
+                    }
             } catch (_: Exception) {
             }
         }
-        LOG.error("non icon be found in $paths")
+        LOG.error("non icon be found in ${paths.contentToString()}")
         return null
     }
 
@@ -133,7 +170,32 @@ object DefaultIconLoader : IconLoader {
     }
 
     override fun findIcon(url: URL?): Icon? {
-        return com.intellij.openapi.util.IconLoader.findIcon(url)
+        url ?: return null
+        return com.intellij.openapi.util.IconLoader.findIcon(tryLoadCache(url))
+    }
+
+    private fun tryLoadCache(url: URL): URL {
+        if (url.protocol == "file") {
+            return url
+        }
+        val context = ActionContext.getContext() ?: return url
+        val localFileRepository = context.instance(DefaultLocalFileRepository::class)
+        val urlStr = url.toString()
+        val suffix = urlStr.substringAfterLast('.')
+        val cachedFile = "${urlStr.encodeToByteArray().encodeBase64()}.$suffix"
+        localFileRepository.getFile(cachedFile)?.toURI()?.toURL()?.let {
+            return it
+        }
+
+        val content = url.openConnection()
+            .also {
+                it.connectTimeout = 10000
+                it.readTimeout = 10000
+            }
+            .getInputStream().use { it.readBytes() }
+        val file = localFileRepository.getOrCreateFile(cachedFile)
+        file.writeBytes(content)
+        return file.toURI().toURL()
     }
 }
 

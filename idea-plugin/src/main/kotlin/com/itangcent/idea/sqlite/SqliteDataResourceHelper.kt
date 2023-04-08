@@ -307,7 +307,7 @@ fun <T> SQLiteDataSource.execute(sql: String, result: (ResultSet) -> T): T? {
     return null
 }
 
-fun ByteArray.encodeBase64(): String? {
+fun ByteArray.encodeBase64(): String {
     return Base64.getEncoder().encodeToString(this)
 }
 

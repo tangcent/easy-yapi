@@ -1,7 +1,6 @@
 package com.itangcent.test
 
 import com.itangcent.common.logger.Log
-import com.itangcent.idea.icons.DefaultIconLoader
 import com.itangcent.idea.icons.IconLoader
 import java.awt.Component
 import java.awt.Graphics
@@ -18,7 +17,7 @@ class IconLoaderHeadlessSupport : IconLoader {
     private val isActivated = !GraphicsEnvironment.isHeadless()
 
     override fun findIcon(path: String, aClass: Class<*>): Icon? {
-        if (isActivated) return DefaultIconLoader.findIcon(path, aClass)
+//        if (isActivated) return DefaultIconLoader.findIcon(path, aClass)
         val url = resolve(path, aClass.classLoader, aClass)
         return findIcon(url)
     }
@@ -26,6 +25,9 @@ class IconLoaderHeadlessSupport : IconLoader {
     override fun findIcon(url: URL?): Icon? {
         if (url == null) {
             return null
+        }
+        if (url.toString().endsWith(".svg")) {
+            return HeadlessSvgIcon
         }
         val image = ImageIO.read(url)
         return HeadlessIcon(image)
@@ -88,5 +90,19 @@ private class HeadlessIcon(private val image: RenderedImage) : Icon {
 
     override fun getIconHeight(): Int {
         return image.height
+    }
+}
+
+private object HeadlessSvgIcon : Icon {
+    override fun paintIcon(c: Component?, g: Graphics?, x: Int, y: Int) {
+        //NOP
+    }
+
+    override fun getIconWidth(): Int {
+        return 16
+    }
+
+    override fun getIconHeight(): Int {
+        return 16
     }
 }
