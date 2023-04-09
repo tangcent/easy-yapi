@@ -1,3 +1,17 @@
+* 2.5.6
+
+	* feat: add several icons to resources [(#947)](https://github.com/tangcent/easy-yapi/pull/947)
+
+	* feat: YapiApiHelper.copyApi support copy by module instead of token [(#945)](https://github.com/tangcent/easy-yapi/pull/945)
+
+	* feat: new script method 'runtime.async' [(#943)](https://github.com/tangcent/easy-yapi/pull/943)
+
+	* feat: new method YapiApiHelper.copyApi [(#941)](https://github.com/tangcent/easy-yapi/pull/941)
+
+	* feat: new script methods for 'runtime' [(#940)](https://github.com/tangcent/easy-yapi/pull/940)
+
+	* build: change min support ide version to 212 [(#938)](https://github.com/tangcent/easy-yapi/pull/938)
+
 * 2.5.5
 
 	* build: use Kotlin DSL script build project [(#933)](https://github.com/tangcent/easy-yapi/pull/933)
