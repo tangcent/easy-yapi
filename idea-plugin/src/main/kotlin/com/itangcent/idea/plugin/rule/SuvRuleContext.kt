@@ -4,10 +4,12 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiDocCommentOwner
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiModifierListOwner
+import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.SimpleExtensible
+import com.itangcent.common.utils.getPropertyValue
 import com.itangcent.idea.plugin.api.export.core.ClassExportContext
 import com.itangcent.idea.plugin.api.export.core.MethodExportContext
 import com.itangcent.idea.plugin.api.export.rule.MethodDocRuleWrap
@@ -20,24 +22,40 @@ import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.element.ExplicitMethod
 import java.util.concurrent.ConcurrentHashMap
 
-class SuvRuleContext : SimpleExtensible(), RuleContext {
+open class SuvRuleContext : SimpleExtensible, RuleContext {
 
-    override fun asPsiDocCommentOwner(): PsiDocCommentOwner? {
-        return null
+    protected var psiElement: PsiElement? = null
+
+    constructor(psiElement: PsiElement?) {
+        this.psiElement = psiElement
     }
 
-    override fun asPsiModifierListOwner(): PsiModifierListOwner? {
-        return null
+    constructor()
+
+    @ScriptIgnore
+    override fun getResource(): PsiElement? {
+        return psiElement
     }
 
     override fun getName(): String? {
+        return getResource()!!.getPropertyValue("name")?.toString()
+    }
+
+    @ScriptIgnore
+    override fun asPsiDocCommentOwner(): PsiDocCommentOwner? {
+        if (getResource() is PsiDocCommentOwner) {
+            return getResource() as PsiDocCommentOwner
+        }
         return null
     }
 
-    override fun getResource(): PsiElement? {
+    @ScriptIgnore
+    override fun asPsiModifierListOwner(): PsiModifierListOwner? {
+        if (getResource() is PsiModifierListOwner) {
+            return getResource() as PsiModifierListOwner
+        }
         return null
     }
-
 }
 
 fun SuvRuleContext.setDoc(doc: Doc) {

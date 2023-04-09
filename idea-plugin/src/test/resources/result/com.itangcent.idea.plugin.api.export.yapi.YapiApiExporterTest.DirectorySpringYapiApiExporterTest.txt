@@ -42,7 +42,7 @@
     "api_opened": false,
     "add_time": 1618124194,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "query_path": {
@@ -129,7 +129,7 @@
     "api_opened": false,
     "add_time": 1618124194,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "query_path": {
@@ -164,7 +164,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "query_path": {
@@ -199,7 +199,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"integer\",\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"user type {@link com.itangcent.constant.UserType}\"}",
@@ -235,7 +235,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"description\":\"response data\",\"type\":\"null\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -247,7 +247,7 @@
     "res_body_type": "json",
     "index": 0,
     "type": "static",
-    "title": "test api return Result\u003cVoid\u003e",
+    "title": "test api return Result<Void>",
     "switch_notice": true,
     "token": "token111111",
     "path": "/test/return/result/Void",
@@ -271,7 +271,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}}},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -350,7 +350,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"integer\",\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"user type {@link com.itangcent.constant.UserType}\"}",
@@ -362,7 +362,7 @@
     "res_body_type": "json",
     "index": 0,
     "type": "static",
-    "title": "test api return Result\u003cEnum field\u003e",
+    "title": "test api return Result<Enum field>",
     "switch_notice": true,
     "token": "token111111",
     "path": "/test/return/result/enum/field",
@@ -386,7 +386,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -429,7 +429,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -465,7 +465,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -507,7 +507,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -549,7 +549,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -585,7 +585,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -621,7 +621,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -657,7 +657,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"string\",\"description\":\"response data\",\"enum\":[\"ADMIN\",\"MEM\",\"GUEST\"],\"enumDesc\":\"ADMIN :administration\\nMEM :a person, an animal or a plant\\nGUEST :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([\\\"ADMIN\\\",\\\"MEM\\\",\\\"GUEST\\\"])\"}}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -669,7 +669,7 @@
     "res_body_type": "json",
     "index": 0,
     "type": "static",
-    "title": "test api return Result\u003cEnum\u003e",
+    "title": "test api return Result<Enum>",
     "switch_notice": true,
     "token": "token111111",
     "path": "/test/return/result/enum",
@@ -693,7 +693,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"token output\"}",
@@ -736,7 +736,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -785,7 +785,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -821,7 +821,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -857,7 +857,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -893,7 +893,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -929,7 +929,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -965,7 +965,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -1001,7 +1001,7 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003e\u003c/p\u003e"
+    "desc": "<p></p>"
   },
   {
     "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
@@ -1030,6 +1030,6 @@
     "add_time": 1618124194,
     "res_body_is_json_schema": true,
     "status": "done",
-    "desc": "\u003cp\u003enot update anything\u003c/p\u003e"
+    "desc": "<p>not update anything</p>"
   }
 ]

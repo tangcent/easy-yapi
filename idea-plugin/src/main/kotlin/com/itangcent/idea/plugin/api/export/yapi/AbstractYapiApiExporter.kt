@@ -99,7 +99,7 @@ open class AbstractYapiApiExporter {
             apiInfo["catid"] = cartId
             apiInfo["switch_notice"] = yapiSettingsHelper.switchNotice()
 
-            val suvRuleContext = SuvRuleContext()
+            val suvRuleContext = SuvRuleContext(doc.resource())
             suvRuleContext.setDoc(doc)
             suvRuleContext.setExt("yapiInfo", apiInfo)
 

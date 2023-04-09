@@ -191,7 +191,7 @@ class MarkdownFormatter {
 
     private fun parseMethodDoc(methodDoc: MethodDoc, deep: Int, writer: Writer) {
 
-        val suvRuleContext = SuvRuleContext()
+        val suvRuleContext = SuvRuleContext(methodDoc.resource())
         suvRuleContext.setDoc(methodDoc)
         suvRuleContext.setExt("deep", deep)
         suvRuleContext.setExt("title", methodDoc.name)
@@ -246,7 +246,7 @@ class MarkdownFormatter {
 
     private fun parseRequest(request: Request, deep: Int, writer: Writer) {
 
-        val suvRuleContext = SuvRuleContext()
+        val suvRuleContext = SuvRuleContext(request.resource())
         suvRuleContext.setDoc(request)
         suvRuleContext.setExt("deep", deep)
         suvRuleContext.setExt("title", request.name)
