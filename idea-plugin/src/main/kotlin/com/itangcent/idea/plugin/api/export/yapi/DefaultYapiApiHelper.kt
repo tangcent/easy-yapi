@@ -5,10 +5,12 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.asInt
+import com.itangcent.common.utils.asMap
 import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.utils.LocalStorage
 import com.itangcent.idea.swing.MessagesHelper
@@ -101,9 +103,13 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
             }
             GsonUtils.parseToJsonTree(returnValue)
                 .sub("data")
-                .sub("_id")
-                ?.asString?.let {
+                ?.asList()
+                ?.firstOrNull()
+                ?.asMap()
+                ?.get("_id")
+                ?.toString()?.let {
                     apiInfo["_id"] = it
+                    LOG.debug("save api: $it")
                 }
             return true
         } catch (e: Throwable) {
@@ -213,7 +219,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
             ?.asList()
     }
 
-    companion object {
+    companion object : Log() {
         const val GET_INTERFACE = "/api/interface/get"
         const val ADD_CART = "/api/interface/add_cat"
         const val GET_CAT_MENU = "/api/interface/getCatMenu"
