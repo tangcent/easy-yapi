@@ -275,3 +275,30 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
         assertTrue(yapiSettingsHelper.yapiResBodyJson5())
     }
 }
+
+
+internal class YapiSettingsHelperWithConfigTest : SettingsHelperTest() {
+
+    @Inject
+    private lateinit var yapiSettingsHelper: YapiSettingsHelper
+
+    override fun customConfig(): String {
+        return "yapi.server=http://127.0.0.1:3000\n" +
+                "yapi.token.demo=123456789\n" +
+                "yapi.token.login-demo=66"
+    }
+
+    @Test
+    fun testGetServerFromConfig() {
+        assertEquals("http://127.0.0.1:3000", yapiSettingsHelper.getServer())
+        assertEquals("http://127.0.0.1:3000", yapiSettingsHelper.getServer(false))
+    }
+
+    @Test
+    fun testGetPrivateTokenFromConfig() {
+        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo"))
+        assertEquals("123456789", yapiSettingsHelper.getPrivateToken("demo", false))
+        assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo", false))
+        assertEquals("66", yapiSettingsHelper.getPrivateToken("login-demo"))
+    }
+}
