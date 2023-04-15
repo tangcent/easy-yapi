@@ -22,7 +22,7 @@ public class DefaultCtrl extends BaseController {
     /**
      * call with query
      */
-    @GetMapping("/body")
+    @GetMapping("/query")
     public Result<Default> query(Default body) {
         return Result.success(body);
     }

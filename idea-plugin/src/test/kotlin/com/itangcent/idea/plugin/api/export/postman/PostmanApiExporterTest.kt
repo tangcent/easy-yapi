@@ -105,10 +105,6 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
                 "json.rule.convert[java.time.LocalDate]=java.lang.String"
     }
 
-    override fun afterBind() {
-        super.afterBind()
-    }
-
     class SpringPostmanApiExporterTest : PostmanApiExporterTest() {
 
         override fun bind(builder: ActionContext.ActionContextBuilder) {

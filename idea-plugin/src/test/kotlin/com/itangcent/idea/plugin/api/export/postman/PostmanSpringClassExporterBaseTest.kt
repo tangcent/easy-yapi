@@ -23,6 +23,8 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
     @Inject
     internal lateinit var classExporter: ClassExporter
 
+    internal lateinit var baseControllerPsiClass: PsiClass
+
     internal lateinit var userCtrlPsiClass: PsiClass
 
     override fun beforeBind() {
@@ -50,7 +52,7 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
         loadFile("spring/RequestMapping.java")
         loadFile("spring/RequestBody.java")
         loadFile("spring/RestController.java")
-        loadFile("api/BaseController.java")
+        baseControllerPsiClass = loadClass("api/BaseController.java")!!
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
     }
 

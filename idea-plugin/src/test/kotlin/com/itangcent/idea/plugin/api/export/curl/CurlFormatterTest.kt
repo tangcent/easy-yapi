@@ -94,10 +94,17 @@ internal class CurlFormatterTest : PluginContextLightCodeInsightFixtureTestCase(
         }
 
 
-        assertEquals("curl -X GET http://localhost:8080/user/greeting", curlFormatter.parseRequest(requests[0]))
+        assertEquals(
+            "curl -X GET -H 'token: ' http://localhost:8080/user/ctrl/name",
+            curlFormatter.parseRequest(requests[0])
+        )
+        assertEquals(
+            "curl -X GET http://localhost:8080/user/greeting",
+            curlFormatter.parseRequest(requests[1])
+        )
         assertEquals(
             "curl -X GET -H 'token: ' http://localhost:8080/user/get/{id}?id=",
-            curlFormatter.parseRequest(requests[1])
+            curlFormatter.parseRequest(requests[2])
         )
         assertEquals(
             "curl -X POST -H 'Content-Type: application/json' -H 'token: ' -d '{\n" +
@@ -108,11 +115,11 @@ internal class CurlFormatterTest : PluginContextLightCodeInsightFixtureTestCase(
                     "  \"sex\": 0,\n" +
                     "  \"birthDay\": \"\",\n" +
                     "  \"regtime\": \"\"\n" +
-                    "}' http://localhost:8080/user/add", curlFormatter.parseRequest(requests[2])
+                    "}' http://localhost:8080/user/add", curlFormatter.parseRequest(requests[3])
         )
         assertEquals(
             "curl -X PUT -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'id=' -F 'type=' -F 'name=' -F 'age=' -F 'sex=' -F 'birthDay=' -F 'regtime=' http://localhost:8080/user/update",
-            curlFormatter.parseRequest(requests[3])
+            curlFormatter.parseRequest(requests[4])
         )
 
     }

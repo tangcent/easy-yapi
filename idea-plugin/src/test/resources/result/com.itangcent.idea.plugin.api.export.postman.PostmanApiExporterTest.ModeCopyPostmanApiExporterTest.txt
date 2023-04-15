@@ -3,6 +3,86 @@
     {
       "request": {
         "method": "GET",
+        "description": "",
+        "header": [
+          {
+            "key": "token",
+            "value": "",
+            "type": "text",
+            "description": "auth token"
+          }
+        ],
+        "url": {
+          "path": [
+            "user",
+            "ctrl",
+            "name"
+          ],
+          "query": [],
+          "host": "{{test_default}}",
+          "raw": "{{test_default}}/user/ctrl/name"
+        }
+      },
+      "response": [
+        {
+          "originalRequest": {
+            "method": "GET",
+            "description": "",
+            "header": [
+              {
+                "key": "token",
+                "value": "",
+                "type": "text",
+                "description": "auth token"
+              }
+            ],
+            "url": {
+              "path": [
+                "user",
+                "ctrl",
+                "name"
+              ],
+              "query": [],
+              "host": "{{test_default}}",
+              "raw": "{{test_default}}/user/ctrl/name"
+            }
+          },
+          "_postman_previewlanguage": "json",
+          "code": 200,
+          "name": "current ctrl name-Example",
+          "header": [
+            {
+              "name": "date",
+              "key": "date",
+              "value": "Sun, 11 Apr 202106:56:34 GMT",
+              "description": "The date and time that the message was sent"
+            },
+            {
+              "name": "server",
+              "key": "server",
+              "value": "Apache-Coyote/1.1",
+              "description": "A name for the server"
+            },
+            {
+              "name": "transfer-encoding",
+              "key": "transfer-encoding",
+              "value": "chunked",
+              "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+            },
+            {
+              "name": "content-type",
+              "key": "content-type",
+              "value": "application/json;charset=UTF-8"
+            }
+          ],
+          "body": "\"\""
+        }
+      ],
+      "name": "current ctrl name"
+    },
+    {
+      "request": {
+        "method": "GET",
         "description": "not update anything",
         "header": [],
         "url": {
@@ -449,86 +529,6 @@
         }
       ],
       "name": "update user info"
-    },
-    {
-      "request": {
-        "method": "GET",
-        "description": "",
-        "header": [
-          {
-            "key": "token",
-            "value": "",
-            "type": "text",
-            "description": "auth token"
-          }
-        ],
-        "url": {
-          "path": [
-            "user",
-            "ctrl",
-            "name"
-          ],
-          "query": [],
-          "host": "{{test_default}}",
-          "raw": "{{test_default}}/user/ctrl/name"
-        }
-      },
-      "response": [
-        {
-          "originalRequest": {
-            "method": "GET",
-            "description": "",
-            "header": [
-              {
-                "key": "token",
-                "value": "",
-                "type": "text",
-                "description": "auth token"
-              }
-            ],
-            "url": {
-              "path": [
-                "user",
-                "ctrl",
-                "name"
-              ],
-              "query": [],
-              "host": "{{test_default}}",
-              "raw": "{{test_default}}/user/ctrl/name"
-            }
-          },
-          "_postman_previewlanguage": "json",
-          "code": 200,
-          "name": "current ctrl name-Example",
-          "header": [
-            {
-              "name": "date",
-              "key": "date",
-              "value": "Sun, 11 Apr 202106:56:34 GMT",
-              "description": "The date and time that the message was sent"
-            },
-            {
-              "name": "server",
-              "key": "server",
-              "value": "Apache-Coyote/1.1",
-              "description": "A name for the server"
-            },
-            {
-              "name": "transfer-encoding",
-              "key": "transfer-encoding",
-              "value": "chunked",
-              "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
-            },
-            {
-              "name": "content-type",
-              "key": "content-type",
-              "value": "application/json;charset=UTF-8"
-            }
-          ],
-          "body": "\"\""
-        }
-      ],
-      "name": "current ctrl name"
     }
   ],
   "info": {

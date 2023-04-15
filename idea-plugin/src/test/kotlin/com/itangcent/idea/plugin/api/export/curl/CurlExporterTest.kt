@@ -113,11 +113,11 @@ internal class CurlExporterTest : PluginContextLightCodeInsightFixtureTestCase()
 
         assertNoThrowable { curlExporter.export(emptyList()) }
 
-        curlExporter.export(requests[0])
+        curlExporter.export(requests[1])
         assertEquals("curl -X GET http://localhost:8080/user/greeting", command)
 
         command = ""
-        curlExporter.export(listOf(requests[1]))
+        curlExporter.export(listOf(requests[2]))
         assertEquals("curl -X GET http://localhost:8080/user/get/{id}?id=", command)
 
         command = ""

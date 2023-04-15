@@ -48,6 +48,24 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
             })
         }
         requests[0].let { request ->
+            assertEquals("current ctrl name", request.name)
+            assertEquals("", request.desc)
+            assertEquals("GET", request.method)
+            assertEquals(baseControllerPsiClass.methods[0], (request.resource as PsiResource).resource())
+
+            assertEquals(
+                "pm.environment.set(\"token\", \"123456\");",
+                request.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name())
+            )
+            assertEquals(
+                "pm.test(\"Successful POST request\", function () {\n" +
+                        "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
+                        "});", request.getExt(ClassExportRuleKeys.POST_TEST.name())
+            )
+            assertNull(request.body)
+            assertEquals("", request.response!!.first().body.toJson())
+        }
+        requests[1].let { request ->
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)
             assertEquals("GET", request.method)
@@ -65,7 +83,7 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
             assertNull(request.body)
             assertEquals("", request.response!!.first().body.toJson())
         }
-        requests[1].let { request ->
+        requests[2].let { request ->
             assertEquals("get user info", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("GET", request.method)
@@ -86,7 +104,7 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
                 request.response!!.first().body.toJson()
             )
         }
-        requests[2].let { request ->
+        requests[3].let { request ->
             assertEquals("create an user", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
