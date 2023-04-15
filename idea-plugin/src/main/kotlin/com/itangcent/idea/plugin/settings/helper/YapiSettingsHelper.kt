@@ -30,7 +30,7 @@ class YapiSettingsHelper {
     private lateinit var settingBinder: SettingBinder
 
     @Inject
-    private val configReader: ConfigReader? = null
+    private lateinit var configReader: ConfigReader
 
     @Inject(optional = true)
     private val yapiTokenChecker: YapiTokenChecker? = null
@@ -51,7 +51,7 @@ class YapiSettingsHelper {
 
     fun getServer(dumb: Boolean = true): String? {
         if (server.notNullOrBlank()) return server
-        configReader!!.first("yapi.server")?.trim()?.removeSuffix("/")
+        configReader.first("yapi.server")?.trim()?.removeSuffix("/")
             ?.takeIf { it.notNullOrBlank() }
             ?.let {
                 server = it
@@ -92,6 +92,9 @@ class YapiSettingsHelper {
     private var tryInputTokenOfModule: HashSet<String> = HashSet()
 
     fun getPrivateToken(module: String, dumb: Boolean = true): String? {
+
+        configReader.first("yapi.token.$module")?.let { return it }
+
         cacheLock.readLock().withLock {
             if (tokenMap != null) {
                 tokenMap!![module]?.checked()?.let { return it }
