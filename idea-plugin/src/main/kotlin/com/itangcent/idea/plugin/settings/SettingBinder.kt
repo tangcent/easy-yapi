@@ -5,10 +5,9 @@ import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.CachedBeanBinder
 
 @ImplementedBy(DefaultSettingBinder::class)
-interface SettingBinder : BeanBinder<Settings> {
-}
+interface SettingBinder : BeanBinder<Settings>
 
-fun SettingBinder.update(updater: (Settings) -> Unit) {
+fun SettingBinder.update(updater: Settings.() -> Unit) {
     this.read().also(updater).let { this.save(it) }
 }
 
