@@ -42,7 +42,7 @@ open class DefaultPostmanSettingsHelper : PostmanSettingsHelper {
             )
             if (postmanPrivateToken.isNullOrBlank()) return null
             settingBinder.update {
-                it.postmanToken = postmanPrivateToken
+                postmanToken = postmanPrivateToken
             }
             return postmanPrivateToken
         }
@@ -59,7 +59,7 @@ open class DefaultPostmanSettingsHelper : PostmanSettingsHelper {
             postmanWorkspace = selectWorkspace()
             if (postmanWorkspace.notNullOrBlank()) {
                 settingBinder.update {
-                    it.postmanWorkspace = postmanWorkspace
+                    this.postmanWorkspace = postmanWorkspace
                 }
             }
         }
@@ -128,7 +128,7 @@ open class DefaultPostmanSettingsHelper : PostmanSettingsHelper {
     }
 
     override fun addCollectionId(module: String, collectionId: String) {
-        settingBinder.update { it.addPostmanCollections(module, collectionId) }
+        settingBinder.update { addPostmanCollections(module, collectionId) }
     }
 }
 

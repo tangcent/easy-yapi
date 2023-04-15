@@ -25,13 +25,13 @@ class RecommendConfigSettingsHelper {
 
     fun addConfig(code: String) {
         settingBinder.update {
-            it.recommendConfigs = RecommendConfigLoader.addSelectedConfig(it.recommendConfigs, code)
+            recommendConfigs = RecommendConfigLoader.addSelectedConfig(recommendConfigs, code)
         }
     }
 
     fun removeConfig(vararg code: String) {
         settingBinder.update {
-            it.recommendConfigs = RecommendConfigLoader.removeSelectedConfig(it.recommendConfigs, *code)
+            recommendConfigs = RecommendConfigLoader.removeSelectedConfig(recommendConfigs, *code)
         }
     }
 }

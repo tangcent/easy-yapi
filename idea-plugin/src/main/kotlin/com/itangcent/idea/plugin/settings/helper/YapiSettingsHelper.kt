@@ -71,7 +71,7 @@ class YapiSettingsHelper {
             if (yapiServer.isNullOrBlank()) return null
             server = yapiServer
             settingBinder.update {
-                it.yapiServer = yapiServer
+                this.yapiServer = yapiServer
             }
             return yapiServer
         }

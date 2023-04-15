@@ -10,7 +10,7 @@ import kotlin.reflect.full.functions
  */
 class MarkdownHtmlGenerator {
 
-    private val commonMarkFlavourDescriptor = commonMarkFlavourDescriptorBuilder()
+    private val commonMarkFlavourDescriptor by lazy { commonMarkFlavourDescriptorBuilder() }
 
     fun render(markdown: String): String? {
         if (markdown.isBlank()) {
@@ -26,7 +26,7 @@ class MarkdownHtmlGenerator {
     }
 
     companion object {
-        val generateHtmlCall: (HtmlGenerator) -> String = findAdaptedGenerateHtmlCall()
+        val generateHtmlCall: (HtmlGenerator) -> String by lazy { findAdaptedGenerateHtmlCall() }
 
         private fun findAdaptedGenerateHtmlCall(): (HtmlGenerator) -> String {
             val functions = HtmlGenerator::class.functions
@@ -38,8 +38,9 @@ class MarkdownHtmlGenerator {
             return { it.generateHtml() }
         }
 
-        val commonMarkFlavourDescriptorBuilder: () -> CommonMarkFlavourDescriptor =
+        val commonMarkFlavourDescriptorBuilder: () -> CommonMarkFlavourDescriptor by lazy {
             findAdaptedCommonMarkFlavourDescriptor()
+        }
 
         private fun findAdaptedCommonMarkFlavourDescriptor(): () -> CommonMarkFlavourDescriptor {
             val constructors = CommonMarkFlavourDescriptor::class.constructors

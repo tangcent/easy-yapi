@@ -67,9 +67,9 @@ class HttpSettingsHelper {
     }
 
     fun addTrustHost(host: String) {
-        settingBinder.update { settings ->
-            if (!settings.trustHosts.contains(host)) {
-                settings.trustHosts = settings.trustHosts + host
+        settingBinder.update {
+            if (!trustHosts.contains(host)) {
+                trustHosts += host
             }
         }
     }
