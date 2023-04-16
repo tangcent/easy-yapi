@@ -29,11 +29,10 @@ object YapiClassExportRuleKeys {
         "api.status", StringRuleMode.SINGLE
     )
 
-    val FIELD_DEMO: RuleKey<String> = SimpleRuleKey(
-        "field.demo",
+    val FIELD_MOCK: RuleKey<String> = SimpleRuleKey(
+        "field.mock",
         StringRuleMode.SINGLE
     )
-
 
     val FIELD_ADVANCED: RuleKey<List<String>> = SimpleRuleKey(
         "field.advanced",

@@ -1,21 +1,13 @@
 package com.itangcent.common.kit
 
 import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.safe
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 
 /**
  * Test case for [KitUtils]
  */
 class KitUtilsTest {
-
-    @Test
-    fun testFromBool() {
-        assertEquals("true", KitUtils.fromBool(true, "true", "false"))
-        assertEquals("false", KitUtils.fromBool(false, "true", "false"))
-    }
 
     @Test
     fun testToJson() {
@@ -45,11 +37,4 @@ class KitUtilsTest {
         assertTrue("abc".equalIgnoreCase("ABC"))
         assertTrue("cbA".equalIgnoreCase("CBa"))
     }
-
-    @Test
-    fun testBoolOr() {
-        assertEquals("true", true.or("true", "false"))
-        assertEquals("false", false.or("true", "false"))
-    }
-
 }

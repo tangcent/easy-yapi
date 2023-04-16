@@ -25,8 +25,24 @@ class SuvRuleParser : RuleParser {
     override fun parseBooleanRule(rule: String): BooleanRule? {
         return when {
             rule.isBlank() -> null
-            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseBooleanRule(rule.removePrefix(JS_PREFIX))
-            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseBooleanRule(rule.removePrefix(GROOVY_PREFIX))
+            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseBooleanRule(
+                rule.removePrefix(
+                    JS_PREFIX
+                )
+            )
+
+            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseBooleanRule(
+                rule.removePrefix(
+                    GROOVY_PREFIX
+                )
+            )
+
+            rule.startsWith(FIELD_PREFIX) -> getRuleParser(FieldPatternRuleParser::class).parseBooleanRule(
+                rule.removePrefix(
+                    FIELD_PREFIX
+                )
+            )
+
             else -> getRuleParser(SimpleRuleParser::class).parseBooleanRule(rule)
         }
     }
@@ -35,7 +51,12 @@ class SuvRuleParser : RuleParser {
         return when {
             rule.isBlank() -> null
             rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseStringRule(rule.removePrefix(JS_PREFIX))
-            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseStringRule(rule.removePrefix(GROOVY_PREFIX))
+            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseStringRule(
+                rule.removePrefix(
+                    GROOVY_PREFIX
+                )
+            )
+
             else -> getRuleParser(SimpleRuleParser::class).parseStringRule(rule)
         }
     }
@@ -44,7 +65,12 @@ class SuvRuleParser : RuleParser {
         return when {
             rule.isBlank() -> null
             rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseEventRule(rule.removePrefix(JS_PREFIX))
-            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseEventRule(rule.removePrefix(GROOVY_PREFIX))
+            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseEventRule(
+                rule.removePrefix(
+                    GROOVY_PREFIX
+                )
+            )
+
             else -> getRuleParser(SimpleRuleParser::class).parseEventRule(rule)
         }
     }
@@ -69,5 +95,6 @@ class SuvRuleParser : RuleParser {
     companion object {
         private const val JS_PREFIX = "js:"
         private const val GROOVY_PREFIX = "groovy:"
+        private const val FIELD_PREFIX = "field:"
     }
 }

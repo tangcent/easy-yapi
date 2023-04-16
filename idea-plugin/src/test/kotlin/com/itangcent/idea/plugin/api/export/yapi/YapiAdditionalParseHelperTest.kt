@@ -18,7 +18,7 @@ internal class YapiAdditionalParseHelperTest : AdditionalParseHelperTest() {
     @Test
     fun parseHeaderFromJson() {
         val header =
-            additionalParseHelper.parseHeaderFromJson("{name: \"Authorization\",value: \"123h\",desc: \"Token in header\",required:true, example:\"321h\"}")
+            additionalParseHelper.parseHeaderFromJson("{name: \"Authorization\",value: \"123h\",desc: \"Token in header\",required:true, demo:\"321h\"}")
         assertNotNull(header)
         assertEquals("Authorization", header.name)
         assertEquals("123h", header.value)
@@ -30,7 +30,7 @@ internal class YapiAdditionalParseHelperTest : AdditionalParseHelperTest() {
     @Test
     fun parseParamFromJson() {
         val param =
-            additionalParseHelper.parseParamFromJson("{name: \"Authorization\",value: \"123p\",desc: \"Token in param\",required:true, example:\"321p\"}")
+            additionalParseHelper.parseParamFromJson("{name: \"Authorization\",value: \"123p\",desc: \"Token in param\",required:true, demo:\"321p\"}")
         assertNotNull(param)
         assertEquals("Authorization", param.name)
         assertEquals("123p", param.value)

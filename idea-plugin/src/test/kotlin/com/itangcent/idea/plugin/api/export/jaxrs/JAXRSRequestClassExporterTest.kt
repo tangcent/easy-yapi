@@ -86,7 +86,7 @@ internal class JAXRSRequestClassExporterTest : PluginContextLightCodeInsightFixt
     }
 
     override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, example:\"123456\"}\n" +
+        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, demo:\"123456\"}\n" +
                 "ignore=#ignore\n" +
                 "json.rule.field.name=@com.fasterxml.jackson.annotation.JsonProperty#value\n" +
                 "field.required=@javax.validation.constraints.NotBlank\n" +

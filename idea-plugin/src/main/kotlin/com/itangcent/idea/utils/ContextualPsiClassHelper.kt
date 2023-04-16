@@ -10,6 +10,7 @@ import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.AdditionalParseHelper
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
+import com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleContext
@@ -18,7 +19,6 @@ import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.JsonOption.has
-import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
@@ -48,7 +48,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     private lateinit var additionalParseHelper: AdditionalParseHelper
 
     private val parseContext: ThreadLocal<Deque<String>> = ThreadLocal()
-    private val parseScriptContext = ParseScriptContext()
+    private val parseScriptContext = ParseScriptContextImpl()
 
     @PostConstruct
     fun initRuleComputeListener() {
@@ -61,13 +61,18 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         super.beforeParseClass(psiClass, resolveContext, kv)
     }
 
-    override fun beforeParseType(psiClass: PsiClass, duckType: SingleDuckType, resolveContext: ResolveContext, kv: KV<String, Any?>) {
+    override fun beforeParseType(
+        psiClass: PsiClass,
+        duckType: SingleDuckType,
+        resolveContext: ResolveContext,
+        kv: KV<String, Any?>,
+    ) {
         tryInitParseContext()
         ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_BEFORE, duckType, psiClass)
         super.beforeParseType(psiClass, duckType, resolveContext, kv)
     }
 
-    override fun afterParseClass(psiClass: PsiClass, resolveContext: ResolveContext,kv: KV<String, Any?>) {
+    override fun afterParseClass(psiClass: PsiClass, resolveContext: ResolveContext, kv: KV<String, Any?>) {
         try {
             super.afterParseClass(psiClass, resolveContext, kv)
             computeAdditionalField(psiClass, resolveContext, kv)
@@ -77,7 +82,12 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    override fun afterParseType(psiClass: PsiClass, duckType: SingleDuckType, resolveContext: ResolveContext, kv: KV<String, Any?>) {
+    override fun afterParseType(
+        psiClass: PsiClass,
+        duckType: SingleDuckType,
+        resolveContext: ResolveContext,
+        kv: KV<String, Any?>,
+    ) {
         try {
             super.afterParseType(psiClass, duckType, resolveContext, kv)
             computeAdditionalField(psiClass, resolveContext, kv)
@@ -218,12 +228,12 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    inner class ParseScriptContext {
-        fun path(): String {
+    inner class ParseScriptContextImpl : ParseScriptContext {
+        override fun path(): String {
             return parseContext.get()?.joinToString(".") ?: ""
         }
 
-        fun property(property: String): String {
+        override fun property(property: String): String {
             val context = parseContext.get()
             return if (context.isNullOrEmpty()) {
                 property
@@ -260,12 +270,19 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             ClassRuleKeys.FIELD_NAME,
             ClassRuleKeys.FIELD_NAME_PREFIX,
             ClassRuleKeys.FIELD_NAME_SUFFIX,
-            ClassExportRuleKeys.FIELD_MOCK,
-            ClassExportRuleKeys.FIELD_DEFAULT_VALUE,
             ClassRuleKeys.JSON_UNWRAPPED,
+            YapiClassExportRuleKeys.FIELD_MOCK,
+            YapiClassExportRuleKeys.FIELD_ADVANCED,
+            ClassExportRuleKeys.FIELD_DEMO,
+            ClassExportRuleKeys.FIELD_DEFAULT_VALUE,
             ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE,
             ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER,
             ClassExportRuleKeys.FIELD_REQUIRED
         )
     }
+}
+
+interface ParseScriptContext {
+    fun path(): String
+    fun property(property: String): String
 }

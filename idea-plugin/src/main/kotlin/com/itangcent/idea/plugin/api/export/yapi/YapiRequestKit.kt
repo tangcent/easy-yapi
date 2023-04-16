@@ -42,12 +42,12 @@ fun Extensible.setOpen(open: Boolean?) {
 }
 
 fun Extensible.getExample(): String? {
-    return this.getExt(Attrs.EXAMPLE_ATTR)
+    return this.getExt(Attrs.DEMO_ATTR)
 }
 
 fun Extensible.setExample(example: String?) {
     if (example.notNullOrBlank()) {
-        this.setExt(Attrs.EXAMPLE_ATTR, example)
+        this.setExt(Attrs.DEMO_ATTR, example)
     }
 }
 

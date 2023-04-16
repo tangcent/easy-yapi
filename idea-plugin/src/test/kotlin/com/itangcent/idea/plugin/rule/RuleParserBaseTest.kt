@@ -9,7 +9,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import kotlin.reflect.KClass
 
-internal abstract class RuleParserBaseTest : PluginContextLightCodeInsightFixtureTestCase() {
+abstract class RuleParserBaseTest : PluginContextLightCodeInsightFixtureTestCase() {
 
     @Inject
     protected lateinit var ruleParser: RuleParser

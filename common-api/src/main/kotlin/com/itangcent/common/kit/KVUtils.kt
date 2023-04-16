@@ -1,9 +1,7 @@
 package com.itangcent.common.kit
 
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.utils.KV
-import com.itangcent.common.utils.joinToString
-import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.*
 import com.itangcent.utils.isCollections
 import com.itangcent.utils.subMutable
 
@@ -165,7 +163,7 @@ object KVUtils {
         }
     }
 
-    fun useFieldAsAttrs(model: Any?, attr: String) {
+    fun useFieldAsAttr(model: Any?, attr: String) {
         when (model) {
             null -> {
                 return
@@ -175,19 +173,19 @@ object KVUtils {
                 if (model.isEmpty()) {
                     return
                 }
-                return useFieldAsAttrs(model.first(), attr)
+                return useFieldAsAttr(model.first(), attr)
             }
 
             is Array<*> -> {
                 if (model.isEmpty()) {
                     return
                 }
-                return useFieldAsAttrs(model.first(), attr)
+                return useFieldAsAttr(model.first(), attr)
             }
 
             is Map<*, *> -> {
                 val keys = model.keys.toList()
-                keys.forEach { key->
+                keys.forEach { key ->
                     if (key !is String) {
                         return@forEach
                     }
@@ -195,8 +193,58 @@ object KVUtils {
                     if (!value.isCollections()) {
                         model.subMutable(attr)?.set(key, value)
                     }
-                    useFieldAsAttrs(value, attr)
+                    useFieldAsAttr(value, attr)
                 }
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun useAttrAsValue(model: Any?, vararg attrs: String) {
+        when {
+            model == null -> {
+                return
+            }
+
+            model is Collection<*> -> {
+                if (model.isEmpty()) {
+                    return
+                }
+                return useAttrAsValue(model.first(), *attrs)
+            }
+
+            model is Array<*> -> {
+                if (model.isEmpty()) {
+                    return
+                }
+                return useAttrAsValue(model.first(), *attrs)
+            }
+
+            model is Map<*, *> && model.isMutableMap() -> {
+                model as MutableMap<Any?, Any?>
+                val keys = model.keys.toList()
+                val attrMaps = attrs.map { model[it] }
+                    .mapNotNull { it as? Map<Any?, Any?> }
+                for (key in keys) {
+                    if (key !is String || key.startsWith(Attrs.PREFIX)) {
+                        continue
+                    }
+                    val value = model[key]
+                    if (!value.isCollections()) {
+                        attrMaps.firstNotNullOfOrNull { it[key] }
+                            ?.let {
+                                model[key] = it
+                            }
+                    }
+                    useAttrAsValue(value, *attrs)
+                }
+            }
+
+            model is Extensible -> {
+                attrs.firstNotNullOfOrNull { model.getExt<Any>(it) }
+                    ?.let {
+                        model.changePropertyValue("value", it)
+                    }
             }
         }
     }

@@ -9,13 +9,13 @@ import com.itangcent.utils.ExtensibleKit.fromJson
 
 class YapiAdditionalParseHelper : AdditionalParseHelper {
 
-    override fun parseHeaderFromJson(headerStr: String) = Header::class.fromJson(headerStr, Attrs.EXAMPLE_ATTR)
+    override fun parseHeaderFromJson(headerStr: String) = Header::class.fromJson(headerStr, Attrs.DEMO_ATTR)
 
-    override fun parseParamFromJson(paramStr: String) = Param::class.fromJson(paramStr, Attrs.EXAMPLE_ATTR)
+    override fun parseParamFromJson(paramStr: String) = Param::class.fromJson(paramStr, Attrs.DEMO_ATTR)
 
     override fun parseFieldFromJson(paramStr: String): AdditionalField =
         AdditionalField::class.fromJson(
             paramStr,
-            Attrs.EXAMPLE_ATTR, Attrs.MOCK_ATTR, Attrs.ADVANCED_ATTR
+            Attrs.DEMO_ATTR, Attrs.MOCK_ATTR, Attrs.ADVANCED_ATTR
         )
 }

@@ -3,6 +3,8 @@ package com.itangcent.idea.plugin.api.export.markdown
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
+import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
@@ -17,12 +19,10 @@ import com.itangcent.idea.psi.UltimateDocHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.SystemProvider
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.takeIfNotOriginal
 import com.itangcent.intellij.extend.takeIfSpecial
-import com.itangcent.intellij.jvm.DuckTypeHelper
 
 /**
  * format [com.itangcent.common.model.Doc] to `markdown`.
@@ -42,9 +42,6 @@ class MarkdownFormatter {
     protected lateinit var systemProvider: SystemProvider
 
     @Inject
-    private lateinit var duckTypeHelper: DuckTypeHelper
-
-    @Inject
     private lateinit var ruleComputer: RuleComputer
 
     @Inject
@@ -61,9 +58,6 @@ class MarkdownFormatter {
 
     @Inject
     private lateinit var objectWriterBuilder: ObjectWriterBuilder
-
-    @Inject
-    private lateinit var configReader: ConfigReader
 
     fun parseRequests(requests: List<Doc>): String {
         val sb = StringBuilder()
@@ -84,7 +78,6 @@ class MarkdownFormatter {
         return sb.toString()
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun groupRequests(requests: List<Doc>): Any {
 
 
@@ -478,7 +471,12 @@ class MarkdownFormatter {
         writer("```json\n")
         body?.let {
             if (it != 0) {
-                writer(RequestUtils.parseRawBody(it))
+                val copyBody = body.copy()!!
+                KVUtils.useAttrAsValue(
+                    copyBody,
+                    Attrs.DEMO_ATTR, Attrs.DEFAULT_VALUE_ATTR
+                )
+                writer(RequestUtils.parseRawBody(copyBody))
             }
         }
         writer("\n```\n")

@@ -77,7 +77,7 @@ internal class GenericRequestClassExporterTest
                 "generic.method.has.api=true\n" +
                 "generic.param.as.json.body=groovy:!it.type().isNormalType()\n" +
                 "generic.param.as.form.body=false\n" +
-                "method.additional.header={name: \"Authorization\",value: \"123h\",desc: \"Token in header\",required:true, example:\"\"}\n" +
+                "method.additional.header={name: \"Authorization\",value: \"123h\",desc: \"Token in header\",required:true, demo:\"\"}\n" +
                 "method.additional.param={name: \"Authorization\",value: \"123p\",desc: \"Token in param\",required:true}"
     }
 

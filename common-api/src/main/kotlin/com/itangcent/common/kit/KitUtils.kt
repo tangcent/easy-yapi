@@ -4,22 +4,7 @@ import com.itangcent.common.spi.SpiUtils
 import com.itangcent.utils.DefaultJsonSupport
 import com.itangcent.utils.JsonSupport
 
-object KitUtils {
-
-    fun <T> fromBool(boolean: Boolean, whenTrue: T, whenFalse: T): T {
-        return when (boolean) {
-            true -> whenTrue
-            false -> whenFalse
-        }
-    }
-}
-
-fun <T> Boolean?.or(whenTrue: T, whenFalse: T): T {
-    return when (this) {
-        true -> whenTrue
-        else -> whenFalse
-    }
-}
+private val jsonSupport by lazy { SpiUtils.loadService(JsonSupport::class) ?: DefaultJsonSupport }
 
 fun Any?.toJson(): String? {
     if (this == null) {
@@ -29,8 +14,7 @@ fun Any?.toJson(): String? {
     if (this is String) {
         return this
     }
-
-    return (SpiUtils.loadService(JsonSupport::class) ?: DefaultJsonSupport).toJson(this)
+    return jsonSupport.toJson(this)
 }
 
 fun String.headLine(): String? {

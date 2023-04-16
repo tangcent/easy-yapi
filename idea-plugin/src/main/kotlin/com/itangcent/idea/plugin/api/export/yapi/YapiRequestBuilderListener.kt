@@ -60,7 +60,7 @@ class YapiRequestBuilderListener : RequestBuilderListener {
             trySetDemo(exportContext, formParam)
         } else {
             val parent = exportContext.getExt<Any>("parent") as? Map<*, *> ?: return
-            val example = parent.getAs<String>(Attrs.EXAMPLE_ATTR, key) ?: return
+            val example = parent.getAs<String>(Attrs.DEMO_ATTR, key) ?: return
             val path = exportContext.getExt<String>("path")
             if (!path.isNullOrEmpty() && !path.endsWith(key) && formParam.value.notNullOrBlank()) {
                 return
@@ -75,7 +75,7 @@ class YapiRequestBuilderListener : RequestBuilderListener {
             trySetDemo(exportContext, param)
         } else {
             val parent = exportContext.getExt<Any>("parent") as? Map<*, *> ?: return
-            val example = parent.getAs<String>(Attrs.EXAMPLE_ATTR, key) ?: return
+            val example = parent.getAs<String>(Attrs.DEMO_ATTR, key) ?: return
             val path = exportContext.getExt<String>("path")
             if (!path.isNullOrEmpty() && !path.endsWith(key) && !param.value.anyIsNullOrEmpty()) {
                 return
