@@ -1,5 +1,7 @@
 [INFO]	search api from: com.itangcent.api.TestCtrl
 [INFO]	before parse class:com.itangcent.api.TestCtrl
+[INFO]	before parse method:com.itangcent.api.TestCtrl#ctrlName
+[INFO]	after parse method:com.itangcent.api.TestCtrl#ctrlName
 [INFO]	before parse method:com.itangcent.api.TestCtrl#header
 [INFO]	before parse param:token
 [INFO]	after parse param:token
@@ -82,6 +84,4 @@
 [INFO]	before parse param:userInfoPageRequest
 [INFO]	after parse param:userInfoPageRequest
 [INFO]	after parse method:com.itangcent.api.TestCtrl#listPageRequestWithArray
-[INFO]	before parse method:com.itangcent.api.TestCtrl#ctrlName
-[INFO]	after parse method:com.itangcent.api.TestCtrl#ctrlName
 [INFO]	after parse class:com.itangcent.api.TestCtrl

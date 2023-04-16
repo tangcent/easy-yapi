@@ -32,6 +32,8 @@ internal class GenericMethodDocClassExporterTest
     @Inject
     private lateinit var classExporter: ClassExporter
 
+    private lateinit var baseControllerPsiClass: PsiClass
+
     private lateinit var userCtrlPsiClass: PsiClass
 
     private val settings = Settings()
@@ -54,7 +56,7 @@ internal class GenericMethodDocClassExporterTest
         loadFile("model/IResult.java")
         loadFile("model/Result.java")
         loadFile("model/UserInfo.java")
-        loadFile("api/BaseController.java")
+        baseControllerPsiClass = loadClass("api/BaseController.java")!!
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
 
         //clear log
@@ -87,11 +89,16 @@ internal class GenericMethodDocClassExporterTest
             })
         }
         methodDocs[0].let { methodDoc ->
+            assertEquals("current ctrl name", methodDoc.name)
+            assertEquals("", methodDoc.desc)
+            assertEquals(baseControllerPsiClass.methods[0], (methodDoc.resource as PsiResource).resource())
+        }
+        methodDocs[1].let { methodDoc ->
             assertEquals("say hello", methodDoc.name)
             assertEquals("not update anything", methodDoc.desc)
             assertEquals(userCtrlPsiClass.methods[0], (methodDoc.resource as PsiResource).resource())
         }
-        methodDocs[1].let { methodDoc ->
+        methodDocs[2].let { methodDoc ->
             assertEquals("get user info", methodDoc.name)
             assertTrue(methodDoc.desc.isNullOrEmpty())
             assertEquals(userCtrlPsiClass.methods[1], (methodDoc.resource as PsiResource).resource())

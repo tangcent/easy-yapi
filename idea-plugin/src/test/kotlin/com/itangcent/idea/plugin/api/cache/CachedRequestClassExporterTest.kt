@@ -34,6 +34,8 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
 
     private lateinit var delegateClassExporter: SpringRequestClassExporter
 
+    private lateinit var baseControllerPsiClass: PsiClass
+
     private lateinit var userCtrlPsiClass: PsiClass
 
     override fun beforeBind() {
@@ -61,7 +63,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         loadFile("spring/RequestMapping.java")
         loadFile("spring/RequestBody.java")
         loadFile("spring/RestController.java")
-        loadFile("api/BaseController.java")
+        baseControllerPsiClass = loadClass("api/BaseController.java")!!
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
     }
 
@@ -104,12 +106,18 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         })
         boundary.waitComplete(false)
         requests[0].let { request ->
+            assertEquals("current ctrl name", request.name)
+            assertEquals("", request.desc)
+            assertEquals("GET", request.method)
+            assertEquals(baseControllerPsiClass.methods[0], (request.resource as PsiResource).resource())
+        }
+        requests[1].let { request ->
             assertEquals("say hello", request.name)
             assertEquals("not update anything", request.desc)
             assertEquals("GET", request.method)
             assertEquals(userCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
         }
-        requests[1].let { request ->
+        requests[2].let { request ->
             assertEquals("get user info", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("GET", request.method)

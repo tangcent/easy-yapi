@@ -1,3 +1,10 @@
+## current ctrl name
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/user/ctrl/name
+```
+
+---
+
 ## say hello
 ```bash
 curl -X GET http://localhost:8080/user/greeting
@@ -36,7 +43,7 @@ curl -X PUT -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'id=' -F 'typ
 
 ## current ctrl name
 ```bash
-curl -X GET -H 'token: ' http://localhost:8080/user/ctrl/name
+curl -X GET -H 'token: ' http://localhost:8080/test/ctrl/name
 ```
 
 ---
@@ -170,11 +177,4 @@ curl -X POST -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'size=' -F '
 ## user page query with array
 ```bash
 curl -X GET -H 'token: ' http://localhost:8080/test/call/page/user/array?id=\&type=\&name=\&age=\&sex=\&birthDay=\&regtime=
-```
-
----
-
-## current ctrl name
-```bash
-curl -X GET -H 'token: ' http://localhost:8080/test/ctrl/name
 ```

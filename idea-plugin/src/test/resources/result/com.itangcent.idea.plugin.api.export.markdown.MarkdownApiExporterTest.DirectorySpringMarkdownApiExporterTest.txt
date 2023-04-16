@@ -8,6 +8,48 @@ test apis
 
 
 ---
+### current ctrl name
+
+> BASIC
+
+**Path:** /test/ctrl/name
+
+**Method:** GET
+
+> REQUEST
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+> RESPONSE
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |  |
+
+**Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  |
+
+**Response Demo:**
+
+```json
+
+```
+
+
+
+
+---
 ### test RequestHeader
 
 > BASIC
@@ -866,12 +908,19 @@ test apis
 
 
 
+
+## apis about user
+
+apis about user
+access user info
+
+
 ---
 ### current ctrl name
 
 > BASIC
 
-**Path:** /test/ctrl/name
+**Path:** user/ctrl/name
 
 **Method:** GET
 
@@ -906,13 +955,6 @@ test apis
 ```
 
 
-
-
-
-## apis about user
-
-apis about user
-access user info
 
 
 ---
@@ -1185,46 +1227,4 @@ access user info
     "regtime": ""
   }
 }
-```
-
-
-
-
----
-### current ctrl name
-
-> BASIC
-
-**Path:** user/ctrl/name
-
-**Method:** GET
-
-> REQUEST
-
-**Headers:**
-
-| name | value | required | desc |
-| ------------ | ------------ | ------------ | ------------ |
-| token |  | YES | auth token |
-
-
-
-> RESPONSE
-
-**Headers:**
-
-| name | value | required | desc |
-| ------------ | ------------ | ------------ | ------------ |
-| content-type | application/json;charset=UTF-8 | NO |  |
-
-**Body:**
-
-| name | type | desc |
-| ------------ | ------------ | ------------ |
-|  | string |  |
-
-**Response Demo:**
-
-```json
-
 ```

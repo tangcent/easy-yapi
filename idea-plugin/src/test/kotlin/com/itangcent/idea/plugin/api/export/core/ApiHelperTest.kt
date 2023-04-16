@@ -63,42 +63,46 @@ internal class ApiHelperTest : PluginContextLightCodeInsightFixtureTestCase() {
     }
 
     fun testNameAndAttrOfApi() {
+        val explicitMethods = duckHelper.explicit(nameCtrlPsiClass).methods()
         assertEquals(
             "nothing" to null,
-            apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[0])
+            apiHelper.nameAndAttrOfApi(explicitMethods[1])
         )
         assertEquals(
             "say hello" to "public api",
-            apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[1])
+            apiHelper.nameAndAttrOfApi(explicitMethods[2])
         )
         assertEquals(
             "say hello" to "not update anything\n" +
                     "just say hello\n" +
                     "public api",
-            apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[2])
+            apiHelper.nameAndAttrOfApi(explicitMethods[3])
         )
         assertEquals(
             "say hello" to "not update anything\n" +
                     "just say hello\n" +
                     "public api",
-            apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[3])
+            apiHelper.nameAndAttrOfApi(explicitMethods[4])
         )
 
-        apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[0],
+        apiHelper.nameAndAttrOfApi(
+            explicitMethods[1],
             {
                 assertEquals("nothing", it)
             }, {
                 assertEquals("not update anything", it)
             })
 
-        apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[1],
+        apiHelper.nameAndAttrOfApi(
+            explicitMethods[2],
             {
                 assertEquals("say hello", it)
             }, {
                 assertEquals("public api", it)
             })
 
-        apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[2],
+        apiHelper.nameAndAttrOfApi(
+            explicitMethods[3],
             {
                 assertEquals("say hello", it)
             }, {
@@ -109,7 +113,8 @@ internal class ApiHelperTest : PluginContextLightCodeInsightFixtureTestCase() {
                 )
             })
 
-        apiHelper.nameAndAttrOfApi(duckHelper.explicit(nameCtrlPsiClass).methods()[3],
+        apiHelper.nameAndAttrOfApi(
+            explicitMethods[4],
             {
                 assertEquals("say hello", it)
             }, {
@@ -118,19 +123,23 @@ internal class ApiHelperTest : PluginContextLightCodeInsightFixtureTestCase() {
                         "public api", it)
             })
 
-        apiHelper.nameAndAttrOfApi(nameCtrlPsiClass.methods[0],
+        val methods = nameCtrlPsiClass.methods
+        apiHelper.nameAndAttrOfApi(
+            methods[0],
             {
                 assertEquals("nothing", it)
             }, {
                 assertEquals("not update anything", it)
             })
-        apiHelper.nameAndAttrOfApi(nameCtrlPsiClass.methods[1],
+        apiHelper.nameAndAttrOfApi(
+            methods[1],
             {
                 assertEquals("say hello", it)
             }, {
                 assertEquals("public api", it)
             })
-        apiHelper.nameAndAttrOfApi(nameCtrlPsiClass.methods[2],
+        apiHelper.nameAndAttrOfApi(
+            methods[2],
             {
                 assertEquals("say hello", it)
             }, {
@@ -140,7 +149,8 @@ internal class ApiHelperTest : PluginContextLightCodeInsightFixtureTestCase() {
                             "public api", it
                 )
             })
-        apiHelper.nameAndAttrOfApi(nameCtrlPsiClass.methods[3],
+        apiHelper.nameAndAttrOfApi(
+            methods[3],
             {
                 assertEquals("say hello", it)
             }, {
