@@ -3,6 +3,8 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
+import com.itangcent.common.constant.Attrs
+import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.*
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
@@ -212,7 +214,11 @@ open class PostmanFormatter {
 
         if (request.body != null) {
             body[MODE] = "raw"
-            body["raw"] = getBodyFormatter(1).format(request.body)
+            body["raw"] = getBodyFormatter(1).format(
+                request.body.copy().also {
+                    KVUtils.useAttrAsValue(it, Attrs.DEMO_ATTR)
+                }
+            )
             body["options"] = KV.by("raw", KV.by("language", "json"))
         }
 
@@ -235,7 +241,11 @@ open class PostmanFormatter {
                 if (request.body != null) {
                     val copyRequestInfo = GsonUtils.copy(requestInfo) as HashMap<String, Any?>
                     val copyBody: HashMap<String, Any?> = copyRequestInfo.getAs("body")!!
-                    copyBody["raw"] = getBodyFormatter(4).format(request.body)
+                    copyBody["raw"] = getBodyFormatter(4).format(
+                        request.body.copy().also {
+                            KVUtils.useAttrAsValue(it, Attrs.DEMO_ATTR)
+                        }
+                    )
                     responseInfo["originalRequest"] = copyRequestInfo
                 } else {
                     responseInfo["originalRequest"] = requestInfo//need clone?request.clone()?
@@ -303,7 +313,11 @@ open class PostmanFormatter {
                     )
                 }
 
-                responseInfo["body"] = getBodyFormatter(8).format(response.body)
+                responseInfo["body"] = getBodyFormatter(8).format(
+                    response.body.copy().also {
+                        KVUtils.useAttrAsValue(it, Attrs.DEMO_ATTR)
+                    }
+                )
 
                 responses.add(responseInfo)
             }

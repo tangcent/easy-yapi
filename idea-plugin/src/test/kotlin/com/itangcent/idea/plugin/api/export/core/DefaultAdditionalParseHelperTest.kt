@@ -16,7 +16,7 @@ internal class DefaultAdditionalParseHelperTest : AdditionalParseHelperTest() {
     @Test
     fun parseHeaderFromJson() {
         val header =
-            additionalParseHelper.parseHeaderFromJson("{name: \"Authorization\",value: \"123h\",desc: \"Token in header\",required:true, example:\"\"}")
+            additionalParseHelper.parseHeaderFromJson("{name: \"Authorization\",value: \"123h\",desc: \"Token in header\",required:true, demo:\"\"}")
         assertNotNull(header)
         assertEquals("Authorization", header.name)
         assertEquals("123h", header.value)
@@ -28,7 +28,7 @@ internal class DefaultAdditionalParseHelperTest : AdditionalParseHelperTest() {
     @Test
     fun parseParamFromJson() {
         val param =
-            additionalParseHelper.parseParamFromJson("{name: \"Authorization\",value: \"123p\",desc: \"Token in param\",required:true, example:\"\"}")
+            additionalParseHelper.parseParamFromJson("{name: \"Authorization\",value: \"123p\",desc: \"Token in param\",required:true, demo:\"\"}")
         assertNotNull(param)
         assertEquals("Authorization", param.name)
         assertEquals("123p", param.value)

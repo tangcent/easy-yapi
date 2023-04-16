@@ -56,7 +56,19 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         } else {
             kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
             parseAsFieldValue(defaultValue)
-                ?.also { KVUtils.useFieldAsAttrs(it, Attrs.DEFAULT_VALUE_ATTR) }
+                ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEFAULT_VALUE_ATTR) }
+                ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
+        }
+
+        //compute `field.demo`
+        val demoValue = ruleComputer.computer(
+            ClassExportRuleKeys.FIELD_DEMO,
+            fieldOrMethod
+        )
+        if (demoValue.notNullOrBlank()) {
+            kv.sub(Attrs.DEMO_ATTR)[fieldName] = demoValue
+            demoValue?.let { parseAsFieldValue(it) }
+                ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEMO_ATTR) }
                 ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
         }
 

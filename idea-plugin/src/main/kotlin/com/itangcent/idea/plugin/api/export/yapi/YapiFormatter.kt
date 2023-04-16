@@ -781,22 +781,31 @@ open class YapiFormatter {
     }
 
     private fun addAdvanced(propertyInfo: HashMap<String, Any?>, it: Any?) {
-        if (it == null) {
-            return
-        } else if (it is Array<*>) {
-            it.forEach { advanced -> addAdvanced(propertyInfo, advanced) }
-        } else if (it is Collection<*>) {
-            it.forEach { advanced -> addAdvanced(propertyInfo, advanced) }
-        } else if (it is String) {
-            val advancedMap = try {
-                GsonUtils.fromJson(it, Map::class)
-            } catch (e: Exception) {
-                logger.warn("failed process advanced info: $it")
+        when (it) {
+            null -> {
                 return
             }
-            advancedMap.forEach { (key, value) -> propertyInfo.putIfAbsent(key.toString(), value) }
-        } else if (it is Map<*, *>) {
-            it.forEach { (key, value) -> propertyInfo.putIfAbsent(key.toString(), value) }
+            is Array<*> -> {
+                it.forEach { advanced -> addAdvanced(propertyInfo, advanced) }
+            }
+
+            is Collection<*> -> {
+                it.forEach { advanced -> addAdvanced(propertyInfo, advanced) }
+            }
+
+            is String -> {
+                val advancedMap = try {
+                    GsonUtils.fromJson(it, Map::class)
+                } catch (e: Exception) {
+                    logger.warn("failed process advanced info: $it")
+                    return
+                }
+                advancedMap.forEach { (key, value) -> propertyInfo.putIfAbsent(key.toString(), value) }
+            }
+
+            is Map<*, *> -> {
+                it.forEach { (key, value) -> propertyInfo.putIfAbsent(key.toString(), value) }
+            }
         }
     }
 
@@ -933,8 +942,8 @@ open class YapiFormatter {
     }
 
     companion object {
-        val EMPTY_ARR: List<String> = Collections.emptyList<String>()!!
-        val EMPTY_PARAMS: List<String> = Collections.emptyList<String>()
+        val EMPTY_ARR: List<String> = emptyList()
+        val EMPTY_PARAMS: List<String> = emptyList()
 
         val REGEX_URL_CONSIST = Regex("[^a-zA-Z0-9-/_:.{}?=!]")
         val REGEX_URL_REDUNDANT_SLASH = Regex("//+")

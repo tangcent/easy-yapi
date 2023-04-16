@@ -26,27 +26,27 @@ class ExtensibleKitTest {
         assertEquals(acceptHeader,
                 Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true}"))
         assertEquals(acceptHeader,
-                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, example:\"token123\"}"))
+                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, demo:\"token123\"}"))
 
         assertEquals(acceptHeader,
-                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true}", Attrs.EXAMPLE_ATTR))
+                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true}", Attrs.DEMO_ATTR))
         assertNotEquals(acceptHeader,
-                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, example:\"token123\"}", Attrs.EXAMPLE_ATTR))
+                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, demo:\"token123\"}", Attrs.DEMO_ATTR))
 
         acceptHeader.setExample("token123")
 
         assertNotEquals(acceptHeader,
                 Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true}"))
         assertNotEquals(acceptHeader,
-                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, example:\"token123\"}"))
+                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, demo:\"token123\"}"))
 
         assertNotEquals(acceptHeader,
-                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true}", Attrs.EXAMPLE_ATTR))
+                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true}", Attrs.DEMO_ATTR))
         assertEquals(acceptHeader,
-                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, example:\"token123\"}", Attrs.EXAMPLE_ATTR))
+                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, demo:\"token123\"}", Attrs.DEMO_ATTR))
 
         //ext with '@'
         assertEquals(acceptHeader,
-                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, \"@example\":\"token123\"}"))
+                Header::class.fromJson("{name: \"Accept\",value: \"*/*\",desc: \"authentication\",required:true, \"@demo\":\"token123\"}"))
     }
 }
