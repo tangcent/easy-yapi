@@ -1,3 +1,15 @@
+* 2.5.7
+
+	* feat: output field.demo value to postman/markdown [(#958)](https://github.com/tangcent/easy-yapi/pull/958)
+
+	* chore: update version of intellij-kotlin to 1.5.0 [(#957)](https://github.com/tangcent/easy-yapi/pull/957)
+
+	* chore: polish SettingBinder [(#956)](https://github.com/tangcent/easy-yapi/pull/956)
+
+	* feat: read yapi token from config [(#955)](https://github.com/tangcent/easy-yapi/pull/955)
+
+	* fix: set _id back after save api to yapi success [(#952)](https://github.com/tangcent/easy-yapi/pull/952)
+
 * 2.5.6
 
 	* feat: add several icons to resources [(#947)](https://github.com/tangcent/easy-yapi/pull/947)
