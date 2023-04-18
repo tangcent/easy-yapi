@@ -3,6 +3,8 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.logger.Log
+import com.itangcent.common.logger.traceError
+import com.itangcent.common.logger.traceWarn
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.icons.EasyIcons
@@ -21,7 +23,6 @@ import com.itangcent.idea.utils.reload
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.*
 import com.itangcent.intellij.extend.rx.from
-import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.dnd.DnDConstants
 import java.awt.dnd.DropTarget
 import java.awt.dnd.DropTargetAdapter
@@ -114,7 +115,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             try {
                 syncYapiProject()
             } catch (e: Exception) {
-                logger.error("sync failed:" + ExceptionUtils.getStackTrace(e))
+                logger.traceError("sync failed", e)
             }
         }
 
@@ -188,7 +189,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                     handleDropEvent(projectNodeData, yapiNodeData)
 
                 } catch (e: java.lang.Exception) {
-                    logger.info("drop failed:" + ExceptionUtils.getStackTrace(e))
+                    logger.traceWarn("drop failed", e)
                 } finally {
                     dtde.dropComplete(true)
                 }
@@ -299,7 +300,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                             }
                         }
                     } catch (e: Exception) {
-                        logger.error("error to load yapi info:" + ExceptionUtils.getStackTrace(e))
+                        logger.traceError("error to load yapi info", e)
                     }
 
                     actionContext.runInSwingUI {
@@ -766,7 +767,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                     syncYapiNode(targetNodeData.getRootNodeData())
                 }
             } catch (e: Exception) {
-                logger.error("export failed:" + ExceptionUtils.getStackTrace(e))
+                logger.traceError("export failed", e)
             }
         }
     }

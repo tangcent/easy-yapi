@@ -20,7 +20,6 @@ import com.itangcent.intellij.extend.asList
 import com.itangcent.intellij.extend.sub
 import com.itangcent.spi.SpiCompositeLoader
 import org.apache.commons.lang3.StringUtils
-import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
 import kotlin.collections.set
 import kotlin.concurrent.withLock
@@ -95,6 +94,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 .body(apiInfo)
                 .call()
                 .use { it.string() }
+                ?.trim()
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
                 logger.info("save apiInfo failed:$errMsg")
@@ -113,7 +113,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 }
             return true
         } catch (e: Throwable) {
-            logger.error("save apiInfo failed:" + ExceptionUtils.getStackTrace(e))
+            logger.traceError("save apiInfo failed", e)
             return false
         }
     }
@@ -186,6 +186,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 )
                 .call()
                 .use { it.string() }
+                ?.trim()
 
             val errMsg = findErrorMsg(returnValue)
             if (StringUtils.isNotBlank(errMsg)) {
@@ -207,7 +208,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
             cacheLock.writeLock().withLock { projectInfoCache.remove(projectId) }
             return true
         } catch (e: Throwable) {
-            logger.error("Post failed:" + ExceptionUtils.getStackTrace(e))
+            logger.traceError("Post failed", e)
             return false
         }
     }

@@ -218,6 +218,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
                 .get(rawUrl)
                 .call()
                 .use { it.string() }
+                ?.trim()
         } catch (e: SocketTimeoutException) {
             if (!dumb) {
                 logger.trace("$rawUrl connect timeout")
