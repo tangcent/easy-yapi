@@ -1,3 +1,7 @@
+* 2.5.8
+
+	* amend: remove deprecated API usages [(#961)](https://github.com/tangcent/easy-yapi/pull/961)
+
 * 2.5.7
 
 	* feat: output field.demo value to postman/markdown [(#958)](https://github.com/tangcent/easy-yapi/pull/958)
