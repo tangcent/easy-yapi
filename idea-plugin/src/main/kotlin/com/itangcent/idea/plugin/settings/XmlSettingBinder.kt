@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.settings
 
 import com.google.inject.Inject
-import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.settings.xml.ApplicationSettings
 import com.itangcent.idea.plugin.settings.xml.ApplicationSettingsComponent
@@ -14,11 +14,12 @@ class XmlSettingBinder : SettingBinder {
     private var project: Project? = null
 
     private val projectSettingsComponent: ProjectSettingsComponent? by lazy {
-        project?.let { ServiceManager.getService(it, ProjectSettingsComponent::class.java) }
+        project?.getService(ProjectSettingsComponent::class.java)
     }
 
     private val applicationSettingsComponent: ApplicationSettingsComponent by lazy {
-        ServiceManager.getService(ApplicationSettingsComponent::class.java)
+        ApplicationManager.getApplication()
+            .getService(ApplicationSettingsComponent::class.java)
     }
 
     override fun read(): Settings {

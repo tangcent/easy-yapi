@@ -573,7 +573,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
         protected fun setUpBooleanTableColumn(tableColumn: TableColumn) {
             tableColumn.headerRenderer = BooleanTableCellRenderer()
-            tableColumn.cellEditor = BooleanTableCellEditor(false)
+            tableColumn.cellEditor = BooleanTableCellEditor()
             tableColumn.cellRenderer = BooleanTableCellRenderer()
             tableColumn.maxWidth = 50
         }
