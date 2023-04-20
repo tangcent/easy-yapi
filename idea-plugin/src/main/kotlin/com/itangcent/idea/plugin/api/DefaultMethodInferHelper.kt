@@ -723,7 +723,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
     private fun getSimpleFields(psiType: PsiType?, context: PsiElement): Any? {
         actionContext!!.checkStatus()
         when {
-            psiType == null || psiType == PsiType.VOID -> return null
+            psiType == null -> return null
             psiType is PsiPrimitiveType -> return PsiTypesUtil.getDefaultValue(psiType)
             psiClassHelper!!.isNormalType(psiType) -> return psiClassHelper.getDefaultValue(psiType)
             psiType is PsiArrayType -> {
@@ -764,7 +764,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
         actionContext!!.checkStatus()
         when {
-            psiType == null || psiType == PsiType.VOID -> return null
+            psiType == null -> return null
             psiType is PsiPrimitiveType -> return PsiTypesUtil.getDefaultValue(psiType)
             psiClassHelper!!.isNormalType(psiType) -> return psiClassHelper.getDefaultValue(psiType)
             psiType is PsiArrayType -> {
