@@ -49,12 +49,11 @@ import javax.swing.table.TableModel
 import javax.swing.text.JTextComponent
 
 
-@Suppress("UnstableApiUsage")
 class ApiCallDialog : ContextDialog(), ApiCallUI {
     private lateinit var contentPane: JPanel
 
     private lateinit var apisListPanel: JPanel
-    private lateinit var apisJList: JList<*>
+    private lateinit var apisJList: JList<Any?>
     private lateinit var apisPopMenu: JPopupMenu
 
     private lateinit var rightPanel: JPanel
@@ -278,7 +277,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
     }
 
     override fun updateRequestList(requestList: List<Request>?) {
-        if (requestList == null) {
+        if (requestList.isNullOrEmpty()) {
             return
         }
         doAfterInit {
@@ -930,7 +929,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                     }
                 }
 
-                if (request.method?.toUpperCase() != "GET") {
+                if (request.method?.uppercase() != "GET") {
 
                     if (request.formParams.notNullOrEmpty()) {
 

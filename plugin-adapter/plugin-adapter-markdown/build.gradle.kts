@@ -14,7 +14,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.0")
 
-    implementation("org.jetbrains:markdown:0.2.4")
+    implementation("org.jetbrains:markdown:0.4.0")
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
     testImplementation("org.junit.jupiter:junit-jupiter-api:${properties["junit_version"]}")
