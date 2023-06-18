@@ -201,7 +201,7 @@ fun RequestBuilderListener.addFormFileParam(
 
 fun RequestBuilderListener.addHeader(
     exportContext: ExportContext, request: Request,
-    name: String, value: String,
+    name: String, value: String?,
 ): Header {
     val header = Header()
     header.name = name
@@ -216,7 +216,7 @@ fun RequestBuilderListener.addHeader(
 
 fun RequestBuilderListener.addHeaderIfMissed(
     exportContext: ExportContext, request: Request,
-    name: String, value: String,
+    name: String, value: String?,
 ): Boolean {
     if (request.header(name) != null) {
         return false
@@ -230,7 +230,7 @@ fun RequestBuilderListener.addHeaderIfMissed(
 
 fun RequestBuilderListener.addPathParam(
     exportContext: ExportContext, request: Request,
-    name: String, desc: String,
+    name: String, desc: String?,
 ) {
     val pathParam = PathParam()
     pathParam.name = name
@@ -243,7 +243,7 @@ fun RequestBuilderListener.addPathParam(
 
 fun RequestBuilderListener.addPathParam(
     exportContext: ExportContext, request: Request,
-    name: String, value: String, desc: String?,
+    name: String, value: String?, desc: String?,
 ) {
     val pathParam = PathParam()
     pathParam.name = name
@@ -259,7 +259,7 @@ fun RequestBuilderListener.addResponseHeader(
     exportContext: ExportContext,
     response: Response,
     name: String,
-    value: String,
+    value: String?,
 ) {
     val header = Header()
     header.name = name

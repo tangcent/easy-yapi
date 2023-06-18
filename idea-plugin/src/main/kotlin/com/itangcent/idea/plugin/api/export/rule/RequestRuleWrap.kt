@@ -266,11 +266,11 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         this.request.headers?.removeIf { it.name == name }
     }
 
-    fun addHeader(name: String, value: String) {
+    fun addHeader(name: String, value: String?) {
         requestBuilderListener.addHeader(methodExportContext!!, request, name, value)
     }
 
-    fun addHeaderIfMissed(name: String, value: String): Boolean {
+    fun addHeaderIfMissed(name: String, value: String?): Boolean {
         return requestBuilderListener.addHeaderIfMissed(methodExportContext!!, request, name, value)
     }
 
@@ -294,11 +294,11 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         }
     }
 
-    fun addPathParam(name: String, desc: String) {
+    fun addPathParam(name: String, desc: String?) {
         requestBuilderListener.addPathParam(methodExportContext!!, request, name, desc)
     }
 
-    fun addPathParam(name: String, value: String, desc: String) {
+    fun addPathParam(name: String, value: String?, desc: String?) {
         val pathParam = PathParam()
         pathParam.name = name
         pathParam.value = value
@@ -306,7 +306,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         requestBuilderListener.addPathParam(methodExportContext!!, request, pathParam)
     }
 
-    fun setPathParam(name: String, value: String, desc: String) {
+    fun setPathParam(name: String, value: String?, desc: String?) {
         val param = request.paths?.firstOrNull { it.name == name }
         if (param == null) {
             addPathParam(name, value, desc)
