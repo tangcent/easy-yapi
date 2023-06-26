@@ -404,7 +404,7 @@ open class YapiFormatter {
             }
         }
 
-        val queryList: ArrayList<HashMap<String, Any?>>? = item.getAs("req_query")
+        val queryList: List<Map<String, Any?>>? = item.getAs("req_query")
         if (queryList.notNullOrEmpty()) {
             val params = arrayListOf<Param>()
             queryList!!.forEach {
@@ -418,7 +418,7 @@ open class YapiFormatter {
             request.querys = params
         }
 
-        val formParams: ArrayList<HashMap<String, Any?>>? = item.getAs("req_body_form")
+        val formParams: List<Map<String, Any?>>? = item.getAs("req_body_form")
         if (formParams != null) {
             val requestFormParams = arrayListOf<FormParam>()
             formParams.forEach {
@@ -432,7 +432,7 @@ open class YapiFormatter {
             request.formParams = requestFormParams
         }
 
-        val pathParmas: ArrayList<HashMap<String, Any?>>? = item.getAs("req_params")
+        val pathParmas: List<Map<String, Any?>>? = item.getAs("req_params")
         if (pathParmas != null) {
             val requestPathParams = arrayListOf<PathParam>()
             pathParmas.forEach {
@@ -577,9 +577,7 @@ open class YapiFormatter {
 
                             val optionList = options as List<Map<String, Any?>>
 
-                            val optionVals = optionList.stream()
-                                .map { it["value"] }
-                                .collect(Collectors.toList())
+                            val optionVals = optionList.map { it["value"] }
 
                             val optionDesc = KVUtils.getOptionDesc(optionList)
                             mockPropertyInfo["enum"] = optionVals
@@ -669,9 +667,7 @@ open class YapiFormatter {
                     val options = comment?.get("$key@options")
                     if (options != null) {
                         val optionList = options as List<Map<String, Any?>>
-                        val optionVals = optionList.stream()
-                            .map { it["value"] }
-                            .collect(Collectors.toList())
+                        val optionVals = optionList.map { it["value"] }
                         setMock(typedObject, key, "@pick(${GsonUtils.toJson(optionVals).asMockString()})")
                         continue
                     }
@@ -785,6 +781,7 @@ open class YapiFormatter {
             null -> {
                 return
             }
+
             is Array<*> -> {
                 it.forEach { advanced -> addAdvanced(propertyInfo, advanced) }
             }

@@ -140,9 +140,7 @@ open class ClassApiExporterHelper {
         actionContext.runInReadUI {
             val methods = duckTypeHelper!!.explicit(cls)
                 .methods()
-                .stream()
                 .filter { !shouldIgnore(it) }
-                .toList()
             actionContext.runAsync {
                 val boundary = actionContext.createBoundary()
                 try {

@@ -16,19 +16,19 @@ internal class PostmanConfigReaderTest : AutoSearchConfigReaderTest() {
 
     override fun loadConfigs(): Array<String> {
         return arrayOf(
-                "config${s}.postman.config",
-                "config${s}.postman.yml",
-                "config${s}.postman.yaml",
-                "config${s}a${s}.postman.config",
-                "config${s}a${s}.postman.yml",
-                "config${s}a${s}.postman.yaml",
+                "config/.postman.config",
+                "config/.postman.yml",
+                "config/.postman.yaml",
+                "config/a/.postman.config",
+                "config/a/.postman.yml",
+                "config/a/.postman.yaml",
 
-                "config${s}.easy.api.config",
-                "config${s}.easy.api.yml",
-                "config${s}.easy.api.yaml",
-                "config${s}a${s}.easy.api.config",
-                "config${s}a${s}.easy.api.yml",
-                "config${s}a${s}.easy.api.yaml",
+                "config/.easy.api.config",
+                "config/.easy.api.yml",
+                "config/.easy.api.yaml",
+                "config/a/.easy.api.config",
+                "config/a/.easy.api.yml",
+                "config/a/.easy.api.yaml",
         )
     }
 

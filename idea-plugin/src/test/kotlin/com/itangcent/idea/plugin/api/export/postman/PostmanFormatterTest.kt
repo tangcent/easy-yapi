@@ -138,7 +138,7 @@ internal class PostmanFormatterTest : PostmanSpringClassExporterBaseTest() {
         )
         assertNull(request2.querys)
         assertEquals(
-            "{\"regtime\":\"\",\"birthDay\":\"\",\"sex\":0,\"name\":\"\",\"id\":0,\"type\":0,\"age\":0}",
+            "{\"id\":0,\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
             request2.body.toJson()
         )
         assertEquals(

@@ -69,21 +69,21 @@
             {
               "listen": "prerequest",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.environment.set(\"token\", \"123456\");"
-                ]
+                ],
+                "type": "text/javascript"
               }
             },
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Successful POST request\", function () {",
                   "pm.expect(pm.response.code).to.be.oneOf([201,202]);",
                   "});"
-                ]
+                ],
+                "type": "text/javascript"
               }
             }
           ]
@@ -94,10 +94,10 @@
             "description": "",
             "header": [
               {
-                "description": "auth token",
-                "type": "text",
+                "key": "token",
                 "value": "",
-                "key": "token"
+                "type": "text",
+                "description": "auth token"
               }
             ],
             "url": {
@@ -108,10 +108,10 @@
               ],
               "query": [
                 {
-                  "equals": true,
-                  "description": "user id",
+                  "key": "id",
                   "value": "0",
-                  "key": "id"
+                  "equals": true,
+                  "description": "user id"
                 }
               ],
               "host": "{{test_default}}",
@@ -125,10 +125,10 @@
                 "description": "",
                 "header": [
                   {
-                    "description": "auth token",
-                    "type": "text",
+                    "key": "token",
                     "value": "",
-                    "key": "token"
+                    "type": "text",
+                    "description": "auth token"
                   }
                 ],
                 "url": {
@@ -139,10 +139,10 @@
                   ],
                   "query": [
                     {
-                      "equals": true,
-                      "description": "user id",
+                      "key": "id",
                       "value": "0",
-                      "key": "id"
+                      "equals": true,
+                      "description": "user id"
                     }
                   ],
                   "host": "{{test_default}}",
@@ -155,26 +155,26 @@
               "header": [
                 {
                   "name": "date",
-                  "description": "The date and time that the message was sent",
+                  "key": "date",
                   "value": "Sun, 11 Apr 202106:56:34 GMT",
-                  "key": "date"
+                  "description": "The date and time that the message was sent"
                 },
                 {
                   "name": "server",
-                  "description": "A name for the server",
+                  "key": "server",
                   "value": "Apache-Coyote/1.1",
-                  "key": "server"
+                  "description": "A name for the server"
                 },
                 {
                   "name": "transfer-encoding",
-                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.",
+                  "key": "transfer-encoding",
                   "value": "chunked",
-                  "key": "transfer-encoding"
+                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
                 },
                 {
                   "name": "content-type",
-                  "value": "application/json;charset=UTF-8",
-                  "key": "content-type"
+                  "key": "content-type",
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"success\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"Tony Stark\", //user name\n        \"age\": 45, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
@@ -185,21 +185,21 @@
             {
               "listen": "prerequest",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.environment.set(\"token\", \"123456\");"
-                ]
+                ],
+                "type": "text/javascript"
               }
             },
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Successful POST request\", function () {",
                   "pm.expect(pm.response.code).to.be.oneOf([201,202]);",
                   "});"
-                ]
+                ],
+                "type": "text/javascript"
               }
             }
           ]
@@ -210,16 +210,16 @@
             "description": "create a new user",
             "header": [
               {
-                "description": "",
-                "type": "text",
+                "key": "Content-Type",
                 "value": "application/json",
-                "key": "Content-Type"
+                "type": "text",
+                "description": ""
               },
               {
-                "description": "auth token",
-                "type": "text",
+                "key": "token",
                 "value": "",
-                "key": "token"
+                "type": "text",
+                "description": "auth token"
               }
             ],
             "body": {
@@ -238,10 +238,10 @@
               ],
               "query": [
                 {
-                  "equals": true,
-                  "description": "user id",
+                  "key": "id",
                   "value": "0",
-                  "key": "id"
+                  "equals": true,
+                  "description": "user id"
                 }
               ],
               "host": "{{test_default}}",
@@ -255,16 +255,16 @@
                 "description": "",
                 "header": [
                   {
-                    "description": "",
-                    "type": "text",
+                    "key": "Content-Type",
                     "value": "application/json",
-                    "key": "Content-Type"
+                    "type": "text",
+                    "description": ""
                   },
                   {
-                    "description": "auth token",
-                    "type": "text",
+                    "key": "token",
                     "value": "",
-                    "key": "token"
+                    "type": "text",
+                    "description": "auth token"
                   }
                 ],
                 "body": {
@@ -292,26 +292,26 @@
               "header": [
                 {
                   "name": "date",
-                  "description": "The date and time that the message was sent",
+                  "key": "date",
                   "value": "Sun, 11 Apr 202106:56:34 GMT",
-                  "key": "date"
+                  "description": "The date and time that the message was sent"
                 },
                 {
                   "name": "server",
-                  "description": "A name for the server",
+                  "key": "server",
                   "value": "Apache-Coyote/1.1",
-                  "key": "server"
+                  "description": "A name for the server"
                 },
                 {
                   "name": "transfer-encoding",
-                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.",
+                  "key": "transfer-encoding",
                   "value": "chunked",
-                  "key": "transfer-encoding"
+                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
                 },
                 {
                   "name": "content-type",
-                  "value": "application/json;charset=UTF-8",
-                  "key": "content-type"
+                  "key": "content-type",
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
@@ -322,21 +322,21 @@
             {
               "listen": "prerequest",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.environment.set(\"token\", \"123456\");"
-                ]
+                ],
+                "type": "text/javascript"
               }
             },
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Successful POST request\", function () {",
                   "pm.expect(pm.response.code).to.be.oneOf([201,202]);",
                   "});"
-                ]
+                ],
+                "type": "text/javascript"
               }
             }
           ]
@@ -347,55 +347,55 @@
             "description": "",
             "header": [
               {
-                "description": "",
-                "type": "text",
+                "key": "Content-Type",
                 "value": "multipart/form-data",
-                "key": "Content-Type"
+                "type": "text",
+                "description": ""
               },
               {
-                "description": "auth token",
-                "type": "text",
+                "key": "token",
                 "value": "",
-                "key": "token"
+                "type": "text",
+                "description": "auth token"
               }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
-                  "description": "user id",
+                  "key": "id",
                   "type": "text",
-                  "key": "id"
+                  "description": "user id"
                 },
                 {
-                  "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor",
+                  "key": "type",
                   "type": "text",
-                  "key": "type"
+                  "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
                 },
                 {
-                  "description": "user name",
+                  "key": "name",
                   "type": "text",
-                  "key": "name"
+                  "description": "user name"
                 },
                 {
-                  "description": "user age",
+                  "key": "age",
                   "type": "text",
-                  "key": "age"
+                  "description": "user age"
                 },
                 {
-                  "description": "",
+                  "key": "sex",
                   "type": "text",
-                  "key": "sex"
+                  "description": ""
                 },
                 {
-                  "description": "user birthDay",
+                  "key": "birthDay",
                   "type": "text",
-                  "key": "birthDay"
+                  "description": "user birthDay"
                 },
                 {
-                  "description": "user regtime",
+                  "key": "regtime",
                   "type": "text",
-                  "key": "regtime"
+                  "description": "user regtime"
                 }
               ]
             },
@@ -416,55 +416,55 @@
                 "description": "",
                 "header": [
                   {
-                    "description": "",
-                    "type": "text",
+                    "key": "Content-Type",
                     "value": "multipart/form-data",
-                    "key": "Content-Type"
+                    "type": "text",
+                    "description": ""
                   },
                   {
-                    "description": "auth token",
-                    "type": "text",
+                    "key": "token",
                     "value": "",
-                    "key": "token"
+                    "type": "text",
+                    "description": "auth token"
                   }
                 ],
                 "body": {
                   "mode": "formdata",
                   "formdata": [
                     {
-                      "description": "user id",
+                      "key": "id",
                       "type": "text",
-                      "key": "id"
+                      "description": "user id"
                     },
                     {
-                      "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor",
+                      "key": "type",
                       "type": "text",
-                      "key": "type"
+                      "description": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
                     },
                     {
-                      "description": "user name",
+                      "key": "name",
                       "type": "text",
-                      "key": "name"
+                      "description": "user name"
                     },
                     {
-                      "description": "user age",
+                      "key": "age",
                       "type": "text",
-                      "key": "age"
+                      "description": "user age"
                     },
                     {
-                      "description": "",
+                      "key": "sex",
                       "type": "text",
-                      "key": "sex"
+                      "description": ""
                     },
                     {
-                      "description": "user birthDay",
+                      "key": "birthDay",
                       "type": "text",
-                      "key": "birthDay"
+                      "description": "user birthDay"
                     },
                     {
-                      "description": "user regtime",
+                      "key": "regtime",
                       "type": "text",
-                      "key": "regtime"
+                      "description": "user regtime"
                     }
                   ]
                 },
@@ -484,26 +484,26 @@
               "header": [
                 {
                   "name": "date",
-                  "description": "The date and time that the message was sent",
+                  "key": "date",
                   "value": "Sun, 11 Apr 202106:56:34 GMT",
-                  "key": "date"
+                  "description": "The date and time that the message was sent"
                 },
                 {
                   "name": "server",
-                  "description": "A name for the server",
+                  "key": "server",
                   "value": "Apache-Coyote/1.1",
-                  "key": "server"
+                  "description": "A name for the server"
                 },
                 {
                   "name": "transfer-encoding",
-                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity.",
+                  "key": "transfer-encoding",
                   "value": "chunked",
-                  "key": "transfer-encoding"
+                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
                 },
                 {
                   "name": "content-type",
-                  "value": "application/json;charset=UTF-8",
-                  "key": "content-type"
+                  "key": "content-type",
+                  "value": "application/json;charset=UTF-8"
                 }
               ],
               "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
@@ -514,21 +514,21 @@
             {
               "listen": "prerequest",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.environment.set(\"token\", \"123456\");"
-                ]
+                ],
+                "type": "text/javascript"
               }
             },
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Successful POST request\", function () {",
                   "pm.expect(pm.response.code).to.be.oneOf([201,202]);",
                   "});"
-                ]
+                ],
+                "type": "text/javascript"
               }
             }
           ]

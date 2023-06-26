@@ -48,9 +48,9 @@ if [ -n "${fixes}" ]; then
 fi
 
 # Append the list of other commits to the pluginChanges.html file (if there are any)
-if [ -n "${others}" ]; then
-  echo "<ul>other: ${others}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
-fi
+#if [ -n "${others}" ]; then
+#  echo "<ul>other: ${others}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+#fi
 
 # Use tidy to prettify the HTML code in pluginChanges.html and only show the contents of the <body> element
 tidy -q -indent -wrap 0 --show-body-only yes ${basedir}/idea-plugin/parts/pluginChanges.html > ${basedir}/idea-plugin/parts/pluginChanges_temp.html

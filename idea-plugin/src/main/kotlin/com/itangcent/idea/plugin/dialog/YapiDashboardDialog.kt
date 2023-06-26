@@ -270,7 +270,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
                         projectNodes = ArrayList()
 
-                        yapiTokens.values.stream().distinct().forEach { token ->
+                        yapiTokens.values.asSequence().distinct().forEach { token ->
 
                             logger.info("load token:$token")
                             val projectId = yapiApiHelper.getProjectIdByToken(token)
@@ -534,7 +534,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
     //region yapi Node Data--------------------------------------------------
 
     abstract class YapiNodeData : DocContainer, TreeNodeData<YapiNodeData>() {
-        abstract fun data(): HashMap<String, Any?>
+        abstract fun data(): Map<String, Any?>
 
         abstract fun getProjectId(): String?
 
@@ -549,7 +549,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
     class YapiProjectNodeData(
         private var projectToken: String,
-        var projectInfo: HashMap<String, Any?>,
+        var projectInfo: Map<String, Any?>,
     ) : YapiNodeData(), IconCustomized {
         override fun icon(): Icon? {
             return when (status) {
@@ -559,8 +559,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
             } ?: EasyIcons.ModuleGroup
         }
 
-        @Suppress("UNCHECKED_CAST")
-        override fun data(): HashMap<String, Any?> {
+        override fun data(): Map<String, Any?> {
             return projectInfo
         }
 

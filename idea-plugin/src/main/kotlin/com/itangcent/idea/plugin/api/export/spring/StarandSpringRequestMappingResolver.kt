@@ -44,7 +44,7 @@ class StandardSpringRequestMappingResolver : SpringRequestMappingResolver {
 
     private fun findRequestMappingInAnn(ele: PsiElement): Pair<Map<String, Any?>, String>? {
         return SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS
-            .stream()
+            .asSequence()
             .map { ann -> annotationHelper.findAnnMap(ele, ann)?.to(ann) }
             .firstOrNull { it != null }
     }

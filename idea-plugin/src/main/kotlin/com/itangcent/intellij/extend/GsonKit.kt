@@ -6,29 +6,29 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.itangcent.common.utils.GsonUtils
 
-fun JsonObject.asMap(): HashMap<String, Any?> {
-    val map: HashMap<String, Any?> = HashMap()
+fun JsonObject.asHashMap(): MutableMap<String, Any?> {
+    val map = LinkedHashMap<String, Any?>()
     this.entrySet().forEach { map[it.key] = it.value.unbox() }
     return map
 }
 
-fun JsonElement.asMap(dumb: Boolean = true): HashMap<String, Any?> {
+fun JsonElement.asMap(dumb: Boolean = true): Map<String, Any?> {
     return when {
-        this.isJsonObject -> this.asJsonObject.asMap()
-        dumb -> HashMap()
+        this.isJsonObject -> this.asJsonObject.asHashMap()
+        dumb -> LinkedHashMap()
         else -> throw IllegalStateException("Not a JSON Object: $this")
     }
 }
 
-fun JsonArray.asList(): ArrayList<Any?> {
+fun JsonArray.asMutableList(): MutableList<Any?> {
     val list: ArrayList<Any?> = ArrayList()
     this.forEach { list.add(it.unbox()) }
     return list
 }
 
-fun JsonElement.asList(dumb: Boolean = true): ArrayList<Any?> {
+fun JsonElement.asList(dumb: Boolean = true): List<Any?> {
     return when {
-        this.isJsonArray -> this.asJsonArray.asList()
+        this.isJsonArray -> this.asJsonArray.asMutableList()
         dumb -> ArrayList()
         else -> throw IllegalStateException("Not a JSON Array: $this")
     }

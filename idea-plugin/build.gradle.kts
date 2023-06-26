@@ -1,9 +1,21 @@
 plugins {
-    id("org.jetbrains.intellij") version "1.13.2"
+    id("org.jetbrains.intellij") version "1.14.2"
 }
 
 group = "com.itangcent"
 version = properties["plugin_version"]!!
+
+val intellijVersions = arrayOf(
+    mapOf("jdk" to 17, "version" to "2023.1.3", "since" to "231"),
+    mapOf("jdk" to 15, "version" to "2022.2.3", "since" to "223"),
+    mapOf("jdk" to 11, "version" to "2021.2.1", "since" to "212")
+)
+
+val javaVersion = JavaVersion.current().majorVersion.toInt()
+val (intellijVersion, intellijSince) = intellijVersions.first { javaVersion >= (it["jdk"] as Int) }.let {
+    it["version"].toString() to it["since"].toString()
+}
+println("use intellij $intellijVersion")
 
 repositories {
     mavenCentral()
@@ -91,7 +103,7 @@ tasks.getByName<Test>("test") {
 }
 
 intellij {
-    version.set("2021.2.1")
+    version.set(intellijVersion)
     type.set("IC")
     pluginName.set("easy-yapi")
     sandboxDir.set("idea-sandbox")
@@ -103,7 +115,7 @@ tasks {
         pluginDescription.set(file("parts/pluginDescription.html").readText())
         changeNotes.set(file("parts/pluginChanges.html").readText())
 
-        sinceBuild.set("212")
+        sinceBuild.set(intellijSince)
         untilBuild.set("")
     }
 }

@@ -341,7 +341,7 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     ) {
         val params = requestMappingAnn["params"] ?: return
         if (params is Array<*>) {
-            params.stream()
+            params.asSequence()
                 .map { it.tinyString() }
                 .filter { it.notNullOrEmpty() }
                 .forEach { resolveParamStr(methodExportContext, request, it!!) }
@@ -411,13 +411,13 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     ) {
         val headers = requestMappingAnn["headers"] ?: return
         if (headers is Array<*>) {
-            headers.stream()
+            headers.asSequence()
                 .map { it.tinyString() }
                 .filter { it.notNullOrEmpty() }
                 .forEach { resolveHeaderStr(methodExportContext, request, it!!) }
         } else {
             headers.tinyString()
-                ?.takeIf { it.notNullOrEmpty() }
+                ?.takeIf { it.isNotEmpty() }
                 ?.let { resolveHeaderStr(methodExportContext, request, it) }
         }
     }

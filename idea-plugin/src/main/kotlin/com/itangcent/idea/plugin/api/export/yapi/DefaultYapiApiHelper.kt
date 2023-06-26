@@ -17,6 +17,7 @@ import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.asJsonElement
 import com.itangcent.intellij.extend.asList
+import com.itangcent.intellij.extend.asMutableList
 import com.itangcent.intellij.extend.sub
 import com.itangcent.spi.SpiCompositeLoader
 import org.apache.commons.lang3.StringUtils
@@ -53,9 +54,9 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
             }?.sub("_id")?.asString
     }
 
-    override fun findApis(token: String, catId: String): ArrayList<Any?>? {
+    override fun findApis(token: String, catId: String): List<Any?>? {
         return listApis(token, catId)
-            ?.asList()
+            ?.asMutableList()
     }
 
     override fun listApis(token: String, catId: String, limit: Int?): JsonArray? {
@@ -213,7 +214,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
         }
     }
 
-    override fun findCarts(projectId: String, token: String): ArrayList<Any?>? {
+    override fun findCarts(projectId: String, token: String): List<Any?>? {
         val url = "${yapiSettingsHelper.getServer()}$GET_CAT_MENU?project_id=$projectId&token=$token"
         return GsonUtils.parseToJsonTree(getByApi(url))
             ?.sub("data")

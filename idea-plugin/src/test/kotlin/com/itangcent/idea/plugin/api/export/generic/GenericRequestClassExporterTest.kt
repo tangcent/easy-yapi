@@ -140,10 +140,7 @@ internal class GenericRequestClassExporterTest
 
 private fun checkHeader(request: Request) {
     assertNotNull(request.headers)
-    val header = request.headers!!
-        .stream()
-        .filter { it.name == "Authorization" }
-        .firstOrNull()
+    val header = request.headers!!.firstOrNull { it.name == "Authorization" }
     assertNotNull(header)
     assertEquals("Authorization", header.name)
     assertEquals("123h", header.value)
@@ -153,10 +150,7 @@ private fun checkHeader(request: Request) {
 
 private fun checkParam(request: Request) {
     assertNotNull(request.querys)
-    val param = request.querys!!
-        .stream()
-        .filter { it.name == "Authorization" }
-        .firstOrNull()
+    val param = request.querys!!.firstOrNull { it.name == "Authorization" }
     assertNotNull(param)
     assertEquals("Authorization", param.name)
     assertEquals("123p", param.value)

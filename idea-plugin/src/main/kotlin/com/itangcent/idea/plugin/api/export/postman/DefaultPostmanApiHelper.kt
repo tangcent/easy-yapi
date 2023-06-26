@@ -11,7 +11,6 @@ import com.itangcent.http.HttpRequest
 import com.itangcent.http.HttpResponse
 import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.idea.utils.resolveGsonLazily
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.*
@@ -22,7 +21,6 @@ import com.itangcent.suv.http.HttpClientProvider
 import org.apache.http.entity.ContentType
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-import kotlin.streams.toList
 
 /**
  * Postman API: https://docs.api.getpostman.com
@@ -114,7 +112,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     /**
      * @return collection id
      */
-    override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): HashMap<String, Any?>? {
+    override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): Map<String, Any?>? {
         LOG.info("create collection in workspace $workspaceId to postman")
         val request = getHttpClient()
             .post(COLLECTION)
@@ -146,17 +144,20 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    override fun updateCollection(collectionId: String, collectionInfo: HashMap<String, Any?>): Boolean {
+    override fun updateCollection(collectionId: String, collectionInfo: Map<String, Any?>): Boolean {
         LOG.info("update collection $collectionId to postman")
         if (doUpdateCollection(collectionId, collectionInfo)) {
             return true
         }
         try {
             logger.info("try fix collection.....")
-            tryFixCollection(collectionInfo)
-            if (doUpdateCollection(collectionId, collectionInfo)) {
-                return true
-            }
+            collectionInfo.toMutableMap()
+                .also { tryFixCollection(it) }
+                .let {
+                    if (doUpdateCollection(collectionId, it)) {
+                        return true
+                    }
+                }
         } catch (e: Exception) {
             logger.traceError("fix collection failed", e)
 
@@ -165,14 +166,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun tryFixCollection(apiInfo: HashMap<String, Any?>) {
+    fun tryFixCollection(apiInfo: MutableMap<String, Any?>) {
         if (apiInfo.containsKey("item")) {
             val items = apiInfo["item"] as List<*>? ?: return
             apiInfo["item"] = items
-                .stream()
+                .asSequence()
                 .map { it as Map<String, Any?> }
                 .map { it.asHashMap() }
-                .peek { item ->
+                .onEach { item ->
                     tryFixCollection(item)
                 }
                 .toList()
@@ -180,10 +181,10 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             val responses = apiInfo["response"] as List<*>?
             if (responses != null) {
                 apiInfo["response"] = responses
-                    .stream()
+                    .asSequence()
                     .map { it as Map<String, Any?> }
                     .map { it.asHashMap() }
-                    .peek { response ->
+                    .onEach { response ->
                         val responseCode = response["code"]
                         if (responseCode != null) {
                             (response as MutableMap<String, Any?>)["code"] = when (responseCode) {
@@ -199,7 +200,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    private fun doUpdateCollection(collectionId: String, apiInfo: HashMap<String, Any?>): Boolean {
+    private fun doUpdateCollection(collectionId: String, apiInfo: Map<String, Any?>): Boolean {
 
         val request = getHttpClient().put("$COLLECTION/$collectionId")
             .contentType(ContentType.APPLICATION_JSON)
@@ -232,7 +233,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    override fun getAllCollection(): ArrayList<HashMap<String, Any?>>? {
+    override fun getAllCollection(): List<Map<String, Any?>>? {
         LOG.info("read all collection from postman")
         val request = getHttpClient().get(COLLECTION)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
@@ -245,7 +246,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                     val returnObj = returnValue.asJsonElement()
                     val collections = returnObj.sub("collections")
                         ?.asJsonArray ?: return null
-                    val collectionList: ArrayList<HashMap<String, Any?>> = ArrayList()
+                    val collectionList: ArrayList<Map<String, Any?>> = ArrayList()
                     collections.forEach { collectionList.add(it.asMap()) }
                     return collectionList
                 }
@@ -261,7 +262,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    override fun getCollectionByWorkspace(workspaceId: String): ArrayList<HashMap<String, Any?>>? {
+    override fun getCollectionByWorkspace(workspaceId: String): List<Map<String, Any?>>? {
         LOG.info("read collection in workspace [$workspaceId] from postman")
         val request = getHttpClient().get("$WORKSPACE/$workspaceId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
@@ -276,7 +277,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                         .sub("workspace")
                         .sub("collections")
                         ?.asJsonArray ?: return arrayListOf()
-                    val collectionList = arrayListOf<HashMap<String, Any?>>()
+                    val collectionList = arrayListOf<Map<String, Any?>>()
                     collections.forEach { collectionList.add(it.asMap()) }
                     return collectionList
                 }
@@ -291,7 +292,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    override fun getCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+    override fun getCollectionInfo(collectionId: String): Map<String, Any?>? {
         LOG.info("read collection of $collectionId from postman")
         val request = getHttpClient().get("$COLLECTION/$collectionId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
@@ -392,7 +393,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    override fun deleteCollectionInfo(collectionId: String): HashMap<String, Any?>? {
+    override fun deleteCollectionInfo(collectionId: String): Map<String, Any?>? {
         LOG.info("delete collection $collectionId from postman")
         val request = getHttpClient().delete("$COLLECTION/$collectionId")
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
