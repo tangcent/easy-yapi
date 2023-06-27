@@ -1,31 +1,71 @@
-#!/usr/bin/env bash
-#
+#!/bin/bash
 
-SOURCE="$0"
-while [[ -h "$SOURCE"  ]]; do # resolve $SOURCE until the file is no longer a symlink
-    scriptDir="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-    SOURCE="$(readlink "$SOURCE")"
-    [[ ${SOURCE} != /*  ]] && SOURCE="$scriptDir/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
-done
-scriptDir="$( cd -P "$( dirname "$SOURCE"  )" && pwd  )"
-basedir=${scriptDir%/*}
-echo "baseDir:"${basedir}
+# Set basedir to the root directory of the project
+basedir=$(cd "$(dirname "$0")/.." && pwd)
 
-bash $scriptDir/collect_commits.sh
-./gradlew patchUpdate --stacktrace
-rm $scriptDir/commits.txt
+# Get the last version
+last_version=$(cat ${basedir}/gradle.properties | grep -Eo -m1 '[0-9]+\.[0-9]+\.[0-9]+')
+echo "Last version: ${last_version}"
 
-cd $scriptDir
-./env-build.sh
+# Set release_date to today's date
+release_date=$(date +"%Y-%m-%d")
 
-cd ${basedir}
-echo "switch to"`pwd`
+# Calculate the next version
+next_version=$(echo ${last_version} | awk -F. '{split($0,a,".");a[3]++;printf("%d.%d.%d",a[1],a[2],a[3])}')
+echo "Next version: ${next_version}"
 
-./gradlew clean
+# Create a new release branch based on the next version
+release_branch="release/v${next_version}"
+git branch ${release_branch}
+git checkout ${release_branch}
 
-git add .
-version=`cat ${basedir}/gradle.properties | grep -Eo -m1 '[0-9]\.[0-9]\.[0-9]'`
-echo "version:${version}"
-git config user.name tangcent
-git config user.email pentatangcent@gmail.com
-git commit -m "release v$version"
+# Get a list of all commits made after the last release tag
+commits=$(git log --pretty=format:"%s" v${last_version}..HEAD | sed 's/\(#\([0-9]*\)\)/<a href="https:\/\/github.com\/tangcent\/easy-yapi\/pull\/\2">\1<\/a>/')
+echo "commits:${commits}"
+
+# Separate commits into enhancements and fixes
+enhancements=$(echo "${commits}" | grep -i "^feat" | sed 's/^/<li>enhancements: /;s/$/<\/li>/')
+fixes=$(echo "${commits}" | grep -i "^fix" | sed 's/^/<li>fixes: /;s/$/<\/li>/')
+others=$(echo "${commits}" | grep -ivE "^feat|^fix" | sed 's/^/<li>/;s/$/<\/li>/')
+
+
+# Update the version number in the gradle.properties file
+sed -i.bak "s/version=${last_version}/version=${next_version}/g" ${basedir}/gradle.properties && rm ${basedir}/gradle.properties.bak
+
+# Write the header to the pluginChanges.html file
+echo "<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${next_version}\">v${next_version}(${release_date})</a>" > ${basedir}/idea-plugin/parts/pluginChanges.html
+echo "<br/>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+echo "<a href=\"https://github.com/tangcent/easy-yapi/blob/master/IDEA_CHANGELOG.md\">Full Changelog</a>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+
+# Write the list of enhancements to the pluginChanges.html file (if there are any)
+if [ -n "${enhancements}" ]; then
+  echo "<ul>enhancements: ${enhancements}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+fi
+
+# Append the list of fixes to the pluginChanges.html file (if there are any)
+if [ -n "${fixes}" ]; then
+  echo "<ul>fixes: ${fixes}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+fi
+
+# Append the list of other commits to the pluginChanges.html file (if there are any)
+if [ -n "${others}" ]; then
+  echo "<ul>other: ${others}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+fi
+
+# Use tidy to prettify the HTML code in pluginChanges.html and only show the contents of the <body> element
+tidy -q -indent -wrap 0 --show-body-only yes ${basedir}/idea-plugin/parts/pluginChanges.html > ${basedir}/idea-plugin/parts/pluginChanges_temp.html
+mv ${basedir}/idea-plugin/parts/pluginChanges_temp.html ${basedir}/idea-plugin/parts/pluginChanges.html
+
+commits_for_changes_log=$(git log --pretty=format:"%s" v${last_version}..HEAD | sed -e 's/^\(.*\)(\(#[0-9]*\))$/\	* \1 \[\2\]\(https:\/\/github.com\/tangcent\/easy-yapi\/pull\/\2\)\n/')
+echo "commits_for_changes_log:${commits_for_changes_log}"
+
+echo "${commits_for_changes_log}" | cat - ${basedir}/IDEA_CHANGELOG.md > tmp && mv tmp ${basedir}/IDEA_CHANGELOG.md
+echo "* ${next_version}" | cat - ${basedir}/IDEA_CHANGELOG.md > tmp && mv tmp ${basedir}/IDEA_CHANGELOG.md
+
+# Add all changes and create a new commit
+git add ${basedir}/gradle.properties ${basedir}/IDEA_CHANGELOG.md ${basedir}/idea-plugin/parts/pluginChanges.html
+
+# Create a new commit with the list of commit messages
+commit_message="release ${next_version}"
+
+git commit -m "${commit_message}"
