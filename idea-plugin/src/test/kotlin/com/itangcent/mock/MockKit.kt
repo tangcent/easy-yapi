@@ -1,5 +1,6 @@
 package com.itangcent.mock
 
+import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.getPropertyValue
 import com.itangcent.intellij.jvm.adapt.getterPropertyName
 import com.itangcent.intellij.jvm.adapt.maybeGetterMethodPropertyName
@@ -37,9 +38,13 @@ private fun Field.markAsAccessible() {
     if (this.name == "modifiers") {
         return
     }
-    val modifiers = this.modifiers and Modifier.FINAL.inv()
-    if (modifiers != this.modifiers) {
-        modifierField.setInt(this, modifiers)
+    try {
+        val modifiers = this.modifiers and Modifier.FINAL.inv()
+        if (modifiers != this.modifiers) {
+            modifierField.setInt(this, modifiers)
+        }
+    } catch (e: Exception) {
+        Log.warn("failed update modifiers of field: $this")
     }
 }
 

@@ -27,8 +27,6 @@ import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
-import com.itangcent.idea.plugin.script.GroovyActionExtLoader
-import com.itangcent.idea.plugin.script.LoggerBuffer
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.helper.*
 import com.itangcent.idea.psi.PsiResource
@@ -128,16 +126,6 @@ open class SuvApiExporter {
         this.selectAll()
     }
 
-    private var customActionExtLoader: ((String, ActionContext.ActionContextBuilder) -> Unit)? = null
-
-    fun setCustomActionExtLoader(customActionExtLoader: (String, ActionContext.ActionContextBuilder) -> Unit) {
-        this.customActionExtLoader = customActionExtLoader
-    }
-
-    protected fun loadCustomActionExt(actionName: String, builder: ActionContext.ActionContextBuilder) {
-        customActionExtLoader?.let { it(actionName, builder) }
-    }
-
     class DocWrapper {
 
         var resource: Any?
@@ -209,8 +197,6 @@ open class SuvApiExporter {
 
             val newActionContext = actionContextBuilder.build()
 
-            actionPerformed(newActionContext)
-
             newActionContext.runAsync {
                 try {
                     newActionContext.init(this)
@@ -237,18 +223,6 @@ open class SuvApiExporter {
             }
 
             newActionContext.waitCompleteAsync()
-        }
-
-        protected open fun actionPerformed(actionContext: ActionContext) {
-            val loggerBuffer: LoggerBuffer? = actionContext.getCache<LoggerBuffer>("LOGGER_BUF")
-            loggerBuffer?.drainTo(actionContext.instance(Logger::class))
-            val actionExtLoader: GroovyActionExtLoader? =
-                actionContext.getCache<GroovyActionExtLoader>("GROOVY_ACTION_EXT_LOADER")
-            actionExtLoader?.let { extLoader ->
-                actionContext.on(EventKey.ON_COMPLETED) {
-                    extLoader.close()
-                }
-            }
         }
 
         protected open fun beforeExport(next: () -> Unit) {
@@ -284,8 +258,6 @@ open class SuvApiExporter {
             }
 
             afterBuildActionContext(actionContext, builder)
-
-            suvApiExporter?.loadCustomActionExt(actionName(), builder)
         }
 
         protected open fun actionName(): String {

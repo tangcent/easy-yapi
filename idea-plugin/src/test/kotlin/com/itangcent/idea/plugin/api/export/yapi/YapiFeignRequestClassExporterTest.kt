@@ -58,6 +58,7 @@ internal class YapiFeignRequestClassExporterTest : YapiSpringClassExporterBaseTe
     fun testExport() {
         assertTrue(classExporter.support(Request::class))
         assertFalse(classExporter.support(MethodDoc::class))
+        LoggerCollector.getLog()
 
         val requests = ArrayList<Request>()
         actionContext.withBoundary {

@@ -126,8 +126,6 @@ class SuvApiExportDialog : ContextDialog() {
     }
 
     override fun init() {
-        actionContext.keepAlive(TimeUnit.MINUTES.toMillis(3))
-
         actionContext.runAsync {
             for (i in 0..10) {
                 Thread.sleep(500)

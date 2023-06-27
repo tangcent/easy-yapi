@@ -216,11 +216,6 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
         initYapiInfo()
     }
 
-    override fun onPostConstruct() {
-        super.onPostConstruct()
-        actionContext.keepAlive(TimeUnit.HOURS.toMillis(1))
-    }
-
     //region yapi module-----------------------------------------------------
 
     private var yapiAvailable: Boolean = true
@@ -247,7 +242,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
                 actionContext.runInSwingUI {
                     Messages.showErrorDialog(
                         this,
-                        "load yapi info failed,no server be found", "Error"
+                        "Load yapi info failed, no server be found", "Error"
                     )
                 }
                 return@runInNormalThread

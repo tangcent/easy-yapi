@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit
 class EnumProcessInitializer : Initializer {
     override fun init() {
         val actionContext = ActionContext.getContext() ?: return
-        actionContext.keepAlive(TimeUnit.MINUTES.toMillis(5))
         try {
             val propertiesComponent = PropertiesComponent.getInstance()
             if (EventRecords.getRecord(EventRecords.ENUM_RESOLVE) > 0 && !propertiesComponent.getBoolean(

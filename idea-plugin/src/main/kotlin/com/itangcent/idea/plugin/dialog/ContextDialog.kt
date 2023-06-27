@@ -94,6 +94,5 @@ abstract class ContextDialog : JDialog() {
     open fun onDispose() {
         actionContext.unHold()
         actionContext.stop()
-        actionContext.suicide()
     }
 }

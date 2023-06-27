@@ -69,8 +69,6 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
 
         this.context = context
 
-        context.keepAlive(TimeUnit.HOURS.toMillis(1))
-
         context.init(this)
 
         easyApiConfigurableGUI = createGUI()
