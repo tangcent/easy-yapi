@@ -74,9 +74,6 @@ class SuvExportAction : ApiExportAction("Export Api") {
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
         super.actionPerformed(actionContext, project, anActionEvent)
         val multipleApiExporter = actionContext.instance(SuvApiExporter::class)
-        multipleApiExporter.setCustomActionExtLoader { actionName, actionContextBuilder ->
-            loadCustomActionExt(actionName, actionContext.instance(DataContext::class), actionContextBuilder)
-        }
         multipleApiExporter.showExportWindow()
     }
 }

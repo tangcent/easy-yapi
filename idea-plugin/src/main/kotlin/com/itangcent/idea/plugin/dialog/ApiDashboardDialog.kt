@@ -231,11 +231,6 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         initPostmanInfo()
     }
 
-    override fun onPostConstruct() {
-        super.onPostConstruct()
-        actionContext.keepAlive(TimeUnit.HOURS.toMillis(1))
-    }
-
     //region postman module-----------------------------------------------------
 
     private var postmanAvailable: Boolean = true

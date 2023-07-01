@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.settings
 
 import com.intellij.ide.util.PropertiesComponent
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 object EventRecords {
 
@@ -18,30 +19,27 @@ object EventRecords {
     }
 
     fun record(key: String): Int {
-        return records.computeIfAbsent(key) { RecordHolder(it) }.incr()
+        return getRecordHolder(key).incr()
     }
 
     fun getRecord(key: String): Int {
-        return records.computeIfAbsent(key) { RecordHolder(it) }.get()
+        return getRecordHolder(key).get()
     }
+
+    private fun getRecordHolder(key: String) = records.computeIfAbsent(key) { RecordHolder(it) }
 
     class RecordHolder(private val key: String) {
 
-        private var value: Int? = null
+        private val value: AtomicInteger by lazy { AtomicInteger(propertiesComponent.getInt(key, 0)) }
 
-        @Synchronized
         fun incr(): Int {
-            value = get() + 1
-            propertiesComponent.setValue(key, value!!, 0)
-            return value!!
+            return value.incrementAndGet().also {
+                propertiesComponent.setValue(key, it, 0)
+            }
         }
 
-        @Synchronized
         fun get(): Int {
-            if (value == null) {
-                value = propertiesComponent.getInt(key, 0)
-            }
-            return value ?: 0
+            return value.get()
         }
     }
 }

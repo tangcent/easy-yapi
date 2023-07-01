@@ -118,7 +118,6 @@ class ScriptExecutorDialog : ContextDialog() {
     }
 
     override fun init() {
-        actionContext.keepAlive(TimeUnit.MINUTES.toMillis(5))
 
         this.scriptTypeComboBox!!.model =
             DefaultComboBoxModel(scriptSupports.filter { it.checkSupport() }.toTypedArray())
@@ -224,7 +223,7 @@ class ScriptExecutorDialog : ContextDialog() {
                 }
                 refreshScriptContexts()
             } catch (e: Exception) {
-                logger!!.traceWarn("error handle class", e)
+                logger.traceWarn("error handle class", e)
             }
         }
     }
@@ -263,7 +262,7 @@ class ScriptExecutorDialog : ContextDialog() {
         val context = this.context
         context?.element()?.let { ele ->
             val psiCls = getPsiClass(ele)
-            actionContext!!.callInReadUI {
+            actionContext.callInReadUI {
                 val explicitClass = duckTypeHelper.explicit(psiCls)
                 contexts.add(SimpleScriptContext(psiCls, psiCls.qualifiedName))
                 explicitClass.fields().forEach {
@@ -275,7 +274,7 @@ class ScriptExecutorDialog : ContextDialog() {
             }
         }
 
-        actionContext!!.runInSwingUI {
+        actionContext.runInSwingUI {
             this.contextComboBox!!.model = DefaultComboBoxModel(contexts.toTypedArray())
             this.contextComboBox!!.model
                 .also { it.selectedItem = context }
@@ -407,7 +406,7 @@ class ScriptExecutorDialog : ContextDialog() {
     }
 
     private fun doEvalToConsole(scriptInfo: ScriptInfo) {
-        actionContext!!.runInReadUI {
+        actionContext.runInReadUI {
             val ret = doEval(scriptInfo)
             actionContext.runAsync {
                 autoComputer.value(this::consoleText, ret ?: "")
