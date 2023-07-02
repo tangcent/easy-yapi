@@ -82,9 +82,9 @@ open class PostmanFormatter {
     }
 
     private fun fixResponse(item: HashMap<String, Any?>) {
-        val responses = item.getAs<ArrayList<HashMap<String, Any?>>>("response")
+        val responses = item.getAs<List<Map<String, Any?>>>("response")
             ?: return
-        val url: HashMap<String, Any?> = item.getAs("request", "url") ?: return
+        val url: Map<String, Any?> = item.getAs("request", "url") ?: return
         for (response in responses) {
             val originalRequest = response.getAs<HashMap<String, Any?>>("originalRequest")
                 ?: continue
@@ -331,12 +331,12 @@ open class PostmanFormatter {
         val request = Request()
         request.name = item.getAs("name")
 
-        val requestInfo: HashMap<String, Any?> = item.getAs("request") ?: return null
+        val requestInfo: Map<String, Any?> = item.getAs("request") ?: return null
         request.path = URL.of(requestInfo.getAs<List<String>>("url", "path")?.joinToString(separator = "/"))
         request.method = requestInfo.getAs("method")
         request.desc = requestInfo.getAs(DESCRIPTION)
 
-        val headers: ArrayList<HashMap<String, Any?>>? = requestInfo.getAs("header")
+        val headers: ArrayList<Map<String, Any?>>? = requestInfo.getAs("header")
         if (headers.notNullOrEmpty()) {
             val requestHeaders = arrayListOf<Header>()
             request.headers = requestHeaders
@@ -349,7 +349,7 @@ open class PostmanFormatter {
             }
         }
 
-        val queryList: ArrayList<HashMap<String, Any?>>? = requestInfo.getAs("url", "query")
+        val queryList: ArrayList<Map<String, Any?>>? = requestInfo.getAs("url", "query")
         if (queryList.notNullOrEmpty()) {
             val params = arrayListOf<Param>()
             queryList!!.forEach {
@@ -362,7 +362,7 @@ open class PostmanFormatter {
             request.querys = params
         }
 
-        val body: HashMap<String, Any?>? = requestInfo.getAs("body")
+        val body: Map<String, Any?>? = requestInfo.getAs("body")
         if (body != null) {
             val mode = body.getAs<String>(MODE)
             when (mode) {
@@ -375,7 +375,7 @@ open class PostmanFormatter {
                 }
 
                 "formdata" -> {
-                    val formdatas: ArrayList<HashMap<String, Any?>>? = body.getAs("formdata")
+                    val formdatas: ArrayList<Map<String, Any?>>? = body.getAs("formdata")
                     if (formdatas != null) {
                         val formParams = arrayListOf<FormParam>()
                         formdatas.forEach {
@@ -391,7 +391,7 @@ open class PostmanFormatter {
                 }
 
                 "urlencoded" -> {
-                    val urlEncodeds: ArrayList<HashMap<String, Any?>>? = body.getAs("urlencoded")
+                    val urlEncodeds: ArrayList<Map<String, Any?>>? = body.getAs("urlencoded")
                     if (urlEncodeds != null) {
                         val formParams = arrayListOf<FormParam>()
                         urlEncodeds.forEach {
@@ -696,7 +696,7 @@ open class PostmanFormatter {
         return folderGroupedMap
     }
 
-    fun parseRequestsToCollection(collectionInfo: HashMap<String, Any?>, requests: List<Request>) {
+    fun parseRequestsToCollection(collectionInfo: Map<String, Any?>, requests: List<Request>) {
         val folderGroupedMap = parseRequestsToFolder(requests)
         val folders = collectionInfo.getEditableItem()
         folderGroupedMap.entries.forEach { (folder, items) ->
@@ -730,7 +730,7 @@ open class PostmanFormatter {
         val url = this.sub("request").sub("url")
         var rawUrl = url.getAs<List<String>>("path")?.joinToString("/")
 
-        val queryList: ArrayList<HashMap<String, Any?>>? = url.getAs("query")
+        val queryList: ArrayList<Map<String, Any?>>? = url.getAs("query")
         if (queryList.notNullOrEmpty()) {
             rawUrl = rawUrl ?: ""
             queryList!!.forEach {

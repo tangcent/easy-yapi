@@ -19,7 +19,7 @@ interface YapiApiHelper {
 
     fun findApi(token: String, catId: String, apiName: String): String?
 
-    fun findApis(token: String, catId: String): ArrayList<Any?>?
+    fun findApis(token: String, catId: String): List<Any?>?
 
     fun listApis(token: String, catId: String, limit: Int?): JsonArray?
 
@@ -31,7 +31,7 @@ interface YapiApiHelper {
 
     fun findCart(token: String, name: String): String?
 
-    fun findCarts(projectId: String, token: String): ArrayList<Any?>?
+    fun findCarts(projectId: String, token: String): List<Any?>?
 
     fun addCart(privateToken: String, name: String, desc: String): Boolean
 

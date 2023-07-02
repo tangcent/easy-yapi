@@ -1,10 +1,8 @@
 package com.itangcent.idea.plugin.api.export.core
 
-import com.intellij.util.containers.stream
 import org.apache.http.HttpResponse
 import org.apache.http.client.ResponseHandler
 import java.util.*
-import kotlin.streams.toList
 
 class ReservedResponseHandle<T>(private var delegate: ResponseHandler<T>) : ResponseHandler<ReservedResult<T>> {
 
@@ -57,11 +55,7 @@ class ReservedResult<T>(
 
     fun headers(headerName: String): List<String> {
         return httpResponse?.getHeaders(headerName)
-            .stream()
-            .map { it.value }
-            .filter { it != null }
-            .map { it!! }
-            .toList()
+            ?.mapNotNull { it.value } ?: emptyList()
     }
 }
 

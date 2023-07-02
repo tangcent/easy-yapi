@@ -22,7 +22,7 @@ open class YapiCachedApiHelper : DefaultYapiApiHelper() {
         { "" }
     }
 
-    private val cartCache = ConcurrentHashMap<String, ArrayList<Any?>>()
+    private val cartCache = ConcurrentHashMap<String, List<Any?>>()
     private val apiCache = ConcurrentHashMap<String, JsonArray>()
 
     override fun getProjectIdByToken(token: String): String? {
@@ -44,9 +44,9 @@ open class YapiCachedApiHelper : DefaultYapiApiHelper() {
         }
     }
 
-    override fun findCarts(projectId: String, token: String): ArrayList<Any?>? {
+    override fun findCarts(projectId: String, token: String): List<Any?>? {
         return cartCache.computeIfAbsent(projectId) {
-            return@computeIfAbsent super.findCarts(projectId, token) ?: ArrayList()
+            return@computeIfAbsent super.findCarts(projectId, token) ?: ArrayList<Any?>()
         }
     }
 

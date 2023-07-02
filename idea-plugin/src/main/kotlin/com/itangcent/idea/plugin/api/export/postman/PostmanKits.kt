@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.api.export.postman
 
+import com.itangcent.common.utils.isMutableMap
 import com.itangcent.intellij.extend.asHashMap
-import java.util.*
 
 
 fun HashMap<String, Any?>.isApi(): Boolean {
@@ -13,7 +13,7 @@ fun HashMap<String, Any?>.isCollection(): Boolean {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun HashMap<String, Any?>.getEditableItem(): ArrayList<HashMap<String, Any?>> {
+fun Map<String, Any?>.getEditableItem(): ArrayList<HashMap<String, Any?>> {
     var items = this["item"]
     if (items != null) {
         if (items is ArrayList<*>) {
@@ -21,7 +21,9 @@ fun HashMap<String, Any?>.getEditableItem(): ArrayList<HashMap<String, Any?>> {
             if (firstOrNull != null && firstOrNull !is HashMap<*, *>) {
                 val arrayListItems = ArrayList<HashMap<String, Any?>>()
                 items.forEach { arrayListItems.add(it.asHashMap()) }
-                this["item"] = arrayListItems
+                if (this.isMutableMap()) {
+                    (this as MutableMap)["item"] = arrayListItems
+                }
                 return arrayListItems
             }
             return items as ArrayList<HashMap<String, Any?>>
@@ -30,12 +32,16 @@ fun HashMap<String, Any?>.getEditableItem(): ArrayList<HashMap<String, Any?>> {
         if (items is List<*>) {
             val arrayListItems = ArrayList<HashMap<String, Any?>>()
             items.filterNotNull().forEach { arrayListItems.add((it.asHashMap())) }
-            this["item"] = arrayListItems
+            if (this.isMutableMap()) {
+                (this as MutableMap)["item"] = arrayListItems
+            }
             return arrayListItems
         }
     }
 
     items = ArrayList<HashMap<String, Any?>>()
-    this["item"] = items
+    if (this.isMutableMap()) {
+        (this as MutableMap)["item"] = items
+    }
     return items
 }

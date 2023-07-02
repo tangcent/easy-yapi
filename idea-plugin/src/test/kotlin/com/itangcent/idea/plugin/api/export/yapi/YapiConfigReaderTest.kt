@@ -16,19 +16,19 @@ internal class YapiConfigReaderTest : AutoSearchConfigReaderTest() {
 
     override fun loadConfigs(): Array<String> {
         return arrayOf(
-                "config${s}.yapi.config",
-                "config${s}.yapi.yml",
-                "config${s}.yapi.yaml",
-                "config${s}a${s}.yapi.config",
-                "config${s}a${s}.yapi.yml",
-                "config${s}a${s}.yapi.yaml",
+                "config/.yapi.config",
+                "config/.yapi.yml",
+                "config/.yapi.yaml",
+                "config/a/.yapi.config",
+                "config/a/.yapi.yml",
+                "config/a/.yapi.yaml",
 
-                "config${s}.easy.api.config",
-                "config${s}.easy.api.yml",
-                "config${s}.easy.api.yaml",
-                "config${s}a${s}.easy.api.config",
-                "config${s}a${s}.easy.api.yml",
-                "config${s}a${s}.easy.api.yaml",
+                "config/.easy.api.config",
+                "config/.easy.api.yml",
+                "config/.easy.api.yaml",
+                "config/a/.easy.api.config",
+                "config/a/.easy.api.yml",
+                "config/a/.easy.api.yaml",
         )
     }
 

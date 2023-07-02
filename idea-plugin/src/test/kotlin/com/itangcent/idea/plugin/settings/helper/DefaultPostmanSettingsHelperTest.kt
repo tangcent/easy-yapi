@@ -240,11 +240,11 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         eq("Select a collection to save apis in [module-a] to"),
                         eq("Postman Collection"),
                         Mockito.any(),
-                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                        Mockito.argThat<Array<Map<String, Any?>>?> {
                             arrayOf(
-                                hashMapOf("name" to "aaa", "id" to "111"),
-                                hashMapOf("name" to "bbb", "id" to "222"),
-                                hashMapOf("name" to "ccc", "id" to "333")
+                                mapOf("name" to "aaa", "id" to "111"),
+                                mapOf("name" to "bbb", "id" to "222"),
+                                mapOf("name" to "ccc", "id" to "333")
                             ).contentEquals(it)
                         },
                         any { it["name"].toString() },
@@ -256,11 +256,11 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         eq("Select a collection to save apis in [module-b] to"),
                         eq("Postman Collection"),
                         Mockito.any(),
-                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                        Mockito.argThat<Array<Map<String, Any?>>?> {
                             arrayOf(
-                                hashMapOf("name" to "aaa", "id" to "111"),
-                                hashMapOf("name" to "bbb", "id" to "222"),
-                                hashMapOf("name" to "ccc", "id" to "333")
+                                mapOf("name" to "aaa", "id" to "111"),
+                                mapOf("name" to "bbb", "id" to "222"),
+                                mapOf("name" to "ccc", "id" to "333")
                             ).contentEquals(it)
                         },
                         any { it["name"].toString() },
@@ -310,12 +310,12 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         eq("Select a collection to save apis in [module-a] to"),
                         eq("Postman Collection"),
                         Mockito.any(),
-                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                        Mockito.argThat<Array<Map<String, Any?>>?> {
                             arrayOf(
-                                hashMapOf("name" to "aaa", "id" to "111"),
-                                hashMapOf("name" to "bbb", "id" to "222"),
-                                hashMapOf("name" to "bbb", "id" to "555"),
-                                hashMapOf("name" to "ccc", "id" to "333")
+                                mapOf("name" to "aaa", "id" to "111"),
+                                mapOf("name" to "bbb", "id" to "222"),
+                                mapOf("name" to "bbb", "id" to "555"),
+                                mapOf("name" to "ccc", "id" to "333")
                             ).contentEquals(it)
                         },
                         any { it["name"].toString() },
@@ -327,12 +327,12 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
                         eq("Select a collection to save apis in [module-b] to"),
                         eq("Postman Collection"),
                         Mockito.any(),
-                        Mockito.argThat<Array<HashMap<String, Any?>>?> {
+                        Mockito.argThat<Array<Map<String, Any?>>?> {
                             arrayOf(
-                                hashMapOf("name" to "aaa", "id" to "111"),
-                                hashMapOf("name" to "bbb", "id" to "222"),
-                                hashMapOf("name" to "bbb", "id" to "555"),
-                                hashMapOf("name" to "ccc", "id" to "333")
+                                mapOf("name" to "aaa", "id" to "111"),
+                                mapOf("name" to "bbb", "id" to "222"),
+                                mapOf("name" to "bbb", "id" to "555"),
+                                mapOf("name" to "ccc", "id" to "333")
                             ).contentEquals(it)
                         },
                         any { it["name"].toString() },

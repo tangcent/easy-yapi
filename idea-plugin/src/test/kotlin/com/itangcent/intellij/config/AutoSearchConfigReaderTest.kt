@@ -27,7 +27,7 @@ internal abstract class AutoSearchConfigReaderTest : AdvancedContextTest() {
         super.afterBind(actionContext)
         //load configs from resource to tempDir as files in module
         for (file in loadConfigs()) {
-            File("$tempDir${s}$file")
+            File("$tempDir/$file")
                     .also { it.forceMkdirParent() }
                     .also { it.createNewFile() }
                     .writeBytes(ResourceUtils.findResource(file)!!.readBytes())
@@ -37,12 +37,12 @@ internal abstract class AutoSearchConfigReaderTest : AdvancedContextTest() {
 
     protected open fun loadConfigs(): Array<String> {
         return arrayOf(
-                "config${s}.easy.api.config",
-                "config${s}.easy.api.yml",
-                "config${s}.easy.api.yaml",
-                "config${s}a${s}.easy.api.config",
-                "config${s}a${s}.easy.api.yml",
-                "config${s}a${s}.easy.api.yaml",
+                "config/.easy.api.config",
+                "config/.easy.api.yml",
+                "config/.easy.api.yaml",
+                "config/a/.easy.api.config",
+                "config/a/.easy.api.yml",
+                "config/a/.easy.api.yaml",
         )
     }
 
@@ -52,7 +52,7 @@ internal abstract class AutoSearchConfigReaderTest : AdvancedContextTest() {
 
         //mock mockContextSwitchListener
         val mockModule = Mockito.mock(Module::class.java)
-        Mockito.`when`(mockModule.moduleFilePath).thenReturn("$tempDir${s}config${s}a/a.iml")
+        Mockito.`when`(mockModule.moduleFilePath).thenReturn("$tempDir/config/a/a.iml")
         val mockContextSwitchListener = Mockito.mock(ContextSwitchListener::class.java)
         Mockito.`when`(mockContextSwitchListener.getModule()).thenReturn(mockModule)
         builder.bind(ContextSwitchListener::class.java) { it.toInstance(mockContextSwitchListener) }

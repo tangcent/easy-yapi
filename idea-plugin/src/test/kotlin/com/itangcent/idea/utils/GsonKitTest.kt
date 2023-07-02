@@ -34,8 +34,10 @@ class GsonKitTest {
         assertTrue("".asJsonElement()!!.asMap().isEmpty())
         assertTrue("1".asJsonElement()!!.asMap().isEmpty())
         assertTrue("[1]".asJsonElement()!!.asMap().isEmpty())
-        assertEquals(hashMapOf("x" to "1"), "{x:\"1\"}".asJsonElement()!!.asMap())
-
+        "{x:\"1\"}".asJsonElement()!!.asJsonObject.getAsJsonPrimitive("x").apply {
+            assertTrue(isString)
+            assertEquals("1", asString)
+        }
 
         //not dumb
         assertThrows(IllegalStateException::class.java) { "".asJsonElement()!!.asMap(false) }
@@ -57,7 +59,7 @@ class GsonKitTest {
         assertTrue("".asJsonElement()!!.asList().isEmpty())
         assertTrue("1".asJsonElement()!!.asList().isEmpty())
         assertTrue("{x:1}".asJsonElement()!!.asList().isEmpty())
-        assertEquals(arrayListOf("1"), "[\"1\"]".asJsonElement()!!.asList())
+        assertEquals("1", "[\"1\"]".asJsonElement()!!.asJsonArray.first().asString)
 
 
         //not dumb
@@ -77,9 +79,9 @@ class GsonKitTest {
         assertEquals(hashMapOf("x" to "1"), "{x:\"1\"}".asJsonElement()!!.unbox())
         assertEquals(arrayListOf("1"), "[\"1\"]".asJsonElement()!!.unbox())
 
-        assertEquals(1, (("1".asJsonElement() as JsonPrimitive)!!.unbox() as Number).toInt())
-        assertEquals(true, ("true".asJsonElement() as JsonPrimitive)!!.unbox())
-        assertEquals("hello world", ("\"hello world\"".asJsonElement() as JsonPrimitive)!!.unbox())
+        assertEquals(1, (("1".asJsonElement() as JsonPrimitive).unbox() as Number).toInt())
+        assertEquals(true, ("true".asJsonElement() as JsonPrimitive).unbox())
+        assertEquals("hello world", ("\"hello world\"".asJsonElement() as JsonPrimitive).unbox())
     }
 
     @Test

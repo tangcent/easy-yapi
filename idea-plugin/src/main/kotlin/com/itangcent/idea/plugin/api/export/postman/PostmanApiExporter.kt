@@ -141,7 +141,7 @@ class PostmanApiExporter {
         (postmanApiHelper as? CacheSwitcher)?.notUserCache()
 
         //collectionId -> collectionInfo to requests
-        val collectionGroupedMap = HashMap<String, Pair<HashMap<String, Any?>, List<Request>>>()
+        val collectionGroupedMap = HashMap<String, Pair<Map<String, Any?>, List<Request>>>()
         moduleGroupedMap.forEach { (module, requests) ->
             for (i in 0..3) {
                 val collectionId = postmanSettingsHelper.getCollectionId(module, false) ?: break
@@ -171,7 +171,7 @@ class PostmanApiExporter {
 
     private fun updateRequestsToCollection(
         collectionId: String,
-        collectionInfo: HashMap<String, Any?>,
+        collectionInfo: Map<String, Any?>,
         requests: List<Request>,
     ) {
         postmanFormatter.parseRequestsToCollection(collectionInfo, requests)

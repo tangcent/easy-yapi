@@ -252,10 +252,10 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
     fun testFindCarts() {
         settings.yapiServer = VALID_YAPI_SERVER
         assertEquals(
-            "[{\"uid\":214663,\"project_id\":155080,\"__v\":0,\"name\":\"公共分类\",\"index\":0,\"up_time\":1654391146,\"_id\":466029,\"add_time\":1654391146,\"desc\":\"公共分类\"}," +
-                    "{\"uid\":214663,\"project_id\":155080,\"__v\":0,\"name\":\"用户相关\",\"index\":0,\"up_time\":1654777919,\"_id\":470385,\"add_time\":1654777919,\"desc\":\"用户相关\"}," +
-                    "{\"uid\":214663,\"project_id\":155080,\"__v\":0,\"name\":\"用户相关Client\",\"index\":0,\"up_time\":1661265770,\"_id\":528244,\"add_time\":1661265770,\"desc\":\"用户相关Client\"}," +
-                    "{\"uid\":214663,\"project_id\":155080,\"__v\":0,\"name\":\"test\",\"index\":0,\"up_time\":1661386891,\"_id\":528580,\"add_time\":1661386891,\"desc\":\"测试包\"}]",
+            "[{\"index\":0,\"_id\":466029,\"name\":\"公共分类\",\"project_id\":155080,\"desc\":\"公共分类\",\"uid\":214663,\"add_time\":1654391146,\"up_time\":1654391146,\"__v\":0}," +
+                    "{\"index\":0,\"_id\":470385,\"name\":\"用户相关\",\"project_id\":155080,\"desc\":\"用户相关\",\"uid\":214663,\"add_time\":1654777919,\"up_time\":1654777919,\"__v\":0}," +
+                    "{\"index\":0,\"_id\":528244,\"name\":\"用户相关Client\",\"project_id\":155080,\"desc\":\"用户相关Client\",\"uid\":214663,\"add_time\":1661265770,\"up_time\":1661265770,\"__v\":0}," +
+                    "{\"index\":0,\"_id\":528580,\"name\":\"test\",\"project_id\":155080,\"desc\":\"测试包\",\"uid\":214663,\"add_time\":1661386891,\"up_time\":1661386891,\"__v\":0}]",
             yapiApiHelper.findCarts(PROJECT_1, VALID_TOKEN_1).toJson()
         )
     }
@@ -264,7 +264,7 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
     fun testFindCartById() {
         settings.yapiServer = VALID_YAPI_SERVER
         assertEquals(
-            "{\"uid\":214663,\"project_id\":155080,\"__v\":0,\"name\":\"用户相关Client\",\"index\":0,\"up_time\":1661265770,\"_id\":528244,\"add_time\":1661265770,\"desc\":\"用户相关Client\"}",
+            "{\"index\":0,\"_id\":528244,\"name\":\"用户相关Client\",\"project_id\":155080,\"desc\":\"用户相关Client\",\"uid\":214663,\"add_time\":1661265770,\"up_time\":1661265770,\"__v\":0}",
             yapiApiHelper.findCartById(VALID_TOKEN_1, "528244").toJson()
         )
     }

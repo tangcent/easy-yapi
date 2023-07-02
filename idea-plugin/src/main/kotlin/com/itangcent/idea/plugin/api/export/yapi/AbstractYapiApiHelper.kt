@@ -12,6 +12,7 @@ import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
+import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
@@ -182,11 +183,11 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
         return null
     }
 
-    private fun listApis(from: Map<String, String>, api: (HashMap<String, Any?>) -> Unit) {
+    private fun listApis(from: Map<String, String>, api: (Map<String, Any?>) -> Unit) {
         val fromToken = from.getToken() ?: throw IllegalArgumentException("no token be found in from")
         val id = from["id"]
         if (id != null) {
-            getApiInfo(fromToken, id)?.asMap()?.let(api)
+            getApiInfo(fromToken, id)?.asHashMap()?.let(api)
             return
         }
 

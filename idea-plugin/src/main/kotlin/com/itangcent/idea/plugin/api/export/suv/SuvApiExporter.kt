@@ -181,8 +181,7 @@ open class SuvApiExporter {
             actionContextBuilder.bindInstance(DataContext::class, actionContext.instance(DataContext::class))
 
             val resources = requests
-                .stream()
-                .filter { it != null }
+                .asSequence()
                 .map { it.resource }
                 .filter { it != null }
                 .map { it as PsiResource }
@@ -274,8 +273,7 @@ open class SuvApiExporter {
         private fun doExportApisFromMethod(requestWrappers: List<DocWrapper>) {
 
             val classes = requestWrappers
-                .stream()
-                .filter { it != null }
+                .asSequence()
                 .map { it.resource }
                 .filter { it is PsiResource }
                 .map { it as PsiResource }

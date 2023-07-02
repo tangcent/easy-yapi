@@ -340,9 +340,9 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
             try {
                 httpContextCacheHelper.getCookies()
-                    .stream()
+                    .asSequence()
                     .filter { it.getName().notNullOrEmpty() }
-                    ?.forEach {
+                    .forEach {
                         httpClient!!.cookieStore().addCookie(it)
                     }
             } catch (e: Exception) {
@@ -1204,7 +1204,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             }
             val lowerName = name.toLowerCase()
             return parseEqualLine(this.headers!!) { k, v -> k to v }
-                .stream()
+                .asSequence()
                 .filter { it.first.toLowerCase() == lowerName }
                 .map { it.second }
                 .firstOrNull()

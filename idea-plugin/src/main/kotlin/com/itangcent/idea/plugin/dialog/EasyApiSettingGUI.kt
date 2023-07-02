@@ -556,7 +556,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
             this.name = name
         }
 
-        constructor(collectionData: HashMap<String, Any?>) {
+        constructor(collectionData: Map<String, Any?>) {
             this.id = collectionData.getAs("id") ?: "unknown"
             this.name = collectionData.getAs("name") ?: "unknown"
         }

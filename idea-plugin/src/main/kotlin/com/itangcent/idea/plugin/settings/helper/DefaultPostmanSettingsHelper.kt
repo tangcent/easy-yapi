@@ -114,7 +114,7 @@ open class DefaultPostmanSettingsHelper : PostmanSettingsHelper {
     }
 
     private fun selectCollection(module: String): String? {
-        val collections: List<HashMap<String, Any?>> = postmanApiHelper.getAllCollectionPreferred() ?: return null
+        val collections: List<Map<String, Any?>> = postmanApiHelper.getAllCollectionPreferred() ?: return null
         return messagesHelper.showEditableChooseDialog(
             "Select a collection to save apis in [$module] to",
             "Postman Collection",
@@ -132,7 +132,7 @@ open class DefaultPostmanSettingsHelper : PostmanSettingsHelper {
     }
 }
 
-fun PostmanApiHelper.getAllCollectionPreferred(): List<HashMap<String, Any?>>? {
+fun PostmanApiHelper.getAllCollectionPreferred(): List<Map<String, Any?>>? {
     val postmanWorkspace = ActionContext.getContext()?.instance(PostmanSettingsHelper::class)?.getWorkspace()
     return if (postmanWorkspace == null) {
         (this.getAllCollection())

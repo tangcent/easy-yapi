@@ -6,10 +6,7 @@ import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.DateUtils
-import com.itangcent.common.utils.mapNotNull
-import com.itangcent.common.utils.mapToTypedArray
-import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
@@ -336,7 +333,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 this.actionContext.runInSwingUI {
                     for (collection in collections) {
                         actionContext.checkStatus()
-                        val collectionNode = PostmanCollectionNodeData(collection)
+                        val collectionNode = PostmanCollectionNodeData(collection.mutable())
                         treeNode.add(collectionNode.asTreeNode())
                         collectionNodes.add(collectionNode)
                         rootTreeModel.reload(collectionNode.asTreeNode())
@@ -380,7 +377,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                     postmanApiTreeModel.remove(collectionNode.asTreeNode())
                     return@runAsync
                 }
-                collectionNode.detail = collectionInfo
+                collectionNode.detail = collectionInfo.mutable()
                 val items = collectionInfo.getEditableItem()
 
                 actionContext.runInSwingUI {
@@ -454,7 +451,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 if (createdCollection == null) {
                     logger.error("create collection failed")
                 } else {
-                    val collectionPostmanNodeData = PostmanCollectionNodeData(createdCollection)
+                    val collectionPostmanNodeData = PostmanCollectionNodeData(createdCollection.mutable())
                     collectionPostmanNodeData.status = NodeStatus.Loaded
                     val collectionTreeNode = collectionPostmanNodeData.asTreeNode()
                     actionContext.runInSwingUI {
@@ -653,11 +650,11 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
     //region postman Node Data--------------------------------------------------
 
     abstract class PostmanNodeData : DocContainer, TreeNodeData<PostmanNodeData>() {
-        open fun currData(): HashMap<String, Any?> {
+        open fun currData(): MutableMap<String, Any?> {
             return coreData()
         }
 
-        abstract fun coreData(): HashMap<String, Any?>
+        abstract fun coreData(): MutableMap<String, Any?>
 
         override fun docs(handle: (Doc) -> Unit) {
             this.getSubNodeData()?.forEach { it.docs(handle) }
@@ -668,7 +665,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
     }
 
-    class PostmanCollectionNodeData(var collection: HashMap<String, Any?>) : PostmanNodeData(), IconCustomized,
+    class PostmanCollectionNodeData(var collection: MutableMap<String, Any?>) : PostmanNodeData(), IconCustomized,
         ToolTipAble {
         override fun icon(): Icon? {
             return when (status) {
@@ -679,7 +676,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
         }
 
         @Suppress("UNCHECKED_CAST")
-        override fun currData(): HashMap<String, Any?> {
+        override fun currData(): MutableMap<String, Any?> {
             if (detail != null) {
                 (detail!!["info"] as MutableMap<String, Any?>)["name"] = this.collection["name"]
                 return detail!!
@@ -699,7 +696,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             return collection
         }
 
-        override fun coreData(): HashMap<String, Any?> {
+        override fun coreData(): MutableMap<String, Any?> {
             return collection
         }
 
@@ -707,7 +704,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             return null
         }
 
-        var detail: HashMap<String, Any?>? = null
+        var detail: MutableMap<String, Any?>? = null
 
         var status = NodeStatus.Unload
 
@@ -715,7 +712,6 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
             return status.desc + collection.getOrDefault("name", "unknown")
         }
 
-        @Suppress("UNCHECKED_CAST")
         override fun toolTip(): String? {
             if (detail == null) return null
             val info = detail!!["info"] ?: return null
@@ -864,7 +860,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
 
         val subProjectNodeData: ArrayList<ProjectNodeData> = projectNodeData.getSubNodeData() ?: return null
         val subItems: ArrayList<HashMap<String, Any?>> = ArrayList()
-        subProjectNodeData.stream().mapNotNull { formatPostmanInfo(it) }.forEach { subItems.add(it) }
+        subProjectNodeData.mapNotNull { formatPostmanInfo(it) }.forEach { subItems.add(it) }
 
         if (projectNodeData is ClassProjectNodeData) {
             return postmanFormatter!!.wrapInfo(projectNodeData.cls, subItems)

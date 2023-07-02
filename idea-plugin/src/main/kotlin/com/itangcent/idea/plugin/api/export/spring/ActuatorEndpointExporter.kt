@@ -27,7 +27,7 @@ import com.itangcent.idea.plugin.condition.ConditionOnSetting
 class ActuatorEndpointExporter : SpringRequestClassExporter() {
 
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
-        val endPointAnnMap = SpringClassName.ENDPOINT_ANNOTATIONS.stream().mapNotNull {
+        val endPointAnnMap = SpringClassName.ENDPOINT_ANNOTATIONS.asSequence().mapNotNull {
             annotationHelper.findAnnMap(cls, it)
         }.firstOrNull()
         if (endPointAnnMap != null) {
@@ -127,7 +127,7 @@ class ActuatorEndpointExporter : SpringRequestClassExporter() {
 
     private fun getOperation(psiMethod: PsiMethod): Pair<Map<String, Any?>, String>? {
         return SpringClassName.ENDPOINT_OPERATION_ANNOTATIONS
-            .stream()
+            .asSequence()
             .map { ann -> annotationHelper.findAnnMap(psiMethod, ann)?.to(ann) }
             .firstOrNull { it != null }
     }
