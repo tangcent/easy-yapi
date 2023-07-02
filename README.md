@@ -33,6 +33,19 @@
 - `./gradlew :idea-plugin:runIde` will runs an IDEA instance with the EasyYapi installed.
 - `./gradlew clean test` will run all test case.
 
+## Requirements
+
+- IDE: Intellij Idea Ultimate / Intellij Idea Community 2021.2.1 or higher
+- JDK: Version 11 or higher
+
+## Compatibility
+
+| JDK | IDE      | status |
+|-----|----------|--------|
+| 11  | 2021.2.1 | ✓      |
+| 15  | 2022.2.3 | ✓      |
+| 17  | 2023.1.3 | ✓      |
+
 ## Javadoc
 
 - [wiki](https://en.wikipedia.org/wiki/Javadoc)
