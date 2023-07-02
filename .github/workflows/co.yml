@@ -8,7 +8,7 @@ on:
 
 jobs:
   coverage:
-    name: "Generate coverage On ${{ matrix.os }}"
+    name: "Generate coverage On ${{ matrix.os }} - jdk${{ matrix.java-version }}"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

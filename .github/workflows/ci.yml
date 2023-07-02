@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-test:
-    name: "Unit Test On ${{ matrix.os }}"
+    name: "Unit Test On ${{ matrix.os }} - jdk${{ matrix.java-version }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     strategy:
