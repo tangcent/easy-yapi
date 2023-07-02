@@ -1,3 +1,20 @@
+* 2.5.9
+
+	* fix: fix swagger3.config  [(#996)](https://github.com/tangcent/easy-yapi/pull/996)
+
+	* doc: declare Requirements & Compatibility  [(#994)](https://github.com/tangcent/easy-yapi/pull/994)
+
+	* build: update workflows name  [(#995)](https://github.com/tangcent/easy-yapi/pull/995)
+
+	* build: update workflows  [(#989)](https://github.com/tangcent/easy-yapi/pull/989)
+
+	* amend: remove support of GroovyActionExt  [(#991)](https://github.com/tangcent/easy-yapi/pull/991)
+
+	* build: update scripts  [(#988)](https://github.com/tangcent/easy-yapi/pull/988)
+
+	* amend: clear uiWeakReference  [(#983)](https://github.com/tangcent/easy-yapi/pull/983)
+
+	* amend: modify several parameters in RequestRuleWrap nullable  [(#984)](https://github.com/tangcent/easy-yapi/pull/984)
 * 2.5.8
 
 	* amend: remove deprecated API usages [(#961)](https://github.com/tangcent/easy-yapi/pull/961)
