@@ -196,6 +196,12 @@ object KVUtils {
                     useFieldAsAttr(value, attr)
                 }
             }
+
+            is Extensible -> {
+                model.getPropertyValue("value")?.let {
+                    model.setExt(attr, it)
+                }
+            }
         }
     }
 

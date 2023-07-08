@@ -14,6 +14,7 @@ import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.RequestBuilder
 import org.apache.http.client.protocol.HttpClientContext
 import org.apache.http.config.SocketConfig
+import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.entity.ContentType
 import org.apache.http.entity.StringEntity
@@ -24,7 +25,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
 import org.apache.http.impl.cookie.BasicClientCookie
 import org.apache.http.impl.cookie.BasicClientCookie2
 import org.apache.http.message.BasicNameValuePair
-import org.apache.http.ssl.SSLContextBuilder
+import org.apache.http.ssl.SSLContexts
 import org.apache.http.util.toByteArray
 import java.io.Closeable
 import java.io.File
@@ -35,6 +36,16 @@ import javax.net.ssl.SSLContext
 
 @ScriptTypeName("httpClient")
 open class ApacheHttpClient : HttpClient {
+    companion object {
+        private fun String.createContentType(charset: String = "UTF-8"): ContentType {
+            val contentType = ContentType.parse(this)
+            return if (contentType.charset == null) {
+                contentType.withCharset(charset)
+            } else {
+                contentType
+            }
+        }
+    }
 
     private val apacheCookieStore: ApacheCookieStore
 
@@ -47,25 +58,25 @@ open class ApacheHttpClient : HttpClient {
         this.apacheCookieStore = ApacheCookieStore(basicCookieStore)
         this.httpClientContext!!.cookieStore = basicCookieStore
         this.httpClient = HttpClients.custom()
-                .setConnectionManager(PoolingHttpClientConnectionManager().also {
-                    it.maxTotal = 50
-                    it.defaultMaxPerRoute = 20
-                })
-                .setDefaultSocketConfig(
-                        SocketConfig.custom()
-                                .setSoTimeout(30 * 1000)
-                                .build()
-                )
-                .setDefaultRequestConfig(
-                        RequestConfig.custom()
-                                .setConnectTimeout(30 * 1000)
-                                .setConnectionRequestTimeout(30 * 1000)
-                                .setSocketTimeout(30 * 1000)
-                                .setCookieSpec(CookieSpecs.STANDARD).build()
-                )
-                .setSSLHostnameVerifier(NOOP_HOST_NAME_VERIFIER)
-                .setSSLSocketFactory(SSLSF)
-                .build()
+            .setConnectionManager(PoolingHttpClientConnectionManager().also {
+                it.maxTotal = 50
+                it.defaultMaxPerRoute = 20
+            })
+            .setDefaultSocketConfig(
+                SocketConfig.custom()
+                    .setSoTimeout(30 * 1000)
+                    .build()
+            )
+            .setDefaultRequestConfig(
+                RequestConfig.custom()
+                    .setConnectTimeout(30 * 1000)
+                    .setConnectionRequestTimeout(30 * 1000)
+                    .setSocketTimeout(30 * 1000)
+                    .setCookieSpec(CookieSpecs.STANDARD).build()
+            )
+            .setSSLHostnameVerifier(NOOP_HOST_NAME_VERIFIER)
+            .setSSLSocketFactory(SSLSF)
+            .build()
     }
 
     constructor(httpClient: org.apache.http.client.HttpClient) {
@@ -102,13 +113,13 @@ open class ApacheHttpClient : HttpClient {
         }
 
         val requestBuilder = RequestBuilder.create(request.method())
-                .setUri(url)
+            .setUri(url)
 
         request.headers()?.forEach {
             requestBuilder.addHeader(it.name(), it.value())
         }
 
-        if (request.method().toUpperCase() != "GET") {
+        if (request.method().uppercase() != "GET") {
             var requestEntity: HttpEntity? = null
             if (request.params().notNullOrEmpty()) {
                 if (request.contentType()?.startsWith("application/x-www-form-urlencoded") == true) {
@@ -141,15 +152,31 @@ open class ApacheHttpClient : HttpClient {
                     requestEntity = entityBuilder.build()
                 }
             }
-            if (request.body() != null) {
+            val body = request.body()
+            if (body != null) {
                 if (requestEntity != null) {
                     SpiUtils.loadService(ILogger::class)
-                            ?.warn("The request with a body should not set content-type:${request.contentType()}")
+                        ?.warn("The request with a body should not set content-type:${request.contentType()}")
                 }
-                requestEntity = StringEntity(
-                        request.body().toJson(),
-                        ContentType.APPLICATION_JSON
-                )
+                requestEntity = when (body) {
+                    is HttpEntity -> {
+                        body
+                    }
+
+                    is String -> {
+                        StringEntity(
+                            body,
+                            request.contentType()?.createContentType() ?: ContentType.APPLICATION_JSON
+                        )
+                    }
+
+                    else -> {
+                        StringEntity(
+                            body.toJson(),
+                            ContentType.APPLICATION_JSON
+                        )
+                    }
+                }
             }
             if (requestEntity != null) {
                 requestBuilder.entity = requestEntity
@@ -218,7 +245,7 @@ class ApacheCookieStore : CookieStore {
      */
     override fun addCookies(cookies: Array<Cookie>?) {
         cookies?.map { cookie -> cookie.asApacheCookie() }
-                ?.forEach { cookieStore.addCookie(it) }
+            ?.forEach { cookieStore.addCookie(it) }
     }
 
     /**
@@ -247,8 +274,8 @@ class ApacheCookieStore : CookieStore {
  */
 @ScriptTypeName("response")
 class ApacheHttpResponse(
-        private val request: HttpRequest,
-        private val response: org.apache.http.HttpResponse
+    private val request: HttpRequest,
+    private val response: org.apache.http.HttpResponse
 ) : AbstractHttpResponse() {
 
     /**
@@ -393,11 +420,11 @@ fun Cookie.asApacheCookie(): org.apache.http.cookie.Cookie {
         return this.getWrapper()
     }
     val cookie =
-            if (this.getPorts() == null || this.getCommentURL() == null) {
-                BasicClientCookie(this.getName(), this.getValue())
-            } else {
-                BasicClientCookie2(this.getName(), this.getValue())
-            }
+        if (this.getPorts() == null || this.getCommentURL() == null) {
+            BasicClientCookie(this.getName(), this.getValue())
+        } else {
+            BasicClientCookie2(this.getName(), this.getValue())
+        }
     cookie.comment = this.getComment()
     cookie.domain = this.getDomain()
     cookie.path = this.getPath()
@@ -412,14 +439,13 @@ fun Cookie.asApacheCookie(): org.apache.http.cookie.Cookie {
     return cookie
 }
 
-var SSLCONTEXT: SSLContext = SSLContextBuilder().loadTrustMaterial(null
-) { _, _ -> true }.build()
+var SSLCONTEXT: SSLContext = SSLContexts.createSystemDefault()
 
 /**
  * Never authenticate the host
  */
-val NOOP_HOST_NAME_VERIFIER: HostnameVerifier = HostnameVerifier { _, _ -> true }
+val NOOP_HOST_NAME_VERIFIER: HostnameVerifier = NoopHostnameVerifier.INSTANCE
 
-var SSLSF: SSLConnectionSocketFactory = SSLConnectionSocketFactory(
-        SSLCONTEXT, arrayOf("TLSv1", "TLSv1.1", "TLSv1.2"), null,
-        NOOP_HOST_NAME_VERIFIER)
+val SSLSF: SSLConnectionSocketFactory = SSLConnectionSocketFactory(
+    SSLCONTEXT, NOOP_HOST_NAME_VERIFIER
+)

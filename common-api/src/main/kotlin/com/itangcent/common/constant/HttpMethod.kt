@@ -21,7 +21,7 @@ object HttpMethod {
         if (method.isBlank()) {
             return NO_METHOD
         }
-        val standardMethod = method.toUpperCase()
+        val standardMethod = method.uppercase()
         if (ALL_METHODS.contains(standardMethod)) {
             return standardMethod
         }

@@ -12,6 +12,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * Runs the specified action asynchronously with the given ActionContext instance.
+ * If the instance is null, the action is run synchronously.
+ */
 fun ActionContext?.tryRunAsync(action: () -> Unit) {
     if (this == null) {
         action()
@@ -20,6 +24,10 @@ fun ActionContext?.tryRunAsync(action: () -> Unit) {
     }
 }
 
+/**
+ * Calls the specified action with a timeout and returns the result.
+ * If the action takes longer than the specified timeout, a TimeoutException is thrown.
+ */
 fun <T> ActionContext.callWithTimeout(timeout: Long, action: () -> T): T? {
     val resultHolder = ValueHolder<T>()
 
@@ -39,9 +47,14 @@ fun <T> ActionContext.callWithTimeout(timeout: Long, action: () -> T): T? {
     } catch (e: Exception) {
         //ignore
     }
+
     return resultHolder.value()
 }
 
+/**
+ * Creates a boundary and executes the specified action within the boundary.
+ * The boundary is waited for completion before returning.
+ */
 fun ActionContext.withBoundary(action: () -> Unit) {
     val boundary = this.createBoundary()
     try {
@@ -53,6 +66,10 @@ fun ActionContext.withBoundary(action: () -> Unit) {
     }
 }
 
+/**
+ * Executes the specified action only if the current ActionContext is not reentrant for the specified flag.
+ * This is useful for preventing recursive calls to the same method.
+ */
 private val reentrantIdx = AtomicInteger()
 
 fun ActionContext.notReentrant(flag: String, action: () -> Unit) {
@@ -66,6 +83,10 @@ fun ActionContext.notReentrant(flag: String, action: () -> Unit) {
     }
 }
 
+/**
+ * Creates a boundary and executes the specified action within the boundary.
+ * The boundary is waited for completion before returning the result.
+ */
 fun <T> ActionContext.callWithBoundary(action: () -> T): T? {
     val boundary = this.createBoundary()
     var ret: T? = null
@@ -78,6 +99,10 @@ fun <T> ActionContext.callWithBoundary(action: () -> T): T? {
     return ret
 }
 
+/**
+ * Creates a boundary and executes the specified action within the boundary.
+ * The boundary is waited for completion with a timeout.
+ */
 fun ActionContext.withBoundary(timeOut: Long, action: () -> Unit) {
     val boundary = this.createBoundary()
     try {
@@ -90,6 +115,10 @@ fun ActionContext.withBoundary(timeOut: Long, action: () -> Unit) {
     }
 }
 
+/**
+ * Runs the specified action with the current ActionContext instance.
+ * If no instance is available, the action is run asynchronously.
+ */
 fun ActionContext.runWithContext(action: () -> Unit) {
     val context = ActionContext.getContext()
     if (context == null) {
@@ -99,6 +128,9 @@ fun ActionContext.runWithContext(action: () -> Unit) {
     }
 }
 
+/**
+ * Runs the specified action in a normal thread if the current ActionContext is not already in an asynchronous thread.
+ */
 fun ActionContext.runInNormalThread(action: () -> Unit) {
     val flag = ActionContext.getFlag()
     if (flag == ThreadFlag.ASYNC.value) {
@@ -108,6 +140,9 @@ fun ActionContext.runInNormalThread(action: () -> Unit) {
     }
 }
 
+/**
+ * Finds the current method which is selected by the current Action.
+ */
 fun ActionContext.findCurrentMethod(): PsiMethod? {
     return this.cacheOrCompute("_currentMethod") {
         ActionUtils.findCurrentMethod()

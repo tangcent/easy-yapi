@@ -43,14 +43,14 @@ internal class DefaultFormatFolderHelperTest : PluginContextLightCodeInsightFixt
 
     fun testResolveFolder() {
 
-        //test of PsiClass & PsiMethod
+        //test for PsiClass & PsiMethod
         assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(userCtrlPsiClass))
         assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(userCtrlPsiClass.methods[0]))
         assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(userCtrlPsiClass.methods[1]))
 
-        //test of ExplicitClass & ExplicitMethod
+        //test for ExplicitClass & ExplicitMethod
         val explicitClass = duckTypeHelper.explicit(userCtrlPsiClass)
         assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(explicitClass))
@@ -58,7 +58,7 @@ internal class DefaultFormatFolderHelperTest : PluginContextLightCodeInsightFixt
                 "access user info"), formatFolderHelper.resolveFolder(explicitClass.methods()[0]))
         assertEquals(Folder("update-apis", ""), formatFolderHelper.resolveFolder(explicitClass.methods()[1]))
 
-        //test of PsiClassResource & PsiMethodResource
+        //test for PsiClassResource & PsiMethodResource
         assertEquals(Folder("apis about user", "apis about user\n" +
                 "access user info"), formatFolderHelper.resolveFolder(PsiClassResource(userCtrlPsiClass)))
         assertEquals(Folder("apis about user", "apis about user\n" +

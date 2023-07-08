@@ -21,6 +21,10 @@ import java.io.InputStream
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 
+/**
+ * An implementation of the HttpClientProvider interface
+ * that provides a configurable HttpClient implementation.
+ */
 @Singleton
 class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
@@ -34,28 +38,37 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
     protected val ruleComputer: RuleComputer? = null
 
     @Inject
-    protected val logger: Logger? = null
+    protected lateinit var logger: Logger
 
+    /**
+     * Builds an instance of HttpClient using configuration options such as timeouts and SSL settings.
+     *
+     * @return An instance of HttpClient.
+     */
     override fun buildHttpClient(): HttpClient {
         val httpClientBuilder = HttpClients.custom()
 
         val config = readHttpConfig()
 
         httpClientBuilder
-                .setConnectionManager(PoolingHttpClientConnectionManager().also {
-                    it.maxTotal = 50
-                    it.defaultMaxPerRoute = 20
-                })
-                .setDefaultSocketConfig(SocketConfig.custom()
-                        .setSoTimeout(config.timeOut)
-                        .build())
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setConnectTimeout(config.timeOut)
-                        .setConnectionRequestTimeout(config.timeOut)
-                        .setSocketTimeout(config.timeOut)
-                        .setCookieSpec(CookieSpecs.STANDARD).build())
-                .setSSLHostnameVerifier(NOOP_HOST_NAME_VERIFIER)
-                .setSSLSocketFactory(SSLSF)
+            .setConnectionManager(PoolingHttpClientConnectionManager().also {
+                it.maxTotal = 50
+                it.defaultMaxPerRoute = 20
+            })
+            .setDefaultSocketConfig(
+                SocketConfig.custom()
+                    .setSoTimeout(config.timeOut)
+                    .build()
+            )
+            .setDefaultRequestConfig(
+                RequestConfig.custom()
+                    .setConnectTimeout(config.timeOut)
+                    .setConnectionRequestTimeout(config.timeOut)
+                    .setSocketTimeout(config.timeOut)
+                    .setCookieSpec(CookieSpecs.STANDARD).build()
+            )
+            .setSSLHostnameVerifier(NOOP_HOST_NAME_VERIFIER)
+            .setSSLSocketFactory(SSLSF)
 
         return HttpClientWrapper(ApacheHttpClient(httpClientBuilder.build()))
     }
@@ -70,14 +83,18 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
         if (configReader != null) {
             try {
                 configReader.first("http.timeOut")?.toLong()
-                        ?.let { httpConfig.timeOut = TimeUnit.SECONDS.toMillis(it).toInt() }
+                    ?.let { httpConfig.timeOut = TimeUnit.SECONDS.toMillis(it).toInt() }
             } catch (e: NumberFormatException) {
+                logger.warn("http.timeOut must be a number")
             }
         }
 
         return httpConfig
     }
 
+    /**
+     * A wrapper class that implements the HttpClient interface and delegates to a wrapped HttpClient instance.
+     */
     @ScriptTypeName("httpClient")
     private inner class HttpClientWrapper(private val httpClient: HttpClient) : HttpClient {
 
@@ -85,11 +102,17 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             return httpClient.cookieStore()
         }
 
+        /**
+         * Wraps the request in a custom HttpRequestWrapper implementation and delegates to the wrapped HttpClient instance.
+         */
         override fun request(): HttpRequest {
             return HttpRequestWrapper(httpClient.request())
         }
     }
 
+    /**
+     * A wrapper class that implements the HttpRequest interface and delegates to a wrapped HttpRequest instance.
+     */
     @ScriptTypeName("request")
     private inner class HttpRequestWrapper(private val httpRequest: HttpRequest) : HttpRequest by httpRequest {
 
@@ -213,8 +236,9 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
         override fun call(): HttpResponse {
             val url = url() ?: throw IllegalArgumentException("url not be set")
             if (httpSettingsHelper != null
-                    && !httpSettingsHelper.checkTrustUrl(url, false)) {
-                logger?.warn("[access forbidden] call:$url")
+                && !httpSettingsHelper.checkTrustUrl(url, false)
+            ) {
+                logger.warn("[access forbidden] call:$url")
                 return EmptyHttpResponse(this)
             }
             var i = 0
@@ -235,6 +259,9 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
         }
     }
 
+    /**
+     * An implementation of the HttpResponse interface that returns empty or null values for all methods.
+     */
     class EmptyHttpResponse(private val request: HttpRequest) : HttpResponse {
         override fun code(): Int {
             return 404
@@ -268,7 +295,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             return null
         }
 
-        override fun containsHeader(headerName: String): Boolean? {
+        override fun containsHeader(headerName: String): Boolean {
             return false
         }
 
@@ -290,14 +317,17 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
 
     }
 
+    /**
+     * A custom implementation of the HttpResponse interface that wraps a delegate HttpResponse instance and adds a
+     * discard() method that can be used to discard the current response and recall the request.
+     */
     @ScriptTypeName("response")
     class DiscardAbleHttpResponse(httpResponse: HttpResponse) : HttpResponse by httpResponse {
 
         private var discarded = false
 
         /**
-         * Discard current response.
-         * Recall the request.
+         * Discards the current response and returns a new HttpResponse instance for the original request.
          */
         fun discard() {
             this.discarded = true
@@ -309,6 +339,9 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
         }
     }
 
+    /**
+     * A data class that holds configuration settings for the HTTP client.
+     */
     class HttpConfig {
 
         //default 10s

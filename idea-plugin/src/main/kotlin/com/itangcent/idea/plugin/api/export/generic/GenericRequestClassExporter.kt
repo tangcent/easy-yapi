@@ -253,7 +253,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
     ): String {
         var ultimateComment = (paramDesc ?: "")
         parameterExportContext.element().getType()?.let { duckType ->
-            commentResolver!!.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
+            commentResolver.resolveCommentForType(duckType, parameterExportContext.psi())?.let {
                 ultimateComment = "$ultimateComment $it"
             }
         }

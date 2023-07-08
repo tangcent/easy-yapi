@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.api.cache
 
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.*
-import com.itangcent.idea.utils.setExts
+import com.itangcent.utils.setExts
 
 class FileApiCache {
     /**

@@ -1,27 +1,10 @@
 package com.itangcent.intellij.extend
 
+import com.itangcent.common.utils.asHashMap
 import com.itangcent.common.utils.isOriginal
 
 fun Boolean.toInt(): Int {
     return if (this) 1 else 0
-}
-
-fun <K, V> Map<K, V>.asHashMap(): HashMap<K, V> {
-    if (this is HashMap<K, V>) {
-        return this
-    }
-    val map: HashMap<K, V> = HashMap()
-    this.entries.forEach { map[it.key] = it.value }
-    return map
-}
-
-fun <E> List<E>.asArrayList(): ArrayList<E> {
-    if (this is ArrayList<E>) {
-        return this
-    }
-    val list: ArrayList<E> = ArrayList()
-    this.forEach { list.add(it) }
-    return list
 }
 
 fun Any?.toPrettyString(): String? {
@@ -36,19 +19,28 @@ fun Any?.toPrettyString(): String? {
 }
 
 @Suppress("UNCHECKED_CAST")
-fun Any.asHashMap(): HashMap<String, Any?> {
+fun <K, V> Any.asHashMap(): HashMap<K, V> {
     if (this is HashMap<*, *>) {
-        return this as HashMap<String, Any?>
+        return this as HashMap<K, V>
     }
 
     if (this is Map<*, *>) {
-        val map: HashMap<String, Any?> = HashMap()
-        this.forEach { (k, v) -> map[k.toString()] = v }
-        return map
+        return this.asHashMap() as HashMap<K, V>
     }
     return HashMap()
 }
 
+/**
+ * Return the object if it is not an "original" value, or null otherwise.
+ *
+ * An "original" value is defined as follows:
+ *
+ * - The default value of a primitive type (e.g., 0 for Int)
+ * - The default value of a nullable primitive type (e.g., null for Int?)
+ * - The empty string ("")
+ * - The string "0"
+ * - An array or collection containing only original values
+ */
 fun Any?.takeIfNotOriginal(): Any? {
     return if (this.isOriginal()) {
         null
@@ -58,26 +50,41 @@ fun Any?.takeIfNotOriginal(): Any? {
 }
 
 /**
- * check if the object is original
- * like:
- * default primary: 0, 0.0
- * default blank string: "","0"
- * array with original: [0],[0.0],[""]
- * list with original: [0],[0.0],[""]
- * map with original: {"key":0}
+ * Check if the object is "special" (not an original value), as defined by the takeIfNotOriginal function.
+ *
+ * An "original" value is defined as follows:
+ *
+ * - The default value of a primitive type (e.g., 0 for Int)
+ * - The default value of a nullable primitive type (e.g., null for Int?)
+ * - The empty string ("")
+ * - The string "0"
+ * - An array or collection containing only original values
  */
 fun Any?.isSpecial(): Boolean {
     return when (val obj = this) {
         null -> {
             false
         }
+
         is String -> {
             obj.isNotBlank() && obj != "0" && obj != "0.0"
         }
+
         else -> !this.isOriginal()
     }
 }
 
+/**
+ * Return the string if it is "special" (not an original value), or null otherwise.
+ *
+ * An "original" value is defined as follows:
+ *
+ * - The default value of a primitive type (e.g., 0 for Int)
+ * - The default value of a nullable primitive type (e.g., null for Int?)
+ * - The empty string ("")
+ * - The string "0"
+ * - An array or collection containing only original values
+ */
 fun String?.takeIfSpecial(): String? {
     return if (this.isSpecial()) {
         this
@@ -86,6 +93,10 @@ fun String?.takeIfSpecial(): String? {
     }
 }
 
+/**
+ * Return the first element of an array or a collection,
+ * or the object itself if it is not an array or a collection.
+ */
 fun Any?.unbox(): Any? {
     if (this is Array<*>) {
         return this.firstOrNull().unbox()

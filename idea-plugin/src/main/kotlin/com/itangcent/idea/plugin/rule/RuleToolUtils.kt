@@ -734,7 +734,7 @@ object RuleToolUtils {
         if (str.isNullOrBlank()) {
             return str
         }
-        val strLow = str.toLowerCase()
+        val strLow = str.lowercase()
         val strLen = strLow.length
         val newCodePoints = IntArray(strLen) { 0 }
         var outOffset = 0
@@ -805,9 +805,9 @@ object RuleToolUtils {
         val buffer = StringBuffer()
         while (matcher.find()) {
             if (matcher.start() > 0) {
-                matcher.appendReplacement(buffer, "_" + matcher.group(0).toLowerCase())
+                matcher.appendReplacement(buffer, "_" + matcher.group(0).lowercase())
             } else {
-                matcher.appendReplacement(buffer, matcher.group(0).toLowerCase())
+                matcher.appendReplacement(buffer, matcher.group(0).lowercase())
             }
         }
         matcher.appendTail(buffer)
@@ -837,7 +837,7 @@ object RuleToolUtils {
         }
         return TemplateUtils.render(
             str,
-            TemplateKit.resolvePlaceHolder(placeHolder) ?: arrayOf('$'),
+            TemplateKit.resolvePlaceHolder(placeHolder) ?: charArrayOf('$'),
             context as Map<String?, *>
         )
     }

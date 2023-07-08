@@ -6,12 +6,18 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import com.itangcent.common.utils.GsonUtils
 
+/**
+ * Convert a JsonObject to a mutable map with string keys and nullable values.
+ */
 fun JsonObject.asHashMap(): MutableMap<String, Any?> {
     val map = LinkedHashMap<String, Any?>()
     this.entrySet().forEach { map[it.key] = it.value.unbox() }
     return map
 }
 
+/**
+ * Convert a JsonElement to a map with string keys and nullable values.
+ */
 fun JsonElement.asMap(dumb: Boolean = true): Map<String, Any?> {
     return when {
         this.isJsonObject -> this.asJsonObject.asHashMap()
@@ -34,6 +40,9 @@ fun JsonElement.asList(dumb: Boolean = true): List<Any?> {
     }
 }
 
+/**
+ * Unbox a JsonElement.
+ */
 fun JsonElement.unbox(): Any? {
     return when {
         this.isJsonNull -> null
@@ -53,10 +62,19 @@ fun JsonPrimitive.unbox(): Any? {
     }
 }
 
+/**
+ * Parse a string as a JsonElement.
+ */
 fun String.asJsonElement(): JsonElement? {
     return GsonUtils.parseToJsonTree(this)
 }
 
+/**
+ * Get a property of a JsonObject as a JsonElement.
+ *
+ * If the JsonElement is not a JsonObject or the property does not exist, this function
+ * returns null.
+ */
 fun JsonElement?.sub(property: String): JsonElement? {
     if (this == null || !this.isJsonObject) {
         return null

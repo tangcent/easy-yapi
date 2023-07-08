@@ -1,7 +1,7 @@
 package com.itangcent.common.constant
 
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 /**
  * Test case for [HttpMethod]
@@ -9,24 +9,40 @@ import org.junit.jupiter.api.Test
 internal class HttpMethodTest {
 
     @Test
-    fun preferMethod() {
+    fun `test preferMethod function`() {
 
-        Assertions.assertEquals("ALL", HttpMethod.preferMethod(""))
+        assertEquals("ALL", HttpMethod.preferMethod(""))
+        assertEquals("ALL", HttpMethod.preferMethod("foo"))
 
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("GET"))
-        Assertions.assertEquals("POST", HttpMethod.preferMethod("POST"))
+        assertEquals("GET", HttpMethod.preferMethod("GET"))
+        assertEquals("POST", HttpMethod.preferMethod("POST"))
+        assertEquals("DELETE", HttpMethod.preferMethod("DELETE"))
+        assertEquals("PUT", HttpMethod.preferMethod("PUT"))
+        assertEquals("PATCH", HttpMethod.preferMethod("PATCH"))
+        assertEquals("OPTIONS", HttpMethod.preferMethod("OPTIONS"))
+        assertEquals("TRACE", HttpMethod.preferMethod("TRACE"))
+        assertEquals("HEAD", HttpMethod.preferMethod("HEAD"))
 
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("XXX.GET"))
-        Assertions.assertEquals("POST", HttpMethod.preferMethod("XXX.POST"))
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("POST.GET"))
-        Assertions.assertEquals("POST", HttpMethod.preferMethod("GET.POST"))
+        assertEquals("GET", HttpMethod.preferMethod("get"))
+        assertEquals("POST", HttpMethod.preferMethod("post"))
+        assertEquals("DELETE", HttpMethod.preferMethod("delete"))
+        assertEquals("PUT", HttpMethod.preferMethod("put"))
+        assertEquals("PATCH", HttpMethod.preferMethod("patch"))
+        assertEquals("OPTIONS", HttpMethod.preferMethod("options"))
+        assertEquals("TRACE", HttpMethod.preferMethod("trace"))
+        assertEquals("HEAD", HttpMethod.preferMethod("head"))
 
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("POST_GET"))
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("GET_POST"))
+        assertEquals("GET", HttpMethod.preferMethod("XXX.GET"))
+        assertEquals("POST", HttpMethod.preferMethod("XXX.POST"))
+        assertEquals("GET", HttpMethod.preferMethod("POST.GET"))
+        assertEquals("POST", HttpMethod.preferMethod("GET.POST"))
 
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("[GET]"))
-        Assertions.assertEquals("POST", HttpMethod.preferMethod("[POST]"))
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("[GET][POST]"))
-        Assertions.assertEquals("GET", HttpMethod.preferMethod("[POST][GET]"))
+        assertEquals("GET", HttpMethod.preferMethod("POST_GET"))
+        assertEquals("GET", HttpMethod.preferMethod("GET_POST"))
+
+        assertEquals("GET", HttpMethod.preferMethod("[GET]"))
+        assertEquals("POST", HttpMethod.preferMethod("[POST]"))
+        assertEquals("GET", HttpMethod.preferMethod("[GET][POST]"))
+        assertEquals("GET", HttpMethod.preferMethod("[POST][GET]"))
     }
 }

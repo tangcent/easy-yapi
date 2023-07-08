@@ -3,7 +3,6 @@ package com.itangcent.utils
 import com.itangcent.common.kit.toJson
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
 
 class AnyKitKtTest {
 
@@ -62,5 +61,19 @@ class AnyKitKtTest {
                 it.subMutable("x")!!["b"] = "c"
             }.toJson()
         )
+
+        assertNull(
+            ImmutableMap(hashMapOf("a" to mapOf("x" to "y"))).subMutable("a")
+        )
+        assertNull(
+            ImmutableMap(hashMapOf("a" to mapOf("x" to "y"))).subMutable("b")
+        )
+    }
+
+    private class ImmutableMap<K, V>(m: MutableMap<out K, out V>?) : HashMap<K, V>(m) {
+
+        override fun put(key: K, value: V): V? {
+            throw UnsupportedOperationException()
+        }
     }
 }

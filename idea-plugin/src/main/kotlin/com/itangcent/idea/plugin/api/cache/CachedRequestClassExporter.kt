@@ -58,7 +58,7 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
 
         val psiFile = actionContext.callInReadUI { cls.containingFile }!!
         val text = actionContext.callInReadUI { psiFile.text } ?: ""
-        val path = ActionUtils.findCurrentPath(psiFile)!!
+        val path = ActionUtils.findCurrentPath(psiFile)
             .replace(File.separator, "_")
         actionContext.runAsync {
             try {

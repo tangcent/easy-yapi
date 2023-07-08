@@ -99,7 +99,7 @@ object RegexUtils {
         return extract(pattern!!, content, template)
     }
 
-    private fun extract(pattern: Pattern, content: String, template: String): String? {
+    private fun extract(pattern: Pattern, content: String, template: String): String {
         return if (template.contains("$")) {
             extract(pattern, content) { template }
         } else {
@@ -125,7 +125,7 @@ object RegexUtils {
      * Remove the first subString of the input String that matches the
      * pattern with the given replacement string.
      */
-    fun delFirst(pattern: String, content: String): String? {
+    fun delFirst(pattern: String, content: String): String {
         return delFirst(getPattern(pattern)!!, content)
     }
 
@@ -298,38 +298,8 @@ object RegexUtils {
         return value
     }
 
-    private class RegexWithFlag(private val regex: String?, private val flag: Int) {
+    data class RegexWithFlag(private val regex: String?, private val flag: Int)
 
-        override fun hashCode(): Int {
-            val prime = 31
-            var result = 1
-            result = prime * result + flag
-            result = prime * result + (regex?.hashCode() ?: 0)
-            return result
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) {
-                return true
-            }
-            if (other == null) {
-                return false
-            }
-            if (javaClass != other.javaClass) {
-                return false
-            }
-            val regexWithFlag = other as RegexWithFlag?
-            if (flag != regexWithFlag!!.flag) {
-                return false
-            }
-            return if (regex == null) {
-                regexWithFlag.regex == null
-            } else
-                regex == regexWithFlag.regex
-        }
-
-    }
-    
     private const val GROUP_VAR_PATTERN = "\\$(\\d+)"
     private val GROUP_VAR = Pattern.compile(GROUP_VAR_PATTERN)!!
 

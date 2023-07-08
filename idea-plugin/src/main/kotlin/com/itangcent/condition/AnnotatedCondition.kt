@@ -32,11 +32,15 @@ abstract class AnnotatedCondition<T : Annotation> : Condition, ConditionSupporte
         }
     }
 
+    /**
+     * Collect all annotations of the specified type for a given bean class and its superclasses,
+     * using reflection to access the annotations.
+     */
     @Suppress("UNCHECKED_CAST")
     private fun collectAnnotations(beanClass: KClass<*>): Array<T> {
         val annotations = ArrayList<T>()
         beanClass.superClasses { kClass ->
-            beanClass.annotations.filter { supportedConditionClass.isInstance(it) }
+            kClass.annotations.filter { supportedConditionClass.isInstance(it) }
                 .forEach {
                     annotations.add(it as T)
                 }
@@ -45,17 +49,32 @@ abstract class AnnotatedCondition<T : Annotation> : Condition, ConditionSupporte
         return annotations.toArray(array)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    open fun annClass(): KClass<T> {
-        for (supertype in this::class.supertypes) {
-            val classifier = supertype.classifier
-            if (classifier != AnnotatedCondition::class) {
-                continue
-            }
-            return supertype.arguments[0].type!!.classifier as KClass<T>
-        }
-        throw IllegalArgumentException("failed get condition class of ${this::class}")
+    /**
+     * Returns the annotation class for the given type parameter T by inspecting the class hierarchy of the implementing class.
+     */
+    protected open fun annClass(): KClass<T> {
+        return findAnnClass(this::class)
+            ?: throw IllegalArgumentException("failed get condition class of ${this::class}")
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun findAnnClass(cls: KClass<*>): KClass<T>? {
+        for (supertype in cls.supertypes) {
+            val classifier = supertype.classifier
+            if (classifier == AnnotatedCondition::class) {
+                return supertype.arguments[0].type!!.classifier as KClass<T>
+            }
+            if (classifier is KClass<*>) {
+                findAnnClass(classifier)?.let {
+                    return it
+                }
+            }
+        }
+        return null
+    }
+
+    /**
+     *  Abstract function that must be implemented by subclasses to check whether a given ActionContext matches a specific annotation.
+     */
     protected abstract fun matches(actionContext: ActionContext, annotation: T): Boolean
 }

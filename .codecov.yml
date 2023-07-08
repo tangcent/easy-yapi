@@ -31,3 +31,4 @@ ignore:
   - "**/*Dialog.kt"
   - "**/*Configurable.kt"
   - "**/*Action.kt"
+  - ".*model.*"

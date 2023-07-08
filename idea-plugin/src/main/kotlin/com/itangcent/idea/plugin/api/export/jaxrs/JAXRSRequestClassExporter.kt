@@ -99,7 +99,7 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
 
         var ultimateComment = (paramDesc ?: "")
         exportContext.type()?.let { duckType ->
-            commentResolver!!.resolveCommentForType(duckType, exportContext.psi())?.let {
+            commentResolver.resolveCommentForType(duckType, exportContext.psi())?.let {
                 ultimateComment = "$ultimateComment $it"
             }
         }
