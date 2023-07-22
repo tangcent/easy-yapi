@@ -1,3 +1,4 @@
+<meta charset="UTF-8">
 <h1>easy-yapi</h1>
 <br/>
 <a href="https://github.com/tangcent/easy-yapi">GitHub</a> |
@@ -11,45 +12,25 @@
 <ul>
     <li>基于javadoc&KDoc&ScalaDoc解析API文档</li>
     <li>注意, 你可以在保持代码零侵入的情况下得到相当完整的api文档</li>
-    <li>但是特殊的需求还是需要部分特殊的注释/注解配合。与之相对的是, 你可以灵活的运用配置规则来适应你的项目特性以尽可能减少代码侵入.</li>
+    <li>但是特殊的需求还是需要部分特殊的注释/注解配合。与之相对的是,
+        你可以灵活的运用配置规则来适应你的项目特性以尽可能减少代码侵入.
+    </li>
 </ul>
 <br/>
+
+<b>详细信息参考:<a href="https://easyyapi.com">Guide</a></b>
+<ul>导出API到Yapi/Postman/Markdown:
+    <p>
+        打开项目中的包含`api`的文件或者在IDEA的左边项目文件区域选择文件或者文件夹,
+        使用快捷键`alt shift E(windows)/ctrl E(mac)`,
+        然后选择要导出的API,选择导出渠道`Yapi/Markdown/Postman`,
+        点击[✔]按钮或者按回车键完成导出
+    </p>
+</ul>
+<br/>
+
 <p>
     如果快捷键无效, 请检查快捷键冲突.
     可以在 <kbd>Preferences(Settings)</kbd> > <kbd>KeyMap</kbd>修改快捷键.
 </p>
-<br/>
-
-<b>详细信息参考:<a href="https://easyyapi.com">Guide</a></b>
-<ul>导出API到Yapi,有以下方法:
-    <li>
-        1. 打开项目中的包含`api/rpc`的文件或者在IDEA的左边项目文件区域选择文件或者文件夹,
-        使用快捷键`alt shift E(windows)/ctrl E(mac)`,
-        然后选择要导出的API,选择导出渠道`Yapi/Markdown/Postman`,
-        点击[✔]按钮或者按回车键完成导出
-    </li>
-    <li>
-        2. 打开项目中的包含`api/rpc`的文件或者在IDEA的左边项目文件区域选择文件或者文件夹,
-        鼠标右键点击文件内容或文件夹, 选择`ExportYapi/ExportPostman/ExportMarkdown`
-        导出该文件或文件夹中所有的`api`
-    </li>
-    <li>
-        3. 在IDEA的左边项目文件区域选择文件或者文件夹,
-        鼠标点击最上方<kbd>Code</kbd> > <kbd>ExportYapi/ExportPostman/ExportMarkdown</kbd>
-    </li>
-    <li>
-        4. 鼠标点击最上方<kbd>Code</kbd> > <kbd>YapiDashBoard</kbd>,
-        然后就可以用鼠标将左边的API拖动到右边yapi目录中，完成API导出到Yapi
-    </li>
-
-    <li>
-        5. 鼠标点击最上方<kbd>Code</kbd> > <kbd>ApiDashBoard</kbd>,
-        然后就可以用鼠标将左边的API拖动到右边postman目录中，完成API导出到Postman
-    </li>
-
-    <li>
-        6. 打开项目中的包含`api`的文件,
-        右键文件内容选择`Call`,就可以发起对当前文件中的API的请求
-    </li>
-</ul>
 <br/>
