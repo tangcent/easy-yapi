@@ -46,10 +46,22 @@ tasks.create("codeCoverageReport", JacocoReport::class) {
     executionData(
         fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
     )
-    subprojects.forEach {
-        sourceDirectories.from(it.file("src/main/kotlin"))
-        classDirectories.from(it.file("build/classes/kotlin/main"))
+
+    val exclusiveDirectories = listOf("**/common/model/**")
+
+    subprojects.forEach { project ->
+        sourceDirectories.from(project.files("src/main/kotlin").map {
+            fileTree(it).matching {
+                exclude(exclusiveDirectories)
+            }
+        })
+        classDirectories.from(project.files("build/classes/kotlin/main").map {
+            fileTree(it).matching {
+                exclude(exclusiveDirectories)
+            }
+        })
     }
+
     reports {
         xml.required.set(true)
         xml.outputLocation.set(file("${buildDir}/reports/jacoco/report.xml").apply { parentFile.mkdirs() })

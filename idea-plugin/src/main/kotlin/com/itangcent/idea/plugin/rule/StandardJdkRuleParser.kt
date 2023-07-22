@@ -166,7 +166,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
                     .union(TemplateEvaluator.from { configReader.first(it) })
             }
             return TemplateUtils.render(str)
-                .placeholder(TemplateKit.resolvePlaceHolder(placeHolder) ?: arrayOf('$'))
+                .placeholder(TemplateKit.resolvePlaceHolder(placeHolder) ?: charArrayOf('$'))
                 .templateEvaluator(templateEvaluator)
                 .render()
         }

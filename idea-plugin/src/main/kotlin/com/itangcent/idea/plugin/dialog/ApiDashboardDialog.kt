@@ -596,7 +596,7 @@ class ApiDashboardDialog : AbstractApiDashboardDialog() {
                 actionContext.runAsync {
                     val collection = postmanNodeData.collection
                     val collectionId = collection["id"].toString()
-                    if (postmanCachedApiHelper!!.deleteCollectionInfo(collectionId) != null) {
+                    if (postmanCachedApiHelper.deleteCollectionInfo(collectionId) != null) {
                         logger.info("delete success")
                         postmanNodeData.asTreeNode().removeFromParent()
                         postmanApiTree!!.model.reload(postmanApiTree!!.model.root as TreeNode)

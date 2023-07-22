@@ -947,7 +947,7 @@ interface HttpResponse : Closeable {
      * @param headerName the header name to find
      * @return {@code true} if at least one header with the name be found, {@code false} otherwise
      */
-    fun containsHeader(headerName: String): Boolean?
+    fun containsHeader(headerName: String): Boolean
 
     /**
      * Gets all of the headers with the given name.  The returned array
@@ -1026,7 +1026,7 @@ abstract class AbstractHttpResponse : HttpResponse {
      * @param headerName the header name to find
      * @return {@code true} if at least one header with the name be found, {@code false} otherwise
      */
-    override fun containsHeader(headerName: String): Boolean? {
+    override fun containsHeader(headerName: String): Boolean {
         return headers()?.any { it.name().equalIgnoreCase(headerName) } ?: false
     }
 

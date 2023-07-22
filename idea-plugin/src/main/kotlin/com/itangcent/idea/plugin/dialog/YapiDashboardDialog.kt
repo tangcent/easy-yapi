@@ -518,7 +518,7 @@ class YapiDashboardDialog : AbstractApiDashboardDialog() {
 
     private fun goToYapi() {
         val yapiNodeData = selectedYapiNode() ?: return
-        LOG!!.trace("go to:[$yapiNodeData]")
+        LOG.trace("go to:[$yapiNodeData]")
         yapiNodeData.getUrl(this)?.let {
             actionContext.instance(IdeaSupport::class).openUrl(it)
         }

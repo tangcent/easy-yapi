@@ -690,7 +690,7 @@ class ScriptExecutorDialog : ContextDialog() {
             if (element == null) {
                 return "select context"
             }
-            name = actionContext!!.callInReadUI {
+            name = actionContext.callInReadUI {
                 when (element) {
                     is PsiElement -> PsiClassUtils.fullNameOfMember(element as PsiElement)
                     else -> element.toString()

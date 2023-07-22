@@ -187,7 +187,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                     .onEach { response ->
                         val responseCode = response["code"]
                         if (responseCode != null) {
-                            (response as MutableMap<String, Any?>)["code"] = when (responseCode) {
+                            response["code"] = when (responseCode) {
                                 is Map<*, *> -> responseCode["value"].asInt() ?: 200
                                 is LazilyParsedNumber -> responseCode.toInt()
                                 is String -> responseCode.toInt()

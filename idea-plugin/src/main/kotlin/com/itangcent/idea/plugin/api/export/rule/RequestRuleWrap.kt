@@ -8,7 +8,7 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.psi.resource
-import com.itangcent.idea.utils.setExts
+import com.itangcent.utils.setExts
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JsonOption

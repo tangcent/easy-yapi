@@ -14,9 +14,12 @@ fun com.itangcent.intellij.context.ActionContext.ActionContextBuilder.mock(type:
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> com.itangcent.intellij.context.ActionContext.ActionContextBuilder.mock(
     type: KClass<T>,
-    mock: (T) -> Unit
+    mock: KStubbing<T>.(T) -> Unit
 ) {
-    this.bindInstance(type as KClass<Any>, Mockito.mock(type.java).also { mock(it as T) } as Any)
+    val mockCls = type.java
+    this.bindInstance(type as KClass<Any>, Mockito.mock(mockCls).also {
+        KStubbing(it).mock(it)
+    } as Any)
 }
 
 @Suppress("UNCHECKED_CAST")

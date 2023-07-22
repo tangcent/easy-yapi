@@ -98,10 +98,10 @@ fun Request.header(name: String): String? {
     if (this.headers.isNullOrEmpty()) {
         return null
     }
-    val lowerName = name.toLowerCase()
+    val lowerName = name.lowercase()
     return this.headers!!
         .stream()
-        .filter { it.name?.toLowerCase() == lowerName }
+        .filter { it.name?.lowercase() == lowerName }
         .map { it.value }
         .firstOrNull()
 }

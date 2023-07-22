@@ -96,7 +96,7 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter {
 
     private fun exportMethodApi(psiClass: PsiClass, method: PsiMethod, docHandle: DocHandle) {
 
-        actionContext!!.checkStatus()
+        actionContext.checkStatus()
         if (!JAXRSBaseAnnotationParser.isApi(method)) {
             return
         }

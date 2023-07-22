@@ -16,7 +16,6 @@ import com.itangcent.test.assertLinesContain
 import com.itangcent.test.mock
 import com.itangcent.test.workAt
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
-import junit.framework.Assert
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -57,7 +56,7 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
                         }
                 })
         builder.mock(ApiCallUI::class) { apiCallUI ->
-            this.apiCallUI = apiCallUI
+            this@ApiCallerTest.apiCallUI = apiCallUI
             Mockito.`when`(apiCallUI.updateRequestList(any()))
                 .thenAnswer {
                     requestListInUI = it.getArgument<List<Request>>(0)

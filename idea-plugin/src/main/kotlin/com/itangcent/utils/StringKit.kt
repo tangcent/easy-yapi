@@ -1,16 +1,21 @@
 package com.itangcent.utils
 
-
+/**
+ * A map of escape characters to their unescaped versions.
+ */
 private val escapeCharacters = mapOf(
-    'b' to '\b',
-    't' to '\t',
-    'n' to '\n',
-    'r' to '\r',
-    '\\' to '\\',
+    'b' to '\b',   // Backspace
+    't' to '\t',   // Tab
+    'n' to '\n',   // Newline
+    'r' to '\r',   // Carriage return
+    '\\' to '\\',  // Backslash
 )
 
 /**
- * Used to convert escaped characters to their unescaped version.
+ * Used to convert escaped characters in a string to their unescaped version.
+ * For example, "\\n" would be converted to "\n".
+ *
+ * @return The unescaped string.
  */
 fun String.unescape(): String {
     val sb = StringBuilder()

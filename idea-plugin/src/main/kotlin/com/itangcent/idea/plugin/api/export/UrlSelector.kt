@@ -25,7 +25,7 @@ class UrlSelector {
         }
 
         val pathMultiResolve = ruleComputer!!.computer(ClassExportRuleKeys.PATH_MULTI, request.resource()!!)?.let {
-            ResolveMultiPath.valueOf(it.toUpperCase())
+            ResolveMultiPath.valueOf(it.uppercase())
         } ?: ResolveMultiPath.FIRST
 
         when (pathMultiResolve) {

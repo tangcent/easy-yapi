@@ -6,6 +6,8 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledOnOs
+import org.junit.jupiter.api.condition.OS
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -61,6 +63,7 @@ internal open class ConfigurableShellFileMarkdownRenderTest : AdvancedContextTes
         }
     }
 
+    @EnabledOnOs(value = [OS.LINUX, OS.MAC], disabledReason = "Only for Linux and Mac")
     internal open class SuccessConfigurableShellFileMarkdownRenderTest : ConfigurableShellFileMarkdownRenderTest() {
 
         override fun customConfig(): String {

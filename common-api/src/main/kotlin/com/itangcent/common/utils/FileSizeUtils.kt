@@ -198,5 +198,4 @@ object FileSizeUtils {
         require(directory.exists()) { "$directory does not exist" }
         require(directory.isDirectory) { "$directory is not a directory" }
     }
-
 }

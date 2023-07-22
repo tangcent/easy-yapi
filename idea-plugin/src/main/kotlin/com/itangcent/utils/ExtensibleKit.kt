@@ -15,18 +15,20 @@ object ExtensibleKit {
         val jsonElement = GsonUtils.parseToJsonTree(json)!!
         val t = GSON.fromJson(jsonElement, this.java)
         jsonElement.asJsonObject.entrySet()
-                .filter { it.key.startsWith(Attrs.PREFIX) }
-                .forEach { t.setExt(it.key, it.value.unbox()) }
+            .filter { it.key.startsWith(Attrs.PREFIX) }
+            .forEach { t.setExt(it.key, it.value.unbox()) }
         return t
     }
 
     fun <T : Extensible> KClass<T>.fromJson(json: String, vararg exts: String): T {
-        val extNames = exts.removePrefix(Attrs.PREFIX)
+        val extNames = exts.toSet() +
+                exts.map { it.removePrefix(Attrs.PREFIX) } +
+                exts.map { it.addPrefix(Attrs.PREFIX) }
         val jsonElement = GsonUtils.parseToJsonTree(json)!!
         val t = GSON.fromJson(jsonElement, this.java)
         jsonElement.asJsonObject.entrySet()
-                .filter { extNames.contains(it.key) }
-                .forEach { t.setExt(it.key.addPrefix(Attrs.PREFIX), it.value.unbox()) }
+            .filter { extNames.contains(it.key) }
+            .forEach { t.setExt(it.key.addPrefix(Attrs.PREFIX), it.value.unbox()) }
         return t
     }
 
@@ -41,10 +43,10 @@ object ExtensibleKit {
         return this
     }
 
-    /**
-     * Remove [prefix] from each string in the original array.
-     */
-    private fun Array<out String>.removePrefix(prefix: CharSequence): Array<String> {
-        return this.mapToTypedArray { it.removePrefix(prefix) }
+}
+
+fun Extensible.setExts(exts: Map<String, Any?>) {
+    exts.forEach { (t, u) ->
+        this.setExt(t, u)
     }
 }

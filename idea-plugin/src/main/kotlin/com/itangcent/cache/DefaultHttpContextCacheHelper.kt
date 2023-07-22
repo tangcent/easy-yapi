@@ -82,7 +82,7 @@ class DefaultHttpContextCacheHelper : HttpContextCacheHelper {
 
     override fun addCookies(cookies: List<Cookie>) {
         val httpContextCache = httpContextCacheBinder.read()
-        val cachedCookies = httpContextCache.cookies?.toMutableList()?.let { HashSet(it) } ?: HashSet()
+        val cachedCookies = httpContextCache.cookies?.toMutableSet() ?: HashSet()
         cookies.forEach { cachedCookies.add(it.json()) }
         httpContextCache.cookies = ArrayList(cachedCookies)
         httpContextCacheBinder.save(httpContextCache)

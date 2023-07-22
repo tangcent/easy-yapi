@@ -132,8 +132,6 @@ internal abstract class RecommendConfigReaderTest : AdvancedContextTest() {
 
         @Test
         fun test() {
-            var mock = Mockito.mock(ConfigReader::class.java, Mockito.withSettings()
-                .extraInterfaces(Initializable::class.java))
             assertEquals(ResultLoader.load("log"), LoggerCollector.getLog().toUnixString())
             assertNull(recommendConfigReader.first("ignore"))
         }

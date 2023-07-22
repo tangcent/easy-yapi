@@ -51,7 +51,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
     }
 
     fun testResolveFolder() {
-        //test of PsiClass & PsiMethod
+        //test for PsiClass & PsiMethod
         formatFolderHelper.resolveFolder(userCtrlPsiClass).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
                     "access user info"), it)
@@ -74,7 +74,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
             assertNull(it.getExt(ClassExportRuleKeys.POST_TEST.name()))
         }
 
-        //test of ExplicitClass & ExplicitMethod
+        //test for ExplicitClass & ExplicitMethod
         val explicitClass = duckTypeHelper.explicit(userCtrlPsiClass)
         formatFolderHelper.resolveFolder(explicitClass).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
@@ -98,7 +98,7 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
             assertNull(it.getExt(ClassExportRuleKeys.POST_TEST.name()))
         }
 
-        //test of PsiClassResource & PsiMethodResource
+        //test for PsiClassResource & PsiMethodResource
         formatFolderHelper.resolveFolder(PsiClassResource(userCtrlPsiClass)).let {
             assertEquals(Folder("apis about user", "apis about user\n" +
                     "access user info"), it)
