@@ -11,7 +11,16 @@ echo "Last version: ${last_version}"
 release_date=$(date +"%Y-%m-%d")
 
 # Calculate the next version
-next_version=$(echo ${last_version} | awk -F. '{split($0,a,".");a[3]++;printf("%d.%d.%d",a[1],a[2],a[3])}')
+parts=(${last_version//./ })
+
+if [[ ${parts[2]//[!0-9]/} == 9 ]]; then
+  parts[2]=0
+  parts[1]=$((parts[1] + 1))
+else
+  parts[2]=$((parts[2] + 1))
+fi
+
+next_version="${parts[0]}.${parts[1]}.${parts[2]}"
 echo "Next version: ${next_version}"
 
 # Create a new release branch based on the next version
