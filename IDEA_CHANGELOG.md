@@ -1,3 +1,9 @@
+* 2.6.0
+	* chore: update pluginDescription  [(#1002)](https://github.com/tangcent/easy-yapi/pull/1002)
+
+	* fix: process correct class when clicking class in multi-class Kotlin file  [(#1000)](https://github.com/tangcent/easy-yapi/pull/1000)
+
+	* fix: fix support for com.fasterxml.jackson.annotation.JsonUnwrapped  [(#999)](https://github.com/tangcent/easy-yapi/pull/999)
 * 2.5.9
 
 	* fix: fix swagger3.config  [(#996)](https://github.com/tangcent/easy-yapi/pull/996)
