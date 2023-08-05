@@ -29,4 +29,16 @@ properties.prefix=@org.springframework.boot.context.properties.ConfigurationProp
 field.name=@com.alibaba.fastjson.annotation.JSONField#value
 enum.use.by.type=true
 json.rule.enum.convert=~#name()
+ignored.classes_or_packages=java.lang.Class,java.lang.ClassLoader,java.lang.Module,java.lang.module,java.lang.annotation,
+java.lang.security,java.lang.invoke,java.lang.reflect,jdk.internal,java.util.jar,java.util.function,
+java.util.stream,java.util.logging,java.util.regex,java.util.zip,java.util.concurrent.locks,
+org.jooq
+field.ignore=groovy:
+def prefixList = it.type().name().tokenize(/[<>,]/).collect{
+it.tokenize('.').inject([]) { acc, val -> acc << (acc ? "${acc.last()}.${val}" : val) }
+}.flatten()
+def ignored = config.getValues("ignored.classes_or_packages").collect{
+it.tokenize(',').collect { it.trim() }.findAll { it }
+}.flatten()
+return !prefixList.intersect(ignored).isEmpty()
 ignore=@Ignore
