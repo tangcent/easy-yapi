@@ -30,7 +30,6 @@ import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.forEachValid
 import java.util.*
 import java.util.regex.Pattern
-import java.util.stream.Collectors
 
 @Singleton
 open class YapiFormatter {
@@ -585,7 +584,7 @@ open class YapiFormatter {
                                 mockPropertyInfo["enumDesc"] = optionDesc
                             }
 
-                            addMock(mockPropertyInfo, "@pick(${GsonUtils.toJson(optionVals)})")
+                            addMock(mockPropertyInfo, "@pick(${GsonUtils.toJson(optionVals)})", true)
                         }
                     }
                     if (required?.get(k) == true) {
@@ -608,7 +607,6 @@ open class YapiFormatter {
         }
 
         //try read mock rules
-        val mockRules = readMockRules()
         if (mockRules.isNotEmpty()) {
             for (mockRule in mockRules) {
                 if (mockRule.pathPredict(path) &&
@@ -705,7 +703,7 @@ open class YapiFormatter {
             else -> {
                 val jsonType = jsonTypeOf(typedObject)
                 if (jsonType != "object" && jsonType != "array") {
-                    for (mockRule in readMockRules()) {
+                    for (mockRule in mockRules) {
                         if (mockRule.pathPredict(path) &&
                             mockRule.typePredict(jsonType)
                         ) {
@@ -823,8 +821,8 @@ open class YapiFormatter {
         return item
     }
 
-    private fun addMock(item: HashMap<String, Any?>, mockStr: Any) {
-        if (item.containsKey("mock")) {
+    private fun addMock(item: HashMap<String, Any?>, mockStr: Any, force: Boolean = false) {
+        if (!force && item.containsKey("mock")) {
             return
         }
         val mock: HashMap<String, Any?> = HashMap()
@@ -857,23 +855,24 @@ open class YapiFormatter {
     }
 
     //region mock rules---------------------------------------------------------
-    private var mockRules: ArrayList<MockRule>? = null
+    private val mockRules: List<MockRule> by lazy {
+        readMockRules()
+    }
 
     private fun readMockRules(): List<MockRule> {
-        if (mockRules != null) return mockRules!!
-        mockRules = ArrayList()
+        val mockRules = arrayListOf<MockRule>()
 
         configReader!!.foreach({ key ->
             key.startsWith("mock.")
         }, { key, value ->
             try {
-                mockRules!!.add(parseMockRule(key.removePrefix("mock."), value))
+                mockRules.add(parseMockRule(key.removePrefix("mock."), value))
             } catch (e: Exception) {
                 logger.error("error to parse mock rule:$key=$value")
             }
         })
 
-        return mockRules!!
+        return mockRules
     }
 
     private fun parseMockRule(key: String, value: String): MockRule {
