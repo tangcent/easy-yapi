@@ -1,3 +1,7 @@
+* 2.6.1
+	* feat: ignore some common classes  [(#1009)](https://github.com/tangcent/easy-yapi/pull/1009)
+
+	* fix: refined config behavior for mocking enum fields  [(#1008)](https://github.com/tangcent/easy-yapi/pull/1008)
 * 2.6.0
 	* chore: update pluginDescription  [(#1002)](https://github.com/tangcent/easy-yapi/pull/1002)
 
