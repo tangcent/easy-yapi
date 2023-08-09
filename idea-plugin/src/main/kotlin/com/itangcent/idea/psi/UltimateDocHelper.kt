@@ -7,10 +7,14 @@ import com.itangcent.common.utils.appendln
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.DocParseHelper
 import com.itangcent.intellij.config.rule.RuleComputer
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 
 @Singleton
 class UltimateDocHelper {
+
+    @Inject
+    private lateinit var actionContext: ActionContext
 
     @Inject
     private val docHelper: DocHelper? = null
@@ -27,7 +31,7 @@ class UltimateDocHelper {
             docText = docText.appendln(it)
         }
         return when {
-            docText.isNullOrBlank() -> cls.name
+            docText.isNullOrBlank() -> actionContext.callInReadUI { cls.name }
             docParseHelper != null -> docParseHelper.resolveLinkInAttr(docText, cls)
             else -> docText
         }
