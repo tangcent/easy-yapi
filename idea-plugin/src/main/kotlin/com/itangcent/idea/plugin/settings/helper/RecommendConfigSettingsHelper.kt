@@ -51,14 +51,14 @@ object RecommendConfigLoader {
     }
 
     fun addSelectedConfig(codes: String, vararg code: String): String {
-        val set = codes.split(",").toHashSet()
+        val set = LinkedHashSet(codes.split(","))
         set.addAll(code)
         code.map { "-$it" }.forEach { set.remove(it) }
         return set.joinToString(",")
     }
 
     fun removeSelectedConfig(codes: String, vararg code: String): String {
-        val set = codes.split(",").toHashSet()
+        val set = LinkedHashSet(codes.split(","))
         set.removeAll(code)
         code.map { "-$it" }.forEach { set.add(it) }
         return set.joinToString(",")
