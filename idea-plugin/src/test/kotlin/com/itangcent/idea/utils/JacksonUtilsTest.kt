@@ -2,7 +2,6 @@ package com.itangcent.idea.utils
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 
 /**
  * Test case of [JacksonUtils]
@@ -41,13 +40,8 @@ internal class JacksonUtilsTest {
 
         assertEquals("java.lang.Object,[\"java.lang.Object\",{}]", JacksonUtils.toJson(Any()))
 
-        assertDoesNotThrow {
-            JacksonUtils.fromJson<Any>("java.lang.Object,[\"java.lang.Object\",{}]").let {
-                assertNotNull(it)
-                //todo: make it true
-                //assertEquals("java.lang.Object", it!!::class.java)
-            }
-        }
+
+        assertNotNull(JacksonUtils.fromJson<Any>("java.lang.Object,[\"java.lang.Object\",{}]"))
     }
 }
 

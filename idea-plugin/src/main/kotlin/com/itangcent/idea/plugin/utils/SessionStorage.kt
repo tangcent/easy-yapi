@@ -4,66 +4,27 @@ import com.google.inject.Singleton
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.sub
-import com.itangcent.idea.plugin.utils.Storage.Companion.NULL
-import java.util.*
+import com.itangcent.idea.plugin.utils.Storage.Companion.DEFAULT_GROUP
 
+/**
+ * Implementation of [Storage] based on memory
+ * The [SessionStorage] can only be accessed in the current action.
+ */
 @Singleton
 @ScriptTypeName("session")
 class SessionStorage : AbstractStorage() {
 
-    private val localKV = ThreadLocal.withInitial {
-        KV.create<String, Any?>()
+    private val kv: KV<String, Any?> by lazy { KV.create() }
+
+    override fun getCache(group: String): MutableMap<String, Any?> {
+        return kv.sub(group)
     }
 
-    private val kv: KV<String, Any?>
-        get() = localKV.get()
-
-    override fun get(group: String?, name: String?): Any? {
-        return kv.sub(group ?: NULL)[name]
-    }
-
-    override fun set(group: String?, name: String?, value: Any?) {
-        kv.sub(group ?: NULL)[name ?: NULL] = value
-    }
-
-    override fun pop(group: String?, name: String?): Any? {
-        return tryQueue(group, name)?.pollLast()
-    }
-
-    override fun peek(group: String?, name: String?): Any? {
-        return tryQueue(group, name)?.peekLast()
-    }
-
-    override fun push(group: String?, name: String?, value: Any?) {
-        queue(group, name).addLast(value)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun queue(group: String?, name: String?): LinkedList<Any?> {
-        val sub = kv.sub(group ?: NULL)
-        var queue = sub[name ?: NULL]
-        if (queue == null || queue !is LinkedList<*>) {
-            queue = LinkedList<Any>()
-            sub[name ?: NULL] = queue
+    override fun onUpdate(group: String?, cache: MutableMap<String, Any?>) {
+        if (cache.isEmpty()) {
+            kv.remove(group ?: DEFAULT_GROUP)
+        } else {
+            kv[group ?: DEFAULT_GROUP] = cache
         }
-        return queue as LinkedList<Any?>
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun tryQueue(group: String?, name: String?): LinkedList<Any?>? {
-        val sub = kv.sub(group ?: NULL)
-        return sub[name ?: NULL] as? LinkedList<Any?>
-    }
-
-    override fun remove(group: String?, name: String) {
-        kv.sub(group ?: NULL).remove(name)
-    }
-
-    override fun keys(group: String?): Array<Any?> {
-        return kv.sub(group ?: NULL).keys.toTypedArray()
-    }
-
-    override fun clear(group: String?) {
-        kv.remove(group)
     }
 }

@@ -1,5 +1,8 @@
 package com.itangcent.idea.plugin.utils
 
+/**
+ * The [Storage] provides a way to store data.
+ */
 interface Storage {
 
     fun get(name: String?): Any?
