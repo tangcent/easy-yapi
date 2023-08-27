@@ -1,3 +1,11 @@
+* 2.6.2
+	* refactor: remove usage of KV  [(#1020)](https://github.com/tangcent/easy-yapi/pull/1020)
+
+	* fix: fix issue with SessionStorage not works  [(#1016)](https://github.com/tangcent/easy-yapi/pull/1016)
+
+	* fix: fix thread warning  [(#1012)](https://github.com/tangcent/easy-yapi/pull/1012)
+
+	* fix: added support for strict check in jakarta.validation and javax.validation  [(#1013)](https://github.com/tangcent/easy-yapi/pull/1013)
 * 2.6.1
 	* feat: ignore some common classes  [(#1009)](https://github.com/tangcent/easy-yapi/pull/1009)
 
