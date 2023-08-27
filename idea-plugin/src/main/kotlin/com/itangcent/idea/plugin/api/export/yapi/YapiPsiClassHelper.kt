@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.intellij.psi.PsiElement
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.AdditionalField
@@ -45,17 +44,17 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
         fieldOrMethod: ExplicitElement<*>,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
         //compute `field.mock`
         ruleComputer.computer(YapiClassExportRuleKeys.FIELD_MOCK, fieldOrMethod)
             ?.takeIf { it.isNotBlank() }
             ?.let { if (resolveProperty) configReader.resolveProperty(it) else it }
             ?.let { mockInfo ->
-                kv.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
+                fields.sub(Attrs.MOCK_ATTR)[fieldName] = mockInfo
                 parseAsFieldValue(mockInfo)
                     ?.also { KVUtils.useFieldAsAttr(it, Attrs.MOCK_ATTR) }
-                    ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
+                    ?.let { populateFieldValue(fieldName, fieldType, fields, it) }
             }
 
         //compute `field.advanced`
@@ -64,28 +63,28 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
             fieldOrMethod
         )
         if (advancedValue.notNullOrEmpty()) {
-            kv.sub(Attrs.ADVANCED_ATTR)[fieldName] = advancedValue
+            fields.sub(Attrs.ADVANCED_ATTR)[fieldName] = advancedValue
         }
 
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
+        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
     }
 
     override fun resolveAdditionalField(
         additionalField: AdditionalField,
         context: PsiElement,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
-        super.resolveAdditionalField(additionalField, context, resolveContext, kv)
+        super.resolveAdditionalField(additionalField, context, resolveContext, fields)
         val fieldName = additionalField.name!!
         additionalField.getExt<Any>(Attrs.MOCK_ATTR)?.let {
-            kv.sub(Attrs.MOCK_ATTR)[fieldName] = it
+            fields.sub(Attrs.MOCK_ATTR)[fieldName] = it
         }
         additionalField.getExt<Any>(Attrs.DEMO_ATTR)?.let {
-            kv.sub(Attrs.DEMO_ATTR)[fieldName] = it
+            fields.sub(Attrs.DEMO_ATTR)[fieldName] = it
         }
         additionalField.getExt<Any>(Attrs.ADVANCED_ATTR)?.let {
-            kv.sub(Attrs.ADVANCED_ATTR)[fieldName] = it
+            fields.sub(Attrs.ADVANCED_ATTR)[fieldName] = it
         }
     }
 }

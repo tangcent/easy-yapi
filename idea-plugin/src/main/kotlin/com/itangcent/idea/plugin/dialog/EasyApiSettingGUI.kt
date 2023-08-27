@@ -30,7 +30,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.utils.ResourceUtils
+import com.itangcent.common.utils.ResourceUtils
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener

@@ -38,9 +38,8 @@ object KVUtils {
      * get description of options
      */
     fun getOptionDesc(options: List<Map<String, Any?>>): String? {
-        return options.stream()
-            .map { concat(it["value"]?.toString(), it["desc"]?.toString()) }
-            .filter { it != null }
+        return options.asSequence()
+            .mapNotNull { concat(it["value"]?.toString(), it["desc"]?.toString()) }
             .joinToString("\n")
     }
 
@@ -48,9 +47,8 @@ object KVUtils {
      * get description of constants
      */
     fun getConstantDesc(constants: List<Map<String, Any?>>): String? {
-        return constants.stream()
-            .map { concat(it["name"]?.toString(), it["desc"]?.toString()) }
-            .filter { it != null }
+        return constants.asSequence()
+            .mapNotNull { concat(it["name"]?.toString(), it["desc"]?.toString()) }
             .joinToString("\n")
     }
 
@@ -97,11 +95,9 @@ object KVUtils {
 
     @Suppress("UNCHECKED_CAST")
     fun addComment(info: HashMap<Any, Any?>, field: String, comment: String?) {
-        var comments = info[Attrs.COMMENT_ATTR]
+        val comments = info[Attrs.COMMENT_ATTR]
         if (comments == null) {
-            comments = KV<String, Any?>()
-            info[Attrs.COMMENT_ATTR] = comments
-            comments[field] = comment
+            info[Attrs.COMMENT_ATTR] = linkedMapOf(field to comment)
         } else {
             val oldComment = (comments as HashMap<Any?, Any?>)[field]
             if (oldComment == null) {
@@ -146,19 +142,15 @@ object KVUtils {
 
     @Suppress("UNCHECKED_CAST")
     fun addOptions(info: HashMap<Any, Any?>, field: String, options: ArrayList<HashMap<String, Any?>>) {
-        var comments = info[Attrs.COMMENT_ATTR]
+        val comments = info[Attrs.COMMENT_ATTR]
         if (comments == null) {
-            comments = KV<String, Any?>()
-            info[Attrs.COMMENT_ATTR] = comments
-            comments["$field@options"] = options
+            info[Attrs.COMMENT_ATTR] = linkedMapOf("$field@options" to options)
         } else {
             val oldOptions = (comments as HashMap<Any?, Any?>)["$field@options"]
             if (oldOptions == null) {
                 comments["$field@options"] = options
             } else {
-                val mergeOptions: ArrayList<Any?> = ArrayList(oldOptions as ArrayList<*>)
-                mergeOptions.addAll(options)
-                comments["$field@options"] = mergeOptions
+                comments["$field@options"] = (oldOptions as ArrayList<*>) + options
             }
         }
     }

@@ -36,6 +36,7 @@
               },
               "response": [
                 {
+                  "name": "get user info-Example",
                   "originalRequest": {
                     "method": "GET",
                     "description": "",
@@ -65,9 +66,8 @@
                       "raw": "{{test_default}}/user/get/{id}"
                     }
                   },
-                  "_postman_previewlanguage": "json",
                   "code": 200,
-                  "name": "get user info-Example",
+                  "_postman_previewlanguage": "json",
                   "header": [
                     {
                       "name": "date",
@@ -151,6 +151,7 @@
               },
               "response": [
                 {
+                  "name": "current ctrl name-Example",
                   "originalRequest": {
                     "method": "GET",
                     "description": "",
@@ -173,9 +174,8 @@
                       "raw": "{{test_default}}/user/ctrl/name"
                     }
                   },
-                  "_postman_previewlanguage": "json",
                   "code": 200,
-                  "name": "current ctrl name-Example",
+                  "_postman_previewlanguage": "json",
                   "header": [
                     {
                       "name": "date",
@@ -245,6 +245,7 @@
               },
               "response": [
                 {
+                  "name": "say hello-Example",
                   "originalRequest": {
                     "method": "GET",
                     "description": "not update anything",
@@ -259,9 +260,8 @@
                       "raw": "{{test_default}}/user/greeting"
                     }
                   },
-                  "_postman_previewlanguage": "json",
                   "code": 200,
-                  "name": "say hello-Example",
+                  "_postman_previewlanguage": "json",
                   "header": [
                     {
                       "name": "date",
@@ -353,6 +353,7 @@
               },
               "response": [
                 {
+                  "name": "create an user-Example",
                   "originalRequest": {
                     "method": "POST",
                     "description": "",
@@ -389,9 +390,8 @@
                       "raw": "{{test_default}}/user/add"
                     }
                   },
-                  "_postman_previewlanguage": "json",
                   "code": 200,
-                  "name": "create an user-Example",
+                  "_postman_previewlanguage": "json",
                   "header": [
                     {
                       "name": "date",
@@ -521,6 +521,7 @@
               },
               "response": [
                 {
+                  "name": "update user info-Example",
                   "originalRequest": {
                     "method": "PUT",
                     "description": "",
@@ -595,9 +596,8 @@
                       "raw": "{{test_default}}/user/update"
                     }
                   },
-                  "_postman_previewlanguage": "json",
                   "code": 200,
-                  "name": "update user info-Example",
+                  "_postman_previewlanguage": "json",
                   "header": [
                     {
                       "name": "date",

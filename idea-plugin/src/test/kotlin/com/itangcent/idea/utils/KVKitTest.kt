@@ -5,7 +5,6 @@ import com.itangcent.intellij.util.*
 import org.junit.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.util.function.BiConsumer
 
 
 /**
@@ -15,20 +14,20 @@ class KVKitTest {
 
     @Test
     fun testForEachValid() {
-        KV.by("a", "A").forEachValid(BiConsumer { t, u ->
+        KV.by("a", "A").forEachValid { t, u ->
             assertEquals("a", t)
             assertEquals("A", u)
-        })
+        }
 
-        KV.by("", "A").forEachValid(BiConsumer { t, u ->
+        KV.by("", "A").forEachValid { t, u ->
             assertEquals("key", t)
             assertEquals("A", u)
-        })
+        }
 
-        KV.by("a", "A").set("@a", "").forEachValid(BiConsumer { t, u ->
+        linkedMapOf("a" to "A", "@a" to "").forEachValid { t, u ->
             assertEquals("a", t)
             assertEquals("A", u)
-        })
+        }
 
         KV.by("a", "A").forEachValid { t, u ->
             assertEquals("a", t)
@@ -40,7 +39,7 @@ class KVKitTest {
             assertEquals("A", u)
         }
 
-        KV.by("a", "A").set("@a", "").forEachValid { t, u ->
+        linkedMapOf("a" to "A", "@a" to "").forEachValid { t, u ->
             assertEquals("a", t)
             assertEquals("A", u)
         }

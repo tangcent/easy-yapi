@@ -1023,7 +1023,7 @@ object RuleToolUtils {
         }
     }
 
-    private fun typeName(kClass: KClass<*>): String? {
+    private fun typeName(kClass: KClass<*>): String {
         val annotation = kClass.findAnnotation<ScriptTypeName>()
         if (annotation != null) return annotation.name
         val qualifiedName = kClass.qualifiedName ?: return "object"
@@ -1052,23 +1052,24 @@ object RuleToolUtils {
 
     private val TO_LINE_PATTERN = Pattern.compile("[A-Z]+")
 
-    private val typeMapper = KV.create<String, String>()
-        .set("java.lang.String", "string")
-        .set("java.lang.Long", "long")
-        .set("java.lang.Double", "double")
-        .set("java.lang.Short", "short")
-        .set("java.lang.Integer", "int")
-        .set("java.lang.Object", "object")
-        .set("kotlin.String", "string")
-        .set("kotlin.Array", "array")
-        .set("kotlin.Int", "int")
-        .set("kotlin.Unit", "void")
-        .set("kotlin.collections.List", "array")
-        .set("kotlin.Any", "object")
-        .set("kotlin.Boolean", "bool")
-        .set("kotlin.collections.Map", "map")
-        .set("kotlin.collections.Set", "array")
-        .set("kotlin.CharArray", "array<char>")
-        .set("kotlin.Function0", "func")
-        .set("kotlin.Function1", "func")
+    private val typeMapper = linkedMapOf(
+        "java.lang.String" to "string",
+        "java.lang.Long" to "long",
+        "java.lang.Double" to "double",
+        "java.lang.Short" to "short",
+        "java.lang.Integer" to "int",
+        "java.lang.Object" to "object",
+        "kotlin.String" to "string",
+        "kotlin.Array" to "array",
+        "kotlin.Int" to "int",
+        "kotlin.Unit" to "void",
+        "kotlin.collections.List" to "array",
+        "kotlin.Any" to "object",
+        "kotlin.Boolean" to "bool",
+        "kotlin.collections.Map" to "map",
+        "kotlin.collections.Set" to "array",
+        "kotlin.CharArray" to "array<char>",
+        "kotlin.Function0" to "func",
+        "kotlin.Function1" to "func"
+    )
 }

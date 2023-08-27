@@ -8,7 +8,7 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.utils.Initializable
-import com.itangcent.utils.ResourceUtils
+import com.itangcent.common.utils.ResourceUtils
 import org.mockito.Mockito
 import java.io.File
 import kotlin.reflect.KClass

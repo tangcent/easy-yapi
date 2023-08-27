@@ -26,7 +26,6 @@ import com.itangcent.intellij.util.FileType
 import java.util.*
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
-import kotlin.streams.toList
 
 @Singleton
 open class ClassApiExporterHelper {
@@ -69,13 +68,13 @@ open class ClassApiExporterHelper {
 
     companion object : Log()
 
-    fun extractParamComment(psiMethod: PsiMethod): KV<String, Any>? {
+    fun extractParamComment(psiMethod: PsiMethod): MutableMap<String, Any?>? {
         val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
         if (subTagMap.isEmpty()) {
             return null
         }
 
-        val methodParamComment: KV<String, Any> = KV.create()
+        val methodParamComment = linkedMapOf<String, Any?>()
         val parameters = psiMethod.parameterList.parameters
         subTagMap.entries.forEach { entry ->
             val name: String = entry.key
@@ -115,7 +114,7 @@ open class ClassApiExporterHelper {
                         return linkResolver!!.linkToMethod(linkMethod)
                     }
 
-                    override fun linkToUnresolved(plainText: String): String? {
+                    override fun linkToUnresolved(plainText: String): String {
                         return plainText
                     }
                 })
@@ -181,20 +180,20 @@ open class ClassApiExporterHelper {
     fun foreachPsiMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         actionContext.runInReadUI {
             jvmClassHelper!!.getAllMethods(cls)
-                .stream()
+                .asSequence()
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
         }
     }
 
     fun export(): List<Doc> {
-        val docs: MutableList<Doc> = Collections.synchronizedList(java.util.ArrayList())
+        val docs: MutableList<Doc> = Collections.synchronizedList(ArrayList())
         export { docs.add(it) }
         return docs
     }
 
     fun export(handle: (Doc) -> Unit) {
-        logger.info("Start find apis...")
+        logger.info("Start export api...")
         val psiClassQueue: BlockingQueue<PsiClass> = LinkedBlockingQueue()
 
         val boundary = actionContext.createBoundary()

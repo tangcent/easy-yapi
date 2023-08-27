@@ -646,10 +646,10 @@ abstract class RequestClassExporter : ClassExporter {
                     }
                 })
             } else {
-                val fields = typeObject.asKV()
-                val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
-                val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
-                val defaultVal = fields.getAsKv(Attrs.DEFAULT_VALUE_ATTR)
+                val fields = typeObject.asHashMap()
+                val comment = fields.getSub(Attrs.COMMENT_ATTR)
+                val required = fields.getSub(Attrs.REQUIRED_ATTR)
+                val defaultVal = fields.getSub(Attrs.DEFAULT_VALUE_ATTR)
                 parameterExportContext.setExt("parent", fields)
                 fields.forEachValid { filedName, fieldVal ->
                     parameterExportContext.setExt("key", filedName)
@@ -659,7 +659,7 @@ abstract class RequestClassExporter : ClassExporter {
                     }
                     requestBuilderListener.addParam(
                         parameterExportContext,
-                        request, filedName, tinyQueryParam(fv),
+                        request, filedName.toString(), tinyQueryParam(fv),
                         required?.getAs(filedName) ?: false,
                         KVUtils.getUltimateComment(comment, filedName)
                     )
@@ -728,10 +728,10 @@ abstract class RequestClassExporter : ClassExporter {
                         }
                     })
                 } else {
-                    val fields = typeObject.asKV()
-                    val comment = fields.getAsKv(Attrs.COMMENT_ATTR)
-                    val required = fields.getAsKv(Attrs.REQUIRED_ATTR)
-                    val defaultVal = fields.getAsKv(Attrs.DEFAULT_VALUE_ATTR)
+                    val fields = typeObject.asHashMap()
+                    val comment = fields.getSub(Attrs.COMMENT_ATTR)
+                    val required = fields.getSub(Attrs.REQUIRED_ATTR)
+                    val defaultVal = fields.getSub(Attrs.DEFAULT_VALUE_ATTR)
                     requestBuilderListener.addHeaderIfMissed(
                         parameterExportContext,
                         request, "Content-Type", "application/x-www-form-urlencoded"
@@ -743,14 +743,14 @@ abstract class RequestClassExporter : ClassExporter {
                         if (fv == Magics.FILE_STR) {
                             requestBuilderListener.addFormFileParam(
                                 parameterExportContext,
-                                request, filedName,
+                                request, filedName.toString(),
                                 required?.getAs(filedName) ?: false,
                                 KVUtils.getUltimateComment(comment, filedName)
                             )
                         } else {
                             requestBuilderListener.addFormParam(
                                 parameterExportContext,
-                                request, filedName, fv?.takeIfNotOriginal()?.toString(),
+                                request, filedName.toString(), fv?.takeIfNotOriginal()?.toString(),
                                 required?.getAs(filedName) ?: false,
                                 KVUtils.getUltimateComment(comment, filedName)
                             )

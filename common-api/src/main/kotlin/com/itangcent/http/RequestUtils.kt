@@ -33,7 +33,7 @@ object RequestUtils {
             return mutableBody
         }
         if (body is List<*>) {
-            return body.stream().map { toRawBody(it, copy) }.toList()
+            return body.map { toRawBody(it, copy) }
         }
         if (body is Array<*>) {
             return body.mapToTypedArray { toRawBody(it, copy) }

@@ -115,12 +115,13 @@ open class YapiFormatter {
                 item["req_query"] = queryList
                 methodDoc.params?.forEach {
                     queryList.add(
-                        KV.create<String, Any?>()
-                            .set("name", it.name)
-                            .set("value", parseQueryValueAsJson5(it.value))
-                            .set("example", parseQueryValueAsJson5(it.getExample() ?: it.value.takeIfNotOriginal()))
-                            .set("desc", it.desc)
-                            .set("required", it.required.asInt())
+                        linkedMapOf(
+                            "name" to it.name,
+                            "value" to parseQueryValueAsJson5(it.value),
+                            "example" to parseQueryValueAsJson5(it.getExample() ?: it.value.takeIfNotOriginal()),
+                            "desc" to it.desc,
+                            "required" to it.required.asInt()
+                        )
                     )
                 }
             } else {
@@ -251,7 +252,7 @@ open class YapiFormatter {
     }
 
     protected open fun copyItem(item: HashMap<String, Any?>): HashMap<String, Any?> {
-        val copyItem = KV.create<String, Any?>()
+        val copyItem = linkedMapOf<String, Any?>()
         copyItem.putAll(item)
 
         val queryPath = HashMap(item.getAs<HashMap<String, Any?>>("query_path"))
@@ -293,12 +294,13 @@ open class YapiFormatter {
         item["req_headers"] = headers
         request.headers?.forEach {
             headers.add(
-                KV.create<String, Any?>()
-                    .set("name", it.name)
-                    .set("value", it.value)
-                    .set("desc", it.desc)
-                    .set("example", it.getExample() ?: it.value.takeIfSpecial())
-                    .set("required", it.required.asInt())
+                linkedMapOf(
+                    "name" to it.name,
+                    "value" to it.value,
+                    "desc" to it.desc,
+                    "example" to (it.getExample() ?: it.value.takeIfSpecial()),
+                    "required" to it.required.asInt()
+                )
             )
         }
 
@@ -306,12 +308,13 @@ open class YapiFormatter {
         item["req_query"] = queryList
         request.querys?.forEach {
             queryList.add(
-                KV.create<String, Any?>()
-                    .set("name", it.name)
-                    .set("value", it.value)
-                    .set("example", it.getExample() ?: it.value.takeIfNotOriginal()?.toString())
-                    .set("desc", it.desc)
-                    .set("required", it.required.asInt())
+                linkedMapOf(
+                    "name" to it.name,
+                    "value" to it.value,
+                    "example" to (it.getExample() ?: it.value.takeIfNotOriginal()?.toString()),
+                    "desc" to it.desc,
+                    "required" to it.required.asInt()
+                )
             )
         }
 
@@ -321,12 +324,13 @@ open class YapiFormatter {
             item["req_body_form"] = urlencodeds
             request.formParams!!.forEach {
                 urlencodeds.add(
-                    KV.create<String, Any?>()
-                        .set("name", it.name)
-                        .set("example", it.getExample() ?: it.value.takeIfSpecial())
-                        .set("type", it.type)
-                        .set("required", it.required.asInt())
-                        .set("desc", it.desc)
+                    linkedMapOf(
+                        "name" to it.name,
+                        "example" to (it.getExample() ?: it.value.takeIfSpecial()),
+                        "type" to it.type,
+                        "required" to it.required.asInt(),
+                        "desc" to it.desc
+                    )
                 )
             }
         }
@@ -336,10 +340,11 @@ open class YapiFormatter {
             item["req_params"] = pathParmas
             request.paths!!.forEach {
                 pathParmas.add(
-                    KV.create<String, Any?>()
-                        .set("name", it.name)
-                        .set("example", it.getExample() ?: it.value.takeIfSpecial())
-                        .set("desc", it.desc)
+                    linkedMapOf(
+                        "name" to it.name,
+                        "example" to (it.getExample() ?: it.value.takeIfSpecial()),
+                        "desc" to it.desc
+                    )
                 )
             }
         }
@@ -630,7 +635,6 @@ open class YapiFormatter {
         return json5Formatter.format(typedObject, rootDesc)
     }
 
-    @Suppress("UNCHECKED_CAST")
     private fun addMockAsProperty(path: String, typedObject: Any?): Any? {
         var ret = typedObject
         addMockAsProperty(path, typedObject) {

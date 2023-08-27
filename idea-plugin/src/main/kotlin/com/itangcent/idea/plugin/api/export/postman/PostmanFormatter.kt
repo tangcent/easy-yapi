@@ -93,7 +93,7 @@ open class PostmanFormatter {
     }
 
     protected open fun copyItem(item: HashMap<String, Any?>): HashMap<String, Any?> {
-        val copyItem = KV.create<String, Any?>()
+        val copyItem = linkedMapOf<String, Any?>()
         copyItem.putAll(item)
 
         val request = HashMap(item.getAs<HashMap<String, Any?>>("request"))
@@ -159,11 +159,12 @@ open class PostmanFormatter {
         requestInfo["header"] = headers
         request.headers?.forEach {
             headers.add(
-                KV.create<String, Any?>()
-                    .set(KEY, it.name)
-                    .set(VALUE, it.value)
-                    .set(TYPE, "text")
-                    .set(DESCRIPTION, it.desc ?: "")
+                linkedMapOf<String, Any?>(
+                    KEY to it.name,
+                    VALUE to it.value,
+                    TYPE to "text",
+                    DESCRIPTION to (it.desc ?: "")
+                )
             )
         }
 
@@ -171,11 +172,12 @@ open class PostmanFormatter {
         url["query"] = queryList
         request.querys?.forEach {
             queryList.add(
-                KV.create<String, Any?>()
-                    .set(KEY, it.name)
-                    .set(VALUE, it.value?.takeIfNotOriginal()?.toString() ?: "")
-                    .set("equals", true)
-                    .set(DESCRIPTION, it.desc)
+                linkedMapOf<String, Any?>(
+                    KEY to it.name,
+                    VALUE to (it.value?.takeIfNotOriginal()?.toString() ?: ""),
+                    "equals" to true,
+                    DESCRIPTION to it.desc
+                )
             )
         }
 
@@ -187,11 +189,12 @@ open class PostmanFormatter {
                 val formdatas: ArrayList<HashMap<String, Any?>> = ArrayList()
                 request.formParams!!.forEach {
                     formdatas.add(
-                        KV.create<String, Any?>()
-                            .set(KEY, it.name)
-                            .set(VALUE, it.value.takeIfSpecial() ?: "")
-                            .set(TYPE, it.type)
-                            .set(DESCRIPTION, it.desc)
+                        linkedMapOf<String, Any?>(
+                            KEY to it.name,
+                            VALUE to (it.value.takeIfSpecial() ?: ""),
+                            TYPE to it.type,
+                            DESCRIPTION to it.desc
+                        )
                     )
                 }
                 body["formdata"] = formdatas
@@ -201,11 +204,12 @@ open class PostmanFormatter {
                 val urlEncodeds: ArrayList<HashMap<String, Any?>> = ArrayList()
                 request.formParams!!.forEach {
                     urlEncodeds.add(
-                        KV.create<String, Any?>()
-                            .set(KEY, it.name)
-                            .set(VALUE, it.value.takeIfSpecial() ?: "")
-                            .set(TYPE, it.type)
-                            .set(DESCRIPTION, it.desc)
+                        linkedMapOf<String, Any?>(
+                            KEY to it.name,
+                            VALUE to (it.value.takeIfSpecial() ?: ""),
+                            TYPE to it.type,
+                            DESCRIPTION to it.desc
+                        )
                     )
                 }
                 body["urlencoded"] = urlEncodeds
@@ -219,7 +223,11 @@ open class PostmanFormatter {
                     KVUtils.useAttrAsValue(it, Attrs.DEMO_ATTR)
                 }
             )
-            body["options"] = KV.by("raw", KV.by("language", "json"))
+            body["options"] = linkedMapOf<String, Any?>(
+                "raw" to linkedMapOf<String, Any?>(
+                    "language" to "json"
+                )
+            )
         }
 
         if (body.isNotEmpty()) {
@@ -231,7 +239,7 @@ open class PostmanFormatter {
             val responses: ArrayList<HashMap<String, Any?>> = ArrayList()
             val exampleName = request.name + "-Example"
             request.response!!.forEachIndexed { index, response ->
-                val responseInfo: HashMap<String, Any?> = HashMap()
+                val responseInfo = linkedMapOf<String, Any?>()
                 if (index > 0) {
                     responseInfo[NAME] = exampleName + (index + 1)
                 } else {
@@ -257,59 +265,59 @@ open class PostmanFormatter {
 
                 if (response.headers?.any { it.name.equals("content-type", true) } == false) {
                     responseHeader.add(
-                        KV.create<String, Any?>()
-                            .set(NAME, "content-type")
-                            .set(KEY, "content-type")
-                            .set(VALUE, "application/json;charset=UTF-8")
-                            .set(DESCRIPTION, "The mime type of this content")
+                        linkedMapOf<String, Any?>(
+                            NAME to "content-type",
+                            KEY to "content-type",
+                            VALUE to "application/json;charset=UTF-8",
+                            DESCRIPTION to "The mime type of this content"
+                        )
                     )
                 }
 
                 if (response.headers?.any { it.name.equals("date", true) } == false) {
 
                     responseHeader.add(
-                        KV.create<String, Any?>()
-                            .set(NAME, "date")
-                            .set(KEY, "date")
-                            .set(
-                                VALUE,
-                                systemProvider.currentTimeMillis().asDate().formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'")
-                            )
-                            .set(DESCRIPTION, "The date and time that the message was sent")
+                        linkedMapOf<String, Any?>(
+                            NAME to "date",
+                            KEY to "date",
+                            VALUE to systemProvider.currentTimeMillis().asDate()
+                                .formatDate("EEE, dd MMM yyyyHH:mm:ss 'GMT'"),
+                            DESCRIPTION to "The date and time that the message was sent"
+                        )
                     )
                 }
 
                 if (response.headers?.any { it.name.equals("server", true) } == false) {
                     responseHeader.add(
-                        KV.create<String, Any?>()
-                            .set(NAME, "server")
-                            .set(KEY, "server")
-                            .set(VALUE, "Apache-Coyote/1.1")
-                            .set(DESCRIPTION, "A name for the server")
+                        linkedMapOf<String, Any?>(
+                            NAME to "server",
+                            KEY to "server",
+                            VALUE to "Apache-Coyote/1.1",
+                            DESCRIPTION to "A name for the server"
+                        )
                     )
                 }
 
                 if (response.headers?.any { it.name.equals("transfer-encoding", true) } == false) {
 
                     responseHeader.add(
-                        KV.create<String, Any?>()
-                            .set(NAME, "transfer-encoding")
-                            .set(KEY, "transfer-encoding")
-                            .set(VALUE, "chunked")
-                            .set(
-                                DESCRIPTION,
-                                "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
-                            )
+                        linkedMapOf<String, Any?>(
+                            NAME to "transfer-encoding",
+                            KEY to "transfer-encoding",
+                            VALUE to "chunked",
+                            DESCRIPTION to "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                        )
                     )
                 }
 
                 response.headers?.forEach {
                     responseHeader.add(
-                        KV.create<String, Any?>()
-                            .set(NAME, it.name)
-                            .set(KEY, it.name)
-                            .set(VALUE, it.value.takeIfSpecial() ?: "")
-                            .set(DESCRIPTION, it.desc)
+                        linkedMapOf<String, Any?>(
+                            NAME to it.name,
+                            KEY to it.name,
+                            VALUE to (it.value.takeIfSpecial() ?: ""),
+                            DESCRIPTION to it.desc
+                        )
                     )
                 }
 
@@ -425,24 +433,26 @@ open class PostmanFormatter {
         preRequest()?.takeIf { it.notNullOrBlank() }?.let {
             events = ArrayList()
             events!!.add(
-                KV.any().set("listen", "prerequest")
-                    .set(
-                        "script", KV.any()
-                            .set("exec", it.lines())
-                            .set(TYPE, "text/javascript")
+                linkedMapOf<String, Any?>(
+                    "listen" to "prerequest",
+                    "script" to linkedMapOf<String, Any?>(
+                        "exec" to it.lines(),
+                        TYPE to "text/javascript"
                     )
+                )
             )
         }
 
         test()?.takeIf { it.notNullOrBlank() }?.let {
             events = events ?: ArrayList()
             events!!.add(
-                KV.any().set("listen", "test")
-                    .set(
-                        "script", KV.any()
-                            .set("exec", it.lines())
-                            .set(TYPE, "text/javascript")
+                linkedMapOf<String, Any?>(
+                    "listen" to "test",
+                    "script" to linkedMapOf<String, Any?>(
+                        "exec" to it.lines(),
+                        TYPE to "text/javascript"
                     )
+                )
             )
         }
 
@@ -591,7 +601,7 @@ open class PostmanFormatter {
 
     @Suppress("UNCHECKED_CAST")
     private fun findCommonEvents(items: List<*>): List<*>? {
-        if (items.isNullOrEmpty()) {
+        if (items.isEmpty()) {
             return null
         }
 
