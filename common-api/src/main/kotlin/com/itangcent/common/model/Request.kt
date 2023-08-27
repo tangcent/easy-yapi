@@ -100,7 +100,7 @@ fun Request.header(name: String): String? {
     }
     val lowerName = name.lowercase()
     return this.headers!!
-        .stream()
+        .asSequence()
         .filter { it.name?.lowercase() == lowerName }
         .map { it.value }
         .firstOrNull()

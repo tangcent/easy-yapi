@@ -39,11 +39,11 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         fieldOrMethod: ExplicitElement<*>,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
         //compute `field.required`
         ruleComputer.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
-            kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = required
+            fields.sub(Attrs.REQUIRED_ATTR)[fieldName] = required
         }
 
         //compute `field.default.value`
@@ -51,13 +51,13 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         if (defaultValue.isNullOrEmpty()) {
             if (fieldOrMethod is ExplicitField) {
                 fieldOrMethod.psi().initializer?.let { psiExpressionResolver.process(it) }?.toPrettyString()
-                    ?.let { kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = it }
+                    ?.let { fields.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = it }
             }
         } else {
-            kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
+            fields.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
             parseAsFieldValue(defaultValue)
                 ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEFAULT_VALUE_ATTR) }
-                ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
+                ?.let { populateFieldValue(fieldName, fieldType, fields, it) }
         }
 
         //compute `field.demo`
@@ -66,25 +66,25 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
             fieldOrMethod
         )
         if (demoValue.notNullOrBlank()) {
-            kv.sub(Attrs.DEMO_ATTR)[fieldName] = demoValue
+            fields.sub(Attrs.DEMO_ATTR)[fieldName] = demoValue
             demoValue?.let { parseAsFieldValue(it) }
                 ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEMO_ATTR) }
-                ?.let { populateFieldValue(fieldName, fieldType, kv, it) }
+                ?.let { populateFieldValue(fieldName, fieldType, fields, it) }
         }
 
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
+        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
     }
 
     override fun resolveAdditionalField(
         additionalField: AdditionalField,
         context: PsiElement,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
-        super.resolveAdditionalField(additionalField, context, resolveContext, kv)
+        super.resolveAdditionalField(additionalField, context, resolveContext, fields)
         val fieldName = additionalField.name!!
-        kv.sub(Attrs.REQUIRED_ATTR)[fieldName] = additionalField.required
-        kv.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = additionalField.defaultValue
+        fields.sub(Attrs.REQUIRED_ATTR)[fieldName] = additionalField.required
+        fields.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = additionalField.defaultValue
     }
 
     protected fun parseAsFieldValue(
@@ -101,10 +101,10 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     protected fun populateFieldValue(
         fieldName: String,
         fieldType: DuckType,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
         fieldValue: Any
     ) {
-        var oldValue = kv[fieldName]
+        var oldValue = fields[fieldName]
         if (oldValue is ObjectHolder) {
             oldValue = oldValue.getOrResolve()
         }
@@ -112,21 +112,20 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
             return
         }
         if (oldValue.isOriginal()) {
-            kv[fieldName] = fieldValue
+            fields[fieldName] = fieldValue
         } else {
-            kv[fieldName] = oldValue.copy()
-            kv.merge(fieldName, fieldValue)
+            fields[fieldName] = oldValue.copy()
+            fields.merge(fieldName, fieldValue)
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun resolveEnumOrStatic(
         context: PsiElement,
         cls: PsiClass?,
         property: String?,
         defaultPropertyName: String,
         valueTypeHandle: ((DuckType) -> Unit)?,
-    ): java.util.ArrayList<java.util.HashMap<String, Any?>>? {
+    ): ArrayList<HashMap<String, Any?>>? {
         EventRecords.record(EventRecords.ENUM_RESOLVE)
         return super.resolveEnumOrStatic(context, cls, property, defaultPropertyName, valueTypeHandle)
     }

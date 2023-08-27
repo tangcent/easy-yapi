@@ -6,7 +6,7 @@ import com.itangcent.common.utils.appendln
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.update
-import com.itangcent.utils.ResourceUtils
+import com.itangcent.common.utils.ResourceUtils
 import java.util.*
 
 @Singleton

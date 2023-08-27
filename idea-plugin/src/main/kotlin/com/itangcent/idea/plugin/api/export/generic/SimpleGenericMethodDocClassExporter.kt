@@ -6,7 +6,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.MethodDoc
-import com.itangcent.common.utils.KV
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
@@ -80,13 +79,13 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
                 else -> {
                     logger!!.info("search api from: $clsQualifiedName")
 
-                    val kv = KV.create<String, Any?>()
+                    val fields = linkedMapOf<String, Any?>()
 
-                    processClass(cls, kv)
+                    processClass(cls, fields)
 
                     classApiExporterHelper.foreachPsiMethod(cls) { method ->
                         if (isApi(method) && methodFilter?.checkMethod(method) != false) {
-                            exportMethodApi(cls, method, kv, docHandle)
+                            exportMethodApi(cls, method, fields, docHandle)
                         }
                     }
                 }
@@ -99,7 +98,7 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
     }
 
     @Suppress("UNUSED")
-    protected fun processClass(cls: PsiClass, kv: KV<String, Any?>) {
+    protected fun processClass(cls: PsiClass, fields: MutableMap<String, Any?>) {
     }
 
     @Suppress("UNUSED")
@@ -132,7 +131,7 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
     }
 
     private fun exportMethodApi(
-        psiClass: PsiClass, method: PsiMethod, kv: KV<String, Any?>,
+        psiClass: PsiClass, method: PsiMethod, fields: MutableMap<String, Any?>,
         docHandle: DocHandle,
     ) {
 
@@ -142,12 +141,12 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
 
         methodDoc.resource = PsiMethodResource(method, psiClass)
 
-        processMethod(method, kv, methodDoc)
+        processMethod(method, fields, methodDoc)
 
         docHandle(methodDoc)
     }
 
-    protected open fun processMethod(method: PsiMethod, kv: KV<String, Any?>, methodDoc: MethodDoc) {
+    protected open fun processMethod(method: PsiMethod, fields: MutableMap<String, Any?>, methodDoc: MethodDoc) {
         methodDoc.name = apiHelper!!.nameOfApi(method)
     }
 }

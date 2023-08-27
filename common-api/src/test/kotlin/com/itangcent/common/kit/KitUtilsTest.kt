@@ -1,6 +1,5 @@
 package com.itangcent.common.kit
 
-import com.itangcent.common.utils.KV
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -14,7 +13,7 @@ class KitUtilsTest {
         assertEquals(null, null.toJson())
         assertEquals("str", "str".toJson())
         assertEquals("1", 1.toJson())
-        assertEquals("{\"a\":\"b\"}", KV.by("a", "b").toJson())
+        assertEquals("{\"a\":\"b\"}", linkedMapOf("a" to "b").toJson())
     }
 
     @Test

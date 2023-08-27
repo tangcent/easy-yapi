@@ -12,7 +12,7 @@ import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.swing.MutableActiveWindowProvider
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.utils.ResourceUtils
+import com.itangcent.common.utils.ResourceUtils
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel

@@ -8,7 +8,6 @@ import com.google.inject.Singleton
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.asInt
 import com.itangcent.common.utils.asMap
 import com.itangcent.http.contentType
@@ -179,11 +178,12 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
                 .post(yapiSettingsHelper.getServer(false) + ADD_CART)
                 .contentType(ContentType.APPLICATION_JSON)
                 .body(
-                    KV.create<Any?, Any?>()
-                        .set("desc", desc)
-                        .set("project_id", projectId)
-                        .set("name", name)
-                        .set("token", yapiSettingsHelper.rawToken(token))
+                    linkedMapOf(
+                        "desc" to desc,
+                        "project_id" to projectId,
+                        "name" to name,
+                        "token" to yapiSettingsHelper.rawToken(token)
+                    )
                 )
                 .call()
                 .use { it.string() }

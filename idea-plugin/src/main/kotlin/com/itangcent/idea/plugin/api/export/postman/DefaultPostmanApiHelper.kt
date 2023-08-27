@@ -13,9 +13,12 @@ import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.utils.resolveGsonLazily
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.*
+import com.itangcent.intellij.extend.acquireGreedy
+import com.itangcent.intellij.extend.asJsonElement
+import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.rx.Throttle
 import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.http.entity.ContentType
@@ -118,7 +121,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             .post(COLLECTION)
             .contentType(ContentType.APPLICATION_JSON)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-            .body(KV.by("collection", collection))
+            .body(linkedMapOf("collection" to collection))
 
         workspaceId?.let { request.query("workspace", it) }
 
@@ -205,7 +208,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         val request = getHttpClient().put("$COLLECTION/$collectionId")
             .contentType(ContentType.APPLICATION_JSON)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-            .body(GsonUtils.toJson(KV.by("collection", apiInfo)).resolveGsonLazily())
+            .body(GsonUtils.toJson(linkedMapOf("collection" to apiInfo)).resolveGsonLazily())
 
         try {
             beforeRequest(request)

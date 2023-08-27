@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.dialog
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.configurable.AbstractEasyApiSettingGUI
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.utils.ResourceUtils
+import com.itangcent.common.utils.ResourceUtils
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTextArea

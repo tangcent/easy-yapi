@@ -2,31 +2,8 @@ package com.itangcent.intellij.util
 
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.resolveCycle
 import com.itangcent.intellij.extend.toPrettyString
-import java.util.function.BiConsumer
-
-fun <V> KV<String, V>.forEachValid(action: BiConsumer<String, V>) {
-    this.forEachValid { k, v ->
-        action.accept(k, v)
-    }
-}
-
-fun <V> KV<String, V>.forEachValid(action: (String, V) -> Unit) {
-    this.forEach { k, v ->
-        if (k.startsWith(Attrs.PREFIX)) {
-            return@forEach
-        }
-        if (k.isBlank()) {
-            if (this.size == 1) {
-                action("key", v)
-            }
-            return@forEach
-        }
-        action(k, v)
-    }
-}
 
 @Suppress("UNCHECKED_CAST")
 fun <K, V> Map<K, V>.forEachValid(action: (K, V) -> Unit) {
@@ -69,6 +46,7 @@ private fun flatValid(parent: Map<*, *>?, path: String, key: String, value: Any?
             consumer.consume(parent, path, key, null)
             return
         }
+
         is Collection<*> -> {
             if (value.isEmpty()) {
                 flatValid(parent, "$path[0]", key, null, consumer)
@@ -80,6 +58,7 @@ private fun flatValid(parent: Map<*, *>?, path: String, key: String, value: Any?
                 }
             }
         }
+
         is Array<*> ->
             if (value.isEmpty()) {
                 flatValid(parent, "$path[0]", key, null, consumer)
@@ -90,6 +69,7 @@ private fun flatValid(parent: Map<*, *>?, path: String, key: String, value: Any?
                     }
                 }
             }
+
         is Map<*, *> -> {
             if (value.isEmpty()) {
                 flatValid(parent, "$path.key", "key", null, consumer)
@@ -99,6 +79,7 @@ private fun flatValid(parent: Map<*, *>?, path: String, key: String, value: Any?
                 }
             }
         }
+
         else -> {
             consumer.consume(parent, path, key, value)
         }
@@ -127,6 +108,7 @@ fun Any?.isComplex(root: Boolean = true): Boolean {
             }
             return false
         }
+
         this == Magics.FILE_STR -> return !root
         else -> return false
     }
@@ -156,6 +138,7 @@ private fun Any?.checkHasFile(): Boolean {
             }
             return false
         }
+
         this == Magics.FILE_STR -> return true
         else -> return false
     }

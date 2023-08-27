@@ -565,7 +565,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     obj is Variable -> valueOf(obj.getValue())
                     obj is ObjectHolder -> valueOf(obj.getOrResolve())
                     obj is MutableMap<*, *> -> {
-                        val copy = KV.create<Any?, Any?>()
+                        val copy = linkedMapOf<Any?, Any?>()
                         obj.entries.forEach { copy[valueOf(it.key)] = valueOf(it.value) }
                         return copy
                     }
@@ -697,7 +697,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             return null
         }
         actionContext!!.checkStatus()
-        val kv = KV.create<String, Any?>()
+        val fields = linkedMapOf<String, Any?>()
         for (field in jvmClassHelper!!.getAllFields(psiClass)) {
             if (jvmClassHelper.isStaticFinal(field)) {
                 continue
@@ -706,18 +706,18 @@ class DefaultMethodInferHelper : MethodInferHelper {
             val name = psiClassHelper!!.getJsonFieldName(field)
 
             if (type is PsiPrimitiveType) {       //primitive Type
-                kv[name] = PsiTypesUtil.getDefaultValue(type)
+                fields[name] = PsiTypesUtil.getDefaultValue(type)
                 continue
             }
             //reference Type
             if (psiClassHelper.isNormalType(type)) {//normal Type
-                kv[name] = psiClassHelper.getDefaultValue(type)
+                fields[name] = psiClassHelper.getDefaultValue(type)
                 continue
             }
 
-            kv[name] = DirectVariable { getSimpleFields(type, psiClass, deep + 1) }
+            fields[name] = DirectVariable { getSimpleFields(type, psiClass, deep + 1) }
         }
-        return kv
+        return fields
     }
 
     private fun getSimpleFields(psiType: PsiType?, context: PsiElement): Any? {

@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.utils
 
 import com.google.inject.Singleton
 import com.itangcent.annotation.script.ScriptTypeName
-import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.utils.Storage.Companion.DEFAULT_GROUP
 
@@ -14,17 +13,17 @@ import com.itangcent.idea.plugin.utils.Storage.Companion.DEFAULT_GROUP
 @ScriptTypeName("session")
 class SessionStorage : AbstractStorage() {
 
-    private val kv: KV<String, Any?> by lazy { KV.create() }
+    private val data: MutableMap<String, Any?> by lazy { linkedMapOf() }
 
     override fun getCache(group: String): MutableMap<String, Any?> {
-        return kv.sub(group)
+        return data.sub(group)
     }
 
     override fun onUpdate(group: String?, cache: MutableMap<String, Any?>) {
         if (cache.isEmpty()) {
-            kv.remove(group ?: DEFAULT_GROUP)
+            data.remove(group ?: DEFAULT_GROUP)
         } else {
-            kv[group ?: DEFAULT_GROUP] = cache
+            data[group ?: DEFAULT_GROUP] = cache
         }
     }
 }

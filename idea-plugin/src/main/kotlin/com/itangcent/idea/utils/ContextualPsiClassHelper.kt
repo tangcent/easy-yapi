@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.itangcent.common.constant.Attrs
-import com.itangcent.common.utils.KV
 import com.itangcent.common.utils.asBool
 import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.AdditionalField
@@ -55,27 +54,27 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         (ruleComputeListener as? RuleComputeListenerRegistry)?.register(InnerComputeListener())
     }
 
-    override fun beforeParseClass(psiClass: PsiClass, resolveContext: ResolveContext, kv: KV<String, Any?>) {
+    override fun beforeParseClass(psiClass: PsiClass, resolveContext: ResolveContext, fields: MutableMap<String, Any?>) {
         tryInitParseContext()
         ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_BEFORE, psiClass)
-        super.beforeParseClass(psiClass, resolveContext, kv)
+        super.beforeParseClass(psiClass, resolveContext, fields)
     }
 
     override fun beforeParseType(
         psiClass: PsiClass,
         duckType: SingleDuckType,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
         tryInitParseContext()
         ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_BEFORE, duckType, psiClass)
-        super.beforeParseType(psiClass, duckType, resolveContext, kv)
+        super.beforeParseType(psiClass, duckType, resolveContext, fields)
     }
 
-    override fun afterParseClass(psiClass: PsiClass, resolveContext: ResolveContext, kv: KV<String, Any?>) {
+    override fun afterParseClass(psiClass: PsiClass, resolveContext: ResolveContext, fields: MutableMap<String, Any?>) {
         try {
-            super.afterParseClass(psiClass, resolveContext, kv)
-            computeAdditionalField(psiClass, resolveContext, kv)
+            super.afterParseClass(psiClass, resolveContext, fields)
+            computeAdditionalField(psiClass, resolveContext, fields)
             ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_AFTER, psiClass)
         } finally {
             tryCleanParseContext()
@@ -86,11 +85,11 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         psiClass: PsiClass,
         duckType: SingleDuckType,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
         try {
-            super.afterParseType(psiClass, duckType, resolveContext, kv)
-            computeAdditionalField(psiClass, resolveContext, kv)
+            super.afterParseType(psiClass, duckType, resolveContext, fields)
+            computeAdditionalField(psiClass, resolveContext, fields)
             ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_AFTER, duckType, psiClass)
         } finally {
             tryCleanParseContext()
@@ -127,7 +126,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         fieldOrMethod: ExplicitElement<*>,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ): Boolean {
         pushField(fieldName)
         if (fieldOrMethod is ExplicitMethod) {
@@ -136,7 +135,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE, fieldOrMethod)
         }
 
-        return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
+        return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
     }
 
     private fun pushField(fieldName: String) {
@@ -152,9 +151,9 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         fieldOrMethod: ExplicitElement<*>,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
-        super.onIgnoredParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
+        super.onIgnoredParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
         popField(fieldName)
     }
 
@@ -164,9 +163,9 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         fieldOrMethod: ExplicitElement<*>,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, kv)
+        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
 
         if (fieldOrMethod is ExplicitMethod) {
             ruleComputer.computer(ClassExportRuleKeys.JSON_METHOD_PARSE_AFTER, fieldOrMethod)
@@ -174,13 +173,13 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER, fieldOrMethod)
         }
         popField(fieldName)
-        computeAdditionalField(fieldOrMethod.psi(), resolveContext, kv)
+        computeAdditionalField(fieldOrMethod.psi(), resolveContext, fields)
     }
 
     protected open fun computeAdditionalField(
         context: PsiElement,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
         //support json.additional.field
         val additionalFields = ruleComputer.computer(ClassExportRuleKeys.JSON_ADDITIONAL_FIELD, context)
@@ -194,11 +193,11 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
                     return
                 }
                 val fieldName = field.name
-                if (kv.containsKey(fieldName)) {
+                if (fields.containsKey(fieldName)) {
                     logger.debug("additional field [$fieldName] is already existed.")
                     continue
                 }
-                resolveAdditionalField(field, context, resolveContext, kv)
+                resolveAdditionalField(field, context, resolveContext, fields)
             }
         }
     }
@@ -207,17 +206,17 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         additionalField: AdditionalField,
         context: PsiElement,
         resolveContext: ResolveContext,
-        kv: KV<String, Any?>,
+        fields: MutableMap<String, Any?>,
     ) {
         val additionalFieldType = duckTypeHelper!!.resolve(additionalField.type!!, context)
         val fieldName = additionalField.name!!
         if (additionalFieldType == null) {
-            kv[fieldName] = null
+            fields[fieldName] = null
         } else {
-            kv[fieldName] = doGetTypeObject(additionalFieldType, context, resolveContext.next())
+            fields[fieldName] = doGetTypeObject(additionalFieldType, context, resolveContext.next())
         }
         if (resolveContext.option.has(JsonOption.READ_COMMENT)) {
-            kv.sub(Attrs.COMMENT_ATTR)[fieldName] = additionalField.desc
+            fields.sub(Attrs.COMMENT_ATTR)[fieldName] = additionalField.desc
         }
     }
 
