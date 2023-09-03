@@ -1,8 +1,8 @@
 package com.itangcent.idea.plugin.utils
 
-import kotlin.reflect.KClass
-
+/**
+ * Test case of [SessionStorage]
+ */
 class SessionStorageTest : AbstractStorageTest() {
-    override val storageClass: KClass<out Storage>
-        get() = SessionStorage::class
+    override val storageClass = SessionStorage::class
 }

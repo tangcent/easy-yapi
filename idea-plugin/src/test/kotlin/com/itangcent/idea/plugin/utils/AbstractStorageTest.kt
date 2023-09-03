@@ -3,11 +3,10 @@ package com.itangcent.idea.plugin.utils
 import com.google.inject.Inject
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
-
+import java.util.*
 import kotlin.reflect.KClass
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -95,5 +94,51 @@ abstract class AbstractStorageTest : AdvancedContextTest() {
         assertFalse(storage.keys("groupB").isEmpty())
 
 
+    }
+
+    @Test
+    fun crossThread() {
+        actionContext.withBoundary {
+            actionContext.runAsync {
+                storage.set("a", 1)
+                repeat(50) {
+                    storage.push("share", it * 2)
+                }
+            }
+            actionContext.runAsync {
+                storage.set("b", 2)
+                repeat(50) {
+                    storage.push("share", it * 2 + 1)
+                }
+            }
+        }
+        assertEquals(1, storage.get("a"))
+        assertEquals(2, storage.get("b"))
+        val share = storage.get("share") as Collection<*>
+        assertEquals(100, share.size)
+        assertEquals((0..99).toSet(), share.toSet())
+        assertEquals(setOf("a", "b", "share"), storage.keys().toSet())
+    }
+
+    @Test
+    fun testWrongType() {
+        //test push element to non-collection
+        storage.set("a", 1)
+        assertEquals(1, storage.get("a"))
+        storage.push("a", 2)
+        assertEquals(2, storage.peek("a"))
+
+        //test push element to collection(not linked list)
+        storage.set("b", listOf(1))
+        assertEquals(listOf(1), storage.get("b"))
+        storage.push("b", 2)
+        assertEquals(listOf(1, 2), storage.get("b"))
+
+        //test push element to linked list
+        storage.set("c", LinkedList<Any>())
+        storage.push("c", 1)
+        assertEquals(1, storage.peek("c"))
+        storage.push("c", 2)
+        assertEquals(2, storage.peek("c"))
     }
 }
