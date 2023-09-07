@@ -3,7 +3,6 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
@@ -16,8 +15,8 @@ import org.junit.jupiter.api.condition.OS
 
 /**
  * Test case of export spring apis with [PostmanRequestBuilderListener]
- * 1.support rule:[com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.POST_PRE_REQUEST]
- * 2.support rule:[com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.POST_TEST]
+ * 1.support rule:[com.itangcent.idea.plugin.api.export.postman.PostmanExportRuleKeys.POST_PRE_REQUEST]
+ * 2.support rule:[com.itangcent.idea.plugin.api.export.postman.PostmanExportRuleKeys.POST_TEST]
  *
  */
 internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporterBaseTest() {
@@ -55,12 +54,12 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
 
             assertEquals(
                 "pm.environment.set(\"token\", \"123456\");",
-                request.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name())
+                request.getExt(PostmanExportRuleKeys.POST_PRE_REQUEST.name())
             )
             assertEquals(
                 "pm.test(\"Successful POST request\", function () {\n" +
                         "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
-                        "});", request.getExt(ClassExportRuleKeys.POST_TEST.name())
+                        "});", request.getExt(PostmanExportRuleKeys.POST_TEST.name())
             )
             assertNull(request.body)
             assertEquals("", request.response!!.first().body.toJson())
@@ -73,12 +72,12 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
 
             assertEquals(
                 "pm.environment.set(\"token\", \"123456\");",
-                request.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name())
+                request.getExt(PostmanExportRuleKeys.POST_PRE_REQUEST.name())
             )
             assertEquals(
                 "pm.test(\"Successful POST request\", function () {\n" +
                         "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
-                        "});", request.getExt(ClassExportRuleKeys.POST_TEST.name())
+                        "});", request.getExt(PostmanExportRuleKeys.POST_TEST.name())
             )
             assertNull(request.body)
             assertEquals("", request.response!!.first().body.toJson())
@@ -91,12 +90,12 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
 
             assertEquals(
                 "pm.environment.set(\"token\", \"123456\");",
-                request.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name())
+                request.getExt(PostmanExportRuleKeys.POST_PRE_REQUEST.name())
             )
             assertEquals(
                 "pm.test(\"Successful POST request\", function () {\n" +
                         "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
-                        "});", request.getExt(ClassExportRuleKeys.POST_TEST.name())
+                        "});", request.getExt(PostmanExportRuleKeys.POST_TEST.name())
             )
             assertNull(request.body.toJson())
             assertEquals(
@@ -112,12 +111,12 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
 
             assertEquals(
                 "pm.environment.set(\"token\", \"123456\");",
-                request.getExt(ClassExportRuleKeys.POST_PRE_REQUEST.name())
+                request.getExt(PostmanExportRuleKeys.POST_PRE_REQUEST.name())
             )
             assertEquals(
                 "pm.test(\"Successful POST request\", function () {\n" +
                         "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
-                        "});", request.getExt(ClassExportRuleKeys.POST_TEST.name())
+                        "});", request.getExt(PostmanExportRuleKeys.POST_TEST.name())
             )
             assertEquals(
                 "{\"id\":0,\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",

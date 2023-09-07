@@ -53,10 +53,6 @@ internal class PostmanFormatterTest : PostmanSpringClassExporterBaseTest() {
         builder.mock(DataContext::class)
     }
 
-    override fun afterBind() {
-        super.afterBind()
-    }
-
     override fun shouldRunTest(): Boolean {
         return !OS.WINDOWS.isCurrentOs
     }
@@ -252,5 +248,19 @@ internal class PostmanFormatterTest : PostmanSpringClassExporterBaseTest() {
             ResultLoader.load("testParseRequestsToCollection"),
             GsonUtils.prettyJson(collectionInfo)
         )
+    }
+
+    fun testParsePath() {
+        // Test case input
+        val path = "/users/{userId}/orders/{orderId:int}/details"
+
+        // Expected output
+        val expectedSegments = listOf("users", ":userId", "orders", ":orderId", "details")
+
+        // Call the function
+        val actualSegments = PostmanFormatter.parsePath(path)
+
+        // Assert the result
+        assertEquals(expectedSegments, actualSegments)
     }
 }

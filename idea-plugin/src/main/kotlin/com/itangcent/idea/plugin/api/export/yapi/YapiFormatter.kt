@@ -12,6 +12,8 @@ import com.itangcent.idea.plugin.api.export.UrlSelector
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.idea.plugin.render.MarkdownRender
+import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.rule.setDoc
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceMethod
@@ -38,19 +40,19 @@ open class YapiFormatter {
     private lateinit var logger: Logger
 
     @Inject
-    private val ruleComputer: RuleComputer? = null
+    private lateinit var ruleComputer: RuleComputer
 
     @Inject
-    private val configReader: ConfigReader? = null
+    private lateinit var configReader: ConfigReader
 
     @Inject
     private lateinit var actionContext: ActionContext
 
     @Inject
-    protected val docHelper: DocHelper? = null
+    protected lateinit var docHelper: DocHelper
 
     @Inject
-    protected val markdownRender: MarkdownRender? = null
+    protected lateinit var markdownRender: MarkdownRender
 
     @Inject
     protected lateinit var systemProvider: SystemProvider
@@ -180,7 +182,7 @@ open class YapiFormatter {
     }
 
     private fun getPathOfMethodDoc(methodDoc: MethodDoc): String {
-        val path = ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_PATH, methodDoc.resource()!!)
+        val path = ruleComputer.computer(ClassExportRuleKeys.METHOD_DOC_PATH, methodDoc.resource()!!)
 
         if (path.notNullOrEmpty()) {
             return path!!
@@ -190,7 +192,7 @@ open class YapiFormatter {
     }
 
     private fun getHttpMethodOfMethodDoc(methodDoc: MethodDoc): String {
-        return ruleComputer!!.computer(ClassExportRuleKeys.METHOD_DOC_METHOD, methodDoc.resource()!!)
+        return ruleComputer.computer(ClassExportRuleKeys.METHOD_DOC_METHOD, methodDoc.resource()!!)
             ?: "POST"
     }
 
@@ -233,19 +235,33 @@ open class YapiFormatter {
         val item = request2Item(request)
 
         val urls = urlSelector.selectUrls(request)
+
+        val suvRuleContext = SuvRuleContext(request.resource())
+        suvRuleContext.setDoc(request)
+
         if (urls.single()) {
-            val path = formatPath(urls.url() ?: "")
+            val selectedUrl = urls.url() ?: ""
+            val path = formatPath(selectedUrl)
             val queryPath: HashMap<String, Any?> = item.getAs("query_path")!!
             queryPath["path"] = path
             item["path"] = path
+
+            suvRuleContext.setExt("url", selectedUrl)
+            suvRuleContext.setExt("item", item)
+            ruleComputer.computer(YapiClassExportRuleKeys.AFTER_FORMAT, suvRuleContext, request.resource())
+
             return listOf(item)
         } else {
-            return urls.urls().map {
+            return urls.urls().map { selectedUrl ->
                 val copyItem = copyItem(item)
-                val path = formatPath(it)
+                val path = formatPath(selectedUrl)
                 val queryPath: HashMap<String, Any?> = copyItem.getAs("query_path")!!
                 copyItem["path"] = path
                 queryPath["path"] = path
+
+                suvRuleContext.setExt("url", selectedUrl)
+                suvRuleContext.setExt("item", copyItem)
+                ruleComputer.computer(YapiClassExportRuleKeys.AFTER_FORMAT, suvRuleContext, request.resource())
                 return@map copyItem
             }
         }
@@ -474,7 +490,7 @@ open class YapiFormatter {
     }
 
     protected fun findReturnOfMethod(method: PsiMethod): String? {
-        return docHelper!!.findDocByTag(method, "return")
+        return docHelper.findDocByTag(method, "return")
     }
 
     private fun jsonTypeOf(typedObject: Any?): String {
@@ -851,10 +867,10 @@ open class YapiFormatter {
         val existedDesc = item["markdown"]
         if (existedDesc == null) {
             item["markdown"] = desc
-            item["desc"] = markdownRender?.render(desc) ?: "<p>$desc</p>"
+            item["desc"] = markdownRender.render(desc) ?: "<p>$desc</p>"
         } else {
             item["markdown"] = "$existedDesc\n$desc"
-            item["desc"] = markdownRender?.render(desc) ?: "<p>$existedDesc\n$desc</p>"
+            item["desc"] = markdownRender.render(desc) ?: "<p>$existedDesc\n$desc</p>"
         }
     }
 
@@ -866,7 +882,7 @@ open class YapiFormatter {
     private fun readMockRules(): List<MockRule> {
         val mockRules = arrayListOf<MockRule>()
 
-        configReader!!.foreach({ key ->
+        configReader.foreach({ key ->
             key.startsWith("mock.")
         }, { key, value ->
             try {
@@ -938,7 +954,7 @@ open class YapiFormatter {
     //endregion mock rules---------------------------------------------------------
 
     protected fun autoFormatUrl(): Boolean {
-        return configReader!!.first("auto.format.url")?.toBool() ?: true
+        return configReader.first("auto.format.url")?.toBool() ?: true
     }
 
     companion object {

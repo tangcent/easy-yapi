@@ -1071,7 +1071,7 @@ access user info
 
 > `BASIC`
 
-**`Path params`:** user/add
+**`Path params`:** user/add,user/admin/add
 
 **`Method`:** POST
 

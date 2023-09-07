@@ -48,4 +48,9 @@ object YapiClassExportRuleKeys {
         "api.open",
         BooleanRuleMode.ANY
     )
+
+    val AFTER_FORMAT: RuleKey<String> = SimpleRuleKey(
+        "yapi.format.after",
+        EventRuleMode.THROW_IN_ERROR
+    )
 }

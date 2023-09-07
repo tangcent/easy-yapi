@@ -9,31 +9,33 @@ import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.swing.showChooseWithTipDialog
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
-import java.util.concurrent.TimeUnit
 
 class EnumProcessInitializer : Initializer {
     override fun init() {
         val actionContext = ActionContext.getContext() ?: return
-        try {
-            val propertiesComponent = PropertiesComponent.getInstance()
-            if (EventRecords.getRecord(EventRecords.ENUM_RESOLVE) > 0 && !propertiesComponent.getBoolean(
-                    ENUM_RECOMMEND_ITEMS_CONFIRMED_KEY)
-            ) {
-                val selectedRecommendItem = actionContext.instance(MessagesHelper::class).showChooseWithTipDialog(
-                    ENUM_RECOMMEND_ITEMS_MESSAGE,
-                    ENUM_RECOMMEND_ITEMS,
-                    { it.first }, { it.second })
-                if (selectedRecommendItem != null) {
-                    val recommendConfigSettingsHelper = actionContext.instance(RecommendConfigSettingsHelper::class)
-                    recommendConfigSettingsHelper.removeConfig(*ENUM_RECOMMEND_ITEMS
-                        .filter { it != selectedRecommendItem }
-                        .mapToTypedArray { it.first })
-                    recommendConfigSettingsHelper.addConfig(selectedRecommendItem.first)
+        actionContext.runAsync {
+            try {
+                val propertiesComponent = PropertiesComponent.getInstance()
+                if (EventRecords.getRecord(EventRecords.ENUM_RESOLVE) > 0 && !propertiesComponent.getBoolean(
+                        ENUM_RECOMMEND_ITEMS_CONFIRMED_KEY
+                    )
+                ) {
+                    val selectedRecommendItem = actionContext.instance(MessagesHelper::class).showChooseWithTipDialog(
+                        ENUM_RECOMMEND_ITEMS_MESSAGE,
+                        ENUM_RECOMMEND_ITEMS,
+                        { it.first }, { it.second })
+                    if (selectedRecommendItem != null) {
+                        val recommendConfigSettingsHelper = actionContext.instance(RecommendConfigSettingsHelper::class)
+                        recommendConfigSettingsHelper.removeConfig(*ENUM_RECOMMEND_ITEMS
+                            .filter { it != selectedRecommendItem }
+                            .mapToTypedArray { it.first })
+                        recommendConfigSettingsHelper.addConfig(selectedRecommendItem.first)
+                    }
+                    propertiesComponent.setValue(ENUM_RECOMMEND_ITEMS_CONFIRMED_KEY, true)
                 }
-                propertiesComponent.setValue(ENUM_RECOMMEND_ITEMS_CONFIRMED_KEY, true)
+            } catch (e: Exception) {
+                actionContext.instance(Logger::class).traceError("error in enumRecommendItemsConfirmed.", e)
             }
-        } catch (e: Exception) {
-            actionContext.instance(Logger::class).traceError("error in enumRecommendItemsConfirmed.", e)
         }
     }
 

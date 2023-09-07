@@ -66,7 +66,7 @@ internal class DefaultSpringRequestMappingResolverTest : PluginContextLightCodeI
             springRequestMappingResolver.resolveRequestMapping(userCtrlPsiClass.methods[1]).toJson()
         )
         assertEquals(
-            "{\"method\":\"POST\",\"value\":\"/add\"}",
+            "{\"method\":\"POST\",\"value\":[\"/add\",\"/admin/add\"]}",
             springRequestMappingResolver.resolveRequestMapping(userCtrlPsiClass.methods[2]).toJson()
         )
         assertEquals(

@@ -21,7 +21,11 @@ class FieldsToJson5Action : FieldsToMessageAction("To Json5") {
     }
 
     override fun formatMessage(psiClass: PsiClass, type: PsiType?): String {
-        val obj = psiClassHelper!!.getTypeObject(type, psiClass, JsonOption.ALL)
+        val obj = psiClassHelper!!.getTypeObject(
+            psiType = type,
+            context = psiClass,
+            option = JsonOption.ALL
+        )
         return ActionContext.getContext()!!.instance(Json5Formatter::class).format(obj)
     }
 }

@@ -160,7 +160,7 @@ access user info
 
 > BASIC
 
-**Path:** user/add
+**Path:** user/add,user/admin/add
 
 **Method:** POST
 
