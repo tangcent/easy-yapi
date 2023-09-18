@@ -53,7 +53,7 @@ public class UserCtrl extends BaseController {
     /**
      * create an user
      */
-    @PostMapping("/add")
+    @PostMapping({"/add", "/admin/add"})
     public Result<UserInfo> create(@RequestBody UserInfo userInfo) {
         return Result.success(userInfo);
     }

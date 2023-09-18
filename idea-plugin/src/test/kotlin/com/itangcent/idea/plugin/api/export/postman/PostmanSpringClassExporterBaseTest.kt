@@ -57,24 +57,33 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
     }
 
     override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, demo:\"123456\"}\n" +
-                "#[converts]*\n" +
-                "#The ObjectId and Date will be parsed as strings\n" +
-                "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
-                "json.rule.convert[java.util.Date]=java.lang.String\n" +
-                "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
-                "# read folder name from tag `folder`\n" +
-                "folder.name=#folder\n" +
-                "postman.prerequest=```\n" +
-                "pm.environment.set(\"token\", \"123456\");\n" +
-                "```\n" +
-                "postman.test=```\n" +
-                "pm.test(\"Successful POST request\", function () {\n" +
-                "pm.expect(pm.response.code).to.be.oneOf([201,202]);\n" +
-                "});\n" +
-                "```"
+        return """
+            method.additional.header[!@com.itangcent.annotation.Public]={name: "token",value: "",desc: "auth token",required:true, demo:"123456"}
+            #[converts]*
+            #The ObjectId and Date will be parsed as strings
+            json.rule.convert[org.bson.types.ObjectId]=java.lang.String
+            json.rule.convert[java.util.Date]=java.lang.String
+            json.rule.convert[java.sql.Timestamp]=java.lang.String
+            json.rule.convert[java.time.LocalDateTime]=java.lang.String
+            json.rule.convert[java.time.LocalDate]=java.lang.String
+            # read folder name from tag `folder`
+            folder.name=#folder
+            postman.prerequest=```
+            pm.environment.set("token", "123456");
+            ```
+            postman.test=```
+            pm.test("Successful POST request", function () {
+            pm.expect(pm.response.code).to.be.oneOf([201,202]);
+            });
+            ```
+            path.multi=all
+            postman.format.after=groovy:```
+                if(url.contains("/admin")){
+                    item["name"] = "[admin]"+item["name"]
+                    item["request"]["description"] = "[admin]"+item["request"]["description"]
+                }
+            ```
+        """
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {

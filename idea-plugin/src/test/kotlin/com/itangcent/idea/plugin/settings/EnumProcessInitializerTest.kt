@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.any
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -55,9 +56,13 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
         builder.bindInstance(MessagesHelper::class, messagesHelper)
     }
 
+    private fun init() = actionContext.withBoundary {
+        enumProcessInitializer.init()
+    }
+
     fun testInitWithNoRecord() {
         selectedEnumOption = null
-        enumProcessInitializer.init()
+        init()
         settings.recommendConfigs = ""
         val recommendConfigs = settingBinder.read().recommendConfigs.split(",")
         assertFalse(recommendConfigs.contains("enum_auto_select_field_by_type"))
@@ -70,7 +75,7 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
         PropertiesComponent.getInstance().setValue(EnumProcessInitializer.ENUM_RECOMMEND_ITEMS_CONFIRMED_KEY, false)
         EventRecords.record(EventRecords.ENUM_RESOLVE)
         settings.recommendConfigs = ""
-        enumProcessInitializer.init()
+        init()
         val recommendConfigs = settingBinder.read().recommendConfigs.split(",")
         assertFalse(recommendConfigs.contains("enum_auto_select_field_by_type"))
         assertFalse(recommendConfigs.contains("enum_use_name"))
@@ -83,7 +88,7 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
         PropertiesComponent.getInstance().setValue(EnumProcessInitializer.ENUM_RECOMMEND_ITEMS_CONFIRMED_KEY, false)
         EventRecords.record(EventRecords.ENUM_RESOLVE)
         settings.recommendConfigs = ""
-        enumProcessInitializer.init()
+        init()
         val recommendConfigs = settingBinder.read().recommendConfigs.split(",")
         assertFalse(recommendConfigs.contains("enum_auto_select_field_by_type"))
         assertFalse(recommendConfigs.contains("enum_use_name"))
@@ -96,7 +101,7 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
         EventRecords.record(EventRecords.ENUM_RESOLVE)
         settings.recommendConfigs = ""
         run {
-            enumProcessInitializer.init()
+            init()
             val recommendConfigs = settingBinder.read().recommendConfigs.split(",")
             assertTrue(recommendConfigs.contains("enum_auto_select_field_by_type"))
             assertFalse(recommendConfigs.contains("enum_use_name"))
@@ -105,7 +110,7 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
         run {
             selectedEnumOption = "enum_use_name" to ""
             //will not init again
-            enumProcessInitializer.init()
+            init()
             val recommendConfigs = settingBinder.read().recommendConfigs.split(",")
             assertTrue(recommendConfigs.contains("enum_auto_select_field_by_type"))
             assertFalse(recommendConfigs.contains("enum_use_name"))

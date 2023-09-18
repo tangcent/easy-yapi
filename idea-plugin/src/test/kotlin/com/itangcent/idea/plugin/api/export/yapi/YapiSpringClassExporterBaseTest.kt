@@ -61,18 +61,28 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
     }
 
     override fun customConfig(): String {
-        return "method.additional.header[!@com.itangcent.annotation.Public]={name: \"token\",value: \"\",desc: \"auth token\",required:true, demo:\"123456\"}\n" +
-                "#[converts]*\n" +
-                "#The ObjectId and Date will be parsed as strings\n" +
-                "json.rule.convert[org.bson.types.ObjectId]=java.lang.String\n" +
-                "json.rule.convert[java.util.Date]=java.lang.String\n" +
-                "json.rule.convert[java.sql.Timestamp]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
-                "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
-                "field.default.value=#default\n" +
-                "api.open=@com.itangcent.annotation.Public\n" +
-                "api.status[#undone]=undone\n" +
-                "api.tag[@java.lang.Deprecated]=deprecated"
+        return """
+            method.additional.header[!@com.itangcent.annotation.Public]={name: "token",value: "",desc: "auth token",required:true, demo:"123456"}
+            #[converts]*
+            #The ObjectId and Date will be parsed as strings
+            json.rule.convert[org.bson.types.ObjectId]=java.lang.String
+            json.rule.convert[java.util.Date]=java.lang.String
+            json.rule.convert[java.sql.Timestamp]=java.lang.String
+            json.rule.convert[java.time.LocalDateTime]=java.lang.String
+            json.rule.convert[java.time.LocalDate]=java.lang.String
+            field.default.value=#default
+            api.open=@com.itangcent.annotation.Public
+            api.status[#undone]=undone
+            api.tag[@java.lang.Deprecated]=deprecated
+            path.multi=all
+            yapi.format.after=groovy:```
+                if(url.contains("/admin")){
+                    item["title"] = "[admin]"+item["title"]
+                    item["markdown"] = "[admin]"+item["markdown"]
+                    item["desc"] = "[admin]"+item["desc"]
+                }
+            ```
+            """
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {

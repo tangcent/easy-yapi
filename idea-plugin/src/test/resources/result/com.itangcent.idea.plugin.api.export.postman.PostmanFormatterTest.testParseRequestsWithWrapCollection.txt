@@ -316,7 +316,6 @@
             },
             {
               "request": {
-                "method": "POST",
                 "description": "",
                 "header": [
                   {
@@ -332,6 +331,7 @@
                     "description": "auth token"
                   }
                 ],
+                "method": "POST",
                 "body": {
                   "mode": "raw",
                   "options": {
@@ -342,13 +342,13 @@
                   "raw": "{\n    \"id\": 0, //user id\n    /**\n     * user type\n     * 1 :administration\n     * 2 :a person, an animal or a plant\n     * 3 :Anonymous visitor\n     */\n    \"type\": 0,\n    \"name\": \"\", //user name\n    \"age\": 0, //user age\n    \"sex\": 0,\n    \"birthDay\": \"\", //user birthDay\n    \"regtime\": \"\" //user regtime\n}"
                 },
                 "url": {
+                  "host": "{{test_default}}",
                   "path": [
                     "user",
                     "add"
                   ],
-                  "query": [],
-                  "host": "{{test_default}}",
-                  "raw": "{{test_default}}/user/add"
+                  "raw": "{{test_default}}/user/add",
+                  "query": []
                 }
               },
               "response": [
@@ -381,13 +381,14 @@
                       "raw": "{\n    \"id\": 0, //user id\n    /**\n     * user type\n     * 1 :administration\n     * 2 :a person, an animal or a plant\n     * 3 :Anonymous visitor\n     */\n    \"type\": 0,\n    \"name\": \"\", //user name\n    \"age\": 0, //user age\n    \"sex\": 0,\n    \"birthDay\": \"\", //user birthDay\n    \"regtime\": \"\" //user regtime\n}"
                     },
                     "url": {
+                      "host": "{{test_default}}",
                       "path": [
                         "user",
+                        "admin",
                         "add"
                       ],
-                      "query": [],
-                      "host": "{{test_default}}",
-                      "raw": "{{test_default}}/user/add"
+                      "raw": "{{test_default}}/user/admin/add",
+                      "query": []
                     }
                   },
                   "code": 200,
@@ -421,6 +422,138 @@
                 }
               ],
               "name": "create an user",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.environment.set(\"token\", \"123456\");"
+                    ],
+                    "type": "text/javascript"
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Successful POST request\", function () {",
+                      "pm.expect(pm.response.code).to.be.oneOf([201,202]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
+              "request": {
+                "description": "[admin]",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text",
+                    "description": ""
+                  },
+                  {
+                    "key": "token",
+                    "value": "",
+                    "type": "text",
+                    "description": "auth token"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\n    \"id\": 0, //user id\n    /**\n     * user type\n     * 1 :administration\n     * 2 :a person, an animal or a plant\n     * 3 :Anonymous visitor\n     */\n    \"type\": 0,\n    \"name\": \"\", //user name\n    \"age\": 0, //user age\n    \"sex\": 0,\n    \"birthDay\": \"\", //user birthDay\n    \"regtime\": \"\" //user regtime\n}"
+                },
+                "url": {
+                  "host": "{{test_default}}",
+                  "path": [
+                    "user",
+                    "admin",
+                    "add"
+                  ],
+                  "raw": "{{test_default}}/user/admin/add",
+                  "query": []
+                }
+              },
+              "response": [
+                {
+                  "name": "create an user-Example",
+                  "originalRequest": {
+                    "method": "POST",
+                    "description": "",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text",
+                        "description": ""
+                      },
+                      {
+                        "key": "token",
+                        "value": "",
+                        "type": "text",
+                        "description": "auth token"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      },
+                      "raw": "{\n    \"id\": 0, //user id\n    /**\n     * user type\n     * 1 :administration\n     * 2 :a person, an animal or a plant\n     * 3 :Anonymous visitor\n     */\n    \"type\": 0,\n    \"name\": \"\", //user name\n    \"age\": 0, //user age\n    \"sex\": 0,\n    \"birthDay\": \"\", //user birthDay\n    \"regtime\": \"\" //user regtime\n}"
+                    },
+                    "url": {
+                      "host": "{{test_default}}",
+                      "path": [
+                        "user",
+                        "admin",
+                        "add"
+                      ],
+                      "raw": "{{test_default}}/user/admin/add",
+                      "query": []
+                    }
+                  },
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "header": [
+                    {
+                      "name": "date",
+                      "key": "date",
+                      "value": "Sun, 11 Apr 202106:56:34 GMT",
+                      "description": "The date and time that the message was sent"
+                    },
+                    {
+                      "name": "server",
+                      "key": "server",
+                      "value": "Apache-Coyote/1.1",
+                      "description": "A name for the server"
+                    },
+                    {
+                      "name": "transfer-encoding",
+                      "key": "transfer-encoding",
+                      "value": "chunked",
+                      "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                    },
+                    {
+                      "name": "content-type",
+                      "key": "content-type",
+                      "value": "application/json;charset=UTF-8"
+                    }
+                  ],
+                  "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
+                }
+              ],
+              "name": "[admin]create an user",
               "event": [
                 {
                   "listen": "prerequest",

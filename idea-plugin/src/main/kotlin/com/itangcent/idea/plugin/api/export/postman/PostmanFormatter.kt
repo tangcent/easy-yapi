@@ -16,8 +16,10 @@ import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.idea.plugin.format.MessageFormatter
 import com.itangcent.idea.plugin.format.SimpleJsonFormatter
 import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.rule.setDoc
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.psi.UltimateDocHelper
+import com.itangcent.idea.psi.resource
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.idea.utils.SystemProvider
@@ -44,7 +46,7 @@ open class PostmanFormatter {
     private val formatFolderHelper: FormatFolderHelper? = null
 
     @Inject
-    private val ruleComputer: RuleComputer? = null
+    private lateinit var ruleComputer: RuleComputer
 
     @Inject
     private lateinit var postmanSettingsHelper: PostmanSettingsHelper
@@ -62,20 +64,36 @@ open class PostmanFormatter {
         val url: HashMap<String, Any?> = item.getAs("request", "url")!!
 
         val urls = urlSelector.selectUrls(request)
+
+        val suvRuleContext = SuvRuleContext(request.resource())
+        suvRuleContext.setDoc(request)
+
         if (urls.single()) {
-            val path = urls.url() ?: ""
+            val selectedUrl = urls.url()
+
+            val path = selectedUrl ?: ""
             url["path"] = parsePath(path)
             url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
             fixResponse(item)
+
+            suvRuleContext.setExt("url", selectedUrl)
+            suvRuleContext.setExt("item", item)
+            ruleComputer.computer(PostmanExportRuleKeys.AFTER_FORMAT, suvRuleContext, request.resource())
+
             return listOf(item)
         } else {
             val host = item.getAs<String>("request", "url", "host") ?: ""
-            return urls.urls().map {
+            return urls.urls().map { selectedUrl ->
                 val copyItem = copyItem(item)
                 val copyUrl: HashMap<String, Any?> = copyItem.getAs("request", "url")!!
-                copyUrl["path"] = parsePath(it)
-                copyUrl["raw"] = RequestUtils.concatPath(host, it)
+                copyUrl["path"] = parsePath(selectedUrl)
+                copyUrl["raw"] = RequestUtils.concatPath(host, selectedUrl)
                 fixResponse(copyItem)
+
+                suvRuleContext.setExt("url", selectedUrl)
+                suvRuleContext.setExt("item", copyItem)
+                ruleComputer.computer(PostmanExportRuleKeys.AFTER_FORMAT, suvRuleContext, request.resource())
+
                 return@map copyItem
             }
         }
@@ -125,7 +143,7 @@ open class PostmanFormatter {
         var host = "{{host}}"
 
         val hostByRule = request.resourceClass()
-            ?.let { ruleComputer!!.computer(ClassExportRuleKeys.POST_MAN_HOST, it) }
+            ?.let { ruleComputer.computer(ClassExportRuleKeys.POST_MAN_HOST, it) }
 
         if (hostByRule == null) {
             val module = request.resource?.let { resource ->
@@ -419,10 +437,14 @@ open class PostmanFormatter {
     }
 
     private fun parseScripts(extensible: Extensible, item: HashMap<String, Any?>) {
-        if (extensible.hasAnyExt(ClassExportRuleKeys.POST_PRE_REQUEST.name(), ClassExportRuleKeys.POST_TEST.name())) {
+        if (extensible.hasAnyExt(
+                PostmanExportRuleKeys.POST_PRE_REQUEST.name(),
+                PostmanExportRuleKeys.POST_TEST.name()
+            )
+        ) {
             addScriptsToItem(item,
-                { extensible.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()) },
-                { extensible.getExt<String>(ClassExportRuleKeys.POST_TEST.name()) }
+                { extensible.getExt<String>(PostmanExportRuleKeys.POST_PRE_REQUEST.name()) },
+                { extensible.getExt<String>(PostmanExportRuleKeys.POST_TEST.name()) }
             )
         }
     }
@@ -472,31 +494,31 @@ open class PostmanFormatter {
         if (resource is Extensible) {
             addScriptsToItem(postman,
                 {
-                    ruleComputer!!.computer(
-                        ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
+                    ruleComputer.computer(
+                        PostmanExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
                         context, null
                     )
-                        .append(resource.getExt<String>(ClassExportRuleKeys.POST_PRE_REQUEST.name()), "\n")
+                        .append(resource.getExt<String>(PostmanExportRuleKeys.POST_PRE_REQUEST.name()), "\n")
                 },
                 {
-                    ruleComputer!!.computer(
-                        ClassExportRuleKeys.COLLECTION_POST_TEST,
+                    ruleComputer.computer(
+                        PostmanExportRuleKeys.COLLECTION_POST_TEST,
                         context, null
                     )
-                        .append(resource.getExt<String>(ClassExportRuleKeys.POST_TEST.name()), "\n")
+                        .append(resource.getExt<String>(PostmanExportRuleKeys.POST_TEST.name()), "\n")
                 }
             )
         } else {
             addScriptsToItem(postman,
                 {
-                    ruleComputer!!.computer(
-                        ClassExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
+                    ruleComputer.computer(
+                        PostmanExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
                         context, null
                     )
                 },
                 {
-                    ruleComputer!!.computer(
-                        ClassExportRuleKeys.COLLECTION_POST_TEST,
+                    ruleComputer.computer(
+                        PostmanExportRuleKeys.COLLECTION_POST_TEST,
                         context, null
                     )
                 }
@@ -754,22 +776,6 @@ open class PostmanFormatter {
         return rawUrl
     }
 
-    private fun parsePath(path: String): List<String> {
-        val paths = path.trim().trim('/').split("/")
-        return paths.map {
-            if (it.contains('{')) {
-                val p = if (it.contains(':'))
-                    it.substring(0, it.indexOf(':')) else
-                    it
-                return@map p
-                    .replace("{", ":")
-                    .replace("}", "")
-            } else {
-                return@map it
-            }
-        }
-    }
-
     private fun getBodyFormatter(type: Int): MessageFormatter {
         val useJson5 = postmanSettingsHelper.postmanJson5FormatType().needUseJson5(type)
         return if (useJson5) {
@@ -783,6 +789,44 @@ open class PostmanFormatter {
         const val NULL_RESOURCE = "unknown"
 
         const val POSTMAN_SCHEMA_V2_1_0 = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+
+        /**
+         * Parses the given path string and returns a list of path segments.
+         * Placeholders enclosed in curly braces are replaced with ':' character.
+         *
+         * @param path The path string to parse.
+         * @return The list of parsed path segments.
+         */
+        fun parsePath(path: String): List<String> {
+            // Trim leading and trailing whitespace, and remove leading/trailing slashes
+            val paths = path.trim().trim('/').split("/")
+
+            return paths.map {
+                return@map it.resolvePathVariable()
+            }
+        }
+
+        /**
+         * Resolves a path segment by replacing placeholders enclosed in curly braces.
+         *
+         * @return The resolved path segment.
+         */
+        private fun String.resolvePathVariable(): String {
+            // If the segment doesn't contain '{', it is not a placeholder
+            if (!contains('{')) {
+                return this
+            }
+
+            // If the segment contains '{', it is a placeholder
+            val p = if (contains(':')) {
+                substring(0, indexOf(':')) // Extract the placeholder without additional information
+            } else {
+                this
+            }
+
+            // Replace '{' with ':' and remove '}'
+            return p.replace("{", ":").replace("}", "")
+        }
     }
 }
 

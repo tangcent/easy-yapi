@@ -8,10 +8,14 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
+import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.rule.setDoc
 import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
+import com.itangcent.idea.psi.resource
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
+import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 
@@ -38,16 +42,16 @@ class PostmanApiExporter {
     private lateinit var postmanFormatter: PostmanFormatter
 
     @Inject
-    private val moduleHelper: ModuleHelper? = null
+    private lateinit var moduleHelper: ModuleHelper
 
     @Inject
-    private val classApiExporterHelper: ClassApiExporterHelper? = null
+    private lateinit var classApiExporterHelper: ClassApiExporterHelper
 
     companion object : Log()
 
     fun export() {
         try {
-            val requests = classApiExporterHelper!!.export().mapNotNull { it as? Request }
+            val requests = classApiExporterHelper.export().mapNotNull { it as? Request }
             if (requests.isEmpty()) {
                 logger.info("No api be found to export!")
             } else {
@@ -105,6 +109,7 @@ class PostmanApiExporter {
         workspaceId: String?,
     ) {
         val postman = postmanFormatter.parseRequests(requests)
+
         val createdCollection = postmanApiHelper.createCollection(postman, workspaceId)
 
         if (createdCollection.notNullOrEmpty()) {
@@ -132,7 +137,7 @@ class PostmanApiExporter {
     private fun updateRequestsToPostman(requests: List<Request>) {
         val moduleGroupedMap = HashMap<String, ArrayList<Request>>()
         requests.forEach {
-            val module = moduleHelper!!.findModule(it.resource!!) ?: "easy-api"
+            val module = moduleHelper.findModule(it.resource!!) ?: "easy-api"
             moduleGroupedMap.safeComputeIfAbsent(module) { ArrayList() }!!
                 .add(it)
         }
