@@ -22,13 +22,13 @@ import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.api.call.ApiCallUI
-import com.itangcent.idea.plugin.utils.CompensateRateLimiter
 import com.itangcent.idea.psi.resourceClass
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.onSelect
 import com.itangcent.idea.swing.onTextChange
 import com.itangcent.idea.utils.*
 import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.rx.throttle
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -104,8 +104,6 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.call.v1.0.db").path)
         { NULL_REQUEST_INFO_CACHE }
     }
-
-    private val rateLimiter = CompensateRateLimiter.create(10)
 
     private val throttleHelper = ThrottleHelper()
 
@@ -203,24 +201,22 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         }
     }
 
-    private fun resize() {
-        rateLimiter.tryAcquire {
-            actionContext.runInSwingUI {
-                val rightWidth = this.contentPane.width - this.apisListPanel.width
+    private val resize = {
+        actionContext.runInSwingUI {
+            val rightWidth = this.contentPane.width - this.apisListPanel.width
 
-                val rightPanel = this.rightPanel
-                rightPanel.setSizeIfNecessary(rightWidth, this.contentPane.height - 6)
+            val rightPanel = this.rightPanel
+            rightPanel.setSizeIfNecessary(rightWidth, this.contentPane.height - 6)
 
-                val requestPanel = this.requestPanel
-                requestPanel.setSizeIfNecessary(rightWidth - 30, requestPanel.height)
+            val requestPanel = this.requestPanel
+            requestPanel.setSizeIfNecessary(rightWidth - 30, requestPanel.height)
 
-                this.responsePanel.let {
-                    it.setSizeIfNecessary(rightWidth - 30, it.height)
-                    it.bottomAlignTo(this.apisJList)
-                }
+            this.responsePanel.let {
+                it.setSizeIfNecessary(rightWidth - 30, it.height)
+                it.bottomAlignTo(this.apisJList)
             }
         }
-    }
+    }.throttle(50, TimeUnit.MILLISECONDS)
 
     //region api module
     private fun initApisModule() {
