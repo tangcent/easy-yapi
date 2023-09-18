@@ -1,3 +1,9 @@
+* 2.6.3
+* amend: remove CompensateRateLimiter  [(#1034)](https://github.com/tangcent/easy-yapi/pull/1034)
+
+* feat: add rules `postman.format.after`, `yapi.format.after`  [(#1033)](https://github.com/tangcent/easy-yapi/pull/1033)
+
+* chore: remove deprecated utils  [(#1024)](https://github.com/tangcent/easy-yapi/pull/1024)
 * 2.6.2
 	* refactor: remove usage of KV  [(#1020)](https://github.com/tangcent/easy-yapi/pull/1020)
 
