@@ -1,5 +1,6 @@
 package com.itangcent.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
@@ -26,6 +27,13 @@ class Model {
      * integerArray field
      */
     private Integer[] integerArray;
+
+    @JsonIgnore
+    private String shouldIgnore;
+
+    private String shouldIgnoreByGetter;
+
+    private String shouldIgnoreBySetter;
 
     public String getStr() {
         return str;
@@ -65,5 +73,31 @@ class Model {
 
     public String getOnlyGet() {
 
+    }
+
+    public String getShouldIgnore() {
+        return shouldIgnore;
+    }
+
+    public void setShouldIgnore(String shouldIgnore) {
+        this.shouldIgnore = shouldIgnore;
+    }
+
+    @JsonIgnore
+    public String getShouldIgnoreByGetter() {
+        return shouldIgnoreByGetter;
+    }
+
+    public void setShouldIgnoreByGetter(String shouldIgnoreByGetter) {
+        this.shouldIgnoreByGetter = shouldIgnoreByGetter;
+    }
+
+    public String getShouldIgnoreBySetter() {
+        return shouldIgnoreBySetter;
+    }
+
+    @JsonIgnore
+    public void setShouldIgnoreBySetter(String shouldIgnoreBySetter) {
+        this.shouldIgnoreBySetter = shouldIgnoreBySetter;
     }
 }
