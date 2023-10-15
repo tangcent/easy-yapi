@@ -63,6 +63,10 @@ open class YapiFormatter {
     @Inject
     protected lateinit var urlSelector: UrlSelector
 
+    protected val json5Formatter: Json5Formatter by lazy {
+        actionContext.instance(Json5Formatter::class)
+    }
+
     fun doc2Items(doc: Doc): List<HashMap<String, Any?>> {
         if (doc is Request) {
             return request2Items(doc)
@@ -161,18 +165,15 @@ open class YapiFormatter {
     private fun parseQueryValueAsJson5(value: Any?): String? {
         when (value) {
             is Array<*> -> {
-                return actionContext.instance(Json5Formatter::class)
-                    .format(value)
+                return json5Formatter.format(value)
             }
 
             is Collection<*> -> {
-                return actionContext.instance(Json5Formatter::class)
-                    .format(value)
+                return json5Formatter.format(value)
             }
 
             is Map<*, *> -> {
-                return actionContext.instance(Json5Formatter::class)
-                    .format(value)
+                return json5Formatter.format(value)
             }
 
             else -> {
@@ -647,7 +648,7 @@ open class YapiFormatter {
     //region parse-json5
     private fun parseByJson5(typedObject: Any?, rootDesc: String?): String {
         addMockAsProperty("", typedObject)
-        val json5Formatter = actionContext.instance(Json5Formatter::class)
+        val json5Formatter = json5Formatter
         return json5Formatter.format(typedObject, rootDesc)
     }
 
