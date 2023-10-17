@@ -11,15 +11,14 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.settings.EventRecords
-import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.toPrettyString
+import com.itangcent.intellij.jvm.AccessibleField
 import com.itangcent.intellij.jvm.PsiExpressionResolver
 import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
-import com.itangcent.intellij.jvm.element.ExplicitElement
-import com.itangcent.intellij.jvm.element.ExplicitField
 import com.itangcent.intellij.psi.ObjectHolder
 import com.itangcent.intellij.psi.ResolveContext
+import com.itangcent.intellij.psi.computer
 import com.itangcent.intellij.psi.getOrResolve
 import com.itangcent.utils.isCollections
 
@@ -33,46 +32,44 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
     @Inject
     private lateinit var psiExpressionResolver: PsiExpressionResolver
 
-    override fun afterParseFieldOrMethod(
-        fieldName: String,
-        fieldType: DuckType,
-        fieldOrMethod: ExplicitElement<*>,
+    override fun afterParseField(
+        accessibleField: AccessibleField,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
         fields: MutableMap<String, Any?>,
     ) {
         //compute `field.required`
-        ruleComputer.computer(ClassExportRuleKeys.FIELD_REQUIRED, fieldOrMethod)?.let { required ->
-            fields.sub(Attrs.REQUIRED_ATTR)[fieldName] = required
+        ruleComputer.computer(ClassExportRuleKeys.FIELD_REQUIRED, accessibleField)?.let { required ->
+            fields.sub(Attrs.REQUIRED_ATTR)[accessibleField.jsonFieldName()] = required
         }
 
         //compute `field.default.value`
-        val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, fieldOrMethod)
+        val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, accessibleField)
         if (defaultValue.isNullOrEmpty()) {
-            if (fieldOrMethod is ExplicitField) {
-                fieldOrMethod.psi().initializer?.let { psiExpressionResolver.process(it) }?.toPrettyString()
-                    ?.let { fields.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = it }
+            accessibleField.field?.psi()?.let { field ->
+                field.initializer?.let { psiExpressionResolver.process(it) }?.toPrettyString()
+                    ?.let { fields.sub(Attrs.DEFAULT_VALUE_ATTR)[accessibleField.jsonFieldName()] = it }
             }
         } else {
-            fields.sub(Attrs.DEFAULT_VALUE_ATTR)[fieldName] = defaultValue
+            fields.sub(Attrs.DEFAULT_VALUE_ATTR)[accessibleField.jsonFieldName()] = defaultValue
             parseAsFieldValue(defaultValue)
                 ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEFAULT_VALUE_ATTR) }
-                ?.let { populateFieldValue(fieldName, fieldType, fields, it) }
+                ?.let { populateFieldValue(accessibleField.jsonFieldName(), accessibleField.jsonFieldType(), fields, it) }
         }
 
         //compute `field.demo`
         val demoValue = ruleComputer.computer(
             ClassExportRuleKeys.FIELD_DEMO,
-            fieldOrMethod
+            accessibleField
         )
         if (demoValue.notNullOrBlank()) {
-            fields.sub(Attrs.DEMO_ATTR)[fieldName] = demoValue
+            fields.sub(Attrs.DEMO_ATTR)[accessibleField.jsonFieldName()] = demoValue
             demoValue?.let { parseAsFieldValue(it) }
                 ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEMO_ATTR) }
-                ?.let { populateFieldValue(fieldName, fieldType, fields, it) }
+                ?.let { populateFieldValue(accessibleField.jsonFieldName(), accessibleField.jsonFieldType(), fields, it) }
         }
 
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
+        super.afterParseField(accessibleField, resourcePsiClass, resolveContext, fields)
     }
 
     override fun resolveAdditionalField(

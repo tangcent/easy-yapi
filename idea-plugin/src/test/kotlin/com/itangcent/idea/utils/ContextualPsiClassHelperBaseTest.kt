@@ -37,6 +37,7 @@ internal abstract class ContextualPsiClassHelperBaseTest : PluginContextLightCod
     override fun beforeBind() {
         super.beforeBind()
         loadFile("annotation/JsonProperty.java")!!
+        loadFile("annotation/JsonIgnore.java")!!
         objectPsiClass = loadSource(Object::class.java)!!
         integerPsiClass = loadSource(java.lang.Integer::class)!!
         loadSource(java.lang.Long::class)!!

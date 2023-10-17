@@ -14,18 +14,16 @@ import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.config.rule.RuleKey
-import com.itangcent.intellij.config.rule.computer
 import com.itangcent.intellij.extend.guice.PostConstruct
+import com.itangcent.intellij.jvm.AccessibleField
 import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.JsonOption.has
-import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
-import com.itangcent.intellij.jvm.element.ExplicitElement
-import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.DefaultPsiClassHelper
 import com.itangcent.intellij.psi.ResolveContext
+import com.itangcent.intellij.psi.computer
 import java.util.*
 
 /**
@@ -54,7 +52,11 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         (ruleComputeListener as? RuleComputeListenerRegistry)?.register(InnerComputeListener())
     }
 
-    override fun beforeParseClass(psiClass: PsiClass, resolveContext: ResolveContext, fields: MutableMap<String, Any?>) {
+    override fun beforeParseClass(
+        psiClass: PsiClass,
+        resolveContext: ResolveContext,
+        fields: MutableMap<String, Any?>
+    ) {
         tryInitParseContext()
         ruleComputer.computer(ClassExportRuleKeys.JSON_CLASS_PARSE_BEFORE, psiClass)
         super.beforeParseClass(psiClass, resolveContext, fields)
@@ -120,22 +122,21 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    override fun beforeParseFieldOrMethod(
-        fieldName: String,
-        fieldType: DuckType,
-        fieldOrMethod: ExplicitElement<*>,
+    override fun beforeParseField(
+        accessField: AccessibleField,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
         fields: MutableMap<String, Any?>,
     ): Boolean {
-        pushField(fieldName)
-        if (fieldOrMethod is ExplicitMethod) {
-            ruleComputer.computer(ClassExportRuleKeys.JSON_METHOD_PARSE_BEFORE, fieldOrMethod)
-        } else {
-            ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE, fieldOrMethod)
-        }
+        pushField(accessField.jsonFieldName())
+        ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE, accessField)
 
-        return super.beforeParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
+        return super.beforeParseField(
+            accessField,
+            resourcePsiClass,
+            resolveContext,
+            fields
+        )
     }
 
     private fun pushField(fieldName: String) {
@@ -145,35 +146,37 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    override fun onIgnoredParseFieldOrMethod(
-        fieldName: String,
-        fieldType: DuckType,
-        fieldOrMethod: ExplicitElement<*>,
+    override fun onIgnoredParseField(
+        accessibleField: AccessibleField,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
-        fields: MutableMap<String, Any?>,
+        fields: MutableMap<String, Any?>
     ) {
-        super.onIgnoredParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
-        popField(fieldName)
+        super.onIgnoredParseField(
+            accessibleField,
+            resourcePsiClass,
+            resolveContext,
+            fields
+        )
+        popField(accessibleField.jsonFieldName())
     }
 
-    override fun afterParseFieldOrMethod(
-        fieldName: String,
-        fieldType: DuckType,
-        fieldOrMethod: ExplicitElement<*>,
+    override fun afterParseField(
+        accessibleField: AccessibleField,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
         fields: MutableMap<String, Any?>,
     ) {
-        super.afterParseFieldOrMethod(fieldName, fieldType, fieldOrMethod, resourcePsiClass, resolveContext, fields)
+        super.afterParseField(
+            accessibleField,
+            resourcePsiClass,
+            resolveContext,
+            fields
+        )
 
-        if (fieldOrMethod is ExplicitMethod) {
-            ruleComputer.computer(ClassExportRuleKeys.JSON_METHOD_PARSE_AFTER, fieldOrMethod)
-        } else {
-            ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER, fieldOrMethod)
-        }
-        popField(fieldName)
-        computeAdditionalField(fieldOrMethod.psi(), resolveContext, fields)
+        ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER, accessibleField)
+        popField(accessibleField.jsonFieldName())
+        computeAdditionalField(accessibleField.psi, resolveContext, fields)
     }
 
     protected open fun computeAdditionalField(

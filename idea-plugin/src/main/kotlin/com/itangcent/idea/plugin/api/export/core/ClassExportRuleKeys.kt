@@ -230,16 +230,6 @@ object ClassExportRuleKeys {
         EventRuleMode.THROW_IN_ERROR
     )
 
-    val JSON_METHOD_PARSE_BEFORE: RuleKey<Boolean> = SimpleRuleKey(
-        "json.method.parse.before", arrayOf("method.parse.before"),
-        EventRuleMode.THROW_IN_ERROR
-    )
-
-    val JSON_METHOD_PARSE_AFTER: RuleKey<Boolean> = SimpleRuleKey(
-        "json.method.parse.after", arrayOf("method.parse.after"),
-        EventRuleMode.THROW_IN_ERROR
-    )
-
     val JSON_ADDITIONAL_FIELD: RuleKey<String> = SimpleRuleKey(
         "json.additional.field",
         StringRuleMode.MERGE_DISTINCT

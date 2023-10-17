@@ -22,6 +22,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
                 "field.default.value=#default\n" +
                 "field.mock=#mock\n" +
                 "field.demo=#demo\n" +
+                "field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value\n" +
                 "json.rule.convert[java.time.LocalDateTime]=java.lang.String\n" +
                 "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
                 "json.additional.field[com.itangcent.model.UserInfo]={\"name\":\"label\",\"defaultValue\":\"genius\",\"type\":\"java.lang.String\",\"desc\":\"label of the user\",\"required\":true,\"mock\":\"@string\",\"demo\":\"genius\",\"advanced\":\"some\"}\n" +
@@ -78,7 +79,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0]}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getTypeObject(PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass))
         )
 
@@ -168,7 +169,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0]}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass,
@@ -177,7 +178,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlyGet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlyGet\":\"\"}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass,
@@ -186,7 +187,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\"}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass,
@@ -281,7 +282,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0]}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getTypeObject(SingleDuckType(modelPsiClass), modelPsiClass))
         )
 
@@ -366,7 +367,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0]}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(modelPsiClass), modelPsiClass,
@@ -375,7 +376,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlyGet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlyGet\":\"\"}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(modelPsiClass), modelPsiClass,
@@ -384,7 +385,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\"}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(modelPsiClass), modelPsiClass,
@@ -441,11 +442,11 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
         //testGetFields------------------------------------------------------------------------------------------------------------
 
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0]}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass))
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0]}",
+            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass, modelPsiClass))
         )
         assertEquals(
