@@ -43,7 +43,7 @@ class FieldPatternRule(
     val pathPredict: (String?) -> Boolean,
     val typePredict: (String?) -> Boolean,
 ) : BooleanRule {
-    override fun compute(context: RuleContext): Boolean {
+    override fun invoke(context: RuleContext): Boolean {
         val path = context.getExt<ParseScriptContext>("fieldContext")?.path() ?: return false
         val name = context.rawType() ?: return false
         return pathPredict(path) && typePredict(name)

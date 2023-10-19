@@ -4,26 +4,26 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.asBool
 import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.AdditionalParseHelper
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys
+import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.config.rule.RuleKey
+import com.itangcent.intellij.config.rule.lookUp
 import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.jvm.AccessibleField
 import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.JsonOption.has
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
-import com.itangcent.intellij.psi.ClassRuleKeys
-import com.itangcent.intellij.psi.DefaultPsiClassHelper
-import com.itangcent.intellij.psi.ResolveContext
-import com.itangcent.intellij.psi.computer
+import com.itangcent.intellij.psi.*
 import java.util.*
 
 /**
@@ -32,6 +32,7 @@ import java.util.*
  * support rules:
  * 1. field.parse.before
  * 2. field.parse.after
+ * 3. field.order.with
  */
 open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
@@ -123,16 +124,16 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     }
 
     override fun beforeParseField(
-        accessField: AccessibleField,
+        accessibleField: AccessibleField,
         resourcePsiClass: ExplicitClass,
         resolveContext: ResolveContext,
         fields: MutableMap<String, Any?>,
     ): Boolean {
-        pushField(accessField.jsonFieldName())
-        ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE, accessField)
+        pushField(accessibleField.jsonFieldName())
+        ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE, accessibleField)
 
         return super.beforeParseField(
-            accessField,
+            accessibleField,
             resourcePsiClass,
             resolveContext,
             fields
@@ -159,6 +160,26 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             fields
         )
         popField(accessibleField.jsonFieldName())
+    }
+
+    override fun collectFields(explicitClass: ExplicitClass, option: Int): Collection<DefaultAccessibleField> {
+        var fields = super.collectFields(explicitClass, option)
+        if (ruleLookUp.lookUp(ClassExportRuleKeys.FIELD_ORDER_WITH).isNotEmpty()) {
+            try {
+                fields = fields.asSequence().withIndex().sortedWith { (index1, field1), (index2, field2) ->
+                    ruleComputer.computer(
+                        ClassExportRuleKeys.FIELD_ORDER_WITH, SuvRuleContext()
+                            .apply {
+                                setExt("a", field1.explicitElement)
+                                setExt("b", field2.explicitElement)
+                            }, null
+                    ) ?: (index1.compareTo(index2))
+                }.map { it.value }.toList()
+            } catch (e: Exception) {
+                logger.traceError("Failed to sort fields. Please check the rule of ${ClassRuleKeys.FIELD_ORDER}", e)
+            }
+        }
+        return fields
     }
 
     override fun afterParseField(
@@ -273,13 +294,15 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             ClassRuleKeys.FIELD_NAME_PREFIX,
             ClassRuleKeys.FIELD_NAME_SUFFIX,
             ClassRuleKeys.JSON_UNWRAPPED,
+            ClassRuleKeys.FIELD_ORDER,
             YapiClassExportRuleKeys.FIELD_MOCK,
             YapiClassExportRuleKeys.FIELD_ADVANCED,
             ClassExportRuleKeys.FIELD_DEMO,
             ClassExportRuleKeys.FIELD_DEFAULT_VALUE,
             ClassExportRuleKeys.JSON_FIELD_PARSE_BEFORE,
             ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER,
-            ClassExportRuleKeys.FIELD_REQUIRED
+            ClassExportRuleKeys.FIELD_REQUIRED,
+            ClassExportRuleKeys.FIELD_ORDER_WITH
         )
     }
 }

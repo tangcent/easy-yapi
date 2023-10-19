@@ -2,6 +2,8 @@ package com.itangcent.idea.plugin.rule
 
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.utils.ParseScriptContext
+import com.itangcent.intellij.config.rule.parseBooleanRule
+import com.itangcent.intellij.config.rule.parseEventRule
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
@@ -26,28 +28,28 @@ class FieldPatternRuleParserTest : RuleParserBaseTest() {
         run {
             val context = ruleParser.contextOf(modelPsiClass.fields[0], modelPsiClass.fields[0])
             context.setExt("fieldContext", FakeParseScriptContext("str"))
-            assertEquals(true, ruleParser.parseBooleanRule("*")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("str")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("*.str")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("none")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("*.none")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("*.str|string")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("*.none|string")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("*.str|*")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("*.str|int")!!.compute(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("str")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*.str")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("none")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("*.none")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*.str|string")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("*.none|string")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*.str|*")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("*.str|int")!!(context))
         }
         run {
             val context = ruleParser.contextOf(modelPsiClass.fields[1], modelPsiClass.fields[1])
             context.setExt("fieldContext", FakeParseScriptContext("integer"))
-            assertEquals(true, ruleParser.parseBooleanRule("*")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("integer")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("*.integer")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("none")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("*.none")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("*.integer|int")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("*.none|int")!!.compute(context))
-            assertEquals(true, ruleParser.parseBooleanRule("*.integer|*")!!.compute(context))
-            assertEquals(false, ruleParser.parseBooleanRule("*.integer|string")!!.compute(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("integer")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*.integer")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("none")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("*.none")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*.integer|int")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("*.none|int")!!(context))
+            assertEquals(true, ruleParser.parseBooleanRule("*.integer|*")!!(context))
+            assertEquals(false, ruleParser.parseBooleanRule("*.integer|string")!!(context))
         }
     }
 

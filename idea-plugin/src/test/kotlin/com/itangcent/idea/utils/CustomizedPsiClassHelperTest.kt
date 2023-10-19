@@ -1,17 +1,24 @@
 package com.itangcent.idea.utils
 
+import com.intellij.psi.PsiClass
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.duck.SingleDuckType
-import com.itangcent.intellij.jvm.JsonOption
 
 /**
  * Test case of [CustomizedPsiClassHelper]
  */
 internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
+
+    protected lateinit var subModelPsiClass: PsiClass
+    override fun beforeBind() {
+        super.beforeBind()
+        subModelPsiClass = loadClass("model/SubModel.java")!!
+    }
 
     override fun customConfig(): String {
         //language=Properties
@@ -25,7 +32,19 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
                 "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
                 "json.additional.field[com.itangcent.model.UserInfo]={\"name\":\"label\",\"defaultValue\":\"genius\",\"type\":\"java.lang.String\",\"desc\":\"label of the user\",\"required\":true}\n" +
                 "json.additional.field[com.itangcent.model.UserInfo#name]={\"name\":\"firstName\",\"defaultValue\":\"tang\",\"type\":\"java.lang.String\",\"desc\":\"a family name\",\"required\":false}\n" +
-                "json.additional.field[com.itangcent.model.UserInfo#age]={\"name\":\"order\",\"defaultValue\":\"12\",\"type\":\"int\",\"desc\":\"order of the age in family\",\"required\":true}"
+                "json.additional.field[com.itangcent.model.UserInfo#age]={\"name\":\"order\",\"defaultValue\":\"12\",\"type\":\"int\",\"desc\":\"order of the age in family\",\"required\":true}\n" +
+                "field.order=#order\n" +
+                "field.order.with=groovy:```\n" +
+                "    def aDefineClass = a.defineClass()\n" +
+                "    def bDefineClass = b.defineClass()\n" +
+                "    if(aDefineClass==bDefineClass){\n" +
+                "        return 0\n" +
+                "    }else if(aDefineClass.isExtend(bDefineClass.name())){\n" +
+                "        return 1\n" +
+                "    }else{\n" +
+                "        return -1\n" +
+                "    }\n" +
+                "```"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -76,7 +95,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getTypeObject(PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass))
         )
 
@@ -91,11 +110,11 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
         )
 
         assertEquals(
-            "{\"intArr\":[123,456],\"@required\":{\"intArr\":false,\"amount\":false,\"strings\":false,\"invalid\":false,\"model\":false,\"modelList\":false},\"@default\":{\"intArr\":\"[123, 456]\",\"amount\":\"{\\\"abc\\\":\\\"123\\\",\\\"def\\\":\\\"456\\\"}\",\"strings\":\"[\\\"abc\\\",\\\"123\\\"]\",\"invalid\":\"[\\\"abc\\\",\\\"123\\\"}\",\"model\":\"{\\\"s\\\":\\\"aaa\\\",\\\"s2\\\":\\\"bbb\\\",\\\"stringList\\\":\\\"abc\\\"}\",\"modelList\":\"[{\\\"s\\\":\\\"aaa\\\",\\\"s2\\\":\\\"bbb\\\",\\\"stringList\\\":\\\"abc\\\"}}\"},\"amount\":{\"abc\":\"123\",\"def\":\"456\",\"@default\":{\"abc\":\"123\",\"def\":\"456\"}},\"strings\":[\"abc\",\"123\"],\"invalid\":[\"\"],\"model\":{\"s\":\"aaa\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":\"abc\",\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"s2\":\"bbb\",\"@default\":{\"s\":\"aaa\",\"s2\":\"bbb\",\"stringList\":\"abc\"}},\"modelList\":[{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}]}",
+            "{\"intArr\":[123,456],\"@required\":{\"intArr\":false,\"amount\":false,\"strings\":false,\"invalid\":false,\"model\":false,\"modelList\":false},\"@default\":{\"intArr\":\"[123, 456]\",\"amount\":\"{\\\"abc\\\":\\\"123\\\",\\\"def\\\":\\\"456\\\"}\",\"strings\":\"[\\\"abc\\\",\\\"123\\\"]\",\"invalid\":\"[\\\"abc\\\",\\\"123\\\"}\",\"model\":\"{\\\"s\\\":\\\"aaa\\\",\\\"s2\\\":\\\"bbb\\\",\\\"stringList\\\":\\\"abc\\\"}\",\"modelList\":\"[{\\\"s\\\":\\\"aaa\\\",\\\"s2\\\":\\\"bbb\\\",\\\"stringList\\\":\\\"abc\\\"}}\"},\"amount\":{\"abc\":\"123\",\"def\":\"456\",\"@default\":{\"abc\":\"123\",\"def\":\"456\"}},\"strings\":[\"abc\",\"123\"],\"invalid\":[\"\"],\"model\":{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"aaa\",\"integer\":0,\"stringList\":\"abc\",\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\",\"s2\":\"bbb\",\"@default\":{\"s\":\"aaa\",\"s2\":\"bbb\",\"stringList\":\"abc\"}},\"modelList\":[{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\"}]}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(defaultPsiClass),
-                    userInfoPsiClass
+                    defaultPsiClass
                 )
             )
         )
@@ -176,7 +195,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass,
@@ -185,7 +204,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass,
@@ -194,7 +213,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass,
@@ -203,10 +222,46 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false},\"@comment\":{\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\"},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     PsiTypesUtil.getClassType(modelPsiClass), modelPsiClass,
+                    JsonOption.ALL
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    PsiTypesUtil.getClassType(subModelPsiClass), subModelPsiClass,
+                    JsonOption.NONE
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    PsiTypesUtil.getClassType(subModelPsiClass), subModelPsiClass,
+                    JsonOption.READ_GETTER
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    PsiTypesUtil.getClassType(subModelPsiClass), subModelPsiClass,
+                    JsonOption.READ_SETTER
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    PsiTypesUtil.getClassType(subModelPsiClass), subModelPsiClass,
                     JsonOption.ALL
                 )
             )
@@ -289,8 +344,13 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getTypeObject(SingleDuckType(modelPsiClass), modelPsiClass))
+        )
+
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(psiClassHelper.getTypeObject(SingleDuckType(subModelPsiClass), subModelPsiClass))
         )
 
         assertEquals(
@@ -374,7 +434,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(modelPsiClass), modelPsiClass,
@@ -383,7 +443,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(modelPsiClass), modelPsiClass,
@@ -392,7 +452,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(modelPsiClass), modelPsiClass,
@@ -401,10 +461,46 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
             )
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false},\"@comment\":{\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\"},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(
                 psiClassHelper.getTypeObject(
                     SingleDuckType(modelPsiClass), modelPsiClass,
+                    JsonOption.ALL
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    SingleDuckType(subModelPsiClass), subModelPsiClass,
+                    JsonOption.NONE
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreBySetter\":false,\"onlyGet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreBySetter\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    SingleDuckType(subModelPsiClass), subModelPsiClass,
+                    JsonOption.READ_GETTER
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"onlySet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"onlySet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    SingleDuckType(subModelPsiClass), subModelPsiClass,
+                    JsonOption.READ_SETTER
+                )
+            )
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(
+                psiClassHelper.getTypeObject(
+                    SingleDuckType(subModelPsiClass), subModelPsiClass,
                     JsonOption.ALL
                 )
             )
@@ -449,20 +545,36 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
 
     fun testGetFields() {
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass))
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass, modelPsiClass))
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false},\"@comment\":{\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\"},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass, JsonOption.ALL))
         )
         assertEquals(
-            "{\"s\":\"\",\"@required\":{\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false},\"@comment\":{\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\"},\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\"}",
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\"}",
             GsonUtils.toJson(psiClassHelper.getFields(modelPsiClass, modelPsiClass, JsonOption.ALL))
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(psiClassHelper.getFields(subModelPsiClass))
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"shouldIgnoreByGetter\":false,\"shouldIgnoreBySetter\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"shouldIgnoreByGetter\":\"\",\"shouldIgnoreBySetter\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(psiClassHelper.getFields(subModelPsiClass, subModelPsiClass))
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(psiClassHelper.getFields(subModelPsiClass, JsonOption.ALL))
+        )
+        assertEquals(
+            "{\"shouldBeFirst\":\"\",\"@required\":{\"shouldBeFirst\":false,\"s\":false,\"integer\":false,\"stringList\":false,\"integerArray\":false,\"onlySet\":false,\"onlyGet\":false,\"shouldBeLast\":false,\"subShouldBeFirst\":false,\"subA\":false,\"subB\":false,\"subShouldBeLast\":false},\"@comment\":{\"shouldBeFirst\":\"\",\"s\":\"string field\",\"integer\":\"integer field\",\"stringList\":\"stringList field\",\"integerArray\":\"integerArray field\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"},\"s\":\"\",\"integer\":0,\"stringList\":[\"\"],\"integerArray\":[0],\"onlySet\":\"\",\"onlyGet\":\"\",\"shouldBeLast\":\"\",\"subShouldBeFirst\":\"\",\"subA\":\"\",\"subB\":\"\",\"subShouldBeLast\":\"\"}",
+            GsonUtils.toJson(psiClassHelper.getFields(subModelPsiClass, subModelPsiClass, JsonOption.ALL))
         )
         assertEquals(
             "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":true,\"firstName\":false,\"age\":true,\"order\":true,\"sex\":false,\"birthDay\":false,\"regtime\":false,\"label\":true},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\",\"firstName\":\"tang\",\"order\":\"12\",\"label\":\"genius\"},\"type\":0,\"name\":\"\",\"firstName\":\"\",\"age\":0,\"order\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\",\"label\":\"\"}",

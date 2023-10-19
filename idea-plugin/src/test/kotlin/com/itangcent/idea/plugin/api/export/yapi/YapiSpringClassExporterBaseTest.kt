@@ -3,7 +3,10 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.idea.plugin.api.export.ExportChannel
-import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.core.AdditionalParseHelper
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.CompositeRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
@@ -80,6 +83,18 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
                     item["title"] = "[admin]"+item["title"]
                     item["markdown"] = "[admin]"+item["markdown"]
                     item["desc"] = "[admin]"+item["desc"]
+                }
+            ```
+            field.order=#order
+            field.order.with=groovy:```
+                def aDefineClass = a.defineClass()
+                def bDefineClass = b.defineClass()
+                if(aDefineClass==bDefineClass){
+                    return 0
+                }else if(aDefineClass.isExtend(bDefineClass.name())){
+                    return 1
+                }else{
+                    return -1
                 }
             ```
             """

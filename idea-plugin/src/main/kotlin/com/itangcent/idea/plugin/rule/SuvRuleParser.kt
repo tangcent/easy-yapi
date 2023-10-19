@@ -1,7 +1,10 @@
 package com.itangcent.idea.plugin.rule
 
 import com.google.inject.Inject
-import com.itangcent.intellij.config.rule.*
+import com.itangcent.intellij.config.rule.Rule
+import com.itangcent.intellij.config.rule.RuleContext
+import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.context.ActionContext
 import kotlin.reflect.KClass
 
@@ -22,56 +25,28 @@ class SuvRuleParser : RuleParser {
         return getRuleParser(SimpleRuleParser::class).contextOf(target, context)
     }
 
-    override fun parseBooleanRule(rule: String): BooleanRule? {
+    override fun parseRule(rule: String, targetType: KClass<*>): Rule<Any>? {
         return when {
             rule.isBlank() -> null
-            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseBooleanRule(
+            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseRule(
                 rule.removePrefix(
                     JS_PREFIX
-                )
+                ), targetType
             )
 
-            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseBooleanRule(
+            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseRule(
                 rule.removePrefix(
                     GROOVY_PREFIX
-                )
+                ), targetType
             )
 
-            rule.startsWith(FIELD_PREFIX) -> getRuleParser(FieldPatternRuleParser::class).parseBooleanRule(
+            rule.startsWith(FIELD_PREFIX) -> getRuleParser(FieldPatternRuleParser::class).parseRule(
                 rule.removePrefix(
                     FIELD_PREFIX
-                )
+                ), targetType
             )
 
-            else -> getRuleParser(SimpleRuleParser::class).parseBooleanRule(rule)
-        }
-    }
-
-    override fun parseStringRule(rule: String): StringRule? {
-        return when {
-            rule.isBlank() -> null
-            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseStringRule(rule.removePrefix(JS_PREFIX))
-            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseStringRule(
-                rule.removePrefix(
-                    GROOVY_PREFIX
-                )
-            )
-
-            else -> getRuleParser(SimpleRuleParser::class).parseStringRule(rule)
-        }
-    }
-
-    override fun parseEventRule(rule: String): EventRule? {
-        return when {
-            rule.isBlank() -> null
-            rule.startsWith(JS_PREFIX) -> getRuleParser(JsRuleParser::class).parseEventRule(rule.removePrefix(JS_PREFIX))
-            rule.startsWith(GROOVY_PREFIX) -> getRuleParser(GroovyRuleParser::class).parseEventRule(
-                rule.removePrefix(
-                    GROOVY_PREFIX
-                )
-            )
-
-            else -> getRuleParser(SimpleRuleParser::class).parseEventRule(rule)
+            else -> getRuleParser(SimpleRuleParser::class).parseRule(rule, targetType)
         }
     }
 

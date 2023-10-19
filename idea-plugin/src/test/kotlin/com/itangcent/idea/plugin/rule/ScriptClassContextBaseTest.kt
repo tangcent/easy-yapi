@@ -78,7 +78,19 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "json.rule.convert[java.time.LocalDate]=java.lang.String\n" +
                 "json.additional.field[com.itangcent.model.UserInfo]={\"name\":\"label\",\"defaultValue\":\"genius\",\"type\":\"java.lang.String\",\"desc\":\"label of the user\",\"required\":true,\"mock\":\"@string\",\"demo\":\"genius\",\"advanced\":\"some\"}\n" +
                 "json.additional.field[com.itangcent.model.UserInfo#name]={\"name\":\"firstName\",\"defaultValue\":\"tang\",\"type\":\"java.lang.String\",\"desc\":\"a family name\",\"required\":false,\"mock\":\"@string\",\"demo\":\"tang\",\"advanced\":\"some\"}\n" +
-                "json.additional.field[com.itangcent.model.UserInfo#age]={\"name\":\"order\",\"defaultValue\":\"12\",\"type\":\"int\",\"desc\":\"order of the age in family\",\"required\":true,\"mock\":\"@int\",\"demo\":\"12\",\"advanced\":\"some\"}"
+                "json.additional.field[com.itangcent.model.UserInfo#age]={\"name\":\"order\",\"defaultValue\":\"12\",\"type\":\"int\",\"desc\":\"order of the age in family\",\"required\":true,\"mock\":\"@int\",\"demo\":\"12\",\"advanced\":\"some\"}\n" +
+                "field.order=#order\n" +
+                "field.order.with=groovy:```\n" +
+                "    def aDefineClass = a.defineClass()\n" +
+                "    def bDefineClass = b.defineClass()\n" +
+                "    if(aDefineClass==bDefineClass){\n" +
+                "        return 0\n" +
+                "    }else if(aDefineClass.isExtend(bDefineClass.name())){\n" +
+                "        return 1\n" +
+                "    }else{\n" +
+                "        return -1\n" +
+                "    }\n" +
+                "```"
     }
 
     open fun PsiClass.asClassContext(): ScriptClassContext {
@@ -235,6 +247,17 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "     * integerArray field\n" +
                     "     */\n" +
                     "    private Integer[] integerArray;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * @order 100\n" +
+                    "     */\n" +
+                    "    private String shouldBeLast;\n" +
+                    "\n" +
+                    "    /**\n" +
+                    "     * @order 0\n" +
+                    "     */\n" +
+                    "    private String shouldBeFirst;\n" +
+                    "\n" +
                     "\n" +
                     "    @JsonIgnore\n" +
                     "    private String shouldIgnore;\n" +
@@ -494,7 +517,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
 
     fun testFieldCnt() {
         assertEquals(0, objectPsiClass.asClassContext().fieldCnt())
-        assertEquals(7, modelPsiClass.asClassContext().fieldCnt())
+        assertEquals(9, modelPsiClass.asClassContext().fieldCnt())
         assertEquals(3, resultPsiClass.asClassContext().fieldCnt())
         assertEquals(0, iResultPsiClass.asClassContext().fieldCnt())
     }
@@ -511,6 +534,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
 
         assertEquals(
             "{\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
@@ -520,11 +544,13 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"onlySet\": \"\",\n" +
-                    "  \"onlyGet\": \"\"\n" +
+                    "  \"onlyGet\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson(true, true)
         )
         assertEquals(
             "{\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
@@ -534,11 +560,13 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"shouldIgnoreBySetter\": \"\",\n" +
-                    "  \"onlyGet\": \"\"\n" +
+                    "  \"onlyGet\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson(true, false)
         )
         assertEquals(
             "{\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
@@ -548,11 +576,13 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"shouldIgnoreByGetter\": \"\",\n" +
-                    "  \"onlySet\": \"\"\n" +
+                    "  \"onlySet\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson(false, true)
         )
         assertEquals(
             "{\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
@@ -562,7 +592,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"shouldIgnoreByGetter\": \"\",\n" +
-                    "  \"shouldIgnoreBySetter\": \"\"\n" +
+                    "  \"shouldIgnoreBySetter\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson(false, false)
         )
 
@@ -666,6 +697,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
 
         assertEquals(
             "{\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"\", //string field\n" +
                     "    \"integer\": 0, //integer field\n" +
                     "    \"stringList\": [ //stringList field\n" +
@@ -675,11 +707,13 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "        0\n" +
                     "    ],\n" +
                     "    \"onlySet\": \"\",\n" +
-                    "    \"onlyGet\": \"\"\n" +
+                    "    \"onlyGet\": \"\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson5(true, true)
         )
         assertEquals(
             "{\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"\", //string field\n" +
                     "    \"integer\": 0, //integer field\n" +
                     "    \"stringList\": [ //stringList field\n" +
@@ -689,11 +723,13 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "        0\n" +
                     "    ],\n" +
                     "    \"shouldIgnoreBySetter\": \"\",\n" +
-                    "    \"onlyGet\": \"\"\n" +
+                    "    \"onlyGet\": \"\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson5(true, false)
         )
         assertEquals(
             "{\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"\", //string field\n" +
                     "    \"integer\": 0, //integer field\n" +
                     "    \"stringList\": [ //stringList field\n" +
@@ -703,11 +739,13 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "        0\n" +
                     "    ],\n" +
                     "    \"shouldIgnoreByGetter\": \"\",\n" +
-                    "    \"onlySet\": \"\"\n" +
+                    "    \"onlySet\": \"\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson5(false, true)
         )
         assertEquals(
             "{\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"\", //string field\n" +
                     "    \"integer\": 0, //integer field\n" +
                     "    \"stringList\": [ //stringList field\n" +
@@ -717,7 +755,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "        0\n" +
                     "    ],\n" +
                     "    \"shouldIgnoreByGetter\": \"\",\n" +
-                    "    \"shouldIgnoreBySetter\": \"\"\n" +
+                    "    \"shouldIgnoreBySetter\": \"\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "}", modelPsiClass.asClassContext().toJson5(false, false)
         )
 
@@ -827,13 +866,16 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
 
         assertEquals(
             "{\n" +
-                    "  \"s\": \"\",\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"@comment\": {\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"string field\",\n" +
                     "    \"integer\": \"integer field\",\n" +
                     "    \"stringList\": \"stringList field\",\n" +
-                    "    \"integerArray\": \"integerArray field\"\n" +
+                    "    \"integerArray\": \"integerArray field\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "  },\n" +
+                    "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
                     "    \"\"\n" +
@@ -842,7 +884,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"onlySet\": \"\",\n" +
-                    "  \"onlyGet\": \"\"\n" +
+                    "  \"onlyGet\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}",
             GsonUtils.prettyJson(
                 modelPsiClass.asClassContext().toObject(
@@ -854,14 +897,17 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         )
         assertEquals(
             "{\n" +
-                    "  \"s\": \"\",\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"@comment\": {\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"string field\",\n" +
                     "    \"integer\": \"integer field\",\n" +
                     "    \"stringList\": \"stringList field\",\n" +
                     "    \"integerArray\": \"integerArray field\",\n" +
-                    "    \"shouldIgnoreBySetter\": \"\"\n" +
+                    "    \"shouldIgnoreBySetter\": \"\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "  },\n" +
+                    "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
                     "    \"\"\n" +
@@ -870,7 +916,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"shouldIgnoreBySetter\": \"\",\n" +
-                    "  \"onlyGet\": \"\"\n" +
+                    "  \"onlyGet\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}",
             GsonUtils.prettyJson(
                 modelPsiClass.asClassContext().toObject(
@@ -882,14 +929,17 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         )
         assertEquals(
             "{\n" +
-                    "  \"s\": \"\",\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"@comment\": {\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"string field\",\n" +
                     "    \"integer\": \"integer field\",\n" +
                     "    \"stringList\": \"stringList field\",\n" +
                     "    \"integerArray\": \"integerArray field\",\n" +
-                    "    \"shouldIgnoreByGetter\": \"\"\n" +
+                    "    \"shouldIgnoreByGetter\": \"\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "  },\n" +
+                    "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
                     "    \"\"\n" +
@@ -898,7 +948,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"shouldIgnoreByGetter\": \"\",\n" +
-                    "  \"onlySet\": \"\"\n" +
+                    "  \"onlySet\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}",
             GsonUtils.prettyJson(
                 modelPsiClass.asClassContext().toObject(false, true, true)
@@ -906,15 +957,18 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         )
         assertEquals(
             "{\n" +
-                    "  \"s\": \"\",\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"@comment\": {\n" +
+                    "    \"shouldBeFirst\": \"\",\n" +
                     "    \"s\": \"string field\",\n" +
                     "    \"integer\": \"integer field\",\n" +
                     "    \"stringList\": \"stringList field\",\n" +
                     "    \"integerArray\": \"integerArray field\",\n" +
                     "    \"shouldIgnoreByGetter\": \"\",\n" +
-                    "    \"shouldIgnoreBySetter\": \"\"\n" +
+                    "    \"shouldIgnoreBySetter\": \"\",\n" +
+                    "    \"shouldBeLast\": \"\"\n" +
                     "  },\n" +
+                    "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
                     "    \"\"\n" +
@@ -923,7 +977,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"shouldIgnoreByGetter\": \"\",\n" +
-                    "  \"shouldIgnoreBySetter\": \"\"\n" +
+                    "  \"shouldIgnoreBySetter\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}",
             GsonUtils.prettyJson(
                 modelPsiClass.asClassContext().toObject(false, false, true)
@@ -932,6 +987,7 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
 
         assertEquals(
             "{\n" +
+                    "  \"shouldBeFirst\": \"\",\n" +
                     "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
                     "  \"stringList\": [\n" +
@@ -941,7 +997,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                     "    0\n" +
                     "  ],\n" +
                     "  \"onlySet\": \"\",\n" +
-                    "  \"onlyGet\": \"\"\n" +
+                    "  \"onlyGet\": \"\",\n" +
+                    "  \"shouldBeLast\": \"\"\n" +
                     "}",
             GsonUtils.prettyJson(
                 modelPsiClass.asClassContext().toObject(true, true, false)

@@ -8,7 +8,6 @@ import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.PATH_MULTI
 import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
 import com.itangcent.intellij.config.rule.Rule
 import com.itangcent.intellij.config.rule.RuleLookUp
-import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.BaseContextTest
 import com.itangcent.test.mock
@@ -35,9 +34,9 @@ abstract class BaseUrlSelectorAllTest : BaseContextTest() {
                     PATH_MULTI.name(),
                     PATH_MULTI.mode().targetType() as KClass<Any>
                 )
-            ) doReturn listOf(
-                StringRule.of { mode().name }
-            ) as List<Rule<Any>>
+            ) doReturn listOf<Rule<Any>> {
+                mode().name
+            }
         }
     }
 

@@ -28,6 +28,17 @@ class Model {
      */
     private Integer[] integerArray;
 
+    /**
+     * @order 100
+     */
+    private String shouldBeLast;
+
+    /**
+     * @order 0
+     */
+    private String shouldBeFirst;
+
+
     @JsonIgnore
     private String shouldIgnore;
 

@@ -23,6 +23,7 @@ import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.FileSelectHelper
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
+import com.itangcent.intellij.config.rule.parseStringRule
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.mutual
@@ -40,7 +41,6 @@ import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.*
 import java.util.Timer
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import javax.script.ScriptEngineManager
 import javax.swing.*
@@ -297,12 +297,15 @@ class ScriptExecutorDialog : ContextDialog() {
             is PsiClass -> {
                 ele
             }
+
             is PsiElement -> {
                 ele.getContainingClass()
             }
+
             is ExplicitElement<*> -> {
                 ele.containClass().psi()
             }
+
             else -> {
                 throw IllegalArgumentException("unknown context:$ele")
             }
@@ -427,7 +430,7 @@ class ScriptExecutorDialog : ContextDialog() {
         val ret: String?
         try {
             val context = scriptInfo.context
-            ret = parseStringRule.compute(
+            ret = parseStringRule(
                 when (context) {
                     is ExplicitElement<*> -> ruleParser.contextOf(context)
                     is PsiClass -> ruleParser.contextOf(duckTypeHelper.explicit(context))
