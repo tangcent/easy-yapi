@@ -1,9 +1,21 @@
+* 2.6.4
+
+	* feat: Add recommended configuration for Jackson JsonPropertyOrder  [(#1048)](https://github.com/tangcent/easy-yapi/pull/1048)
+
+	* feat: Add new rule field.order.with  [(#1047)](https://github.com/tangcent/easy-yapi/pull/1047)
+
+	* feat: Apply field rules to getter and setter methods  [(#1044)](https://github.com/tangcent/easy-yapi/pull/1044)
+
+	* chore: polish YapiFormatter  [(#1043)](https://github.com/tangcent/easy-yapi/pull/1043)
+
 * 2.6.3
-* amend: remove CompensateRateLimiter  [(#1034)](https://github.com/tangcent/easy-yapi/pull/1034)
 
-* feat: add rules `postman.format.after`, `yapi.format.after`  [(#1033)](https://github.com/tangcent/easy-yapi/pull/1033)
+	* amend: remove CompensateRateLimiter  [(#1034)](https://github.com/tangcent/easy-yapi/pull/1034)
 
-* chore: remove deprecated utils  [(#1024)](https://github.com/tangcent/easy-yapi/pull/1024)
+    * feat: add rules `postman.format.after`, `yapi.format.after`  [(#1033)](https://github.com/tangcent/easy-yapi/pull/1033)
+
+    * chore: remove deprecated utils  [(#1024)](https://github.com/tangcent/easy-yapi/pull/1024)
+
 * 2.6.2
 	* refactor: remove usage of KV  [(#1020)](https://github.com/tangcent/easy-yapi/pull/1020)
 
