@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.settings.helper
 
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -79,9 +80,60 @@ internal class RecommendConfigLoaderTest {
 
     @Test
     fun testCodes() {
-        assertEquals(
-            "[module, ignore, deprecated_java, deprecated_kotlin, not_ignore_irregular_api_method, Jackson, Jackson_JsonIgnoreProperties, Jackson_JsonUnwrapped, Gson, ignore_transient_field, converts, spring_Entity, spring_webflux, spring.validations, spring.ui, jakarta.validation, jakarta.validation(strict), javax.validation, javax.validation(strict), is_file, yapi_tag, yapi_tag_kotlin, yapi_status, yapi_mock, yapi_tag, import_spring_properties, resolve_spring_properties, ignore_serialVersionUID, support_mock_for_general, private_protected_field_only, support_mock_for_javax_validation, not_ignore_static_final_field, Jackson_JsonNaming, Jackson_UpperCamelCaseStrategy, Jackson_SnakeCaseStrategy, Jackson_LowerCaseStrategy, Jackson_KebabCaseStrategy, Jackson_LowerDotCaseStrategy, properties, Fastjson, enum_auto_select_field_by_type, enum_use_name, enum_use_ordinal, ignore_some_common_classes, field_order, field_order_child_first, field_order_parent_first]",
-            RecommendConfigLoader.codes().contentToString()
+        assertArrayEquals(
+            arrayOf(
+                "module",
+                "ignore",
+                "deprecated_java",
+                "deprecated_kotlin",
+                "not_ignore_irregular_api_method",
+                "Jackson",
+                "Jackson_JsonPropertyOrder",
+                "Jackson_JsonIgnoreProperties",
+                "Jackson_JsonUnwrapped",
+                "Gson",
+                "ignore_transient_field",
+                "converts",
+                "spring_Entity",
+                "spring_webflux",
+                "spring.validations",
+                "spring.ui",
+                "jakarta.validation",
+                "jakarta.validation(strict)",
+                "javax.validation",
+                "javax.validation(strict)",
+                "is_file",
+                "yapi_tag",
+                "yapi_tag_kotlin",
+                "yapi_status",
+                "yapi_mock",
+                "yapi_tag",
+                "import_spring_properties",
+                "resolve_spring_properties",
+                "ignore_serialVersionUID",
+                "support_mock_for_general",
+                "private_protected_field_only",
+                "support_mock_for_javax_validation",
+                "not_ignore_static_final_field",
+                "Jackson_JsonNaming",
+                "Jackson_UpperCamelCaseStrategy",
+                "Jackson_SnakeCaseStrategy",
+                "Jackson_LowerCaseStrategy",
+                "Jackson_KebabCaseStrategy",
+                "Jackson_LowerDotCaseStrategy",
+                "properties",
+                "Fastjson",
+                "enum_auto_select_field_by_type",
+                "enum_use_name",
+                "enum_use_ordinal",
+                "ignore_some_common_classes",
+                "field_order",
+                "field_order_child_first",
+                "field_order_parent_first",
+                "field_order_alphabetically",
+                "field_order_alphabetically_descending"
+            ),
+            RecommendConfigLoader.codes()
         )
 
     }
