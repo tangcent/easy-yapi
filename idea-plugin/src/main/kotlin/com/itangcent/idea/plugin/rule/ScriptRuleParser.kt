@@ -31,7 +31,7 @@ import javax.script.ScriptContext
 import javax.script.ScriptEngine
 import javax.script.SimpleScriptContext
 
-abstract class ScriptRuleParser : RuleParser {
+abstract class ScriptRuleParser : AbstractRuleParser() {
 
     @Inject
     protected val duckTypeHelper: DuckTypeHelper? = null
@@ -59,22 +59,28 @@ abstract class ScriptRuleParser : RuleParser {
 
     @Inject
     protected val logger: Logger? = null
+    override fun parseAnyRule(rule: String): AnyRule? {
+        return { context ->
+            eval(rule, context)
+        }
+    }
 
     override fun parseBooleanRule(rule: String): BooleanRule? {
-        return BooleanRule.of { context ->
-            return@of eval(rule, context).asBool()
+        return { context ->
+            eval(rule, context).asBool()
         }
     }
 
     override fun parseStringRule(rule: String): StringRule? {
-        return StringRule.of { context ->
-            return@of eval(rule, context)?.toPrettyString()
+        return { context ->
+            eval(rule, context)?.toPrettyString()
         }
     }
 
     override fun parseEventRule(rule: String): EventRule? {
-        return EventRule.of {
+        return {
             eval(rule, it)
+            Unit
         }
     }
 
@@ -83,7 +89,15 @@ abstract class ScriptRuleParser : RuleParser {
             val simpleScriptContext = SimpleScriptContext()
 
             context.exts()?.forEach {
-                simpleScriptContext.setAttribute(it.key, it.value, ScriptContext.ENGINE_SCOPE)
+                simpleScriptContext.setAttribute(
+                    it.key,
+                    wrap(
+                        obj = it.value,
+                        context = context.getPsiContext(),
+                        shouldCopy = false
+                    ),
+                    ScriptContext.ENGINE_SCOPE
+                )
             }
 
             val contextForScript: RuleContext? =
@@ -128,6 +142,54 @@ abstract class ScriptRuleParser : RuleParser {
         }
     }
 
+    private fun wrap(obj: Any?, context: PsiElement?, shouldCopy: Boolean = true): Any? {
+        if (obj == null) {
+            return null
+        }
+
+        if (obj is RuleContext) {
+            return obj
+        }
+
+        val className = obj::class.qualifiedName ?: return obj
+        if (className.startsWith("com.intellij") || className.startsWith("com.itangcent.intellij.jvm")) {
+            return try {
+                contextOf(obj, context)
+            } catch (e: IllegalArgumentException) {
+                obj
+            }
+        }
+
+        if (shouldCopy) {
+            when (obj) {
+                is Map<*, *> -> {
+                    val copy = LinkedHashMap<Any?, Any?>()
+                    for ((k, v) in obj.entries) {
+                        copy[k] = wrap(v, context)
+                    }
+                    return copy
+                }
+
+                is Collection<*> -> {
+                    val copy = LinkedList<Any?>()
+                    for (ele in obj) {
+                        copy.add(wrap(ele, context))
+                    }
+                    return copy
+                }
+
+                is Array<*> -> {
+                    val copy = LinkedList<Any?>()
+                    for (ele in obj) {
+                        copy.add(wrap(ele, context))
+                    }
+                    return copy
+                }
+            }
+        }
+        return obj
+    }
+
     /**
      * support usages:
      *
@@ -149,48 +211,9 @@ abstract class ScriptRuleParser : RuleParser {
 
         @Suppress("UNCHECKED_CAST")
         private fun <T> wrapAs(obj: Any?): T? {
-            return wrap(obj) as T?
+            return wrap(obj, getPsiContext()) as T?
         }
 
-        private fun wrap(obj: Any?): Any? {
-            if (obj == null) {
-                return null
-            }
-
-            if (obj is RuleContext) {
-                return obj
-            }
-
-            val className = obj::class.qualifiedName ?: return obj
-            if (className.startsWith("com.intellij") || className.startsWith("com.itangcent")) {
-                return contextOf(obj, getPsiContext())
-            }
-
-            if (obj is Map<*, *>) {
-                val copy = LinkedHashMap<Any?, Any?>()
-                for ((k, v) in obj.entries) {
-                    copy[k] = wrap(v)
-                }
-                return copy
-            }
-
-            if (obj is Collection<*>) {
-                val copy = LinkedList<Any?>()
-                for (ele in obj) {
-                    copy.add(wrap(ele))
-                }
-                return copy
-            }
-
-            if (obj is Array<*>) {
-                val copy = LinkedList<Any?>()
-                for (ele in obj) {
-                    copy.add(wrap(ele))
-                }
-                return copy
-            }
-            return obj
-        }
 
         fun name(): String {
             return getName() ?: ""
@@ -568,7 +591,7 @@ abstract class ScriptRuleParser : RuleParser {
         /**
          * attention:it should not be used in [json.rule.field.name]
          */
-        fun jsonName(): String? {
+        fun jsonName(): String {
             return psiClassHelper!!.getJsonFieldName(psiField)
         }
 
@@ -802,7 +825,7 @@ abstract class ScriptRuleParser : RuleParser {
         }
 
         @ScriptIgnore
-        override fun getCore(): Any? {
+        override fun getCore(): Any {
             return explicitMethod
         }
     }

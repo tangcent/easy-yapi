@@ -109,6 +109,11 @@ object ClassExportRuleKeys {
         BooleanRuleMode.ANY
     )
 
+    val FIELD_ORDER_WITH: RuleKey<Int> = SimpleRuleKey(
+        "field.order.with",
+        IntRuleMode
+    )
+
     val CLASS_PREFIX_PATH: RuleKey<String> = SimpleRuleKey(
         "class.prefix.path",
         StringRuleMode.SINGLE
