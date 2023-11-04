@@ -248,7 +248,7 @@ open class SuvApiExporter {
 
             builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
             builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
-            builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
+            builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
 
             builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }
             builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
