@@ -637,8 +637,8 @@ abstract class RequestClassExporter : ClassExporter {
                             request,
                             path,
                             tinyQueryParam(
-                                parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
-                                    ?: value
+                                parent?.getAs<String>(Attrs.DEFAULT_VALUE_ATTR, key)
+                                    ?: value.takeIfNotOriginal()
                             ),
                             parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
                             KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
@@ -718,7 +718,7 @@ abstract class RequestClassExporter : ClassExporter {
                                     parameterExportContext,
                                     request, path,
                                     tinyQueryParam(
-                                        (parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
+                                        (parent?.getAs<String>(Attrs.DEFAULT_VALUE_ATTR, key)
                                             ?: value.takeIfNotOriginal())
                                     )?.toString(),
                                     parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
