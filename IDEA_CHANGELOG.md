@@ -1,3 +1,7 @@
+* 2.6.5
+
+    * feat: Support configuring doc.source.disable to disable documentation reading  [(#1059)](https://github.com/tangcent/easy-yapi/pull/1059)
+
 * 2.6.4
 
 	* feat: Add recommended configuration for Jackson JsonPropertyOrder  [(#1048)](https://github.com/tangcent/easy-yapi/pull/1048)
