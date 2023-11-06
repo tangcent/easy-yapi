@@ -7,6 +7,7 @@ import com.itangcent.common.spi.SpiUtils
 import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.Initializer
 import com.itangcent.idea.plugin.log.CustomLogConfig
+import com.itangcent.idea.psi.DisableDocSupport
 import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.actions.ActionEventDataContextAdaptor
 import com.itangcent.intellij.actions.KotlinAnAction
@@ -41,6 +42,8 @@ abstract class BasicAnAction : KotlinAnAction {
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
         builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }
+
+        DisableDocSupport.bind(builder)
 
         afterBuildActionContext(event, builder)
     }
