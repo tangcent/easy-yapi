@@ -1,7 +1,6 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.psi.PsiMethod
 import com.intellij.ui.components.JBCheckBox
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
@@ -9,14 +8,20 @@ import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.utils.SwingUtils
+import java.awt.Dimension
 import java.awt.event.KeyEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
-import java.util.concurrent.TimeUnit
 import javax.swing.*
 
 class SuvApiExportDialog : ContextDialog() {
+
+    companion object {
+        private const val LAST_USED_CHANNEL = "com.itangcent.easyapi.suv.last.used.channel"
+        private const val LAST_SIZE = "com.itangcent.easyapi.suv.last.size"
+    }
+
     private var contentPane: JPanel? = null
     private var buttonOK: JButton? = null
     private var buttonCancel: JButton? = null
@@ -33,7 +38,9 @@ class SuvApiExportDialog : ContextDialog() {
 
     init {
         this.isUndecorated = false
-        this.isResizable = false
+        maximumSize = Dimension(800, 800)
+
+        //this.isResizable = false
         setContentPane(contentPane)
         isModal = false
         getRootPane().defaultButton = buttonOK
@@ -92,12 +99,12 @@ class SuvApiExportDialog : ContextDialog() {
         this.apiList!!.model = DefaultComboBoxModel(requestList.toTypedArray())
     }
 
-    fun selectAll(){
+    fun selectAll() {
         this.selectAllCheckBox!!.isSelected = true
         onSelectedAll()
     }
 
-    fun selectMethod(api: Any?){
+    fun selectMethod(api: Any?) {
         this.selectAllCheckBox!!.isSelected = false
         this.docList?.indexOf(api)?.let {
             apiList!!.selectedIndex = it
@@ -127,6 +134,19 @@ class SuvApiExportDialog : ContextDialog() {
 
     override fun init() {
         actionContext.runAsync {
+            doAfterInit {
+                PropertiesComponent.getInstance().getValue(LAST_SIZE)?.let {
+                    val split = it.split(",")
+                    if (split.size == 2) {
+                        val width = split[0].toIntOrNull()
+                        val height = split[1].toIntOrNull()
+                        if (width != null && height != null) {
+                            this.size = Dimension(width, height)
+                        }
+                    }
+                }
+            }
+
             for (i in 0..10) {
                 Thread.sleep(500)
                 if (disposed) {
@@ -190,7 +210,11 @@ class SuvApiExportDialog : ContextDialog() {
         }
     }
 
-    companion object {
-        private const val LAST_USED_CHANNEL = "com.itangcent.last.used.channel"
+    override fun onDispose() {
+        PropertiesComponent.getInstance().setValue(
+            LAST_SIZE,
+            "${this.size.width},${this.size.height}"
+        )
+        super.onDispose()
     }
 }

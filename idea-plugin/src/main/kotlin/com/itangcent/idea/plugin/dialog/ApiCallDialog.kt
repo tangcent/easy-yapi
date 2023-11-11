@@ -189,34 +189,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         initApisModule()
         LOG.info("init RequestModule")
         initRequestModule()
-        resize()
-        this.onResized {
-            resize()
-        }
-        this.requestPanel.onResized {
-            resize()
-        }
-        this.responsePanel.onResized {
-            resize()
-        }
     }
-
-    private val resize = {
-        actionContext.runInSwingUI {
-            val rightWidth = this.contentPane.width - this.apisListPanel.width
-
-            val rightPanel = this.rightPanel
-            rightPanel.setSizeIfNecessary(rightWidth, this.contentPane.height - 6)
-
-            val requestPanel = this.requestPanel
-            requestPanel.setSizeIfNecessary(rightWidth - 30, requestPanel.height)
-
-            this.responsePanel.let {
-                it.setSizeIfNecessary(rightWidth - 30, it.height)
-                it.bottomAlignTo(this.apisJList)
-            }
-        }
-    }.throttle(50, TimeUnit.MILLISECONDS)
 
     //region api module
     private fun initApisModule() {
@@ -268,7 +241,6 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                 ?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
                 ?: ""
         formatForm(currRequest)
-        resize()
     }
 
     override fun updateRequestList(requestList: List<Request>?) {
@@ -293,7 +265,6 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             if (requestRawViewList.isNotEmpty()) {
                 this.apisJList.selectedIndex = 0
             }
-            resize()
         }
     }
 
