@@ -41,7 +41,7 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
             this.on(
                 messagesHelper.showChooseWithTipDialog<Any>(
                     Mockito.any(),
-                    Mockito.any(),
+                    any(emptyList()),
                     Mockito.any(),
                     Mockito.any(),
                     any {}

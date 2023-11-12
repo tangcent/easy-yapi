@@ -6,9 +6,14 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.BooleanTableCellEditor
 import com.intellij.ui.BooleanTableCellRenderer
+import com.intellij.ui.CollectionListModel
+import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.ComboBoxCellEditor
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.components.BorderLayoutPanel
 import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.logger.Log
@@ -28,7 +33,6 @@ import com.itangcent.idea.swing.onSelect
 import com.itangcent.idea.swing.onTextChange
 import com.itangcent.idea.utils.*
 import com.itangcent.intellij.extend.rx.ThrottleHelper
-import com.itangcent.intellij.extend.rx.throttle
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -38,9 +42,12 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import java.awt.BorderLayout
+import java.awt.Dimension
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
 import java.awt.event.*
 import java.io.Closeable
-import java.util.concurrent.TimeUnit
 import javax.swing.*
 import javax.swing.event.TableModelListener
 import javax.swing.table.DefaultTableModel
@@ -49,43 +56,316 @@ import javax.swing.table.TableModel
 import javax.swing.text.JTextComponent
 
 
+@Suppress("DialogTitleCapitalization")
+private class ApiCallPanel : BorderLayoutPanel() {
+
+    val searchTextField: JTextField
+    val apisListPanel: JScrollPane
+    val apisJList: JBList<Any>
+
+    val methodLabel: JLabel
+    val hostComboBox: JComboBox<String>
+    val pathTextField: JTextField
+
+    val callButton: JButton
+
+    val requestBodyTextArea: JTextArea
+    val requestHeadersTextArea: JTextArea
+    val contentTypeComboBox: JComboBox<String>
+    val formTable: JBTable
+
+    val requestPanel: JBTabbedPane
+
+    val paramPanel: JPanel
+    val paramsLabel: JLabel
+    val paramsTextField: JTextField
+
+    val contentTypePanel: JPanel
+    val contentTypeLabel: JLabel
+
+    val responsePanel: JBTabbedPane
+    val formatOrRawButton: JButton
+    val saveButton: JButton
+    val statusLabel: JLabel
+    val responseActionPanel: JPanel
+    val responseTextArea: JTextArea
+    val responseHeadersTextArea: JTextArea
+
+
+    init {
+        this.layout = GridBagLayout()  // Set the layout manager to GridBagLayout
+        this.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+
+        searchTextField = JTextField()
+
+        // API List Panel
+        apisJList = JBList<Any>()
+        apisListPanel = JScrollPane(apisJList)
+
+        // Left Panel for Search and API List
+        val leftPanel = JPanel(BorderLayout()).apply {
+            // Remove any default margins or padding
+            border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+        }
+        leftPanel.add(searchTextField, BorderLayout.NORTH)
+        leftPanel.add(apisListPanel, BorderLayout.CENTER)
+
+        // Add Left Panel to ApiCallPanel
+        val gbcLeftPanel = GridBagConstraints().apply {
+            fill = GridBagConstraints.BOTH
+            gridx = 0
+            gridy = 1
+            weightx = 0.5
+            weighty = 1.0
+        }
+        this.add(leftPanel, gbcLeftPanel)
+
+        // Right Panel
+
+        val rightPanel = JPanel(GridBagLayout())  // Set the layout manager to GridBagLayout
+        val gbcRightPanel = GridBagConstraints().apply {
+            fill = GridBagConstraints.BOTH
+            gridx = 1
+            gridy = 0
+            gridheight = 2
+            weightx = 0.5
+            weighty = 1.0
+        }
+        this.add(rightPanel, gbcRightPanel)  // Use BorderLayout.EAST as the constraint string
+
+        // Top Panel within Right Panel
+        methodLabel = JBLabel("GET")
+        hostComboBox = JComboBox<String>().apply {
+            isEditable = true  // Make it editable
+            // Optional: Set a maximum width if desired
+            setMaximumSize(Dimension(250, getPreferredSize().height))
+        }
+        pathTextField = JTextField("path")
+        callButton = JButton("Call")
+
+        val topPanel = JPanel(GridBagLayout())
+        // methodLabel with fixed width
+        methodLabel.setPreferredSize(Dimension(50, methodLabel.getPreferredSize().height))  // Example width
+        topPanel.add(methodLabel, GridBagConstraints().apply {
+            gridx = 0
+            gridy = 0
+            weightx = 0.0  // No extra space
+            fill = GridBagConstraints.NONE
+        })
+
+        // hostComboBox with fixed width
+        topPanel.add(hostComboBox, GridBagConstraints().apply {
+            gridx = 1
+            weightx = 0.3  // Adjust this to control the width of the combo box
+            fill = GridBagConstraints.HORIZONTAL  // Make it grow/shrink horizontally as needed
+        })
+
+        // pathTextField to fill the rest
+        topPanel.add(pathTextField, GridBagConstraints().apply {
+            gridx = 2
+            weightx = 1.0  // Take up remaining space
+            fill = GridBagConstraints.HORIZONTAL
+        })
+
+        // callButton with fixed width
+        callButton.preferredSize = Dimension(80, callButton.getPreferredSize().height)  // Example width
+        topPanel.add(callButton, GridBagConstraints().apply {
+            gridx = 3
+            weightx = 0.0  // No extra space
+            fill = GridBagConstraints.NONE
+        })
+
+        // Add topPanel to rightPanel
+        rightPanel.add(topPanel, GridBagConstraints().apply {
+            fill = GridBagConstraints.HORIZONTAL
+            gridx = 0
+            gridy = 0
+            weightx = 1.0  // Make it fill the entire width of rightPanel
+            anchor = GridBagConstraints.LINE_START  // Align to the left
+            insets = JBUI.insetsLeft(8)  // Add a 15-pixel margin to the left
+        })
+
+// Param Panel within Right Panel
+        paramsLabel = JBLabel("Params")
+        paramsTextField = JTextField()
+        paramPanel = JPanel(GridBagLayout())  // Use GridBagLayout
+        val gbcParam = GridBagConstraints()
+
+// paramsLabel with fixed width
+        gbcParam.gridx = 0
+        gbcParam.gridy = 0
+        gbcParam.weightx = 0.0  // No extra space
+        gbcParam.fill = GridBagConstraints.NONE
+        paramPanel.add(paramsLabel, gbcParam)
+
+// paramsTextField to fill the rest
+        gbcParam.gridx = 1
+        gbcParam.weightx = 1.0  // Take up remaining space
+        gbcParam.fill = GridBagConstraints.HORIZONTAL
+        paramPanel.add(paramsTextField, gbcParam)
+
+        rightPanel.add(paramPanel, GridBagConstraints().apply {
+            fill = GridBagConstraints.HORIZONTAL
+            gridy = 1
+            weightx = 1.0
+            anchor = GridBagConstraints.LINE_START  // Align to the left
+            insets = JBUI.insetsLeft(8)  // Add a 15-pixel margin to the left
+        })
+
+// ContentType Panel within Right Panel
+        contentTypeLabel = JLabel("ContentType")
+        contentTypeComboBox = JComboBox<String>()
+        contentTypePanel = JPanel(GridBagLayout())  // Use GridBagLayout
+
+        // contentTypeLabel with fixed width
+        contentTypePanel.add(contentTypeLabel, GridBagConstraints().apply {
+            gridx = 0
+            gridy = 0
+            weightx = 0.0  // No extra space
+            fill = GridBagConstraints.NONE
+        })
+
+        // contentTypeComboBox to fill the rest
+        contentTypePanel.add(contentTypeComboBox, GridBagConstraints().apply {
+            gridx = 1
+            weightx = 1.0  // Take up remaining space
+            fill = GridBagConstraints.HORIZONTAL
+        })
+
+        rightPanel.add(contentTypePanel, GridBagConstraints().apply {
+            fill = GridBagConstraints.HORIZONTAL
+            gridy = 2
+            weightx = 1.0
+            anchor = GridBagConstraints.LINE_START  // Align to the left
+            insets = JBUI.insetsLeft(8)  // Add a 15-pixel margin to the left
+        })
+
+        // Request Panel within Right Panel
+        requestBodyTextArea = JTextArea()
+        val requestBodyPanel = JScrollPane(requestBodyTextArea)
+
+        formTable = JBTable()
+        val formPanel = JScrollPane(formTable)
+
+        requestHeadersTextArea = JTextArea()
+        val requestHeaderPanel = JScrollPane(requestHeadersTextArea)
+
+        requestPanel = JBTabbedPane().apply {
+            addTab("Body", requestBodyPanel)
+            addTab("Form", formPanel)
+            addTab("Headers", requestHeaderPanel)
+        }
+
+        rightPanel.add(requestPanel, GridBagConstraints().apply {
+            fill = GridBagConstraints.BOTH
+            gridy = 3
+            weightx = 1.0
+            weighty = 1.0
+        })
+
+        // Response Panel within Right Panel
+        responseTextArea = JTextArea()
+        formatOrRawButton = JButton("format")
+        statusLabel = JBLabel("status: unknown")
+        saveButton = JButton("save")
+        responseActionPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(formatOrRawButton)
+            add(statusLabel)
+            add(saveButton)
+            // Add a vertical glue to push all components to the top
+            add(Box.createVerticalGlue())
+        }
+
+
+        val responseBodyPanel = JPanel(GridBagLayout()).apply {
+            add(JScrollPane(responseTextArea), GridBagConstraints().apply {
+                fill = GridBagConstraints.BOTH
+                gridx = 0
+                weightx = 1.0
+                weighty = 1.0
+            })
+            add(responseActionPanel, GridBagConstraints().apply {
+                fill = GridBagConstraints.VERTICAL
+                gridx = 1
+                weightx = 0.1
+                weighty = 1.0
+                anchor = GridBagConstraints.NORTH
+            })
+        }
+
+        responseHeadersTextArea = JTextArea().apply { isEditable = false }
+        val responseHeaderPanel = JScrollPane(responseHeadersTextArea)
+
+        responsePanel = JBTabbedPane().apply {
+            addTab("Body", responseBodyPanel)
+            addTab("Headers", responseHeaderPanel)
+        }
+        rightPanel.add(responsePanel, GridBagConstraints().apply {
+            fill = GridBagConstraints.BOTH
+            gridy = 4
+            weightx = 1.0
+            weighty = 1.0
+        })
+    }
+
+}
+
 class ApiCallDialog : ContextDialog(), ApiCallUI {
-    private lateinit var contentPane: JPanel
+    private val apiCallPanel = ApiCallPanel()
 
-    private lateinit var apisListPanel: JPanel
-    private lateinit var apisJList: JList<Any?>
-    private lateinit var apisPopMenu: JPopupMenu
+    private val searchTextField: JTextField
+        get() = apiCallPanel.searchTextField
 
-    private lateinit var rightPanel: JPanel
+    private val apisJList: JList<Any?>
+        get() = apiCallPanel.apisJList
 
-    private lateinit var topPanel: JPanel
+    private val callButton: JButton
+        get() = apiCallPanel.callButton
+    private val requestBodyTextArea: JTextArea
+        get() = apiCallPanel.requestBodyTextArea
+    private val responseTextArea: JTextArea
+        get() = apiCallPanel.responseTextArea
+    private val pathTextField: JTextField
+        get() = apiCallPanel.pathTextField
 
-    private lateinit var callButton: JButton
-    private lateinit var requestBodyTextArea: JTextArea
-    private lateinit var responseTextArea: JTextArea
-    private lateinit var pathTextField: JTextField
+    private val methodLabel: JLabel
+        get() = apiCallPanel.methodLabel
+    private val requestPanel: JBTabbedPane
+        get() = apiCallPanel.requestPanel
+    private val formTable: JBTable
+        get() = apiCallPanel.formTable
 
-    private lateinit var methodLabel: JLabel
-    private lateinit var requestPanel: JBTabbedPane
-    private lateinit var requestBodyPanel: JPanel
-    private lateinit var requestHeaderPanel: JPanel
-    private lateinit var formTable: JBTable
+    private val formatOrRawButton: JButton
+        get() = apiCallPanel.formatOrRawButton
+    private val saveButton: JButton
+        get() = apiCallPanel.saveButton
+    private val responseActionPanel: JPanel
+        get() = apiCallPanel.responseActionPanel
 
-    private lateinit var responsePanel: JBTabbedPane
-    private lateinit var formatOrRawButton: JButton
-    private lateinit var saveButton: JButton
-    private lateinit var responseActionPanel: JPanel
-    private lateinit var responseHeadersTextArea: JTextArea
-    private lateinit var requestHeadersTextArea: JTextArea
-    private lateinit var statusLabel: JLabel
+    private val responseHeadersTextArea: JTextArea
+        get() = apiCallPanel.responseHeadersTextArea
+    private val requestHeadersTextArea: JTextArea
+        get() = apiCallPanel.requestHeadersTextArea
+    private val statusLabel: JLabel
+        get() = apiCallPanel.statusLabel
 
-    private lateinit var paramPanel: JPanel
-    private lateinit var paramsLabel: JLabel
-    private lateinit var paramsTextField: JTextField
+    private val paramPanel: JPanel
+        get() = apiCallPanel.paramPanel
+    private val paramsLabel: JLabel
+        get() = apiCallPanel.paramsLabel
+    private val paramsTextField: JTextField
+        get() = apiCallPanel.paramsTextField
 
-    private lateinit var contentTypePanel: JPanel
-    private lateinit var contentTypeLabel: JLabel
-    private lateinit var contentTypeComboBox: JComboBox<String>
+    private val contentTypePanel: JPanel
+        get() = apiCallPanel.contentTypePanel
+    private val contentTypeLabel: JLabel
+        get() = apiCallPanel.contentTypeLabel
+    private val contentTypeComboBox: JComboBox<String>
+        get() = apiCallPanel.contentTypeComboBox
+
+    private val hostComboBox: JComboBox<String>
+        get() = apiCallPanel.hostComboBox
 
 //    private val autoComputer: AutoComputer = AutoComputer()
 
@@ -98,11 +378,9 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
     private var currUrl: String? = null
 
-    private var hostComboBox: JComboBox<String>? = null
 
     private val requestRawInfoBinderFactory: DbBeanBinderFactory<RequestRawInfo> by lazy {
-        DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.call.v1.0.db").path)
-        { NULL_REQUEST_INFO_CACHE }
+        DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.call.v1.0.db").path) { NULL_REQUEST_INFO_CACHE }
     }
 
     private val throttleHelper = ThrottleHelper()
@@ -113,7 +391,13 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
     init {
         LOG.info("create ApiCallDialog")
-        setContentPane(contentPane)
+
+        // Setting preferred, maximum, and minimum sizes
+        this.preferredSize = Dimension(900, 600)
+        this.maximumSize = Dimension(1200, 800)
+        this.minimumSize = Dimension(600, 400)
+
+        contentPane = apiCallPanel
         getRootPane().defaultButton = callButton
 
         contentTypeComboBox.model = DefaultComboBoxModel(CONTENT_TYPES)
@@ -127,14 +411,12 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         })
 
         // call onCancel() on ESCAPE
-        contentPane.registerKeyboardAction(
-            { onCancel() },
-            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-            JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+        apiCallPanel.registerKeyboardAction(
+            { onCancel() }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
         )
 
         // call onCallClick() on ENTER
-        contentPane.registerKeyboardAction(
+        apiCallPanel.registerKeyboardAction(
             { onCallClick() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
             JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
@@ -175,11 +457,17 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         formatOrRawButton.isFocusPainted = false
         saveButton.isFocusPainted = false
 
-        SwingUtils.underLine(this.hostComboBox!!)
+        SwingUtils.underLine(this.hostComboBox)
         SwingUtils.underLine(this.pathTextField)
         SwingUtils.underLine(this.paramsTextField)
 
         EasyIcons.Run.iconOnly(this.callButton)
+
+        SearchSupport.bindSearch(
+            searchInputField = searchTextField,
+            sourceList = { apiModelList },
+            uiList = apisJList
+        )
     }
 
     override fun init() {
@@ -201,7 +489,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             }
         }
 
-        apisPopMenu = JPopupMenu()
+        val apisPopMenu = JPopupMenu()
 
         val resetItem = JMenuItem("Reset")
 
@@ -237,10 +525,12 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         this.contentTypeComboBox.selectedItem = currRequest.contentType()
         updateResponse(null)
         this.responseTextArea.text =
-            apiList?.get(selectedIndex)?.origin
-                ?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
+            apiList?.get(selectedIndex)?.origin?.response?.firstOrNull()?.body?.let { RequestUtils.parseRawBody(it) }
                 ?: ""
         formatForm(currRequest)
+
+        apiCallPanel.revalidate()
+        apiCallPanel.repaint()
     }
 
     override fun updateRequestList(requestList: List<Request>?) {
@@ -248,25 +538,28 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             return
         }
         doAfterInit {
-            val requestRawList = ArrayList<ApiInfo>(requestList.size)
-            val requestRawViewList = ArrayList<RequestRawInfo>(requestList.size)
-            requestList.forEach { request ->
-                val rawInfo = rawInfo(request)
-                requestRawList.add(ApiInfo(request, rawInfo))
-                val beanBinder = this.requestRawInfoBinderFactory.getBeanBinder(rawInfo.cacheKey())
-                requestRawViewList.add(beanBinder.tryRead() ?: rawInfo.copy())
-            }
-            this.apiList = requestRawList
-            this.requestRawViewList = requestRawViewList
-            this.apisJList.model = DefaultComboBoxModel(
-                List(requestRawViewList.size) { index: Int -> RequestNameWrapper(index) }
-                    .toTypedArray()
-            )
-            if (requestRawViewList.isNotEmpty()) {
-                this.apisJList.selectedIndex = 0
+            actionContext.runInSwingUI {
+                val requestRawList = ArrayList<ApiInfo>(requestList.size)
+                val requestRawViewList = ArrayList<RequestRawInfo>(requestList.size)
+                requestList.forEach { request ->
+                    val rawInfo = rawInfo(request)
+                    requestRawList.add(ApiInfo(request, rawInfo))
+                    val beanBinder = this.requestRawInfoBinderFactory.getBeanBinder(rawInfo.cacheKey())
+                    requestRawViewList.add(beanBinder.tryRead() ?: rawInfo.copy())
+                }
+                this.apiList = requestRawList
+                this.requestRawViewList = requestRawViewList
+                this.apisJList.model = CollectionListModel(apiModelList)
+                if (requestRawViewList.isNotEmpty()) {
+                    this.apisJList.selectedIndex = 0
+                }
             }
         }
     }
+
+    private val apiModelList: List<Any>
+        get() = requestRawViewList?.let { List(it.size) { index: Int -> RequestNameWrapper(index) } }
+            ?: emptyList()
 
     private fun resetCurrentRequestView() {
         val index = this.apisJList.selectedIndex
@@ -278,8 +571,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         val requestView = requestRawInfo.copy()
         (this.requestRawViewList as MutableList<RequestRawInfo>)[index] = requestView
         changeRequest()
-        requestRawInfoBinderFactory.getBeanBinder(requestRawInfo.cacheKey())
-            .save(null)
+        requestRawInfoBinderFactory.getBeanBinder(requestRawInfo.cacheKey()).save(null)
         this.apisJList.repaint()
     }
 
@@ -306,12 +598,9 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             httpClient = httpClientProvider!!.getHttpClient()
 
             try {
-                httpContextCacheHelper.getCookies()
-                    .asSequence()
-                    .filter { it.getName().notNullOrEmpty() }
-                    .forEach {
-                        httpClient!!.cookieStore().addCookie(it)
-                    }
+                httpContextCacheHelper.getCookies().asSequence().filter { it.getName().notNullOrEmpty() }.forEach {
+                    httpClient!!.cookieStore().addCookie(it)
+                }
             } catch (e: Exception) {
                 logger.traceError("load cookie failed!", e)
             }
@@ -321,24 +610,20 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
 
     private fun initRequestModule() {
-        (this.requestPanel.getTabComponentAt(0) as? JLabel)
-            ?.listenModify(requestBodyTextArea) {
-                selectedRequestRawInfo()?.body
-            }
+        (this.requestPanel.getTabComponentAt(0) as? JLabel)?.listenModify(requestBodyTextArea) {
+            selectedRequestRawInfo()?.body
+        }
 
-        (this.requestPanel.getTabComponentAt(2) as? JLabel)
-            ?.listenModify(requestHeadersTextArea) {
-                selectedRequestRawInfo()?.headers
-            }
+        (this.requestPanel.getTabComponentAt(2) as? JLabel)?.listenModify(requestHeadersTextArea) {
+            selectedRequestRawInfo()?.headers
+        }
 
         this.paramsLabel.listenModify(this.paramsTextField) {
             selectedRequestRawInfo()?.querys
         }
 
         this.requestHeadersTextArea.onTextChange { header ->
-            if (contentTypeChangeThrottle.acquire(500)
-                && requestChangeThrottle.acquire(100)
-            ) {
+            if (contentTypeChangeThrottle.acquire(500) && requestChangeThrottle.acquire(100)) {
                 this.currRequest?.headers = header
                 this.currRequest?.contentType()?.let {
                     if (this.contentTypeComboBox.selectedItem != it) {
@@ -400,20 +685,15 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                         return header
                     } else {
                         found = true
-                        newHeader.appendlnIfNotEmpty()
-                            .append("Content-Type=")
-                            .append(contentType)
+                        newHeader.appendlnIfNotEmpty().append("Content-Type=").append(contentType)
                     }
                 } else {
-                    newHeader.appendlnIfNotEmpty()
-                        .append(line)
+                    newHeader.appendlnIfNotEmpty().append(line)
                 }
             }
         }
         if (!found) {
-            newHeader.appendlnIfNotEmpty()
-                .append("Content-Type=")
-                .append(contentType)
+            newHeader.appendlnIfNotEmpty().append("Content-Type=").append(contentType)
         }
         return newHeader.toString()
     }
@@ -423,8 +703,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         if (request.querys.isNullOrEmpty()) {
             return ""
         }
-        val path = StringBuilder()
-            .append("?")
+        val path = StringBuilder().append("?")
         request.querys!!.forEach { param ->
             if (path.lastOrNull() != '?') {
                 path.append("&")
@@ -816,12 +1095,10 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
                     if (apiCallDialog!!.throttleHelper.acquire("select_file_for_form_param", 1000)) {
                         IdeaFileChooserHelper.create(
-                            apiCallDialog!!.actionContext,
-                            FileChooserDescriptorFactory.createSingleFileDescriptor()
-                        ).lastSelectedLocation("file.form.param.select.last.location.key")
-                            .selectFile {
-                                formTable.setValueAt(it?.path, row, column)
-                            }
+                            apiCallDialog!!.actionContext, FileChooserDescriptorFactory.createSingleFileDescriptor()
+                        ).lastSelectedLocation("file.form.param.select.last.location.key").selectFile {
+                            formTable.setValueAt(it?.path, row, column)
+                        }
                     }
                     formTable.selectionModel.clearSelection()
                 }
@@ -842,10 +1119,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         if (request?.headers.isNullOrEmpty()) return ""
         val sb = StringBuilder()
         request?.headers?.forEach {
-            sb.append(it.name)
-                .append("=")
-                .append(it.value ?: "")
-                .appendLine()
+            sb.append(it.name).append("=").append(it.value ?: "").appendLine()
         }
         return sb.toString()
     }
@@ -859,7 +1133,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         actionContext.withBoundary {
             val hosts = httpContextCacheHelper.getHosts()
             actionContext.runInSwingUI {
-                this.hostComboBox!!.model = DefaultComboBoxModel(hosts.toTypedArray())
+                this.hostComboBox.model = DefaultComboBoxModel(hosts.toTypedArray())
             }
         }
     }
@@ -871,7 +1145,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         }
         refreshDataFromUI()
         val request = currRequest!!
-        val host = this.hostComboBox!!.editor.item as String
+        val host = this.hostComboBox.editor.item as String
         val path = this.pathTextField.text
         val query = this.paramsTextField.text
 
@@ -882,12 +1156,9 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             onNewHost(host)
             var url: String? = null
             try {
-                url = RequestUtils.UrlBuild().host(host)
-                    .path(path)
-                    .query(query).url()
+                url = RequestUtils.UrlBuild().host(host).path(path).query(query).url()
                 this.currUrl = url
-                val httpRequest = getHttpClient().request().method(request.method ?: "GET")
-                    .url(url)
+                val httpRequest = getHttpClient().request().method(request.method ?: "GET").url(url)
 
                 if (requestHeader.notNullOrBlank()) {
                     parseEqualLine(requestHeader) { name, value ->
@@ -921,8 +1192,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                         }
                     }
                     if (request.body != null) {
-                        httpRequest.contentType(ContentType.APPLICATION_JSON)
-                            .body(requestBodyOrForm)
+                        httpRequest.contentType(ContentType.APPLICATION_JSON).body(requestBodyOrForm)
                     }
                 }
 
@@ -935,13 +1205,14 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
             } catch (e: Exception) {
                 actionContext.runInSwingUI {
-                    responseTextArea.text = "Could not get any response" +
-                            "\nThere was an error connecting:" + url +
-                            "\nThe stackTrace is:" +
-                            ExceptionUtils.getStackTrace(e)
+                    responseTextArea.text =
+                        "Could not get any response" + "\nThere was an error connecting:" + url + "\nThe stackTrace is:" + ExceptionUtils.getStackTrace(
+                            e
+                        )
                 }
             }
         }
+
     }
 
     //endregion
@@ -964,10 +1235,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         if (response?.headers() == null) return ""
         val sb = StringBuilder()
         response.headers()?.forEach {
-            sb.append(it.name())
-                .append("=")
-                .append(it.value())
-                .appendLine()
+            sb.append(it.name()).append("=").append(it.value()).appendLine()
         }
         return sb.toString()
     }
@@ -981,8 +1249,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         refreshDataFromUI()
         if (this.currResponse == null) {
             Messages.showMessageDialog(
-                this, "No Response",
-                "Error", Messages.getErrorIcon()
+                this, "No Response", "Error", Messages.getErrorIcon()
             )
             return
         }
@@ -991,8 +1258,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         val bytes = response.bytes()
         if (bytes == null) {
             Messages.showMessageDialog(
-                this, "Response is empty",
-                "Error", Messages.getErrorIcon()
+                this, "Response is empty", "Error", Messages.getErrorIcon()
             )
             return
         }
@@ -1042,8 +1308,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             httpClient?.cookieStore()?.cookies()?.let { httpContextCacheHelper.addCookies(it) }
             this.requestRawViewList?.forEachIndexed { index, requestRawInfo ->
                 if (requestRawInfo != this.apiList!![index].raw) {
-                    this.requestRawInfoBinderFactory.getBeanBinder(requestRawInfo.cacheKey())
-                        .save(requestRawInfo)
+                    this.requestRawInfoBinderFactory.getBeanBinder(requestRawInfo.cacheKey()).save(requestRawInfo)
                 }
             }
             (httpClient as? Closeable)?.close()
@@ -1077,9 +1342,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             return try {
                 val contentType = safe { response.contentType()?.let { ContentType.parse(it) } }
                 if (contentType != null) {
-                    if (contentType.mimeType.startsWith("text/html") ||
-                        contentType.mimeType.startsWith("text/xml")
-                    ) {
+                    if (contentType.mimeType.startsWith("text/html") || contentType.mimeType.startsWith("text/xml")) {
                         val doc: Document = Jsoup.parse(getRawResult())
                         doc.outputSettings().prettyPrint(true)
                         return doc.outerHtml()
@@ -1169,12 +1432,9 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             if (this.headers.isNullOrEmpty()) {
                 return null
             }
-            val lowerName = name.toLowerCase()
-            return parseEqualLine(this.headers!!) { k, v -> k to v }
-                .asSequence()
-                .filter { it.first.toLowerCase() == lowerName }
-                .map { it.second }
-                .firstOrNull()
+            val lowerName = name.lowercase()
+            return parseEqualLine(this.headers!!) { k, v -> k to v }.asSequence()
+                .filter { it.first.lowercase() == lowerName }.map { it.second }.firstOrNull()
         }
 
         fun copy(): RequestRawInfo {
@@ -1244,8 +1504,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         val requestRawInfo = RequestRawInfo()
         requestRawInfo.key = actionContext.callInReadUI {
             PsiClassUtils.fullNameOfMember(
-                request.resourceClass(),
-                request.resourceMethod()!!
+                request.resourceClass(), request.resourceMethod()!!
             )
         }
         requestRawInfo.name = request.name?.trim()
@@ -1262,11 +1521,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
 
     companion object : Log() {
         var CONTENT_TYPES: Array<String> = arrayOf(
-            "",
-            "application/json",
-            "application/x-www-form-urlencoded",
-            "multipart/form-data",
-            "application/xml"
+            "", "application/json", "application/x-www-form-urlencoded", "multipart/form-data", "application/xml"
         )
 
         val disabledFormTableBinder: FormTableBinder = DisabledFormTableBinder()

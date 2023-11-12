@@ -1,7 +1,10 @@
 package com.itangcent.idea.plugin.dialog
 
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.components.JBCheckBox
+import com.intellij.ui.components.JBList
+import com.intellij.util.ui.components.BorderLayoutPanel
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.notNullOrEmpty
@@ -15,112 +18,162 @@ import java.awt.event.WindowEvent
 import java.awt.event.WindowFocusListener
 import javax.swing.*
 
+
+private class SuvApiExportPanel : BorderLayoutPanel() {
+
+    val searchInputField = JTextField().apply {
+        minimumSize = Dimension(100, 30)
+    }
+    val selectAllCheckBox = JBCheckBox()
+    val channelComboBox = ComboBox<Any?>()
+    val buttonOK = JButton("✔").apply {
+        preferredSize = Dimension(40, 30)
+        minimumSize = Dimension(40, 30)
+    }
+    val buttonCancel = JButton("X").apply {
+        preferredSize = Dimension(40, 30)
+        minimumSize = Dimension(40, 30)
+    }
+
+    val apiList = JBList<Any?>()
+
+    init {
+        // Top Panel
+        val topPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            add(searchInputField)  // Add search input field at the top and left
+            add(selectAllCheckBox)
+            add(channelComboBox)
+            add(Box.createHorizontalGlue())  // To push the following components to the right
+            add(buttonOK)
+            add(buttonCancel)
+        }
+
+        // Center Panel
+        val centerPanel = JScrollPane(apiList)
+
+        // Setup BorderLayoutPanel
+        addToTop(topPanel)
+        addToCenter(centerPanel)
+    }
+}
+
+
 class SuvApiExportDialog : ContextDialog() {
 
     companion object {
         private const val LAST_USED_CHANNEL = "com.itangcent.easyapi.suv.last.used.channel"
     }
 
-    private var contentPane: JPanel? = null
-    private var buttonOK: JButton? = null
-    private var buttonCancel: JButton? = null
-    private var channelComboBox: JComboBox<*>? = null
+    private var trigger = TriggerSupport()
 
-    private var apiList: JList<*>? = null
+    private val suvApiExportPanel = SuvApiExportPanel()
+    private val buttonOK get() = suvApiExportPanel.buttonOK
+    private val buttonCancel get() = suvApiExportPanel.buttonCancel
+    private val channelComboBox get() = suvApiExportPanel.channelComboBox
+    private val apiList get() = suvApiExportPanel.apiList
+    private val selectAllCheckBox get() = suvApiExportPanel.selectAllCheckBox
+    private val searchInputField get() = suvApiExportPanel.searchInputField
+
     private var docList: List<*>? = null
-
-    private var selectAllCheckBox: JBCheckBox? = null
 
     private var apisHandle: ((Any?, List<*>) -> Unit)? = null
 
     private var onChannelChanged: ((Any?) -> Unit)? = null
 
     init {
-        this.isUndecorated = false
+        minimumSize = Dimension(400, 400)
         maximumSize = Dimension(800, 800)
 
-        //this.isResizable = false
-        setContentPane(contentPane)
-        isModal = false
+        contentPane = suvApiExportPanel
         getRootPane().defaultButton = buttonOK
         SwingUtils.centerWindow(this)
 
-        buttonOK!!.addActionListener { onOK() }
+        buttonOK.addActionListener { onOK() }
 
-        buttonCancel!!.addActionListener { onCancel() }
+        buttonCancel.addActionListener { onCancel() }
 
-        // call onCancel() when cross is clicked
-        defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
         addWindowListener(object : WindowAdapter() {
             override fun windowClosing(e: WindowEvent?) {
                 onCancel()
             }
         })
 
-        SwingUtils.immersed(this.channelComboBox!!)
+        SwingUtils.immersed(this.channelComboBox)
 
         EasyIcons.Close.iconOnly(this.buttonCancel)
         EasyIcons.OK.iconOnly(this.buttonOK)
 
         // call onCancel() on ESCAPE
-        contentPane!!.registerKeyboardAction(
+        suvApiExportPanel.registerKeyboardAction(
             { onCancel() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
             JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
         )
 
         // call onCallClick() on ENTER
-        contentPane!!.registerKeyboardAction(
+        suvApiExportPanel.registerKeyboardAction(
             { onOK() },
             KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
             JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
         )
 
-        selectAllCheckBox!!.addChangeListener {
+        selectAllCheckBox.addChangeListener {
             onSelectedAll()
         }
 
-        channelComboBox!!.addActionListener {
-            onChannelChanged?.invoke(channelComboBox?.selectedItem)
+        channelComboBox.addActionListener {
+            onChannelChanged?.invoke(channelComboBox.selectedItem)
+        }
+
+        SearchSupport.bindSearch(
+            searchInputField = searchInputField,
+            sourceList = { docList!! },
+            uiList = apiList
+        )
+
+        apiList.addListSelectionListener {
+            this.trigger.withTrigger("onSelect") {
+                selectAllCheckBox.isSelected = apiList.model.size == apiList.selectionModel.selectedItemsCount
+            }
         }
     }
 
-    private fun onSelectedAll() {
-        if (selectAllCheckBox!!.isSelected) {
-            apiList!!.selectionModel!!.addSelectionInterval(0, docList!!.size)
+    private fun onSelectedAll() = this.trigger.withTrigger("onSelectAll") {
+        if (selectAllCheckBox.isSelected) {
+            apiList.selectionModel!!.addSelectionInterval(0, docList!!.size)
         } else {
-            apiList!!.selectionModel!!.clearSelection()
+            apiList.selectionModel!!.clearSelection()
         }
     }
 
     fun updateRequestList(requestList: List<*>) {
         this.docList = requestList
-        this.apiList!!.model = DefaultComboBoxModel(requestList.toTypedArray())
+        this.apiList.model = DefaultComboBoxModel(requestList.toTypedArray())
     }
 
     fun selectAll() {
-        this.selectAllCheckBox!!.isSelected = true
-        onSelectedAll()
+        this.selectAllCheckBox.isSelected = true
     }
 
     fun selectMethod(api: Any?) {
-        this.selectAllCheckBox!!.isSelected = false
+        this.selectAllCheckBox.isSelected = false
         this.docList?.indexOf(api)?.let {
-            apiList!!.selectedIndex = it
+            apiList.selectedIndex = it
         }
     }
 
     fun setChannels(channels: List<*>) {
-        this.channelComboBox!!.model = DefaultComboBoxModel(channels.toTypedArray())
+        this.channelComboBox.model = DefaultComboBoxModel(channels.toTypedArray())
 
 
         val lastUsedChannel = PropertiesComponent.getInstance().getValue(LAST_USED_CHANNEL)
         if (lastUsedChannel.notNullOrEmpty()) {
             channels.firstOrNull { it.toString() == lastUsedChannel }
-                ?.let { this.channelComboBox!!.model.selectedItem = it }
+                ?.let { this.channelComboBox.model.selectedItem = it }
         }
 
-        onChannelChanged?.let { it(this.channelComboBox?.selectedItem) }
+        onChannelChanged?.let { it(this.channelComboBox.selectedItem) }
     }
 
     fun setApisHandle(apisHandle: (Any?, List<*>) -> Unit) {
@@ -141,7 +194,7 @@ class SuvApiExportDialog : ContextDialog() {
 
                 if (actionContext.callInSwingUI {
                         if (!disposed && !this.isFocused) {
-                            this.apiList!!.requestFocus()
+                            this.apiList.requestFocus()
                             return@callInSwingUI false
                         } else {
                             return@callInSwingUI true
@@ -173,8 +226,8 @@ class SuvApiExportDialog : ContextDialog() {
     }
 
     private fun onOK() {
-        val selectedChannel = this.channelComboBox!!.selectedItem
-        val selectedApis = GsonUtils.copy(this.apiList!!.selectedValuesList!!) as List<*>
+        val selectedChannel = this.channelComboBox.selectedItem
+        val selectedApis = GsonUtils.copy(this.apiList.selectedValuesList!!) as List<*>
         actionContext.runAsync {
             try {
                 this.apisHandle!!(selectedChannel, selectedApis)

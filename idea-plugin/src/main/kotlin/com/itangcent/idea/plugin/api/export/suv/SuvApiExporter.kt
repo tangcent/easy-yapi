@@ -83,11 +83,11 @@ open class SuvApiExporter {
                 return
             }
 
-            val multipleApiExportDialog = actionContext.instance { SuvApiExportDialog() }
-
-            UIUtils.show(multipleApiExportDialog)
-
             actionContext.runInSwingUI {
+
+                val multipleApiExportDialog = actionContext.instance { SuvApiExportDialog() }
+
+                UIUtils.show(multipleApiExportDialog)
 
                 multipleApiExportDialog.setOnChannelChanged { channel ->
                     if (channel == null) {
