@@ -19,7 +19,6 @@ class SuvApiExportDialog : ContextDialog() {
 
     companion object {
         private const val LAST_USED_CHANNEL = "com.itangcent.easyapi.suv.last.used.channel"
-        private const val LAST_SIZE = "com.itangcent.easyapi.suv.last.size"
     }
 
     private var contentPane: JPanel? = null
@@ -134,19 +133,6 @@ class SuvApiExportDialog : ContextDialog() {
 
     override fun init() {
         actionContext.runAsync {
-            doAfterInit {
-                PropertiesComponent.getInstance().getValue(LAST_SIZE)?.let {
-                    val split = it.split(",")
-                    if (split.size == 2) {
-                        val width = split[0].toIntOrNull()
-                        val height = split[1].toIntOrNull()
-                        if (width != null && height != null) {
-                            this.size = Dimension(width, height)
-                        }
-                    }
-                }
-            }
-
             for (i in 0..10) {
                 Thread.sleep(500)
                 if (disposed) {
@@ -208,13 +194,5 @@ class SuvApiExportDialog : ContextDialog() {
             disposed = true
             dispose()
         }
-    }
-
-    override fun onDispose() {
-        PropertiesComponent.getInstance().setValue(
-            LAST_SIZE,
-            "${this.size.width},${this.size.height}"
-        )
-        super.onDispose()
     }
 }
