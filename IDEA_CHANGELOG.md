@@ -1,3 +1,7 @@
+* 2.6.6
+	* feat: Add dialog size memory feature  [(#1069)](https://github.com/tangcent/easy-yapi/pull/1069)
+
+	* feat: Improve Layout and Responsiveness of Several UI Forms  [(#1068)](https://github.com/tangcent/easy-yapi/pull/1068)
 * 2.6.5
 
     * feat: Support configuring doc.source.disable to disable documentation reading  [(#1059)](https://github.com/tangcent/easy-yapi/pull/1059)
