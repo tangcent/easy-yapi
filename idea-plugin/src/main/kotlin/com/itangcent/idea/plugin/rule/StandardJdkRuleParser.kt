@@ -8,6 +8,7 @@ import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.text.TemplateEvaluator
 import com.itangcent.common.text.TemplateUtils
 import com.itangcent.common.text.union
+import com.itangcent.common.utils.safe
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.utils.LocalStorage
 import com.itangcent.idea.plugin.utils.RegexUtils
@@ -270,7 +271,9 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
         private val actionContext by lazy { ActionContext.getContext() }
 
         fun channel(): String? {
-            return actionContext?.instance(ExportChannel::class)?.channel()
+            return safe {
+                actionContext?.instance(ExportChannel::class)?.channel()
+            }
         }
 
         fun projectName(): String? {
