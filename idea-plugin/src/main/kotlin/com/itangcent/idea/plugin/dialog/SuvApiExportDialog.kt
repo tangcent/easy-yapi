@@ -25,7 +25,9 @@ private class SuvApiExportPanel : BorderLayoutPanel() {
         minimumSize = Dimension(100, 30)
     }
     val selectAllCheckBox = JBCheckBox()
-    val channelComboBox = ComboBox<Any?>()
+    val channelComboBox = ComboBox<Any?>().apply {
+        isSwingPopup = false
+    }
     val buttonOK = JButton("✔").apply {
         preferredSize = Dimension(40, 30)
         minimumSize = Dimension(40, 30)
