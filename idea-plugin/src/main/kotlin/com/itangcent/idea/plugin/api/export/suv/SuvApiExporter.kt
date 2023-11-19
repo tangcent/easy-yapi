@@ -21,6 +21,7 @@ import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.curl.CurlExporter
+import com.itangcent.idea.plugin.api.export.http.HttpClientExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
 import com.itangcent.idea.plugin.api.export.postman.*
 import com.itangcent.idea.plugin.api.export.yapi.*
@@ -30,7 +31,6 @@ import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.helper.*
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
@@ -55,7 +55,6 @@ import com.itangcent.suv.http.HttpClientProvider
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
-import kotlin.streams.toList
 
 open class SuvApiExporter {
 
@@ -569,16 +568,7 @@ open class SuvApiExporter {
     class CurlApiExporterAdapter : ApiExporterAdapter() {
 
         @Inject
-        private val fileSaveHelper: FileSaveHelper? = null
-
-        @Inject
         private lateinit var curlExporter: CurlExporter
-
-        @Inject
-        private lateinit var markdownSettingsHelper: MarkdownSettingsHelper
-
-        @Inject
-        private lateinit var messagesHelper: MessagesHelper
 
         override fun actionName(): String {
             return "CurlExportAction"
@@ -622,6 +612,54 @@ open class SuvApiExporter {
         }
     }
 
+
+    class HttpClientApiExporterAdapter : ApiExporterAdapter() {
+
+        @Inject
+        private lateinit var httpClientExporter: HttpClientExporter
+
+        override fun actionName(): String {
+            return "HttpClientExportAction"
+        }
+
+        override fun afterBuildActionContext(
+            actionContext: ActionContext,
+            builder: ActionContext.ActionContextBuilder,
+        ) {
+            super.afterBuildActionContext(actionContext, builder)
+
+            builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
+
+            builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
+
+            builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
+
+            builder.bind(ConfigReader::class, "delegate_config_reader") {
+                it.with(EasyApiConfigReader::class).singleton()
+            }
+            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
+
+            //always not read api from cache
+            builder.bindInstance("class.exporter.read.cache", false)
+
+            builder.bindInstance("file.save.default", "easy-api-httpClient.http")
+            builder.bindInstance("file.save.last.location.key", "com.itangcent.httpClient.export.path")
+        }
+
+        override fun doExportDocs(docs: MutableList<Doc>) {
+            val requests = docs.filterAs(Request::class)
+            try {
+                if (docs.isEmpty()) {
+                    logger!!.info("No api be found to export!")
+                    return
+                }
+                httpClientExporter.export(requests)
+            } catch (e: Exception) {
+                logger!!.traceError("Apis save failed", e)
+            }
+        }
+    }
+
     private fun doExport(channel: ApiExporterWrapper, requests: List<DocWrapper>) {
         if (requests.isEmpty()) {
             logger.info("no api has be selected")
@@ -638,7 +676,8 @@ open class SuvApiExporter {
             ApiExporterWrapper(YapiApiExporterAdapter::class, "Yapi", Request::class, MethodDoc::class),
             ApiExporterWrapper(PostmanApiExporterAdapter::class, "Postman", Request::class),
             ApiExporterWrapper(MarkdownApiExporterAdapter::class, "Markdown", Request::class, MethodDoc::class),
-            ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class)
+            ApiExporterWrapper(CurlApiExporterAdapter::class, "Curl", Request::class),
+            ApiExporterWrapper(HttpClientApiExporterAdapter::class, "HttpClient", Request::class)
         )
     }
 }

@@ -1,0 +1,661 @@
+### ref: com.itangcent.api.UserCtrl#greeting()
+### say hello
+
+// not update anything
+GET http://localhost:8080/user/greeting
+
+
+###
+
+### ref: com.itangcent.api.UserCtrl#notExisted(java.lang.Long)
+### api not existed in userCtrl should be kept
+
+GET http://localhost:8080/user/notExisted
+token:
+
+
+###
+
+### ref: com.itangcent.api.BaseController#ctrlName()
+### current ctrl name
+
+GET http://localhost:8080/user/ctrl/name
+token: 
+
+
+###
+
+### ref: com.itangcent.api.UserCtrl#get(java.lang.Long)
+### get user info
+
+GET http://localhost:8080/user/get/{id}?id=0
+token: 
+
+
+###
+
+### ref: com.itangcent.api.UserCtrl#create(com.itangcent.model.UserInfo)
+### create an user
+
+POST http://localhost:8080/user/add
+Content-Type: application/json
+token: 
+
+{
+  "id": 0,
+  "type": 0,
+  "name": "",
+  "age": 0,
+  "sex": 0,
+  "birthDay": "",
+  "regtime": ""
+}
+
+###
+
+### ref: com.itangcent.api.UserCtrl#update(com.itangcent.model.UserInfo)
+### update user info
+
+PUT http://localhost:8080/user/update
+Content-Type: multipart/form-data
+token: 
+
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="id"
+
+[id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="type"
+
+[type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="name"
+
+[name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="age"
+
+[age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="sex"
+
+[sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="birthDay"
+
+[birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="regtime"
+
+[regtime]
+--WebAppBoundary--
+
+
+###
+
+### ref: com.itangcent.api.BaseController#ctrlName()
+### current ctrl name
+
+GET http://localhost:8080/test/ctrl/name
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#header(java.lang.String)
+### test RequestHeader
+
+GET http://localhost:8080/test/header
+x-token: 
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#header(java.lang.String[],int[])
+### test query with array parameters
+
+GET http://localhost:8080/test/arrays?string=&int=1
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#ignore()
+### test ignored method
+
+GET http://localhost:8080/test/ignore
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#request(HttpServletRequest)
+### test query with javax.servlet.http.HttpServletRequest
+
+GET http://localhost:8080/test/httpServletRequest
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#response(HttpServletResponse)
+### test query with javax.servlet.http.HttpServletResponse
+
+GET http://localhost:8080/test/httpServletResponse
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnvoid()
+### test api return void
+
+GET http://localhost:8080/test/return/void
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnVoid()
+### test api return Void
+
+GET http://localhost:8080/test/return/Void
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnResultVoid()
+### test api return Result<Void>
+
+GET http://localhost:8080/test/return/result/Void
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnEnum()
+### test api return Enum
+
+GET http://localhost:8080/test/return/enum
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnResultEnum()
+### test api return Result<Enum>
+
+GET http://localhost:8080/test/return/result/enum
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnEnumField()
+### test api return Enum field
+
+GET http://localhost:8080/test/return/enum/field
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnResultEnumField()
+### test api return Result<Enum field>
+
+GET http://localhost:8080/test/return/result/enum/field
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnNode(com.itangcent.model.Node)
+### return nested node
+
+POST http://localhost:8080/test/return/node
+Content-Type: multipart/form-data
+token: 
+
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="id"
+
+[id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="code"
+
+[code]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="parent.id"
+
+[parent.id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="parent.code"
+
+[parent.code]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="parent.parent.key"
+
+[parent.parent.key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="parent.sub[0].key"
+
+[parent.sub[0].key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="parent.siblings[0].key"
+
+[parent.siblings[0].key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="sub[0].id"
+
+[sub[0].id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="sub[0].code"
+
+[sub[0].code]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="sub[0].parent.key"
+
+[sub[0].parent.key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="sub[0].sub[0].key"
+
+[sub[0].sub[0].key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="sub[0].siblings[0].key"
+
+[sub[0].siblings[0].key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="siblings[0].id"
+
+[siblings[0].id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="siblings[0].code"
+
+[siblings[0].code]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="siblings[0].parent.key"
+
+[siblings[0].parent.key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="siblings[0].sub[0].key"
+
+[siblings[0].sub[0].key]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="siblings[0].siblings[0].key"
+
+[siblings[0].siblings[0].key]
+--WebAppBoundary--
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnRoot(com.itangcent.model.Root)
+### return root with nested nodes
+
+GET http://localhost:8080/test/return/root?id=&children[0].id=&children[0].code=&children[0].parent.key=&children[0].sub[0].key=&children[0].siblings[0].key=
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#returnAjaxResult(com.itangcent.model.CustomMap)
+### return customMap
+
+GET http://localhost:8080/test/return/customMap?key=
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#pageRequest(com.itangcent.model.PageRequest<com.itangcent.model.UserInfo>)
+### user page query
+
+GET http://localhost:8080/test/call/page/user?size=&user.id=0&user.type=0&user.name=&user.age=0&user.sex=0&user.birthDay=&user.regtime=&users[0].id=0&users[0].type=0&users[0].name=&users[0].age=0&users[0].sex=0&users[0].birthDay=&users[0].regtime=&t.id=0&t.type=0&t.name=&t.age=0&t.sex=0&t.birthDay=&t.regtime=
+token: 
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#pageRequestWithModelAttribute(com.itangcent.model.PageRequest<com.itangcent.model.UserInfo>)
+### user page query with ModelAttribute
+
+POST http://localhost:8080/test/call/page/user/form
+Content-Type: multipart/form-data
+token: 
+
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="size"
+
+[size]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.id"
+
+[user.id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.type"
+
+[user.type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.name"
+
+[user.name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.age"
+
+[user.age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.sex"
+
+[user.sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.birthDay"
+
+[user.birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.regtime"
+
+[user.regtime]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].id"
+
+[users[0].id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].type"
+
+[users[0].type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].name"
+
+[users[0].name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].age"
+
+[users[0].age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].sex"
+
+[users[0].sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].birthDay"
+
+[users[0].birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].regtime"
+
+[users[0].regtime]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.id"
+
+[t.id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.type"
+
+[t.type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.name"
+
+[t.name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.age"
+
+[t.age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.sex"
+
+[t.sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.birthDay"
+
+[t.birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.regtime"
+
+[t.regtime]
+--WebAppBoundary--
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#pageRequestWithPost(com.itangcent.model.PageRequest<com.itangcent.model.UserInfo>)
+### user page query with POST
+
+POST http://localhost:8080/test/call/page/user/post
+Content-Type: multipart/form-data
+token: 
+
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="size"
+
+[size]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.id"
+
+[user.id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.type"
+
+[user.type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.name"
+
+[user.name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.age"
+
+[user.age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.sex"
+
+[user.sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.birthDay"
+
+[user.birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="user.regtime"
+
+[user.regtime]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].id"
+
+[users[0].id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].type"
+
+[users[0].type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].name"
+
+[users[0].name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].age"
+
+[users[0].age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].sex"
+
+[users[0].sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].birthDay"
+
+[users[0].birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="users[0].regtime"
+
+[users[0].regtime]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.id"
+
+[t.id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.type"
+
+[t.type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.name"
+
+[t.name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.age"
+
+[t.age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.sex"
+
+[t.sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.birthDay"
+
+[t.birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="t.regtime"
+
+[t.regtime]
+--WebAppBoundary--
+
+
+###
+
+### ref: com.itangcent.api.TestCtrl#listPageRequestWithArray(com.itangcent.model.UserInfo[])
+### user page query with array
+
+GET http://localhost:8080/test/call/page/user/array?id=0&type=0&name=&age=0&sex=0&birthDay=&regtime=
+token:
