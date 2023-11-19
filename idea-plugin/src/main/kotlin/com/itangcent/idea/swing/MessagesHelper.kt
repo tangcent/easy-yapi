@@ -54,9 +54,9 @@ interface MessagesHelper {
 
     fun <T> showChooseWithTipDialog(
         message: String?,
-        items: List<T>?,
-        showAs: ((T) -> String?)?,
-        tipAs: ((T) -> String?)?,
+        items: List<T>,
+        showAs: ((T) -> String)?,
+        tipAs: ((T) -> String)?,
         callBack: ((T?) -> Unit),
     )
 
@@ -74,9 +74,9 @@ interface MessagesHelper {
 
 fun <T> MessagesHelper.showChooseWithTipDialog(
     message: String?,
-    items: List<T>?,
-    showAs: ((T) -> String?)?,
-    tipAs: ((T) -> String?)?,
+    items: List<T>,
+    showAs: ((T) -> String)?,
+    tipAs: ((T) -> String)?,
 ): T? {
     val valueHolder = ValueHolder<T>()
     this.showChooseWithTipDialog(message, items, showAs, tipAs) {
