@@ -1,3 +1,13 @@
+* 2.6.7
+
+	* feat: Add support for exporting APIs as .http files  [(#1076)](https://github.com/tangcent/easy-yapi/pull/1076)
+
+	* fix: Fix auto-collapse for popup items on select channel  [(#1075)](https://github.com/tangcent/easy-yapi/pull/1075)
+
+	* feat: support search in several dialogs  [(#1073)](https://github.com/tangcent/easy-yapi/pull/1073)
+
+	* Refactor: Preventing runtime.channel() from throwing exceptions on missing implementations  [(#1074)](https://github.com/tangcent/easy-yapi/pull/1074)
+
 * 2.6.6
 	* feat: Add dialog size memory feature  [(#1069)](https://github.com/tangcent/easy-yapi/pull/1069)
 
