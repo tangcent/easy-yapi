@@ -2,6 +2,7 @@ package com.itangcent.idea.utils
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
+import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.cast
 import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.intellij.context.ActionContext
@@ -13,7 +14,7 @@ import javax.swing.*
 import javax.swing.table.TableColumn
 import javax.swing.tree.*
 
-object SwingUtils {
+object SwingUtils : Log() {
     // Sets the focus on the specified Dialog component in the Swing UI thread.
     fun focus(dialog: Dialog) {
         ActionContext.getContext()!!.runInSwingUI {
@@ -83,6 +84,12 @@ object SwingUtils {
         WindowManager.getInstance().suggestParentWindow(context.instance(Project::class))
             ?.let { return it }
         return null
+    }
+
+    fun logComponentDetails(component: JComponent, componentName: String) {
+        val location = component.location
+        val size = component.size
+        LOG.info("$componentName - Location: ($location) Dimensions: (${size.width} x ${size.height})")
     }
 }
 

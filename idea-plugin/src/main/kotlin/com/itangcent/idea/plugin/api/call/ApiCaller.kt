@@ -43,14 +43,20 @@ class ApiCaller {
                 return
             }
 
-            val apiCallUI = actionContext.instance(ApiCallUI::class)
-            apiCallUI.updateRequestList(requests)
-            apiCallUI.showUI()
-            val uiWeakReference = WeakReference(apiCallUI)
-            project.putUserData(API_CALL_UI, uiWeakReference)
-            actionContext.on(EventKey.ON_COMPLETED) {
-                project.putUserData(API_CALL_UI, null)
-                uiWeakReference.clear()
+            actionContext.runInSwingUI {
+
+                val apiCallUI = actionContext.instance(ApiCallUI::class)
+                apiCallUI.updateRequestList(requests)
+                apiCallUI.showUI()
+
+                actionContext.runAsync {
+                    val uiWeakReference = WeakReference(apiCallUI)
+                    project.putUserData(API_CALL_UI, uiWeakReference)
+                    actionContext.on(EventKey.ON_COMPLETED) {
+                        project.putUserData(API_CALL_UI, null)
+                        uiWeakReference.clear()
+                    }
+                }
             }
         } catch (e: Exception) {
             logger.traceError("Apis exported failed", e)

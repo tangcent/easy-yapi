@@ -39,9 +39,9 @@ class EmptyMessagesHelper : MessagesHelper {
 
     override fun <T> showChooseWithTipDialog(
         message: String?,
-        items: List<T>?,
-        showAs: ((T) -> String?)?,
-        tipAs: ((T) -> String?)?,
+        items: List<T>,
+        showAs: ((T) -> String)?,
+        tipAs: ((T) -> String)?,
         callBack: ((T?) -> Unit),
     ) {
         callBack.invoke(null)

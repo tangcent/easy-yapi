@@ -126,15 +126,17 @@ class DefaultMessagesHelper : MessagesHelper {
 
     override fun <T> showChooseWithTipDialog(
         message: String?,
-        items: List<T>?,
-        showAs: ((T) -> String?)?,
-        tipAs: ((T) -> String?)?,
+        items: List<T>,
+        showAs: ((T) -> String)?,
+        tipAs: ((T) -> String)?,
         callBack: ((T?) -> Unit),
     ) {
         actionContext.runInSwingUI {
             val chooseWithTipDialog = ChooseWithTipDialog<T>(SwingUtils.preferableWindow())
             UIUtils.show(chooseWithTipDialog)
-            chooseWithTipDialog.updateItems(message, items, showAs, tipAs, callBack)
+            actionContext.runAsync {
+                chooseWithTipDialog.updateItems(message, items, showAs, tipAs, callBack)
+            }
         }
     }
 
