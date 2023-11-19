@@ -9,23 +9,23 @@ import com.itangcent.idea.utils.ModuleHelper
 @Singleton
 class ConstantModuleHelper(private val module: String) : ModuleHelper {
 
-    override fun findModule(resource: Any): String? {
+    override fun findModule(resource: Any): String {
         return module
     }
 
-    override fun findModule(psiMethod: PsiMethod): String? {
+    override fun findModule(psiMethod: PsiMethod): String {
         return module
     }
 
-    override fun findModule(cls: PsiClass): String? {
+    override fun findModule(cls: PsiClass): String {
         return module
     }
 
-    override fun findModule(psiFile: PsiFile): String? {
+    override fun findModule(psiFile: PsiFile): String {
         return module
     }
 
-    override fun findModuleByPath(path: String?): String? {
+    override fun findModuleByPath(path: String?): String {
         return module
     }
 
