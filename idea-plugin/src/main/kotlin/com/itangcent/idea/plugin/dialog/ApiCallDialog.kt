@@ -99,7 +99,9 @@ private class ApiCallPanel : BorderLayoutPanel() {
         searchTextField = JTextField()
 
         // API List Panel
-        apisJList = JBList<Any>()
+        apisJList = JBList<Any>().apply {
+            selectionMode = ListSelectionModel.SINGLE_SELECTION
+        }
         apisListPanel = JScrollPane(apisJList)
 
         // Left Panel for Search and API List
