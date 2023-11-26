@@ -24,7 +24,7 @@
 
 * [Guide](https://easyyapi.com/documents/index.html)
 * [Installation](https://easyyapi.com/documents/installation.html)
-* [Useage](https://easyyapi.com/documents/use.html)
+* [Usage](https://easyyapi.com/documents/use.html)
 * [Setting](https://easyyapi.com/setting/index.html)
 * [Demo](https://easyyapi.com/demo/index.html)
 
