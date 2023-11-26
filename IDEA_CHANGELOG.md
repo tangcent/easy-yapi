@@ -1,3 +1,9 @@
+* 2.6.8
+	* feat: Enhance support for enum fields in 'field'  [(#1083)](https://github.com/tangcent/easy-yapi/pull/1083)
+
+	* amend: refactor ResolveMultiPath enum to encapsulate url selection logic  [(#1079)](https://github.com/tangcent/easy-yapi/pull/1079)
+
+	* amend: Restrict api selection to single item in ApiCall  [(#1078)](https://github.com/tangcent/easy-yapi/pull/1078)
 * 2.6.7
 
 	* feat: Add support for exporting APIs as .http files  [(#1076)](https://github.com/tangcent/easy-yapi/pull/1076)
