@@ -33,6 +33,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     internal lateinit var addPsiClass: PsiClass
     internal lateinit var updatePsiClass: PsiClass
     internal lateinit var validationGroupedDemoDtoPsiClass: PsiClass
+    internal lateinit var userTypePsiClass: PsiClass
+    internal lateinit var userInfoPsiClass: PsiClass
 
     override fun beforeBind() {
         super.beforeBind()
@@ -64,6 +66,8 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         addPsiClass = loadClass("constant/Add.java")!!
         updatePsiClass = loadClass("constant/Update.java")!!
         validationGroupedDemoDtoPsiClass = loadClass("model/ValidationGroupedDemoDto.java")!!
+        userTypePsiClass = loadClass("constant/UserType.java")!!
+        userInfoPsiClass = loadClass("model/UserInfo.java")!!
     }
 
     override fun customConfig(): String? {
@@ -90,6 +94,12 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
                 "    }else{\n" +
                 "        return -1\n" +
                 "    }\n" +
+                "```\n" +
+                "field.doc=groovy:```\n" +
+                "if(!it.isEnumField()){\n" +
+                "    return\n" +
+                "}\n" +
+                "return it.asEnumField().getParam(\"desc\")\n" +
                 "```"
     }
 
@@ -534,6 +544,18 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
 
         assertEquals(
             "{\n" +
+                    "  \"id\": 0,\n" +
+                    "  \"type\": 0,\n" +
+                    "  \"name\": \"\",\n" +
+                    "  \"age\": 0,\n" +
+                    "  \"sex\": 0,\n" +
+                    "  \"birthDay\": \"\",\n" +
+                    "  \"regtime\": \"\"\n" +
+                    "}", userInfoPsiClass.asClassContext().toJson(true, true)
+        )
+
+        assertEquals(
+            "{\n" +
                     "  \"shouldBeFirst\": \"\",\n" +
                     "  \"s\": \"\",\n" +
                     "  \"integer\": 0,\n" +
@@ -695,6 +717,26 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
     fun testToJson5() {
         assertEquals("{}", objectPsiClass.asClassContext().toJson5(true, true))
 
+        assertEquals(
+            "{\n" +
+                    "    \"id\": 0, //user id\n" +
+                    "    /**\n" +
+                    "     * user type\n" +
+                    "     * 1 :administration\n" +
+                    "     * ADMINISTRATION\n" +
+                    "     * 2 :a person, an animal or a plant\n" +
+                    "     * MEMBER\n" +
+                    "     * 3 :Anonymous visitor\n" +
+                    "     * ANONYMOUS\n" +
+                    "     */\n" +
+                    "    \"type\": 0,\n" +
+                    "    \"name\": \"\", //user name\n" +
+                    "    \"age\": 0, //user age\n" +
+                    "    \"sex\": 0,\n" +
+                    "    \"birthDay\": \"\", //user birthDay\n" +
+                    "    \"regtime\": \"\" //user regtime\n" +
+                    "}", userInfoPsiClass.asClassContext().toJson5(true, true)
+        )
         assertEquals(
             "{\n" +
                     "    \"shouldBeFirst\": \"\",\n" +
@@ -1142,6 +1184,35 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         assertTrue(iResultPsiClass.asClassContext().implements()!!.isEmpty())
         assertFalse(resultPsiClass.asClassContext().implements()!!.isEmpty())
         assertTrue(modelPsiClass.asClassContext().implements()!!.isEmpty())
+    }
+
+    //endregion
+
+    //region tests of ScriptFieldContext
+
+    fun testIsEnumField() {
+        assertFalse(userInfoPsiClass.asClassContext().fields()[0].isEnumField())
+        assertTrue(userTypePsiClass.asClassContext().fields()[0].isEnumField())
+    }
+
+    fun testAsEnumField() {
+        assertNull(userInfoPsiClass.asClassContext().fields()[0].asEnumField())
+        run {
+            val enumField = userTypePsiClass.asClassContext().fields()[0].asEnumField()
+            assertNotNull(enumField)
+            enumField!!
+            assertEquals(0, enumField.ordinal())
+            assertEquals(mapOf("type" to 1, "desc" to "ADMINISTRATION"), enumField.getParams())
+            assertEquals("ADMINISTRATION", enumField.getParam("desc"))
+        }
+        run {
+            val enumField = userTypePsiClass.asClassContext().fields()[1].asEnumField()
+            assertNotNull(enumField)
+            enumField!!
+            assertEquals(1, enumField.ordinal())
+            assertEquals(mapOf("type" to 2, "desc" to "MEMBER"), enumField.getParams())
+            assertEquals("MEMBER", enumField.getParam("desc"))
+        }
     }
 
     //endregion

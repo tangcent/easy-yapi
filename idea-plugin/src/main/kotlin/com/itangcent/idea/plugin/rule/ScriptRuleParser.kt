@@ -7,12 +7,14 @@ import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.asBool
+import com.itangcent.common.utils.getSub
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.notReentrant
 import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.jvm.duck.ArrayDuckType
@@ -599,6 +601,14 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
             return ScriptPsiTypeContext(classRuleConfig!!.tryConvert(psiField.type, psiField))
         }
 
+        fun isEnumField(): Boolean {
+            return psiField is PsiEnumConstant
+        }
+
+        fun asEnumField(): ScriptPsiEnumConstantContext? {
+            return (psiField as? PsiEnumConstant)?.let { ScriptPsiEnumConstantContext(it) }
+        }
+
         override fun toString(): String {
             return containingClass().name() + "#" + psiField.name
         }
@@ -623,6 +633,40 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
         @ScriptIgnore
         override fun getCore(): Any {
             return explicitField
+        }
+    }
+
+    @ScriptTypeName("enumField")
+    inner class ScriptPsiEnumConstantContext(private val psiEnumConstant: PsiEnumConstant) :
+        BaseScriptRuleContext(psiEnumConstant) {
+
+        override fun getName(): String {
+            return psiEnumConstant.name
+        }
+
+        fun ordinal(): Int {
+            return actionContext.callInReadUI {
+                psiEnumConstant.containingClass?.fields?.indexOf(psiEnumConstant)
+            } ?: 0
+        }
+
+        private fun getEnumFields(): Map<String, Any?> {
+            return actionContext.notReentrant("enumFields") {
+                actionContext.callInReadUI {
+                    actionContext.instance(PsiResolver::class).resolveEnumFields(
+                        ordinal(), psiEnumConstant
+                    )
+                }
+            } ?: emptyMap()
+
+        }
+
+        fun getParams(): Map<String, Any?> {
+            return getEnumFields().getSub("params") ?: emptyMap()
+        }
+
+        fun getParam(name: String): Any? {
+            return getParams()[name]
         }
     }
 
