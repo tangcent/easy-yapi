@@ -72,15 +72,16 @@ fun ActionContext.withBoundary(action: () -> Unit) {
  */
 private val reentrantIdx = AtomicInteger()
 
-fun ActionContext.notReentrant(flag: String, action: () -> Unit) {
+fun <T> ActionContext.notReentrant(flag: String, action: () -> T): T? {
     val idx = reentrantIdx.getAndIncrement()
     if (this.cacheOrCompute("reentrantFlag-${flag}") { idx } == idx) {
         try {
-            action()
+            return action()
         } finally {
             this.deleteCache<Int>("reentrantFlag-${flag}")
         }
     }
+    return null
 }
 
 /**
