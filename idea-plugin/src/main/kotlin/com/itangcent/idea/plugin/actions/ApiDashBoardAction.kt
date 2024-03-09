@@ -6,15 +6,14 @@ import com.itangcent.idea.plugin.api.cache.CachedRequestClassExporter
 import com.itangcent.idea.plugin.api.dashboard.ApiDashBoard
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
-import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
+import com.itangcent.idea.plugin.api.export.core.CompositeRequestBuilderListener
+import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
-import com.itangcent.idea.plugin.api.export.postman.PostmanConfigReader
-import com.itangcent.idea.plugin.api.export.postman.PostmanRequestBuilderListener
-import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.idea.swing.SimpleActiveWindowProvider
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -37,11 +36,8 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
-        
-        builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
 
-        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
+        builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
         builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }

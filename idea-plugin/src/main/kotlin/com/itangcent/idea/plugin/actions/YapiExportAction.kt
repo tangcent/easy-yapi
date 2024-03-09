@@ -6,9 +6,7 @@ import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.yapi.*
-import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -28,15 +26,13 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
         builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
 
-        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
         builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
-        
+
         builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
         builder.bind(MethodDocBuilderListener::class) { it.with(CompositeMethodDocBuilderListener::class).singleton() }
 

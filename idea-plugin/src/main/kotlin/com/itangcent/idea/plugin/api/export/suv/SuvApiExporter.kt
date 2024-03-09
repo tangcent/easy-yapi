@@ -25,7 +25,7 @@ import com.itangcent.idea.plugin.api.export.http.HttpClientExporter
 import com.itangcent.idea.plugin.api.export.markdown.MarkdownFormatter
 import com.itangcent.idea.plugin.api.export.postman.*
 import com.itangcent.idea.plugin.api.export.yapi.*
-import com.itangcent.idea.plugin.config.RecommendConfigReader
+import com.itangcent.idea.plugin.config.EnhancedConfigReader
 import com.itangcent.idea.plugin.dialog.SuvApiExportDialog
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -255,6 +255,8 @@ open class SuvApiExporter {
                 it.with(ProjectCacheRepository::class).singleton()
             }
 
+            builder.bind(ConfigReader::class) { it.with(EnhancedConfigReader::class).singleton() }
+
             afterBuildActionContext(actionContext, builder)
         }
 
@@ -365,11 +367,6 @@ open class SuvApiExporter {
 
             builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
 
-            builder.bind(ConfigReader::class, "delegate_config_reader") {
-                it.with(PostmanConfigReader::class).singleton()
-            }
-            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
-
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
             builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
@@ -413,8 +410,6 @@ open class SuvApiExporter {
 
             builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
             builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
-            builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
-            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
@@ -523,11 +518,6 @@ open class SuvApiExporter {
             builder.bindInstance(ExportChannel::class, ExportChannel.of("markdown"))
             builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
 
-            builder.bind(ConfigReader::class, "delegate_config_reader") {
-                it.with(EasyApiConfigReader::class).singleton()
-            }
-            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
-
             //always not read api from cache
             builder.bindInstance("class.exporter.read.cache", false)
 
@@ -586,11 +576,6 @@ open class SuvApiExporter {
 
             builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
 
-            builder.bind(ConfigReader::class, "delegate_config_reader") {
-                it.with(EasyApiConfigReader::class).singleton()
-            }
-            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
-
             //always not read api from cache
             builder.bindInstance("class.exporter.read.cache", false)
 
@@ -633,12 +618,6 @@ open class SuvApiExporter {
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
             builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
-
-            builder.bind(ConfigReader::class, "delegate_config_reader") {
-                it.with(EasyApiConfigReader::class).singleton()
-            }
-            builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
-
             //always not read api from cache
             builder.bindInstance("class.exporter.read.cache", false)
 

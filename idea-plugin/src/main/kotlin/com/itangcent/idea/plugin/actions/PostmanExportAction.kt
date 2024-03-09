@@ -5,9 +5,10 @@ import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.*
-import com.itangcent.idea.plugin.api.export.postman.*
-import com.itangcent.idea.plugin.config.RecommendConfigReader
-import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.idea.plugin.api.export.postman.PostmanApiExporter
+import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
+import com.itangcent.idea.plugin.api.export.postman.PostmanFormatFolderHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -27,10 +28,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
 
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-
-        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(PostmanConfigReader::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
-
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))

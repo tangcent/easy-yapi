@@ -7,9 +7,6 @@ import com.itangcent.idea.plugin.api.call.ApiCaller
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
-import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
-import com.itangcent.idea.plugin.config.RecommendConfigReader
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -33,9 +30,6 @@ class ApiCallAction : ApiExportAction("Call Api") {
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
 
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
-
-        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 

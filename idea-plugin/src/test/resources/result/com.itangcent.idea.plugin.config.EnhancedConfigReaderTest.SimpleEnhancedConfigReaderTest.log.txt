@@ -1,4 +1,4 @@
-[DEBUG]	use recommend config
+[TRACE]	No config be found
 [DEBUG]	use built-in config
 [DEBUG]	use recommend config
-[DEBUG]	use built-in config
+[DEBUG]	load remote config

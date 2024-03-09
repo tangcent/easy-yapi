@@ -1,0 +1,7 @@
+[TRACE]	No config be found
+[DEBUG]	use built-in config
+[DEBUG]	use recommend config
+[DEBUG]	Even useRecommendConfig was true, but no recommend config be selected!
+
+If you need to enable the built-in recommended configuration.Go to [Preference -> Other Setting -> EasyApi -> Recommend]
+[DEBUG]	load remote config

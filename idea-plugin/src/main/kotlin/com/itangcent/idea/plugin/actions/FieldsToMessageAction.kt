@@ -7,13 +7,9 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiType
 import com.itangcent.common.logger.traceError
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
-import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
-import com.itangcent.idea.plugin.config.RecommendConfigReader
-import com.itangcent.idea.plugin.format.MessageFormatter
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
@@ -57,9 +53,6 @@ abstract class FieldsToMessageAction : BasicAnAction {
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {
             it.with(ProjectCacheRepository::class).singleton()
         }
-
-        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }

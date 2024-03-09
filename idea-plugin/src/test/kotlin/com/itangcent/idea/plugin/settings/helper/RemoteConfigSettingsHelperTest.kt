@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Test case of [RemoteConfigSettingsHelper]
@@ -52,7 +53,7 @@ internal class RemoteConfigSettingsHelperTest : SettingsHelperTest() {
 
     @Test
     fun remoteConfigContent() {
-        assertEquals("", remoteConfigSettingsHelper.remoteConfigContent())
+        assertTrue(remoteConfigSettingsHelper.remoteConfigContent().isEmpty())
         settings.remoteConfig = arrayOf(
             "https://github.com/tangcent/easy-yapi/raw/master/third/a.config",
             "!https://github.com/tangcent/easy-yapi/raw/master/third/b.config",
@@ -60,7 +61,7 @@ internal class RemoteConfigSettingsHelperTest : SettingsHelperTest() {
         )
         assertEquals(
             "a=1\n" +
-                    "c=3", remoteConfigSettingsHelper.remoteConfigContent()
+                    "c=3", remoteConfigSettingsHelper.remoteConfigContent().joinToString("\n") { it.content }
         )
     }
 
@@ -69,6 +70,7 @@ internal class RemoteConfigSettingsHelperTest : SettingsHelperTest() {
         assertEquals(
             "a=1",
             remoteConfigSettingsHelper.loadConfig("https://github.com/tangcent/easy-yapi/raw/master/third/a.config")
+                .content
         )
     }
 
