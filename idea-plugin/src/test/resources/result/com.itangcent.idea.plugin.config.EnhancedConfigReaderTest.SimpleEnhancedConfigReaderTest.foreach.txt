@@ -1,3 +1,4 @@
+ignore=@Ignore
 module=#module
 ignore=#ignore
 field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
@@ -41,4 +42,3 @@ def ignored = config.getValues("ignored.classes_or_packages").collect{
 it.tokenize(',').collect { it.trim() }.findAll { it }
 }.flatten()
 return !prefixList.intersect(ignored).isEmpty()
-ignore=@Ignore

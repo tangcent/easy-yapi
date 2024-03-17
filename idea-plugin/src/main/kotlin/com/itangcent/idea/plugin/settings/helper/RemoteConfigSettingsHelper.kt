@@ -4,13 +4,19 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
+import com.itangcent.idea.sqlite.get
+import com.itangcent.idea.sqlite.set
+import com.itangcent.intellij.config.ConfigContent
 import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.logger.Logger
 import java.util.*
 
 @Singleton
 class RemoteConfigSettingsHelper {
+    @Inject
+    private lateinit var logger: Logger
 
     @Inject
     private lateinit var settingBinder: SettingBinder
@@ -31,23 +37,33 @@ class RemoteConfigSettingsHelper {
         )
     }
 
-    fun remoteConfigContent(): String {
+    fun remoteConfigContent(): List<ConfigContent> {
         return settingBinder.read().remoteConfig
             .parse()
             .filter { it.first }
-            .map { it.second }
-            .distinct()
-            .joinToString("\n") { loadConfig(it) }
+            .map { loadConfig(it.second) }
     }
 
-    fun loadConfig(url: String): String {
-        val bytes = beanDAO.get(url.toByteArray()) ?: refreshConfig(url)
-        return bytes?.toString(Charsets.UTF_8) ?: ""
+    fun loadConfig(url: String): ConfigContent {
+        return ConfigContent(
+            content = beanDAO.get(url) ?: refreshConfig(url) ?: "",
+            type = getContentTypeFromUrl(url)
+        )
     }
 
-    fun refreshConfig(url: String): ByteArray? {
-        return resourceResolver.resolve(url).bytes?.let {
-            beanDAO.set(url.toByteArray(), it)
+    private fun getContentTypeFromUrl(url: String): String {
+        return url.substringAfterLast('.').ifBlank { "properties" }
+    }
+
+    fun refreshConfig(url: String): String? {
+        val resource = try {
+            resourceResolver.resolve(url)
+        } catch (e: Exception) {
+            logger.error("failed to load config: $url")
+            null
+        }
+        return resource?.content?.let {
+            beanDAO.set(url, it)
             it
         }
     }

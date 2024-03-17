@@ -8,10 +8,8 @@ import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.yapi.*
-import com.itangcent.idea.plugin.config.RecommendConfigReader
 import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.idea.swing.SimpleActiveWindowProvider
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -27,9 +25,6 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
-
-        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(YapiConfigReader::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
         builder.bind(YapiDashBoard::class) { it.singleton() }
 
         builder.bind(YapiApiDashBoardExporter::class) { it.singleton() }
@@ -43,7 +38,7 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
-        
+
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
 
         builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }

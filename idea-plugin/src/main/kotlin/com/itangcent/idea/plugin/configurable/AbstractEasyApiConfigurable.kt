@@ -5,7 +5,7 @@ import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.project.Project
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.logger.Log
-import com.itangcent.idea.plugin.api.export.core.EasyApiConfigReader
+import com.itangcent.idea.plugin.api.export.core.EasyApiConfigProvider
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -18,7 +18,6 @@ import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.SystemLogger
 import com.itangcent.suv.http.ConfigurableHttpClientProvider
 import com.itangcent.suv.http.HttpClientProvider
-import java.util.concurrent.TimeUnit
 import javax.swing.JComponent
 
 abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : SearchableConfigurable {
@@ -60,7 +59,6 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
         myProject?.let { builder.bindInstance(Project::class, it) }
         builder.bind(Logger::class) { it.with(SystemLogger::class).singleton() }
         builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(EasyApiConfigReader::class).singleton() }
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
         afterBuildActionContext(builder)

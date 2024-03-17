@@ -7,9 +7,11 @@ import com.itangcent.idea.plugin.api.cache.FileApiCacheRepository
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
+import com.itangcent.idea.plugin.config.EnhancedConfigReader
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
@@ -18,7 +20,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.util.ActionUtils
 
 abstract class ApiExportAction(text: String) : BasicAnAction(text) {
 
@@ -35,6 +36,8 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
         builder.bind(LocalFileRepository::class, "projectCacheRepository") {
             it.with(ProjectCacheRepository::class).singleton()
         }
+
+        builder.bind(ConfigReader::class) { it.with(EnhancedConfigReader::class).singleton() }
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {

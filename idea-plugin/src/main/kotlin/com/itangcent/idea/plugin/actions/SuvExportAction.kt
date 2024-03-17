@@ -7,12 +7,13 @@ import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.DataEventCollector
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.condition.markAsSimple
-import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
+import com.itangcent.idea.plugin.api.export.core.ConfigurableMethodFilter
+import com.itangcent.idea.plugin.api.export.core.MethodFilter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
-import com.itangcent.idea.plugin.config.RecommendConfigReader
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
@@ -46,9 +47,6 @@ class SuvExportAction : ApiExportAction("Export Api") {
         builder.markAsSimple()
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
-
-        builder.bind(ConfigReader::class, "delegate_config_reader") { it.with(EasyApiConfigReader::class).singleton() }
-        builder.bind(ConfigReader::class) { it.with(RecommendConfigReader::class).singleton() }
 
         builder.bind(SuvApiExporter::class) { it.singleton() }
 

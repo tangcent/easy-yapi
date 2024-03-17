@@ -3,6 +3,9 @@ package com.itangcent.idea.binder
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
+import com.itangcent.idea.sqlite.delete
+import com.itangcent.idea.sqlite.get
+import com.itangcent.idea.sqlite.set
 import com.itangcent.idea.utils.JacksonUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.file.BeanBinder
@@ -16,40 +19,35 @@ class DbBeanBinderFactory<T : Any>(private val file: String, protected var init:
     }
 
     private var dbBeanBinderCache: Cache<String, BeanBinder<T>> = CacheBuilder.newBuilder()
-            .maximumSize(20)
-            .build()
+        .maximumSize(20)
+        .build()
 
     fun getBeanBinder(beanBindName: String): BeanBinder<T> {
         return dbBeanBinderCache.get(beanBindName) { DbBeanBinder(beanBindName) }
     }
 
     fun deleteBinder(beanBindName: String) {
-        dao.delete(beanBindName.toByteArray())
+        dao.delete(beanBindName)
     }
 
-    inner class DbBeanBinder : BeanBinder<T> {
-        private val beanBindName: String
-
-        constructor(beanBindName: String) {
-            this.beanBindName = beanBindName
-        }
+    inner class DbBeanBinder(private val beanBindName: String) : BeanBinder<T> {
 
         override fun tryRead(): T? {
-            return dao.get(beanBindName.toByteArray())
-                    ?.let { JacksonUtils.fromJson<T>(String(it)) }
+            return dao.get(beanBindName)
+                ?.let { JacksonUtils.fromJson<T>(it) }
         }
 
         override fun read(): T {
-            return dao.get(beanBindName.toByteArray())
-                    ?.let { JacksonUtils.fromJson<T>(String(it)) }
-                    ?: return init()
+            return dao.get(beanBindName)
+                ?.let { JacksonUtils.fromJson<T>(it) }
+                ?: return init()
         }
 
         override fun save(t: T?) {
             if (t == null) {
-                dao.delete(beanBindName.toByteArray())
+                dao.delete(beanBindName)
             } else {
-                dao.set(beanBindName.toByteArray(), JacksonUtils.toJson(t).toByteArray())
+                dao.set(beanBindName, JacksonUtils.toJson(t))
             }
         }
     }

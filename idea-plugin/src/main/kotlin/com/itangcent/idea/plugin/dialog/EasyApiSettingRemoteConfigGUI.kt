@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.dialog
 import com.google.inject.Inject
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.CheckBoxList
+import com.itangcent.common.utils.ResourceUtils
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
 import com.itangcent.idea.plugin.configurable.AbstractEasyApiSettingGUI
@@ -12,7 +13,6 @@ import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.swing.MutableActiveWindowProvider
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.common.utils.ResourceUtils
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -95,7 +95,7 @@ class EasyApiSettingRemoteConfigGUI : AbstractEasyApiSettingGUI() {
         this.previewRemoteConfigTextArea.text = "Loading..."
         val config = remoteConfig[index].second
         actionContext.runAsync {
-            val content = remoteConfigSettingsHelper.loadConfig(config)
+            val content = remoteConfigSettingsHelper.loadConfig(config).content
             actionContext.runInSwingUI {
                 if (this.configList.selectedIndex == index) {
                     this.previewRemoteConfigTextArea.text = content

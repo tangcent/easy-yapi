@@ -1,40 +1,34 @@
 package com.itangcent.idea.plugin.config
 
 import com.google.inject.Inject
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.module.Module
 import com.itangcent.common.kit.toJson
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
-import com.itangcent.intellij.config.AbstractConfigReader
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
-import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
 import com.itangcent.test.mock
-import com.itangcent.utils.Initializable
-import org.junit.jupiter.api.Test
-import org.mockito.Mockito
+import com.itangcent.testFramework.ContextLightCodeInsightFixtureTestCase
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 /**
- * Test case of [RecommendConfigReader]
+ * Test case of [EnhancedConfigReader]
  */
-internal abstract class RecommendConfigReaderTest : AdvancedContextTest() {
+internal abstract class EnhancedConfigReaderTest : ContextLightCodeInsightFixtureTestCase() {
 
     @Inject
-    protected lateinit var recommendConfigReader: RecommendConfigReader
+    protected lateinit var enhancedConfigReader: EnhancedConfigReader
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
@@ -50,34 +44,28 @@ internal abstract class RecommendConfigReaderTest : AdvancedContextTest() {
         }
 
         builder.bind(
-            ConfigReader::class,
-            "delegate_config_reader"
-        ) { it.toInstance(ConfigReaderAdaptor(customConfig() ?: "")) }
-
-        builder.bind(
             ConfigReader::class
-        ) { it.with(RecommendConfigReader::class).singleton() }
+        ) { it.with(EnhancedConfigReader::class).singleton() }
 
         builder.mock<ContextSwitchListener> { contextSwitchListener ->
             this.on(contextSwitchListener.onModuleChange(any()))
                 .thenAnswer { it.getArgument<(Module) -> Unit>(0)(mock()) }
         }
+
+        builder.mock<DataContext> { dataContext ->
+            this.on(dataContext.getData(any()))
+                .thenAnswer { null }
+        }
     }
 
-    override fun afterBind(actionContext: ActionContext) {
-        super.afterBind(actionContext)
-        recommendConfigReader.init()
-    }
+    internal class SimpleEnhancedConfigReaderTest : EnhancedConfigReaderTest() {
 
-    internal class SimpleRecommendConfigReaderTest : RecommendConfigReaderTest() {
-
-        @Test
-        fun test() {
+        fun testLoadConfig() {
+            assertEquals("@Ignore", enhancedConfigReader.first("ignore"))
             assertEquals(ResultLoader.load("log"), LoggerCollector.getLog().toUnixString())
-            assertEquals("#ignore", recommendConfigReader.first("ignore"))
             run {
                 var configs = ""
-                recommendConfigReader.foreach { key, value ->
+                enhancedConfigReader.foreach { key, value ->
                     if (configs.isNotEmpty()) {
                         configs = "$configs\n"
                     }
@@ -87,7 +75,7 @@ internal abstract class RecommendConfigReaderTest : AdvancedContextTest() {
             }
             run {
                 var configs = ""
-                recommendConfigReader.foreach({ it.startsWith("api.") }) { key, value ->
+                enhancedConfigReader.foreach({ it.startsWith("api.") }) { key, value ->
                     if (configs.isNotEmpty()) {
                         configs = "$configs\n"
                     }
@@ -95,12 +83,12 @@ internal abstract class RecommendConfigReaderTest : AdvancedContextTest() {
                 }
                 assertEquals(ResultLoader.load("foreach.api"), configs)
             }
-            assertEquals(listOf("#ignore", "@Ignore").toJson(), recommendConfigReader.read("ignore").toJson())
-            assertEquals("#mock", recommendConfigReader.resolveProperty("\${field.mock}"))
+            assertEquals(listOf("@Ignore", "#ignore").toJson(), enhancedConfigReader.read("ignore").toJson())
+            assertEquals("#mock", enhancedConfigReader.resolveProperty("\${field.mock}"))
         }
     }
 
-    internal class EmptyRecommendRecommendConfigReaderTest : RecommendConfigReaderTest() {
+    internal class EmptyRecommendEnhancedConfigReaderTest : EnhancedConfigReaderTest() {
         override fun bind(builder: ActionContext.ActionContextBuilder) {
             super.bind(builder)
 
@@ -113,39 +101,9 @@ internal abstract class RecommendConfigReaderTest : AdvancedContextTest() {
             }
         }
 
-        @Test
-        fun test() {
+        fun testLoadConfig() {
+            assertEquals("@Ignore", enhancedConfigReader.first("ignore"))
             assertEquals(ResultLoader.load("log"), LoggerCollector.getLog().toUnixString())
-            assertEquals("@Ignore", recommendConfigReader.first("ignore"))
-        }
-    }
-
-    internal class ImmutableRecommendConfigReaderTest : RecommendConfigReaderTest() {
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
-            super.bind(builder)
-
-            builder.bind(
-                ConfigReader::class,
-                "delegate_config_reader"
-            ) { it.toInstance(mock(extraInterfaces = arrayOf(Initializable::class))) }
-        }
-
-        @Test
-        fun test() {
-            assertEquals(ResultLoader.load("log"), LoggerCollector.getLog().toUnixString())
-            assertNull(recommendConfigReader.first("ignore"))
-        }
-    }
-
-    private inner class ConfigReaderAdaptor(val config: String) : AbstractConfigReader() {
-
-        @PostConstruct
-        fun init() {
-            loadConfigInfoContent(config, "properties")
-        }
-
-        override fun findConfigFiles(): List<String>? {
-            return null
         }
     }
 }

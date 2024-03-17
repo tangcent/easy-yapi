@@ -69,7 +69,8 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         //RequestBody(json)
         if (isJsonBody(parameterExportContext.psi())) {
             if (request.method == "GET") {
-                logger.warn("Request Body is not supported for GET method, please check the rule [generic.param.as.json.body]")
+                logger.warn("Attempted to use a request body with a GET method in ${parameterExportContext.psi().containingFile.name} at ${parameterExportContext.psi().textOffset}." +
+                        " Please ensure the HTTP method supports a body or adjust the rule [generic.param.as.json.body].")
                 addParamAsQuery(
                     parameterExportContext, request, parameterExportContext.defaultVal()
                         ?: parameterExportContext.unbox(), getUltimateComment(paramDesc, parameterExportContext)
@@ -102,7 +103,8 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 val header = safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                 when {
                     header == null -> {
-                        logger.error("error to parse additional header: $headerStr")
+                        logger.error("Failed to parse additional header in ${parameterExportContext.psi().containingFile.name} at ${parameterExportContext.psi().textOffset}. Header content: '$headerStr'." +
+                                " Verify the header format is correct.")
                         return@cache null
                     }
                     header.name.isNullOrBlank() -> {
