@@ -7,9 +7,11 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiType
 import com.itangcent.common.logger.traceError
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
+import com.itangcent.idea.plugin.config.EnhancedConfigReader
 import com.itangcent.idea.plugin.rule.SuvRuleParser
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
+import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.context.ActionContext
@@ -56,6 +58,7 @@ abstract class FieldsToMessageAction : BasicAnAction {
 
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
+        builder.bind(ConfigReader::class) { it.with(EnhancedConfigReader::class).singleton() }
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
