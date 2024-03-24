@@ -52,7 +52,7 @@ class RemoteConfigSettingsHelper {
     }
 
     private fun getContentTypeFromUrl(url: String): String {
-        return url.substringAfterLast('.').ifBlank { "properties" }
+        return url.substringBefore('?').substringAfterLast('.').ifBlank { "properties" }
     }
 
     fun refreshConfig(url: String): String? {

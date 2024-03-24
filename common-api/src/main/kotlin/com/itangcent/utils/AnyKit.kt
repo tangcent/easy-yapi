@@ -55,3 +55,11 @@ fun Map<*, *>.subMutable(key: String): MutableMap<String, Any?>? {
     }
     return null
 }
+
+fun <T : Collection<*>> T?.emptyIf(another: () -> T): T {
+    return if (this.isNullOrEmpty()) {
+        another()
+    } else {
+        this
+    }
+}
