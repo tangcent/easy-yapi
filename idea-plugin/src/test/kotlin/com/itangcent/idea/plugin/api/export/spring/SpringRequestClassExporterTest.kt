@@ -279,7 +279,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("/test/return/result/enum", request.path.toString())
             assertEquals("GET", request.method)
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nADMIN :administration\\nMEM :a person, an animal or a plant\\nGUEST :Anonymous visitor\"},\"msg\":\"\",\"data\":\"\"}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\",\"data@options\":[{\"value\":\"ADMIN\",\"desc\":\"administration\"},{\"value\":\"MEM\",\"desc\":\"a person, an animal or a plant\"},{\"value\":\"GUEST\",\"desc\":\"Anonymous visitor\"}]},\"msg\":\"\",\"data\":\"\"}",
                 request.response!![0].body.toJson()
             )
             assertNull(request.response!![0].bodyDesc)
@@ -531,7 +531,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("/test/return/result/enum", request.path.toString())
             assertEquals("GET", request.method)
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nADMIN :administration\\nMEM :a person, an animal or a plant\\nGUEST :Anonymous visitor\"},\"msg\":\"\",\"data\":\"\"}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\",\"data@options\":[{\"value\":\"ADMIN\",\"desc\":\"administration\"},{\"value\":\"MEM\",\"desc\":\"a person, an animal or a plant\"},{\"value\":\"GUEST\",\"desc\":\"Anonymous visitor\"}]},\"msg\":\"\",\"data\":\"\"}",
                 request.response!![0].body.toJson()
             )
             assertNull(request.response!![0].bodyDesc)

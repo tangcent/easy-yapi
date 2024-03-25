@@ -48,7 +48,7 @@ object KVUtils {
      */
     fun getConstantDesc(constants: List<Map<String, Any?>>): String? {
         return constants.asSequence()
-            .mapNotNull { concat(it["name"]?.toString(), it["desc"]?.toString()) }
+            .mapNotNull { concat((it["name"] ?: it["value"])?.toString(), it["desc"]?.toString()) }
             .joinToString("\n")
     }
 

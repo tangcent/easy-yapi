@@ -33,10 +33,11 @@
 [INFO]	before parse method:com.itangcent.api.TestCtrl#returnResultVoid
 [INFO]	after parse method:com.itangcent.api.TestCtrl#returnResultVoid
 [INFO]	before parse method:com.itangcent.api.TestCtrl#returnEnum
-[WARN]	can not resolve com.itangcent.constant.UserType for com.itangcent.api.TestCtrl#returnEnum
+[DEBUG]	can not resolve com.itangcent.constant.UserType for com.itangcent.api.TestCtrl#returnEnum
+[DEBUG]	can not resolve com.itangcent.constant.UserType for com.itangcent.api.TestCtrl#returnEnum
 [INFO]	after parse method:com.itangcent.api.TestCtrl#returnEnum
 [INFO]	before parse method:com.itangcent.api.TestCtrl#returnResultEnum
-[WARN]	can not resolve com.itangcent.constant.UserType for com.itangcent.model.Result#data
+[DEBUG]	can not resolve com.itangcent.constant.UserType for com.itangcent.model.Result#data
 [INFO]	after parse method:com.itangcent.api.TestCtrl#returnResultEnum
 [INFO]	before parse method:com.itangcent.api.TestCtrl#returnEnumField
 [INFO]	after parse method:com.itangcent.api.TestCtrl#returnEnumField

@@ -123,6 +123,7 @@ abstract class RequestClassExporter : ClassExporter {
             !hasApi(cls) -> {
                 return false
             }
+
             shouldIgnore(cls) -> {
                 logger.info("ignore class:$clsQualifiedName")
                 return true
@@ -246,10 +247,12 @@ abstract class RequestClassExporter : ClassExporter {
                             logger.error("error to parse additional header: $headerStr")
                             return@cache null
                         }
+
                         header.name.isNullOrBlank() -> {
                             logger.error("no name had be found in: $headerStr")
                             return@cache null
                         }
+
                         else -> return@cache header
                     }
                 }?.let {
@@ -271,10 +274,12 @@ abstract class RequestClassExporter : ClassExporter {
                             logger.error("error to parse additional param: $paramStr")
                             return@cache null
                         }
+
                         param.name.isNullOrBlank() -> {
                             logger.error("no name had be found in: $paramStr")
                             return@cache null
                         }
+
                         else -> return@cache param
                     }
                 }?.let {
@@ -300,10 +305,12 @@ abstract class RequestClassExporter : ClassExporter {
                                 logger.error("error to parse additional response header: $headerStr")
                                 return@cache null
                             }
+
                             header.name.isNullOrBlank() -> {
                                 logger.error("no name had be found in: $headerStr")
                                 return@cache null
                             }
+
                             else -> return@cache header
                         }
                     }?.let {
@@ -422,7 +429,7 @@ abstract class RequestClassExporter : ClassExporter {
                     }
                 }
 
-                if (methodReturnMainType != null) {
+                if (methodReturnMain == null && methodReturnMainType != null) {
                     commentResolver.resolveCommentForType(methodReturnMainType, methodExportContext.psi())?.let {
                         ultimateComment.appendLine(it)
                     }
@@ -437,9 +444,11 @@ abstract class RequestClassExporter : ClassExporter {
                         )
                     } else {
                         if (!KVUtils.addKeyComment(typedResponse, methodReturnMain, ultimateCommentStr)) {
-                            requestBuilderListener.appendResponseBodyDesc(methodExportContext,
+                            requestBuilderListener.appendResponseBodyDesc(
+                                methodExportContext,
                                 response,
-                                ultimateCommentStr)
+                                ultimateCommentStr
+                            )
                         }
                     }
                 }
@@ -787,12 +796,14 @@ abstract class RequestClassExporter : ClassExporter {
                 duckType, method.psi(),
                 this.intelligentSettingsHelper.jsonOptionForOutput(JsonOption.READ_COMMENT)
             )
+
             this.intelligentSettingsHelper.inferEnable() && !duckTypeHelper.isQualified(duckType)
             -> {
                 logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
+
             else -> psiClassHelper!!.getTypeObject(
                 duckType, method.psi(),
                 this.intelligentSettingsHelper.jsonOptionForOutput(JsonOption.READ_COMMENT)
