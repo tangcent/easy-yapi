@@ -16,6 +16,7 @@ import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.duck.SingleUnresolvedDuckType
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleKeys
+import com.itangcent.utils.emptyIf
 
 @Singleton
 class CommentResolver {
@@ -74,9 +75,10 @@ class CommentResolver {
             if (duckType is SingleDuckType) {
                 val enumClass = duckType.psiClass()
 
-                val constants = psiClassHelper!!.parseEnumConstant(enumClass)
+                val constants = psiClassHelper!!.resolveEnumOrStatic(context, enumClass, null, "") {}
+                    .emptyIf { psiClassHelper.parseEnumConstant(enumClass) }
                 if (constants.isEmpty()) {
-                    logger!!.error("nothing be found at:$convertTo")
+                    logger!!.error("nothing be found for:${duckType.canonicalText()}")
                     return null
                 }
 
@@ -116,9 +118,9 @@ class CommentResolver {
             }
 
             val enumClass = jvmClassHelper.resolveClassInType(psiType)!!
-            val constants = psiClassHelper!!.parseEnumConstant(enumClass)
-            if (constants.isEmpty()) {
-                logger!!.error("nothing be found at:$convertTo")
+            val constants = psiClassHelper!!.resolveEnumOrStatic(context, enumClass, null, "") {}
+            if (constants.isNullOrEmpty()) {
+                logger!!.error("nothing be found for:${psiType.canonicalText}")
                 return null
             }
 
