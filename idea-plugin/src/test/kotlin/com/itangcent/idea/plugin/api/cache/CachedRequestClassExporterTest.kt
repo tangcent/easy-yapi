@@ -126,8 +126,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         Mockito.verify(delegateClassExporter, times(1))
             .export(any(), any())
 
-        TimeUnit.SECONDS.sleep(10)//wait 10s to save cache
-
+        boundary.waitComplete(TimeUnit.SECONDS.toMillis(10),false)//wait 10s to save cache
         //export again
         val requestsAgain = ArrayList<Request>()
         classExporter.export(userCtrlPsiClass, requestOnly {
