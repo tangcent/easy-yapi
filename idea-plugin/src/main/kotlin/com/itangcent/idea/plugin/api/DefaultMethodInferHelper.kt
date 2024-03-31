@@ -25,8 +25,8 @@ import java.lang.reflect.Modifier
 import java.util.*
 
 /**
- *1.Try infer the return type of method
- *It should be called from the UI thread
+ * Handles inferring the return type of methods
+ * It should be executed within the UI thread.
  */
 @Singleton
 class DefaultMethodInferHelper : MethodInferHelper {
@@ -58,18 +58,26 @@ class DefaultMethodInferHelper : MethodInferHelper {
     @Inject
     protected lateinit var intelligentSettingsHelper: IntelligentSettingsHelper
 
+    //Cache for storing the results of static method invocations to avoid recomputation.
     private val staticMethodCache: HashMap<Pair<PsiMethod, Array<Any?>?>, Any?> = HashMap()
 
+    //Tracks the current stack of method inferences to avoid infinite recursion.
     private val methodStack: Stack<Infer> = Stack()
 
+    //JSON options for controlling the serialization behavior in the inference process.
     private var jsonOption: Int = JsonOption.ALL
 
     private var simpleJsonOption: Int = jsonOption and JsonOption.READ_GETTER.inv()
 
+    //Limits the depth of object graph exploration to prevent excessively deep or infinite recursion.
     private var maxObjectDeep: Int = 4
 
+    //A cache for methods that do not require arguments to infer their return types.
     private val emptyCallMethodCache: HashMap<PsiMethod, Any?> = HashMap()
 
+    /**
+     * Main methods for inferring the return type of a given PsiMethod.
+     */
     override fun inferReturn(psiMethod: PsiMethod, option: Int): Any? {
         return emptyCallMethodCache.safeComputeIfAbsent(psiMethod) {
             return@safeComputeIfAbsent inferReturn(psiMethod, null, null, option)
@@ -123,6 +131,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
         return DirectVariable { psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption) }
     }
 
+    /**
+     * Cleans up the inferred return values by removing invalid keys, based on predefined criteria.
+     */
     private fun Any?.cleanInvalidKeys(): Any? {
         when (this) {
             null -> return null
@@ -165,6 +176,10 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
     }
 
+    /**
+     * Computes a "point" score for an object based on its complexity and contents.
+     * This score helps in prioritizing more informative or complex inferred values.
+     */
     private fun pointOf(obj: Any?): Int {
         when (obj) {
             null -> return 0
@@ -207,7 +222,9 @@ class DefaultMethodInferHelper : MethodInferHelper {
     }
 
     /**
-     * Try a simple call
+     * Attempts a simple method call based on static analysis and predefined patterns,
+     * like getter/setter methods, to quickly infer the return type without deep analysis.
+     * e.g.
      * static method
      * getter/setter
      * method of collection(Set/List/Map...)
@@ -306,6 +323,11 @@ class DefaultMethodInferHelper : MethodInferHelper {
         return CALL_FAILED
     }
 
+    /**
+     * Handles the inference process when the simple approach fails. This method
+     * performs a more detailed analysis, potentially involving recursive inference,
+     * to determine the method's return type.
+     */
     private fun inferReturnUnsafely(psiMethod: PsiMethod, caller: Any? = null, args: Array<Any?>?, option: Int): Any? {
         actionContext!!.checkStatus()
         val realCaller = valueOf(caller)
@@ -314,7 +336,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         if (allowQuickCall(option)) {
             try {
                 return tryInfer(QuicklyMethodReturnInfer(psiMethod, this))
-            } catch (e: Exception) {
+            } catch (_: Exception) {
             }
         }
 
@@ -526,11 +548,15 @@ class DefaultMethodInferHelper : MethodInferHelper {
 
         const val DEFAULT_OPTION = ALLOW_QUICK_CALL
 
+        //Determines if a method allows for quick call-based inference.
         fun allowQuickCall(option: Int): Boolean {
             return (option and ALLOW_QUICK_CALL) != 0
         }
 
+        //Static failure object used to signal that a method call cannot be inferred.
         private val CALL_FAILED = Any()
+
+        //A set of method names considered for quick invocation without deep analysis.
         private val COLLECTION_METHODS = setOf("put", "set", "add", "addAll", "putAll")
 
         private fun isSuperMethod(method: PsiMethod, superMethod: PsiMethod): Boolean {
@@ -883,6 +909,11 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
     }
 
+    /*
+     * Defines the contract for inference strategies, allowing different approaches
+     * to be implemented and utilized based on the context and needs of the inference
+     * process.
+     */
     interface Infer {
         fun infer(): Any?
 
@@ -891,6 +922,11 @@ class DefaultMethodInferHelper : MethodInferHelper {
         fun callMethod(): Any?
     }
 
+    /**
+     * Abstract implementation of an inference strategy, providing common functionality
+     * and utilities for handling method return inference. This includes managing local
+     * variables, processing PSI elements, and handling control flow constructs.
+     */
     abstract class AbstractMethodReturnInfer(
         var caller: Any? = null,
         val args: Array<Any?>?,
@@ -904,8 +940,6 @@ class DefaultMethodInferHelper : MethodInferHelper {
         var returnVal: Any? = null
 
         private var inits: HashSet<String> = HashSet()
-
-//        val psiClassHelper = ActionContext.getContext()!!.instance(PsiClassHelper::class)
 
         protected open fun processStatement(statement: PsiStatement): Any? {
 
