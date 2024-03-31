@@ -33,8 +33,8 @@ commits=$(git log --pretty=format:"%s" v${last_version}..HEAD | sed 's/\(#\([0-9
 echo "commits:${commits}"
 
 # Separate commits into enhancements and fixes
-enhancements=$(echo "${commits}" | grep -i "^feat" | sed 's/^/<li>enhancements: /;s/$/<\/li>/')
-fixes=$(echo "${commits}" | grep -i "^fix" | sed 's/^/<li>fixes: /;s/$/<\/li>/')
+enhancements=$(echo "${commits}" | grep -i "^feat" | sed 's/^/<li>/;s/$/<\/li>/')
+fixes=$(echo "${commits}" | grep -i "^fix" | sed 's/^/<li>/;s/$/<\/li>/')
 others=$(echo "${commits}" | grep -ivE "^feat|^fix" | sed 's/^/<li>/;s/$/<\/li>/')
 
 
@@ -49,14 +49,16 @@ echo "<a href=\"https://github.com/tangcent/easy-yapi/releases/tag/v${next_versi
 echo "<br/>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
 echo "<a href=\"https://github.com/tangcent/easy-yapi/blob/master/IDEA_CHANGELOG.md\">Full Changelog</a>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
 
+echo "<h3>Enhancements:</h3>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
 # Write the list of enhancements to the pluginChanges.html file (if there are any)
 if [ -n "${enhancements}" ]; then
-  echo "<ul>enhancements: ${enhancements}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+  echo "<ul>${enhancements}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
 fi
 
+echo "<h3>Fixes:</h3>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
 # Append the list of fixes to the pluginChanges.html file (if there are any)
 if [ -n "${fixes}" ]; then
-  echo "<ul>fixes: ${fixes}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
+  echo "<ul>${fixes}</ul>" >> ${basedir}/idea-plugin/parts/pluginChanges.html
 fi
 
 # Append the list of other commits to the pluginChanges.html file (if there are any)

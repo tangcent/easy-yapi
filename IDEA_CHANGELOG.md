@@ -1,3 +1,12 @@
+* 2.6.9
+	* fix: implement error handling in remoteConfigContent function  [(#1115)](https://github.com/tangcent/easy-yapi/pull/1115)
+
+	* fix: resolve comment for custom enum field  [(#1112)](https://github.com/tangcent/easy-yapi/pull/1112)
+
+	* fix: resolve configuration loading issue in several actions  [(#1111)](https://github.com/tangcent/easy-yapi/pull/1111)
+
+	* feat: optimize configuration loading logic for enhanced efficiency and reliability  [(#1107)](https://github.com/tangcent/easy-yapi/pull/1107)
+
 * 2.6.8
 	* feat: Enhance support for enum fields in 'field'  [(#1083)](https://github.com/tangcent/easy-yapi/pull/1083)
 
