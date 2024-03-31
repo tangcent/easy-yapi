@@ -11,9 +11,11 @@ import com.intellij.util.io.createDirectories
 import com.intellij.util.io.readText
 import com.itangcent.intellij.context.ActionContext
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
@@ -67,7 +69,7 @@ class HttpClientFileSaver {
         val file = scratchesPath.resolve(module).resolve(fileName).apply {
             parent.createDirectories()
         }
-        file.writeText(content(file.takeIf { Files.exists(it) }?.readText()))
+        file.writeText(content(file.takeIf { Files.exists(it) }?.readText(StandardCharsets.UTF_8)))
 
         return (localFileSystem.refreshAndFindFileByPath(file.toString())
             ?: throw IOException("Unable to find file: $file"))
