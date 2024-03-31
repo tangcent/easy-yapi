@@ -15,7 +15,6 @@ import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.condition.ConditionOnSetting
-import org.apache.commons.lang.StringUtils.lowerCase
 
 /**
  * Support export apis from client that annotated with @FeignClient
@@ -104,7 +103,7 @@ open class FeignRequestClassExporter : SpringRequestClassExporter() {
                 val name = it.first
                 val value = it.second.trim()
                 if (name.equalIgnoreCase("content-type")) {
-                    if (lowerCase(value).contains("application/json")) {
+                    if (value.lowercase().contains("application/json")) {
                         methodExportContext.setExt("paramType", "body")
                     }
                 }
