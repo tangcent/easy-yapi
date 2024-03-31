@@ -8,12 +8,12 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.*
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.psi.resource
-import com.itangcent.utils.setExts
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.logger
 import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.intellij.logger.Logger
+import com.itangcent.utils.setExts
 import java.util.*
 
 class RequestRuleWrap(private val methodExportContext: MethodExportContext?, private val request: Request) {
@@ -102,7 +102,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         val context = ActionContext.getContext()!!
         val resource = request.resource()
         if (resource == null) {
-            context.instance(Logger::class).warn("no resource be related with:${request}")
+            context.logger().warn("no resource be related with:${request}")
             return
         }
         val responseType = context.instance(DuckTypeHelper::class).findType(bodyClass, resource) ?: return
@@ -126,7 +126,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         val context = ActionContext.getContext()!!
         val resource = request.resource()
         if (resource == null) {
-            context.instance(Logger::class).warn("no resource be related with:${request}")
+            context.logger().warn("no resource be related with:${request}")
             return
         }
         val responseType = context.instance(DuckTypeHelper::class).findType(modelClass, resource)
@@ -141,7 +141,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         val context = ActionContext.getContext()!!
         val resource = request.resource()
         if (resource == null) {
-            context.instance(Logger::class).warn("no resource be related with:${request}")
+            context.logger().warn("no resource be related with:${request}")
             return
         }
         val responseType = context.instance(DuckTypeHelper::class).findType(modelClass, resource)
@@ -155,7 +155,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
     )
     fun addModelClass(modelClass: String?) {
         ActionContext.getContext()
-            ?.instance(Logger::class)
+            ?.logger()
             ?.warn("addModelClass is deprecated, please use addModelClassAsFormParam instead of addModelClass")
         addModelClassAsFormParam(modelClass)
     }
@@ -348,7 +348,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         val context = ActionContext.getContext()!!
         val resource = request.resource()
         if (resource == null) {
-            context.instance(Logger::class).warn("no resource be related with:${request}")
+            context.logger().warn("no resource be related with:${request}")
             return
         }
         val responseType = context.instance(DuckTypeHelper::class).findType(bodyClass, resource)
@@ -363,7 +363,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         val context = ActionContext.getContext()!!
         val resource = request.resource()
         if (resource == null) {
-            context.instance(Logger::class).warn("no resource be related with:${request}")
+            context.logger().warn("no resource be related with:${request}")
             return
         }
         val responseType = context.instance(DuckTypeHelper::class).findType(bodyClass, resource)

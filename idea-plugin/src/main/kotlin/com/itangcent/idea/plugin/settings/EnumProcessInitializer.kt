@@ -8,6 +8,7 @@ import com.itangcent.idea.plugin.settings.helper.RecommendConfigSettingsHelper
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.swing.showChooseWithTipDialog
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.logger
 import com.itangcent.intellij.logger.Logger
 
 class EnumProcessInitializer : Initializer {
@@ -34,7 +35,7 @@ class EnumProcessInitializer : Initializer {
                     propertiesComponent.setValue(ENUM_RECOMMEND_ITEMS_CONFIRMED_KEY, true)
                 }
             } catch (e: Exception) {
-                actionContext.instance(Logger::class).traceError("error in enumRecommendItemsConfirmed.", e)
+                actionContext.logger().traceError("error in enumRecommendItemsConfirmed.", e)
             }
         }
     }

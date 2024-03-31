@@ -6,8 +6,8 @@ import com.google.inject.ImplementedBy
 import com.itangcent.common.logger.traceError
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.logger
 import com.itangcent.intellij.extend.sub
-import com.itangcent.intellij.logger.Logger
 
 
 @ImplementedBy(DefaultYapiApiHelper::class)
@@ -84,7 +84,7 @@ fun YapiApiHelper.getCartForFolder(folder: Folder, privateToken: String): CartIn
     try {
         cartId = findCart(privateToken, name)
     } catch (e: Exception) {
-        ActionContext.getContext()?.instance(Logger::class)
+        ActionContext.getContext()?.logger()
             ?.traceError("error to find cart [$name]", e)
         return null
     }

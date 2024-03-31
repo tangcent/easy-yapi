@@ -94,7 +94,7 @@ fun <T> ActionContext.callWithBoundary(action: () -> T): T? {
     try {
         ret = action()
     } catch (e: Exception) {
-        ActionContext.instance(Logger::class).traceError(e)
+        logger().traceError(e)
     }
     boundary.waitComplete()
     return ret
@@ -109,12 +109,14 @@ fun ActionContext.withBoundary(timeOut: Long, action: () -> Unit) {
     try {
         action()
     } catch (e: Throwable) {
-        ActionContext.instance(Logger::class).traceError(e)
+        logger().traceError(e)
     }
     if (!boundary.waitComplete(timeOut)) {
         boundary.close()
     }
 }
+
+fun ActionContext.logger() = instance(Logger::class)
 
 /**
  * Runs the specified action with the current ActionContext instance.

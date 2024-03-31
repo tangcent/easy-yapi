@@ -39,7 +39,7 @@ object JacksonUtils : Log() {
         val split = json.indexOf(',')
         return try {
             objectMapper.readValue(
-                json.substring(split + 1).resolveGsonLazily(),
+                GsonExUtils.resolveGsonLazily(json.substring(split + 1)),
                 Class.forName(json.substring(0, split)) as Class<T>
             )
         } catch (e: Exception) {

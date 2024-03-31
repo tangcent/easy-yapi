@@ -6,7 +6,7 @@ import com.google.inject.name.Named
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.util.io.FileUtil
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.extend.logger
 import com.itangcent.intellij.util.FileUtils
 import com.itangcent.intellij.util.ToolUtils
 import com.itangcent.utils.localPath
@@ -27,7 +27,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
     private val lastImportedLocation: String? = null
 
     @Inject
-    private val actionContext: ActionContext? = null
+    private lateinit var actionContext: ActionContext
 
     override fun saveOrCopy(
         content: String?,
@@ -62,11 +62,13 @@ class DefaultFileSaveHelper : FileSaveHelper {
     ) {
         if (content == null) return
 
-        IdeaFileChooserHelper.create(actionContext!!, FileChooserDescriptorFactory
-            .createSingleFileOrFolderDescriptor()
-            .withTitle("Export Location")
-            .withDescription("Choose directory to export api to")
-            .withHideIgnored(false))
+        IdeaFileChooserHelper.create(
+            actionContext, FileChooserDescriptorFactory
+                .createSingleFileOrFolderDescriptor()
+                .withTitle("Export Location")
+                .withDescription("Choose directory to export api to")
+                .withHideIgnored(false)
+        )
             .lastSelectedLocation(getLastImportedLocation())
             .selectFile({ file ->
                 if (file.isDirectory) {
@@ -107,11 +109,13 @@ class DefaultFileSaveHelper : FileSaveHelper {
         onSaveFailed: (String?) -> Unit,
         onSaveCancel: () -> Unit,
     ) {
-        IdeaFileChooserHelper.create(actionContext!!, FileChooserDescriptorFactory
-            .createSingleFileOrFolderDescriptor()
-            .withTitle("Select Location")
-            .withDescription("Choose folder/file to save")
-            .withHideIgnored(false))
+        IdeaFileChooserHelper.create(
+            actionContext, FileChooserDescriptorFactory
+                .createSingleFileOrFolderDescriptor()
+                .withTitle("Select Location")
+                .withDescription("Choose folder/file to save")
+                .withHideIgnored(false)
+        )
             .lastSelectedLocation(getLastImportedLocation())
             .selectFile({ file ->
                 if (file.isDirectory) {
@@ -171,16 +175,15 @@ class DefaultFileSaveHelper : FileSaveHelper {
     }
 
     private fun copyAndLog(info: String, onCopy: () -> Unit) {
-        val logger: Logger = ActionContext.getContext()!!.instance(Logger::class)
         try {
             ToolUtils.copy2Clipboard(info)
-        } catch (e: HeadlessException) {
+        } catch (_: HeadlessException) {
         }
         onCopy()
         if (info.length > 10000) {
-            logger.info("Api data is too lager to show in console!")
+            actionContext.logger().info("Api data is too lager to show in console!")
         } else {
-            logger.log(info)
+            actionContext.logger().log(info)
         }
     }
 
