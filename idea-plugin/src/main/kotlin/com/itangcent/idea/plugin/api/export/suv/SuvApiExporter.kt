@@ -43,6 +43,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.findCurrentMethod
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.extend.logger
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
@@ -171,7 +172,7 @@ open class SuvApiExporter {
 
         fun exportApisFromMethod(actionContext: ActionContext, requests: List<DocWrapper>) {
 
-            this.logger = actionContext.instance(Logger::class)
+            this.logger = actionContext.logger()
 
             val actionContextBuilder = ActionContext.builder()
             actionContextBuilder.setParentContext(actionContext)
@@ -240,7 +241,7 @@ open class SuvApiExporter {
 
             builder.inheritFrom(actionContext, TipsHelper::class)
 
-//            builder.bindInstance(Logger::class, BeanWrapperProxies.wrap(Logger::class, actionContext.instance(Logger::class)))
+//            builder.bindInstance(Logger::class, BeanWrapperProxies.wrap(Logger::class, actionContext.logger()))
 
 //            builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
 //            builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }

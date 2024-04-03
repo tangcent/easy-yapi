@@ -11,7 +11,7 @@ import com.itangcent.http.HttpRequest
 import com.itangcent.http.HttpResponse
 import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.utils.resolveGsonLazily
+import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.asJsonElement
@@ -208,7 +208,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         val request = getHttpClient().put("$COLLECTION/$collectionId")
             .contentType(ContentType.APPLICATION_JSON)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
-            .body(GsonUtils.toJson(linkedMapOf("collection" to apiInfo)).resolveGsonLazily())
+            .body(GsonUtils.toJson(linkedMapOf("collection" to apiInfo)).apply { GsonExUtils.resolveGsonLazily(this) })
 
         try {
             beforeRequest(request)

@@ -21,7 +21,10 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.FormParam
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.hasBodyOrForm
-import com.itangcent.common.utils.*
+import com.itangcent.common.utils.appendlnIfNotEmpty
+import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.safe
 import com.itangcent.http.*
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.icons.EasyIcons
@@ -32,6 +35,7 @@ import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.idea.swing.onSelect
 import com.itangcent.idea.swing.onTextChange
 import com.itangcent.idea.utils.*
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.LocalFileRepository
@@ -40,8 +44,6 @@ import com.itangcent.suv.http.HttpClientProvider
 import org.apache.commons.lang3.RandomUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.apache.http.entity.ContentType
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GridBagConstraints
@@ -1320,7 +1322,10 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         super.onDispose()
     }
 
-    class ResponseStatus(var response: HttpResponse) {
+    class ResponseStatus(
+        var response: HttpResponse,
+        val actionContext: ActionContext = ActionContext.getContext()!!
+    ) {
 
         //auto format
         var isFormat: Boolean = true
@@ -1344,14 +1349,17 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
             return try {
                 val contentType = safe { response.contentType()?.let { ContentType.parse(it) } }
                 if (contentType != null) {
-                    if (contentType.mimeType.startsWith("text/html") || contentType.mimeType.startsWith("text/xml")) {
-                        val doc: Document = Jsoup.parse(getRawResult())
-                        doc.outputSettings().prettyPrint(true)
-                        return doc.outerHtml()
+                    if (contentType.mimeType.startsWith("text/html")) {
+                        return getRawResult()?.let { actionContext.instance(FormatterHelper::class).formatHtml(it) }
+                    }
+                    if (contentType.mimeType.startsWith("text/xml")) {
+                        return getRawResult()?.let { actionContext.instance(FormatterHelper::class).formatXml(it) }
+                    }
+                    if (contentType.mimeType.startsWith("application/json")) {
+                        return getRawResult()?.let { actionContext.instance(FormatterHelper::class).formatJson(it) }
                     }
                 }
-
-                getRawResult()?.let { GsonUtils.prettyJsonStr(it) }
+                getRawResult()
             } catch (e: Exception) {
                 getRawResult()
             }

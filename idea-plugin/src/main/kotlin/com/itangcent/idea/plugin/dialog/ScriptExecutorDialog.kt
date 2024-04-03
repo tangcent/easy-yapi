@@ -25,6 +25,7 @@ import com.itangcent.intellij.config.rule.RuleParser
 import com.itangcent.intellij.config.rule.StringRule
 import com.itangcent.intellij.config.rule.parseStringRule
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.extend.logger
 import com.itangcent.intellij.extend.rx.AutoComputer
 import com.itangcent.intellij.extend.rx.mutual
 import com.itangcent.intellij.jvm.DuckTypeHelper
@@ -618,7 +619,7 @@ class ScriptExecutorDialog : ContextDialog() {
             try {
                 delay = task()
             } catch (e: Throwable) {
-                actionContext.instance(Logger::class)
+                actionContext.logger()
                     .traceError("error to eval script", e)
             } finally {
                 schedule(delay ?: 3000)

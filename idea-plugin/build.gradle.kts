@@ -72,9 +72,6 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.0")
 
-    // https://mvnrepository.com/artifact/org.jsoup/jsoup
-    implementation("org.jsoup:jsoup:1.12.1")
-
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
     implementation("com.fasterxml.jackson.core:jackson-databind:2.12.2")
 

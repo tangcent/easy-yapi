@@ -3,8 +3,7 @@ package com.itangcent.http
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.kit.toJson
-import com.itangcent.common.logger.ILogger
-import com.itangcent.common.spi.SpiUtils
+import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.notNullOrEmpty
 import org.apache.http.HttpEntity
 import org.apache.http.NameValuePair
@@ -36,7 +35,7 @@ import javax.net.ssl.SSLContext
 
 @ScriptTypeName("httpClient")
 open class ApacheHttpClient : HttpClient {
-    companion object {
+    companion object : Log() {
         private fun String.createContentType(charset: String = "UTF-8"): ContentType {
             val contentType = ContentType.parse(this)
             return if (contentType.charset == null) {
@@ -155,8 +154,7 @@ open class ApacheHttpClient : HttpClient {
             val body = request.body()
             if (body != null) {
                 if (requestEntity != null) {
-                    SpiUtils.loadService(ILogger::class)
-                        ?.warn("The request with a body should not set content-type:${request.contentType()}")
+                    LOG.warn("The request with a body should not set content-type:${request.contentType()}")
                 }
                 requestEntity = when (body) {
                     is HttpEntity -> {
