@@ -71,6 +71,11 @@ class EnhancedConfigReader : BaseConfigReader() {
                         contextSwitchListener.onModuleChange {
                             loadConfigList()
                         }
+                        //fix: https://github.com/tangcent/easy-yapi/issues/1121
+                        //if the module is null, the contextSwitchListener will not be triggered
+                        if (contextSwitchListener.getModule() == null) {
+                            loadConfigList()
+                        }
                     } finally {
                         notInit = false
                     }

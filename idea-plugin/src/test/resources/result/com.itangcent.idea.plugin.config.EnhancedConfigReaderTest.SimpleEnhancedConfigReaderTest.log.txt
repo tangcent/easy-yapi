@@ -2,3 +2,7 @@
 [DEBUG]	use built-in config
 [DEBUG]	use recommend config
 [DEBUG]	load remote config
+[TRACE]	No config be found
+[DEBUG]	use built-in config
+[DEBUG]	use recommend config
+[DEBUG]	load remote config
