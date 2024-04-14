@@ -99,6 +99,16 @@ object ClassExportRuleKeys {
         BooleanRuleMode.ANY
     )
 
+    val PARAM_NAME: RuleKey<String> = SimpleRuleKey(
+        "param.name",
+        StringRuleMode.SINGLE
+    )
+
+    val PARAM_TYPE: RuleKey<String> = SimpleRuleKey(
+        "param.type",
+        StringRuleMode.SINGLE
+    )
+
     val PARAM_DEFAULT_VALUE: RuleKey<String> = SimpleRuleKey(
         "param.default.value",
         StringRuleMode.MERGE_DISTINCT

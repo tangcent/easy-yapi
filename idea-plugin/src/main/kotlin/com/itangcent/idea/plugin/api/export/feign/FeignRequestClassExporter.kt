@@ -171,7 +171,7 @@ open class FeignRequestClassExporter : SpringRequestClassExporter() {
 
             addParamAsQuery(
                 parameterExportContext, request, readParamDefaultValue
-                    ?: parameterExportContext.unbox(), ultimateComment
+                    ?: parameterExportContext.unboxedReturnObject(), ultimateComment
             )
             return
         }

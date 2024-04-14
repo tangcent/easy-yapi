@@ -120,6 +120,7 @@ test apis
 | ------------ | ------------ | ------------ | ------------ |
 | strings |  | NO | string array |
 | ints |  | NO | integer array |
+| fake |  | NO | it was only a joke |
 
 
 

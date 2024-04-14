@@ -509,13 +509,16 @@ abstract class RequestClassExporter : ClassExporter {
                         continue
                     }
 
-                    parsedParams.add(ParameterExportContext(methodExportContext, param).also { it.raw() })
+                    parsedParams.add(ParameterExportContext(methodExportContext, param)
+                        .adaptive()
+                        .also { it.originalReturnObject() }
+                    )
                 } finally {
                     ruleComputer.computer(ClassExportRuleKeys.API_PARAM_AFTER, param)
                 }
             }
 
-            val hasFile = parsedParams.any { it.raw().hasFile() }
+            val hasFile = parsedParams.any { it.originalReturnObject().hasFile() }
 
             if (hasFile) {
                 if (request.method == HttpMethod.GET) {
@@ -539,7 +542,7 @@ abstract class RequestClassExporter : ClassExporter {
                     processMethodParameter(
                         request,
                         parameterExportContext,
-                        KVUtils.getUltimateComment(paramDocComment, parameterExportContext.name())
+                        KVUtils.getUltimateComment(paramDocComment, parameterExportContext.originalName())
                             .append(readParamDoc(parameterExportContext.element()))
                     )
                 } finally {
@@ -589,7 +592,6 @@ abstract class RequestClassExporter : ClassExporter {
         return
     }
 
-    @Suppress("UNCHECKED_CAST")
     protected open fun addParamAsQuery(
         parameterExportContext: VariableExportContext,
         request: Request, typeObject: Any?, paramDesc: String? = null,
@@ -600,7 +602,7 @@ abstract class RequestClassExporter : ClassExporter {
             if (typeObject == Magics.FILE_STR) {
                 requestBuilderListener.addFormFileParam(
                     parameterExportContext,
-                    request, parameterExportContext.paramName(),
+                    request, parameterExportContext.name(),
                     parameterExportContext.required()
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.element())
                         ?: false, paramDesc
@@ -612,7 +614,7 @@ abstract class RequestClassExporter : ClassExporter {
                 requestBuilderListener.addParam(
                     parameterExportContext,
                     request,
-                    parameterExportContext.paramName(),
+                    parameterExportContext.name(),
                     tinyQueryParam(parameterExportContext.defaultVal() ?: typeObject),
                     parameterExportContext.required()
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.element())
@@ -683,7 +685,6 @@ abstract class RequestClassExporter : ClassExporter {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     protected open fun addParamAsForm(
         parameterExportContext: VariableExportContext,
         request: Request, typeObject: Any?, paramDesc: String? = null,
@@ -693,7 +694,7 @@ abstract class RequestClassExporter : ClassExporter {
             if (typeObject == Magics.FILE_STR) {
                 requestBuilderListener.addFormFileParam(
                     parameterExportContext,
-                    request, parameterExportContext.paramName(),
+                    request, parameterExportContext.name(),
                     ruleComputer.computer(
                         ClassExportRuleKeys.PARAM_REQUIRED,
                         parameterExportContext.element()
@@ -769,7 +770,7 @@ abstract class RequestClassExporter : ClassExporter {
             } else {
                 requestBuilderListener.addFormParam(
                     parameterExportContext,
-                    request, parameterExportContext.paramName(), tinyQueryParam(typeObject)?.toString(),
+                    request, parameterExportContext.name(), tinyQueryParam(typeObject)?.toString(),
                     parameterExportContext.required()
                         ?: ruleComputer.computer(ClassExportRuleKeys.PARAM_REQUIRED, parameterExportContext.element())
                         ?: false, paramDesc
@@ -812,63 +813,113 @@ abstract class RequestClassExporter : ClassExporter {
     }
 
     protected fun deepComponent(obj: Any?): Any? {
-        if (obj == null) {
-            return null
+        val unboxed = obj.unbox()
+        if (unboxed is Map<*, *>) {
+            return RequestUtils.parseRawBody(unboxed)
         }
-        if (obj is Array<*>) {
-            if (obj.isEmpty()) return obj
-            return deepComponent(obj[0])
-        }
-        if (obj is Collection<*>) {
-            if (obj.isEmpty()) return obj
-            return deepComponent(obj.first())
-        }
-        if (obj is Map<*, *>) {
-            return RequestUtils.parseRawBody(obj)
-        }
-        return obj
+        return unboxed
     }
 
     //region extent of ParameterExportContext
-    fun VariableExportContext.setParamName(name: String) {
-        this.setExt("param_name", name)
+
+    /**
+     * Creates a new [ParameterExportContext] that adapts the output of parameters based on certain rules.
+     */
+    fun ParameterExportContext.adaptive(): ParameterExportContext {
+        return AdaptiveParameterContext(this)
     }
 
-    fun VariableExportContext.paramName(): String {
-        return this.getExt<String>("param_name") ?: this.name()
+    /**
+     * Decorator for [ParameterExportContext] that adapts the output of
+     * parameters based on certain rules
+     */
+    inner class AdaptiveParameterContext(
+        val delegate: ParameterExportContext
+    ) : ParameterExportContext by delegate {
+
+        private val nameByRule by lazy {
+            ruleComputer.computer(ClassExportRuleKeys.PARAM_NAME, delegate.element())
+        }
+
+        private val typeByRule by lazy {
+            ruleComputer.computer(ClassExportRuleKeys.PARAM_TYPE, delegate.element())?.let {
+                duckTypeHelper.findDuckType(it, delegate.psi())
+            }
+        }
+
+        override fun name(): String {
+            return nameByRule ?: delegate.name()
+        }
+
+        override fun type(): DuckType? {
+            return typeByRule ?: delegate.type()
+        }
     }
 
+    /**
+     * the original name of the element within the [VariableExportContext]
+     */
+    fun VariableExportContext.originalName(): String {
+        return this.element().name()
+    }
+
+    /**
+     * Sets the 'required' status as an extended property within the [ExportContext]
+     */
     fun ExportContext.setRequired(name: Boolean) {
         this.setExt("required", name)
     }
 
+    /**
+     * Retrieves the 'required' status from the extended properties of the [ExportContext]
+     */
     fun ExportContext.required(): Boolean? {
         return this.getExt<Boolean>("required")
     }
 
+    /**
+     * Sets the default value as an extended property within the [ExportContext]
+     *
+     * @param defaultVal The default value to set.
+     */
     fun ExportContext.setDefaultVal(defaultVal: String) {
         this.setExt("defaultVal", defaultVal)
     }
 
+    /**
+     * Retrieves the default value from the extended properties of the [ExportContext]
+     */
     fun ExportContext.defaultVal(): String? {
         return this.getExt<String>("defaultVal")
     }
 
-    fun VariableExportContext.raw(): Any? {
-        return this.cache("raw") {
+    /**
+     * Computes and caches the original return object (type representation) of a variable within [VariableExportContext].
+     * The computed object is constant and is cached for future use.
+     *
+     * @return The computed type object or null if the type cannot be resolved.
+     */
+    fun VariableExportContext.originalReturnObject(): Any? {
+        return this.cache("originalReturnObj") {
             val paramType = this.type() ?: return@cache null
             val typeObject = psiClassHelper!!.getTypeObject(
                 paramType, this.psi(),
                 this@RequestClassExporter.intelligentSettingsHelper.jsonOptionForInput(JsonOption.READ_COMMENT)
             )
-            this.setExt("raw", typeObject)
+            this.setExt("originalReturnObj", typeObject)
             return@cache typeObject
         }
     }
 
-    fun VariableExportContext.unbox(): Any? {
-        return this.cache("unbox") {
-            return@cache raw().unbox()
+    /**
+     * Computes and caches the unboxed version of the original return object within [VariableExportContext].
+     * Utilizes the previously cached original return object and performs an unboxing operation.
+     *
+     * @return The unboxed object or null if the original is null.
+     */
+    fun VariableExportContext.unboxedReturnObject(): Any? {
+        return this.cache("unboxedReturnObj") {
+            return@cache originalReturnObject().unbox()
         }
     }
 

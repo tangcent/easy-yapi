@@ -203,6 +203,12 @@
                   "value": "",
                   "equals": true,
                   "description": "integer array"
+                },
+                {
+                  "key": "fake",
+                  "value": "",
+                  "equals": true,
+                  "description": "it was only a joke"
                 }
               ],
               "host": "{{test_default}}",
@@ -240,6 +246,12 @@
                       "value": "",
                       "equals": true,
                       "description": "integer array"
+                    },
+                    {
+                      "key": "fake",
+                      "value": "",
+                      "equals": true,
+                      "description": "it was only a joke"
                     }
                   ],
                   "host": "{{test_default}}",

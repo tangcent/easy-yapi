@@ -47,10 +47,13 @@ public class TestCtrl extends BaseController {
      *
      * @param strings string array
      * @param ints    integer array
+     * @param fake    it was only a joke
      */
     @RequestMapping("/arrays")
     public String header(@RequestParam(name = "string", required = false) String[] strings,
-                         @RequestParam(name = "int", defaultValue = "1") int[] ints) {
+                         @RequestParam(name = "int", defaultValue = "1") int[] ints,
+                         @RequestParam(name = "none", defaultValue = "1") int fake
+    ) {
         return "ok";
     }
 

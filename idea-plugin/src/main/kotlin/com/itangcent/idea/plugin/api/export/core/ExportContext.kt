@@ -13,6 +13,9 @@ import com.itangcent.intellij.jvm.element.ExplicitParameter
 import kotlin.reflect.KClass
 
 interface ExportContext : Extensible {
+    /**
+     * the parent context, allowing navigation up the context hierarchy.
+     */
     fun parent(): ExportContext?
 
     /**
@@ -23,22 +26,45 @@ interface ExportContext : Extensible {
     fun psi(): PsiElement
 }
 
+/**
+ * Extends ExportContext for contexts dealing with variables (methods or parameters).
+ */
 interface VariableExportContext : ExportContext {
 
+    /**
+     * the name of the variable.
+     */
     fun name(): String
 
+    /**
+     * the type of the variable, which may be null if the type is not resolved.
+     */
     fun type(): DuckType?
 
+    /**
+     * the explicit element representation of the variable.
+     */
     fun element(): ExplicitElement<*>
+
+    /**
+     * Sets a resolved name for the variable, typically used for renaming.
+     */
+    fun setResolvedName(name: String)
 }
 
 //region kits of ExportContext
 
+/**
+ * find specific contexts by type.
+ */
 @Suppress("UNCHECKED_CAST")
 fun <T : ExportContext> ExportContext.findContext(condition: KClass<T>): T? {
     return findContext { condition.isInstance(it) } as? T
 }
 
+/**
+ * find specific contexts by condition.
+ */
 fun ExportContext.findContext(condition: (ExportContext) -> Boolean): ExportContext? {
     var exportContext: ExportContext? = this
     while (exportContext != null) {
@@ -50,17 +76,11 @@ fun ExportContext.findContext(condition: (ExportContext) -> Boolean): ExportCont
     return null
 }
 
-fun <T> ExportContext.findExt(attr: String): T? {
-    var exportContext: ExportContext? = this
-    while (exportContext != null) {
-        exportContext.getExt<T>(attr)?.let { return it }
-        exportContext = exportContext.parent()
-    }
-    return null
-}
-
 //endregion
 
+/**
+ * Base context with no parent, typically used for top-level classes.
+ */
 abstract class RootExportContext :
     SimpleExtensible(), ExportContext {
     override fun parent(): ExportContext? {
@@ -68,21 +88,46 @@ abstract class RootExportContext :
     }
 }
 
+/**
+ * General purpose context implementation with a specified parent context.
+ */
 abstract class AbstractExportContext(private val parent: ExportContext) :
-    SimpleExtensible(), ExportContext {
+    SimpleExtensible(), VariableExportContext {
+
+    private var resolvedName: String? = null
+
     override fun parent(): ExportContext? {
         return this.parent
     }
+
+    /**
+     * Returns the name of the element.
+     *
+     * @return the element name.
+     */
+    override fun name(): String {
+        return resolvedName ?: element().name()
+    }
+
+    override fun setResolvedName(name: String) {
+        this.resolvedName = name
+    }
 }
 
+/**
+ * Context specifically for a class
+ */
 class ClassExportContext(val cls: PsiClass) : RootExportContext() {
     override fun psi(): PsiClass {
         return cls
     }
 }
 
+/**
+ * Context for a method, containing specifics about the method being exported.
+ */
 class MethodExportContext(
-    private val parent: ExportContext,
+    parent: ExportContext,
     private val method: ExplicitMethod
 ) : AbstractExportContext(parent), VariableExportContext {
 
@@ -113,19 +158,27 @@ class MethodExportContext(
     }
 }
 
-class ParameterExportContext(
-    private val parent: ExportContext,
-    private val parameter: ExplicitParameter
-) : AbstractExportContext(parent), VariableExportContext {
+/**
+ * Context for a parameter, containing specifics about the parameter being exported.
+ */
+interface ParameterExportContext : VariableExportContext {
 
-    /**
-     * Returns the name of the element.
-     *
-     * @return the element name.
-     */
-    override fun name(): String {
-        return parameter.name()
-    }
+    override fun element(): ExplicitParameter
+
+    override fun psi(): PsiParameter
+}
+
+fun ParameterExportContext(
+    parent: ExportContext,
+    parameter: ExplicitParameter
+): ParameterExportContext {
+    return ParameterExportContextImpl(parent, parameter)
+}
+
+class ParameterExportContextImpl(
+    parent: ExportContext,
+    private val parameter: ExplicitParameter
+) : AbstractExportContext(parent), ParameterExportContext {
 
     /**
      * Returns the type of the variable.
@@ -145,18 +198,30 @@ class ParameterExportContext(
     }
 }
 
+/**
+ * retrieve ClassExportContext based on the current context.
+ */
 fun ExportContext.classContext(): ClassExportContext? {
     return this.findContext(ClassExportContext::class)
 }
 
+/**
+ * retrieve MethodExportContext based on the current context.
+ */
 fun ExportContext.methodContext(): MethodExportContext? {
     return this.findContext(MethodExportContext::class)
 }
 
+/**
+ * retrieve ParameterExportContext based on the current context.
+ */
 fun ExportContext.paramContext(): ParameterExportContext? {
     return this.findContext(ParameterExportContext::class)
 }
 
+/**
+ * Searches for an extended property, first locally then up the context hierarchy.
+ */
 fun <T> ExportContext.searchExt(attr: String): T? {
     this.getExt<T>(attr)?.let { return it }
     this.parent()?.searchExt<T>(attr)?.let { return it }
