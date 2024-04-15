@@ -1,3 +1,11 @@
+* 2.7.0
+	* feat: add rules `param.name`, `param.type`  [(#1128)](https://github.com/tangcent/easy-yapi/pull/1128)
+
+	* feat: add support for io.swagger.v3.oas.annotations.media.Schema annotation  [(#1127)](https://github.com/tangcent/easy-yapi/pull/1127)
+
+	* fix: fix issue where the configuration was not being loaded before actions were performed  [(#1123)](https://github.com/tangcent/easy-yapi/pull/1123)
+
+	* feat: Replace gson and jsoup with IntelliJ code style for JSON/XML/HTML formatting  [(#1119)](https://github.com/tangcent/easy-yapi/pull/1119)
 * 2.6.9
 	* fix: implement error handling in remoteConfigContent function  [(#1115)](https://github.com/tangcent/easy-yapi/pull/1115)
 
