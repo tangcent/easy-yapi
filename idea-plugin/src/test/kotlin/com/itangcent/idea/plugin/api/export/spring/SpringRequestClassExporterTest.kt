@@ -24,7 +24,6 @@ import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
-import junit.framework.Assert
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -115,7 +114,10 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 "api.param.parse.before=groovy:logger.info(\"before parse param:\"+it)\n" +
                 "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n" +
                 "method.return.main[groovy:it.returnType().isExtend(\"com.itangcent.model.Result\")]=data\n" +
-                "enum.use.by.type=true\n"
+                "enum.use.by.type=true\n" +
+                "param.name=groovy:if(it.name()==\"fake\") \"joke\"\n" +
+                "param.type=groovy:if(it.name()==\"fake\") \"java.lang.String\"\n" +
+                "param.default.value=groovy:if(it.name()==\"fake\") \"a joke\"\n"
     }
 
     override fun bind(builder: ActionContext.ActionContextBuilder) {
@@ -218,6 +220,10 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("1", querys[1].value)
             assertEquals("integer array", querys[1].desc)
             assertEquals(true, querys[1].required)
+            assertEquals("joke", querys[2].name)
+            assertEquals("a joke", querys[2].value)
+            assertEquals("it was only a joke", querys[2].desc)
+            assertEquals(true, querys[2].required)
         }
         requests[3].let { request ->
             assertEquals(testCtrlPsiClass.methods[3], (request.resource as PsiResource).resource())
@@ -470,6 +476,10 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("1", querys[1].value)
             assertEquals("integer array", querys[1].desc)
             assertEquals(true, querys[1].required)
+            assertEquals("joke", querys[2].name)
+            assertEquals("a joke", querys[2].value)
+            assertEquals("it was only a joke", querys[2].desc)
+            assertEquals(true, querys[2].required)
         }
         requests[3].let { request ->
             assertEquals(testCtrlPsiClass.methods[3], (request.resource as PsiResource).resource())
@@ -663,8 +673,10 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             )
         }
 
-        assertEquals(ResultLoader.load("testExportFromTestCtrlWithOutExpanded"),
-            LoggerCollector.getLog().toUnixString())
+        assertEquals(
+            ResultLoader.load("testExportFromTestCtrlWithOutExpanded"),
+            LoggerCollector.getLog().toUnixString()
+        )
     }
 
     fun testExportFromUserApi() {

@@ -126,10 +126,10 @@ token:
 
 ###
 
-### ref: com.itangcent.api.TestCtrl#header(java.lang.String[],int[])
+### ref: com.itangcent.api.TestCtrl#header(java.lang.String[],int[],int)
 ### test query with array parameters
 
-GET http://localhost:8080/test/arrays?string=&int=1
+GET http://localhost:8080/test/arrays?string=&int=1&none=1
 token: 
 
 

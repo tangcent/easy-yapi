@@ -57,7 +57,7 @@ curl -X GET -H 'x-token: ' -H 'token: ' http://localhost:8080/test/header
 
 ## test query with array parameters
 ```bash
-curl -X GET -H 'token: ' http://localhost:8080/test/arrays?string=\&int=1
+curl -X GET -H 'token: ' http://localhost:8080/test/arrays?string=\&int=1\&none=1
 ```
 
 ---

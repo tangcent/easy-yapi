@@ -779,6 +779,12 @@
         "value": 0,
         "desc": "integer array",
         "required": 0
+      },
+      {
+        "name": "fake",
+        "value": 0,
+        "desc": "it was only a joke",
+        "required": 0
       }
     ],
     "api_opened": false,

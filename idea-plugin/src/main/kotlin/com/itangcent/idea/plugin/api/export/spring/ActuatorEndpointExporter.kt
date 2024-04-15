@@ -8,8 +8,6 @@ import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.common.utils.cache
-import com.itangcent.common.utils.firstOrNull
-import com.itangcent.common.utils.mapNotNull
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.api.export.core.*
@@ -63,6 +61,7 @@ class ActuatorEndpointExporter : SpringRequestClassExporter() {
                         request, HttpMethod.GET
                     )
                 }
+
                 SpringClassName.WRITE_OPERATION_ANNOTATION -> {
                     requestBuilderListener.setMethodIfMissed(
                         methodExportContext,
@@ -70,6 +69,7 @@ class ActuatorEndpointExporter : SpringRequestClassExporter() {
                     )
                     methodExportContext.setExt("hasWriteOrDeleteOperation", true)
                 }
+
                 SpringClassName.DELETE_OPERATION_ANNOTATION -> {
                     requestBuilderListener.setMethodIfMissed(
                         methodExportContext,

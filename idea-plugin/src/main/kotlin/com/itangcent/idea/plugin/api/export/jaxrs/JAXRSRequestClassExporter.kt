@@ -129,14 +129,14 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
                         ?: HttpMethod.POST
                 )
             }
-            addParamAsForm(exportContext, request, exportContext.unbox(), ultimateComment)
+            addParamAsForm(exportContext, request, exportContext.unboxedReturnObject(), ultimateComment)
             return
         }
 
         //@QueryParam
         if (annotationHelper.hasAnn(exportContext.psi(), JAXRSClassName.QUERY_PARAM_ANNOTATION)) {
             findParamName(exportContext, JAXRSClassName.QUERY_PARAM_ANNOTATION)
-            addParamAsQuery(exportContext, request, exportContext.unbox(), ultimateComment)
+            addParamAsQuery(exportContext, request, exportContext.unboxedReturnObject(), ultimateComment)
             return
         }
 
@@ -192,11 +192,11 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
 
         //as body by default
         if (exportContext is FieldExportContext) {
-            addParamAsQuery(exportContext, request, exportContext.unbox(), ultimateComment)
+            addParamAsQuery(exportContext, request, exportContext.unboxedReturnObject(), ultimateComment)
         } else {
             setRequestBody(
                 exportContext,
-                request, exportContext.raw(), paramDesc
+                request, exportContext.originalReturnObject(), paramDesc
             )
         }
         return
@@ -204,7 +204,7 @@ open class JAXRSRequestClassExporter : RequestClassExporter() {
 
     private fun findParamName(exportContext: VariableExportContext, annName: String): String {
         annotationHelper.findAttrAsString(exportContext.psi(), annName)
-            ?.also { exportContext.setParamName(it) }
+            ?.also { exportContext.setResolvedName(it) }
             ?.let { return it }
         return exportContext.name()
     }

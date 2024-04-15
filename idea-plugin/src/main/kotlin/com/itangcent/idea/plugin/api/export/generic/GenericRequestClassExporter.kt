@@ -69,17 +69,19 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         //RequestBody(json)
         if (isJsonBody(parameterExportContext.psi())) {
             if (request.method == "GET") {
-                logger.warn("Attempted to use a request body with a GET method in ${parameterExportContext.psi().containingFile.name} at ${parameterExportContext.psi().textOffset}." +
-                        " Please ensure the HTTP method supports a body or adjust the rule [generic.param.as.json.body].")
+                logger.warn(
+                    "Attempted to use a request body with a GET method in ${parameterExportContext.psi().containingFile.name} at ${parameterExportContext.psi().textOffset}." +
+                            " Please ensure the HTTP method supports a body or adjust the rule [generic.param.as.json.body]."
+                )
                 addParamAsQuery(
                     parameterExportContext, request, parameterExportContext.defaultVal()
-                        ?: parameterExportContext.unbox(), getUltimateComment(paramDesc, parameterExportContext)
+                        ?: parameterExportContext.unboxedReturnObject(), getUltimateComment(paramDesc, parameterExportContext)
                 )
                 return
             }
             setRequestBody(
                 parameterExportContext,
-                request, parameterExportContext.raw(), paramDesc
+                request, parameterExportContext.originalReturnObject(), paramDesc
             )
             return
         }
@@ -89,9 +91,9 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
             if (request.method == HttpMethod.GET) {
                 logger.warn("Form is not supported for GET method, it will be resolved as query.")
-                addParamAsQuery(parameterExportContext, request, parameterExportContext.unbox())
+                addParamAsQuery(parameterExportContext, request, parameterExportContext.unboxedReturnObject())
             } else {
-                addParamAsForm(parameterExportContext, request, parameterExportContext.unbox(), paramDesc)
+                addParamAsForm(parameterExportContext, request, parameterExportContext.unboxedReturnObject(), paramDesc)
             }
             return
         }
@@ -103,14 +105,18 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 val header = safe { additionalParseHelper.parseHeaderFromJson(headerStr) }
                 when {
                     header == null -> {
-                        logger.error("Failed to parse additional header in ${parameterExportContext.psi().containingFile.name} at ${parameterExportContext.psi().textOffset}. Header content: '$headerStr'." +
-                                " Verify the header format is correct.")
+                        logger.error(
+                            "Failed to parse additional header in ${parameterExportContext.psi().containingFile.name} at ${parameterExportContext.psi().textOffset}. Header content: '$headerStr'." +
+                                    " Verify the header format is correct."
+                        )
                         return@cache null
                     }
+
                     header.name.isNullOrBlank() -> {
                         logger.error("no name had be found in: $headerStr")
                         return@cache null
                     }
+
                     else -> return@cache header
                 }
             }?.let {
@@ -166,7 +172,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         //form/body/query
         var paramType: String? = null
 
-        findParamName(parameterExportContext.psi())?.let { parameterExportContext.setParamName(it) }
+        findParamName(parameterExportContext.psi())?.let { parameterExportContext.setResolvedName(it) }
 
         if (request.method == "GET") {
             paramType = "query"
@@ -179,7 +185,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(parameterExportContext, request, parameterExportContext.unbox(), ultimateComment)
+            addParamAsQuery(parameterExportContext, request, parameterExportContext.unboxedReturnObject(), ultimateComment)
             return
         }
 
@@ -194,24 +200,27 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             when (paramType) {
                 "body" -> {
                     requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
-                    setRequestBody(parameterExportContext, request, parameterExportContext.raw(), ultimateComment)
+                    setRequestBody(parameterExportContext, request, parameterExportContext.originalReturnObject(), ultimateComment)
                     return
                 }
+
                 "form" -> {
                     requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
                     addParamAsForm(
                         parameterExportContext, request, parameterExportContext.defaultVal()
-                            ?: parameterExportContext.unbox(), ultimateComment
+                            ?: parameterExportContext.unboxedReturnObject(), ultimateComment
                     )
                     return
                 }
+
                 "query" -> {
                     addParamAsQuery(
                         parameterExportContext, request, parameterExportContext.defaultVal()
-                            ?: parameterExportContext.unbox(), ultimateComment
+                            ?: parameterExportContext.unboxedReturnObject(), ultimateComment
                     )
                     return
                 }
+
                 else -> {
                     logger.warn(
                         "Unknown param type:$paramType." +
@@ -222,8 +231,8 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             }
         }
 
-        if (parameterExportContext.unbox().hasFile()) {
-            addParamAsForm(parameterExportContext, request, parameterExportContext.unbox(), ultimateComment)
+        if (parameterExportContext.unboxedReturnObject().hasFile()) {
+            addParamAsForm(parameterExportContext, request, parameterExportContext.unboxedReturnObject(), ultimateComment)
             return
         }
 
@@ -231,7 +240,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             requestBuilderListener.addParam(
                 parameterExportContext,
                 request,
-                parameterExportContext.paramName(),
+                parameterExportContext.name(),
                 parameterExportContext.defaultVal(),
                 parameterExportContext.required()
                     ?: false,
@@ -246,7 +255,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
 //        }
 
         //else
-        addParamAsQuery(parameterExportContext, request, parameterExportContext.unbox(), ultimateComment)
+        addParamAsQuery(parameterExportContext, request, parameterExportContext.unboxedReturnObject(), ultimateComment)
     }
 
     private fun getUltimateComment(
