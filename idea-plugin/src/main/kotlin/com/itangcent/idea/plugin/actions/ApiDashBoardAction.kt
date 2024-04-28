@@ -19,8 +19,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.suv.http.HttpClientProvider
 
 class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
 
@@ -38,7 +36,6 @@ class ApiDashBoardAction : ApiExportAction("ApiDashBoard") {
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
 
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
-        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
         builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
         builder.bind(ActiveWindowProvider::class) { it.with(SimpleActiveWindowProvider::class) }

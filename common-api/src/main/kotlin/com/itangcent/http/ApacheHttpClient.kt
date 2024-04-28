@@ -52,11 +52,8 @@ open class ApacheHttpClient : HttpClient {
 
     private val httpClient: org.apache.http.client.HttpClient
 
-    constructor() {
-        val basicCookieStore = BasicCookieStore()
-        this.apacheCookieStore = ApacheCookieStore(basicCookieStore)
-        this.httpClientContext!!.cookieStore = basicCookieStore
-        this.httpClient = HttpClients.custom()
+    constructor() : this(
+        HttpClients.custom()
             .setConnectionManager(PoolingHttpClientConnectionManager().also {
                 it.maxTotal = 50
                 it.defaultMaxPerRoute = 20
@@ -73,10 +70,8 @@ open class ApacheHttpClient : HttpClient {
                     .setSocketTimeout(30 * 1000)
                     .setCookieSpec(CookieSpecs.STANDARD).build()
             )
-            .setSSLHostnameVerifier(NOOP_HOST_NAME_VERIFIER)
-            .setSSLSocketFactory(SSLSF)
             .build()
-    }
+    )
 
     constructor(httpClient: org.apache.http.client.HttpClient) {
         val basicCookieStore = BasicCookieStore()
@@ -133,7 +128,7 @@ open class ApacheHttpClient : HttpClient {
                         if (param.type() == "file") {
                             val filePath = param.value()
                             if (filePath.isNullOrBlank()) {
-                                continue
+                                throw FileNotFoundException("file not found")
                             }
                             val file = File(filePath)
                             if (!file.exists() || !file.isFile) {
@@ -187,13 +182,7 @@ open class ApacheHttpClient : HttpClient {
 }
 
 @ScriptTypeName("request")
-class ApacheHttpRequest : AbstractHttpRequest {
-
-    private val apacheHttpClient: ApacheHttpClient
-
-    constructor(apacheHttpClient: ApacheHttpClient) : super() {
-        this.apacheHttpClient = apacheHttpClient
-    }
+class ApacheHttpRequest(private val apacheHttpClient: ApacheHttpClient) : AbstractHttpRequest() {
 
     /**
      * Executes HTTP request using the [apacheHttpClient].
@@ -214,13 +203,7 @@ fun HttpRequest.contentType(contentType: ContentType): HttpRequest {
  * The implement of [CookieStore] by [org.apache.http.client.CookieStore].
  */
 @ScriptTypeName("cookieStore")
-class ApacheCookieStore : CookieStore {
-
-    private var cookieStore: org.apache.http.client.CookieStore
-
-    constructor(cookieStore: org.apache.http.client.CookieStore) {
-        this.cookieStore = cookieStore
-    }
+class ApacheCookieStore(private var cookieStore: org.apache.http.client.CookieStore) : CookieStore {
 
     /**
      * Adds an [Cookie], replacing any existing equivalent cookies.
@@ -281,7 +264,7 @@ class ApacheHttpResponse(
      *
      * @return  the status of the response, or {@code null} if not yet set
      */
-    override fun code(): Int? {
+    override fun code(): Int {
         val statusLine = response.statusLine
         return statusLine.statusCode
     }
@@ -314,9 +297,11 @@ class ApacheHttpResponse(
     }
 
     /**
-     * Cache the bytes message of this response.
+     * the bytes message of this response.
      */
-    private var bytes: ByteArray? = null
+    private val bodyBytes: ByteArray by lazy {
+        response.entity.toByteArray()
+    }
 
     /**
      * Obtains the bytes message of this response.
@@ -324,17 +309,8 @@ class ApacheHttpResponse(
      * @return  the response bytes, or
      *          {@code null} if there is none
      */
-    override fun bytes(): ByteArray? {
-        if (bytes == null) {
-            synchronized(this)
-            {
-                if (bytes == null) {
-                    val entity = response.entity
-                    bytes = entity.toByteArray()
-                }
-            }
-        }
-        return bytes!!
+    override fun bytes(): ByteArray {
+        return bodyBytes
     }
 
     /**
@@ -353,15 +329,10 @@ class ApacheHttpResponse(
  * The implement of [Cookie] by [org.apache.http.cookie.Cookie].
  */
 @ScriptTypeName("cookie")
-class ApacheCookie : Cookie {
-    private val cookie: org.apache.http.cookie.Cookie
+class ApacheCookie(private val cookie: org.apache.http.cookie.Cookie) : Cookie {
 
     fun getWrapper(): org.apache.http.cookie.Cookie {
         return cookie
-    }
-
-    constructor(cookie: org.apache.http.cookie.Cookie) {
-        this.cookie = cookie
     }
 
     override fun getName(): String? {
@@ -404,7 +375,7 @@ class ApacheCookie : Cookie {
         return cookie.isSecure
     }
 
-    override fun getVersion(): Int? {
+    override fun getVersion(): Int {
         return cookie.version
     }
 

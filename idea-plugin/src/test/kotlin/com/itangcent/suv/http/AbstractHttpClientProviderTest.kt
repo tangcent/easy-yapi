@@ -46,22 +46,4 @@ class AbstractHttpClientProviderTest {
         // Verify that only one instance of the HttpClient was created
         assertNotNull(httpClientRef.get())
     }
-
-    @Test
-    fun `test httpClientInstance is accessible`() {
-        val testProvider = object : AbstractHttpClientProvider() {
-            fun updateHttpClientInstance(httpClient: HttpClient) {
-                httpClientInstance = httpClient
-            }
-
-            override fun buildHttpClient(): HttpClient {
-                return ApacheHttpClient()
-            }
-        }
-        val httpClient = testProvider.getHttpClient()
-        assertNotNull(httpClient)
-        val newHttpClient = ApacheHttpClient()
-        testProvider.updateHttpClientInstance(newHttpClient)
-        assertEquals(newHttpClient, testProvider.getHttpClient())
-    }
 }

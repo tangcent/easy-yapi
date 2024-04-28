@@ -1,3 +1,5 @@
 com.itangcent.intellij.spi.IdeaAutoInject
 com.itangcent.intellij.tip.OnlyOnceInContextTipSetup
 com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
+com.itangcent.idea.psi.DisableDocSupport
+com.itangcent.suv.http.HttpClientScriptInterceptorSupport

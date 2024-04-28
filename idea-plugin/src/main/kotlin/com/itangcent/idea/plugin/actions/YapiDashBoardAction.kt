@@ -15,8 +15,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.suv.http.HttpClientProvider
 
 class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
 
@@ -28,8 +26,7 @@ class YapiDashBoardAction : ApiExportAction("YapiDashBoard") {
         builder.bind(YapiDashBoard::class) { it.singleton() }
 
         builder.bind(YapiApiDashBoardExporter::class) { it.singleton() }
-        builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
-        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
+        builder.bind(YapiApiHelper::class) { it.with(CachedYapiApiHelper::class).singleton() }
 
         //allow cache api
         builder.bind(ClassExporter::class, "delegate_classExporter") {

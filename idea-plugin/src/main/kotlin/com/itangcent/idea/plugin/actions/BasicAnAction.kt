@@ -43,8 +43,6 @@ abstract class BasicAnAction : KotlinAnAction {
         builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
         builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }
 
-        DisableDocSupport.bind(builder)
-
         afterBuildActionContext(event, builder)
     }
 

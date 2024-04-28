@@ -2,6 +2,7 @@ package com.itangcent.idea.psi
 
 import com.google.inject.matcher.Matchers
 import com.itangcent.common.logger.Log
+import com.itangcent.common.spi.SetupAble
 import com.itangcent.common.utils.toBool
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -13,17 +14,19 @@ import org.aopalliance.intercept.MethodInvocation
  * The DisableDocSupport object is responsible for binding the EmptyInterceptor to the ActionContextBuilder.
  * It provides a way to disable the plugin from reading documentation.
  */
-object DisableDocSupport {
+class DisableDocSupport : SetupAble {
     /*
      * Binds the EmptyInterceptor to the ActionContextBuilder, enabling the plugin to intercept method invocations.
      * @param builder The ActionContextBuilder to bind the interceptor to.
      */
-    fun bind(builder: ActionContext.ActionContextBuilder) {
-        builder.bindInterceptor(
-            Matchers.subclassesOf(DocHelper::class.java),
-            Matchers.any(),
-            EmptyInterceptor()
-        )
+    override fun init() {
+        ActionContext.addDefaultInject { builder ->
+            builder.bindInterceptor(
+                Matchers.subclassesOf(DocHelper::class.java),
+                Matchers.any(),
+                EmptyInterceptor
+            )
+        }
     }
 }
 
@@ -31,20 +34,21 @@ object DisableDocSupport {
  * The EmptyInterceptor class is an interceptor used to disable documentation support.
  * Use 'doc.source.disable' configuration property to determine if documentation is enabled or disabled.
  */
-class EmptyInterceptor : MethodInterceptor {
+object EmptyInterceptor : MethodInterceptor, Log() {
 
-    companion object : Log()
-
-    private val disableDoc by lazy {
-        val disable = ActionContext.getContext()
-            ?.instance(ConfigReader::class)
-            ?.first("doc.source.disable")
-            ?.toBool(false) ?: false
-        if (disable) {
-            LOG.info("disable doc")
+    private val disableDoc: Boolean
+        get() {
+            return ActionContext.getContext()?.cacheOrCompute("disableDoc") {
+                val disable = ActionContext.getContext()
+                    ?.instance(ConfigReader::class)
+                    ?.first("doc.source.disable")
+                    ?.toBool(false) ?: false
+                if (disable) {
+                    LOG.info("disable doc")
+                }
+                disable
+            } ?: false
         }
-        disable
-    }
 
     override fun invoke(invocation: MethodInvocation): Any? {
         if (disableDoc) {

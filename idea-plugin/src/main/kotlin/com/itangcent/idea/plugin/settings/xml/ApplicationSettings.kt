@@ -38,6 +38,9 @@ interface ApplicationSettingsSupport {
     //unit:s
     var httpTimeOut: Int
     var trustHosts: Array<String>
+    var unsafeSsl: Boolean
+    var httpClient: String
+
 
     //enable to use recommend config
     var useRecommendConfig: Boolean
@@ -77,7 +80,6 @@ interface ApplicationSettingsSupport {
         newSetting.yapiExportMode = this.yapiExportMode
         newSetting.yapiReqBodyJson5 = this.yapiReqBodyJson5
         newSetting.yapiResBodyJson5 = this.yapiResBodyJson5
-        newSetting.httpTimeOut = this.httpTimeOut
         newSetting.useRecommendConfig = this.useRecommendConfig
         newSetting.recommendConfigs = this.recommendConfigs
         newSetting.logLevel = this.logLevel
@@ -86,6 +88,9 @@ interface ApplicationSettingsSupport {
         newSetting.outputCharset = this.outputCharset
         newSetting.markdownFormatType = this.markdownFormatType
         newSetting.builtInConfig = this.builtInConfig
+        newSetting.httpTimeOut = this.httpTimeOut
+        newSetting.unsafeSsl = this.unsafeSsl
+        newSetting.httpClient = this.httpClient
         newSetting.trustHosts = this.trustHosts
         newSetting.remoteConfig = this.remoteConfig
     }
@@ -157,6 +162,10 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var httpTimeOut: Int = 5
 
     override var trustHosts: Array<String> = Settings.DEFAULT_TRUST_HOSTS
+
+    override var unsafeSsl: Boolean = false
+
+    override var httpClient: String = "Apache"
 
     //endregion
 

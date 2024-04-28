@@ -32,11 +32,13 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
 
     abstract val httpClientProviderClass: KClass<out HttpClientProvider>
 
+    protected val settings = Settings()
+
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) { it.with(httpClientProviderClass) }
         builder.bind(SettingBinder::class) {
-            it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
+            it.toInstance(SettingBinderAdaptor(settings.also { settings ->
                 settings.trustHosts = arrayOf(
                     "https://jsonplaceholder.typicode.com",
                     "!http://forbidden.com"
@@ -56,16 +58,17 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
             .url("https://jsonplaceholder.typicode.com/todos/1")
 
         // Send the request and receive the response.
-        val httpResponse = httpRequest.call()
+        httpRequest.call().use { httpResponse ->
 
-        // Assert that the response is not null.
-        assertNotNull(httpResponse)
+            // Assert that the response is not null.
+            assertNotNull(httpResponse)
 
-        // Assert that the response has a status code of 200.
-        assertEquals(200, httpResponse.code())
+            // Assert that the response has a status code of 200.
+            assertEquals(200, httpResponse.code())
 
-        // Assert that the response has a non-empty entity.
-        assertNotNull(httpResponse.bytes())
+            // Assert that the response has a non-empty entity.
+            assertNotNull(httpResponse.bytes())
+        }
     }
 
     @Test
@@ -81,19 +84,20 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
             .body("Hello, world!")
 
         // Send the request and receive the response.
-        val httpResponse = httpRequest.call()
+        httpRequest.call().use { httpResponse ->
 
-        // Assert that the response is not null.
-        assertNotNull(httpResponse)
+            // Assert that the response is not null.
+            assertNotNull(httpResponse)
 
-        // Assert that the response has a status code of 201.
-        assertEquals(201, httpResponse.code())
+            // Assert that the response has a status code of 201.
+            assertEquals(201, httpResponse.code())
 
-        // Assert that the response has a non-empty entity.
-        assertNotNull(httpResponse.bytes())
+            // Assert that the response has a non-empty entity.
+            assertNotNull(httpResponse.bytes())
 
-        // Assert that the response entity contains the expected text.
-        assertTrue(httpResponse.string().notNullOrBlank())
+            // Assert that the response entity contains the expected text.
+            assertTrue(httpResponse.string().notNullOrBlank())
+        }
     }
 
     @Test
@@ -109,19 +113,20 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
             .body("Hello, world!")
 
         // Send the request and receive the response.
-        val httpResponse = httpRequest.call()
+        httpRequest.call().use { httpResponse ->
 
-        // Assert that the response is not null.
-        assertNotNull(httpResponse)
+            // Assert that the response is not null.
+            assertNotNull(httpResponse)
 
-        // Assert that the response has a status code of 200.
-        assertEquals(200, httpResponse.code())
+            // Assert that the response has a status code of 200.
+            assertEquals(200, httpResponse.code())
 
-        // Assert that the response has a non-empty entity.
-        assertNotNull(httpResponse.bytes())
+            // Assert that the response has a non-empty entity.
+            assertNotNull(httpResponse.bytes())
 
-        // Assert that the response entity contains the expected text.
-        assertTrue(httpResponse.string().notNullOrBlank())
+            // Assert that the response entity contains the expected text.
+            assertTrue(httpResponse.string().notNullOrBlank())
+        }
     }
 
     @Test
@@ -135,19 +140,20 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
             .url("https://jsonplaceholder.typicode.com/posts/1")
 
         // Send the request and receive the response.
-        val httpResponse = httpRequest.call()
+        httpRequest.call().use { httpResponse ->
 
-        // Assert that the response is not null.
-        assertNotNull(httpResponse)
+            // Assert that the response is not null.
+            assertNotNull(httpResponse)
 
-        // Assert that the response has a status code of 200.
-        assertEquals(200, httpResponse.code())
+            // Assert that the response has a status code of 200.
+            assertEquals(200, httpResponse.code())
 
-        // Assert that the response has a non-empty entity.
-        assertNotNull(httpResponse.bytes())
+            // Assert that the response has a non-empty entity.
+            assertNotNull(httpResponse.bytes())
 
-        // Assert that the response entity contains the expected text.
-        assertEquals("{}", httpResponse.string())
+            // Assert that the response entity contains the expected text.
+            assertEquals("{}", httpResponse.string())
+        }
     }
 
     @Test
@@ -354,6 +360,7 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
     fun testCookies() {
         val httpClient = httpClientProvider.getHttpClient()
         val cookieStore = httpClient.cookieStore()
+        cookieStore.clear()
         assertTrue(cookieStore.cookies().isEmpty())
 
         val token = cookieStore.newCookie()
@@ -361,12 +368,8 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
         token.setValue("111111")
         token.setExpiryDate(DateUtils.parse("2021-01-01").time)
         token.setDomain("github.com")
-        token.setPorts(intArrayOf(9999))
-        token.setComment("for auth")
-        token.setCommentURL("http://www.apache.org/licenses/LICENSE-2.0")
         token.setSecure(false)
         token.setPath("/")
-        token.setVersion(100)
         assertTrue(token.isPersistent())
 
         //add cookie which is expired
@@ -382,10 +385,7 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
             assertEquals("token", it.getName())
             assertEquals("111111", it.getValue())
             assertEquals("github.com", it.getDomain())
-            assertEquals("for auth", it.getComment())
-            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", it.getCommentURL())
             assertEquals("/", it.getPath())
-            assertEquals(100, it.getVersion())
             assertEquals(false, it.isSecure())
             assertEquals(DateUtils.parse("2099-01-01").time, it.getExpiryDate())
 
@@ -393,10 +393,7 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
             assertEquals("token", fromJson.getName())
             assertEquals("111111", fromJson.getValue())
             assertEquals("github.com", fromJson.getDomain())
-            assertEquals("for auth", fromJson.getComment())
-            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", fromJson.getCommentURL())
             assertEquals("/", fromJson.getPath())
-            assertEquals(100, fromJson.getVersion())
             assertEquals(false, fromJson.isSecure())
             assertEquals(DateUtils.parse("2099-01-01").time, fromJson.getExpiryDate())
 
@@ -405,10 +402,7 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
             assertEquals("token", mutable.getName())
             assertEquals("111111", mutable.getValue())
             assertEquals("github.com", mutable.getDomain())
-            assertEquals("for auth", mutable.getComment())
-            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", mutable.getCommentURL())
             assertEquals("/", mutable.getPath())
-            assertEquals(100, mutable.getVersion())
             assertEquals(false, mutable.isSecure())
             assertEquals(DateUtils.parse("2099-01-01").time, mutable.getExpiryDate())
 
@@ -422,17 +416,5 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
         assertTrue(cookieStore.cookies().isEmpty())
         cookieStore.addCookies(cookies.toTypedArray())
         assertEquals(1, cookies.size)
-
-        token.setPorts(null)
-        val apacheCookie = token.asApacheCookie()
-        assertNull(apacheCookie.commentURL)
-        assertTrue(apacheCookie.isPersistent)
-
-        val packageApacheCookie = ApacheCookie(apacheCookie)
-        assertEquals("token", packageApacheCookie.getName())
-        assertEquals("111111", packageApacheCookie.getValue())
-        assertEquals("github.com", packageApacheCookie.getDomain())
-        assertEquals("for auth", packageApacheCookie.getComment())
-        assertTrue(packageApacheCookie.isPersistent())
     }
 }

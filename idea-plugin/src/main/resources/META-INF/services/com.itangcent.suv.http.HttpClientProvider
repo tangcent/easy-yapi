@@ -1,0 +1,2 @@
+com.itangcent.suv.http.ApacheHttpClientProvider
+com.itangcent.suv.http.OkHttpClientProvider

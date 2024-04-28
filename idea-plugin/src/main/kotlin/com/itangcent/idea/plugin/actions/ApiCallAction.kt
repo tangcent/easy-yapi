@@ -12,8 +12,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.suv.http.HttpClientProvider
 
 class ApiCallAction : ApiExportAction("Call Api") {
 
@@ -30,8 +28,6 @@ class ApiCallAction : ApiExportAction("Call Api") {
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
 
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
-
-        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
         builder.bind(ApiCaller::class) { it.singleton() }
     }

@@ -14,8 +14,6 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.suv.http.HttpClientProvider
 
 class PostmanExportAction : ApiExportAction("Export Postman") {
 
@@ -27,7 +25,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
 
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
-        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
