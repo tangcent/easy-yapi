@@ -1,112 +1,96 @@
 package com.itangcent.suv.http
 
-import com.google.inject.Inject
-import com.google.inject.Singleton
+import com.google.inject.matcher.Matchers
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.common.spi.SetupAble
 import com.itangcent.http.*
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelper
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
-import org.apache.http.client.config.CookieSpecs
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.config.SocketConfig
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager
+import org.aopalliance.intercept.MethodInterceptor
+import org.aopalliance.intercept.MethodInvocation
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.nio.charset.Charset
-import java.util.concurrent.TimeUnit
 
 /**
- * An implementation of the HttpClientProvider interface
- * that provides a configurable HttpClient implementation.
+ * A support class for integrating [HttpClientProvider]s with scripting functionalities.
+ * This class setups method interceptors on HTTP client providers to augment them with additional
+ * scripting capabilities, monitoring, and conditional execution of HTTP requests based on script annotations.
+ * It is responsible for setting up interception of HTTP client methods to apply custom logic before
+ * or after HTTP requests are executed.
+ *
+ * @author tangcent
+ * @date 2024/05/08
  */
-@Singleton
-class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
+class HttpClientScriptInterceptorSupport : SetupAble {
+    /**
+     * Initializes and adds default injections to intercept [HttpClientProvider] methods,
+     * applying custom interceptor logic defined in [HttpClientScriptInterceptor].
+     */
+    override fun init() {
+        ActionContext.addDefaultInject { builder ->
+            builder.bindInterceptor(
+                Matchers.subclassesOf(HttpClientProvider::class.java),
+                Matchers.any(),
+                HttpClientScriptInterceptor
+            )
+        }
+    }
+}
 
-    @Inject(optional = true)
-    protected val httpSettingsHelper: HttpSettingsHelper? = null
+/**
+ * A method interceptor for [HttpClientProvider] which wraps returned HttpClient instances in a custom wrapper
+ * to augment them with additional functional behaviors.
+ */
+object HttpClientScriptInterceptor : MethodInterceptor {
 
-    @Inject(optional = true)
-    protected val configReader: ConfigReader? = null
-
-    @Inject(optional = true)
-    protected val ruleComputer: RuleComputer? = null
-
-    @Inject
-    protected lateinit var logger: Logger
+    private val logger: Logger = ActionContext.local()
+    private val ruleComputer: RuleComputer = ActionContext.local()
+    private val httpSettingsHelper: HttpSettingsHelper = ActionContext.local()
 
     /**
-     * Builds an instance of HttpClient using configuration options such as timeouts and SSL settings.
-     *
-     * @return An instance of HttpClient.
+     * Intercepts method invocations on [HttpClientProvider]s, wrapping returned HttpClient objects
+     * if they are not already wrapped.
      */
-    override fun buildHttpClient(): HttpClient {
-        val httpClientBuilder = HttpClients.custom()
-
-        val config = readHttpConfig()
-
-        httpClientBuilder
-            .setConnectionManager(PoolingHttpClientConnectionManager().also {
-                it.maxTotal = 50
-                it.defaultMaxPerRoute = 20
-            })
-            .setDefaultSocketConfig(
-                SocketConfig.custom()
-                    .setSoTimeout(config.timeOut)
-                    .build()
-            )
-            .setDefaultRequestConfig(
-                RequestConfig.custom()
-                    .setConnectTimeout(config.timeOut)
-                    .setConnectionRequestTimeout(config.timeOut)
-                    .setSocketTimeout(config.timeOut)
-                    .setCookieSpec(CookieSpecs.STANDARD).build()
-            )
-            .setSSLHostnameVerifier(NOOP_HOST_NAME_VERIFIER)
-            .setSSLSocketFactory(SSLSF)
-
-        return HttpClientWrapper(ApacheHttpClient(httpClientBuilder.build()))
+    override fun invoke(invocation: MethodInvocation): Any {
+        if (invocation.method.returnType == HttpClient::class.java) {
+            return (invocation.proceed() as HttpClient).wrap()
+        }
+        return invocation.proceed()
     }
 
-    private fun readHttpConfig(): HttpConfig {
-        val httpConfig = HttpConfig()
-
-        httpSettingsHelper?.let {
-            httpConfig.timeOut = it.httpTimeOut(TimeUnit.MILLISECONDS)
+    /**
+     * Ensures that an HttpClient instance is wrapped with [HttpClientWrapper] to apply custom behaviors.
+     *
+     * @return A wrapped HttpClient instance.
+     */
+    private fun HttpClient.wrap(): HttpClient {
+        if (this is HttpClientWrapper) {
+            return this
         }
-
-        if (configReader != null) {
-            try {
-                configReader.first("http.timeOut")?.toLong()
-                    ?.let { httpConfig.timeOut = TimeUnit.SECONDS.toMillis(it).toInt() }
-            } catch (e: NumberFormatException) {
-                logger.warn("http.timeOut must be a number")
-            }
-        }
-
-        return httpConfig
+        return HttpClientWrapper(this)
     }
 
     /**
      * A wrapper class that implements the HttpClient interface and delegates to a wrapped HttpClient instance.
      */
     @ScriptTypeName("httpClient")
-    private inner class HttpClientWrapper(private val httpClient: HttpClient) : HttpClient {
+    internal class HttpClientWrapper(val delegate: HttpClient) : HttpClient {
 
         override fun cookieStore(): CookieStore {
-            return httpClient.cookieStore()
+            return delegate.cookieStore()
         }
 
         /**
          * Wraps the request in a custom HttpRequestWrapper implementation and delegates to the wrapped HttpClient instance.
          */
         override fun request(): HttpRequest {
-            return HttpRequestWrapper(httpClient.request())
+            return HttpRequestWrapper(delegate.request())
         }
     }
 
@@ -114,7 +98,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
      * A wrapper class that implements the HttpRequest interface and delegates to a wrapped HttpRequest instance.
      */
     @ScriptTypeName("request")
-    private inner class HttpRequestWrapper(private val httpRequest: HttpRequest) : HttpRequest by httpRequest {
+    private class HttpRequestWrapper(private val httpRequest: HttpRequest) : HttpRequest by httpRequest {
 
         /**
          * Set the HTTP method to request
@@ -235,9 +219,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
          */
         override fun call(): HttpResponse {
             val url = url() ?: throw IllegalArgumentException("url not be set")
-            if (httpSettingsHelper != null
-                && !httpSettingsHelper.checkTrustUrl(url, false)
-            ) {
+            if (!httpSettingsHelper.checkTrustUrl(url, false)) {
                 logger.warn("[access forbidden] call:$url")
                 return EmptyHttpResponse(this)
             }
@@ -245,7 +227,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
             while (true) {
                 val suvRuleContext = SuvRuleContext()
                 suvRuleContext.setExt("request", this)
-                ruleComputer!!.computer(ClassExportRuleKeys.HTTP_CLIENT_BEFORE_CALL, suvRuleContext, null)
+                ruleComputer.computer(ClassExportRuleKeys.HTTP_CLIENT_BEFORE_CALL, suvRuleContext, null)
                 val response = DiscardAbleHttpResponse(httpRequest.call())
                 suvRuleContext.setExt("response", response)
                 ruleComputer.computer(ClassExportRuleKeys.HTTP_CLIENT_AFTER_CALL, suvRuleContext, null)
@@ -262,7 +244,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
     /**
      * An implementation of the HttpResponse interface that returns empty or null values for all methods.
      */
-    class EmptyHttpResponse(private val request: HttpRequest) : HttpResponse {
+    private class EmptyHttpResponse(private val request: HttpRequest) : HttpResponse {
         override fun code(): Int {
             return 404
         }
@@ -322,7 +304,7 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
      * discard() method that can be used to discard the current response and recall the request.
      */
     @ScriptTypeName("response")
-    class DiscardAbleHttpResponse(httpResponse: HttpResponse) : HttpResponse by httpResponse {
+    private class DiscardAbleHttpResponse(httpResponse: HttpResponse) : HttpResponse by httpResponse {
 
         private var discarded = false
 
@@ -337,18 +319,5 @@ class ConfigurableHttpClientProvider : AbstractHttpClientProvider() {
         fun isDiscarded(): Boolean {
             return this.discarded
         }
-    }
-
-    /**
-     * A data class that holds configuration settings for the HTTP client.
-     */
-    class HttpConfig {
-
-        //default 10s
-        var timeOut: Int = defaultHttpTimeOut
-    }
-
-    companion object {
-        const val defaultHttpTimeOut: Int = 10
     }
 }

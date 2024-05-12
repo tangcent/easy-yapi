@@ -1,26 +1,19 @@
-package com.itangcent.http
+package com.itangcent.suv.http
 
 import com.itangcent.common.utils.DateUtils
 import com.itangcent.common.utils.FileUtils
-import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.common.utils.readString
-import org.apache.http.HttpEntity
+import com.itangcent.http.*
+import okhttp3.Headers
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Response
+import okhttp3.ResponseBody
 import org.apache.http.HttpEntityEnclosingRequest
-import org.apache.http.HttpResponse
-import org.apache.http.HttpVersion
-import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.entity.UrlEncodedFormEntity
-import org.apache.http.client.methods.HttpUriRequest
-import org.apache.http.config.SocketConfig
 import org.apache.http.conn.ConnectTimeoutException
 import org.apache.http.entity.ContentType
-import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.message.BasicStatusLine
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
@@ -28,21 +21,25 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
-import java.io.Closeable
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.charset.Charset
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
+import kotlin.reflect.KClass
 import kotlin.test.*
 
 /**
- * Test case of [ApacheHttpClient]
+ * Test case of [OkHttpClient]
+ *
+ * @author tangcent
+ * @date 2024/05/09
  */
-class ApacheHttpClientTest {
+class OkHttpClientTest {
 
     @Test
     fun testMethods() {
-        val httpClient: HttpClient = ApacheHttpClient()
+        val httpClient: HttpClient = OkHttpClient()
 
         //GET
         httpClient.get().url("https://github.com/tangcent/easy-yapi/pulls").let {
@@ -128,7 +125,7 @@ class ApacheHttpClientTest {
 
     @Test
     fun testHeaders() {
-        val httpClient: HttpClient = ApacheHttpClient()
+        val httpClient: HttpClient = OkHttpClient()
         val request = httpClient.request()
 
         assertFalse(request.containsHeader("x-token"))
@@ -169,7 +166,7 @@ class ApacheHttpClientTest {
 
     @Test
     fun testQuery() {
-        val httpClient: HttpClient = ApacheHttpClient()
+        val httpClient: HttpClient = OkHttpClient()
         val request = httpClient.request()
         assertNull(request.querys())
         request.query("q", "test")
@@ -178,7 +175,7 @@ class ApacheHttpClientTest {
 
     @Test
     fun testBody() {
-        val httpClient: HttpClient = ApacheHttpClient()
+        val httpClient: HttpClient = OkHttpClient()
         val request = httpClient.request()
         assertNull(request.body())
         request.body("body")
@@ -189,7 +186,7 @@ class ApacheHttpClientTest {
 
     @Test
     fun testContentType() {
-        val httpClient: HttpClient = ApacheHttpClient()
+        val httpClient: HttpClient = OkHttpClient()
         val request = httpClient.request()
         assertNull(request.contentType())
         request.contentType("application/json")
@@ -202,7 +199,7 @@ class ApacheHttpClientTest {
 
     @Test
     fun testParams() {
-        val httpClient: HttpClient = ApacheHttpClient()
+        val httpClient: HttpClient = OkHttpClient()
         val request = httpClient.request()
         assertFalse(request.containsParam("auth"))
         assertNull(request.params("auth"))
@@ -236,7 +233,7 @@ class ApacheHttpClientTest {
 
     @Test
     fun testCookies() {
-        val httpClient: HttpClient = ApacheHttpClient()
+        val httpClient: HttpClient = OkHttpClient()
         val cookieStore = httpClient.cookieStore()
         assertTrue(cookieStore.cookies().isEmpty())
 
@@ -245,12 +242,8 @@ class ApacheHttpClientTest {
         token.setValue("111111")
         token.setExpiryDate(DateUtils.parse("2021-01-01").time)
         token.setDomain("github.com")
-        token.setPorts(intArrayOf(9999))
-        token.setComment("for auth")
-        token.setCommentURL("http://www.apache.org/licenses/LICENSE-2.0")
         token.setSecure(false)
         token.setPath("/")
-        token.setVersion(100)
         assertTrue(token.isPersistent())
 
         //add cookie which is expired
@@ -266,10 +259,7 @@ class ApacheHttpClientTest {
             assertEquals("token", it.getName())
             assertEquals("111111", it.getValue())
             assertEquals("github.com", it.getDomain())
-            assertEquals("for auth", it.getComment())
-            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", it.getCommentURL())
             assertEquals("/", it.getPath())
-            assertEquals(100, it.getVersion())
             assertEquals(false, it.isSecure())
             assertEquals(DateUtils.parse("2099-01-01").time, it.getExpiryDate())
 
@@ -277,10 +267,7 @@ class ApacheHttpClientTest {
             assertEquals("token", fromJson.getName())
             assertEquals("111111", fromJson.getValue())
             assertEquals("github.com", fromJson.getDomain())
-            assertEquals("for auth", fromJson.getComment())
-            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", fromJson.getCommentURL())
             assertEquals("/", fromJson.getPath())
-            assertEquals(100, fromJson.getVersion())
             assertEquals(false, fromJson.isSecure())
             assertEquals(DateUtils.parse("2099-01-01").time, fromJson.getExpiryDate())
 
@@ -289,10 +276,7 @@ class ApacheHttpClientTest {
             assertEquals("token", mutable.getName())
             assertEquals("111111", mutable.getValue())
             assertEquals("github.com", mutable.getDomain())
-            assertEquals("for auth", mutable.getComment())
-            assertEquals("http://www.apache.org/licenses/LICENSE-2.0", mutable.getCommentURL())
             assertEquals("/", mutable.getPath())
-            assertEquals(100, mutable.getVersion())
             assertEquals(false, mutable.isSecure())
             assertEquals(DateUtils.parse("2099-01-01").time, mutable.getExpiryDate())
 
@@ -306,37 +290,16 @@ class ApacheHttpClientTest {
         assertTrue(cookieStore.cookies().isEmpty())
         cookieStore.addCookies(cookies.toTypedArray())
         assertEquals(1, cookies.size)
-
-        token.setPorts(null)
-        val apacheCookie = token.asApacheCookie()
-        assertNull(apacheCookie.commentURL)
-        assertTrue(apacheCookie.isPersistent)
-
-        val packageApacheCookie = ApacheCookie(apacheCookie)
-        assertEquals("token", packageApacheCookie.getName())
-        assertEquals("111111", packageApacheCookie.getValue())
-        assertEquals("github.com", packageApacheCookie.getDomain())
-        assertEquals("for auth", packageApacheCookie.getComment())
-        assertTrue(packageApacheCookie.isPersistent())
     }
 
     @Test
     fun testCall() {
         try {
-            val httpClient = ApacheHttpClient(
-                HttpClients.custom()
-                    .setDefaultSocketConfig(
-                        SocketConfig.custom()
-                            .setSoTimeout(30 * 1000)
-                            .build()
-                    )
-                    .setDefaultRequestConfig(
-                        RequestConfig.custom()
-                            .setConnectTimeout(30 * 1000)
-                            .setConnectionRequestTimeout(30 * 1000)
-                            .setSocketTimeout(30 * 1000)
-                            .build()
-                    ).build()
+            val httpClient = OkHttpClient(
+                okhttp3.OkHttpClient.Builder()
+                    .connectTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
             )
             val httpResponse = httpClient
                 .post("https://www.apache.org/licenses/LICENSE-2.0")
@@ -354,17 +317,17 @@ class ApacheHttpClientTest {
 
 open class AbstractCallTest {
 
-    protected lateinit var httpClient: org.apache.http.client.HttpClient
-    protected lateinit var httpResponse: HttpResponse
-    protected lateinit var httpEntity: HttpEntity
+    protected lateinit var call: okhttp3.Call
+    protected lateinit var httpClient: okhttp3.OkHttpClient
+    protected lateinit var httpClientBuilder: okhttp3.OkHttpClient.Builder
+    protected lateinit var httpResponseBody: ResponseBody
 
     protected var responseCode: Int = 200
     protected lateinit var responseBody: String
-    protected lateinit var responseHeaders: Array<Pair<String, String>>
+    protected lateinit var responseHeaders: Array<String>
     protected lateinit var responseCharset: Charset
 
-    protected lateinit var httpUriRequest: HttpUriRequest
-    protected var closed: Boolean = false
+    protected lateinit var httpRequest: okhttp3.Request
 
     @BeforeEach
     fun setUp() {
@@ -373,43 +336,58 @@ open class AbstractCallTest {
         responseBody = "{}"
         responseHeaders = arrayOf()
         responseCharset = Charsets.UTF_8
-        closed = false
 
+        httpClientBuilder = mock()
         httpClient = mock()
-        httpResponse = mock(extraInterfaces = arrayOf(Closeable::class))
-        httpEntity = mock()
+        call = mock()
+        httpResponseBody = mock()
 
+        httpClientBuilder.stub {
+            this.on(httpClientBuilder.cookieJar(any()))
+                .doAnswer {
+                    httpClientBuilder
+                }
+            this.on(httpClientBuilder.build())
+                .doAnswer {
+                    httpClient
+                }
+        }
         httpClient.stub {
-            this.on(httpClient.execute(any<HttpUriRequest>(), any()))
+            this.on(httpClient.newCall(any()))
                 .doAnswer {
-                    httpUriRequest = it.getArgument(0)
-                    httpResponse
+                    httpRequest = it.getArgument(0)
+                    call
                 }
         }
-        (httpResponse as Closeable).stub {
-            this.on((httpResponse as Closeable).close())
+        call.stub {
+            this.on(call.execute())
                 .doAnswer {
-                    closed = true
+                    Response.Builder()
+                        .request(okhttp3.Request.Builder().url("https://www.apache.org/licenses/LICENSE-2.0").build())
+                        .protocol(okhttp3.Protocol.HTTP_1_1)
+                        .code(responseCode)
+                        .message("ok")
+                        .headers(Headers.headersOf(*responseHeaders))
+                        .body(httpResponseBody)
+                        .build()
                 }
         }
-        httpResponse.stub {
-            this.on(httpResponse.statusLine)
-                .doAnswer { BasicStatusLine(HttpVersion.HTTP_1_0, responseCode, "") }
-            this.on(httpResponse.entity)
-                .thenReturn(httpEntity)
-            this.on(httpResponse.allHeaders)
+        httpResponseBody.stub {
+            this.on(httpResponseBody.bytes())
+                .doAnswer { responseBody.encodeToByteArray() }
+            this.on(httpResponseBody.string())
+                .doAnswer { responseBody }
+            this.on(httpResponseBody.byteStream())
+                .doAnswer { responseBody.byteInputStream() }
+            this.on(httpResponseBody.charStream())
+                .doAnswer { responseBody.reader() }
+            this.on(httpResponseBody.contentLength())
+                .doAnswer { responseBody.encodeToByteArray().size.toLong() }
+            this.on(httpResponseBody.contentType())
                 .doAnswer {
-                    responseHeaders.mapToTypedArray {
-                        org.apache.http.message.BasicHeader(
-                            it.first,
-                            it.second
-                        )
-                    }
+                    (Headers.headersOf(*responseHeaders)["Content-type"]
+                        ?: ContentType.APPLICATION_JSON.toString()).toMediaType()
                 }
-        }
-        httpEntity.stub {
-            this.on(httpEntity.content)
-                .doAnswer { responseBody.byteInputStream(responseCharset) }
         }
     }
 }
@@ -421,12 +399,12 @@ open class CallTest : AbstractCallTest() {
         responseCode = 200
         responseBody = "ok"
         responseHeaders = arrayOf(
-            "Content-type" to "application/json;charset=UTF-8",
-            "x-token" to "123", "x-token" to "987",
-            "Content-Disposition" to "attachment; filename=\"test.json\""
+            "Content-type", "application/json;charset=UTF-8",
+            "x-token", "123", "x-token", "987",
+            "Content-Disposition", "attachment; filename=\"test.json\""
         )
 
-        val httpClient = ApacheHttpClient(this.httpClient)
+        val httpClient = OkHttpClient(this.httpClientBuilder)
         val httpRequest = httpClient
             .post("https://www.apache.org/licenses/LICENSE-2.0")
             .param("hello", "hello")
@@ -436,9 +414,7 @@ open class CallTest : AbstractCallTest() {
             .call()
         assertSame(httpRequest, httpResponse.request())
 
-        assertTrue(httpUriRequest is HttpEntityEnclosingRequest)
-        val httpUriRequest = (this.httpUriRequest as HttpEntityEnclosingRequest)
-        assertTrue(httpUriRequest.entity is StringEntity)
+        assertTrue("okhttp3.RequestBody" in this.httpRequest.body!!::class.toString())
 
         assertEquals(200, httpResponse.code())
         assertEquals("ok", httpResponse.string())
@@ -452,7 +428,6 @@ open class CallTest : AbstractCallTest() {
         assertArrayEquals(arrayOf("123", "987"), httpResponse.headers("x-token"))
         assertEquals("test.json", httpResponse.getHeaderFileName())
         httpResponse.close()
-        assertTrue(closed)
     }
 
     @Test
@@ -460,12 +435,13 @@ open class CallTest : AbstractCallTest() {
         responseCode = 200
         responseBody = "ok"
         responseHeaders = arrayOf(
-            "Content-type" to "application/json;charset=UTF-8",
-            "x-token" to "123", "x-token" to "987",
-            "Content-Disposition" to "attachment; filename=\"\""
+            "Content-type", "application/json;charset=UTF-8",
+            "x-token", "123",
+            "x-token", "987",
+            "Content-Disposition", "attachment; filename=\"\""
         )
 
-        val httpClient = ApacheHttpClient(this.httpClient)
+        val httpClient = OkHttpClient(this.httpClientBuilder)
         val httpRequest = httpClient
             .post("https://www.apache.org/licenses/LICENSE-2.0")
             .contentType(ContentType.MULTIPART_FORM_DATA)
@@ -477,9 +453,7 @@ open class CallTest : AbstractCallTest() {
         assertEquals("ok", httpResponse.string())
         assertEquals("ok", httpResponse.stream().readString(Charsets.UTF_8))
 
-        assertTrue(httpUriRequest is HttpEntityEnclosingRequest)
-        val httpUriRequest = (this.httpUriRequest as HttpEntityEnclosingRequest)
-        assertEquals("org.apache.http.entity.mime.MultipartFormEntity", httpUriRequest.entity::class.qualifiedName)
+        assertEquals<KClass<*>>(okhttp3.MultipartBody::class, this.httpRequest.body!!::class)
 
         assertEquals(true, httpResponse.containsHeader("Content-type"))
         assertEquals(false, httpResponse.containsHeader("y-token"))
@@ -489,7 +463,7 @@ open class CallTest : AbstractCallTest() {
         assertArrayEquals(arrayOf("123", "987"), httpResponse.headers("x-token"))
         assertNull(httpResponse.getHeaderFileName())
         httpResponse.close()
-        assertTrue(closed)
+
     }
 
     @Test
@@ -497,11 +471,11 @@ open class CallTest : AbstractCallTest() {
         responseCode = 200
         responseBody = "ok"
         responseHeaders = arrayOf(
-            "Content-type" to "application/json;charset=UTF-8",
-            "x-token" to "123", "x-token" to "987"
+            "Content-type", "application/json;charset=UTF-8",
+            "x-token", "123", "x-token", "987"
         )
 
-        val httpClient = ApacheHttpClient(this.httpClient)
+        val httpClient = OkHttpClient(this.httpClientBuilder)
         val httpRequest = httpClient
             .post("https://www.apache.org/licenses/LICENSE-2.0")
             .contentType(ContentType.APPLICATION_FORM_URLENCODED)
@@ -513,9 +487,7 @@ open class CallTest : AbstractCallTest() {
         assertEquals("ok", httpResponse.string())
         assertEquals("ok", httpResponse.stream().readString(Charsets.UTF_8))
 
-        assertTrue(httpUriRequest is HttpEntityEnclosingRequest)
-        val httpUriRequest = (this.httpUriRequest as HttpEntityEnclosingRequest)
-        assertTrue(httpUriRequest.entity is UrlEncodedFormEntity)
+        assertEquals<KClass<*>>(okhttp3.FormBody::class, this.httpRequest.body!!::class)
 
         assertEquals(true, httpResponse.containsHeader("Content-type"))
         assertEquals(false, httpResponse.containsHeader("y-token"))
@@ -525,7 +497,7 @@ open class CallTest : AbstractCallTest() {
         assertArrayEquals(arrayOf("123", "987"), httpResponse.headers("x-token"))
         assertNull(httpResponse.getHeaderFileName())
         httpResponse.close()
-        assertTrue(closed)
+
     }
 
     @Test
@@ -533,12 +505,12 @@ open class CallTest : AbstractCallTest() {
         responseCode = 200
         responseBody = "ok"
         responseHeaders = arrayOf(
-            "Content-type" to "application/json",
-            "x-token" to "123", "x-token" to "987",
-            "Content-Disposition" to "attachment; filename=\"test.json\""
+            "Content-type", "application/json",
+            "x-token", "123", "x-token", "987",
+            "Content-Disposition", "attachment; filename=\"test.json\""
         )
 
-        val httpClient = ApacheHttpClient(this.httpClient)
+        val httpClient = OkHttpClient(this.httpClientBuilder)
         val httpRequest = httpClient
             .post("https://www.apache.org/licenses/LICENSE-2.0")
             .contentType(ContentType.MULTIPART_FORM_DATA)
@@ -548,9 +520,7 @@ open class CallTest : AbstractCallTest() {
             .call()
         assertSame(httpRequest, httpResponse.request())
 
-        assertTrue(httpUriRequest is HttpEntityEnclosingRequest)
-        val httpUriRequest = (this.httpUriRequest as HttpEntityEnclosingRequest)
-        assertTrue(httpUriRequest.entity is StringEntity)
+        assertEquals<KClass<*>>(okhttp3.MultipartBody::class, this.httpRequest.body!!::class)
 
         assertEquals(200, httpResponse.code())
         assertEquals("ok", httpResponse.string())
@@ -564,16 +534,16 @@ open class CallTest : AbstractCallTest() {
         assertArrayEquals(arrayOf("123", "987"), httpResponse.headers("x-token"))
         assertEquals("test.json", httpResponse.getHeaderFileName())
         httpResponse.close()
-        assertTrue(closed)
+
     }
 
     @Test
     fun testUrlWithOutQuestionMark() {
         responseCode = 200
         responseBody = "ok"
-        responseHeaders = arrayOf("Content-type" to "application/json;charset=UTF-8")
+        responseHeaders = arrayOf("Content-type", "application/json;charset=UTF-8")
 
-        val httpClient = ApacheHttpClient(this.httpClient)
+        val httpClient = OkHttpClient(this.httpClientBuilder)
         val httpRequest = httpClient
             .get("https://www.apache.org/licenses/LICENSE-2.0")
             .query("x", "1")
@@ -583,19 +553,19 @@ open class CallTest : AbstractCallTest() {
             .call()
         assertSame(httpRequest, httpResponse.request())
 
-        assertFalse(httpUriRequest is HttpEntityEnclosingRequest)
-        assertEquals("https://www.apache.org/licenses/LICENSE-2.0?x=1&y=2", httpUriRequest.uri.toString())
+        assertFalse(this.httpRequest.body is HttpEntityEnclosingRequest)
+        assertEquals("https://www.apache.org/licenses/LICENSE-2.0?x=1&y=2", this.httpRequest.url.toString())
         httpResponse.close()
-        assertTrue(closed)
+
     }
 
     @Test
     fun testUrlWithQuestionMark() {
         responseCode = 200
         responseBody = "ok"
-        responseHeaders = arrayOf("Content-type" to "application/json;charset=UTF-8")
+        responseHeaders = arrayOf("Content-type", "application/json;charset=UTF-8")
 
-        val httpClient = ApacheHttpClient(this.httpClient)
+        val httpClient = OkHttpClient(this.httpClientBuilder)
         val httpRequest = httpClient
             .get("https://www.apache.org/licenses/LICENSE-2.0?x=1")
             .query("y", "2")
@@ -604,10 +574,10 @@ open class CallTest : AbstractCallTest() {
             .call()
         assertSame(httpRequest, httpResponse.request())
 
-        assertFalse(httpUriRequest is HttpEntityEnclosingRequest)
-        assertEquals("https://www.apache.org/licenses/LICENSE-2.0?x=1&y=2", httpUriRequest.uri.toString())
+        assertFalse(this.httpRequest.body is HttpEntityEnclosingRequest)
+        assertEquals("https://www.apache.org/licenses/LICENSE-2.0?x=1&y=2", this.httpRequest.url.toString())
         httpResponse.close()
-        assertTrue(closed)
+
     }
 }
 
@@ -621,10 +591,10 @@ class PostFileTest : AbstractCallTest() {
     fun testCallPostFileFormData() {
         responseCode = 200
         responseBody = "ok"
-        responseHeaders = arrayOf("Content-type" to "application/json;charset=UTF-8")
+        responseHeaders = arrayOf("Content-type", "application/json;charset=UTF-8")
 
         assertThrows<FileNotFoundException> {
-            ApacheHttpClient(this.httpClient)
+            OkHttpClient(this.httpClientBuilder)
                 .post("https://www.apache.org/licenses/LICENSE-2.0")
                 .contentType(ContentType.MULTIPART_FORM_DATA)
                 .param("hello", "hello")
@@ -634,7 +604,7 @@ class PostFileTest : AbstractCallTest() {
 
         FileUtils.forceMkdir(File("${tempDir}/a"))
         assertThrows<FileNotFoundException> {
-            ApacheHttpClient(this.httpClient)
+            OkHttpClient(this.httpClientBuilder)
                 .post("https://www.apache.org/licenses/LICENSE-2.0")
                 .contentType(ContentType.MULTIPART_FORM_DATA)
                 .param("hello", "hello")
@@ -646,7 +616,7 @@ class PostFileTest : AbstractCallTest() {
         FileUtils.forceMkdirParent(txtFile)
         FileUtils.write(txtFile, "abc")
         assertThrows<FileNotFoundException> {
-            ApacheHttpClient(this.httpClient)
+            OkHttpClient(this.httpClientBuilder)
                 .post("https://www.apache.org/licenses/LICENSE-2.0")
                 .contentType(ContentType.MULTIPART_FORM_DATA)
                 .param("hello", "hello")

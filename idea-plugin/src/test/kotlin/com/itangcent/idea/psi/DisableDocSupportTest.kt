@@ -2,6 +2,7 @@ package com.itangcent.idea.psi
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.common.spi.Setup
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -19,11 +20,13 @@ abstract class DisableDocSupportTest : PluginContextLightCodeInsightFixtureTestC
     @Inject
     protected lateinit var docHelper: DocHelper
 
+    override fun beforeBind() {
+        super.beforeBind()
+        Setup.setup(DisableDocSupport::class)
+    }
+
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         super.bind(builder)
-
-        DisableDocSupport.bind(builder)
-
         userInfoPsiClass = loadClass("model/UserInfo.java")!!
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
     }

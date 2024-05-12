@@ -13,8 +13,6 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.PsiClassHelper
-import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.suv.http.HttpClientProvider
 
 class YapiExportAction : ApiExportAction("Export Yapi") {
 
@@ -23,10 +21,9 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-        builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
         builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
 
-        builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
+        builder.bind(YapiApiHelper::class) { it.with(CachedYapiApiHelper::class).singleton() }
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 

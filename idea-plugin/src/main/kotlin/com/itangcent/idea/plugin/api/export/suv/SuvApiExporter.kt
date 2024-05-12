@@ -51,8 +51,6 @@ import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.UIUtils
-import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.suv.http.HttpClientProvider
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
@@ -364,7 +362,6 @@ open class SuvApiExporter {
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
             builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
-            builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
 
             builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
 
@@ -407,9 +404,8 @@ open class SuvApiExporter {
 
             builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
-            builder.bind(YapiApiHelper::class) { it.with(YapiCachedApiHelper::class).singleton() }
+            builder.bind(YapiApiHelper::class) { it.with(CachedYapiApiHelper::class).singleton() }
 
-            builder.bind(HttpClientProvider::class) { it.with(ConfigurableHttpClientProvider::class).singleton() }
             builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
 
             builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }

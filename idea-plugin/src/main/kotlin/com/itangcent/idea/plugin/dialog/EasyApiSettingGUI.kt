@@ -29,8 +29,6 @@ import com.itangcent.idea.utils.isDoubleClick
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.suv.http.ConfigurableHttpClientProvider
-import com.itangcent.common.utils.ResourceUtils
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
@@ -165,6 +163,10 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
 
     private var recommendedCheckBox: JCheckBox? = null
 
+    private var unsafeSslCheckBox: JCheckBox? = null
+
+    private var httpClientComboBox: JComboBox<String>? = null
+
     private var httpTimeOutTextField: JTextField? = null
 
     private var trustHostsTextArea: JTextArea? = null
@@ -253,6 +255,9 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         markdownFormatTypeComboBox!!.model =
             DefaultComboBoxModel(MarkdownFormatType.values().mapToTypedArray { it.name })
 
+        httpClientComboBox!!.model =
+            DefaultComboBoxModel(HttpClientType.values().mapToTypedArray { it.value })
+
         //endregion general-----------------------------------------------------
     }
 
@@ -300,6 +305,8 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         this.trustHostsTextArea!!.text = settings.trustHosts.joinToString(separator = "\n")
         this.maxDeepTextField!!.text = settings.inferMaxDeep.toString()
 
+        this.unsafeSslCheckBox!!.isSelected = settings.unsafeSsl
+        this.httpClientComboBox!!.selectedItem = settings.httpClient
         this.httpTimeOutTextField!!.text = settings.httpTimeOut.toString()
 
         refresh()
@@ -606,8 +613,9 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
         settings.yapiExportMode = yapiExportModeComboBox!!.selectedItem as? String ?: YapiExportMode.ALWAYS_UPDATE.name
         settings.yapiReqBodyJson5 = yapiReqBodyJson5CheckBox!!.isSelected
         settings.yapiResBodyJson5 = yapiResBodyJson5CheckBox!!.isSelected
-        settings.httpTimeOut =
-            httpTimeOutTextField!!.text.toIntOrNull() ?: ConfigurableHttpClientProvider.defaultHttpTimeOut
+        settings.unsafeSsl = unsafeSslCheckBox!!.isSelected
+        settings.httpClient = httpClientComboBox!!.selectedItem as? String ?: HttpClientType.APACHE.value
+        settings.httpTimeOut = httpTimeOutTextField!!.text.toIntOrNull() ?: 10
         settings.useRecommendConfig = recommendedCheckBox!!.isSelected
         settings.logLevel =
             (logLevelComboBox!!.selected() ?: CommonSettingsHelper.CoarseLogLevel.LOW).getLevel()

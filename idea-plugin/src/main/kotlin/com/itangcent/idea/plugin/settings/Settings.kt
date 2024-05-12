@@ -82,6 +82,10 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     override var trustHosts: Array<String> = DEFAULT_TRUST_HOSTS
 
+    override var unsafeSsl: Boolean = false
+
+    override var httpClient: String = "Apache"
+
     //endregion
 
     /**
@@ -156,6 +160,8 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (yapiReqBodyJson5 != other.yapiReqBodyJson5) return false
         if (yapiResBodyJson5 != other.yapiResBodyJson5) return false
         if (httpTimeOut != other.httpTimeOut) return false
+        if (unsafeSsl != other.unsafeSsl) return false
+        if (httpClient != other.httpClient) return false
         if (!trustHosts.contentEquals(other.trustHosts)) return false
         if (useRecommendConfig != other.useRecommendConfig) return false
         if (recommendConfigs != other.recommendConfigs) return false
@@ -201,6 +207,8 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + yapiReqBodyJson5.hashCode()
         result = 31 * result + yapiResBodyJson5.hashCode()
         result = 31 * result + httpTimeOut
+        result = 31 * result + unsafeSsl.hashCode()
+        result = 31 * result + httpClient.hashCode()
         result = 31 * result + trustHosts.contentHashCode()
         result = 31 * result + useRecommendConfig.hashCode()
         result = 31 * result + recommendConfigs.hashCode()
@@ -215,7 +223,31 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
     }
 
     override fun toString(): String {
-        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, feignEnable=$feignEnable, jaxrsEnable=$jaxrsEnable, actuatorEnable=$actuatorEnable, pullNewestDataBefore=$pullNewestDataBefore, postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, postmanExportMode=$postmanExportMode, postmanCollections=$postmanCollections, wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, postmanJson5FormatType='$postmanJson5FormatType', queryExpanded=$queryExpanded, formExpanded=$formExpanded, readGetter=$readGetter, readSetter=$readSetter, inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, selectedOnly=$selectedOnly, yapiServer=$yapiServer, yapiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, switchNotice=$switchNotice, loginMode=$loginMode, yapiExportMode=$yapiExportMode, yapiReqBodyJson5=$yapiReqBodyJson5, yapiResBodyJson5=$yapiResBodyJson5, httpTimeOut=$httpTimeOut, trustHosts=${trustHosts.contentToString()}, useRecommendConfig=$useRecommendConfig, recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', outputDemo=$outputDemo, outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', builtInConfig=$builtInConfig), remoteConfig=$remoteConfig)"
+        return "Settings(methodDocEnable=$methodDocEnable, genericEnable=$genericEnable, " +
+                "feignEnable=$feignEnable, " +
+                "jaxrsEnable=$jaxrsEnable, actuatorEnable=$actuatorEnable, " +
+                "pullNewestDataBefore=$pullNewestDataBefore, " +
+                "postmanToken=$postmanToken, postmanWorkspace=$postmanWorkspace, " +
+                "postmanExportMode=$postmanExportMode, " +
+                "postmanCollections=$postmanCollections, postmanBuildExample=$postmanBuildExample, " +
+                "wrapCollection=$wrapCollection, autoMergeScript=$autoMergeScript, " +
+                "postmanJson5FormatType='$postmanJson5FormatType', " +
+                "queryExpanded=$queryExpanded, formExpanded=$formExpanded, " +
+                "readGetter=$readGetter, readSetter=$readSetter, " +
+                "inferEnable=$inferEnable, inferMaxDeep=$inferMaxDeep, " +
+                "selectedOnly=$selectedOnly, yapiServer=$yapiServer, " +
+                "apiTokens=$yapiTokens, enableUrlTemplating=$enableUrlTemplating, " +
+                "switchNotice=$switchNotice, loginMode=$loginMode, " +
+                "yapiExportMode='$yapiExportMode', yapiReqBodyJson5=$yapiReqBodyJson5, " +
+                "yapiResBodyJson5=$yapiResBodyJson5, " +
+                "httpTimeOut=$httpTimeOut, unsafeSsl=$unsafeSsl, " +
+                "httpClient='$httpClient', trustHosts=${trustHosts.contentToString()}," +
+                "useRecommendConfig=$useRecommendConfig, " +
+                "recommendConfigs='$recommendConfigs', logLevel=$logLevel, logCharset='$logCharset', " +
+                "outputDemo=$outputDemo, " +
+                "outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', " +
+                "builtInConfig=$builtInConfig, " +
+                "remoteConfig=${remoteConfig.contentToString()})"
     }
 
     companion object {

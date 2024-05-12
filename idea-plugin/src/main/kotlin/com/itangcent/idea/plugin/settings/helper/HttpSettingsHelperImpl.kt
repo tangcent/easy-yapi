@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.settings.helper
 
+import com.google.inject.ImplementedBy
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.openapi.ui.Messages
@@ -10,8 +11,18 @@ import com.itangcent.idea.swing.MessagesHelper
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
+@ImplementedBy(HttpSettingsHelperImpl::class)
+interface HttpSettingsHelper {
+    fun checkTrustUrl(url: String, dumb: Boolean = true): Boolean
+    fun checkTrustHost(host: String, dumb: Boolean = true): Boolean
+    fun addTrustHost(host: String)
+    fun resolveHost(url: String): String
+    fun httpTimeOut(timeUnit: TimeUnit): Int
+    fun unsafeSsl(): Boolean
+}
+
 @Singleton
-class HttpSettingsHelper {
+class HttpSettingsHelperImpl : HttpSettingsHelper {
 
     @Inject
     private lateinit var settingBinder: SettingBinder
@@ -21,7 +32,7 @@ class HttpSettingsHelper {
 
     //region trustHosts----------------------------------------------------
 
-    fun checkTrustUrl(url: String, dumb: Boolean = true): Boolean {
+    override fun checkTrustUrl(url: String, dumb: Boolean): Boolean {
         val trustHosts = settingBinder.read().trustHosts
         var ret: Boolean? = null
         for (trustHost in trustHosts) {
@@ -39,7 +50,7 @@ class HttpSettingsHelper {
         return checkTrustHost(resolveHost(url), dumb)
     }
 
-    fun checkTrustHost(host: String, dumb: Boolean = true): Boolean {
+    override fun checkTrustHost(host: String, dumb: Boolean): Boolean {
         val settings = settingBinder.read()
         val trustHosts = settings.trustHosts
 
@@ -48,12 +59,15 @@ class HttpSettingsHelper {
             return false
         }
         if (settings.yapiServer == host
-                || trustHosts.contains(host)) {
+            || trustHosts.contains(host)
+        ) {
             return true
         }
         if (!dumb) {
-            val trustRet = messagesHelper.showYesNoDialog("Do you trust [$host]?",
-                    "Trust Host", Messages.getQuestionIcon())
+            val trustRet = messagesHelper.showYesNoDialog(
+                "Do you trust [$host]?",
+                "Trust Host", Messages.getQuestionIcon()
+            )
 
             return if (trustRet == Messages.YES) {
                 addTrustHost(host)
@@ -66,7 +80,7 @@ class HttpSettingsHelper {
         return false
     }
 
-    fun addTrustHost(host: String) {
+    override fun addTrustHost(host: String) {
         settingBinder.update {
             if (!trustHosts.contains(host)) {
                 trustHosts += host
@@ -74,7 +88,7 @@ class HttpSettingsHelper {
         }
     }
 
-    fun resolveHost(url: String): String {
+    override fun resolveHost(url: String): String {
         try {
             val settings = settingBinder.read()
 
@@ -96,7 +110,7 @@ class HttpSettingsHelper {
 
     //endregion trustHosts----------------------------------------------------
 
-    fun httpTimeOut(timeUnit: TimeUnit): Int {
+    override fun httpTimeOut(timeUnit: TimeUnit): Int {
         //unit of httpTimeOut is second
         if (timeUnit == TimeUnit.SECONDS) {
             return settingBinder.read().httpTimeOut
@@ -104,12 +118,18 @@ class HttpSettingsHelper {
         return timeUnit.convert(settingBinder.read().httpTimeOut.toLong(), TimeUnit.SECONDS).toInt()
     }
 
+    override fun unsafeSsl(): Boolean {
+        return settingBinder.read().unsafeSsl
+    }
+
     companion object {
         val HOST_RESOLVERS: Array<(String) -> String?> = arrayOf({
             if (it.startsWith("https://raw.githubusercontent.com")) {
                 val url = if (it.endsWith("/")) it else "$it/"
-                return@arrayOf RegexUtils.extract("https://raw.githubusercontent.com/(.*?)/.*",
-                        url, "https://raw.githubusercontent.com/$1")
+                return@arrayOf RegexUtils.extract(
+                    "https://raw.githubusercontent.com/(.*?)/.*",
+                    url, "https://raw.githubusercontent.com/$1"
+                )
             }
             return@arrayOf null
         })

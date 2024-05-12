@@ -6,6 +6,7 @@ import com.itangcent.common.utils.readString
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelper
+import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelperImpl
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.context.ActionContext
@@ -34,7 +35,7 @@ internal class CachedResourceResolverTest : AdvancedContextTest() {
     @Inject
     private lateinit var httpSettingsHelper: HttpSettingsHelper
 
-    private val delegateHttpSettingsHelper: HttpSettingsHelper = HttpSettingsHelper()
+    private val delegateHttpSettingsHelper: HttpSettingsHelper = HttpSettingsHelperImpl()
 
     private val settings: Settings = Settings()
 

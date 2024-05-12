@@ -3,9 +3,15 @@ package com.itangcent.http
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.constant.HttpMethod
 
+/**
+ * Defines an interface for an HTTP client capable of creating various types of HTTP requests.
+ */
 @ScriptTypeName("httpClient")
 interface HttpClient {
 
+    /**
+     * Returns a CookieStore to manage cookies for HTTP transactions.
+     */
     fun cookieStore(): CookieStore
 
     /**
@@ -124,6 +130,5 @@ interface HttpClient {
     fun head(url: String): HttpRequest {
         return request().method(HttpMethod.HEAD).url(url)
     }
-
 }
 

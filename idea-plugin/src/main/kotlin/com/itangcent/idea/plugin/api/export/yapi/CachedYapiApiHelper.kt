@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
  * cache:
  * projectToken -> projectId
  */
-open class YapiCachedApiHelper : DefaultYapiApiHelper() {
+open class CachedYapiApiHelper : DefaultYapiApiHelper() {
 
     @Inject
     private val localFileRepository: LocalFileRepository? = null

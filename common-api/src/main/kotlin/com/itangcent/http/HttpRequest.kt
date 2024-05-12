@@ -82,14 +82,20 @@ interface Cookie {
      * {@code null} if no such comment has been defined.
      * Compatible only.Obsolete.
      * @return comment
+     *
+     * @deprecated it is only supported by Apache HttpClient
      */
+    @Deprecated("Obsolete")
     fun getComment(): String?
 
     /**
      * If a user agent (web browser) presents this cookie to a user, the
      * cookie's purpose will be described by the information at this URL.
      * Compatible only.Obsolete.
+     *
+     * @deprecated it is only supported by Apache HttpClient
      */
+    @Deprecated("Obsolete")
     fun getCommentURL(): String?
 
     /**
@@ -129,7 +135,10 @@ interface Cookie {
     /**
      * Get the Port attribute. It restricts the ports to which a cookie
      * may be returned in a Cookie request header.
+     *
+     * @deprecated it is only supported by Apache HttpClient
      */
+    @Deprecated("Obsolete")
     fun getPorts(): IntArray?
 
     /**
@@ -146,8 +155,15 @@ interface Cookie {
      * Compatible only.Obsolete.
      *
      * @return the version of the cookie.
+     * @deprecated it is only supported by Apache HttpClient
      */
+    @Deprecated("Obsolete")
     fun getVersion(): Int?
+}
+
+fun Cookie.isExpired(): Boolean {
+    val expiryDate = this.getExpiryDate()
+    return expiryDate != null && expiryDate < System.currentTimeMillis()
 }
 
 @ScriptTypeName("cookie")
@@ -157,8 +173,16 @@ interface MutableCookie : Cookie {
 
     fun setValue(value: String?)
 
+    /**
+     * @deprecated it is only supported by Apache HttpClient
+     */
+    @Deprecated("Obsolete")
     fun setComment(comment: String?)
 
+    /**
+     * @deprecated it is only supported by Apache HttpClient
+     */
+    @Deprecated("Obsolete")
     fun setCommentURL(commentURL: String?)
 
     /**
@@ -193,7 +217,10 @@ interface MutableCookie : Cookie {
      * Sets the Port attribute. It restricts the ports to which a cookie
      * may be returned in a Cookie request header.
      * Compatible only.Obsolete.
+     *
+     * @deprecated it is only supported by Apache HttpClient
      */
+    @Deprecated("Obsolete")
     fun setPorts(ports: IntArray?)
 
     /**
@@ -218,7 +245,10 @@ interface MutableCookie : Cookie {
      * @param version the version of the cookie.
      *
      * @see Cookie.getVersion
+     *
+     * @deprecated it is only supported by Apache HttpClient
      */
+    @Deprecated("Obsolete")
     fun setVersion(version: Int?)
 }
 
@@ -1239,5 +1269,4 @@ class BasicHttpParam : HttpParam {
     fun setType(type: String?) {
         this.type = type
     }
-
 }
