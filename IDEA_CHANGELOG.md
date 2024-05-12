@@ -1,3 +1,9 @@
+* 2.7.1
+	* fix: resolve 'module_path' property resolution issue  [(#1137)](https://github.com/tangcent/easy-yapi/pull/1137)
+
+	* feat: added functionality to choose between apache and okHttp for sending HTTP requests via settings  [(#1132)](https://github.com/tangcent/easy-yapi/pull/1132)
+
+	* docs: remove Travis CI build status badge from README  [(#1136)](https://github.com/tangcent/easy-yapi/pull/1136)
 * 2.7.0
 	* feat: add rules `param.name`, `param.type`  [(#1128)](https://github.com/tangcent/easy-yapi/pull/1128)
 
