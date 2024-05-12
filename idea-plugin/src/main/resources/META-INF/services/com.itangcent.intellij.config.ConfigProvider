@@ -1,6 +1,7 @@
 com.itangcent.idea.plugin.config.RecommendConfigProvider
 com.itangcent.idea.plugin.config.BuiltinConfigProvider
 com.itangcent.idea.plugin.config.RemoteConfigProvider
+com.itangcent.idea.plugin.config.RuntimeConfigProvider
 com.itangcent.idea.plugin.api.export.core.EasyApiConfigProvider
 com.itangcent.idea.plugin.api.export.yapi.YapiConfigProvider
 com.itangcent.idea.plugin.api.export.postman.PostmanConfigProvider

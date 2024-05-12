@@ -1,19 +1,22 @@
 package com.itangcent.idea.plugin.config
 
 import com.google.inject.Inject
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.logger.traceWarn
 import com.itangcent.idea.plugin.settings.helper.BuiltInConfigSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.RemoteConfigSettingsHelper
+import com.itangcent.intellij.adaptor.ModuleAdaptor.filePath
 import com.itangcent.intellij.config.BaseConfigReader
 import com.itangcent.intellij.config.ConfigContent
 import com.itangcent.intellij.config.ConfigProvider
 import com.itangcent.intellij.config.dev
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.jvm.dev.DevEnv
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.order.Order
+import com.itangcent.order.Ordered
 import com.itangcent.spi.SpiCompositeLoader
 import java.util.concurrent.TimeUnit
 
@@ -137,22 +140,19 @@ class EnhancedConfigReader : BaseConfigReader() {
 @Order(0)
 class BuiltinConfigProvider : ConfigProvider {
 
+    companion object : Log()
+
     @Inject(optional = true)
     private val builtInConfigSettingsHelper: BuiltInConfigSettingsHelper? = null
 
     @Inject
     private lateinit var logger: Logger
 
-    @Inject
-    private val devEnv: DevEnv? = null
-
     override fun loadConfig(): Sequence<ConfigContent> {
         try {
             val builtInConfig = builtInConfigSettingsHelper?.builtInConfig() ?: return emptySequence()
-            logger.debug("use built-in config")
-            devEnv!!.dev {
-                logger.debug("----------------\n$builtInConfig\n----------------")
-            }
+            LOG.debug("use built-in config")
+            LOG.debug("----------------\n$builtInConfig\n----------------")
             return sequenceOf(ConfigContent(builtInConfig, "properties"))
         } catch (e: Exception) {
             logger.warn("failed to use built-in config")
@@ -164,23 +164,20 @@ class BuiltinConfigProvider : ConfigProvider {
 @Order(1)
 class RecommendConfigProvider : ConfigProvider {
 
+    companion object : Log()
+
     @Inject(optional = true)
     private val recommendConfigSettingsHelper: RecommendConfigSettingsHelper? = null
 
     @Inject
     private lateinit var logger: Logger
 
-    @Inject
-    private val devEnv: DevEnv? = null
-
     override fun loadConfig(): Sequence<ConfigContent> {
         try {
             if (recommendConfigSettingsHelper?.useRecommendConfig() == true) {
                 val recommendConfig = recommendConfigSettingsHelper.loadRecommendConfig()
-                logger.debug("use recommend config")
-                devEnv!!.dev {
-                    logger.debug("----------------\n$recommendConfig\n----------------")
-                }
+                LOG.debug("use recommend config")
+                LOG.debug("----------------\n$recommendConfig\n----------------")
                 if (recommendConfig.isEmpty()) {
                     logger.debug(
                         "Even useRecommendConfig was true, but no recommend config be selected!\n" +
@@ -192,7 +189,7 @@ class RecommendConfigProvider : ConfigProvider {
                 return sequenceOf(ConfigContent(recommendConfig, "properties"))
             }
         } catch (e: Exception) {
-            logger.warn("failed to use recommend config")
+            logger.traceWarn("failed to use recommend config", e)
         }
         return emptySequence()
     }
@@ -201,26 +198,53 @@ class RecommendConfigProvider : ConfigProvider {
 @Order(2)
 class RemoteConfigProvider : ConfigProvider {
 
+    companion object : Log()
+
     @Inject(optional = true)
     private val remoteConfigSettingsHelper: RemoteConfigSettingsHelper? = null
 
     @Inject
     private lateinit var logger: Logger
 
-    @Inject
-    private val devEnv: DevEnv? = null
-
     override fun loadConfig(): Sequence<ConfigContent> {
         try {
             val remoteConfig = remoteConfigSettingsHelper?.remoteConfigContent() ?: return emptySequence()
-            logger.debug("load remote config")
-            devEnv!!.dev {
-                logger.debug("----------------\n$remoteConfig\n----------------")
-            }
+            LOG.debug("load remote config")
+            LOG.debug("----------------\n$remoteConfig\n----------------")
             return remoteConfig.asSequence()
         } catch (e: Exception) {
-            logger.warn("failed to load remote config")
+            logger.traceError("failed to load remote config", e)
             return emptySequence()
         }
+    }
+}
+
+@Order(Ordered.HIGHEST_PRECEDENCE)
+class RuntimeConfigProvider : ConfigProvider {
+
+    companion object : Log()
+
+    @Inject
+    private lateinit var contextSwitchListener: ContextSwitchListener
+
+    override fun loadConfig(): Sequence<ConfigContent> {
+        try {
+            val runtimeConfig = runtimeConfig()
+            LOG.debug("use runtime config")
+            LOG.debug("----------------\n$runtimeConfig\n----------------")
+            return sequenceOf(ConfigContent(runtimeConfig, "properties"))
+        } catch (e: Exception) {
+            LOG.warn("failed to use runtime config")
+        }
+        return emptySequence()
+    }
+
+    private fun runtimeConfig(): String {
+        val res = StringBuilder()
+        contextSwitchListener.getModule()?.let { module ->
+            res.append("module_path=${module.filePath()}")
+            res.appendLine()
+        }
+        return res.toString()
     }
 }
