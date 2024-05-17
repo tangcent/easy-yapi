@@ -45,4 +45,77 @@ internal class BundledMarkdownRenderTest : BaseContextTest() {
                     "| cellX  | cellY |</p>", html
         )
     }
+
+    @Test
+    fun testRenderNonEnglishContent() {
+        @Language("Markdown")
+        val mdNonEnglish =
+            """
+        # Überschrift
+        ## Titel
+        - Erster
+        - Zweiter
+        
+        ---
+        
+        ## Второй абзац
+        1. первый
+        2. второй
+        
+        ---
+        
+        > 注意：这是一个演示
+        
+        ```java
+        public class Beispiel {
+            private String zeichen;
+        
+            public String getZeichen() {
+                return this.zeichen;
+            }
+        }
+        ```
+        
+        ---
+        
+        | заголовокA | заголовокB |
+        | ------ | ------ |
+        | ячейкаA | ячейкаB |
+        """
+
+        val htmlNonEnglish = markdownRender.render(mdNonEnglish)
+        assertEquals(
+            "<pre><code>    # Überschrift\n" +
+                    "    ## Titel\n" +
+                    "    - Erster\n" +
+                    "    - Zweiter\n" +
+                    "    \n" +
+                    "    ---\n" +
+                    "    \n" +
+                    "    ## Второй абзац\n" +
+                    "    1. первый\n" +
+                    "    2. второй\n" +
+                    "    \n" +
+                    "    ---\n" +
+                    "    \n" +
+                    "    &gt; 注意：这是一个演示\n" +
+                    "    \n" +
+                    "    ```java\n" +
+                    "    public class Beispiel {\n" +
+                    "        private String zeichen;\n" +
+                    "    \n" +
+                    "        public String getZeichen() {\n" +
+                    "            return this.zeichen;\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "    ```\n" +
+                    "    \n" +
+                    "    ---\n" +
+                    "    \n" +
+                    "    | заголовокA | заголовокB |\n" +
+                    "    | ------ | ------ |\n" +
+                    "    | ячейкаA | ячейкаB |\n" +
+                    "</code></pre>", htmlNonEnglish
+        )
+    }
 }
