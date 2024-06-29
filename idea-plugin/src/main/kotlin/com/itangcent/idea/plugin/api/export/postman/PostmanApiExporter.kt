@@ -8,23 +8,15 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
-import com.itangcent.idea.plugin.rule.SuvRuleContext
-import com.itangcent.idea.plugin.rule.setDoc
 import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
-import com.itangcent.idea.psi.resource
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
-import com.itangcent.intellij.config.rule.RuleComputer
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 
 
 @Singleton
 class PostmanApiExporter {
-
-    @Inject
-    private lateinit var actionContext: ActionContext
 
     @Inject
     private lateinit var logger: Logger

@@ -6,10 +6,7 @@ import com.google.inject.Inject
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.*
-import com.itangcent.http.HttpClient
-import com.itangcent.http.HttpRequest
-import com.itangcent.http.HttpResponse
-import com.itangcent.http.contentType
+import com.itangcent.http.*
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.intellij.context.ActionContext
@@ -21,7 +18,6 @@ import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
-import org.apache.http.entity.ContentType
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
@@ -119,7 +115,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         LOG.info("create collection in workspace $workspaceId to postman")
         val request = getHttpClient()
             .post(COLLECTION)
-            .contentType(ContentType.APPLICATION_JSON)
+            .contentType(RawContentType.APPLICATION_JSON)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
             .body(linkedMapOf("collection" to collection))
 
@@ -206,7 +202,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     private fun doUpdateCollection(collectionId: String, apiInfo: Map<String, Any?>): Boolean {
 
         val request = getHttpClient().put("$COLLECTION/$collectionId")
-            .contentType(ContentType.APPLICATION_JSON)
+            .contentType(RawContentType.APPLICATION_JSON)
             .header("x-api-key", postmanSettingsHelper.getPrivateToken())
             .body(GsonUtils.toJson(linkedMapOf("collection" to apiInfo)).apply { GsonExUtils.resolveGsonLazily(this) })
 
@@ -434,7 +430,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     }
 
     companion object : Log() {
-        const val POSTMAN_HOST = "https://api.getpostman.com"
+        private const val POSTMAN_HOST = "https://api.getpostman.com"
 
         //const val IMPOREDAPI = "$POSTMANHOST/import/exported"
         const val COLLECTION = "$POSTMAN_HOST/collections"

@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.postman
 import com.google.inject.Inject
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.utils.KV
+import com.itangcent.http.RawContentType
 import com.itangcent.idea.plugin.settings.helper.SettingsHelperTest
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.asJsonElement
@@ -10,14 +11,10 @@ import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.sub
-import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.suv.http.HttpClientProvider
 import com.itangcent.test.HttpClientProviderMockBuilder
 import com.itangcent.test.response404
-import org.apache.http.entity.ContentType
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.DisabledOnOs
-import org.junit.jupiter.api.condition.OS
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -52,19 +49,19 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
                         .method("POST")
                         .response(
                             content = CREATE_OR_UPDATE_COLLECTION_SUCCESS_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.COLLECTION}/8283378b-5df6-488b-237c-f6b9ed0d7883")
                         .method("PUT")
                         .response(
                             content = CREATE_OR_UPDATE_COLLECTION_SUCCESS_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.COLLECTION}/31415926-67ce-2d4a-13c1-535897932384")
                         .method("PUT")
                         .response(
                             content = CREATE_OR_UPDATE_COLLECTION_FAILED_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.COLLECTION}/31415926-67ce-12cf-13c1-535897932384")
                         .method("PUT")
@@ -75,43 +72,43 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
                         .method("GET")
                         .response(
                             content = ALL_COLLECTIONS_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.WORKSPACE}/e508269b-72ef-4c67-92c4-55777ba33434")
                         .method("GET")
                         .response(
                             content = COLLECTIONS_IN_WORKSPACE,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.COLLECTION}/42dc9386-34ab-2d4a-83c1-535897932384")
                         .method("GET")
                         .response(
                             content = COLLECTION_INFO_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url(DefaultPostmanApiHelper.WORKSPACE)
                         .method("GET")
                         .response(
                             content = ALL_WORKSPACES_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.WORKSPACE}/0db55d8f-8e03-4568-2871-250a378ab87c")
                         .method("GET")
                         .response(
                             content = WORKSPACE_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.COLLECTION}/42dc9386-34ab-2d4a-83c1-535897932384")
                         .method("DELETE")
                         .response(
                             content = DELETE_COLLECTION_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .url("${DefaultPostmanApiHelper.COLLECTION}/378bacc3-77cf-5331-82c1-ed273450ae35")
                         .method("DELETE")
                         .response(
                             content = DELETE_COLLECTION_FAILED_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .notFound().response404()
                         .build()
@@ -257,7 +254,7 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
                         .call()
                         .response(
                             content = AUTHENTICATION_FAILED_RESULT,
-                            contentType = ContentType.APPLICATION_JSON
+                            contentType = RawContentType.APPLICATION_JSON
                         )
                         .notFound().response404()
                         .build()
@@ -277,7 +274,7 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
                         .call()
                         .response(
                             content = SERVICE_LIMIT_EXHAUSTED_FAILED_RESULT,
-                            contentType = ContentType.APPLICATION_JSON,
+                            contentType = RawContentType.APPLICATION_JSON,
                             responseCode = 429
                         )
                         .notFound().response404()
