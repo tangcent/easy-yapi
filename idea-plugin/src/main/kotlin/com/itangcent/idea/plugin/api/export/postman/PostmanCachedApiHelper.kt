@@ -8,13 +8,14 @@ import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.binder.DbBeanBinderFactory
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.logger.Logger
 
+/**
+ * A helper class for interacting with the Postman API with caching capabilities.
+ * This class extends the DefaultPostmanApiHelper to provide additional caching functionality
+ * for various Postman API operations such as creating, updating, deleting, and retrieving collections.
+ */
 @Singleton
 class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
-
-    @Inject
-    private lateinit var logger: Logger
 
     private var readCache: Boolean = true
 
@@ -24,19 +25,14 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
     @Inject
     private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
-    private var dbBeanBinderFactory: DbBeanBinderFactory<PostmanInfoCache>? = null
-
-    private fun getDbBeanBinderFactory(): DbBeanBinderFactory<PostmanInfoCache> {
-        if (dbBeanBinderFactory == null) {
-            synchronized(this) {
-                dbBeanBinderFactory =
-                    DbBeanBinderFactory(localFileRepository!!.getOrCreateFile(".api.postman.v1.1.db").path)
-                    { NULL_POSTMAN_INFO_CACHE }
-            }
-        }
-        return this.dbBeanBinderFactory!!
+    private val dbBeanBinderFactory: DbBeanBinderFactory<PostmanInfoCache> by lazy {
+        DbBeanBinderFactory(localFileRepository!!.getOrCreateFile(".api.postman.v1.1.db").path) { NULL_POSTMAN_INFO_CACHE }
     }
 
+    /**
+     * Creates a new collection in Postman and updates the local cache.
+     * @return The created collection details or null if creation failed.
+     */
     override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): Map<String, Any?>? {
         val createdCollection: Map<String, Any?> = super.createCollection(collection, workspaceId) ?: return null
 
@@ -45,7 +41,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         collection["id"] = collectionId
 
         //region update collection of AllCollection-----------------------------
-        val allCollectionBeanBinder = getDbBeanBinderFactory()
+        val allCollectionBeanBinder = dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_getAllCollection")
         val cacheOfAllCollection = allCollectionBeanBinder.read()
         if (cacheOfAllCollection != NULL_POSTMAN_INFO_CACHE) {
@@ -61,7 +57,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         val cacheOfCollection = PostmanInfoCache()
         cacheOfCollection.collectionDetail = collection
 
-        getDbBeanBinderFactory()
+        dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
             .save(cacheOfCollection)
         //endregion add cache of created collection--------------------------------
@@ -70,11 +66,15 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
 
     }
 
+    /**
+     * Updates an existing collection in Postman and updates the local cache.
+     * @return True if the update was successful, false otherwise.
+     */
     @Suppress("UNCHECKED_CAST")
     override fun updateCollection(collectionId: String, collectionInfo: Map<String, Any?>): Boolean {
         if (super.updateCollection(collectionId, collectionInfo)) {
             //region try update collection of AllCollection-----------------------------
-            val allCollectionBeanBinder = getDbBeanBinderFactory()
+            val allCollectionBeanBinder = dbBeanBinderFactory
                 .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_getAllCollection")
             val cacheOfAllCollection = allCollectionBeanBinder.read()
             if (cacheOfAllCollection != NULL_POSTMAN_INFO_CACHE) {
@@ -95,7 +95,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
             //endregion try update collection of AllCollection-----------------------------
 
             val collectionDetailBeanBinder =
-                getDbBeanBinderFactory().getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
+                dbBeanBinderFactory.getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
             val cache = PostmanInfoCache()
             cache.collectionDetail = collectionInfo
             collectionDetailBeanBinder.save(cache)
@@ -104,12 +104,16 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         return false
     }
 
+    /**
+     * Deletes a collection in Postman and updates the local cache.
+     * @return The deleted collection details or null if deletion failed.
+     */
     override fun deleteCollectionInfo(collectionId: String): Map<String, Any?>? {
         val deleteCollectionInfo = super.deleteCollectionInfo(collectionId)
         if (deleteCollectionInfo != null) {
 
             //region update collection of AllCollection-----------------------------
-            val allCollectionBeanBinder = getDbBeanBinderFactory()
+            val allCollectionBeanBinder = dbBeanBinderFactory
                 .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_getAllCollection")
             val cacheOfAllCollection = allCollectionBeanBinder.read()
             if (cacheOfAllCollection != NULL_POSTMAN_INFO_CACHE) {
@@ -123,18 +127,27 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
             }
             //endregion update collection of AllCollection-----------------------------
 
-            getDbBeanBinderFactory().deleteBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
+            dbBeanBinderFactory.deleteBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
         }
         return deleteCollectionInfo
     }
 
+    /**
+     * Retrieves all collections from Postman, optionally using the cache.
+     * @return A list of all collections or null if retrieval failed.
+     */
     override fun getAllCollection(): List<Map<String, Any?>>? {
         return getAllCollection(true)
     }
 
+    /**
+     * Retrieves all collections from Postman, with an option to use the cache.
+     * @param useCache Whether to use the cached data or not.
+     * @return A list of all collections or null if retrieval failed.
+     */
     fun getAllCollection(useCache: Boolean): List<Map<String, Any?>>? {
         if (useCache && this.readCache) {
-            val allCollectionBeanBinder = getDbBeanBinderFactory().getBeanBinder(
+            val allCollectionBeanBinder = dbBeanBinderFactory.getBeanBinder(
                 "${postmanSettingsHelper.getPrivateToken()}_getAllCollection"
             )
             val cache = allCollectionBeanBinder.read()
@@ -149,7 +162,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         cache.allCollection = allCollection.map { it.toMutableMap() }.toMutableList()
 
 
-        val beanBinder = getDbBeanBinderFactory()
+        val beanBinder = dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_getAllCollection")
 
         //try clean cache
@@ -169,7 +182,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
                 .toList()
 
             deletedCollections.forEach {
-                getDbBeanBinderFactory().deleteBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$it")
+                dbBeanBinderFactory.deleteBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$it")
             }
         }
 
@@ -178,14 +191,24 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         return allCollection
     }
 
+    /**
+     * Retrieves information about a specific collection from Postman, optionally using the cache.
+     * @return The collection details or null if retrieval failed.
+     */
     override fun getCollectionInfo(collectionId: String): Map<String, Any?>? {
         return getCollectionInfo(collectionId, true)
     }
 
+    /**
+     * Retrieves information about a specific collection from Postman, with an option to use the cache.
+     * @param collectionId The ID of the collection to retrieve.
+     * @param useCache Whether to use the cached data or not.
+     * @return The collection details or null if retrieval failed.
+     */
     fun getCollectionInfo(collectionId: String, useCache: Boolean = true): Map<String, Any?>? {
         if (useCache && this.readCache) {
             val collectionDetailBeanBinder =
-                getDbBeanBinderFactory().getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
+                dbBeanBinderFactory.getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
             val cache = collectionDetailBeanBinder.read()
             if (cache != NULL_POSTMAN_INFO_CACHE) {
                 LOG.debug("read cache of collection $collectionId")
@@ -196,19 +219,29 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         val collectionDetail = super.getCollectionInfo(collectionId)
         val cache = PostmanInfoCache()
         cache.collectionDetail = collectionDetail
-        getDbBeanBinderFactory()
+        dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$collectionId")
             .save(cache)
         return collectionDetail
     }
 
+    /**
+     * Retrieves all collections in a specific workspace from Postman, optionally using the cache.
+     * @return A list of collections in the specified workspace or null if retrieval failed.
+     */
     override fun getCollectionByWorkspace(workspaceId: String): List<Map<String, Any?>>? {
         return getCollectionByWorkspace(workspaceId, true)
     }
 
+    /**
+     * Retrieves all collections in a specific workspace from Postman, with an option to use the cache.
+     * @param workspaceId The ID of the workspace to retrieve collections from.
+     * @param useCache Whether to use the cached data or not.
+     * @return A list of collections in the specified workspace or null if retrieval failed.
+     */
     fun getCollectionByWorkspace(workspaceId: String, useCache: Boolean): List<Map<String, Any?>>? {
         if (useCache && this.readCache) {
-            val workspaceInfoBeanBinder = getDbBeanBinderFactory()
+            val workspaceInfoBeanBinder = dbBeanBinderFactory
                 .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collectionByWorkspace:$workspaceId")
             val cache = workspaceInfoBeanBinder.read()
             if (cache != NULL_POSTMAN_INFO_CACHE) {
@@ -220,7 +253,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         val cache = PostmanInfoCache()
         cache.allCollection = collectionInWorkspace?.map { it.toMutableMap() }?.toMutableList()
 
-        val beanBinder = getDbBeanBinderFactory()
+        val beanBinder = dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_collectionByWorkspace:$workspaceId")
 
         if (!useCache) { //try clean collection info cache
@@ -238,7 +271,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
                     .toList()
 
                 deletedCollections.forEach {
-                    getDbBeanBinderFactory().deleteBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$it")
+                    dbBeanBinderFactory.deleteBinder("${postmanSettingsHelper.getPrivateToken()}_collection:$it")
                 }
             }
         }
@@ -248,8 +281,13 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         return collectionInWorkspace
     }
 
+
+    /**
+     * Retrieves all collections in a specific workspace from Postman, optionally using the cache.
+     * @return A list of collections in the specified workspace or null if retrieval failed.
+     */
     override fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace? {
-        val workspaceInfoBeanBinder = getDbBeanBinderFactory()
+        val workspaceInfoBeanBinder = dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_workspace:$workspaceId")
         var cache = workspaceInfoBeanBinder.read()
         if (cache != NULL_POSTMAN_INFO_CACHE) {
@@ -259,19 +297,28 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         val workspace = super.getWorkspaceInfo(workspaceId)
         cache = PostmanInfoCache()
         cache.workspaceDetail = workspace
-        getDbBeanBinderFactory()
+        dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_workspace:$workspaceId")
             .save(cache)
         return workspace
     }
 
+    /**
+     * Retrieves all workspaces from Postman, optionally using the cache.
+     * @return A list of all workspaces or null if retrieval failed.
+     */
     override fun getAllWorkspaces(): List<PostmanWorkspace>? {
         return getAllWorkspaces(true)
     }
 
+    /**
+     * Retrieves all workspaces from Postman, with an option to use the cache.
+     * @param useCache Whether to use the cached data or not.
+     * @return A list of all workspaces or null if retrieval failed.
+     */
     fun getAllWorkspaces(useCache: Boolean): List<PostmanWorkspace>? {
         if (useCache && this.readCache) {
-            val allWorkspacesBeanBinder = getDbBeanBinderFactory().getBeanBinder(
+            val allWorkspacesBeanBinder = dbBeanBinderFactory.getBeanBinder(
                 "${postmanSettingsHelper.getPrivateToken()}_getAllWorkspaces"
             )
             val cache = allWorkspacesBeanBinder.read()
@@ -285,7 +332,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         val cache = PostmanInfoCache()
         cache.allWorkspace = allWorkspaces
 
-        val beanBinder = getDbBeanBinderFactory()
+        val beanBinder = dbBeanBinderFactory
             .getBeanBinder("${postmanSettingsHelper.getPrivateToken()}_getAllWorkspaces")
 
         //try clean cache
@@ -305,7 +352,7 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
                 .toList()
 
             deletedCollections.forEach {
-                getDbBeanBinderFactory().deleteBinder("${postmanSettingsHelper.getPrivateToken()}_workspace:$it")
+                dbBeanBinderFactory.deleteBinder("${postmanSettingsHelper.getPrivateToken()}_workspace:$it")
             }
         }
 
@@ -314,14 +361,23 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
         return allWorkspaces
     }
 
+    /**
+     * Disables the use of cache for subsequent operations.
+     */
     override fun notUserCache() {
         readCache = false
     }
 
+    /**
+     * Enables the use of cache for subsequent operations.
+     */
     override fun userCache() {
         readCache = true
     }
 
+    /**
+     * Data class for caching Postman API responses.
+     */
     data class PostmanInfoCache(
         var allCollection: MutableList<MutableMap<String, Any?>>? = null,
         var collectionDetail: Map<String, Any?>? = null,
