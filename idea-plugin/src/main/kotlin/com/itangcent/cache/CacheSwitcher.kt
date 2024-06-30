@@ -5,8 +5,14 @@ package com.itangcent.cache
  */
 interface CacheSwitcher {
 
+    /**
+     * Disables the use of cache for subsequent operations.
+     */
     fun notUserCache()
 
+    /**
+     * Enables the use of cache for subsequent operations.
+     */
     fun userCache()
 }
 

@@ -1,12 +1,14 @@
 package com.itangcent.idea.plugin.api.export.postman
 
-import com.google.gson.JsonObject
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.*
-import com.itangcent.http.*
+import com.itangcent.http.HttpRequest
+import com.itangcent.http.HttpResponse
+import com.itangcent.http.RawContentType
+import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.idea.utils.GsonExUtils
 import com.itangcent.intellij.context.ActionContext
@@ -48,17 +50,14 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
     @Inject
     protected lateinit var actionContext: ActionContext
 
-    private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
-
-    protected open fun beforeRequest(request: HttpRequest) {
-        apiThrottle.acquireGreedy(LIMIT_PERIOD_PRE_REQUEST)
-    }
-
-    private fun onErrorResponse(response: HttpResponse) {
-
-        val returnValue = response.string()
+    /**
+     * Handles error responses from the Postman API.
+     * Logs the error and provides appropriate messages.
+     */
+    private fun HttpResponse.onError() {
+        val returnValue = string()
         if (returnValue.isNullOrBlank()) {
-            logger.error("No Response For: ${response.request().url()}")
+            logger.error("No Response For: ${request().url()}")
             return
         }
         if (returnValue.contains("AuthenticationError")
@@ -68,25 +67,21 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
             return
         }
 
-        if (returnValue.contains("WLError")
-            || returnValue.contains("attribute is invalid")
+        if (
+            (returnValue.contains("WLError")
+                    || returnValue.contains("attribute is invalid"))
+            && postmanSettingsHelper.buildExample()
         ) {
             logger.error("Please try after turning off [build example] at Preferences(Settings) > Other Settings > EasyApi > Postman > build example")
             return
         }
 
         val returnObj = returnValue.asJsonElement()
-        val errorName = returnObj
-            .sub("error")
-            .sub("name")
-            ?.asString
-        val errorMessage = (returnObj as? JsonObject)
-            .sub("error")
-            .sub("message")
-            ?.asString
+        val errorObj = returnObj.sub("error")
+        val errorName = errorObj.sub("name")?.asString
+        val errorMessage = errorObj.sub("message")?.asString
 
-        if (response.code() == 429) {
-
+        if (code() == 429) {
             if (errorName == null) {
                 logger.error("$errorMessage \n $LIMIT_ERROR_MSG")
                 return
@@ -104,28 +99,25 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         logger.error("Error Response:$returnValue")
     }
 
-    protected open fun getHttpClient(): HttpClient {
-        return httpClientProvider!!.getHttpClient()
-    }
+    protected open val httpClient by lazy { httpClientProvider!!.getHttpClient() }
 
     /**
+     * Creates a collection in Postman.
      * @return collection id
      */
     override fun createCollection(collection: HashMap<String, Any?>, workspaceId: String?): Map<String, Any?>? {
         LOG.info("create collection in workspace $workspaceId to postman")
-        val request = getHttpClient()
+        val request = httpClient
             .post(COLLECTION)
             .contentType(RawContentType.APPLICATION_JSON)
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
             .body(linkedMapOf("collection" to collection))
 
         workspaceId?.let { request.query("workspace", it) }
 
         try {
-            beforeRequest(request)
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                if (returnValue?.contains("collection") == true) {
                     val returnObj = returnValue.asJsonElement()
                     val collectionInfo = returnObj.sub("collection")?.asMap()
                     if (collectionInfo.notNullOrEmpty()) {
@@ -133,7 +125,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                     }
                 }
 
-                onErrorResponse(response)
+                response.onError()
 
                 return null
             }
@@ -143,6 +135,10 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * Updates a collection in Postman.
+     * @return true if successful, false otherwise.
+     */
     override fun updateCollection(collectionId: String, collectionInfo: Map<String, Any?>): Boolean {
         LOG.info("update collection $collectionId to postman")
         if (doUpdateCollection(collectionId, collectionInfo)) {
@@ -164,10 +160,13 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         return false
     }
 
+    /**
+     * Attempts to fix the collection data by ensuring proper types for certain fields.
+     */
     @Suppress("UNCHECKED_CAST")
-    fun tryFixCollection(apiInfo: MutableMap<String, Any?>) {
+    private fun tryFixCollection(apiInfo: MutableMap<String, Any?>) {
         if (apiInfo.containsKey("item")) {
-            val items = apiInfo["item"] as List<*>? ?: return
+            val items = apiInfo["item"] as? List<*>? ?: return
             apiInfo["item"] = items
                 .asSequence()
                 .map { it as Map<String, Any?> }
@@ -199,19 +198,20 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * Performs the actual update of the collection in Postman.
+     * @return true if successful, false otherwise.
+     */
     private fun doUpdateCollection(collectionId: String, apiInfo: Map<String, Any?>): Boolean {
 
-        val request = getHttpClient().put("$COLLECTION/$collectionId")
+        val request = httpClient.put("$COLLECTION/$collectionId")
             .contentType(RawContentType.APPLICATION_JSON)
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
             .body(GsonUtils.toJson(linkedMapOf("collection" to apiInfo)).apply { GsonExUtils.resolveGsonLazily(this) })
 
         try {
-            beforeRequest(request)
-
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                if (returnValue?.contains("collection") == true) {
                     val returnObj = returnValue.asJsonElement()
                     val collectionName = returnObj
                         .sub("collection")
@@ -222,7 +222,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                     }
                 }
 
-                onErrorResponse(response)
+                response.onError()
                 return false
             }
         } catch (e: Throwable) {
@@ -232,16 +232,18 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * Retrieves all collections from Postman.
+     * @return list of collections if successful, null otherwise.
+     */
     override fun getAllCollection(): List<Map<String, Any?>>? {
         LOG.info("read all collection from postman")
-        val request = getHttpClient().get(COLLECTION)
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+        val request = httpClient.get(COLLECTION)
 
         try {
-            beforeRequest(request)
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collections")) {
+                if (returnValue?.contains("collections") == true) {
                     val returnObj = returnValue.asJsonElement()
                     val collections = returnObj.sub("collections")
                         ?.asJsonArray ?: return null
@@ -250,7 +252,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                     return collectionList
                 }
 
-                onErrorResponse(response)
+                response.onError()
 
                 return null
             }
@@ -261,16 +263,18 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * Retrieves all collections in a specific workspace from Postman.
+     * @return list of collections if successful, null otherwise.
+     */
     override fun getCollectionByWorkspace(workspaceId: String): List<Map<String, Any?>>? {
         LOG.info("read collection in workspace [$workspaceId] from postman")
-        val request = getHttpClient().get("$WORKSPACE/$workspaceId")
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+        val request = httpClient.get("$WORKSPACE/$workspaceId")
 
         try {
-            beforeRequest(request)
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspace")) {
+                if (returnValue?.contains("workspace") == true) {
                     val returnObj = returnValue.asJsonElement()
                     val collections = returnObj
                         .sub("workspace")
@@ -281,7 +285,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
                     return collectionList
                 }
 
-                onErrorResponse(response)
+                response.onError()
 
                 return null
             }
@@ -291,23 +295,25 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * Retrieves information about a specific collection from Postman.
+     * @return collection information if successful, null otherwise.
+     */
     override fun getCollectionInfo(collectionId: String): Map<String, Any?>? {
         LOG.info("read collection of $collectionId from postman")
-        val request = getHttpClient().get("$COLLECTION/$collectionId")
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+        val request = httpClient.get("$COLLECTION/$collectionId")
         try {
-            beforeRequest(request)
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
 
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                if (returnValue?.contains("collection") == true) {
                     val returnObj = returnValue.asJsonElement()
                     return returnObj
                         .sub("collection")
                         ?.asMap()
                 }
 
-                onErrorResponse(response)
+                response.onError()
 
                 return null
             }
@@ -318,38 +324,30 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * Retrieves all workspaces from Postman.
+     * @return list of workspaces if successful, null otherwise.
+     */
     override fun getAllWorkspaces(): List<PostmanWorkspace>? {
         if (postmanSettingsHelper.getPrivateToken() == null) {
             return null
         }
         LOG.info("read allWorkspaces from postman")
-        val request = getHttpClient().get(WORKSPACE)
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+        val request = httpClient.get(WORKSPACE)
 
         try {
-            beforeRequest(request)
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspaces")) {
+                if (returnValue?.contains("workspaces") == true) {
                     val returnObj = returnValue.asJsonElement()
                     val workspaces = returnObj.sub("workspaces")
                         ?.asJsonArray ?: return null
-                    val workspaceList = mutableListOf<PostmanWorkspace>()
-                    workspaces
-                        .forEach {
-                            val res = it.asMap()
-                            workspaceList.add(
-                                PostmanWorkspace(
-                                    res["id"] as String,
-                                    res["name"] as String,
-                                    res["type"] as String
-                                )
-                            )
-                        }
-                    return workspaceList
+                    return workspaces
+                        .map { it.asMap() }
+                        .map { it.parsePostmanWorkspace() }
                 }
 
-                onErrorResponse(response)
+                response.onError()
 
                 return null
             }
@@ -360,29 +358,25 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * Retrieves information about a specific workspace from Postman.
+     * @return workspace information if successful, null otherwise.
+     */
     override fun getWorkspaceInfo(workspaceId: String): PostmanWorkspace? {
         LOG.info("read workspaceInfo of $workspaceId from postman")
-        val request = getHttpClient().get("$WORKSPACE/$workspaceId")
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+        val request = httpClient.get("$WORKSPACE/$workspaceId")
 
         try {
-            beforeRequest(request)
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("workspace")) {
+                if (returnValue?.contains("workspace") == true) {
                     val returnObj = returnValue.asJsonElement()
                     return returnObj.sub("workspace")
                         ?.asMap()
-                        ?.let {
-                            PostmanWorkspace(
-                                it["id"] as String,
-                                it["name"] as String,
-                                it["type"] as String
-                            )
-                        }
+                        ?.parsePostmanWorkspace()
                 }
 
-                onErrorResponse(response)
+                response.onError()
 
                 return null
             }
@@ -392,23 +386,34 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    /**
+     * parse a map into a PostmanWorkspace object.
+     */
+    private fun Map<String, Any?>.parsePostmanWorkspace() = PostmanWorkspace(
+        id = this["id"] as String,
+        name = this["name"] as String,
+        type = this["type"] as String
+    )
+
+    /**
+     * Deletes a collection in Postman.
+     * @return collection information if successful, null otherwise.
+     */
     override fun deleteCollectionInfo(collectionId: String): Map<String, Any?>? {
         LOG.info("delete collection $collectionId from postman")
-        val request = getHttpClient().delete("$COLLECTION/$collectionId")
-            .header("x-api-key", postmanSettingsHelper.getPrivateToken())
+        val request = httpClient.delete("$COLLECTION/$collectionId")
         try {
-            beforeRequest(request)
-            call(request).use { response ->
+            request.callPostman().use { response ->
                 val returnValue = response.string()
 
-                if (returnValue.notNullOrEmpty() && returnValue!!.contains("collection")) {
+                if (returnValue?.contains("collection") == true) {
                     val returnObj = returnValue.asJsonElement()
                     return returnObj
                         .sub("collection")
                         ?.asMap()
                 }
 
-                onErrorResponse(response)
+                response.onError()
 
                 return null
             }
@@ -418,12 +423,21 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
+    private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
+
     private val semaphore = Semaphore(5)
 
-    protected fun call(request: HttpRequest): HttpResponse {
+    /**
+     * Executes a Postman API call with throttling and concurrency control.
+     */
+    private fun HttpRequest.callPostman(): HttpResponse {
+        //throttling API requests to avoid hitting rate limits.
+        apiThrottle.acquireGreedy(LIMIT_PERIOD_PRE_REQUEST)
+
         semaphore.acquire()
         try {
-            return request.call()
+            return header("x-api-key", postmanSettingsHelper.getPrivateToken())
+                .call()
         } finally {
             semaphore.release()
         }
@@ -436,8 +450,8 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         const val COLLECTION = "$POSTMAN_HOST/collections"
         const val WORKSPACE = "$POSTMAN_HOST/workspaces"
 
-        //the postman rate limit is 60 per/s
-        //Just to be on the safe side,limit to 30 per/s
+        // The Postman rate limit is 60 per second.
+        // To be safe, limit it to 30 per second.
         private val LIMIT_PERIOD_PRE_REQUEST = TimeUnit.MINUTES.toMillis(1) / 30
 
         private const val LIMIT_ERROR_MSG = "API access rate limits are applied at a per-key basis in unit time.\n" +
