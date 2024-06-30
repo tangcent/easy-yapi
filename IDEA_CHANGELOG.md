@@ -1,3 +1,11 @@
+* 2.7.2
+	* fix: remove Non-extendable interface usage  [(#1146)](https://github.com/tangcent/easy-yapi/pull/1146)
+
+	* chore: polish Postman API helper classes and cache management  [(#1145)](https://github.com/tangcent/easy-yapi/pull/1145)
+
+	* fix: correct content-type for Postman API export  [(#1144)](https://github.com/tangcent/easy-yapi/pull/1144)
+
+	* test: add test case to verify rendering of non-English content in BundledMarkdownRender  [(#1142)](https://github.com/tangcent/easy-yapi/pull/1142)
 * 2.7.1
 	* fix: resolve 'module_path' property resolution issue  [(#1137)](https://github.com/tangcent/easy-yapi/pull/1137)
 
