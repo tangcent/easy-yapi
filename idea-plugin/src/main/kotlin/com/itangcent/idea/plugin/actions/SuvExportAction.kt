@@ -2,9 +2,7 @@ package com.itangcent.idea.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.project.Project
-import com.itangcent.idea.plugin.DataEventCollector
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.condition.markAsSimple
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
@@ -19,27 +17,13 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
+import com.itangcent.intellij.psi.DataContextProvider
 
 class SuvExportAction : ApiExportAction("Export Api") {
-
-    private var dataEventCollector: DataEventCollector? = null
-
-    override fun actionPerformed(anActionEvent: AnActionEvent) {
-        dataEventCollector = DataEventCollector(anActionEvent)
-
-        load(dataEventCollector!!)
-
-        dataEventCollector!!.disableDataReach()
-
-        super.actionPerformed(anActionEvent)
-    }
 
     override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
 
         super.afterBuildActionContext(event, builder)
-
-        val copyDataEventCollector = dataEventCollector
-        builder.bind(DataContext::class) { it.toInstance(copyDataEventCollector) }
 
         builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
@@ -52,25 +36,21 @@ class SuvExportAction : ApiExportAction("Export Api") {
 
         builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }
 
-        builder.cache("DATA_EVENT_COLLECTOR", dataEventCollector)
-
-        dataEventCollector = null
-
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
-
     }
 
-    private fun load(dataContext: DataContext) {
-        dataContext.getData(CommonDataKeys.PROJECT)
-        dataContext.getData(CommonDataKeys.PSI_FILE)
-        dataContext.getData(CommonDataKeys.NAVIGATABLE_ARRAY)
-        dataContext.getData(CommonDataKeys.NAVIGATABLE)
-        dataContext.getData(CommonDataKeys.EDITOR)
-        dataContext.getData(CommonDataKeys.PSI_ELEMENT)
+    private fun DataContextProvider.preLoadData() {
+        getData(CommonDataKeys.PROJECT)
+        getData(CommonDataKeys.PSI_FILE)
+        getData(CommonDataKeys.NAVIGATABLE_ARRAY)
+        getData(CommonDataKeys.NAVIGATABLE)
+        getData(CommonDataKeys.EDITOR)
+        getData(CommonDataKeys.PSI_ELEMENT)
     }
 
     override fun actionPerformed(actionContext: ActionContext, project: Project?, anActionEvent: AnActionEvent) {
         super.actionPerformed(actionContext, project, anActionEvent)
+        actionContext.instance(DataContextProvider::class).preLoadData()
         val multipleApiExporter = actionContext.instance(SuvApiExporter::class)
         multipleApiExporter.showExportWindow()
     }

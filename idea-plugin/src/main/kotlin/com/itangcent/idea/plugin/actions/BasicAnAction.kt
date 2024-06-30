@@ -7,9 +7,7 @@ import com.itangcent.common.spi.SpiUtils
 import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.Initializer
 import com.itangcent.idea.plugin.log.CustomLogConfig
-import com.itangcent.idea.psi.DisableDocSupport
 import com.itangcent.idea.utils.ConfigurableLogger
-import com.itangcent.intellij.actions.ActionEventDataContextAdaptor
 import com.itangcent.intellij.actions.KotlinAnAction
 import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.context.ActionContext
