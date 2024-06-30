@@ -233,7 +233,7 @@ internal class PsiActionContextKitTest : PluginContextLightCodeInsightFixtureTes
         val psiElement = mock<PsiMethod> {
             on(it.context).thenReturn(it)
         }
-        actionContext.cache(CommonDataKeys.PSI_ELEMENT.name, psiElement)
+        actionContext.cache("dataContext:${CommonDataKeys.PSI_ELEMENT.name}", psiElement)
         kotlin.test.assertEquals(psiElement, actionContext.findCurrentMethod())
     }
 }
