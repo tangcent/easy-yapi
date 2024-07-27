@@ -63,7 +63,7 @@ class PostmanApiExporter {
             logger.info("PrivateToken of postman not be setting")
             logger.info(
                 "To enable automatically import to postman you could set privateToken of postman" +
-                        "in \"Preference -> Other Setting -> EasyApi\""
+                        " in \"Preference -> Other Setting -> EasyApi\""
             )
             logger.info(
                 "If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
