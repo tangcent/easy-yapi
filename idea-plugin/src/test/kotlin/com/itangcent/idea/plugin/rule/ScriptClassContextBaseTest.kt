@@ -1186,6 +1186,10 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         assertTrue(modelPsiClass.asClassContext().implements()!!.isEmpty())
     }
 
+    fun testMavenId() {
+        assertNull(objectPsiClass.asClassContext().mavenId())
+    }
+
     //endregion
 
     //region tests of ScriptFieldContext

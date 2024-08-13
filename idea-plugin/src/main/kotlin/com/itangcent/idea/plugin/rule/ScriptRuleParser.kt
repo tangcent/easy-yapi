@@ -12,6 +12,8 @@ import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.MethodInferHelper
 import com.itangcent.idea.plugin.format.Json5Formatter
+import com.itangcent.idea.utils.MavenHelper
+import com.itangcent.idea.utils.MavenIdData
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.notReentrant
@@ -468,6 +470,10 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
             return psiClass.implementsList?.referencedTypes?.mapToTypedArray {
                 ScriptPsiTypeContext(it)
             }
+        }
+
+        override fun mavenId(): MavenIdData? {
+            return actionContext.callInReadUI { MavenHelper.getMavenId(psiClass) }
         }
 
         override fun toString(): String {
@@ -1069,6 +1075,7 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
          */
         abstract fun implements(): Array<ScriptClassContext>?
 
+        abstract fun mavenId(): MavenIdData?
     }
 
     /**
@@ -1229,6 +1236,11 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
             return duckTypeHelper.explicit(duckType).implements()?.mapToTypedArray {
                 ScriptExplicitClassContext(it)
             }
+        }
+
+        override fun mavenId(): MavenIdData? {
+            val psiClass = getResource() as? PsiClass ?: return null
+            return actionContext.callInReadUI { MavenHelper.getMavenId(psiClass) }
         }
 
         override fun toString(): String {
@@ -1437,6 +1449,11 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
             return duckTypeHelper!!.explicit(duckType).implements()?.mapToTypedArray {
                 ScriptExplicitClassContext(it)
             }
+        }
+
+        override fun mavenId(): MavenIdData? {
+            val psiClass = getResource() as? PsiClass ?: return null
+            return actionContext.callInReadUI { MavenHelper.getMavenId(psiClass) }
         }
 
         override fun equals(other: Any?): Boolean {
