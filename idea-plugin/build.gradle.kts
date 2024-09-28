@@ -1,5 +1,5 @@
 plugins {
-    id("org.jetbrains.intellij") version "1.14.2"
+    id("org.jetbrains.intellij") version "1.17.1"
 }
 
 group = "com.itangcent"
