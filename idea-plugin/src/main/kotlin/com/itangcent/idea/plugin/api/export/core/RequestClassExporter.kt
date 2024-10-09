@@ -562,12 +562,13 @@ abstract class RequestClassExporter : ClassExporter {
             )
         }
 
-        if (request.hasBodyOrForm()) {
-            requestBuilderListener.addHeaderIfMissed(
-                methodExportContext,
-                request, "Content-Type", "application/x-www-form-urlencoded"
-            )
-        }
+        // no longer need to set content-type here
+        //if (request.hasBodyOrForm()) {
+        //    requestBuilderListener.addHeaderIfMissed(
+        //        methodExportContext,
+        //        request, "Content-Type", "application/x-www-form-urlencoded"
+        //    )
+        //}
 
     }
 
