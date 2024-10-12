@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.condition
 
 import com.itangcent.idea.plugin.api.export.ExportDoc
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnChannel
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
