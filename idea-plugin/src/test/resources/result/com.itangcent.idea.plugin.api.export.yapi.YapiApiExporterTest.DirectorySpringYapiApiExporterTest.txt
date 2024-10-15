@@ -487,12 +487,6 @@
     "markdown": "",
     "req_headers": [
       {
-        "name": "Content-Type",
-        "value": "application/x-www-form-urlencoded",
-        "example": "application/x-www-form-urlencoded",
-        "required": 1
-      },
-      {
         "name": "token",
         "value": "",
         "desc": "auth token",
@@ -528,12 +522,6 @@
     "__v": 0,
     "markdown": "",
     "req_headers": [
-      {
-        "name": "Content-Type",
-        "value": "application/x-www-form-urlencoded",
-        "example": "application/x-www-form-urlencoded",
-        "required": 1
-      },
       {
         "name": "token",
         "value": "",

@@ -1422,12 +1422,6 @@
             "description": "",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/x-www-form-urlencoded",
-                "type": "text",
-                "description": ""
-              },
-              {
                 "key": "token",
                 "value": "",
                 "type": "text",
@@ -1454,12 +1448,6 @@
                 "method": "POST",
                 "description": "",
                 "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/x-www-form-urlencoded",
-                    "type": "text",
-                    "description": ""
-                  },
                   {
                     "key": "token",
                     "value": "",
@@ -1518,12 +1506,6 @@
             "description": "",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/x-www-form-urlencoded",
-                "type": "text",
-                "description": ""
-              },
-              {
                 "key": "token",
                 "value": "",
                 "type": "text",
@@ -1550,12 +1532,6 @@
                 "method": "POST",
                 "description": "",
                 "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/x-www-form-urlencoded",
-                    "type": "text",
-                    "description": ""
-                  },
                   {
                     "key": "token",
                     "value": "",
