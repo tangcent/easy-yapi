@@ -58,20 +58,29 @@ fun YapiApiHelper.listApis(token: String, catId: String): JsonArray? {
 }
 
 fun YapiApiHelper.existed(apiInfo: HashMap<String, Any?>): Boolean {
-    val path = apiInfo["path"] ?: return false
-    val method = apiInfo["method"] ?: return false
-    val token = apiInfo["token"] as? String ?: return false
-    val projectId: String = this.getProjectIdByToken(token) ?: return false
-    val carts = this.findCarts(projectId, token) ?: return false
+    return this.findExistApi(apiInfo) != null
+}
+
+fun YapiApiHelper.findExistApi(apiInfo: HashMap<String, Any?>): JsonObject? {
+    val path = apiInfo["path"] as? String ?: return null
+    val method = apiInfo["method"] as? String ?: return null
+    val token = apiInfo["token"] as? String ?: return null
+    return this.findExistApi(token, path, method)
+}
+
+fun YapiApiHelper.findExistApi(token: String, path: String, method: String): JsonObject? {
+    val projectId: String = this.getProjectIdByToken(token) ?: return null
+    val carts = this.findCarts(projectId, token) ?: return null
     for (cart in carts) {
-        val cart_id = (cart as? Map<*, *>)?.get("_id")?.toString() ?: continue
-        if (this.listApis(token, cart_id, null)?.any { api ->
-                api.sub("path")?.asString == path && api.sub("method")?.asString == method
-            } == true) {
-            return true
+        val catId = (cart as? Map<*, *>)?.get("_id")?.toString() ?: continue
+        val api = this.listApis(token, catId, null)?.find { api ->
+            api.sub("path")?.asString == path && api.sub("method")?.asString == method
+        }
+        if (api != null) {
+            return api as JsonObject
         }
     }
-    return false
+    return null
 }
 
 fun YapiApiHelper.getCartForFolder(folder: Folder, privateToken: String): CartInfo? {

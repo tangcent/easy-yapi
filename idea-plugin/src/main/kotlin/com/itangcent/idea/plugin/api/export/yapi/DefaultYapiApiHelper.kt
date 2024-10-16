@@ -78,7 +78,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
     }
 
     override fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
-        if (!saveInterceptor.beforeSaveApi(this, apiInfo)) {
+        if (saveInterceptor.beforeSaveApi(this, apiInfo) == false) {
             return false
         }
 

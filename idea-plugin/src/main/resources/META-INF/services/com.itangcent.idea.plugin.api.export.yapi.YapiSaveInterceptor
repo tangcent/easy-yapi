@@ -1,3 +1,4 @@
 com.itangcent.idea.plugin.api.export.yapi.AlwaysUpdateYapiSaveInterceptor
 com.itangcent.idea.plugin.api.export.yapi.NeverUpdateYapiSaveInterceptor
 com.itangcent.idea.plugin.api.export.yapi.AlwaysAskYapiSaveInterceptor
+com.itangcent.idea.plugin.api.export.yapi.NoUpdateDescriptionYapiSaveInterceptor
