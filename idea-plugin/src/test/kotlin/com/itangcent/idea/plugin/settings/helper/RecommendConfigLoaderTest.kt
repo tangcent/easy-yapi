@@ -91,6 +91,7 @@ internal class RecommendConfigLoaderTest {
                 "Jackson_JsonPropertyOrder",
                 "Jackson_JsonIgnoreProperties",
                 "Jackson_JsonUnwrapped",
+                "Jackson_JsonView",
                 "Gson",
                 "ignore_transient_field",
                 "converts",
