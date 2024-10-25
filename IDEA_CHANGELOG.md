@@ -1,3 +1,15 @@
+* 2.7.3
+	* feat: support Jackson JsonView  [(#1162)](https://github.com/tangcent/easy-yapi/pull/1162)
+
+	* feat: add 'yapi.no_update.description' to stop api description updates  [(#1170)](https://github.com/tangcent/easy-yapi/pull/1170)
+
+	* feat: omit content-type header when no parameters are present  [(#1169)](https://github.com/tangcent/easy-yapi/pull/1169)
+
+	* build: update IntelliJ plugin version from 1.14.2 to 1.17.1  [(#1166)](https://github.com/tangcent/easy-yapi/pull/1166)
+
+	* feat(script): add support for 'mavenId()' in 'class'  [(#1155)](https://github.com/tangcent/easy-yapi/pull/1155)
+
+	* chore: add missing space in log message for setting Postman privateToken  [(#1148)](https://github.com/tangcent/easy-yapi/pull/1148)
 * 2.7.2
 	* fix: remove Non-extendable interface usage  [(#1146)](https://github.com/tangcent/easy-yapi/pull/1146)
 
