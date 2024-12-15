@@ -1,9 +1,6 @@
-[INFO]	Start export api...
+[INFO]	Starting API export process...
 [INFO]	search api from: com.itangcent.api.TestCtrl
-[INFO]	search api from: com.itangcent.api.UserCtrl
 [INFO]	Export to http://127.0.0.1:3088/project/12345/interface/api/cat_222222 success
-[INFO]	Export to http://127.0.0.1:3088/project/12345/interface/api/cat_111111 success
-[INFO]	try infer return type of method[com.itangcent.api.UserCtrl#get(java.lang.Long)]
 [INFO]	try infer return type of method[com.itangcent.api.TestCtrl#returnNode(Node)]
 [WARN]	error to resolve class:Node
 [INFO]	try infer return type of method[com.itangcent.api.TestCtrl#returnRoot(Root)]
@@ -13,4 +10,7 @@
 [INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequest(PageRequest<UserInfo>)]
 [INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequestWithModelAttribute(PageRequest<UserInfo>)]
 [INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequestWithPost(PageRequest<UserInfo>)]
+[INFO]	search api from: com.itangcent.api.UserCtrl
+[INFO]	Export to http://127.0.0.1:3088/project/12345/interface/api/cat_111111 success
+[INFO]	try infer return type of method[com.itangcent.api.UserCtrl#get(java.lang.Long)]
 [INFO]	Apis exported completed
