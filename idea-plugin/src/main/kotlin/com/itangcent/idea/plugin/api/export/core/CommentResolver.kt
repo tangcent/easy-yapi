@@ -22,19 +22,19 @@ import com.itangcent.utils.emptyIf
 class CommentResolver {
 
     @Inject
-    protected val logger: Logger? = null
+    protected lateinit var logger: Logger
 
     @Inject
-    protected val ruleComputer: RuleComputer? = null
+    protected lateinit var ruleComputer: RuleComputer
 
     @Inject
-    protected val jvmClassHelper: JvmClassHelper? = null
+    protected lateinit var jvmClassHelper: JvmClassHelper
 
     @Inject
-    protected val psiClassHelper: PsiClassHelper? = null
+    protected lateinit var psiClassHelper: PsiClassHelper
 
     @Inject
-    protected val duckTypeHelper: DuckTypeHelper? = null
+    protected lateinit var duckTypeHelper: DuckTypeHelper
 
     fun resolveCommentForType(duckType: DuckType, context: PsiElement): String? {
 
@@ -42,29 +42,29 @@ class CommentResolver {
             return null
         }
 
-        if (jvmClassHelper!!.isEnum(duckType)) {
+        if (jvmClassHelper.isEnum(duckType)) {
 
             if (duckType is SingleUnresolvedDuckType) {
                 return resolveCommentForType(duckType.psiType(), context)
             }
 
-            val convertTo = ruleComputer!!.computer(ClassRuleKeys.ENUM_CONVERT, duckType, context)
+            val convertTo = ruleComputer.computer(ClassRuleKeys.ENUM_CONVERT, duckType, context)
 
             if (convertTo.notNullOrBlank()) {
                 if (convertTo!!.contains("#")) {
-                    val options = psiClassHelper!!.resolveEnumOrStatic(convertTo, context, "")
+                    val options = psiClassHelper.resolveEnumOrStatic(convertTo, context, "")
                     if (options.notNullOrEmpty()) {
                         return KVUtils.getOptionDesc(options!!)
                     }
                 } else {
-                    val resolveClass = duckTypeHelper!!.resolveClass(convertTo, context)
+                    val resolveClass = duckTypeHelper.resolveClass(convertTo, context)
                     if (resolveClass == null) {
-                        logger!!.error("failed to resolve class:$convertTo")
+                        logger.warn("Failed to resolve class: $convertTo")
                         return null
                     }
-                    val constants = psiClassHelper!!.parseEnumConstant(resolveClass)
+                    val constants = psiClassHelper.parseEnumConstant(resolveClass)
                     if (constants.isEmpty()) {
-                        logger!!.error("nothing be found at:$convertTo")
+                        logger.debug("No constants found at: $convertTo")
                         return null
                     }
 
@@ -75,10 +75,10 @@ class CommentResolver {
             if (duckType is SingleDuckType) {
                 val enumClass = duckType.psiClass()
 
-                val constants = psiClassHelper!!.resolveEnumOrStatic(context, enumClass, null, "") {}
+                val constants = psiClassHelper.resolveEnumOrStatic(context, enumClass, null, "") {}
                     .emptyIf { psiClassHelper.parseEnumConstant(enumClass) }
                 if (constants.isEmpty()) {
-                    logger!!.error("nothing be found for:${duckType.canonicalText()}")
+                    logger.debug("No constants found for: ${duckType.canonicalText()}")
                     return null
                 }
 
@@ -91,25 +91,25 @@ class CommentResolver {
 
     fun resolveCommentForType(psiType: PsiType, context: PsiElement): String? {
 
-        if (jvmClassHelper!!.isEnum(psiType)) {
+        if (jvmClassHelper.isEnum(psiType)) {
 
-            val convertTo = ruleComputer!!.computer(ClassRuleKeys.ENUM_CONVERT, psiType, context)
+            val convertTo = ruleComputer.computer(ClassRuleKeys.ENUM_CONVERT, psiType, context)
 
             if (convertTo.notNullOrBlank()) {
                 if (convertTo!!.contains("#")) {
-                    val options = psiClassHelper!!.resolveEnumOrStatic(convertTo, context, "")
+                    val options = psiClassHelper.resolveEnumOrStatic(convertTo, context, "")
                     if (options.notNullOrEmpty()) {
                         return KVUtils.getOptionDesc(options!!)
                     }
                 } else {
-                    val resolveClass = duckTypeHelper!!.resolveClass(convertTo, context)
+                    val resolveClass = duckTypeHelper.resolveClass(convertTo, context)
                     if (resolveClass == null) {
-                        logger!!.error("failed to resolve class:$convertTo")
+                        logger.warn("Failed to resolve class: $convertTo")
                         return null
                     }
-                    val constants = psiClassHelper!!.parseEnumConstant(resolveClass)
+                    val constants = psiClassHelper.parseEnumConstant(resolveClass)
                     if (constants.isEmpty()) {
-                        logger!!.error("nothing be found at:$convertTo")
+                        logger.debug("No constants found at: $convertTo")
                         return null
                     }
 
@@ -118,9 +118,9 @@ class CommentResolver {
             }
 
             val enumClass = jvmClassHelper.resolveClassInType(psiType)!!
-            val constants = psiClassHelper!!.resolveEnumOrStatic(context, enumClass, null, "") {}
+            val constants = psiClassHelper.resolveEnumOrStatic(context, enumClass, null, "") {}
             if (constants.isNullOrEmpty()) {
-                logger!!.error("nothing be found for:${psiType.canonicalText}")
+                logger.debug("No constants found for: ${psiType.canonicalText}")
                 return null
             }
 
