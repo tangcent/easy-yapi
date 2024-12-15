@@ -77,7 +77,7 @@ open class SuvApiExporter {
             val docs = classApiExporterHelper.export().map { DocWrapper(it) }
 
             if (docs.isEmpty()) {
-                logger.info("No api be found!")
+                logger.info("No API found in the selected files")
                 return
             }
 
@@ -153,11 +153,11 @@ open class SuvApiExporter {
 
     abstract class ApiExporterAdapter {
 
-        @Inject(optional = true)
-        protected var logger: Logger? = null
+        @Inject
+        protected lateinit var logger: Logger
 
         @Inject
-        protected val classExporter: ClassExporter? = null
+        protected lateinit var classExporter: ClassExporter
 
         @Inject
         protected lateinit var actionContext: ActionContext
@@ -202,13 +202,13 @@ open class SuvApiExporter {
                             try {
                                 doExportApisFromMethod(requests)
                             } catch (e: Exception) {
-                                logger!!.error("error to export apis:" + e.message)
+                                logger!!.error("Failed to export APIs: " + e.message)
                                 logger!!.traceError(e)
                             }
                         }
                     }
                 } catch (e: Throwable) {
-                    logger!!.error("error to export apis:" + e.message)
+                    logger!!.error("Failed to export APIs: " + e.message)
                     logger!!.traceError(e)
                 }
             }
@@ -295,7 +295,7 @@ open class SuvApiExporter {
                 }
 
                 if (docs.isEmpty()) {
-                    logger!!.info("no api has be found")
+                    logger!!.info("No APIs found")
                 }
 
                 doExportDocs(docs)
@@ -341,10 +341,10 @@ open class SuvApiExporter {
         private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
         @Inject
-        private val fileSaveHelper: FileSaveHelper? = null
+        private lateinit var fileSaveHelper: FileSaveHelper
 
         @Inject
-        private val postmanFormatter: PostmanFormatter? = null
+        private lateinit var postmanFormatter: PostmanFormatter
 
         @Inject
         private lateinit var project: Project
@@ -388,7 +388,7 @@ open class SuvApiExporter {
     class YapiApiExporterAdapter : ApiExporterAdapter() {
 
         @Inject
-        protected val yapiSettingsHelper: YapiSettingsHelper? = null
+        protected lateinit var yapiSettingsHelper: YapiSettingsHelper
 
         override fun actionName(): String {
             return "YapiExportAction"
@@ -429,7 +429,7 @@ open class SuvApiExporter {
         }
 
         override fun beforeExport(next: () -> Unit) {
-            val serverFound = yapiSettingsHelper!!.getServer(false).notNullOrBlank()
+            val serverFound = yapiSettingsHelper.getServer(false).notNullOrBlank()
             if (serverFound) {
                 next()
             }
@@ -441,7 +441,7 @@ open class SuvApiExporter {
             try {
                 docs.forEach { suvYapiApiExporter.exportDoc(it) }
             } catch (e: Exception) {
-                logger!!.error("Apis export failed")
+                logger!!.error("Failed to export APIs to YAPI")
                 logger!!.traceError(e)
             }
         }
@@ -490,10 +490,10 @@ open class SuvApiExporter {
     class MarkdownApiExporterAdapter : ApiExporterAdapter() {
 
         @Inject
-        private val fileSaveHelper: FileSaveHelper? = null
+        private lateinit var fileSaveHelper: FileSaveHelper
 
         @Inject
-        private val markdownFormatter: MarkdownFormatter? = null
+        private lateinit var markdownFormatter: MarkdownFormatter
 
         @Inject
         private lateinit var markdownSettingsHelper: MarkdownSettingsHelper
@@ -525,15 +525,15 @@ open class SuvApiExporter {
         override fun doExportDocs(docs: MutableList<Doc>) {
             try {
                 if (docs.isEmpty()) {
-                    logger!!.info("No api be found to export!")
+                    logger!!.info("No API found in the selected scope")
                     return
                 }
                 logger!!.info("Start parse apis")
-                val apiInfo = markdownFormatter!!.parseRequests(docs)
+                val apiInfo = markdownFormatter.parseRequests(docs)
                 docs.clear()
                 actionContext.runAsync {
                     try {
-                        fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
+                        fileSaveHelper.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
                             logger!!.info("Exported data are copied to clipboard,you can paste to a md file now")
                         }, {
                             logger!!.info("Apis save success: $it")
@@ -584,7 +584,7 @@ open class SuvApiExporter {
             val requests = docs.filterAs(Request::class)
             try {
                 if (docs.isEmpty()) {
-                    logger!!.info("No api be found to export!")
+                    logger!!.info("No API found in the selected scope")
                     return
                 }
                 curlExporter.export(requests)
@@ -626,7 +626,7 @@ open class SuvApiExporter {
             val requests = docs.filterAs(Request::class)
             try {
                 if (docs.isEmpty()) {
-                    logger!!.info("No api be found to export!")
+                    logger!!.info("No API found in the selected scope")
                     return
                 }
                 httpClientExporter.export(requests)
@@ -638,7 +638,7 @@ open class SuvApiExporter {
 
     private fun doExport(channel: ApiExporterWrapper, requests: List<DocWrapper>) {
         if (requests.isEmpty()) {
-            logger.info("no api has be selected")
+            logger.info("No API found in the selected scope")
             return
         }
         val adapter = channel.adapter.createInstance() as ApiExporterAdapter
