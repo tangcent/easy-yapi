@@ -1,6 +1,5 @@
 package com.itangcent.idea.utils
 
-import com.itangcent.common.utils.SystemUtils
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
@@ -31,10 +30,10 @@ internal class ConfigurableLoggerTest : BaseContextTest() {
 
     @ParameterizedTest
     @CsvSource(
-            "EMPTY,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-            "LOW,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-            "MEDIUM,[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-            "HIGH,[ERROR]\terrorlog",
+        "EMPTY,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+        "LOW,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+        "MEDIUM,[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+        "HIGH,[ERROR]\terrorlog",
     )
     fun testLog(level: CommonSettingsHelper.CoarseLogLevel, output: String) {
         settings.logLevel = level.getLevel()
@@ -45,6 +44,6 @@ internal class ConfigurableLoggerTest : BaseContextTest() {
         logger.warn("warn")
         logger.error("error")
         logger.log("log")
-        assertEquals(output, LoggerCollector.getLog().replace(SystemUtils.newLine(), ""))
+        assertEquals(output, LoggerCollector.getLog().replace("\n", ""))
     }
 }

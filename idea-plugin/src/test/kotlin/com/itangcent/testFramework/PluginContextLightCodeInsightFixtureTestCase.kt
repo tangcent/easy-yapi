@@ -18,7 +18,6 @@ abstract class PluginContextLightCodeInsightFixtureTestCase : ContextLightCodeIn
     override fun bind(builder: ActionContext.ActionContextBuilder) {
         builder.bind(SettingBinder::class) { it.with(SettingBinderAdaptor::class) }
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
-        builder.bindInstance("plugin.name", "easy_api")
         builder.bind(ModuleHelper::class) { it.toInstance(ConstantModuleHelper.INSTANCE) }
         builder.bind(MessagesHelper::class) { it.with(EmptyMessagesHelper::class).singleton() }
     }

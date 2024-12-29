@@ -14,12 +14,12 @@ class KVKitTest {
 
     @Test
     fun testForEachValid() {
-        KV.by("a", "A").forEachValid { t, u ->
+        KV.of("a", "A").forEachValid { t, u ->
             assertEquals("a", t)
             assertEquals("A", u)
         }
 
-        KV.by("", "A").forEachValid { t, u ->
+        KV.of("", "A").forEachValid { t, u ->
             assertEquals("key", t)
             assertEquals("A", u)
         }
@@ -29,12 +29,12 @@ class KVKitTest {
             assertEquals("A", u)
         }
 
-        KV.by("a", "A").forEachValid { t, u ->
+        KV.of("a", "A").forEachValid { t, u ->
             assertEquals("a", t)
             assertEquals("A", u)
         }
 
-        KV.by("", "A").forEachValid { t, u ->
+        KV.of("", "A").forEachValid { t, u ->
             assertEquals("key", t)
             assertEquals("A", u)
         }
