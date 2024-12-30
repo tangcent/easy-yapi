@@ -77,7 +77,7 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
             apiCaller.showCallWindow()
             actionContext.waitComplete()
             assertEquals(
-                "[INFO]\tStart export api...\n" +
+                "[INFO]\tStarting API export process...\n" +
                         "[INFO]\tNo api be found to call!\n",
                 LoggerCollector.getLog().toUnixString()
             )
@@ -119,7 +119,7 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
             apiCaller.showCallWindow()
             actionContext.waitComplete()
             assertEquals(
-                "[INFO]\tStart export api...\n",
+                "[INFO]\tStarting API export process...\n",
                 LoggerCollector.getLog().replace(Regex("\\d"), "").toUnixString()
             )
             assertEquals(requests, requestListInUI)
@@ -147,7 +147,7 @@ internal abstract class ApiCallerTest : PluginContextLightCodeInsightFixtureTest
             actionContext.instance(ApiCaller::class).showCallWindow()
             actionContext.waitComplete()
             assertEquals(
-                "[INFO]\tStart export api...\n",
+                "[INFO]\tStarting API export process...\n",
                 LoggerCollector.getLog().replace(Regex("\\d"), "").toUnixString()
             )
             assertEquals(requests, requestListInUI)

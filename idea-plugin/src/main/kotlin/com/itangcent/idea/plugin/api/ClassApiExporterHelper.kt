@@ -31,25 +31,25 @@ import java.util.concurrent.LinkedBlockingQueue
 open class ClassApiExporterHelper {
 
     @Inject
-    protected val jvmClassHelper: JvmClassHelper? = null
+    protected lateinit var jvmClassHelper: JvmClassHelper
 
     @Inject
-    protected val ruleComputer: RuleComputer? = null
+    protected lateinit var ruleComputer: RuleComputer
 
     @Inject
-    private val docHelper: DocHelper? = null
+    private lateinit var docHelper: DocHelper
 
     @Inject
-    protected val psiClassHelper: PsiClassHelper? = null
+    protected lateinit var psiClassHelper: PsiClassHelper
 
     @Inject
-    private val linkExtractor: LinkExtractor? = null
+    private lateinit var linkExtractor: LinkExtractor
 
     @Inject
-    private val linkResolver: LinkResolver? = null
+    private lateinit var linkResolver: LinkResolver
 
     @Inject
-    protected val duckTypeHelper: DuckTypeHelper? = null
+    protected lateinit var duckTypeHelper: DuckTypeHelper
 
     @Inject
     protected lateinit var actionContext: ActionContext
@@ -58,7 +58,7 @@ open class ClassApiExporterHelper {
     protected lateinit var logger: Logger
 
     @Inject
-    protected val classExporter: ClassExporter? = null
+    protected lateinit var classExporter: ClassExporter
 
     @Inject
     protected lateinit var messagesHelper: MessagesHelper
@@ -69,7 +69,7 @@ open class ClassApiExporterHelper {
     companion object : Log()
 
     fun extractParamComment(psiMethod: PsiMethod): MutableMap<String, Any?>? {
-        val subTagMap = docHelper!!.getSubTagMapOfDocComment(psiMethod, "param")
+        val subTagMap = docHelper.getSubTagMapOfDocComment(psiMethod, "param")
         if (subTagMap.isEmpty()) {
             return null
         }
@@ -82,36 +82,34 @@ open class ClassApiExporterHelper {
             if (value.notNullOrBlank()) {
 
                 val options: ArrayList<HashMap<String, Any?>> = ArrayList()
-                val comment = linkExtractor!!.extract(value, psiMethod, object : AbstractLinkResolve() {
+                val comment = linkExtractor.extract(value, psiMethod, object : AbstractLinkResolve() {
 
                     override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
-
-                        psiClassHelper!!.resolveEnumOrStatic(
+                        psiClassHelper.resolveEnumOrStatic(
                             plainText,
                             parameters.firstOrNull { it.name == name } ?: psiMethod,
                             name
-                        )
-                            ?.let { options.addAll(it) }
+                        )?.let { options.addAll(it) }
 
                         return super.linkToPsiElement(plainText, linkTo)
                     }
 
                     override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
-                        return linkResolver!!.linkToClass(linkClass)
+                        return linkResolver.linkToClass(linkClass)
                     }
 
                     override fun linkToType(plainText: String, linkType: PsiType): String? {
-                        return jvmClassHelper!!.resolveClassInType(linkType)?.let {
-                            linkResolver!!.linkToClass(it)
+                        return jvmClassHelper.resolveClassInType(linkType)?.let {
+                            linkResolver.linkToClass(it)
                         }
                     }
 
                     override fun linkToField(plainText: String, linkField: PsiField): String? {
-                        return linkResolver!!.linkToProperty(linkField)
+                        return linkResolver.linkToProperty(linkField)
                     }
 
                     override fun linkToMethod(plainText: String, linkMethod: PsiMethod): String? {
-                        return linkResolver!!.linkToMethod(linkMethod)
+                        return linkResolver.linkToMethod(linkMethod)
                     }
 
                     override fun linkToUnresolved(plainText: String): String {
@@ -124,7 +122,6 @@ open class ClassApiExporterHelper {
                     methodParamComment["$name@options"] = options
                 }
             }
-
         }
 
         return methodParamComment
@@ -137,7 +134,7 @@ open class ClassApiExporterHelper {
         cls: PsiClass, handle: (ExplicitMethod) -> Unit,
     ) {
         actionContext.runInReadUI {
-            val methods = duckTypeHelper!!.explicit(cls)
+            val methods = duckTypeHelper.explicit(cls)
                 .methods()
                 .filter { !shouldIgnore(it) }
             actionContext.runAsync {
@@ -158,28 +155,28 @@ open class ClassApiExporterHelper {
     }
 
     protected open fun shouldIgnore(explicitElement: ExplicitMethod): Boolean {
-        if (ignoreIrregularApiMethod() && (jvmClassHelper!!.isBasicMethod(explicitElement.psi().name)
+        if (ignoreIrregularApiMethod() && (jvmClassHelper.isBasicMethod(explicitElement.psi().name)
                     || explicitElement.psi().hasModifierProperty("static")
                     || explicitElement.psi().isConstructor)
         ) {
             return true
         }
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, explicitElement) ?: false
+        return ruleComputer.computer(ClassExportRuleKeys.IGNORE, explicitElement) ?: false
     }
 
     protected open fun shouldIgnore(psiMethod: PsiMethod): Boolean {
-        if (ignoreIrregularApiMethod() && (jvmClassHelper!!.isBasicMethod(psiMethod.name)
+        if (ignoreIrregularApiMethod() && (jvmClassHelper.isBasicMethod(psiMethod.name)
                     || psiMethod.hasModifierProperty("static")
                     || psiMethod.isConstructor)
         ) {
             return true
         }
-        return ruleComputer!!.computer(ClassExportRuleKeys.IGNORE, psiMethod) ?: false
+        return ruleComputer.computer(ClassExportRuleKeys.IGNORE, psiMethod) ?: false
     }
 
     fun foreachPsiMethod(cls: PsiClass, handle: (PsiMethod) -> Unit) {
         actionContext.runInReadUI {
-            jvmClassHelper!!.getAllMethods(cls)
+            jvmClassHelper.getAllMethods(cls)
                 .asSequence()
                 .filter { !shouldIgnore(it) }
                 .forEach(handle)
@@ -193,7 +190,7 @@ open class ClassApiExporterHelper {
     }
 
     fun export(handle: (Doc) -> Unit) {
-        logger.info("Start export api...")
+        logger.info("Starting API export process...")
         val psiClassQueue: BlockingQueue<PsiClass> = LinkedBlockingQueue()
 
         val boundary = actionContext.createBoundary()
@@ -238,11 +235,11 @@ open class ClassApiExporterHelper {
                 }
             } else {
                 val classQualifiedName = actionContext.callInReadUI { psiClass.qualifiedName }
-                LOG.info("wait api parsing... $classQualifiedName")
+                LOG.info("Processing API for class: $classQualifiedName")
                 actionContext.withBoundary {
-                    classExporter!!.export(psiClass) { handle(it) }
+                    classExporter.export(psiClass) { handle(it) }
                 }
-                LOG.info("api parse $classQualifiedName completed.")
+                LOG.info("Successfully parsed API for class: $classQualifiedName")
             }
         }
     }
