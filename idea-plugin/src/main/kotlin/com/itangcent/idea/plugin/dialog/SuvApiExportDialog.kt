@@ -89,7 +89,6 @@ class SuvApiExportDialog : ContextDialog() {
 
         contentPane = suvApiExportPanel
         getRootPane().defaultButton = buttonOK
-        SwingUtils.centerWindow(this)
 
         buttonOK.addActionListener { onOK() }
 
@@ -139,6 +138,8 @@ class SuvApiExportDialog : ContextDialog() {
                 selectAllCheckBox.isSelected = apiList.model.size == apiList.selectionModel.selectedItemsCount
             }
         }
+
+        SwingUtils.centerWindow(this)
     }
 
     private fun onSelectedAll() = this.trigger.withTrigger("onSelectAll") {

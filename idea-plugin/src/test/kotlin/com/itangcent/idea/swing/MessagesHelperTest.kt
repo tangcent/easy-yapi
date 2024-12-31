@@ -1,6 +1,7 @@
 package com.itangcent.idea.swing
 
 import com.intellij.openapi.ui.Messages
+import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
 import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -38,11 +39,14 @@ internal class MessagesHelperTest : BaseContextTest() {
             val callBack: (Int, Boolean) -> Unit = it.getArgument(2)!!
             callBack(Messages.YES, applyAll)
         }.`when`(messagesHelper)
-            .showAskWithApplyAllDialog(Mockito.any(), Mockito.any(), com.itangcent.mock.any { _, _ -> })
+            .showAskWithApplyAllDialog(
+                Mockito.any(),
+                com.itangcent.mock.any(ConfirmationDialogLabels()),
+                com.itangcent.mock.any { _, _ -> })
         var ret: Int? = null
         messagesHelper.showAskWithApplyAllDialog(
             "msg",
-            null,
+            ConfirmationDialogLabels(),
             "test-showAskWithApplyAllDialogWithApplyAll"
         )
         {
@@ -54,12 +58,12 @@ internal class MessagesHelperTest : BaseContextTest() {
         )
         verify(messagesHelper, times(1)).showAskWithApplyAllDialog(
             Mockito.any(),
-            Mockito.any(),
+            com.itangcent.mock.any(ConfirmationDialogLabels()),
             com.itangcent.mock.any { _, _ -> })
         applyAll = true
         messagesHelper.showAskWithApplyAllDialog(
             "msg",
-            null,
+            ConfirmationDialogLabels(),
             "test-showAskWithApplyAllDialogWithApplyAll"
         )
         {
@@ -71,11 +75,11 @@ internal class MessagesHelperTest : BaseContextTest() {
         )
         verify(messagesHelper, times(2)).showAskWithApplyAllDialog(
             Mockito.any(),
-            Mockito.any(),
+            com.itangcent.mock.any(ConfirmationDialogLabels()),
             com.itangcent.mock.any { _, _ -> })
         messagesHelper.showAskWithApplyAllDialog(
             "msg",
-            null,
+            ConfirmationDialogLabels(),
             "test-showAskWithApplyAllDialogWithApplyAll"
         )
         {
@@ -87,7 +91,7 @@ internal class MessagesHelperTest : BaseContextTest() {
         )
         verify(messagesHelper, times(2)).showAskWithApplyAllDialog(
             Mockito.any(),
-            Mockito.any(),
+            com.itangcent.mock.any(ConfirmationDialogLabels()),
             com.itangcent.mock.any { _, _ -> })
     }
 }

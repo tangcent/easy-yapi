@@ -61,17 +61,34 @@ object SwingUtils : Log() {
         component.background = component.parent.background
     }
 
-    // Centers a Component on the screen.
-    fun centerWindow(component: Component) {
-        val toolkit = Toolkit.getDefaultToolkit()
-        val scmSize = toolkit.screenSize
-        val width = component.width
-        val height = component.height
+    // Centers a Component on the screen or relative to its parent window.
+    fun centerWindow(window: Window) {
+        EventQueue.invokeLater {
+            window.pack()
 
-        component.setLocation(
-            scmSize.width / 2 - width / 2,
-            scmSize.height / 2 - height / 2
-        )
+            val parentWindow = when {
+                window.owner != null && window.owner.isVisible && window.owner.width > 0 && window.owner.height > 0 -> window.owner
+                window.parent != null -> SwingUtilities.getWindowAncestor(window.parent)?.takeIf { it.isVisible && it.width > 0 && it.height > 0 }
+                else -> null
+            }?.takeIf { !it.javaClass.name.contains("SharedOwnerFrame") }
+
+            if (parentWindow != null) {
+                // Center relative to parent window
+                val parentBounds = parentWindow.bounds
+                window.setLocation(
+                    parentBounds.x + (parentBounds.width - window.width) / 2,
+                    parentBounds.y + (parentBounds.height - window.height) / 2
+                )
+            } else {
+                // Center on screen
+                val toolkit = Toolkit.getDefaultToolkit()
+                val scmSize = toolkit.screenSize
+                window.setLocation(
+                    scmSize.width / 2 - window.width / 2,
+                    scmSize.height / 2 - window.height / 2
+                )
+            }
+        }
     }
 
     // Returns the active window of the current project in the IntelliJ IDEA IDE.

@@ -1,6 +1,7 @@
 package com.itangcent.mock
 
 import com.intellij.openapi.ui.Messages
+import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
 import com.itangcent.idea.swing.MessagesHelper
 import javax.swing.Icon
 
@@ -49,7 +50,7 @@ class EmptyMessagesHelper : MessagesHelper {
 
     override fun showAskWithApplyAllDialog(
         message: String?,
-        buttonNames: Array<String>?,
+        buttonLabels: ConfirmationDialogLabels,
         callBack: (Int, Boolean) -> Unit,
     ) {
         callBack(Messages.YES, true)

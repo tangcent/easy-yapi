@@ -3,6 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.intellij.openapi.ui.Messages
+import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.YapiExportMode
@@ -90,7 +91,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
         Mockito.`when`(
             messagesHelper.showAskWithApplyAllDialog(
                 Mockito.any(),
-                Mockito.any(),
+                com.itangcent.mock.any(ConfirmationDialogLabels()),
                 com.itangcent.mock.any { _, _ -> })
         ).thenAnswer {
             val callBack: (Int, Boolean) -> Unit = it.getArgument(2)!!

@@ -3,6 +3,7 @@ package com.itangcent.idea.swing
 import com.google.inject.ImplementedBy
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.concurrent.ValueHolder
+import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
 import com.itangcent.intellij.context.ActionContext
 import org.jetbrains.annotations.Nls
 import javax.swing.Icon
@@ -61,13 +62,16 @@ interface MessagesHelper {
     )
 
     /**
-     * @param message tip at the top
-     * @param buttonNames [YES,NO,CANCEL]
-     * @param callBack callback when button be clicked
+     * Shows a dialog with a message and three buttons, plus an "Apply to all" checkbox.
+     *
+     * @param message The message to display at the top of the dialog
+     * @param buttonLabels The labels for the three buttons (OK/YES, NO, CANCEL)
+     * @param callBack Callback invoked when a button is clicked, with the button type ([Messages.OK], [Messages.NO], [Messages.CANCEL])
+     *                 and the state of the "Apply to all" checkbox
      */
     fun showAskWithApplyAllDialog(
         message: String?,
-        buttonNames: Array<String>?,
+        buttonLabels: ConfirmationDialogLabels = ConfirmationDialogLabels(),
         callBack: (Int, Boolean) -> Unit,
     )
 }
@@ -88,7 +92,7 @@ fun <T> MessagesHelper.showChooseWithTipDialog(
 
 fun MessagesHelper.showAskWithApplyAllDialog(
     message: String?,
-    buttonNames: Array<String>?,
+    buttonLabels: ConfirmationDialogLabels = ConfirmationDialogLabels(),
     key: String,
     callBack: (Int) -> Unit,
 ) {
@@ -99,7 +103,7 @@ fun MessagesHelper.showAskWithApplyAllDialog(
             return
         }
 
-    this.showAskWithApplyAllDialog(message, buttonNames) { ret, applyAll ->
+    this.showAskWithApplyAllDialog(message, buttonLabels) { ret, applyAll ->
         if (applyAll) {
             actionContext?.cache(key, ret)
         }
