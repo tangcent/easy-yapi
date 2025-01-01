@@ -231,8 +231,6 @@ open class SuvApiExporter {
             builder: ActionContext.ActionContextBuilder,
         ) {
 
-            builder.bindInstance("plugin.name", "easy_api")
-
             builder.inheritFrom(actionContext, SettingBinder::class)
 
             builder.inheritFrom(actionContext, Logger::class)
@@ -242,7 +240,7 @@ open class SuvApiExporter {
 //            builder.bindInstance(Logger::class, BeanWrapperProxies.wrap(Logger::class, actionContext.logger()))
 
 //            builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
-//            builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
+//            builder.bind(Logger::class, "delegate.logger") { it.with(IdeaConsoleLogger::class).singleton() }
 
             builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
             builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }

@@ -11,6 +11,7 @@ class LoggerCollector : AbstractLogger() {
 
     override fun processLog(logData: String?) {
         buffer.append(logData)
+            .appendLine()
     }
 
     companion object {

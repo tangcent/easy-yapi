@@ -14,7 +14,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
-import com.itangcent.intellij.logger.ConsoleRunnerLogger
+import com.itangcent.intellij.logger.IdeaConsoleLogger
 import com.itangcent.intellij.logger.LogConfig
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.spi.IdeaAutoInject
@@ -34,11 +34,10 @@ abstract class BasicAnAction : KotlinAnAction {
     override fun onBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
 
         super.onBuildActionContext(event, builder)
-        builder.bindInstance("plugin.name", "easy_api")
         builder.bind(LogConfig::class) { it.with(CustomLogConfig::class).singleton() }
 
         builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
-        builder.bind(Logger::class, "delegate.logger") { it.with(ConsoleRunnerLogger::class).singleton() }
+        builder.bind(Logger::class, "delegate.logger") { it.with(IdeaConsoleLogger::class).singleton() }
         builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }
 
         afterBuildActionContext(event, builder)

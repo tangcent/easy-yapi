@@ -22,7 +22,7 @@ internal class LoggerCollectorTest : BaseContextTest() {
     fun testLog() {
         logger.debug("hello")
         logger.info("world")
-        assertEquals("[DEBUG]\thello${SystemUtils.newLine()}" +
-                "[INFO]\tworld${SystemUtils.newLine()}", LoggerCollector.getLog())
+        assertEquals("[DEBUG]\thello\n" +
+                "[INFO]\tworld\n", LoggerCollector.getLog())
     }
 }

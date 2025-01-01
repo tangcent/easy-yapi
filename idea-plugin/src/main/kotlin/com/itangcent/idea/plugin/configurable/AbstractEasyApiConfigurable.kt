@@ -51,7 +51,6 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
 
         val builder = ActionContext.builder()
 
-        builder.bindInstance("plugin.name", "easy_api")
         myProject?.let { builder.bindInstance(Project::class, it) }
         builder.bind(Logger::class) { it.with(SystemLogger::class).singleton() }
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
