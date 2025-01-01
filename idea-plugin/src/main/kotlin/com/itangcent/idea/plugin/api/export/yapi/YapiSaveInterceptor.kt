@@ -4,6 +4,7 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.common.concurrent.ValueHolder
 import com.itangcent.common.utils.toBool
 import com.itangcent.idea.plugin.condition.ConditionOnSetting
+import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
@@ -71,7 +72,8 @@ class AlwaysAskYapiSaveInterceptor : YapiSaveInterceptor {
         val context = ActionContext.getContext() ?: return true
         context.instance(MessagesHelper::class).showAskWithApplyAllDialog(
             "The api [${apiInfo["title"]}] already existed in the project.\n" +
-                    "Do you want update it?", arrayOf("Update", "Skip", "Cancel")
+                    "Do you want update it?",
+            ConfirmationDialogLabels(okText = "Update", noText = "Skip", cancelText = "Cancel")
         ) { ret, applyAll ->
             if (ret == Messages.CANCEL) {
                 context.stop()

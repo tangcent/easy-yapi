@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Messages.YesNoResult
 import com.itangcent.idea.plugin.dialog.AskWithApplyAllDialog
 import com.itangcent.idea.plugin.dialog.ChooseWithTipDialog
+import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.UIUtils
@@ -142,15 +143,15 @@ class DefaultMessagesHelper : MessagesHelper {
 
     override fun showAskWithApplyAllDialog(
         message: String?,
-        buttonNames: Array<String>?,
+        buttonLabels: ConfirmationDialogLabels,
         callBack: (Int, Boolean) -> Unit,
     ) {
         actionContext.runInSwingUI {
-            val chooseWithTipDialog = AskWithApplyAllDialog(SwingUtils.preferableWindow())
-            buttonNames?.let { chooseWithTipDialog.updateButtons(buttonNames) }
-            chooseWithTipDialog.updateMessage(message ?: "Yes or No?")
-            UIUtils.show(chooseWithTipDialog)
-            chooseWithTipDialog.setCallBack(callBack)
+            val dialog = AskWithApplyAllDialog(SwingUtils.preferableWindow())
+            dialog.updateButtonLabels(buttonLabels)
+            dialog.updateMessage(message ?: "Yes or No?")
+            UIUtils.show(dialog)
+            dialog.setCallBack(callBack)
         }
     }
 }
