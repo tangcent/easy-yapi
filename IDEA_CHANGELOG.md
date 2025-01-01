@@ -1,3 +1,13 @@
+* 2.7.4
+	* build: update project dependencies  [(#1180)](https://github.com/tangcent/easy-yapi/pull/1180)
+
+	* chore: remove AskWithApplyAllDialog form file  [(#1181)](https://github.com/tangcent/easy-yapi/pull/1181)
+
+	* test: add unit tests for ClassApiExporterHelper  [(#1179)](https://github.com/tangcent/easy-yapi/pull/1179)
+
+	* refactor: replace nullable properties with lateinit for improved initialization in CommentResolver  [(#1178)](https://github.com/tangcent/easy-yapi/pull/1178)
+
+	* fix: update methods in ScriptRuleParser to avoid return types with parameter type erasure  [(#1176)](https://github.com/tangcent/easy-yapi/pull/1176)
 * 2.7.3
 	* feat: support Jackson JsonView  [(#1162)](https://github.com/tangcent/easy-yapi/pull/1162)
 
