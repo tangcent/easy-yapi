@@ -34,6 +34,9 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     @Inject
     protected lateinit var springRequestMappingResolver: SpringRequestMappingResolver
 
+    @Inject
+    private lateinit var springControllerAnnotationResolver: SpringControllerAnnotationResolver
+
     override fun processClass(cls: PsiClass, classExportContext: ClassExportContext) {
 
         val ctrlRequestMappingAnn = findRequestMappingInAnn(cls)
@@ -50,9 +53,8 @@ open class SpringRequestClassExporter : RequestClassExporter() {
     }
 
     override fun hasApi(psiClass: PsiClass): Boolean {
-        return SpringClassName.SPRING_CONTROLLER_ANNOTATION.any {
-            annotationHelper.hasAnn(psiClass, it)
-        } || (ruleComputer.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
+        return springControllerAnnotationResolver.hasControllerAnnotation(psiClass) ||
+               (ruleComputer.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
     }
 
     override fun isApi(psiMethod: PsiMethod): Boolean {

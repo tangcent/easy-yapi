@@ -94,7 +94,7 @@ abstract class StandardJdkRuleParser : ScriptRuleParser() {
 
         fun findClass(canonicalText: String): ScriptPsiTypeContext? {
             return context?.let {
-                duckTypeHelper!!.findType(canonicalText, it)?.let { type -> ScriptPsiTypeContext(type) }
+                duckTypeHelper.findType(canonicalText, it)?.let { type -> ScriptPsiTypeContext(type) }
             }
         }
 

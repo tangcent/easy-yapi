@@ -1,0 +1,2 @@
+com.itangcent.idea.plugin.api.export.spring.StandardSpringControllerAnnotationResolver
+com.itangcent.idea.plugin.api.export.spring.CustomSpringControllerAnnotationResolver
