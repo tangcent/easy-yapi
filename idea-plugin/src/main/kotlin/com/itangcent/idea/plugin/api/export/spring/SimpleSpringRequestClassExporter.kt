@@ -7,7 +7,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
-import com.itangcent.common.utils.stream
 import com.itangcent.idea.condition.annotation.ConditionOnClass
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
@@ -24,8 +23,12 @@ import com.itangcent.intellij.jvm.JvmClassHelper
 import com.itangcent.intellij.logger.Logger
 import kotlin.reflect.KClass
 
-/**
- * only parse name
+/*
+ * A simplified version of Spring request class exporter that focuses on basic request mapping information.
+ * This exporter provides a lightweight alternative to the full SpringRequestClassExporter,
+ * processing only essential information from Spring MVC controllers.
+ * - Only processes basic request mapping information (paths, method names)
+ * - Ignores complex parameter processing and type resolution
  */
 @Singleton
 @ConditionOnSimple
@@ -44,6 +47,9 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
 
     @Inject
     protected lateinit var classApiExporterHelper: ClassApiExporterHelper
+
+    @Inject
+    private lateinit var springControllerAnnotationResolver: SpringControllerAnnotationResolver
 
     override fun support(docType: KClass<*>): Boolean {
         return docType == Request::class
@@ -72,10 +78,12 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
 
                     return false
                 }
+
                 shouldIgnore(cls) -> {
                     logger!!.info("ignore class: $clsQualifiedName")
                     return true
                 }
+
                 else -> {
                     logger!!.info("search api from: $clsQualifiedName")
 
@@ -92,9 +100,8 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
     }
 
     protected open fun isCtrl(psiClass: PsiClass): Boolean {
-        return SpringClassName.SPRING_CONTROLLER_ANNOTATION.any {
-            annotationHelper!!.hasAnn(psiClass, it)
-        } || (ruleComputer.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
+        return springControllerAnnotationResolver.hasControllerAnnotation(psiClass)
+                || (ruleComputer.computer(ClassExportRuleKeys.IS_SPRING_CTRL, psiClass) ?: false)
     }
 
     private fun shouldIgnore(psiElement: PsiElement): Boolean {

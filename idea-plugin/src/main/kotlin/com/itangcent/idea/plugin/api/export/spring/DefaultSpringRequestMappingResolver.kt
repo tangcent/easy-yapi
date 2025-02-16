@@ -7,6 +7,10 @@ import com.intellij.psi.PsiElement
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.spi.SpiCompositeLoader
 
+/*
+ * This class provides a default implementation of SpringRequestMappingResolver that uses
+ * a composite pattern to delegate the resolution to multiple resolvers.
+ */
 @Singleton
 class DefaultSpringRequestMappingResolver : SpringRequestMappingResolver {
 

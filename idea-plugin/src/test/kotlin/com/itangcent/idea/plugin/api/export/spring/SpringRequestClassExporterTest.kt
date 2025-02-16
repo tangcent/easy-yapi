@@ -46,6 +46,8 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
 
     private lateinit var userApiImplPsiClass: PsiClass
 
+    private lateinit var customCtrlPsiClass: PsiClass
+
     private val settings = Settings()
 
     override fun beforeBind() {
@@ -63,6 +65,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         loadSource(LocalDateTime::class)
         loadSource(HashMap::class)
         loadFile("annotation/Public.java")
+        loadFile("annotation/MyController.java")
         loadFile("constant/UserType.java")
         loadFile("model/IResult.java")
         loadFile("model/Result.java")
@@ -85,6 +88,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         testCtrlPsiClass = loadClass("api/TestCtrl.java")!!
         iuserApiPsiClass = loadClass("api/IUserApi.java")!!
         userApiImplPsiClass = loadClass("api/UserApiImpl.java")!!
+        customCtrlPsiClass = loadClass("api/CustomCtrl.java")!!
         settings.inferEnable = true
 
         //clear log
@@ -701,5 +705,20 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals(iuserApiPsiClass.methods[1], (request.resource as PsiResource).resource())
         }
         assertEquals(ResultLoader.load("testExportFromUserApi"), LoggerCollector.getLog().toUnixString())
+    }
+
+    fun testExportFromMyController() {
+        val requests = ArrayList<Request>()
+        actionContext.withBoundary {
+            classExporter.export(customCtrlPsiClass, requestOnly {
+                requests.add(it)
+            })
+        }
+        assertEquals(1, requests.size)
+        requests[0].let { request ->
+            assertEquals("hello", request.name)
+            assertEquals("GET", request.method)
+            assertEquals(customCtrlPsiClass.methods[0], (request.resource as PsiResource).resource())
+        }
     }
 }

@@ -1,6 +1,10 @@
 package com.itangcent.idea.plugin.api.export.spring
 
-
+/*
+ * This object holds constants for various Spring class and annotation names.
+ * It is used throughout the codebase to refer to these classes and annotations
+ * in a consistent manner.
+ */
 object SpringClassName {
 
     val SPRING_REQUEST_RESPONSE: Array<String> = arrayOf(
@@ -58,8 +62,10 @@ object SpringClassName {
     //Spring Boot Actuator Annotations
     const val ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.Endpoint"
     const val WEB_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.WebEndpoint"
-    const val CONTROLLER_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpoint"
-    const val REST_CONTROLLER_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.RestControllerEndpoint"
+    const val CONTROLLER_ENDPOINT_ANNOTATION =
+        "org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpoint"
+    const val REST_CONTROLLER_ENDPOINT_ANNOTATION =
+        "org.springframework.boot.actuate.endpoint.web.annotation.RestControllerEndpoint"
 
     const val READ_OPERATION_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.ReadOperation"
     const val WRITE_OPERATION_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.WriteOperation"

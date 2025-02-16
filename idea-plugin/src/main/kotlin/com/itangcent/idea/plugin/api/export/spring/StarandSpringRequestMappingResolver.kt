@@ -10,7 +10,19 @@ import com.itangcent.order.Order
 import com.itangcent.order.Ordered
 
 /**
- * Support standard spring RequestMapping annotations [SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS]
+ * This class handles the resolution of standard Spring request mapping annotations.
+ * It is responsible for processing the core Spring MVC annotations such as:
+ * - @RequestMapping
+ * - @GetMapping
+ * - @PostMapping
+ * - @PutMapping
+ * - @DeleteMapping
+ * - @PatchMapping
+ *
+ * This resolver has the highest precedence among all request mapping resolvers,
+ * ensuring that standard Spring annotations are processed before any custom ones.
+ * It extracts mapping information like HTTP methods, paths, headers, and other
+ * attributes from these standard annotations.
  */
 @Singleton
 @Order(Ordered.HIGHEST_PRECEDENCE)

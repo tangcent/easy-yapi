@@ -12,8 +12,24 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.AnnotationHelper
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * Support custom annotation which annotated with [SpringClassName.SPRING_REQUEST_MAPPING_ANNOTATIONS]
+/*
+ * This class provides support for resolving custom request mapping annotations that are
+ * themselves annotated with standard Spring request mapping annotations.
+ *
+ * It enables the use of custom annotations as alternatives to the standard Spring
+ * request mapping annotations. For example:
+ *
+ * ```java
+ * @Target({ElementType.METHOD})
+ * @Retention(RetentionPolicy.RUNTIME)
+ * @RequestMapping(method = RequestMethod.GET)
+ * public @interface CustomGet {
+ *     String value() default "";
+ * }
+ * ```
+ *
+ * The resolver will recognize such custom annotations and extract the appropriate
+ * mapping information from them by analyzing their meta-annotations.
  */
 @Singleton
 class CustomSpringRequestMappingResolver : SpringRequestMappingResolver {
