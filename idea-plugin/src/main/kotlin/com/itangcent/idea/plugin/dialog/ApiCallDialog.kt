@@ -36,7 +36,7 @@ import com.itangcent.idea.swing.onSelect
 import com.itangcent.idea.swing.onTextChange
 import com.itangcent.idea.utils.*
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.rx.throttle
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.psi.PsiClassUtils
@@ -387,11 +387,9 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.call.v1.0.db").path) { NULL_REQUEST_INFO_CACHE }
     }
 
-    private val throttleHelper = ThrottleHelper()
+    private val requestChangeThrottle = throttle()
 
-    private val requestChangeThrottle = throttleHelper.build("request")
-
-    private val contentTypeChangeThrottle = throttleHelper.build("content_type")
+    private val contentTypeChangeThrottle = throttle()
 
     init {
         LOG.info("create ApiCallDialog")
@@ -524,7 +522,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         this.paramsTextField.text = currRequest.querys
         this.requestHeadersTextArea.text = currRequest.headers
         this.requestBodyTextArea.isEnabled = this.apiList!![selectedIndex].origin.hasBodyOrForm()
-        this.contentTypePanel.isVisible = currRequest.method?.toUpperCase() != "GET"
+        this.contentTypePanel.isVisible = currRequest.method?.uppercase() != HttpMethod.GET
         this.paramPanel.isVisible = currRequest.querys.notNullOrEmpty()
         this.contentTypeComboBox.selectedItem = currRequest.contentType()
         updateResponse(null)
@@ -827,6 +825,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         }
 
         private var headerAllSelectListener: MouseListener? = null
+        private val headerClickThrottle = throttle()
 
         protected fun listenHeaderAllSelectAction(formTable: JBTable, columnIndex: Int) {
 
@@ -845,7 +844,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                 }
 
                 override fun mouseClicked(e: MouseEvent?) {
-                    if (e == null || !apiCallDialog!!.throttleHelper.acquire("header_all_select_click", 100)) {
+                    if (e == null || !headerClickThrottle.acquire(100)) {
                         return
                     }
 
@@ -1066,6 +1065,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         }
 
         private var fileSelectListener: MouseListener? = null
+        private val fileSelectThrottle = throttle()
 
         private fun addFileSelectListener(formTable: JBTable) {
             if (fileSelectListener != null) {
@@ -1097,7 +1097,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
                         return
                     }
 
-                    if (apiCallDialog!!.throttleHelper.acquire("select_file_for_form_param", 1000)) {
+                    if (fileSelectThrottle.acquire(1000)) {
                         IdeaFileChooserHelper.create(
                             apiCallDialog!!.actionContext, FileChooserDescriptorFactory.createSingleFileDescriptor()
                         ).lastSelectedLocation("file.form.param.select.last.location.key").selectFile {
@@ -1253,7 +1253,7 @@ class ApiCallDialog : ContextDialog(), ApiCallUI {
         refreshDataFromUI()
         if (this.currResponse == null) {
             Messages.showMessageDialog(
-                this, "No Response", "Error", Messages.getErrorIcon()
+                this, "No response", "Error", Messages.getErrorIcon()
             )
             return
         }

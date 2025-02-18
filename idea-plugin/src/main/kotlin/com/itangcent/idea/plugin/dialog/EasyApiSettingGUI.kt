@@ -27,7 +27,6 @@ import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.idea.utils.isDoubleClick
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.rx.ThrottleHelper
 import com.itangcent.intellij.logger.Logger
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -172,8 +171,6 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
     private var trustHostsTextArea: JTextArea? = null
 
     //endregion general-----------------------------------------------------
-
-    private val throttleHelper = ThrottleHelper()
 
     override fun getRootPanel(): JPanel? {
         return rootPanel

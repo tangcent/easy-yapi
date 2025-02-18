@@ -2,6 +2,7 @@ package com.itangcent.http
 
 import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.notNullOrEmpty
@@ -113,7 +114,7 @@ open class ApacheHttpClient : HttpClient {
             requestBuilder.addHeader(it.name(), it.value())
         }
 
-        if (request.method().uppercase() != "GET") {
+        if (request.method().uppercase() != HttpMethod.GET) {
             var requestEntity: HttpEntity? = null
             if (request.params().notNullOrEmpty()) {
                 if (request.contentType()?.startsWith("application/x-www-form-urlencoded") == true) {
