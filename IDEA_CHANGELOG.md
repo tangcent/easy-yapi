@@ -1,3 +1,7 @@
+* 2.7.5
+	* feat: Add Support for Meta-Spring Controller Annotations  [(#1187)](https://github.com/tangcent/easy-yapi/pull/1187)
+
+	* fix: correct YapiSaveInterceptor order for no_update.description config  [(#1185)](https://github.com/tangcent/easy-yapi/pull/1185)
 * 2.7.4
 	* build: update project dependencies  [(#1180)](https://github.com/tangcent/easy-yapi/pull/1180)
 
