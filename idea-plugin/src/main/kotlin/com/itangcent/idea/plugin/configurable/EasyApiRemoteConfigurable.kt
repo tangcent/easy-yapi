@@ -5,6 +5,7 @@ import com.itangcent.idea.plugin.dialog.EasyApiSettingRemoteConfigGUI
 import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.idea.swing.SimpleActiveWindowProvider
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
@@ -24,7 +25,7 @@ class EasyApiRemoteConfigurable(myProject: Project?) : AbstractEasyApiConfigurab
         return EasyApiSettingRemoteConfigGUI()
     }
 
-    override fun afterBuildActionContext(builder: ActionContext.ActionContextBuilder) {
+    override fun afterBuildActionContext(builder: ActionContextBuilder) {
         super.afterBuildActionContext(builder)
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
         builder.bind(ActiveWindowProvider::class) { it.with(SimpleActiveWindowProvider::class).singleton() }

@@ -10,6 +10,7 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanFormatFolderHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
@@ -17,7 +18,7 @@ import com.itangcent.intellij.file.LocalFileRepository
 
 class PostmanExportAction : ApiExportAction("Export Postman") {
 
-    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContextBuilder) {
         super.afterBuildActionContext(event, builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
@@ -25,7 +26,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(FormatFolderHelper::class) { it.with(PostmanFormatFolderHelper::class).singleton() }
 
         builder.bind(PostmanApiHelper::class) { it.with(PostmanCachedApiHelper::class).singleton() }
-        builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
@@ -33,8 +33,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
 
         builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }
-        //always not read api from cache
-        builder.bindInstance("class.exporter.read.cache", false)
 
         builder.bindInstance("file.save.default", "postman.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.postman.export.path")

@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.format
 
 import com.google.inject.Inject
 import com.itangcent.common.kit.KVUtils
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.BeforeEach
@@ -21,7 +21,7 @@ internal abstract class MessageFormatterTest : BaseContextTest() {
 
     protected abstract val formatClass: KClass<out MessageFormatter>
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         builder.bind(MessageFormatter::class) { it.with(formatClass) }
     }
 

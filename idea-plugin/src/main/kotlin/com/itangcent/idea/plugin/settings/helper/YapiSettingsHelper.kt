@@ -10,6 +10,7 @@ import com.itangcent.idea.plugin.settings.YapiExportMode
 import com.itangcent.idea.plugin.settings.update
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.ConfigReader
+import com.itangcent.intellij.context.AutoClear
 import com.itangcent.intellij.logger.Logger
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -65,8 +66,10 @@ class YapiSettingsHelper {
             }
         if (!dumb) {
             val yapiServer =
-                messagesHelper.showInputDialog("Input server of yapi",
-                    "Server Of Yapi", Messages.getInformationIcon())
+                messagesHelper.showInputDialog(
+                    "Input server of yapi",
+                    "Server Of Yapi", Messages.getInformationIcon()
+                )
                     ?.removeSuffix("/")
             if (yapiServer.isNullOrBlank()) return null
             server = yapiServer
@@ -87,9 +90,11 @@ class YapiSettingsHelper {
      * Map<module,<token,state>>
      * state: null->unchecked,true->valid, false->invalid
      */
+    @AutoClear
     private var tokenMap: HashMap<String, Pair<String, Boolean?>>? = null
 
-    private var tryInputTokenOfModule: HashSet<String> = HashSet()
+    @AutoClear
+    private var tryInputTokenOfModule = HashSet<String>()
 
     fun getPrivateToken(module: String, dumb: Boolean = true): String? {
 
@@ -102,9 +107,7 @@ class YapiSettingsHelper {
         }
 
         cacheLock.writeLock().withLock {
-            if (tokenMap == null) {
-                initToken()
-            }
+            checkInit()
             tokenMap!![module]?.checked()?.let { return it }
             if (!dumb && tryInputTokenOfModule.add(module)) {
                 val modulePrivateToken = inputNewToken(module)
@@ -121,14 +124,18 @@ class YapiSettingsHelper {
 
     private fun inputNewToken(module: String): String? {
         val inputTitle = if (loginMode()) "ProjectId" else "Private Token"
-        return messagesHelper.showInputDialog("Input $inputTitle Of Module:$module",
-            "Yapi $inputTitle", Messages.getInformationIcon())
+        return messagesHelper.showInputDialog(
+            "Input $inputTitle Of Module:$module",
+            "Yapi $inputTitle", Messages.getInformationIcon()
+        )
     }
 
     fun inputNewToken(): String? {
         val inputTitle = if (loginMode()) "ProjectId" else "Private Token"
-        return messagesHelper.showInputDialog("Input $inputTitle",
-            "Yapi $inputTitle", Messages.getInformationIcon())
+        return messagesHelper.showInputDialog(
+            "Input $inputTitle",
+            "Yapi $inputTitle", Messages.getInformationIcon()
+        )
     }
 
     private fun Pair<String, Boolean?>.checked(): String? {
@@ -145,9 +152,11 @@ class YapiSettingsHelper {
                 }
                 return if (status) this.first else null
             }
+
             true -> {
                 this.first
             }
+
             false -> {
                 null
             }
@@ -159,9 +168,7 @@ class YapiSettingsHelper {
      */
     fun disableTemp(token: String) {
         cacheLock.writeLock().withLock {
-            if (tokenMap == null) {
-                initToken()
-            }
+            checkInit()
             updateTokenStatus(token, false)
         }
     }
@@ -171,6 +178,12 @@ class YapiSettingsHelper {
             if (it.value.first == token) {
                 it.setValue(it.value.first to status)
             }
+        }
+    }
+
+    private fun checkInit() {
+        if (tokenMap.isNullOrEmpty()) {
+            initToken()
         }
     }
 
@@ -232,9 +245,7 @@ class YapiSettingsHelper {
     }
 
     fun readTokens(): HashMap<String, String> {
-        if (tokenMap == null) {
-            initToken()
-        }
+        checkInit()
         return HashMap(tokenMap!!.mapValues { it.value.first })
     }
 

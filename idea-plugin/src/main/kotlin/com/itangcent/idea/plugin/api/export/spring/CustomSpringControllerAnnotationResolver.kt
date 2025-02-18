@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.spring
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.jvm.PsiResolver
 import java.util.concurrent.ConcurrentHashMap
 
@@ -31,6 +32,9 @@ class CustomSpringControllerAnnotationResolver : SpringControllerAnnotationResol
     @Inject
     private lateinit var standardSpringControllerAnnotationResolver: StandardSpringControllerAnnotationResolver
 
+    @Inject
+    private lateinit var actionContext: ActionContext
+
     /**
      * A cache to store the resolution results of whether a given annotation is a Spring controller annotation.
      * The key is the qualified name of the annotation, and the value is a boolean indicating if it is a controller annotation.
@@ -38,16 +42,21 @@ class CustomSpringControllerAnnotationResolver : SpringControllerAnnotationResol
     private val controllerAnnotationLookup = ConcurrentHashMap<String, Boolean>()
 
     override fun hasControllerAnnotation(psiClass: PsiClass): Boolean {
-        return psiClass.annotations.any { annotation ->
-            val annotationQualifiedName = annotation.qualifiedName ?: return@any false
-            controllerAnnotationLookup.computeIfAbsent(annotationQualifiedName) {
-                val annotationClass = annotation.resolveAnnotationType()
-                    ?: psiResolver.resolveClass(annotationQualifiedName, psiClass)
-                    ?: return@computeIfAbsent false
-                return@computeIfAbsent standardSpringControllerAnnotationResolver.hasControllerAnnotation(
-                    annotationClass
-                )
+        return actionContext.callInReadUI {
+            psiClass.annotations.any { annotation ->
+                val annotationQualifiedName = annotation.qualifiedName ?: return@any false
+                controllerAnnotationLookup.computeIfAbsent(annotationQualifiedName) {
+                    val annotationClass = annotation.resolveAnnotationType()
+                        ?: psiResolver.resolveClass(
+                            annotationQualifiedName,
+                            psiClass
+                        )
+                        ?: return@computeIfAbsent false
+                    return@computeIfAbsent standardSpringControllerAnnotationResolver.hasControllerAnnotation(
+                        annotationClass
+                    )
+                }
             }
-        }
+        } ?: false
     }
 } 

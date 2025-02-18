@@ -1,5 +1,3 @@
 [INFO]	Starting API export process...
 [INFO]	search api from: com.itangcent.api.UserCtrl
-[INFO]	Export to http://127.0.0.1:3088/project/12345/interface/api/cat_111111 success
 [INFO]	try infer return type of method[com.itangcent.api.UserCtrl#get(java.lang.Long)]
-[INFO]	Apis exported completed

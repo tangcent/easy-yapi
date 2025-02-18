@@ -25,4 +25,14 @@
 
     <depends optional="true" config-file="easy-api-kotlin.xml">org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="easy-api-scala.xml">org.intellij.scala</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add the tool window extension -->
+        <toolWindow id="API Dashboard" 
+                   secondary="true"
+                   icon="AllIcons.Toolwindows.ToolWindowRun"
+                   anchor="right"
+                   factoryClass="com.itangcent.idea.plugin.api.dashboard.ApiDashboardToolWindow"/>
+        <notificationGroup id="EasyApi Notifications" displayType="BALLOON" />
+    </extensions>
 </idea-plugin>

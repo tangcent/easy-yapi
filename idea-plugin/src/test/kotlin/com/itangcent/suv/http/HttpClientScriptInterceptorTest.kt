@@ -1,7 +1,7 @@
 package com.itangcent.suv.http
 
 import com.itangcent.http.HttpClient
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import org.mockito.kotlin.mock
@@ -18,7 +18,7 @@ import kotlin.test.assertNotNull
  */
 class HttpClientScriptInterceptorTest : AdvancedContextTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) { it.with(HttpClientProviderImpl::class) }
     }

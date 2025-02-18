@@ -7,7 +7,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
@@ -56,7 +56,7 @@ internal class SimpleSpringRequestClassExporterTest
         userCtrlPsiClass = loadClass("api/UserCtrl.java")!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(ClassExporter::class) { it.with(SimpleSpringRequestClassExporter::class).singleton() }
     }

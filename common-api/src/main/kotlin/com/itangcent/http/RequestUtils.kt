@@ -3,7 +3,6 @@ package com.itangcent.http
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.*
 import java.net.URL
-import kotlin.streams.toList
 
 object RequestUtils {
 

@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.yapi
 import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.Test
@@ -20,7 +20,7 @@ internal class YapiTokenCheckerSupportTest : BaseContextTest() {
     @Inject
     private lateinit var yapiTokenChecker: YapiTokenChecker
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(YapiTokenChecker::class) { it.with(YapiTokenCheckerSupport::class) }
         val yapiApiHelper = mock<YapiApiHelper>()

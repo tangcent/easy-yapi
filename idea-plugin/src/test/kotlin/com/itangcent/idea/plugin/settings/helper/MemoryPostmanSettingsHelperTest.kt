@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.settings.helper
 import com.google.inject.Inject
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.test.mock
 import org.junit.jupiter.api.Test
@@ -24,7 +24,7 @@ internal class MemoryPostmanSettingsHelperTest : SettingsHelperTest() {
         postmanSettingsHelper as MemoryPostmanSettingsHelper
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(PostmanSettingsHelper::class) { it.with(MemoryPostmanSettingsHelper::class) }
         builder.mock(PostmanApiHelper::class)

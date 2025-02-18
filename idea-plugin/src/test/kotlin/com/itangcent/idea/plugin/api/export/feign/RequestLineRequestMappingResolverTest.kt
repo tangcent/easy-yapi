@@ -5,7 +5,7 @@ import com.intellij.psi.PsiClass
 import com.itangcent.common.kit.toJson
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
@@ -47,7 +47,7 @@ internal class RequestLineRequestMappingResolverTest : PluginContextLightCodeIns
         settings.feignEnable = true
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
     }

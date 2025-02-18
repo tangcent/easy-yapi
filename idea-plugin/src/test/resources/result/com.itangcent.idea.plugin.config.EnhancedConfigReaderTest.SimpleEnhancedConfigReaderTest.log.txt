@@ -1,2 +1,0 @@
-[TRACE]	No config be found
-[TRACE]	No config be found

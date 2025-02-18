@@ -13,7 +13,9 @@
                 "greeting"
               ],
               "query": [],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/greeting"
             }
           },
@@ -30,7 +32,9 @@
                     "greeting"
                   ],
                   "query": [],
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "raw": "{{test_default}}/user/greeting"
                 }
               },
@@ -114,7 +118,9 @@
                   "description": "user id"
                 }
               ],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/get/{id}"
             }
           },
@@ -145,7 +151,9 @@
                       "description": "user id"
                     }
                   ],
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "raw": "{{test_default}}/user/get/{id}"
                 }
               },
@@ -244,7 +252,9 @@
                   "description": "user id"
                 }
               ],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/add"
             }
           },
@@ -282,7 +292,9 @@
                     "add"
                   ],
                   "query": [],
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "raw": "{{test_default}}/user/add"
                 }
               },
@@ -405,7 +417,9 @@
                 "update"
               ],
               "query": [],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/update"
             }
           },
@@ -474,7 +488,9 @@
                     "update"
                   ],
                   "query": [],
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "raw": "{{test_default}}/user/update"
                 }
               },
@@ -552,7 +568,9 @@
                 "name"
               ],
               "query": [],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/ctrl/name"
             }
           },
@@ -577,7 +595,9 @@
                     "name"
                   ],
                   "query": [],
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "raw": "{{test_default}}/user/ctrl/name"
                 }
               },
@@ -663,7 +683,9 @@
               "raw": "{\n  \"id\": 0,\n  \"type\": 0,\n  \"name\": \"\",\n  \"age\": 0,\n  \"sex\": 0,\n  \"birthDay\": \"\",\n  \"regtime\": \"\"\n}"
             },
             "url": {
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "path": [
                 "user",
                 "add"
@@ -702,7 +724,9 @@
                   "raw": "{\n  \"id\": 0,\n  \"type\": 0,\n  \"name\": \"\",\n  \"age\": 0,\n  \"sex\": 0,\n  \"birthDay\": \"\",\n  \"regtime\": \"\"\n}"
                 },
                 "url": {
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "path": [
                     "user",
                     "admin",
@@ -794,7 +818,9 @@
               "raw": "{\n  \"id\": 0,\n  \"type\": 0,\n  \"name\": \"\",\n  \"age\": 0,\n  \"sex\": 0,\n  \"birthDay\": \"\",\n  \"regtime\": \"\"\n}"
             },
             "url": {
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "path": [
                 "user",
                 "admin",
@@ -834,7 +860,9 @@
                   "raw": "{\n  \"id\": 0,\n  \"type\": 0,\n  \"name\": \"\",\n  \"age\": 0,\n  \"sex\": 0,\n  \"birthDay\": \"\",\n  \"regtime\": \"\"\n}"
                 },
                 "url": {
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "path": [
                     "user",
                     "admin",
@@ -969,7 +997,9 @@
                 "update"
               ],
               "query": [],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/update"
             }
           },
@@ -1046,7 +1076,9 @@
                     "update"
                   ],
                   "query": [],
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "raw": "{{test_default}}/user/update"
                 }
               },
@@ -1136,7 +1168,9 @@
                   "description": "user id"
                 }
               ],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/get/{id}"
             }
           },
@@ -1168,7 +1202,9 @@
                       "description": "user id"
                     }
                   ],
-                  "host": "{{test_default}}",
+                  "host": [
+                    "{{test_default}}"
+                  ],
                   "raw": "{{test_default}}/user/get/{id}"
                 }
               },

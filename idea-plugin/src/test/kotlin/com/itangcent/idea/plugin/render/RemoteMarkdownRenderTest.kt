@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.render
 
 import com.google.inject.Inject
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.suv.http.HttpClientProvider
@@ -23,7 +23,7 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
     @Inject
     protected lateinit var markdownRender: MarkdownRender
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(MarkdownRender::class) { it.with(RemoteMarkdownRender::class) }
     }
@@ -35,7 +35,7 @@ internal open class RemoteMarkdownRenderTest : AdvancedContextTest() {
 
 internal class NoConfigRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) {
             it.toInstance(
@@ -67,7 +67,7 @@ internal class NoConfigRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
 internal class SuccessRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) {
             it.toInstance(
@@ -97,7 +97,7 @@ internal class SuccessRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
 internal class BadResponseRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) {
             it.toInstance(
@@ -121,7 +121,7 @@ internal class BadResponseRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() 
 
 internal class FailedRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) {
             it.toInstance(
@@ -146,7 +146,7 @@ internal class FailedRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
 internal class OutburstRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) {
             it.toInstance(
@@ -198,7 +198,7 @@ internal class OutburstRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
 internal class SafeRemoteMarkdownRenderTest : RemoteMarkdownRenderTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) {
             it.toInstance(

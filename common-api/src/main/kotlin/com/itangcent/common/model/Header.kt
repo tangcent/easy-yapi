@@ -6,10 +6,10 @@ import java.io.Serializable
 /**
  * Represents an HTTP header field.
  */
-class Header : SimpleExtensible(), Serializable {
-    var name: String? = null
+class Header : SimpleExtensible(), NamedValue<String>, Serializable {
+    override var name: String? = null
 
-    var value: String? = null
+    override var value: String? = null
 
     var desc: String? = null
 
@@ -42,5 +42,13 @@ class Header : SimpleExtensible(), Serializable {
     override fun toString(): String {
         return "Header(name=$name, value=$value, desc=$desc, required=$required)"
     }
-
 }
+
+fun Header(name: String, value: String): Header {
+    return Header().apply {
+        this.name = name
+        this.value = value
+    }
+}
+
+fun List<Header>.contentType(): String? = this.findIgnoreCase("Content-Type")?.value

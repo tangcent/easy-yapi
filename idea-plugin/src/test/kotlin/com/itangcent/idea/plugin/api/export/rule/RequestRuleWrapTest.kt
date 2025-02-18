@@ -8,7 +8,7 @@ import com.itangcent.idea.plugin.api.export.core.ClassExportContext
 import com.itangcent.idea.plugin.api.export.core.DefaultRequestBuilderListener
 import com.itangcent.idea.plugin.api.export.core.MethodExportContext
 import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.DuckTypeHelper
@@ -51,7 +51,7 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         modelPsiClass = loadClass("model/Model.java")!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(RequestBuilderListener::class) { it.with(DefaultRequestBuilderListener::class).singleton() }
     }

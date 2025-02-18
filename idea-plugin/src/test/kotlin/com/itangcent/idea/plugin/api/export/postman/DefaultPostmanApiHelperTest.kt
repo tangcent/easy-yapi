@@ -6,6 +6,7 @@ import com.itangcent.common.utils.KV
 import com.itangcent.http.RawContentType
 import com.itangcent.idea.plugin.settings.helper.SettingsHelperTest
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.asJsonElement
 import com.itangcent.intellij.extend.asMap
 import com.itangcent.intellij.extend.guice.singleton
@@ -28,7 +29,7 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
     @Inject
     protected lateinit var postmanApiHelper: PostmanApiHelper
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(PostmanApiHelper::class) { it.with(DefaultPostmanApiHelper::class).singleton() }
     }
@@ -40,7 +41,7 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
 
     class SuccessDefaultPostmanApiHelperTest : DefaultPostmanApiHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(
@@ -246,7 +247,7 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
 
     class AuthenticationFailedDefaultPostmanApiHelperTest : FailedDefaultPostmanApiHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(
@@ -266,7 +267,7 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
 
     class ServiceLimitExhaustedFailedDefaultPostmanApiHelperTest : FailedDefaultPostmanApiHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(
@@ -286,7 +287,7 @@ abstract class DefaultPostmanApiHelperTest : SettingsHelperTest() {
 
     class UnreachableFailedDefaultPostmanApiHelperTest : FailedDefaultPostmanApiHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(

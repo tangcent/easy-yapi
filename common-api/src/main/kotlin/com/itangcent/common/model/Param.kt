@@ -3,10 +3,10 @@ package com.itangcent.common.model
 import com.itangcent.common.utils.SimpleExtensible
 import java.io.Serializable
 
-class Param : SimpleExtensible(), Serializable {
-    var name: String? = null
+class Param : SimpleExtensible(), NamedValue<Any>, Serializable {
+    override var name: String? = null
 
-    var value: Any? = null
+    override var value: Any? = null
 
     var desc: String? = null
 
@@ -37,5 +37,4 @@ class Param : SimpleExtensible(), Serializable {
     override fun toString(): String {
         return "Param(name=$name, value=$value, desc=$desc, required=$required)"
     }
-
 }

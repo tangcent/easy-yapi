@@ -11,7 +11,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.rule.RuleComputeListener
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.PsiClassHelper
@@ -100,7 +100,7 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
             """
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(ExportChannel::class) { it.toInstance(ExportChannel.of("yapi")) }

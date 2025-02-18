@@ -1,26 +1,26 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.inject.Inject
-import com.intellij.openapi.ui.Messages
+import com.google.inject.Singleton
 import com.intellij.util.containers.ContainerUtil
-import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Doc
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.api.export.core.Folder
-import com.itangcent.idea.swing.MessagesHelper
-import com.itangcent.intellij.extend.withBoundary
-import com.itangcent.intellij.psi.SelectedHelper
-import com.itangcent.intellij.util.ActionUtils
-import com.itangcent.intellij.util.FileType
+import com.itangcent.idea.plugin.support.IdeaSupport
+import com.itangcent.idea.plugin.utils.NotificationUtils
+import com.itangcent.intellij.context.AutoClear
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.set
 
 
+@Singleton
 class YapiApiExporter : AbstractYapiApiExporter() {
 
     @Inject
     private lateinit var classApiExporterHelper: ClassApiExporterHelper
+
+    @Inject
+    private lateinit var ideaSupport: IdeaSupport
 
     fun export() {
         val serverFound = yapiSettingsHelper.getServer(false).notNullOrBlank()
@@ -36,9 +36,9 @@ class YapiApiExporter : AbstractYapiApiExporter() {
             exportDoc(it)
         }
         if (anyFound) {
-            logger.info("Apis exported completed")
+            NotificationUtils.notifyInfo(project, "APIs exported successfully")
         } else {
-            logger.info("No api be found to export!")
+            NotificationUtils.notifyInfo(project, "No API found to export")
         }
     }
 
@@ -57,19 +57,19 @@ class YapiApiExporter : AbstractYapiApiExporter() {
         return cartInfo
     }
 
+    @AutoClear
     private var successExportedCarts: MutableSet<String> = ContainerUtil.newConcurrentSet()
 
     override fun exportDoc(doc: Doc, privateToken: String, cartId: String): Boolean {
         if (super.exportDoc(doc, privateToken, cartId)) {
             if (successExportedCarts.add(cartId)) {
-                logger.info(
-                    "Export to ${
-                        yapiApiHelper.getCartWeb(
-                            yapiApiHelper.getProjectIdByToken(privateToken)!!,
-                            cartId
-                        )
-                    } success"
-                )
+                val cartUrl = yapiApiHelper.getCartWeb(
+                    yapiApiHelper.getProjectIdByToken(privateToken)!!,
+                    cartId
+                ) ?: return false
+                NotificationUtils.notifyInfo(project, "Successfully exported to YApi: $cartUrl") {
+                    ideaSupport.openUrl(cartUrl)
+                }
             }
             return true
         }

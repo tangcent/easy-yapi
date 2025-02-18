@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.render
 
 import com.google.inject.Inject
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.suv.http.HttpClientProvider
@@ -22,7 +22,7 @@ internal abstract class AdaptiveMarkdownRenderTest : AdvancedContextTest() {
     @Inject
     protected lateinit var markdownRender: MarkdownRender
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(MarkdownRender::class) { it.with(AdaptiveMarkdownRender::class) }
     }
@@ -96,7 +96,7 @@ internal abstract class AdaptiveMarkdownRenderTest : AdvancedContextTest() {
             return "markdown.render.server=http://www.itangcent.com/render"
         }
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()
@@ -125,7 +125,7 @@ internal abstract class AdaptiveMarkdownRenderTest : AdvancedContextTest() {
             return "markdown.render.server=http://www.itangcent.com/render"
         }
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(HttpClientProvider::class) {
                 it.toInstance(HttpClientProviderMockBuilder.builder()

@@ -364,15 +364,15 @@ class PostmanCachedApiHelper : DefaultPostmanApiHelper(), CacheSwitcher {
     /**
      * Disables the use of cache for subsequent operations.
      */
-    override fun notUserCache() {
-        readCache = false
+    override fun notUseCache() {
+        this.readCache = false
     }
 
     /**
      * Enables the use of cache for subsequent operations.
      */
-    override fun userCache() {
-        readCache = true
+    override fun useCache() {
+        this.readCache = true
     }
 
     /**

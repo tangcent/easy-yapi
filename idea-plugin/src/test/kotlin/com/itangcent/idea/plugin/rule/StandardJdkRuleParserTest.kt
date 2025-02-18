@@ -10,7 +10,7 @@ import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.config.rule.parseEventRule
 import com.itangcent.intellij.config.rule.parseStringRule
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.logger.Logger
@@ -46,7 +46,7 @@ internal class StandardJdkRuleParserTest : RuleParserBaseTest() {
 
     override fun ruleParserClass() = SuvRuleParser::class
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
         builder.bind(FileSaveHelper::class) { it.with(FileSaveHelperAdaptor::class) }

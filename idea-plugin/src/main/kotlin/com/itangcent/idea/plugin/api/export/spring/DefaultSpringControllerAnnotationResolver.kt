@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.export.spring
 
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.itangcent.spi.SpiCompositeLoader
 
@@ -8,6 +9,7 @@ import com.itangcent.spi.SpiCompositeLoader
  * has a Spring controller annotation. It delegates the resolution to a composite
  * loader that can handle multiple strategies.
  */
+@Singleton
 class DefaultSpringControllerAnnotationResolver : SpringControllerAnnotationResolver {
 
     private val delegate: SpringControllerAnnotationResolver by lazy {

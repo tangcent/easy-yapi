@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.api.export.condition
 
 import com.itangcent.idea.plugin.api.export.ExportChannel
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  * Test case of [OnChannelCondition]
  */
 internal class OnChannelConditionTest : AdvancedContextTest() {
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bindInstance(ExportChannel::class, ExportChannel.of("channel1"))
     }

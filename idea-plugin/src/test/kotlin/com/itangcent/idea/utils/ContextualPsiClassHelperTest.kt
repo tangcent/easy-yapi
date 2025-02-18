@@ -2,7 +2,7 @@ package com.itangcent.idea.utils
 
 import com.itangcent.common.kit.toJson
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
@@ -14,7 +14,7 @@ import com.itangcent.test.ResultLoader
  */
 internal abstract class ContextualPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(PsiClassHelper::class) { it.with(ContextualPsiClassHelper::class) }
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }

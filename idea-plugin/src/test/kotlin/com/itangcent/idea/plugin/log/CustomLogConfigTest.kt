@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.log
 import com.google.inject.Inject
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.LogConfig
 import com.itangcent.mock.BaseContextTest
@@ -25,7 +25,7 @@ internal class CustomLogConfigTest : BaseContextTest() {
     @Inject
     private lateinit var logConfig: LogConfig
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(LogConfig::class) { it.with(CustomLogConfig::class) }
         builder.bind(SettingBinder::class) {

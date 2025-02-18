@@ -2,14 +2,14 @@ package com.itangcent.idea.plugin.api.cache
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.google.inject.name.Named
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
-import com.itangcent.cache.CacheSwitcher
+import com.itangcent.cache.CacheIndicator
 import com.itangcent.common.exception.ProcessCanceledException
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
+import com.itangcent.idea.plugin.api.export.core.DefaultClassExporter
 import com.itangcent.idea.plugin.api.export.core.DocHandle
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiMethodResource
@@ -24,28 +24,26 @@ import java.io.File
 import kotlin.reflect.KClass
 
 @Singleton
-class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
+class CachedRequestClassExporter : ClassExporter {
 
     override fun support(docType: KClass<*>): Boolean {
-        return delegateClassExporter?.support(docType) ?: false
+        return delegateClassExporter.support(docType)
     }
 
     @Inject
     private lateinit var logger: Logger
 
     @Inject
-    @Named("delegate_classExporter")
-    private val delegateClassExporter: ClassExporter? = null
-
-    @Inject(optional = true)
-    @Named("class.exporter.read.cache")
-    private var readCache: Boolean = true
+    private lateinit var delegateClassExporter: DefaultClassExporter
 
     @Inject
-    private val fileApiCacheRepository: FileApiCacheRepository? = null
+    private lateinit var fileApiCacheRepository: FileApiCacheRepository
 
     @Inject
     private lateinit var actionContext: ActionContext
+
+    @Inject
+    private lateinit var cacheIndicator: CacheIndicator
 
     //no use cache,no read,no write
     private var disabled: Boolean = false
@@ -53,7 +51,7 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
 
         if (disabled || cls !is PsiClass) {
-            return delegateClassExporter!!.export(cls, docHandle)
+            return delegateClassExporter.export(cls, docHandle)
         }
 
         val psiFile = actionContext.callInReadUI { cls.containingFile }!!
@@ -64,8 +62,8 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
             try {
                 val md5 = "${text.length}x${text.hashCode()}"//use length+hashcode
                 var fileApiCache: FileApiCache?
-                if (readCache) {
-                    fileApiCache = fileApiCacheRepository!!.getFileApiCache(path)
+                if (cacheIndicator.useCache) {
+                    fileApiCache = fileApiCacheRepository.getFileApiCache(path)
                     if (fileApiCache != null
                         && fileApiCache.lastModified!! >= (FileUtils.getLastModified(psiFile)
                             ?: System.currentTimeMillis())
@@ -87,7 +85,7 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
                 fileApiCache.requests = requests
 
                 actionContext.withBoundary {
-                    delegateClassExporter!!.export(cls, requestOnly { request ->
+                    delegateClassExporter.export(cls, requestOnly { request ->
                         docHandle(request)
                         val fullName = PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
                         requests.add(
@@ -100,7 +98,7 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
                 actionContext.runAsync {
                     fileApiCache.md5 = md5
                     fileApiCache.lastModified = System.currentTimeMillis()
-                    fileApiCacheRepository!!.saveFileApiCache(path, fileApiCache)
+                    fileApiCacheRepository.saveFileApiCache(path, fileApiCache)
                 }
             } catch (e: ProcessCanceledException) {
                 return@runAsync
@@ -108,7 +106,7 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
                 logger.traceError("error to cache api info", e)
 
                 disabled = true
-                delegateClassExporter!!.export(cls, docHandle)
+                delegateClassExporter.export(cls, docHandle)
             }
         }
         return true
@@ -128,13 +126,5 @@ class CachedRequestClassExporter : ClassExporter, CacheSwitcher {
                 requestHandle(it)
             }
         }
-    }
-
-    override fun notUserCache() {
-        this.readCache = false
-    }
-
-    override fun userCache() {
-        this.readCache = true
     }
 }

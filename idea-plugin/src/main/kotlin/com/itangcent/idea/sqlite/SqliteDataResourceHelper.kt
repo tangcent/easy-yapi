@@ -4,7 +4,6 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.FileUtils
-import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
@@ -34,13 +33,18 @@ class SqliteDataResourceHelper {
     private lateinit var actionContext: ActionContext
 
     private fun getSD(fileName: String): SQLiteDataSourceHandle {
-        return sdCache.safeComputeIfAbsent(fileName) {
-            val sqLiteDataSourceHandle = SQLiteDataSourceHandle(fileName)
-            actionContext.on(EventKey.ON_COMPLETED) {
-                sqLiteDataSourceHandle.close()
-            }
-            sqLiteDataSourceHandle
-        }!!
+        val dataSourceHandle = sdCache.computeIfAbsent(fileName) {
+            buildSqLiteDataSourceHandle(fileName)
+        }
+        return dataSourceHandle
+    }
+
+    private fun buildSqLiteDataSourceHandle(fileName: String): SQLiteDataSourceHandle {
+        val sqLiteDataSourceHandle = SQLiteDataSourceHandle(fileName)
+        actionContext.on(EventKey.ON_COMPLETED) {
+            sqLiteDataSourceHandle.close()
+        }
+        return sqLiteDataSourceHandle
     }
 
     private fun checkTableExisted(sqlLiteDataSource: SQLiteDataSourceHandle, table: String): Boolean {

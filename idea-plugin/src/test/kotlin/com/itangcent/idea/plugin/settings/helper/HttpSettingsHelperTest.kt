@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.settings.helper
 import com.google.inject.Inject
 import com.intellij.openapi.ui.Messages
 import com.itangcent.idea.swing.MessagesHelper
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -19,7 +19,7 @@ internal class HttpSettingsHelperTest : SettingsHelperTest() {
 
     @Inject
     private lateinit var httpSettingsHelper: HttpSettingsHelper
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         val messagesHelper = Mockito.mock(MessagesHelper::class.java)

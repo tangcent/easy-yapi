@@ -10,6 +10,7 @@ import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelperImpl
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.mock.SettingBinderAdaptor
@@ -39,7 +40,7 @@ internal class CachedResourceResolverTest : AdvancedContextTest() {
 
     private val settings: Settings = Settings()
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(settings))
@@ -73,6 +74,7 @@ internal class CachedResourceResolverTest : AdvancedContextTest() {
     override fun afterBind(actionContext: ActionContext) {
         super.afterBind(actionContext)
         actionContext.init(delegateHttpSettingsHelper)
+        actionContext.cache("project_path", tempDir.toString())
     }
 
     @Test

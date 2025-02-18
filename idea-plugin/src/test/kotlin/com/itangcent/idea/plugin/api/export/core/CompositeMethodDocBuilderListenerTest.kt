@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.Inject
 import com.itangcent.common.model.MethodDoc
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
@@ -21,7 +21,7 @@ internal class CompositeMethodDocBuilderListenerTest : AdvancedContextTest() {
 
     private lateinit var methodDoc: MethodDoc
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(MethodDocBuilderListener::class) {
             it.with(CompositeMethodDocBuilderListener::class).singleton()

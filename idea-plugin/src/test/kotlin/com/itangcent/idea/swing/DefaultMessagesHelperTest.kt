@@ -3,7 +3,7 @@ package com.itangcent.idea.swing
 import com.google.inject.Inject
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.BaseContextTest
 import org.junit.jupiter.api.Test
@@ -25,7 +25,7 @@ internal open class DefaultMessagesHelperTest : BaseContextTest() {
     @Inject
     protected lateinit var project: Project
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(MessagesHelper::class) { it.with(DefaultMessagesHelper::class) }
     }
@@ -234,7 +234,7 @@ internal open class DefaultMessagesHelperTest : BaseContextTest() {
         @Inject
         private lateinit var activeWindowProvider: ActiveWindowProvider
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(ActiveWindowProvider::class) { it.with(SimpleActiveWindowProvider::class) }
         }

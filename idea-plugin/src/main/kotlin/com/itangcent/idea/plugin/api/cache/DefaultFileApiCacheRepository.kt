@@ -2,18 +2,15 @@ package com.itangcent.idea.plugin.api.cache
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.google.inject.name.Named
 import com.itangcent.common.logger.traceError
 import com.itangcent.idea.binder.DbBeanBinderFactory
-import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 
 @Singleton
 class DefaultFileApiCacheRepository : FileApiCacheRepository {
 
     @Inject
-    @Named("projectCacheRepository")
-    private val projectCacheRepository: LocalFileRepository? = null
+    private lateinit var projectCacheRepository: ProjectCacheRepository
 
     @Inject
     private lateinit var logger: Logger
@@ -23,8 +20,9 @@ class DefaultFileApiCacheRepository : FileApiCacheRepository {
     private fun init() {
         if (dbBeanBinderFactory == null) {
             synchronized(this) {
-                dbBeanBinderFactory = DbBeanBinderFactory(projectCacheRepository!!.getOrCreateFile(".api.cache.v1.1.db").path)
-                { NULL_FILE_API_CACHE }
+                dbBeanBinderFactory =
+                    DbBeanBinderFactory(projectCacheRepository.getOrCreateFile(".api.cache.v1.1.db").path)
+                    { NULL_FILE_API_CACHE }
             }
         }
     }

@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.psi.PsiMethod
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.context.ThreadFlag
 import com.itangcent.mock.BaseContextTest
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -225,7 +226,7 @@ internal class ActionContextKitTest : BaseContextTest() {
 
 internal class PsiActionContextKitTest : PluginContextLightCodeInsightFixtureTestCase() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         builder.bindInstance(DataContext::class, mock())
     }
 

@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.itangcent.common.utils.mapToTypedArray
-import com.itangcent.intellij.context.ActionContext.ActionContextBuilder
+import com.itangcent.intellij.context.ActionContextBuilder
 
 fun ActionContextBuilder.workAt(file: PsiFile) {
     this.bind(DataContext::class) {

@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.condition
 
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple.Companion.CACHE_NAME
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 
 /**
  * Conditional that only matches when the [CACHE_NAME] cached in the actionContext equals the given [value].
@@ -19,7 +20,7 @@ fun ActionContext.markAsSimple() {
     this.cache(CACHE_NAME, true)
 }
 
-fun ActionContext.ActionContextBuilder.markAsSimple() {
+fun ActionContextBuilder.markAsSimple() {
     this.cache(CACHE_NAME, true)
 }
 
@@ -27,7 +28,7 @@ fun ActionContext.markSimple(value: Boolean) {
     this.cache(CACHE_NAME, value)
 }
 
-fun ActionContext.ActionContextBuilder.markSimple(value: Boolean) {
+fun ActionContextBuilder.markSimple(value: Boolean) {
     this.cache(CACHE_NAME, value)
 }
 

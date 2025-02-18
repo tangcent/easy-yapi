@@ -1,7 +1,7 @@
 package com.itangcent.common.model
 
 import com.itangcent.common.constant.HttpMethod
-import com.itangcent.common.utils.firstOrNull
+import org.apache.http.entity.ContentType
 
 /**
  * Request represent A Http API.
@@ -81,8 +81,12 @@ open class Request : Doc() {
     }
 }
 
-fun Request.getContentType(): String? {
+fun Request.rawContentType(): String? {
     return this.header("content-type")
+}
+
+fun Request.contentType(): ContentType? {
+    return this.rawContentType()?.let { ContentType.parse(it) }
 }
 
 fun Request.hasForm(): Boolean {
@@ -90,7 +94,7 @@ fun Request.hasForm(): Boolean {
         return false
     }
 
-    val contentType = this.getContentType() ?: return false
+    val contentType = this.rawContentType() ?: return false
     return !contentType.contains("application/json")
 }
 

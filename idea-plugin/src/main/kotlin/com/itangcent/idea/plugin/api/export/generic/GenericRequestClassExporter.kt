@@ -74,8 +74,11 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                             " Please ensure the HTTP method supports a body or adjust the rule [generic.param.as.json.body]."
                 )
                 addParamAsQuery(
-                    parameterExportContext, request, parameterExportContext.defaultVal()
-                        ?: parameterExportContext.unboxedReturnObject(), getUltimateComment(paramDesc, parameterExportContext)
+                    parameterExportContext,
+                    request,
+                    parameterExportContext.defaultVal()
+                        ?: parameterExportContext.unboxedReturnObject(),
+                    getUltimateComment(paramDesc, parameterExportContext)
                 )
                 return
             }
@@ -185,7 +188,12 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         }
 
         if (request.method == HttpMethod.GET) {
-            addParamAsQuery(parameterExportContext, request, parameterExportContext.unboxedReturnObject(), ultimateComment)
+            addParamAsQuery(
+                parameterExportContext,
+                request,
+                parameterExportContext.unboxedReturnObject(),
+                ultimateComment
+            )
             return
         }
 
@@ -200,7 +208,12 @@ open class GenericRequestClassExporter : RequestClassExporter() {
             when (paramType) {
                 "body" -> {
                     requestBuilderListener.setMethodIfMissed(parameterExportContext, request, HttpMethod.POST)
-                    setRequestBody(parameterExportContext, request, parameterExportContext.originalReturnObject(), ultimateComment)
+                    setRequestBody(
+                        parameterExportContext,
+                        request,
+                        parameterExportContext.originalReturnObject(),
+                        ultimateComment
+                    )
                     return
                 }
 
@@ -232,7 +245,12 @@ open class GenericRequestClassExporter : RequestClassExporter() {
         }
 
         if (parameterExportContext.unboxedReturnObject().hasFile()) {
-            addParamAsForm(parameterExportContext, request, parameterExportContext.unboxedReturnObject(), ultimateComment)
+            addParamAsForm(
+                parameterExportContext,
+                request,
+                parameterExportContext.unboxedReturnObject(),
+                ultimateComment
+            )
             return
         }
 
@@ -303,7 +321,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 path = p
                 break
             }
-            superCls = superCls.superClass
+            superCls = actionContext.callInReadUI { superCls?.superClass }
         }
         superCls = psiClass
         while (superCls != null) {
@@ -312,7 +330,7 @@ open class GenericRequestClassExporter : RequestClassExporter() {
                 method = h
                 break
             }
-            superCls = superCls.superClass
+            superCls = actionContext.callInReadUI { superCls?.superClass }
         }
         return path to method
     }

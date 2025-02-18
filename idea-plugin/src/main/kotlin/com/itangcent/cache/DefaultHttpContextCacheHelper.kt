@@ -7,19 +7,18 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.http.BasicCookie
 import com.itangcent.http.Cookie
 import com.itangcent.http.json
+import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.file.BeanBinder
 import com.itangcent.intellij.file.FileBeanBinder
-import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.file.lazy
 
 @Singleton
 class DefaultHttpContextCacheHelper : HttpContextCacheHelper {
 
     @Inject
-    @Named("projectCacheRepository")
-    private val projectCacheRepository: LocalFileRepository? = null
+    private lateinit var projectCacheRepository: ProjectCacheRepository
 
     @Inject(optional = true)
     @Named("host.history.max")
@@ -31,7 +30,7 @@ class DefaultHttpContextCacheHelper : HttpContextCacheHelper {
 
     private val httpContextCacheBinder: BeanBinder<HttpContextCache> by lazy {
         FileBeanBinder(
-            projectCacheRepository!!.getOrCreateFile(".http_content_cache"),
+            projectCacheRepository.getOrCreateFile(".http_content_cache"),
             HttpContextCache::class
         ).lazy()
     }

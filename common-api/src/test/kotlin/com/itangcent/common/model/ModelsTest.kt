@@ -42,7 +42,7 @@ class ModelsTest {
         assertFalse(request.hasForm())
         assertFalse(request.hasBodyOrForm())
         assertFalse(request.hasMethod())
-        assertNull(request.getContentType())
+        assertNull(request.rawContentType())
         assertNull(request.header("content-type"))
 
         //test empty request with GET
@@ -51,7 +51,7 @@ class ModelsTest {
         assertFalse(request.hasForm())
         assertFalse(request.hasBodyOrForm())
         assertTrue(request.hasMethod())
-        assertNull(request.getContentType())
+        assertNull(request.rawContentType())
         assertNull(request.header("content-type"))
 
 
@@ -61,7 +61,7 @@ class ModelsTest {
         assertFalse(request.hasForm())
         assertTrue(request.hasBodyOrForm())
         assertTrue(request.hasMethod())
-        assertNull(request.getContentType())
+        assertNull(request.rawContentType())
         assertNull(request.header("content-type"))
     }
 }

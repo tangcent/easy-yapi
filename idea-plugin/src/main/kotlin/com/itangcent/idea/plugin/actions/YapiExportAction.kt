@@ -8,6 +8,7 @@ import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.plugin.api.export.yapi.*
 import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
@@ -16,7 +17,7 @@ import com.itangcent.intellij.jvm.PsiClassHelper
 
 class YapiExportAction : ApiExportAction("Export Yapi") {
 
-    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContextBuilder) {
         super.afterBuildActionContext(event, builder)
 
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
@@ -24,8 +25,6 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bind(LinkResolver::class) { it.with(YapiLinkResolver::class).singleton() }
 
         builder.bind(YapiApiHelper::class) { it.with(CachedYapiApiHelper::class).singleton() }
-
-        builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))

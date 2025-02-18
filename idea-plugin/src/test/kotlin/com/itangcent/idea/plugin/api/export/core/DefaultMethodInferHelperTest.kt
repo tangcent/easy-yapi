@@ -5,7 +5,7 @@ import com.intellij.psi.PsiClass
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.DefaultMethodInferHelper
 import com.itangcent.idea.plugin.api.MethodInferHelper
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.util.*
@@ -20,7 +20,7 @@ internal class DefaultMethodInferHelperTest : PluginContextLightCodeInsightFixtu
     @Inject
     private lateinit var methodInferHelper: MethodInferHelper
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(MethodInferHelper::class) { it.with(DefaultMethodInferHelper::class) }
     }
@@ -50,7 +50,9 @@ internal class DefaultMethodInferHelperTest : PluginContextLightCodeInsightFixtu
                 }
             }
         }
-        assertEquals("{\"code\":0,\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"success\",\"data\":[{\"key1\":\"string\",\"@comment\":{\"key1\":\"This is the key for the test\",\"key2\":\"This is a test key valued 666\",\"key3\":\"This is a child for test\"},\"key2\":666,\"key3\":{\"subKey\":\"string\",\"@comment\":{\"subKey\":\"This is the key of the child\"}}},{}]}",
-                GsonUtils.toJson(inferReturn))
+        assertEquals(
+            "{\"code\":0,\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"success\",\"data\":[{\"key1\":\"string\",\"@comment\":{\"key1\":\"This is the key for the test\",\"key2\":\"This is a test key valued 666\",\"key3\":\"This is a child for test\"},\"key2\":666,\"key3\":{\"subKey\":\"string\",\"@comment\":{\"subKey\":\"This is the key of the child\"}}},{}]}",
+            GsonUtils.toJson(inferReturn)
+        )
     }
 }

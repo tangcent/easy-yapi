@@ -7,7 +7,7 @@ import com.intellij.psi.PsiFile
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.test.workAt
@@ -56,7 +56,7 @@ class ClassApiExporterHelperTest : PluginContextLightCodeInsightFixtureTestCase(
         userCtrlPsiClass = (userCtrlPsiFile as? PsiClassOwner)?.classes?.firstOrNull()!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
         builder.workAt(userCtrlPsiFile)

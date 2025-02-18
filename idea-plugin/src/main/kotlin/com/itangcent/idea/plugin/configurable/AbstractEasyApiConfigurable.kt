@@ -7,6 +7,7 @@ import com.itangcent.common.kit.toJson
 import com.itangcent.common.logger.Log
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.rx.throttle
@@ -71,7 +72,7 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
         return easyApiConfigurableGUI.getRootPanel()
     }
 
-    open fun afterBuildActionContext(builder: ActionContext.ActionContextBuilder) {}
+    open fun afterBuildActionContext(builder: ActionContextBuilder) {}
 
     protected abstract fun createGUI(): EasyApiSettingGUI
 

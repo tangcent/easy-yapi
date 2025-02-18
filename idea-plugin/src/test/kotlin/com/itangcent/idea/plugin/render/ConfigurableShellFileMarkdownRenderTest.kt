@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.render
 
 import com.google.inject.Inject
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import org.intellij.lang.annotations.Language
@@ -19,7 +19,7 @@ internal open class ConfigurableShellFileMarkdownRenderTest : AdvancedContextTes
     @Inject
     internal lateinit var markdownRender: MarkdownRender
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(MarkdownRender::class) { it.with(ConfigurableShellFileMarkdownRender::class) }
     }

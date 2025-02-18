@@ -5,14 +5,13 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.condition.markAsSimple
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.api.export.core.ConfigurableMethodFilter
 import com.itangcent.idea.plugin.api.export.core.MethodFilter
 import com.itangcent.idea.plugin.api.export.postman.PostmanApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.suv.SuvApiExporter
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
@@ -21,11 +20,9 @@ import com.itangcent.intellij.psi.DataContextProvider
 
 class SuvExportAction : ApiExportAction("Export Api") {
 
-    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+    override fun afterBuildActionContext(event: AnActionEvent, builder: ActionContextBuilder) {
 
         super.afterBuildActionContext(event, builder)
-
-        builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
 
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
         builder.markAsSimple()

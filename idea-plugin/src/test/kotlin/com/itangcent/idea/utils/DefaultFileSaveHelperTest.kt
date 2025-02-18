@@ -3,7 +3,7 @@ package com.itangcent.idea.utils
 import com.google.inject.Inject
 import com.intellij.openapi.vfs.VirtualFile
 import com.itangcent.common.utils.forceMkdirParent
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.withMockCompanion
@@ -26,7 +26,7 @@ internal class DefaultFileSaveHelperTest : PluginContextLightCodeInsightFixtureT
         return Runtime.version().feature() <= 12
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(FileSaveHelper::class) { it.with(DefaultFileSaveHelper::class).singleton() }

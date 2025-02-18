@@ -7,12 +7,12 @@ import org.mockito.kotlin.stub
 import kotlin.reflect.KClass
 
 @Suppress("UNCHECKED_CAST")
-fun com.itangcent.intellij.context.ActionContext.ActionContextBuilder.mock(type: KClass<*>) {
+fun com.itangcent.intellij.context.ActionContextBuilder.mock(type: KClass<*>) {
     this.bindInstance(type as KClass<Any>, Mockito.mock(type.java) as Any)
 }
 
 @Suppress("UNCHECKED_CAST")
-fun <T : Any> com.itangcent.intellij.context.ActionContext.ActionContextBuilder.mock(
+fun <T : Any> com.itangcent.intellij.context.ActionContextBuilder.mock(
     type: KClass<T>,
     mock: KStubbing<T>.(T) -> Unit
 ) {
@@ -23,7 +23,7 @@ fun <T : Any> com.itangcent.intellij.context.ActionContext.ActionContextBuilder.
 }
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified T : Any> com.itangcent.intellij.context.ActionContext.ActionContextBuilder.mock(
+inline fun <reified T : Any> com.itangcent.intellij.context.ActionContextBuilder.mock(
     stubbing: KStubbing<T>.(T) -> Unit
 ) {
     this.bindInstance(

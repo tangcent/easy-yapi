@@ -2,10 +2,14 @@ package com.itangcent.idea.utils
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.wm.WindowManager
+import com.itangcent.idea.psi.PsiClassFinder
 import java.awt.Component
+import java.util.concurrent.TimeUnit
 import javax.swing.SwingUtilities
 
 object ProjectHelper {
@@ -47,5 +51,26 @@ object ProjectHelper {
         }
 
         return null
+    }
+}
+
+fun Project.waiteUtilIndexReady() {
+    while (!this.isInitialized) {
+        Thread.sleep(500)
+    }
+    var indexReady = false
+    val maxWait = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10)
+    while (System.currentTimeMillis() < maxWait && !indexReady) {
+        ApplicationManager.getApplication().runReadAction {
+            try {
+                val cls = PsiClassFinder.findClass("java.lang.Object", this)
+                if (cls != null) {
+                    indexReady = true
+                }
+            } catch (e: IndexNotReadyException) {
+                //ignore
+            }
+        }
+        Thread.sleep(500)
     }
 }

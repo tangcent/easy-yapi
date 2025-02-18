@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -50,7 +50,7 @@ internal class DefaultDocParseHelperTest : PluginContextLightCodeInsightFixtureT
         staticInnerClassBPsiClass = nestedClassBPsiClass.allInnerClasses.last()
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(DocParseHelper::class) {
             it.with(DefaultDocParseHelper::class)

@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.condition
 
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.mock.SettingBinderAdaptor
 import org.junit.jupiter.api.Test
@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 internal class OnSettingConditionTest : AdvancedContextTest() {
     private val setting: Settings = Settings()
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(setting)) }
     }

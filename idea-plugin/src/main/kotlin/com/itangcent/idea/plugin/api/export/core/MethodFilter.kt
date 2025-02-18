@@ -37,3 +37,35 @@ class ConfigurableMethodFilter : MethodFilter {
         return true
     }
 }
+
+@Singleton
+class SpecialMethodFilter(
+    private val specialMethod: PsiMethod
+) : MethodFilter {
+    override fun checkMethod(method: PsiMethod): Boolean {
+        return specialMethod == method
+    }
+}
+
+@Singleton
+class CustomizedMethodFilter : MethodFilter {
+
+    private val methodFilters: MutableList<MethodFilter> = mutableListOf()
+
+    fun addMethodFilter(methodFilter: MethodFilter) {
+        methodFilters.add(methodFilter)
+    }
+
+    fun setMethodFilters(methodFilters: List<MethodFilter>) {
+        this.methodFilters.clear()
+        this.methodFilters.addAll(methodFilters)
+    }
+
+    fun clearMethodFilters() {
+        methodFilters.clear()
+    }
+
+    override fun checkMethod(method: PsiMethod): Boolean {
+        return methodFilters.all { it.checkMethod(method) }
+    }
+}
