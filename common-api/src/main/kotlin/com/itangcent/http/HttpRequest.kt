@@ -1,6 +1,7 @@
 package com.itangcent.http
 
 import com.itangcent.annotation.script.ScriptTypeName
+import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.kit.equalIgnoreCase
 import com.itangcent.common.utils.safe
 import org.apache.http.Consts
@@ -526,7 +527,7 @@ abstract class AbstractHttpRequest : HttpRequest {
     /**
      * The HTTP method to request
      */
-    private var method: String = "GET"
+    private var method: String = HttpMethod.GET
 
     /**
      * Get the HTTP method to request

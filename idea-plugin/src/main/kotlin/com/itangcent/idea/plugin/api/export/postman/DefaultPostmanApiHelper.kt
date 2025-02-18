@@ -15,8 +15,7 @@ import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.acquireGreedy
 import com.itangcent.intellij.extend.asJsonElement
 import com.itangcent.intellij.extend.asMap
-import com.itangcent.intellij.extend.rx.Throttle
-import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.rx.throttle
 import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
@@ -423,7 +422,7 @@ open class DefaultPostmanApiHelper : PostmanApiHelper {
         }
     }
 
-    private val apiThrottle: Throttle = ThrottleHelper().build("postman_api")
+    private val apiThrottle = throttle()
 
     private val semaphore = Semaphore(5)
 
