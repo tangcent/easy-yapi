@@ -1,6 +1,6 @@
 package com.itangcent.intellij.extend
 
-import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.rx.throttle
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -15,8 +15,7 @@ class ThrottleKitTest {
 
     @Test
     fun testAcquireGreedy() {
-        val throttleHelper = ThrottleHelper()
-        val throttle = throttleHelper.build("test")
+        val throttle = throttle()
         throttle.acquire(1000)
         val now = System.currentTimeMillis()
         assertTimeout(Duration.ofMillis(10)) { throttle.acquire(1000) }

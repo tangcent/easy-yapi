@@ -9,7 +9,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
-import com.itangcent.intellij.extend.rx.ThrottleHelper
+import com.itangcent.intellij.extend.rx.throttle
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
@@ -23,7 +23,7 @@ abstract class AbstractEasyApiConfigurable(private var myProject: Project?) : Se
     @Inject
     private lateinit var settingBinder: SettingBinder
 
-    private val throttle = ThrottleHelper().build(this::class.qualifiedName!!)
+    private val throttle = throttle()
 
     override fun isModified(): Boolean {
         val pre = settingBinder.read()
