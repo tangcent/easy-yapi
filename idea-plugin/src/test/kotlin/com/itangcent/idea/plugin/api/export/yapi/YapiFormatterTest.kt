@@ -7,7 +7,7 @@ import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.SystemProvider
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.ImmutableSystemProvider
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.toUnixString
@@ -29,7 +29,7 @@ internal abstract class YapiFormatterTest : YapiSpringClassExporterBaseTest() {
         settings.inferEnable = true
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SystemProvider::class) {
             it.toInstance(ImmutableSystemProvider(STANDARD_TIME))

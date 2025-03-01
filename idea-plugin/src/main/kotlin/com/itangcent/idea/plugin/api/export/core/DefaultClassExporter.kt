@@ -7,7 +7,7 @@ import com.itangcent.spi.SpiCompositeLoader
 import kotlin.reflect.KClass
 
 @Singleton
-class CompositeClassExporter : ClassExporter {
+class DefaultClassExporter : ClassExporter {
 
     @Inject
     private lateinit var actionContext: ActionContext
@@ -21,8 +21,6 @@ class CompositeClassExporter : ClassExporter {
     }
 
     override fun export(cls: Any, docHandle: DocHandle): Boolean {
-        return this.subClassExporters.any {
-            it.export(cls, docHandle)
-        }
+        return this.subClassExporters.any { it.export(cls, docHandle) }
     }
 }

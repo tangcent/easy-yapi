@@ -1,12 +1,23 @@
 package com.itangcent.idea.swing
 
+import com.intellij.util.ui.UIUtil
 import java.awt.Component
 import javax.swing.Icon
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeCellRenderer
 
-class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
+open class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
+
+    init {
+        background = UIUtil.getTreeBackground()
+        foreground = UIUtil.getTreeForeground()
+        textSelectionColor = UIUtil.getTreeSelectionForeground(true)
+        textNonSelectionColor = UIUtil.getTreeForeground()
+        backgroundSelectionColor = UIUtil.getTreeSelectionBackground(true)
+        backgroundNonSelectionColor = UIUtil.getTreeBackground()
+        isOpaque = true
+    }
 
     /**
      * Configures the renderer based on the passed in components.
@@ -29,6 +40,16 @@ class EasyApiTreeCellRenderer : DefaultTreeCellRenderer() {
         findIcon(value, expanded, leaf)?.let { icon = it }
 
         findTooltips(value)?.let { toolTipText = it }
+
+        // Set proper background colors
+        if (sel) {
+            background = UIUtil.getTreeSelectionBackground(true)
+            foreground = UIUtil.getTreeSelectionForeground(true)
+        } else {
+            background = UIUtil.getTreeBackground()
+            foreground = UIUtil.getTreeForeground()
+        }
+        isOpaque = true
 
         return this
     }

@@ -2,10 +2,12 @@ package com.itangcent.idea.plugin.api.export.http
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.intellij.openapi.project.Project
 import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
+import com.itangcent.idea.plugin.utils.NotificationUtils
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.logger.Logger
 
@@ -35,6 +37,9 @@ class HttpClientExporter {
     @Inject
     private lateinit var httpContextCacheHelper: HttpContextCacheHelper
 
+    @Inject
+    private lateinit var project: Project
+
     /**
      * Exports a list of HTTP requests to a file.
      *
@@ -43,12 +48,13 @@ class HttpClientExporter {
     fun export(requests: List<Request>) {
         try {
             if (requests.isEmpty()) {
-                logger.info("No api be found to export!")
+                NotificationUtils.notifyInfo(project, "No API found to export")
                 return
             }
             exportToFile(requests)
         } catch (e: Exception) {
             logger.traceError("Apis save failed", e)
+            NotificationUtils.notifyError(project, "Failed to export APIs: ${e.message}")
         }
     }
 

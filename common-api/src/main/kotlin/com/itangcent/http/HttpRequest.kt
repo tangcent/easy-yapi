@@ -1046,7 +1046,7 @@ abstract class AbstractHttpResponse : HttpResponse {
      *          {@code null} if the content type is unknown
      */
     override fun contentType(): String? {
-        return this.firstHeader("content-type")
+        return headers()?.contentType()
     }
 
     /**
@@ -1087,10 +1087,7 @@ abstract class AbstractHttpResponse : HttpResponse {
      * @return value of the first header or {@code null}
      */
     override fun firstHeader(headerName: String): String? {
-        return headers()
-            ?.filter { it.name().equalIgnoreCase(headerName) }
-            ?.map { it.value() }
-            ?.firstOrNull { it != null }
+        return headers()?.firstHeader(headerName)
     }
 
     /**
@@ -1211,6 +1208,9 @@ class BasicHttpHeader : HttpHeader {
     }
 }
 
+fun HttpHeader(name: String, value: String): HttpHeader {
+    return BasicHttpHeader(name, value)
+}
 @ScriptTypeName("param")
 interface HttpParam {
 
@@ -1270,4 +1270,12 @@ class BasicHttpParam : HttpParam {
     fun setType(type: String?) {
         this.type = type
     }
+}
+
+fun List<HttpHeader>.firstHeader(name: String): String? {
+    return this.firstOrNull { it.name().equalIgnoreCase(name) }?.value()
+}
+
+fun List<HttpHeader>.contentType(): String? {
+    return this.firstHeader("content-type")
 }

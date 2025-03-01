@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.Response
 import com.itangcent.common.model.URL
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.mock.FakeExportContext
@@ -24,9 +24,7 @@ internal class DefaultRequestBuilderListenerTest : AdvancedContextTest() {
 
     private lateinit var request: Request
 
-    private val context = FakeExportContext.INSTANCE
-
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(RequestBuilderListener::class) { it.with(DefaultRequestBuilderListener::class) }
     }

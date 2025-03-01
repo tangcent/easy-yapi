@@ -1,10 +1,12 @@
 package com.itangcent.idea.plugin.api.export.core
 
+import com.google.inject.ImplementedBy
 import com.itangcent.common.model.Doc
 import com.itangcent.common.model.MethodDoc
 import com.itangcent.common.model.Request
 import kotlin.reflect.KClass
 
+@ImplementedBy(DefaultClassExporter::class)
 interface ClassExporter {
 
     /**

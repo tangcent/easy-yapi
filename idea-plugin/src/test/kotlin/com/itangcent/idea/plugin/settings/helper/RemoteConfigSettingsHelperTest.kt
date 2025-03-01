@@ -2,7 +2,7 @@ package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
 import com.itangcent.intellij.config.resource.ResourceResolver
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.test.StringResource
 import com.itangcent.test.assertContentEquals
 import org.junit.jupiter.api.Test
@@ -19,7 +19,7 @@ internal class RemoteConfigSettingsHelperTest : SettingsHelperTest() {
     @Inject
     private lateinit var remoteConfigSettingsHelper: RemoteConfigSettingsHelper
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         val resourceResolver = mock<ResourceResolver> {

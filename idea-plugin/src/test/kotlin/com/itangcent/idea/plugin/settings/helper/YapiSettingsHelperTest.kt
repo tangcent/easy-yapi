@@ -5,7 +5,7 @@ import com.itangcent.common.kit.toJson
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.settings.YapiExportMode
 import com.itangcent.idea.swing.MessagesHelper
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
 import org.junit.jupiter.api.Test
@@ -25,7 +25,7 @@ internal class YapiSettingsHelperTest : SettingsHelperTest() {
     @Inject
     private lateinit var yapiSettingsHelper: YapiSettingsHelper
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }

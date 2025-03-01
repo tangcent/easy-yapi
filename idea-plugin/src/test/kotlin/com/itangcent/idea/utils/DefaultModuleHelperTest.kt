@@ -6,7 +6,7 @@ import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiFile
 import com.itangcent.idea.psi.PsiClassResource
 import com.itangcent.idea.psi.PsiMethodResource
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 
@@ -31,7 +31,7 @@ internal class DefaultModuleHelperTest : PluginContextLightCodeInsightFixtureTes
         userCtrlPsiClass = (userCtrlPsiFile as PsiClassOwner).classes[0]
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(ModuleHelper::class) { it.with(DefaultModuleHelper::class) }
     }

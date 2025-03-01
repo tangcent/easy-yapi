@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.kit.toJson
 import com.itangcent.common.model.Request
-import com.itangcent.common.model.getContentType
+import com.itangcent.common.model.rawContentType
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
@@ -14,7 +14,7 @@ import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.rule.RuleComputeListener
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
@@ -110,7 +110,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
                 "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n"
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
 
@@ -162,7 +162,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             assertEquals("create an user", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
-            assertEquals("application/x-www-form-urlencoded", request.getContentType())
+            assertEquals("application/x-www-form-urlencoded", request.rawContentType())
             assertEquals(primitiveUserClientPsiClass.methods[0], (request.resource as PsiResource).resource())
             assertNull(request.body)
             assertEquals(
@@ -175,7 +175,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             assertEquals("list users", request.name)
             assertTrue(request.desc.isNullOrEmpty())
             assertEquals("POST", request.method)
-            assertEquals("application/json", request.getContentType())
+            assertEquals("application/json", request.rawContentType())
             request.paths!!.first().let {
                 assertEquals("type", it.name)
                 assertEquals(
@@ -194,13 +194,19 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
                 assertEquals("user id", it.desc)
             }
             assertEquals(primitiveUserClientPsiClass.methods[1], (request.resource as PsiResource).resource())
-            assertEquals("{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}",
-                request.body.toJson())
-            assertEquals("{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
-                request.response!!.first().body.toJson())
+            assertEquals(
+                "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}",
+                request.body.toJson()
+            )
+            assertEquals(
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
+                request.response!!.first().body.toJson()
+            )
         }
 
-        assertEquals(ResultLoader.load("testExportFromPrimitiveUserClientPsiClass"),
-            LoggerCollector.getLog().toUnixString())
+        assertEquals(
+            ResultLoader.load("testExportFromPrimitiveUserClientPsiClass"),
+            LoggerCollector.getLog().toUnixString()
+        )
     }
 }

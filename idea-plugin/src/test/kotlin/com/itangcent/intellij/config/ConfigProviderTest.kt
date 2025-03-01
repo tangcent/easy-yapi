@@ -3,9 +3,9 @@ package com.itangcent.intellij.config
 import com.google.inject.Inject
 import com.intellij.openapi.module.Module
 import com.itangcent.common.utils.ResourceUtils
-import com.itangcent.common.utils.append
 import com.itangcent.common.utils.forceMkdirParent
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.mock.AdvancedContextTest
@@ -47,7 +47,7 @@ internal abstract class ConfigProviderTest : AdvancedContextTest() {
         )
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(ConfigProvider::class) { it.with(this.configProviderClass) }
 

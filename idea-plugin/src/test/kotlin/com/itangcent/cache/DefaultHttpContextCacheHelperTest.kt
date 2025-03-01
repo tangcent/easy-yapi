@@ -6,6 +6,7 @@ import com.itangcent.http.ApacheHttpClient
 import com.itangcent.http.HttpClient
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -21,6 +22,10 @@ internal open class DefaultHttpContextCacheHelperTest : AdvancedContextTest() {
 
     @Inject
     protected lateinit var httpContextCacheHelper: HttpContextCacheHelper
+
+    override fun afterBind(actionContext: ActionContext) {
+        actionContext.cache("project_path", tempDir.toString())
+    }
 
     class HostDefaultHttpContextCacheHelperTest : DefaultHttpContextCacheHelperTest() {
 
@@ -88,7 +93,7 @@ internal open class DefaultHttpContextCacheHelperTest : AdvancedContextTest() {
     }
 
     class SelectHostDefaultHttpContextCacheHelperTest : DefaultHttpContextCacheHelperTest() {
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             //mock MessagesHelper

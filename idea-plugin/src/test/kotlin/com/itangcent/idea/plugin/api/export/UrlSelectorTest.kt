@@ -8,7 +8,7 @@ import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys.PATH_MULTI
 import com.itangcent.idea.plugin.api.export.core.ResolveMultiPath
 import com.itangcent.intellij.config.rule.Rule
 import com.itangcent.intellij.config.rule.RuleLookUp
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.BaseContextTest
 import com.itangcent.test.mock
 import org.junit.jupiter.api.Test
@@ -26,7 +26,7 @@ abstract class BaseUrlSelectorAllTest : BaseContextTest() {
     @Inject
     protected lateinit var urlSelector: UrlSelector
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.mock<RuleLookUp> {
             on(

@@ -12,7 +12,7 @@ import com.itangcent.idea.plugin.api.export.yapi.YapiSpringClassExporterBaseTest
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.SystemProvider
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.ImmutableSystemProvider
 import com.itangcent.mock.SettingBinderAdaptor
@@ -65,7 +65,7 @@ internal class ValidationTest : YapiSpringClassExporterBaseTest() {
             .appendln(ResourceUtils.readResource("config/javax.validation.config"))!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SystemProvider::class) {
             it.toInstance(ImmutableSystemProvider(STANDARD_TIME))

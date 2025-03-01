@@ -4,7 +4,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.xml.ApplicationSettingsSupport
 import com.itangcent.idea.plugin.settings.xml.ProjectSettingsSupport
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.utils.WaitHelper
 import org.junit.jupiter.api.Test
@@ -78,7 +78,7 @@ class FakeEasyApiConfigurable : AbstractEasyApiConfigurable(mock()) {
         return "easyyapi.FakeConfigurable"
     }
 
-    override fun afterBuildActionContext(builder: ActionContext.ActionContextBuilder) {
+    override fun afterBuildActionContext(builder: ActionContextBuilder) {
         super.afterBuildActionContext(builder)
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(setting)) }
     }

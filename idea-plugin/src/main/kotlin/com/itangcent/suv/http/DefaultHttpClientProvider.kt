@@ -1,5 +1,6 @@
 package com.itangcent.suv.http
 
+import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.http.HttpClient
 import com.itangcent.intellij.context.ActionContext
@@ -13,8 +14,10 @@ import com.itangcent.spi.SpiCompositeLoader
 @Singleton
 open class DefaultHttpClientProvider : AbstractHttpClientProvider() {
 
+    @Inject
+    private lateinit var actionContext: ActionContext
+
     private val httpClientProvider: HttpClientProvider by lazy {
-        val actionContext = ActionContext.getContext()!!
         SpiCompositeLoader.load<HttpClientProvider>(actionContext).firstOrNull()
             ?: actionContext.instance(ApacheHttpClientProvider::class)
     }

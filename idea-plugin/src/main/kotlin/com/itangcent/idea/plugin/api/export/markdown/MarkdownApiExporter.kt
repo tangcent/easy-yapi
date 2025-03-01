@@ -2,13 +2,13 @@ package com.itangcent.idea.plugin.api.export.markdown
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.intellij.openapi.project.Project
 import com.itangcent.common.logger.traceError
+import com.itangcent.common.model.Doc
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
-import com.itangcent.idea.swing.MessagesHelper
+import com.itangcent.idea.plugin.utils.NotificationUtils
 import com.itangcent.idea.utils.FileSaveHelper
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
 
 @Singleton
@@ -18,19 +18,10 @@ class MarkdownApiExporter {
     private lateinit var logger: Logger
 
     @Inject
-    private lateinit var actionContext: ActionContext
-
-    @Inject
-    private val classExporter: ClassExporter? = null
-
-    @Inject
     private val fileSaveHelper: FileSaveHelper? = null
 
     @Inject
     private val markdownFormatter: MarkdownFormatter? = null
-
-    @Inject
-    private lateinit var messagesHelper: MessagesHelper
 
     @Inject
     private lateinit var markdownSettingsHelper: MarkdownSettingsHelper
@@ -38,24 +29,36 @@ class MarkdownApiExporter {
     @Inject
     private lateinit var classApiExporterHelper: ClassApiExporterHelper
 
+    @Inject
+    private lateinit var project: Project
+
     fun export() {
         try {
             val docs = classApiExporterHelper.export()
             if (docs.isEmpty()) {
-                logger.info("No api be found to export!")
+                NotificationUtils.notifyInfo(project, "No API found to export")
             } else {
-                val apiInfo = markdownFormatter!!.parseRequests(docs)
-                fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
-                    logger.info("Exported data are copied to clipboard,you can paste to a md file now")
-                }, {
-                    logger.info("Apis save success: $it")
-                }) {
-                    logger.info("Apis save failed")
-                }
-                logger.info("Apis exported completed")
+                export(docs)
             }
         } catch (e: Exception) {
             logger.traceError("Apis exported failed", e)
+            NotificationUtils.notifyError(project, "Failed to export APIs: ${e.message}")
         }
+    }
+
+    fun export(docs: List<Doc>) {
+        if (docs.isEmpty()) {
+            NotificationUtils.notifyInfo(project, "No API found to export")
+            return
+        }
+        val apiInfo = markdownFormatter!!.parseRequests(docs)
+        fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
+            NotificationUtils.notifyInfo(project, "API documentation copied to clipboard")
+        }, {
+            NotificationUtils.notifyInfo(project, "APIs exported successfully to: $it")
+        }) {
+            NotificationUtils.notifyError(project, "Failed to save API documentation")
+        }
+        logger.info("Apis exported completed")
     }
 }

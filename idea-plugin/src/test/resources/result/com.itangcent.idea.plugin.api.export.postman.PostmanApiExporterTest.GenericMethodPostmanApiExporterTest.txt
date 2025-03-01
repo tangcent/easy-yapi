@@ -11,7 +11,9 @@
             "greeting"
           ],
           "query": [],
-          "host": "{{test_default}}",
+          "host": [
+            "{{test_default}}"
+          ],
           "raw": "{{test_default}}/user/greeting"
         }
       },
@@ -27,7 +29,9 @@
                 "greeting"
               ],
               "query": [],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/greeting"
             }
           },
@@ -90,7 +94,9 @@
               "description": "user id"
             }
           ],
-          "host": "{{test_default}}",
+          "host": [
+            "{{test_default}}"
+          ],
           "raw": "{{test_default}}/user/get/{id}"
         }
       },
@@ -121,7 +127,9 @@
                   "description": "user id"
                 }
               ],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/get/{id}"
             }
           },
@@ -191,7 +199,9 @@
             "add"
           ],
           "query": [],
-          "host": "{{test_default}}",
+          "host": [
+            "{{test_default}}"
+          ],
           "raw": "{{test_default}}/user/add"
         }
       },
@@ -229,7 +239,9 @@
                 "add"
               ],
               "query": [],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/add"
             }
           },
@@ -330,7 +342,9 @@
             "update"
           ],
           "query": [],
-          "host": "{{test_default}}",
+          "host": [
+            "{{test_default}}"
+          ],
           "raw": "{{test_default}}/user/update"
         }
       },
@@ -399,7 +413,9 @@
                 "update"
               ],
               "query": [],
-              "host": "{{test_default}}",
+              "host": [
+                "{{test_default}}"
+              ],
               "raw": "{{test_default}}/user/update"
             }
           },

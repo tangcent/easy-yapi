@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.Messages.YesNoResult
 import com.itangcent.idea.plugin.dialog.AskWithApplyAllDialog
 import com.itangcent.idea.plugin.dialog.ChooseWithTipDialog
 import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
+import com.itangcent.idea.plugin.utils.NotificationUtils
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.util.UIUtils
@@ -115,13 +116,8 @@ class DefaultMessagesHelper : MessagesHelper {
         message: String?,
         @Nls(capitalization = Nls.Capitalization.Title) title: String?,
     ) {
-        val activeWindow = activeWindowProvider?.activeWindow()
         actionContext.runInSwingUI {
-            if (activeWindow == null) {
-                Messages.showInfoMessage(project, message, title ?: "")
-            } else {
-                Messages.showInfoMessage(activeWindow, message, title ?: "")
-            }
+            NotificationUtils.notifyInfo(project, message ?: "")
         }
     }
 

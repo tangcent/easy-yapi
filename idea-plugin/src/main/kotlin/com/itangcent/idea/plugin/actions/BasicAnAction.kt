@@ -11,6 +11,7 @@ import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.actions.KotlinAnAction
 import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
@@ -31,7 +32,7 @@ abstract class BasicAnAction : KotlinAnAction {
         return this::class.simpleName!!
     }
 
-    override fun onBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+    override fun onBuildActionContext(event: AnActionEvent, builder: ActionContextBuilder) {
 
         super.onBuildActionContext(event, builder)
         builder.bind(LogConfig::class) { it.with(CustomLogConfig::class).singleton() }
@@ -49,7 +50,7 @@ abstract class BasicAnAction : KotlinAnAction {
         }
     }
 
-    protected open fun afterBuildActionContext(event: AnActionEvent, builder: ActionContext.ActionContextBuilder) {
+    protected open fun afterBuildActionContext(event: AnActionEvent, builder: ActionContextBuilder) {
 
     }
 

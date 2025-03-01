@@ -5,7 +5,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.config.rule.RuleParser
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.ConstantModuleHelper
@@ -15,7 +15,7 @@ import com.itangcent.mock.SettingBinderAdaptor
 
 abstract class PluginContextLightCodeInsightFixtureTestCase : ContextLightCodeInsightFixtureTestCase() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         builder.bind(SettingBinder::class) { it.with(SettingBinderAdaptor::class) }
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
         builder.bind(ModuleHelper::class) { it.toInstance(ConstantModuleHelper.INSTANCE) }

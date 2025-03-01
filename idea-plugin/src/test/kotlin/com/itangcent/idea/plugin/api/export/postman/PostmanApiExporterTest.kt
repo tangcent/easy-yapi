@@ -5,15 +5,12 @@ import com.intellij.psi.PsiFile
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.SystemProvider
-import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.singleton
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.*
 import com.itangcent.test.ResultLoader
@@ -81,10 +78,9 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
         userClientPsiFile = loadFile("client/UserClient.java")!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
-        builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
         builder.bind(FileSaveHelper::class) { it.with(FileSaveHelperAdaptor::class) }
         builder.bind(SystemProvider::class) {
             it.toInstance(ImmutableSystemProvider(STANDARD_TIME))
@@ -107,7 +103,7 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
 
     class SpringPostmanApiExporterTest : PostmanApiExporterTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {
@@ -133,7 +129,7 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
 
         private var createdCollection: Any? = null
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
@@ -166,7 +162,7 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
     class ModeUpdatePostmanApiExporterTest : PostmanApiExporterTest() {
 
         private val updatedCollections = HashMap<String, Any>()
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
@@ -211,7 +207,7 @@ internal abstract class PostmanApiExporterTest : PluginContextLightCodeInsightFi
             loadFile("api/TestCtrl.java")
         }
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
             builder.bind(SettingBinder::class) {
                 it.toInstance(SettingBinderAdaptor(Settings().also { settings ->

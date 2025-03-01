@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.http
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.common.model.Request
-import com.itangcent.common.model.getContentType
+import com.itangcent.common.model.rawContentType
 import com.itangcent.common.utils.IDUtils
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.psi.resource
@@ -150,7 +150,7 @@ class HttpClientFormatter {
             sb.appendHeader(header.name ?: "", header.value)
         }
 
-        val contentType = request.getContentType()
+        val contentType = request.rawContentType()
         when {
             contentType?.contains("application/json") == true -> {
                 request.body?.let { body ->

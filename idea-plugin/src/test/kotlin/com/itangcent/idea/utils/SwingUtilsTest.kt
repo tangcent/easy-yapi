@@ -11,7 +11,7 @@ import com.itangcent.common.utils.cast
 import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.idea.swing.MutableActiveWindowProvider
 import com.itangcent.idea.swing.SimpleActiveWindowProvider
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.BaseContextTest
@@ -49,7 +49,7 @@ class SwingUtilsTest : BaseContextTest() {
         }
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(ActiveWindowProvider::class) {
             it.with(SimpleActiveWindowProvider::class)

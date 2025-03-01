@@ -6,14 +6,11 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.SystemProvider
-import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.singleton
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.mock.*
@@ -76,14 +73,13 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
         LoggerCollector.getLog()
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
         builder.bind(SystemProvider::class) {
             it.toInstance(ImmutableSystemProvider(STANDARD_TIME))
         }
-        builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
         builder.bind(FileSaveHelper::class) { it.with(FileSaveHelperAdaptor::class) }
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
@@ -103,7 +99,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
 
     class SpringYapiApiExporterTest : YapiApiExporterTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {
@@ -155,7 +151,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
             loadFile("api/TestCtrl.java")
         }
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {
@@ -202,7 +198,7 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
     }
 
     class GenericMethodYapiApiExporterTest : YapiApiExporterTest() {
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {

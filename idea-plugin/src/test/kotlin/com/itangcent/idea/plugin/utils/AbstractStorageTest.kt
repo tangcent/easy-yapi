@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.utils
 
 import com.google.inject.Inject
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.AdvancedContextTest
@@ -23,7 +23,7 @@ abstract class AbstractStorageTest : AdvancedContextTest() {
 
     abstract val storageClass: KClass<out Storage>
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(Storage::class) { it.with(storageClass) }
     }

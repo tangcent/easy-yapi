@@ -2,7 +2,6 @@ package com.itangcent.idea.utils
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.google.inject.name.Named
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.psi.PsiFile
@@ -10,9 +9,9 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.IDUtils
+import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.logger
-import com.itangcent.intellij.file.LocalFileRepository
 import java.io.File
 import java.nio.charset.StandardCharsets
 
@@ -33,8 +32,7 @@ class FormatterHelper {
     private lateinit var project: Project
 
     @Inject
-    @Named("projectCacheRepository")
-    private lateinit var localFileRepository: LocalFileRepository
+    private lateinit var projectCacheRepository: ProjectCacheRepository
 
     private val localFileSystem by lazy { LocalFileSystem.getInstance() }
 
@@ -49,7 +47,7 @@ class FormatterHelper {
     fun formatText(text: String, type: String): String {
         try {
             return actionContext.callInWriteUI {
-                val file: File = localFileRepository.getOrCreateFile("temp${IDUtils.shortUUID()}.${type}")
+                val file: File = projectCacheRepository.getOrCreateFile("temp${IDUtils.shortUUID()}.${type}")
                 try {
                     file.writeText(text, StandardCharsets.UTF_8)
                     val virtualFile = localFileSystem.refreshAndFindFileByPath(file.absolutePath)!!

@@ -5,7 +5,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.logger.Logger
@@ -33,7 +33,7 @@ internal class PostmanSpringRequestClassExporterTest : PostmanSpringClassExporte
                 "api.method.parse.after=groovy:logger.info(\"after parse method:\"+it)\n"
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }

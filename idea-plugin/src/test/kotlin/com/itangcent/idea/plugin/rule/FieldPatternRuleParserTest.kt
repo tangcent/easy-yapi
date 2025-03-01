@@ -4,13 +4,13 @@ import com.itangcent.debug.LoggerCollector
 import com.itangcent.idea.utils.ParseScriptContext
 import com.itangcent.intellij.config.rule.parseBooleanRule
 import com.itangcent.intellij.config.rule.parseEventRule
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
 
 class FieldPatternRuleParserTest : RuleParserBaseTest() {
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
     }

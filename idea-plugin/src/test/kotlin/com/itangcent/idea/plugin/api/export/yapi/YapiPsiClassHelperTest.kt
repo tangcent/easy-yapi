@@ -4,11 +4,11 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.api.export.core.AdditionalParseHelper
 import com.itangcent.idea.utils.ContextualPsiClassHelperBaseTest
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.duck.SingleDuckType
-import com.itangcent.intellij.jvm.JsonOption
 
 /**
  * Test case of [YapiPsiClassHelper]
@@ -42,7 +42,7 @@ internal class YapiPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
                 "```"
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class) }
         builder.bind(AdditionalParseHelper::class) { it.with(YapiAdditionalParseHelper::class) }

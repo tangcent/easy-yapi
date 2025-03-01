@@ -2,7 +2,9 @@ package com.itangcent.idea.plugin.api.cache
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
+import com.itangcent.cache.CacheSwitcher
 import com.itangcent.common.model.Request
+import com.itangcent.idea.plugin.api.export.ExportDoc
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
@@ -10,6 +12,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.SettingBinderAdaptor
@@ -30,9 +33,11 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
     @Inject
     private lateinit var classExporter: ClassExporter
 
-    private lateinit var springClassExporter: SpringRequestClassExporter
+    @Inject
+    private lateinit var cacheSwitcher: CacheSwitcher
 
-    private lateinit var delegateClassExporter: SpringRequestClassExporter
+    @Inject
+    private lateinit var springRequestClassExporter: SpringRequestClassExporter
 
     private lateinit var baseControllerPsiClass: PsiClass
 
@@ -78,13 +83,14 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
                 "json.rule.convert[java.time.LocalDate]=java.lang.String"
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
-        springClassExporter = SpringRequestClassExporter()
-        delegateClassExporter = Mockito.spy(springClassExporter)
-        builder.bind(ClassExporter::class, "delegate_classExporter") { it.toInstance(delegateClassExporter) }
+        builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
+
+        springRequestClassExporter = Mockito.spy(SpringRequestClassExporter())
+        builder.bind(SpringRequestClassExporter::class) { it.toInstance(springRequestClassExporter) }
 
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
@@ -95,7 +101,7 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
 
     override fun afterBind() {
         super.afterBind()
-        ActionContext.getContext()!!.init(springClassExporter)
+        ActionContext.getContext()!!.init(springRequestClassExporter)
     }
 
     fun testExport() {
@@ -123,10 +129,10 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("GET", request.method)
             assertEquals(userCtrlPsiClass.methods[1], (request.resource as PsiResource).resource())
         }
-        Mockito.verify(delegateClassExporter, times(1))
+        Mockito.verify(springRequestClassExporter, times(1))
             .export(any(), any())
 
-        boundary.waitComplete(TimeUnit.SECONDS.toMillis(10),false)//wait 10s to save cache
+        boundary.waitComplete(TimeUnit.SECONDS.toMillis(10), false)//wait 10s to save cache
         //export again
         val requestsAgain = ArrayList<Request>()
         classExporter.export(userCtrlPsiClass, requestOnly {
@@ -134,29 +140,29 @@ internal class CachedRequestClassExporterTest : PluginContextLightCodeInsightFix
         })
         boundary.waitComplete(false)
         assertEquals(requests, requestsAgain)
-        Mockito.verify(delegateClassExporter, times(1))
+        Mockito.verify(springRequestClassExporter, times(1))
             .export(any(), any())
 
         //export thrice
-        (classExporter as CachedRequestClassExporter).notUserCache()
+        cacheSwitcher.notUseCache()
         val requestsThrice = ArrayList<Request>()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsThrice.add(it)
         })
         boundary.waitComplete(false)
         assertEquals(requests, requestsThrice)
-        Mockito.verify(delegateClassExporter, times(2))
+        Mockito.verify(springRequestClassExporter, times(2))
             .export(any(), any())
 
         //export quartic
-        (classExporter as CachedRequestClassExporter).userCache()
+        cacheSwitcher.useCache()
         val requestsQuartic = ArrayList<Request>()
         classExporter.export(userCtrlPsiClass, requestOnly {
             requestsQuartic.add(it)
         })
         boundary.waitComplete(false)
         assertEquals(requests, requestsQuartic)
-        Mockito.verify(delegateClassExporter, times(2))
+        Mockito.verify(springRequestClassExporter, times(2))
             .export(any(), any())
     }
 }

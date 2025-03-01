@@ -1,5 +1,6 @@
 package com.itangcent.condition
 
+import com.google.inject.Singleton
 import com.itangcent.common.spi.SpiUtils
 import com.itangcent.common.utils.newInstance
 import com.itangcent.intellij.context.ActionContext
@@ -8,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 
+@Singleton
 class DefaultConditionEvaluator : ConditionEvaluator {
 
     private val loadedConditions by lazy {

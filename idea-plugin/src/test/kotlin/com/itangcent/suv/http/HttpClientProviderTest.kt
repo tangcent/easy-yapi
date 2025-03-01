@@ -6,7 +6,7 @@ import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.http.*
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.mock.SettingBinderAdaptor
@@ -34,7 +34,7 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
 
     protected val settings = Settings()
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(HttpClientProvider::class) { it.with(httpClientProviderClass) }
         builder.bind(SettingBinder::class) {

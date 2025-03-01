@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
 import com.itangcent.idea.plugin.api.export.core.*
+import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.AdvancedContextTest
 import com.itangcent.mock.FakeExportContext
 import org.junit.jupiter.api.Test
@@ -21,6 +22,10 @@ internal class FileApiCacheRepositoryTest : AdvancedContextTest() {
 
     @Inject
     private lateinit var requestBuilderListener: RequestBuilderListener
+
+    override fun afterBind(actionContext: ActionContext) {
+        actionContext.cache("project_path", tempDir.toString())
+    }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)

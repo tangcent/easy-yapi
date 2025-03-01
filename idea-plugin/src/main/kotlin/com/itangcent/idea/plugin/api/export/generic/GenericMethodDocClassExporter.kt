@@ -191,7 +191,7 @@ open class GenericMethodDocClassExporter : ClassExporter {
         docHandle: DocHandle,
     ) {
 
-        actionContext!!.checkStatus()
+        actionContext.checkStatus()
 
         val methodDoc = MethodDoc()
 

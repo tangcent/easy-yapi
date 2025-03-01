@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.settings
 
 import com.google.inject.Inject
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import kotlin.test.assertNotEquals
@@ -14,7 +14,7 @@ internal class XmlSettingBinderTest : PluginContextLightCodeInsightFixtureTestCa
     @Inject
     private lateinit var settingBinder: SettingBinder
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SettingBinder::class) { it.with(XmlSettingBinder::class) }
     }

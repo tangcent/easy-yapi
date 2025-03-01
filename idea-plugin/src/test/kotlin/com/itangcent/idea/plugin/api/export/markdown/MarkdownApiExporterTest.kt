@@ -4,15 +4,12 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiFile
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.ExportDoc
-import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompositeClassExporter
 import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.SystemProvider
-import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.singleton
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.FileSaveHelperAdaptor
 import com.itangcent.mock.ImmutableSystemProvider
@@ -71,14 +68,13 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
         userClientPsiFile = loadFile("client/UserClient.java")!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(SystemProvider::class) {
             it.toInstance(ImmutableSystemProvider(TimeZoneKit.STANDARD_TIME))
         }
 
-        builder.bind(ClassExporter::class) { it.with(CompositeClassExporter::class).singleton() }
         builder.bind(FileSaveHelper::class) { it.with(FileSaveHelperAdaptor::class) }
 
         builder.bindInstance(ExportChannel::class, ExportChannel.of("markdown"))
@@ -98,7 +94,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
 
     class SpringMarkdownApiExporterTest : MarkdownApiExporterTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {
@@ -121,7 +117,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
 
     class SpringUltimateMarkdownApiExporterTest : MarkdownApiExporterTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {
@@ -150,7 +146,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
             loadFile("api/TestCtrl.java")
         }
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {
@@ -275,7 +271,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
                     super.customConfig()
         }
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {
@@ -297,7 +293,7 @@ internal abstract class MarkdownApiExporterTest : PluginContextLightCodeInsightF
     }
 
     class GenericMethodMarkdownApiExporterTest : MarkdownApiExporterTest() {
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {

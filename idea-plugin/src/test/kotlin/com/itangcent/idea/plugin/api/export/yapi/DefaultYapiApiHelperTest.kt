@@ -10,7 +10,7 @@ import com.itangcent.idea.plugin.api.export.yapi.DefaultYapiApiHelper.Companion.
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.YapiExportMode
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
@@ -37,7 +37,7 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
 
     private val settings = Settings()
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(YapiApiHelper::class) { it.with(DefaultYapiApiHelper::class).singleton() }
 

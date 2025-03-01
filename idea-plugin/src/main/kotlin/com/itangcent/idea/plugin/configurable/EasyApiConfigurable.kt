@@ -5,6 +5,7 @@ import com.itangcent.idea.plugin.dialog.EasyApiSettingGUI
 import com.itangcent.idea.plugin.settings.helper.MemoryPostmanSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 
@@ -22,7 +23,7 @@ class EasyApiConfigurable(myProject: Project?) : AbstractEasyApiConfigurable(myP
         return EasyApiSettingGUI()
     }
 
-    override fun afterBuildActionContext(builder: ActionContext.ActionContextBuilder) {
+    override fun afterBuildActionContext(builder: ActionContextBuilder) {
         super.afterBuildActionContext(builder)
         builder.bind(PostmanSettingsHelper::class) { it.with(MemoryPostmanSettingsHelper::class).singleton() }
     }

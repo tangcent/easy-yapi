@@ -30,25 +30,25 @@ class CacheSwitcherTest {
             }
         }
 
-        override fun notUserCache() {
+        override fun notUseCache() {
             // Disable caching.
             cachingEnabled = false
         }
 
-        override fun userCache() {
+        override fun useCache() {
             // Enable caching.
             cachingEnabled = true
         }
     }
 
     @Test
-    fun `notUserCache disables caching for non-user data`() {
+    fun `notUseCache disables caching for non-user data`() {
         // Create a new TestCacheSwitcher object with caching enabled.
         val cacheSwitcher = TestCacheSwitcher()
-        cacheSwitcher.userCache()
+        cacheSwitcher.useCache()
 
-        // Call notUserCache() to disable caching.
-        cacheSwitcher.notUserCache()
+        // Call notUseCache() to disable caching.
+        cacheSwitcher.notUseCache()
 
         // Call getObject() twice and verify that different objects are returned each time.
         val obj1 = cacheSwitcher.getObject()
@@ -57,13 +57,13 @@ class CacheSwitcherTest {
     }
 
     @Test
-    fun `userCache enables caching for data that was previously disabled`() {
+    fun `useCache enables caching for data that was previously disabled`() {
         // Create a new TestCacheSwitcher object with caching disabled.
         val cacheSwitcher = TestCacheSwitcher()
-        cacheSwitcher.notUserCache()
+        cacheSwitcher.notUseCache()
 
-        // Call userCache() to enable caching.
-        cacheSwitcher.userCache()
+        // Call useCache() to enable caching.
+        cacheSwitcher.useCache()
 
         // Call getObject() twice and verify that the same object is returned both times.
         val obj1 = cacheSwitcher.getObject()
@@ -75,7 +75,7 @@ class CacheSwitcherTest {
     fun `withoutCache prevents caching for the duration of the call`() {
         // Create a new TestCacheSwitcher object with caching enabled.
         val cacheSwitcher = TestCacheSwitcher()
-        cacheSwitcher.userCache()
+        cacheSwitcher.useCache()
 
         // Call the withoutCache() extension function and verify that caching is disabled for the duration of the call.
         cacheSwitcher.withoutCache {

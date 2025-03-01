@@ -6,7 +6,7 @@ import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspace
 import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.swing.MessagesHelper
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.any
 import com.itangcent.test.mock
 import org.junit.jupiter.api.Test
@@ -27,14 +27,14 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
     @Inject
     protected lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.mock(PostmanApiHelper::class)
     }
 
     class PrivateTokenTest : DefaultPostmanSettingsHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             val messagesHelper = mock<MessagesHelper>()
@@ -70,7 +70,7 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
 
     class GetWorkspaceFromDistinctTest : DefaultPostmanSettingsHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             val postmanApiHelper = mock<PostmanApiHelper>()
@@ -125,7 +125,7 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
 
     class GetWorkspaceFromDuplicatedTest : DefaultPostmanSettingsHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             val postmanApiHelper = mock<PostmanApiHelper>()
@@ -217,7 +217,7 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
 
     class GetCollectionFromDistinctTest : DefaultPostmanSettingsHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             val postmanApiHelper = mock<PostmanApiHelper>()
@@ -286,7 +286,7 @@ internal open class DefaultPostmanSettingsHelperTest : SettingsHelperTest() {
 
     class GetCollectionFromDuplicatedTest : DefaultPostmanSettingsHelperTest() {
 
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             val postmanApiHelper = mock<PostmanApiHelper>()

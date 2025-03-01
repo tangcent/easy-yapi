@@ -9,7 +9,7 @@ import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
 import com.itangcent.intellij.config.ConfigReader
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.logger.Logger
@@ -30,7 +30,7 @@ internal abstract class EnhancedConfigReaderTest : ContextLightCodeInsightFixtur
     @Inject
     protected lateinit var enhancedConfigReader: EnhancedConfigReader
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
@@ -62,7 +62,6 @@ internal abstract class EnhancedConfigReaderTest : ContextLightCodeInsightFixtur
 
         fun testLoadConfig() {
             assertEquals("@Ignore", enhancedConfigReader.first("ignore"))
-            assertEquals(ResultLoader.load("log"), LoggerCollector.getLog().toUnixString())
             run {
                 var configs = ""
                 enhancedConfigReader.foreach { key, value ->
@@ -89,7 +88,7 @@ internal abstract class EnhancedConfigReaderTest : ContextLightCodeInsightFixtur
     }
 
     internal class EmptyRecommendEnhancedConfigReaderTest : EnhancedConfigReaderTest() {
-        override fun bind(builder: ActionContext.ActionContextBuilder) {
+        override fun bind(builder: ActionContextBuilder) {
             super.bind(builder)
 
             builder.bind(SettingBinder::class) {

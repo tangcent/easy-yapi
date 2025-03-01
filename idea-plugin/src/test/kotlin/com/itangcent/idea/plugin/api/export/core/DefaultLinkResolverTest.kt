@@ -2,9 +2,7 @@ package com.itangcent.idea.plugin.api.export.core
 
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
-import com.itangcent.idea.plugin.api.export.core.DefaultLinkResolver
-import com.itangcent.idea.plugin.api.export.core.LinkResolver
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 
@@ -23,7 +21,7 @@ internal class DefaultLinkResolverTest : PluginContextLightCodeInsightFixtureTes
         userInfoPsiClass = createClass("model/UserInfo.java")!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(LinkResolver::class) { it.with(DefaultLinkResolver::class) }

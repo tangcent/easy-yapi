@@ -1,8 +1,7 @@
 package com.itangcent.idea.plugin.api.export.condition
 
 import com.itangcent.idea.plugin.api.export.ExportDoc
-import com.itangcent.idea.plugin.api.export.condition.ConditionOnChannel
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFalse
@@ -12,7 +11,7 @@ import kotlin.test.assertTrue
  * Test case of [OnDocCondition]
  */
 internal class OnDocConditionTest : AdvancedContextTest() {
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bindInstance(ExportDoc::class, ExportDoc.of("doc1", "doc2"))
     }

@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.settings
 import com.google.inject.Inject
 import com.intellij.ide.util.PropertiesComponent
 import com.itangcent.idea.swing.MessagesHelper
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.mock.SettingBinderAdaptor
 import com.itangcent.mock.any
@@ -28,7 +28,7 @@ class EnumProcessInitializerTest : PluginContextLightCodeInsightFixtureTestCase(
 
     private var selectedEnumOption: Pair<String, String>? = null
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
 
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }

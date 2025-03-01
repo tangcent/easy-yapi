@@ -8,7 +8,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
@@ -60,7 +60,7 @@ internal class ActuatorEndpointExporterTest
         restControllerAnnEndpointPsiClass = loadClass("api/actuator/RestControllerAnnEndpoint.java")!!
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(ClassExporter::class) { it.with(ActuatorEndpointExporter::class).singleton() }
     }
@@ -172,7 +172,7 @@ internal class ActuatorEndpointExporterTest
             assertEquals(webAnnEndpointPsiClass.methods[2], (request.resource as PsiResource).resource())
         }
     }
-    
+
     fun testExportController() {
         assertTrue(classExporter.support(Request::class))
         assertFalse(classExporter.support(MethodDoc::class))
@@ -226,7 +226,7 @@ internal class ActuatorEndpointExporterTest
             assertEquals(controllerAnnEndpointPsiClass.methods[2], (request.resource as PsiResource).resource())
         }
     }
-    
+
     fun testExportRestController() {
         assertTrue(classExporter.support(Request::class))
         assertFalse(classExporter.support(MethodDoc::class))
@@ -280,5 +280,5 @@ internal class ActuatorEndpointExporterTest
             assertEquals(restControllerAnnEndpointPsiClass.methods[2], (request.resource as PsiResource).resource())
         }
     }
-    
+
 }

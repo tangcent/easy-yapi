@@ -3,10 +3,10 @@ package com.itangcent.common.model
 import com.itangcent.common.utils.SimpleExtensible
 import java.io.Serializable
 
-class PathParam : SimpleExtensible(), Serializable {
-    var name: String? = null
+class PathParam : SimpleExtensible(), NamedValue<String>, Serializable {
+    override var name: String? = null
 
-    var value: String? = null
+    override var value: String? = null
 
     var desc: String? = null
 
@@ -33,6 +33,4 @@ class PathParam : SimpleExtensible(), Serializable {
     override fun toString(): String {
         return "PathParam(name=$name, value=$value, desc=$desc)"
     }
-
-
 }

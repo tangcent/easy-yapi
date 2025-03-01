@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.intellij.openapi.project.Project
 import com.itangcent.cache.CacheSwitcher
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
@@ -10,6 +11,7 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
 import com.itangcent.idea.plugin.settings.PostmanExportMode
 import com.itangcent.idea.plugin.settings.helper.PostmanSettingsHelper
+import com.itangcent.idea.plugin.utils.NotificationUtils
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.logger.Logger
@@ -28,7 +30,7 @@ class PostmanApiExporter {
     private lateinit var postmanSettingsHelper: PostmanSettingsHelper
 
     @Inject
-    private val fileSaveHelper: FileSaveHelper? = null
+    private lateinit var fileSaveHelper: FileSaveHelper
 
     @Inject
     private lateinit var postmanFormatter: PostmanFormatter
@@ -39,19 +41,23 @@ class PostmanApiExporter {
     @Inject
     private lateinit var classApiExporterHelper: ClassApiExporterHelper
 
+    @Inject
+    private lateinit var project: Project
+
     companion object : Log()
 
     fun export() {
         try {
             val requests = classApiExporterHelper.export().mapNotNull { it as? Request }
             if (requests.isEmpty()) {
-                logger.info("No api be found to export!")
+                NotificationUtils.notifyInfo(project, "No API found to export")
             } else {
                 export(requests)
-                logger.info("Apis exported completed")
+                NotificationUtils.notifyInfo(project, "APIs exported successfully")
             }
         } catch (e: Exception) {
             logger.traceError("Apis exported failed", e)
+            NotificationUtils.notifyError(project, "Failed to export APIs: ${e.message}")
         }
     }
 
@@ -59,22 +65,17 @@ class PostmanApiExporter {
 
         //no privateToken be found
         if (!postmanSettingsHelper.hasPrivateToken()) {
-            val postman = postmanFormatter.parseRequests(requests)
-            logger.info("PrivateToken of postman not be setting")
-            logger.info(
-                "To enable automatically import to postman you could set privateToken of postman" +
-                        " in \"Preference -> Other Setting -> EasyApi\""
+            val postmanCollection = postmanFormatter.parseRequests(requests)
+            NotificationUtils.notifyWarning(
+                project,
+                "Postman private token not found. To enable automatic import to Postman, set your private token in Preferences -> Other Settings -> EasyApi"
             )
-            logger.info(
-                "If you do not have a privateToken of postman, you can easily generate one by heading over to the" +
-                        " Postman Integrations Dashboard [https://go.postman.co/integrations/services/pm_pro_api]."
-            )
-            fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
-                logger.info("Exported data are copied to clipboard, you can paste to postman now")
+            fileSaveHelper.saveOrCopy(GsonUtils.prettyJson(postmanCollection), {
+                NotificationUtils.notifyInfo(project, "API collection copied to clipboard, ready to paste into Postman")
             }, {
-                logger.info("Apis save success: $it")
+                NotificationUtils.notifyInfo(project, "API collection saved successfully to: $it")
             }) {
-                logger.info("Apis save failed")
+                NotificationUtils.notifyError(project, "Failed to save API collection")
             }
             return
         }
@@ -107,21 +108,20 @@ class PostmanApiExporter {
         if (createdCollection.notNullOrEmpty()) {
             val collectionName = createdCollection!!.getAs<String>("name")
             if (collectionName.notNullOrBlank()) {
-                logger.info("Imported as collection:$collectionName")
+                NotificationUtils.notifyInfo(project, "Collection '$collectionName' successfully created in Postman")
                 return
             }
         }
-        logger.error(
-            "Export to postman failed. You could check below:\n" +
-                    "1.the network \n" +
-                    "2.the privateToken\n"
+        NotificationUtils.notifyError(
+            project,
+            "Failed to export to Postman. Please check:\n1. Your network connection\n2. Your private token"
         )
-        fileSaveHelper!!.saveOrCopy(GsonUtils.prettyJson(postman), {
-            logger.info("Exported data are copied to clipboard, you can paste to postman now")
+        fileSaveHelper.saveOrCopy(GsonUtils.prettyJson(postman), {
+            NotificationUtils.notifyInfo(project, "API collection copied to clipboard, ready to paste into Postman")
         }, {
-            logger.info("Apis save success: $it")
+            NotificationUtils.notifyInfo(project, "API collection saved successfully to: $it")
         }) {
-            logger.info("Apis save failed")
+            NotificationUtils.notifyError(project, "Failed to save API collection")
         }
         return
     }
@@ -135,15 +135,16 @@ class PostmanApiExporter {
         }
 
         //don't use cache for keeping the data consistency
-        (postmanApiHelper as? CacheSwitcher)?.notUserCache()
+        (postmanApiHelper as? CacheSwitcher)?.notUseCache()
 
         //collectionId -> collectionInfo to requests
         val collectionGroupedMap = HashMap<String, Pair<Map<String, Any?>, List<Request>>>()
         moduleGroupedMap.forEach { (module, requests) ->
-            for (i in 0..3) {
+            for (i in 0..2) {
                 val collectionId = postmanSettingsHelper.getCollectionId(module, false) ?: break
                 val collectionInfo = postmanApiHelper.getCollectionInfo(collectionId)
                 if (collectionInfo == null) {
+                    NotificationUtils.notifyError(project, "Failed to get collection info for $module")
                     logger.error("collection $collectionId may be deleted.")
                     continue
                 }
@@ -155,6 +156,7 @@ class PostmanApiExporter {
                 }
                 return@forEach
             }
+            NotificationUtils.notifyInfo(project, "No collection be selected for $module")
             logger.info("no collection be selected for $module")
         }
         if (collectionGroupedMap.isEmpty()) {
@@ -173,5 +175,9 @@ class PostmanApiExporter {
     ) {
         postmanFormatter.parseRequestsToCollection(collectionInfo, requests)
         postmanApiHelper.updateCollection(collectionId, collectionInfo)
+        val collectionName = collectionInfo["name"] as? String
+        if (collectionName.notNullOrBlank()) {
+            NotificationUtils.notifyInfo(project, "Collection '$collectionName' successfully updated in Postman")
+        }
     }
 }

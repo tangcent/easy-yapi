@@ -37,7 +37,7 @@ open class PostmanFormatter {
     private val actionContext: ActionContext? = null
 
     @Inject
-    private val moduleHelper: ModuleHelper? = null
+    private lateinit var moduleHelper: ModuleHelper
 
     @Inject
     private val ultimateDocHelper: UltimateDocHelper? = null
@@ -73,7 +73,7 @@ open class PostmanFormatter {
 
             val path = selectedUrl ?: ""
             url["path"] = parsePath(path)
-            url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
+            url["raw"] = RequestUtils.concatPath(URLItem.getHost(url), path)
             fixResponse(item)
 
             suvRuleContext.setExt("url", selectedUrl)
@@ -82,7 +82,7 @@ open class PostmanFormatter {
 
             return listOf(item)
         } else {
-            val host = item.getAs<String>("request", "url", "host") ?: ""
+            val host = item.getAs<HashMap<String, Any?>>("request", "url")?.let { URLItem.getHost(it) } ?: ""
             return urls.urls().map { selectedUrl ->
                 val copyItem = copyItem(item)
                 val copyUrl: HashMap<String, Any?> = copyItem.getAs("request", "url")!!
@@ -133,7 +133,7 @@ open class PostmanFormatter {
 
         val path = pathInRequest.url() ?: ""
         url["path"] = parsePath(path)
-        url["raw"] = RequestUtils.concatPath(url.getAs("host"), path)
+        url["raw"] = RequestUtils.concatPath(URLItem.getHost(url), path)
         return item
     }
 
@@ -147,7 +147,7 @@ open class PostmanFormatter {
 
         if (hostByRule == null) {
             val module = request.resource?.let { resource ->
-                actionContext!!.callInReadUI { moduleHelper!!.findModule(resource) }
+                actionContext!!.callInReadUI { moduleHelper.findModule(resource) }
             }
             if (module != null) {
                 host = "{{$module}}"
@@ -171,7 +171,7 @@ open class PostmanFormatter {
         val url: HashMap<String, Any?> = HashMap()
         requestInfo["url"] = url
 
-        url["host"] = host
+        url["host"] = arrayOf(host)
 
         val headers: ArrayList<HashMap<String, Any?>> = ArrayList()
         requestInfo["header"] = headers
@@ -179,7 +179,7 @@ open class PostmanFormatter {
             headers.add(
                 linkedMapOf<String, Any?>(
                     KEY to it.name,
-                    VALUE to it.value,
+                    VALUE to (it.value ?: ""),
                     TYPE to "text",
                     DESCRIPTION to (it.desc ?: "")
                 )
@@ -201,7 +201,7 @@ open class PostmanFormatter {
 
         val body: HashMap<String, Any?> = HashMap()
         if (request.formParams != null) {
-            val contentType = request.getContentType()
+            val contentType = request.rawContentType()
             if (contentType?.contains("form-data") == true) {
                 body[MODE] = "formdata"
                 val formdatas: ArrayList<HashMap<String, Any?>> = ArrayList()
@@ -442,7 +442,8 @@ open class PostmanFormatter {
                 PostmanExportRuleKeys.POST_TEST.name()
             )
         ) {
-            addScriptsToItem(item,
+            addScriptsToItem(
+                item,
                 { extensible.getExt<String>(PostmanExportRuleKeys.POST_PRE_REQUEST.name()) },
                 { extensible.getExt<String>(PostmanExportRuleKeys.POST_TEST.name()) }
             )
@@ -492,7 +493,8 @@ open class PostmanFormatter {
         val context = SuvRuleContext()
         context.setExt("postman", postman)
         if (resource is Extensible) {
-            addScriptsToItem(postman,
+            addScriptsToItem(
+                postman,
                 {
                     ruleComputer.computer(
                         PostmanExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
@@ -509,7 +511,8 @@ open class PostmanFormatter {
                 }
             )
         } else {
-            addScriptsToItem(postman,
+            addScriptsToItem(
+                postman,
                 {
                     ruleComputer.computer(
                         PostmanExportRuleKeys.COLLECTION_POST_PRE_REQUEST,
@@ -658,7 +661,7 @@ open class PostmanFormatter {
         //group by module
         val moduleGroupedMap: HashMap<String, MutableList<Request>> = HashMap()
         requests.forEach { request ->
-            val module = request.resource?.let { moduleHelper!!.findModule(it) } ?: "easy-api"
+            val module = request.resource?.let { moduleHelper.findModule(it) } ?: "easy-api"
             moduleGroupedMap.safeComputeIfAbsent(module) { ArrayList() }!!
                 .add(request)
         }
@@ -707,7 +710,7 @@ open class PostmanFormatter {
     }
 
     private fun wrapCollection(modules: ArrayList<HashMap<String, Any?>>): HashMap<String, Any?> {
-        val rootModule = moduleHelper!!.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
+        val rootModule = moduleHelper.findModuleByPath(ActionUtils.findCurrentPath()) ?: "easy-api"
         return wrapRootInfo(rootModule, modules)
     }
 
@@ -827,6 +830,10 @@ open class PostmanFormatter {
             // Replace '{' with ':' and remove '}'
             return p.replace("{", ":").replace("}", "")
         }
+    }
+
+    object URLItem {
+        fun getHost(url: HashMap<String, Any?>): String? = url.getAs<Array<String>>("host")?.firstOrNull()
     }
 }
 

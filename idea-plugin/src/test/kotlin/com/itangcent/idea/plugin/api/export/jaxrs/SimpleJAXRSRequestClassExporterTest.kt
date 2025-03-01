@@ -13,7 +13,7 @@ import com.itangcent.idea.psi.PsiResource
 import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.rule.RuleComputeListener
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
@@ -108,7 +108,7 @@ internal class SimpleJAXRSRequestClassExporterTest : PluginContextLightCodeInsig
                 "api.param.parse.after=groovy:logger.info(\"after parse param:\"+it)\n"
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(Logger::class) { it.with(LoggerCollector::class) }
 

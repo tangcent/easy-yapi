@@ -2,10 +2,10 @@ package com.itangcent.idea.config
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import com.google.inject.name.Named
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.TimeSpanUtils
+import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelper
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
 import com.itangcent.intellij.config.ConfigReader
@@ -13,7 +13,6 @@ import com.itangcent.intellij.config.resource.DefaultResourceResolver
 import com.itangcent.intellij.config.resource.URLResource
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.callWithTimeout
-import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.utils.GiteeSupport
 import java.io.ByteArrayInputStream
@@ -29,12 +28,8 @@ open class CachedResourceResolver : DefaultResourceResolver() {
         private const val URL_CACHE_EXPIRE = "url.cache.expire"
     }
 
-    @Inject(optional = true)
-    @Named("projectCacheRepository")
-    private val projectCacheRepository: LocalFileRepository? = null
-
-    @Inject(optional = true)
-    private val localFileRepository: LocalFileRepository? = null
+    @Inject
+    private lateinit var projectCacheRepository: ProjectCacheRepository
 
     @Inject
     private lateinit var configReader: ConfigReader
@@ -51,8 +46,7 @@ open class CachedResourceResolver : DefaultResourceResolver() {
     private val beanDAO: SqliteDataResourceHelper.ExpiredBeanDAO by lazy {
         val sqliteDataResourceHelper = actionContext.instance(SqliteDataResourceHelper::class)
         sqliteDataResourceHelper.getExpiredBeanDAO(
-            (projectCacheRepository
-                ?: localFileRepository)!!.getOrCreateFile(".url.cache.v2.1.db").path, "DB_BEAN_BINDER"
+            projectCacheRepository.getOrCreateFile(".url.cache.v2.1.db").path, "DB_BEAN_BINDER"
         )
     }
 
@@ -96,7 +90,8 @@ open class CachedResourceResolver : DefaultResourceResolver() {
                     logger.traceError("failed fetch:[$url]", e)
                 }
                 valueBytes?.let {
-                    beanDAO.set(key, it, System.currentTimeMillis() +
+                    beanDAO.set(
+                        key, it, System.currentTimeMillis() +
                             (configReader.first(URL_CACHE_EXPIRE)?.let { str -> TimeSpanUtils.parse(str) }
                                 ?: TimeUnit.HOURS.toMillis(2)))
                 }

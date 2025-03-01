@@ -75,6 +75,13 @@ object EasyIcons : Log() {
         "/assets/run.svg"
     ) // 7x10
 
+    val Reset by lazy {
+        tryLoad(
+            "/general/reset.svg",
+            "/general/reset.png",
+        ) ?: tryLoadByUrl("https://raw.githubusercontent.com/tangcent/easy-yapi/master/assets/reset.svg")
+    } // 16x16
+
     val Module by lazyLoad(
         "/nodes/Module.svg",
         "/assets/module.svg"
@@ -95,7 +102,7 @@ object EasyIcons : Log() {
             "/notification/close.png",
             "/actions/close.svg",
             "/assets/close.svg"
-        ) ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/master/assets/close.png"))
+        ) ?: tryLoadByUrl("https://raw.githubusercontent.com/tangcent/easy-yapi/master/assets/close.png")
     }
 
     val OK by lazy {
@@ -103,7 +110,7 @@ object EasyIcons : Log() {
             "/general/inspectionsOK.svg",
             "/process/state/GreenOK.png",
             "/assets/ok.svg",
-        ) ?: tryLoadByUrl(URL("https://raw.githubusercontent.com/tangcent/easy-yapi/master/assets/ok.png"))
+        ) ?: tryLoadByUrl("https://raw.githubusercontent.com/tangcent/easy-yapi/master/assets/ok.png")
     }
 
     val Export by lazyLoad(
@@ -147,8 +154,12 @@ object EasyIcons : Log() {
         return iconLoader.findIcon(path, callerClass)
     }
 
-    private fun tryLoadByUrl(vararg paths: URL): Icon? {
-        for (path in paths) {
+    private fun tryLoadByUrl(vararg urls: String): Icon? {
+        return tryLoadByUrl(*urls.map { URL(it) }.toTypedArray())
+    }
+
+    private fun tryLoadByUrl(vararg urls: URL): Icon? {
+        for (path in urls) {
             try {
                 iconLoader.findIcon(path)?.let { return it }
             } catch (_: Exception) {

@@ -3,7 +3,7 @@ package com.itangcent.idea.utils
 import com.intellij.psi.PsiClass
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.PsiClassHelper
@@ -47,7 +47,7 @@ internal class CustomizedPsiClassHelperTest : ContextualPsiClassHelperBaseTest()
                 "```"
     }
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class) }
     }

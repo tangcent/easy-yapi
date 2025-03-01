@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.itangcent.cache.HttpContextCacheHelper
 import com.itangcent.common.model.Request
-import com.itangcent.common.model.getContentType
+import com.itangcent.common.model.rawContentType
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.http.RequestUtils
 import com.itangcent.intellij.extend.takeIfNotOriginal
@@ -56,7 +56,7 @@ class CurlFormatter {
             header.value?.escape()?.let { sb.append(it) }
             sb.append("'")
         }
-        val contentType = request.getContentType()
+        val contentType = request.rawContentType()
         if (contentType != null) {
             when {
                 contentType.contains("application/json") -> {

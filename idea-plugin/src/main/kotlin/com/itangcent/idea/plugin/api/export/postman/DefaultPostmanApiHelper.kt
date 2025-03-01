@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.api.export.postman
 
 import com.google.gson.internal.LazilyParsedNumber
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.*
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit
  * For free,The requests made to the Postman API was limited 1000
  * User can upgrade to increase your resource limits.
  */
+@Singleton
 open class DefaultPostmanApiHelper : PostmanApiHelper {
 
     @Inject

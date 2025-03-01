@@ -1,7 +1,7 @@
 package com.itangcent.idea.utils
 
 import com.google.inject.Inject
-import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.mock.AdvancedContextTest
 import org.junit.jupiter.api.Test
@@ -17,7 +17,7 @@ internal class DefaultSystemProviderTest : AdvancedContextTest() {
     @Inject
     private lateinit var systemProvider: SystemProvider
 
-    override fun bind(builder: ActionContext.ActionContextBuilder) {
+    override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
         builder.bind(SystemProvider::class) { it.with(DefaultSystemProvider::class) }
     }

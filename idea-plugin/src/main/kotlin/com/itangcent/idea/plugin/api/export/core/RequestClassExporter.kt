@@ -158,7 +158,7 @@ abstract class RequestClassExporter : ClassExporter {
                 }
             }
         } catch (e: Throwable) {
-            logger.traceError("error to export api from class:" + cls.name, e)
+            logger.traceError("error to export api from class:${actionContext.callInReadUI { cls.name }}", e)
         } finally {
             ruleComputer.computer(ClassExportRuleKeys.API_CLASS_PARSE_AFTER, cls)
         }
@@ -509,9 +509,10 @@ abstract class RequestClassExporter : ClassExporter {
                         continue
                     }
 
-                    parsedParams.add(ParameterExportContext(methodExportContext, param)
-                        .adaptive()
-                        .also { it.originalReturnObject() }
+                    parsedParams.add(
+                        ParameterExportContext(methodExportContext, param)
+                            .adaptive()
+                            .also { it.originalReturnObject() }
                     )
                 } finally {
                     ruleComputer.computer(ClassExportRuleKeys.API_PARAM_AFTER, param)
@@ -800,7 +801,7 @@ abstract class RequestClassExporter : ClassExporter {
             )
 
             this.intelligentSettingsHelper.inferEnable() && !duckTypeHelper.isQualified(duckType)
-            -> {
+                -> {
                 logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
