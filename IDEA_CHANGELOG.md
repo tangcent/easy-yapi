@@ -1,3 +1,11 @@
+* 2.7.5
+	* feat: Introduces a new ApiDashboardPanel for API testing  [(#1191)](https://github.com/tangcent/easy-yapi/pull/1191)
+
+	* chore: remove the usage of ThrottleHelper  [(#1189)](https://github.com/tangcent/easy-yapi/pull/1189)
+
+	* feat: Add Support for Meta-Spring Controller Annotations  [(#1187)](https://github.com/tangcent/easy-yapi/pull/1187)
+
+	* fix: correct YapiSaveInterceptor order for no_update.description config  [(#1185)](https://github.com/tangcent/easy-yapi/pull/1185)
 * 2.7.4
 	* build: update project dependencies  [(#1180)](https://github.com/tangcent/easy-yapi/pull/1180)
 
