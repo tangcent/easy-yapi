@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.api.dashboard
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
@@ -31,7 +32,6 @@ import java.awt.Dimension
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
-import java.util.concurrent.Executors
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -45,7 +45,7 @@ import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 import kotlin.concurrent.thread
 
-class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPanel>(BorderLayout()) {
+class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPanel>(BorderLayout()), Disposable {
     companion object : Log()
 
     private val disabledFormTableBinder: ParamsTableBinder<FormParam> = DisabledFormTableBinder()
@@ -83,7 +83,6 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
     private lateinit var service: ApiDashboardService
     private var apis: List<ProjectNodeData> = emptyList()
 
-    private val workThreadPool = Executors.newCachedThreadPool()
     private var currentResponse: HttpResponse? = null
     private var formTableBinder: ParamsTableBinder<FormParam> = disabledFormTableBinder
 
@@ -276,7 +275,7 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
             val node = apiTree.lastSelectedPathComponent as? DefaultMutableTreeNode
             val userObject = node?.userObject
             if (userObject is ProjectNodeData) {
-                workThreadPool.submit {
+                actionContext.runAsync {
                     refreshProjectNodeData(userObject)
                 }
             }
@@ -1227,5 +1226,10 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
             }
         }
         return null
+    }
+
+    override fun dispose() {
+        searchDebounceTimer.stop()
+        service.dispose()
     }
 }
