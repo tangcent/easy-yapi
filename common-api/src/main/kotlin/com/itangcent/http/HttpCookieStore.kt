@@ -62,14 +62,18 @@ class BasicCookie : MutableCookie {
      * Compatible only.Obsolete.
      * @return comment
      */
+    @Deprecated("Obsolete")
     override fun getComment(): String? = comment
 
+    @Deprecated("Obsolete")
     override fun setComment(comment: String?) {
         this.comment = comment
     }
 
     private var commentURL: String? = null
+    @Deprecated("Obsolete")
     override fun getCommentURL(): String? = commentURL
+    @Deprecated("Obsolete")
     override fun setCommentURL(commentURL: String?) {
         this.commentURL = commentURL
     }
@@ -112,7 +116,9 @@ class BasicCookie : MutableCookie {
      *
      * @return the version of the cookie.
      */
+    @Deprecated("Obsolete")
     override fun getVersion(): Int? = version
+    @Deprecated("Obsolete")
     override fun setVersion(version: Int?) {
         this.version = version
     }
@@ -131,7 +137,9 @@ class BasicCookie : MutableCookie {
     }
 
     private var ports: IntArray? = null
+    @Deprecated("Obsolete")
     override fun getPorts(): IntArray? = ports
+    @Deprecated("Obsolete")
     override fun setPorts(ports: IntArray?) {
         this.ports = ports
     }
