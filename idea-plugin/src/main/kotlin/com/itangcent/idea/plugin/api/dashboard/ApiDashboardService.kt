@@ -20,6 +20,7 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.common.model.*
 import com.itangcent.common.spi.Setup
 import com.itangcent.common.utils.safe
+import com.itangcent.http.CookieStore
 import com.itangcent.http.HttpResponse
 import com.itangcent.http.RequestUtils
 import com.itangcent.http.contentType
@@ -58,6 +59,7 @@ import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.FileType
+import com.itangcent.suv.http.CookiePersistenceHelper
 import com.itangcent.suv.http.HttpClientProvider
 import org.apache.http.entity.ContentType
 import java.util.*
@@ -97,8 +99,14 @@ class ApiDashboardService(private val project: Project) {
     @Inject
     private lateinit var httpContextCacheHelper: HttpContextCacheHelper
 
+    @Inject
+    private lateinit var cookiePersistenceHelper: CookiePersistenceHelper
+
     lateinit var actionContext: ActionContext
         private set
+
+    private val cookieStore: CookieStore
+        get() = httpClientProvider.getHttpClient().cookieStore()
 
     private val requestRawInfoBinderFactory: DbBeanBinderFactory<RequestRawInfo> by lazy {
         DbBeanBinderFactory(projectCacheRepository.getOrCreateFile(".api.dashboard.v1.0.db").path) { RequestRawInfo() }
@@ -143,7 +151,7 @@ class ApiDashboardService(private val project: Project) {
     init {
         Setup.load(ApiDashboardService::class.java.classLoader)
         createNewActionContext()
-        
+
         // Add project dispose listener
         project.messageBus.connect().subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
             override fun projectClosing(project: Project) {
@@ -167,6 +175,9 @@ class ApiDashboardService(private val project: Project) {
 
         actionContext = builder.build()
         actionContext.init(this)
+        actionContext.runAsync {
+            cookiePersistenceHelper.loadCookiesInto(cookieStore)
+        }
     }
 
     fun ensureActionContextActive() {
@@ -441,6 +452,9 @@ class ApiDashboardService(private val project: Project) {
             }
             .call()
         logger.info("response status code: ${httpResponse.code()}")
+        actionContext.runAsync {
+            cookiePersistenceHelper.storeCookiesFrom(cookieStore)
+        }
         return httpResponse
     }
 
