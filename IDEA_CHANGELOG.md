@@ -1,3 +1,7 @@
+* 2.7.6
+	* feat: implement cookie persistence in ApiDashboardPanel  [(#1198)](https://github.com/tangcent/easy-yapi/pull/1198)
+
+	* feat: Improve ApiDashboard lifecycle management and context handling  [(#1197)](https://github.com/tangcent/easy-yapi/pull/1197)
 * 2.7.5
 	* feat: Introduces a new ApiDashboardPanel for API testing  [(#1191)](https://github.com/tangcent/easy-yapi/pull/1191)
 
