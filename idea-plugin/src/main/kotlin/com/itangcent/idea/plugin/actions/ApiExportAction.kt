@@ -29,8 +29,6 @@ abstract class ApiExportAction(text: String) : BasicAnAction(text) {
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
 
-        builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
-
         builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
 
         builder.bind(ConfigReader::class) { it.with(EnhancedConfigReader::class).singleton() }
