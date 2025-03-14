@@ -117,6 +117,35 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     override var remoteConfig: Array<String> = emptyArray()
 
+    //region AI integration--------------------------
+
+    /**
+     * AI service provider (e.g., OpenAI, DeepSeek, etc.)
+     */
+    override var aiProvider: String? = null
+    
+    /**
+     * AI service API token
+     */
+    override var aiToken: String? = null
+
+    /**
+     * Enable AI integration
+     */
+    override var aiEnable: Boolean = false
+    
+    /**
+     * AI model to use (e.g., gpt-3.5-turbo, gpt-4, etc.)
+     */
+    override var aiModel: String? = null
+
+    /**
+     * Enable caching of AI API responses
+     */
+    override var aiEnableCache: Boolean = false
+
+    //endregion AI integration--------------------------
+
     fun copy(): Settings {
         val newSetting = Settings()
         this.copyTo(newSetting as ProjectSettingsSupport)
@@ -172,6 +201,11 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (markdownFormatType != other.markdownFormatType) return false
         if (builtInConfig != other.builtInConfig) return false
         if (!remoteConfig.contentEquals(other.remoteConfig)) return false
+        if (aiProvider != other.aiProvider) return false
+        if (aiToken != other.aiToken) return false
+        if (aiEnable != other.aiEnable) return false
+        if (aiModel != other.aiModel) return false
+        if (aiEnableCache != other.aiEnableCache) return false
 
         return true
     }
@@ -219,6 +253,11 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + markdownFormatType.hashCode()
         result = 31 * result + (builtInConfig?.hashCode() ?: 0)
         result = 31 * result + remoteConfig.contentHashCode()
+        result = 31 * result + (aiProvider?.hashCode() ?: 0)
+        result = 31 * result + (aiToken?.hashCode() ?: 0)
+        result = 31 * result + aiEnable.hashCode()
+        result = 31 * result + (aiModel?.hashCode() ?: 0)
+        result = 31 * result + aiEnableCache.hashCode()
         return result
     }
 
@@ -247,7 +286,12 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
                 "outputDemo=$outputDemo, " +
                 "outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', " +
                 "builtInConfig=$builtInConfig, " +
-                "remoteConfig=${remoteConfig.contentToString()})"
+                "remoteConfig=${remoteConfig.contentToString()}, " +
+                "aiProvider=$aiProvider, " +
+                "aiToken=$aiToken, " +
+                "aiEnable=$aiEnable, " +
+                "aiModel=$aiModel, " +
+                "aiEnableCache=$aiEnableCache)"
     }
 
     companion object {
@@ -261,6 +305,8 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
                 "http://localhost",
                 "https://127.0.0.1",
                 "http://127.0.0.1",
+                "https://api.deepseek.com",
+                "https://api.openai.com",
             )
     }
 }

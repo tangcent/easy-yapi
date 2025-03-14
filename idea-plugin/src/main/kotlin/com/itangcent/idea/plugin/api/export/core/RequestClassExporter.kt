@@ -13,7 +13,7 @@ import com.itangcent.common.model.hasBodyOrForm
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
-import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.plugin.api.infer.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.api.export.spring.SpringClassName

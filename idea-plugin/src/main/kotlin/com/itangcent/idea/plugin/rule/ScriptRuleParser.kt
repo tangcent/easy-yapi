@@ -10,7 +10,7 @@ import com.itangcent.common.utils.asBool
 import com.itangcent.common.utils.getSub
 import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.http.RequestUtils
-import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.plugin.api.infer.MethodInferHelper
 import com.itangcent.idea.plugin.format.Json5Formatter
 import com.itangcent.idea.utils.MavenHelper
 import com.itangcent.idea.utils.MavenIdData

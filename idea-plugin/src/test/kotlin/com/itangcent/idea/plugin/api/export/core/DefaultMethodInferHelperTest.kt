@@ -3,8 +3,8 @@ package com.itangcent.idea.plugin.api.export.core
 import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.common.utils.GsonUtils
-import com.itangcent.idea.plugin.api.DefaultMethodInferHelper
-import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.plugin.api.infer.DefaultMethodInferHelper
+import com.itangcent.idea.plugin.api.infer.MethodInferHelper
 import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase

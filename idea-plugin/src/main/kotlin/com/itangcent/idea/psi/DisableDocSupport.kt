@@ -42,12 +42,12 @@ object EmptyInterceptor : MethodInterceptor, Log() {
                 val disable = ActionContext.getContext()
                     ?.instance(ConfigReader::class)
                     ?.first("doc.source.disable")
-                    ?.toBool(false) ?: false
+                    ?.toBool(false) == true
                 if (disable) {
                     LOG.info("disable doc")
                 }
                 disable
-            } ?: false
+            } == true
         }
 
     override fun invoke(invocation: MethodInvocation): Any? {
