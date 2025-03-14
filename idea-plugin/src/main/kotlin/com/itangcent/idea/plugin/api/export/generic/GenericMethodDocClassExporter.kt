@@ -10,7 +10,7 @@ import com.itangcent.common.utils.append
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
-import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.plugin.api.infer.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.Orders
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnSimple

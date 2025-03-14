@@ -151,3 +151,11 @@ fun ActionContext.findCurrentMethod(): PsiMethod? {
         ActionUtils.findCurrentMethod()
     }
 }
+
+fun ThreadFlag.isActive(): Boolean {
+    return this.value == ActionContext.getFlag()
+}
+
+fun ThreadFlag.isNotActive(): Boolean {
+    return this.value != ActionContext.getFlag()
+}

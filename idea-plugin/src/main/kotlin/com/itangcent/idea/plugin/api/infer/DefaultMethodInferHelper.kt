@@ -1,4 +1,4 @@
-package com.itangcent.idea.plugin.api
+package com.itangcent.idea.plugin.api.infer
 
 import com.google.inject.Inject
 import com.google.inject.Singleton

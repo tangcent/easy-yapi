@@ -13,7 +13,7 @@ import com.itangcent.common.model.hasBodyOrForm
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
-import com.itangcent.idea.plugin.api.MethodInferHelper
+import com.itangcent.idea.plugin.api.infer.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.api.export.spring.SpringClassName
@@ -464,7 +464,7 @@ abstract class RequestClassExporter : ClassExporter {
 
                 requestBuilderListener.addResponse(methodExportContext, request, response)
 
-            } catch (e: ProcessCanceledException) {
+            } catch (_: ProcessCanceledException) {
                 //ignore cancel
             } catch (e: Throwable) {
                 logger.traceError("error to parse body", e)
@@ -700,8 +700,7 @@ abstract class RequestClassExporter : ClassExporter {
                     ruleComputer.computer(
                         ClassExportRuleKeys.PARAM_REQUIRED,
                         parameterExportContext.element()
-                    )
-                        ?: false, paramDesc
+                    ) == true, paramDesc
                 )
                 return
             }

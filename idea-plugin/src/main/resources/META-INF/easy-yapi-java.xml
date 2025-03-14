@@ -113,6 +113,11 @@
                              instance="com.itangcent.idea.plugin.configurable.EasyApiSettingBuiltInConfigConfigurable"/>
 
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
+                             displayName="AI Integration"
+                             id="easyapi.settings.EasyApiConfigurable.AI"
+                             instance="com.itangcent.idea.plugin.configurable.EasyApiSettingAIConfigurable"/>
+
+        <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
                              displayName="Other"
                              id="easyapi.settings.EasyApiConfigurable.Other"
                              instance="com.itangcent.idea.plugin.configurable.EasyApiOtherConfigurable"/>
