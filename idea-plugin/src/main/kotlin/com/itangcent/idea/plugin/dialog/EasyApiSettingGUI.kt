@@ -11,6 +11,7 @@ import com.itangcent.common.logger.Log
 import com.itangcent.common.utils.*
 import com.itangcent.idea.icons.EasyIcons
 import com.itangcent.idea.icons.iconOnly
+import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.api.export.postman.PostmanCachedApiHelper
 import com.itangcent.idea.plugin.api.export.postman.PostmanUrls.INTEGRATIONS_DASHBOARD
 import com.itangcent.idea.plugin.api.export.postman.PostmanWorkspace
@@ -27,6 +28,8 @@ import com.itangcent.idea.utils.Charsets
 import com.itangcent.idea.utils.SwingUtils
 import com.itangcent.idea.utils.isDoubleClick
 import com.itangcent.intellij.context.ActionContext
+import com.itangcent.intellij.file.DefaultLocalFileRepository
+import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.logger.Logger
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -448,9 +451,7 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
     }
 
     private fun computeProjectCacheSize() {
-        val currentProject = myProject ?: return
-        val projectBasePath = currentProject.basePath
-        val cachePath = "$projectBasePath${File.separator}.idea${File.separator}.cache${File.separator}$basePath"
+        val cachePath = actionContext.instance(ProjectCacheRepository::class).cachePath()
         val cacheSize = computeFolderSize(cachePath)
         actionContext.runInSwingUI {
             this.projectCacheSizeLabel!!.text = StringUtil.formatFileSize(cacheSize)
@@ -458,15 +459,13 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
     }
 
     private fun clearProjectCache() {
-        val currentProject = myProject ?: return
-        val projectBasePath = currentProject.basePath
-        val cachePath = "$projectBasePath${File.separator}.idea${File.separator}.cache${File.separator}$basePath"
+        val cachePath = actionContext.instance(ProjectCacheRepository::class).cachePath()
         deleteFolder(cachePath)
         computeProjectCacheSize()
     }
 
     private fun computeGlobalCacheSize() {
-        val cachePath = "${globalBasePath()}${File.separator}$basePath"
+        val cachePath = actionContext.instance(DefaultLocalFileRepository::class).cachePath()
         val cacheSize = computeFolderSize(cachePath)
         actionContext.runInSwingUI {
             this.globalCacheSizeLabel!!.text = StringUtil.formatFileSize(cacheSize)
@@ -474,9 +473,13 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
     }
 
     private fun clearGlobalCache() {
-        val cachePath = "${globalBasePath()}${File.separator}$basePath"
+        val cachePath = actionContext.instance(DefaultLocalFileRepository::class).cachePath()
         deleteFolder(cachePath)
         computeGlobalCacheSize()
+    }
+
+    private fun LocalFileRepository.cachePath(): String {
+        return this.getOrCreateFile(".setting.size").parentFile.path
     }
 
     private fun computeFolderSize(path: String): Long {
@@ -503,15 +506,6 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
             pairs.add(module to collectionId.id)
         }
         settings.setPostmanCollectionsPairs(pairs)
-    }
-
-    private fun globalBasePath(): String {
-
-        var home = SystemUtils.userHome
-        if (home.endsWith(File.separator)) {
-            home = home.substring(0, home.length - 1)
-        }
-        return home
     }
 
     private class PostmanWorkspaceData {
@@ -630,8 +624,6 @@ class EasyApiSettingGUI : AbstractEasyApiSettingGUI() {
     }
 
     companion object : Log() {
-        const val basePath = ".easy_api"
-
         const val setting_path = "easy.api.setting.path"
 
         private var DEFAULT_WORKSPACE = PostmanWorkspaceData(null, "")
