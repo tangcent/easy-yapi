@@ -22,6 +22,8 @@ dependencies {
     // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
     compileOnly("org.apache.httpcomponents:httpclient:4.5.10")
 
+    compileOnly("com.google.code.gson:gson:2.8.6")
+
     // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime
     testImplementation("org.apache.httpcomponents:httpmime:4.5.10")
 

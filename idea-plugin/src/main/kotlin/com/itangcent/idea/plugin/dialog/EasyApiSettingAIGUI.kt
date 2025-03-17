@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.dialog
 
 import com.itangcent.ai.AIModel
 import com.itangcent.ai.AIProvider
+import com.itangcent.common.constant.Language
 import com.itangcent.idea.plugin.configurable.AbstractEasyApiSettingGUI
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.utils.SwingUtils
@@ -19,9 +20,14 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
     private var aiModelComboBox: JComboBox<DisplayItem<AIModel>>? = null
     private var aiApiKeyField: JPasswordField? = null
     private var aiEnableCacheCheckBox: JCheckBox? = null
+    private var aiTranslationEnabledCheckBox: JCheckBox? = null
+    private var translationTargetLanguageComboBox: JComboBox<DisplayItem<Language>>? = null
 
     // Store the last selected AI Provider to detect changes
     private var lastSelectedAIProvider: AIProvider? = null
+    
+    // List of supported languages for translation
+    private val supportedLanguages = Language.values().toList()
 
     override fun getRootPanel(): JComponent? {
         return rootPanel
@@ -30,6 +36,7 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
     override fun onCreate() {
         super.onCreate()
         setupAIProviderComboBox()
+        setupTranslationLanguageComboBox()
     }
 
     private fun setupAIProviderComboBox() {
@@ -53,6 +60,13 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
             // Update model combo box
             updateModelComboBox()
         }
+    }
+    
+    private fun setupTranslationLanguageComboBox() {
+        // Initialize the language combo box with supported languages using the display format "code(name)"
+        translationTargetLanguageComboBox?.model = SwingUtils.createComboBoxModel(
+            supportedLanguages
+        ) { "${it.code}(${it.displayName})" }
     }
 
     private fun updateModelComboBox() {
@@ -93,6 +107,14 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
         
         settings.aiToken = aiApiKeyField?.password?.let { String(it) }?.takeIf { it.isNotBlank() }
         settings.aiEnableCache = aiEnableCacheCheckBox?.isSelected == true
+        
+        // Translation settings
+        settings.aiTranslationEnabled = aiTranslationEnabledCheckBox?.isSelected == true
+        
+        // Store the language code in settings
+        settings.aiTranslationTargetLanguage = translationTargetLanguageComboBox?.let { 
+            SwingUtils.getSelectedItem(it)?.code 
+        }
     }
 
     /**
@@ -125,5 +147,28 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
 
         aiApiKeyField?.text = settings.aiToken ?: ""
         aiEnableCacheCheckBox?.isSelected = settings.aiEnableCache
+        
+        // Translation settings
+        aiTranslationEnabledCheckBox?.isSelected = settings.aiTranslationEnabled
+        
+        // Set the selected language by code or default to English if not set
+        val targetLanguageCode = settings.aiTranslationTargetLanguage
+        if (targetLanguageCode != null && translationTargetLanguageComboBox != null) {
+            // Find the language with the matching code
+            val languageToSelect = Language.fromCode(targetLanguageCode)
+            
+            // Set the selected item
+            if (languageToSelect != null) {
+                SwingUtils.setSelectedItem(translationTargetLanguageComboBox!!, languageToSelect) { a, b -> a.code == b.code }
+            } else {
+                // Default to English if code not found
+                SwingUtils.setSelectedItem(translationTargetLanguageComboBox!!, Language.getDefault()) { a, b -> a.code == b.code }
+            }
+        } else {
+            // Default to English if no language code is set
+            if (translationTargetLanguageComboBox != null) {
+                SwingUtils.setSelectedItem(translationTargetLanguageComboBox!!, Language.getDefault()) { a, b -> a.code == b.code }
+            }
+        }
     }
 } 

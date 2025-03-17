@@ -2,6 +2,7 @@ package com.itangcent.idea.plugin.settings.helper
 
 import com.google.inject.Inject
 import com.google.inject.Singleton
+import com.itangcent.common.constant.Language
 import com.itangcent.idea.plugin.settings.SettingBinder
 
 /**
@@ -32,9 +33,27 @@ class AISettingsHelper {
      * Get the AI provider from settings
      */
     val aiProvider: String? get() = settingBinder.read().aiProvider
-    
+
     /**
      * Check if AI API response caching is enabled
      */
     val aiEnableCache: Boolean get() = settingBinder.read().aiEnableCache
+
+    /**
+     * Check if API translation is enabled
+     */
+    val translationEnabled: Boolean
+        get() = settingBinder.read().run {
+            aiEnable && aiTranslationEnabled && aiTranslationTargetLanguage != null
+        }
+
+    /**
+     * Get the target language for API translation
+     * Returns the language name (e.g., "English") instead of the language code (e.g., "en")
+     */
+    val translationTargetLanguageName: String?
+        get() {
+            val languageCode = settingBinder.read().aiTranslationTargetLanguage ?: return null
+            return Language.getNameFromCode(languageCode)
+        }
 } 

@@ -30,8 +30,6 @@ class PostmanExportAction : ApiExportAction("Export Postman") {
         builder.bindInstance(ExportChannel::class, ExportChannel.of("postman"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
 
-        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
-
         builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }
 
         builder.bindInstance("file.save.default", "postman.json")

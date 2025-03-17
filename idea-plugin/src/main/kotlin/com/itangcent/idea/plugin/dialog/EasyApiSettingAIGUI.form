@@ -86,9 +86,35 @@
               <toolTipText value="Your AI service API key"/>
             </properties>
           </component>
+          <component id="h8i9j" class="javax.swing.JCheckBox" binding="aiTranslationEnabledCheckBox">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Enable API Translation"/>
+              <toolTipText value="Enable translation of API documentation before export"/>
+            </properties>
+          </component>
+          <component id="k1l2m" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Target Language:"/>
+            </properties>
+          </component>
+          <component id="n3o4p" class="javax.swing.JComboBox" binding="translationTargetLanguageComboBox">
+            <constraints>
+              <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <model/>
+              <toolTipText value="Select the target language for API translation"/>
+            </properties>
+          </component>
         </children>
       </grid>
-      <vspacer id="e5a5a">
+      <vspacer id="q5r6s">
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
         </constraints>

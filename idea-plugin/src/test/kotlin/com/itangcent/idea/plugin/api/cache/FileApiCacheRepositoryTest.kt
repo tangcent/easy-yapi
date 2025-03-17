@@ -3,10 +3,8 @@ package com.itangcent.idea.plugin.api.cache
 import com.google.inject.Inject
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
-import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.mock.AdvancedContextTest
-import com.itangcent.mock.FakeExportContext
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
@@ -20,9 +18,6 @@ internal class FileApiCacheRepositoryTest : AdvancedContextTest() {
     @Inject
     private lateinit var fileApiCacheRepository: FileApiCacheRepository
 
-    @Inject
-    private lateinit var requestBuilderListener: RequestBuilderListener
-
     override fun afterBind(actionContext: ActionContext) {
         actionContext.cache("project_path", tempDir.toString())
     }
@@ -30,7 +25,6 @@ internal class FileApiCacheRepositoryTest : AdvancedContextTest() {
     @Test
     @DisabledOnOs(OS.WINDOWS)
     fun testFileApiCacheRepository() {
-        val context = FakeExportContext()
         val filePath = "/a/b.java"
 
         val fileApiCache = FileApiCache()
@@ -40,11 +34,6 @@ internal class FileApiCacheRepositoryTest : AdvancedContextTest() {
         val request = Request()
         request.path = URL.of("test")
         request.method = "GET"
-        requestBuilderListener.addHeader(context, request, "token", "123456")
-        requestBuilderListener.addPathParam(context, request, "user", "tang")
-        requestBuilderListener.addParam(context, request, "q", "name", "condition")
-        requestBuilderListener.addFormParam(context, request, "q", "name", "condition")
-        requestBuilderListener.setContentType(context, request, "application/json")
         request.body = ""
         request.bodyAttr = "hello"
         request.name = "demo"
@@ -56,6 +45,5 @@ internal class FileApiCacheRepositoryTest : AdvancedContextTest() {
         val apiCache = fileApiCacheRepository.getFileApiCache(filePath)!!
         assertEquals(fileApiCache, apiCache)
         assertEquals(request, apiCache.requests!!.first().request())
-
     }
 }
