@@ -24,7 +24,8 @@ object PostmanExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/pre-request-scripts]
      */
     val CLASS_POST_PRE_REQUEST: RuleKey<String> = SimpleRuleKey(
-        "class.postman.prerequest",
+        "postman.class.prerequest",
+        alias = arrayOf("class.postman.prerequest"),
         StringRuleMode.MERGE
     )
 
@@ -35,7 +36,8 @@ object PostmanExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/pre-request-scripts]
      */
     val COLLECTION_POST_PRE_REQUEST: RuleKey<String> = SimpleRuleKey(
-        "collection.postman.prerequest",
+        "postman.collection.prerequest",
+        alias = arrayOf("collection.postman.prerequest"),
         StringRuleMode.MERGE
     )
 
@@ -56,7 +58,8 @@ object PostmanExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/test-scripts/]
      */
     val CLASS_POST_TEST: RuleKey<String> = SimpleRuleKey(
-        "class.postman.test",
+        "postman.class.test",
+        alias = arrayOf("class.postman.test"),
         StringRuleMode.MERGE
     )
 
@@ -67,7 +70,8 @@ object PostmanExportRuleKeys {
      * @see [https://learning.postman.com/docs/writing-scripts/test-scripts/]
      */
     val COLLECTION_POST_TEST: RuleKey<String> = SimpleRuleKey(
-        "collection.postman.test",
+        "postman.collection.test",
+        alias = arrayOf("collection.postman.test"),
         StringRuleMode.MERGE
     )
 

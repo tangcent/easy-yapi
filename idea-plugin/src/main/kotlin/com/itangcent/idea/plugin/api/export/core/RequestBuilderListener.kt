@@ -121,11 +121,11 @@ interface RequestBuilderListener {
         bodyDesc: String?,
     )
 
+    //endregion
+
     fun startProcessMethod(methodExportContext: MethodExportContext, request: Request)
 
     fun processCompleted(methodExportContext: MethodExportContext, request: Request)
-
-    //endregion
 }
 
 //region utils------------------------------------------------------------------
