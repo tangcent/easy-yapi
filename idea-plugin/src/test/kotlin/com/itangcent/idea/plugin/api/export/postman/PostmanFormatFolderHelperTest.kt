@@ -29,7 +29,20 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
 
     override fun customConfig(): String {
         //language=Properties
-        return "# read folder name from tag `folder`\nfolder.name=#folder\nclass.postman.prerequest=```\npm.environment.set(\"token\", \"123456\");\n```\nclass.postman.test=```\npm.test(\"Successful POST request\", function () {\npm.expect(pm.response.code).to.be.oneOf([201,202]);\n});\n```"
+        return """
+            # read folder name from tag `folder`
+            folder.name=#folder
+            
+            postman.class.prerequest=```
+            pm.environment.set("token", "123456");
+            ```
+            
+            postman.class.test=```
+            pm.test("Successful POST request", function () {
+            pm.expect(pm.response.code).to.be.oneOf([201,202]);
+            });
+            ```
+        """.trimIndent()
     }
 
     override fun setUp() {
@@ -173,6 +186,5 @@ internal class PostmanFormatFolderHelperTest : PluginContextLightCodeInsightFixt
             assertNull(it.getExt(PostmanExportRuleKeys.POST_PRE_REQUEST.name()))
             assertNull(it.getExt(PostmanExportRuleKeys.POST_TEST.name()))
         }
-
     }
 }
