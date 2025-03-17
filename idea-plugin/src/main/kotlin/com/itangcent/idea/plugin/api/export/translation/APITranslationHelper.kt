@@ -12,9 +12,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.settings.helper.AISettingsHelper
-import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.spi.SpiCompositeLoader
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -32,11 +30,7 @@ class APITranslationHelper {
     private lateinit var aiSettingsHelper: AISettingsHelper
 
     @Inject
-    private lateinit var actionContext: ActionContext
-
-    private val aiService: AIService by lazy {
-        SpiCompositeLoader.load<AIService>(actionContext).first()
-    }
+    private lateinit var aiService: AIService
 
     // Cache for translated content to avoid duplicate translations
     private val translationCache = ConcurrentHashMap<String, String>()

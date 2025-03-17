@@ -1,8 +1,13 @@
 package com.itangcent.ai
 
+import com.google.inject.ProvidedBy
+import com.google.inject.Singleton
+import com.itangcent.spi.SpiSingleBeanProvider
+
 /**
  * Interface for AI service operations
  */
+@ProvidedBy(AIServiceProvider::class)
 interface AIService {
     /**
      * Sends a prompt to the AI service and returns the response
@@ -27,3 +32,5 @@ interface AIService {
     }
 }
 
+@Singleton
+class AIServiceProvider : SpiSingleBeanProvider<AIService>()

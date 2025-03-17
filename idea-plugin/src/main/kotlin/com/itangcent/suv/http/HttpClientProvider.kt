@@ -1,7 +1,10 @@
 package com.itangcent.suv.http
 
 import com.google.inject.ImplementedBy
+import com.google.inject.ProvidedBy
+import com.google.inject.Singleton
 import com.itangcent.http.HttpClient
+import com.itangcent.spi.SpiSingleBeanProvider
 
 
 /**
@@ -13,7 +16,7 @@ import com.itangcent.http.HttpClient
  * @author tangcent
  * @date 2024/05/08
  */
-@ImplementedBy(DefaultHttpClientProvider::class)
+@ProvidedBy(HttpClientProviderProvider::class)
 interface HttpClientProvider {
 
     /**
@@ -21,3 +24,6 @@ interface HttpClientProvider {
      */
     fun getHttpClient(): HttpClient
 }
+
+@Singleton
+class HttpClientProviderProvider : SpiSingleBeanProvider<HttpClientProvider>()

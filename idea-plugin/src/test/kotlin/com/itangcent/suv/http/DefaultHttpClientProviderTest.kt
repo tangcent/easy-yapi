@@ -5,6 +5,7 @@ import com.itangcent.http.ApacheCookie
 import com.itangcent.http.ApacheHttpClient
 import com.itangcent.http.asApacheCookie
 import com.itangcent.idea.plugin.settings.HttpClientType
+import com.itangcent.intellij.context.ActionContextBuilder
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import kotlin.test.assertContentEquals
@@ -13,11 +14,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Test case of [DefaultHttpClientProvider]
+ * Test case of [HttpClientProvider]
  */
 internal abstract class DefaultHttpClientProviderTest : HttpClientProviderTest() {
-
-    override val httpClientProviderClass get() = DefaultHttpClientProvider::class
 
     override fun customConfig(): String {
         return "http.call.before=groovy:logger.info(\"call:\"+request.url())\nhttp.call.after=groovy:logger.info(\"response:\"+response.string())\nhttp.timeOut=3"
@@ -158,7 +157,8 @@ internal class UnsafeSslApacheHttpClientProviderTest : DefaultHttpClientProvider
 }
 
 internal class OkHttpClientProviderTest : DefaultHttpClientProviderTest() {
-    override fun setUp() {
+    override fun bind(builder: ActionContextBuilder) {
+        super.bind(builder)
         settings.httpClient = HttpClientType.OKHTTP.value
     }
 
@@ -171,7 +171,8 @@ internal class OkHttpClientProviderTest : DefaultHttpClientProviderTest() {
 }
 
 internal class UnsafeSslOkHttpClientProviderTest : DefaultHttpClientProviderTest() {
-    override fun setUp() {
+    override fun bind(builder: ActionContextBuilder) {
+        super.bind(builder)
         settings.httpClient = HttpClientType.OKHTTP.value
         settings.unsafeSsl = true
     }
@@ -199,8 +200,6 @@ internal class IllegalHttpClientProviderTest : DefaultHttpClientProviderTest() {
 
 internal class NonConfigConfigurableHttpClientProviderTest : HttpClientProviderTest() {
 
-    override val httpClientProviderClass get() = DefaultHttpClientProvider::class
-
     @Test
     fun `test buildHttpClient`() {
         // Build an instance of HttpClient using the provider.
@@ -212,9 +211,6 @@ internal class NonConfigConfigurableHttpClientProviderTest : HttpClientProviderT
 }
 
 internal class IllegalConfigConfigurableHttpClientProviderTest : HttpClientProviderTest() {
-
-    override val httpClientProviderClass get() = DefaultHttpClientProvider::class
-
     override fun customConfig(): String {
         return "http.timeOut=illegal"
     }

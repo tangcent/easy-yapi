@@ -10,7 +10,6 @@ import com.itangcent.common.utils.trySet
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.rule.SuvRuleContext
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
-import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.extend.asHashMap
 import com.itangcent.intellij.extend.asMap
@@ -33,13 +32,10 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     protected lateinit var logger: Logger
 
     @Inject
-    private val configReader: ConfigReader? = null
+    protected lateinit var ruleComputer: RuleComputer
 
     @Inject
-    protected val ruleComputer: RuleComputer? = null
-
-    @Inject
-    protected val httpClientProvide: HttpClientProvider? = null
+    protected lateinit var httpClientProvide: HttpClientProvider
 
     @Volatile
     var init: Boolean = false
@@ -249,7 +245,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             synchronized(this)
             {
                 if (!init) {
-                    ruleComputer!!.computer(
+                    ruleComputer.computer(
                         YapiClassExportRuleKeys.BEFORE_EXPORT, SuvRuleContext(),
                         null
                     )

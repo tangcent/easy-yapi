@@ -30,13 +30,10 @@ internal abstract class HttpClientProviderTest : AdvancedContextTest() {
     @Inject
     protected lateinit var httpClientProvider: HttpClientProvider
 
-    abstract val httpClientProviderClass: KClass<out HttpClientProvider>
-
     protected val settings = Settings()
 
     override fun bind(builder: ActionContextBuilder) {
         super.bind(builder)
-        builder.bind(HttpClientProvider::class) { it.with(httpClientProviderClass) }
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(settings.also { settings ->
                 settings.trustHosts = arrayOf(

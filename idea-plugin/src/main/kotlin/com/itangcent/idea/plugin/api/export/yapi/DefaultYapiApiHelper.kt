@@ -18,10 +18,8 @@ import com.itangcent.intellij.extend.asJsonElement
 import com.itangcent.intellij.extend.asList
 import com.itangcent.intellij.extend.asMutableList
 import com.itangcent.intellij.extend.sub
-import com.itangcent.spi.SpiCompositeLoader
 import org.apache.commons.lang3.StringUtils
 import org.apache.http.entity.ContentType
-import kotlin.collections.set
 import kotlin.concurrent.withLock
 
 @Singleton
@@ -38,6 +36,9 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
     @Inject
     internal lateinit var actionContext: ActionContext
+
+    @Inject
+    private lateinit var saveInterceptor: YapiSaveInterceptor
 
     override fun getApiInfo(token: String, id: String): JsonObject? {
         val url = "${yapiSettingsHelper.getServer()}$GET_INTERFACE?token=$token&id=$id"
@@ -73,10 +74,6 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
         return jsonArray
     }
 
-    private val saveInterceptor: YapiSaveInterceptor by lazy {
-        SpiCompositeLoader.loadComposite()
-    }
-
     override fun saveApiInfo(apiInfo: HashMap<String, Any?>): Boolean {
         if (saveInterceptor.beforeSaveApi(this, apiInfo) == false) {
             return false
@@ -88,7 +85,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
         }
 
         try {
-            val returnValue = httpClientProvide!!.getHttpClient()
+            val returnValue = httpClientProvide.getHttpClient()
                 .post(yapiSettingsHelper.getServer(false) + SAVE_API)
                 .contentType(ContentType.APPLICATION_JSON)
                 .body(apiInfo)
@@ -174,7 +171,7 @@ open class DefaultYapiApiHelper : AbstractYapiApiHelper(), YapiApiHelper {
 
     override fun addCart(projectId: String, token: String, name: String, desc: String): Boolean {
         try {
-            val returnValue = httpClientProvide!!.getHttpClient()
+            val returnValue = httpClientProvide.getHttpClient()
                 .post(yapiSettingsHelper.getServer(false) + ADD_CART)
                 .contentType(ContentType.APPLICATION_JSON)
                 .body(
