@@ -29,7 +29,6 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
 
-        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
         builder.bind(MethodDocBuilderListener::class) { it.with(CompositeMethodDocBuilderListener::class).singleton() }
 
         builder.bind(MethodFilter::class) { it.with(ConfigurableMethodFilter::class).singleton() }

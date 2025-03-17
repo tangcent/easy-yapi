@@ -1,6 +1,7 @@
 package com.itangcent.common.model
 
 import com.itangcent.common.utils.SimpleExtensible
+import com.google.gson.annotations.Expose
 import java.io.Serializable
 
 /**
@@ -11,6 +12,8 @@ open class Doc : SimpleExtensible(), Serializable {
     /**
      * The element associated the origin code.
      */
+    @Transient
+    @Expose(serialize = false, deserialize = false)
     var resource: Any? = null
 
     /**

@@ -3,7 +3,7 @@ package com.itangcent.idea.plugin.api.export.core
 import com.google.inject.ImplementedBy
 import com.itangcent.common.model.*
 
-@ImplementedBy(DefaultRequestBuilderListener::class)
+@ImplementedBy(CompositeRequestBuilderListener::class)
 interface RequestBuilderListener {
 
     fun setName(

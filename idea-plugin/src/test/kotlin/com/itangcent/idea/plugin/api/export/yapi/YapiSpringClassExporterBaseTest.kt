@@ -107,7 +107,6 @@ internal abstract class YapiSpringClassExporterBaseTest : PluginContextLightCode
         builder.bind(ClassExporter::class) { it.with(YapiSpringRequestClassExporter::class).singleton() }
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
         builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
-        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
         builder.bind(AdditionalParseHelper::class) { it.with(YapiAdditionalParseHelper::class).singleton() }
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->

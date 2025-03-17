@@ -91,8 +91,6 @@ internal abstract class PostmanSpringClassExporterBaseTest : PluginContextLightC
 
         builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
 
-        builder.bind(RequestBuilderListener::class) { it.with(CompositeRequestBuilderListener::class).singleton() }
-
         builder.bind(SettingBinder::class) {
             it.toInstance(SettingBinderAdaptor(Settings().also { settings ->
                 settings.inferEnable = true
