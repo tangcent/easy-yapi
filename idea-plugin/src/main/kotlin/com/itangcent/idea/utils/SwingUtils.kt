@@ -108,6 +108,75 @@ object SwingUtils : Log() {
         val size = component.size
         LOG.info("$componentName - Location: ($location) Dimensions: (${size.width} x ${size.height})")
     }
+
+    /**
+     * Creates a DefaultComboBoxModel from an array of items with a custom display function.
+     * @param items The array of items to populate the model with
+     * @param displayFunction A function that converts each item to its display string
+     * @return A DefaultComboBoxModel containing the items
+     */
+    fun <E> createComboBoxModel(items: Array<E>, displayFunction: (E) -> String): DefaultComboBoxModel<DisplayItem<E>> {
+        val displayItems = items.map { DisplayItem(it, displayFunction(it)) }
+        return DefaultComboBoxModel(displayItems.toTypedArray())
+    }
+
+    /**
+     * Creates a DefaultComboBoxModel from a collection of items with a custom display function.
+     * @param items The collection of items to populate the model with
+     * @param displayFunction A function that converts each item to its display string
+     * @return A DefaultComboBoxModel containing the items
+     */
+    fun <E> createComboBoxModel(items: Collection<E>, displayFunction: (E) -> String): DefaultComboBoxModel<DisplayItem<E>> {
+        val displayItems = items.map { DisplayItem(it, displayFunction(it)) }
+        return DefaultComboBoxModel(displayItems.toTypedArray())
+    }
+
+    /**
+     * Gets the selected item from a JComboBox as the original type.
+     * @param comboBox The JComboBox to get the selected item from
+     * @return The original item that was selected, or null if nothing is selected
+     */
+    fun <E> getSelectedItem(comboBox: JComboBox<DisplayItem<E>>): E? {
+        return (comboBox.selectedItem as? DisplayItem<E>)?.item
+    }
+
+    /**
+     * Sets the selected item in a JComboBox by finding the DisplayItem that wraps the given item.
+     * @param comboBox The JComboBox to set the selected item in
+     * @param item The item to select
+     * @param matcher Optional function to determine if two items match (defaults to equality)
+     * @return True if the item was found and selected, false otherwise
+     */
+    fun <E> setSelectedItem(comboBox: JComboBox<DisplayItem<E>>, item: E?, matcher: (E, E) -> Boolean = { a, b -> a == b }): Boolean {
+        if (item == null) {
+            comboBox.selectedIndex = -1
+            return true
+        }
+        
+        for (i in 0 until comboBox.itemCount) {
+            val displayItem = comboBox.getItemAt(i)
+            if (displayItem.item?.let { matcher(it, item) } == true) {
+                comboBox.selectedItem = displayItem
+                return true
+            }
+        }
+        
+        // If not found and there are items, select the first one
+        if (comboBox.itemCount > 0) {
+            comboBox.selectedIndex = 0
+        }
+        
+        return false
+    }
+
+    /**
+     * A wrapper class that holds an item and its display string for use in combo boxes.
+     * @param item The original item
+     * @param displayText The text to display in the combo box
+     */
+    data class DisplayItem<E>(val item: E, private val displayText: String) {
+        override fun toString(): String = displayText
+    }
 }
 
 // Returns true if the mouse event is a double-click event.

@@ -44,6 +44,7 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 import kotlin.concurrent.thread
+import com.itangcent.idea.utils.FileSelectHelper
 
 class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPanel>(BorderLayout()), Disposable {
     companion object : Log()
@@ -984,11 +985,8 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
                     }
 
                     if (fileSelectThrottle.acquire(1000)) {
-                        IdeaFileChooserHelper.create(
-                            actionContext,
-                            FileChooserDescriptorFactory.createSingleFileDescriptor()
-                        ).lastSelectedLocation("file.form.param.select.last.location.key").selectFile {
-                            formTable.setValueAt(it?.path, row, column)
+                        actionContext.instance(FileSelectHelper::class).selectFile { file ->
+                            formTable.setValueAt(file?.path, row, column)
                         }
                     }
                     formTable.selectionModel.clearSelection()

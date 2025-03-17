@@ -3,10 +3,15 @@ package com.itangcent.idea.utils
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.google.inject.name.Named
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.logger
+import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.util.FileUtils
 import com.itangcent.intellij.util.ToolUtils
 import com.itangcent.utils.localPath
@@ -28,6 +33,12 @@ class DefaultFileSaveHelper : FileSaveHelper {
 
     @Inject
     private lateinit var actionContext: ActionContext
+
+    @Inject
+    private lateinit var project: Project
+
+    @Inject
+    private lateinit var logger: Logger
 
     override fun saveOrCopy(
         content: String?,
@@ -62,44 +73,56 @@ class DefaultFileSaveHelper : FileSaveHelper {
     ) {
         if (content == null) return
 
-        IdeaFileChooserHelper.create(
-            actionContext, FileChooserDescriptorFactory
-                .createSingleFileOrFolderDescriptor()
-                .withTitle("Export Location")
-                .withDescription("Choose directory to export api to")
-                .withHideIgnored(false)
-        )
-            .lastSelectedLocation(getLastImportedLocation())
-            .selectFile({ file ->
-                if (file.isDirectory) {
-                    try {
-                        val defaultFile = defaultFileName() ?: getDefaultExportedFile()
-                        var filePath = "${file.path}${File.separator}$defaultFile"
-                        filePath = availablePath(filePath)
-                        FileUtils.forceSave(filePath, content.toByteArray(charset))
-                        onSaveSuccess(filePath.localPath())
-                    } catch (e: Exception) {
-                        onSaveFailed(e.message)
-                        actionContext.runAsync {
-                            copyAndLog(content, onCopy)
+        val descriptor = FileChooserDescriptorFactory
+            .createSingleFileOrFolderDescriptor()
+            .withTitle("Export Location")
+            .withDescription("Choose directory to export api to")
+            .withHideIgnored(false)
+
+        var toSelect: VirtualFile? = null
+        val lastLocation = PropertiesComponent.getInstance().getValue(getLastImportedLocation())
+        if (lastLocation != null) {
+            toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
+        }
+
+        actionContext.runInAWT {
+            val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
+            val files = chooser.choose(project, toSelect)
+            if (files.isNotEmpty()) {
+                val file = files[0]
+                PropertiesComponent.getInstance().setValue(getLastImportedLocation(), file.path)
+                actionContext.runAsync {
+                    if (file.isDirectory) {
+                        try {
+                            val defaultFile = defaultFileName() ?: getDefaultExportedFile()
+                            var filePath = "${file.path}${File.separator}$defaultFile"
+                            filePath = availablePath(filePath)
+                            FileUtils.forceSave(filePath, content.toByteArray(charset))
+                            onSaveSuccess(filePath.localPath())
+                        } catch (e: Exception) {
+                            onSaveFailed(e.message)
+                            actionContext.runAsync {
+                                copyAndLog(content, onCopy)
+                            }
                         }
-                    }
-                } else {
-                    try {
-                        FileUtils.forceSave(file, content.toByteArray(charset))
-                        onSaveSuccess(file.path.localPath())
-                    } catch (e: Exception) {
-                        onSaveFailed(e.message)
-                        actionContext.runAsync {
-                            copyAndLog(content, onCopy)
+                    } else {
+                        try {
+                            FileUtils.forceSave(file, content.toByteArray(charset))
+                            onSaveSuccess(file.path.localPath())
+                        } catch (e: Exception) {
+                            onSaveFailed(e.message)
+                            actionContext.runAsync {
+                                copyAndLog(content, onCopy)
+                            }
                         }
                     }
                 }
-            }, {
+            } else {
                 actionContext.runAsync {
                     copyAndLog(content, onCopy)
                 }
-            })
+            }
+        }
     }
 
     override fun saveBytes(
@@ -109,44 +132,58 @@ class DefaultFileSaveHelper : FileSaveHelper {
         onSaveFailed: (String?) -> Unit,
         onSaveCancel: () -> Unit,
     ) {
-        IdeaFileChooserHelper.create(
-            actionContext, FileChooserDescriptorFactory
-                .createSingleFileOrFolderDescriptor()
-                .withTitle("Select Location")
-                .withDescription("Choose folder/file to save")
-                .withHideIgnored(false)
-        )
-            .lastSelectedLocation(getLastImportedLocation())
-            .selectFile({ file ->
-                if (file.isDirectory) {
-                    try {
-                        val defaultFile = defaultFileName() ?: "untitled"
-                        var path = "${file.path}${File.separator}$defaultFile"
-                        path = availablePath(path)
+        val descriptor = FileChooserDescriptorFactory
+            .createSingleFileOrFolderDescriptor()
+            .withTitle("Select Location")
+            .withDescription("Choose folder/file to save")
+            .withHideIgnored(false)
 
-                        FileUtils.forceSave(path, content(path))
-                        onSaveSuccess()
-                    } catch (e: Exception) {
-                        onSaveFailed(e.message)
-                    }
-                } else {
-                    try {
-                        FileUtils.forceSave(file, content(file.path))
-                        onSaveSuccess()
-                    } catch (e: Exception) {
-                        onSaveFailed(e.message)
+        var toSelect: VirtualFile? = null
+        val lastLocation = PropertiesComponent.getInstance().getValue(getLastImportedLocation())
+        if (lastLocation != null) {
+            toSelect = LocalFileSystem.getInstance().refreshAndFindFileByPath(lastLocation)
+        }
+
+        actionContext.runInAWT {
+            val chooser = FileChooserFactory.getInstance().createFileChooser(descriptor, project, null)
+            val files = chooser.choose(project, toSelect)
+            if (files.isNotEmpty()) {
+                val file = files[0]
+                PropertiesComponent.getInstance().setValue(getLastImportedLocation(), file.path)
+                actionContext.runAsync {
+                    if (file.isDirectory) {
+                        try {
+                            val defaultFile = defaultFileName() ?: "untitled"
+                            var path = "${file.path}${File.separator}$defaultFile"
+                            path = availablePath(path)
+
+                            FileUtils.forceSave(path, content(path))
+                            onSaveSuccess()
+                        } catch (e: Exception) {
+                            onSaveFailed(e.message)
+                        }
+                    } else {
+                        try {
+                            FileUtils.forceSave(file, content(file.path))
+                            onSaveSuccess()
+                        } catch (e: Exception) {
+                            onSaveFailed(e.message)
+                        }
                     }
                 }
-            }, {
-                onSaveCancel()
-            })
+            } else {
+                actionContext.runAsync {
+                    onSaveCancel()
+                }
+            }
+        }
     }
 
     private fun availablePath(path: String): String {
         try {
             if (FileUtil.exists(path)) {
                 var index = 1
-                var pathWithIndex: String?
+                var pathWithIndex: String
                 while (true) {
                     pathWithIndex = pathWithIndex(path, index)
                     if (!FileUtil.exists(pathWithIndex)) {
@@ -154,7 +191,7 @@ class DefaultFileSaveHelper : FileSaveHelper {
                     }
                     ++index
                 }
-                pathWithIndex?.let { return it }
+                pathWithIndex.let { return it }
             }
         } catch (_: Exception) {
         }
@@ -181,9 +218,9 @@ class DefaultFileSaveHelper : FileSaveHelper {
         }
         onCopy()
         if (info.length > 10000) {
-            actionContext.logger().info("Api data is too lager to show in console!")
+            logger.info("Api data is too lager to show in console!")
         } else {
-            actionContext.logger().log(info)
+            logger.log(info)
         }
     }
 

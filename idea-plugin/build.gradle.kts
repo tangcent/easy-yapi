@@ -70,7 +70,7 @@ dependencies {
         exclude("com.google.guava", "guava")
     }
 
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:${properties["kotlin_version"]}")
 
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
     implementation("com.fasterxml.jackson.core:jackson-databind:2.12.2")
@@ -81,6 +81,9 @@ dependencies {
     // https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    // Official OpenAI SDK for Java
+    implementation("com.openai:openai-java:0.31.0")
+    implementation("com.openai:openai-java-client-okhttp:0.31.0")
 
     // https://search.maven.org/artifact/org.mockito.kotlin/mockito-kotlin/3.2.0/jar
     testImplementation("org.mockito.kotlin:mockito-kotlin:3.2.0")
@@ -96,7 +99,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:${properties["junit_version"]}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${properties["junit_version"]}")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.7.1")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:1.8.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${properties["kotlin_version"]}")
 }
 
 tasks.getByName<Test>("test") {

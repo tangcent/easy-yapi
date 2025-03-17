@@ -32,7 +32,7 @@ object SearchSupport {
         return indexS == s.length
     }
 
-    @Suppress("SYNTHETIC_SETTER_PROJECTED_OUT")
+    @Suppress("SYNTHETIC_SETTER_PROJECTED_OUT", "UNCHECKED_CAST")
     fun bindSearch(
         searchInputField: JTextField,
         sourceList: () -> List<*>,
@@ -56,14 +56,15 @@ object SearchSupport {
             // Remember the currently selected items
             val selectedItems = uiList.selectedValuesList
 
-            val newModel = if (query.isNullOrEmpty()) {
+            val newModel: CollectionListModel<Any?> = if (query.isNullOrEmpty()) {
                 CollectionListModel(source)
             } else {
                 val filtered = source.asSequence().filterNotNull().filter { match(query, it) }.toList()
                 CollectionListModel(filtered)
             }
 
-            uiList.model = newModel
+            // Cast the JList to raw type to avoid type mismatch
+            (uiList as JList<Any?>).model = newModel
 
             // Restore the selection
             val indicesToSelect = mutableListOf<Int>()

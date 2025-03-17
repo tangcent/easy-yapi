@@ -79,6 +79,5 @@ internal class IntelligentSettingsHelperTest : SettingsHelperTest() {
         assertEquals(JsonOption.NONE, intelligentSettingsHelper.jsonOptionForOutput(JsonOption.NONE))
         settings.readGetter = true
         assertEquals(JsonOption.READ_GETTER, intelligentSettingsHelper.jsonOptionForOutput(JsonOption.NONE))
-
     }
 }

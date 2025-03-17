@@ -9,6 +9,7 @@ import com.itangcent.idea.plugin.settings.update
 import com.itangcent.idea.plugin.utils.RegexUtils
 import com.itangcent.idea.swing.MessagesHelper
 import java.net.URL
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 @ImplementedBy(HttpSettingsHelperImpl::class)
@@ -17,6 +18,7 @@ interface HttpSettingsHelper {
     fun checkTrustHost(host: String, dumb: Boolean = true): Boolean
     fun addTrustHost(host: String)
     fun resolveHost(url: String): String
+    fun httpTimeOut(): Duration
     fun httpTimeOut(timeUnit: TimeUnit): Int
     fun unsafeSsl(): Boolean
 }
@@ -109,6 +111,10 @@ class HttpSettingsHelperImpl : HttpSettingsHelper {
     }
 
     //endregion trustHosts----------------------------------------------------
+
+    override fun httpTimeOut(): Duration {
+        return Duration.ofMillis(settingBinder.read().httpTimeOut.toLong())
+    }
 
     override fun httpTimeOut(timeUnit: TimeUnit): Int {
         //unit of httpTimeOut is second

@@ -41,7 +41,6 @@ interface ApplicationSettingsSupport {
     var unsafeSsl: Boolean
     var httpClient: String
 
-
     //enable to use recommend config
     var useRecommendConfig: Boolean
     var recommendConfigs: String
@@ -53,6 +52,13 @@ interface ApplicationSettingsSupport {
     var builtInConfig: String?
 
     var remoteConfig: Array<String>
+    
+    // AI integration
+    var aiProvider: String?
+    var aiToken: String?
+    var aiEnable: Boolean
+    var aiModel: String?
+    var aiEnableCache: Boolean
 
     fun copyTo(newSetting: ApplicationSettingsSupport) {
         newSetting.postmanToken = this.postmanToken
@@ -93,6 +99,11 @@ interface ApplicationSettingsSupport {
         newSetting.httpClient = this.httpClient
         newSetting.trustHosts = this.trustHosts
         newSetting.remoteConfig = this.remoteConfig
+        newSetting.aiProvider = this.aiProvider
+        newSetting.aiToken = this.aiToken
+        newSetting.aiEnable = this.aiEnable
+        newSetting.aiModel = this.aiModel
+        newSetting.aiEnableCache = this.aiEnableCache
     }
 }
 
@@ -192,6 +203,20 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var builtInConfig: String? = null
 
     override var remoteConfig: Array<String> = emptyArray()
+    
+    //region AI integration--------------------------
+    
+    override var aiProvider: String? = null
+    
+    override var aiToken: String? = null
+    
+    override var aiEnable: Boolean = false
+    
+    override var aiModel: String? = null
+    
+    override var aiEnableCache: Boolean = false
+    
+    //endregion
 
     fun copy(): ApplicationSettings {
         val applicationSettings = ApplicationSettings()

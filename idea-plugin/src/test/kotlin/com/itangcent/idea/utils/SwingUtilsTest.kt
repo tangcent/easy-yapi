@@ -11,6 +11,8 @@ import com.itangcent.common.utils.cast
 import com.itangcent.idea.swing.ActiveWindowProvider
 import com.itangcent.idea.swing.MutableActiveWindowProvider
 import com.itangcent.idea.swing.SimpleActiveWindowProvider
+import com.itangcent.idea.swing.onSelect
+import com.itangcent.idea.swing.selected
 import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
@@ -444,5 +446,178 @@ class SwingUtilsTest : BaseContextTest() {
         assertDoesNotThrow {
             comboBoxJBList.removeElementAt(999)
         }
+    }
+
+    @Test
+    fun testCreateComboBoxModelFromArray() {
+        // Test with simple strings
+        val items = arrayOf("Item 1", "Item 2", "Item 3")
+        val model = SwingUtils.createComboBoxModel(items) { it }
+        
+        assertEquals(3, model.size)
+        for (i in items.indices) {
+            val displayItem = model.getElementAt(i)
+            assertEquals(items[i], displayItem.item)
+            assertEquals(items[i], displayItem.toString())
+        }
+        
+        // Test with custom objects and display function
+        data class Person(val id: Int, val name: String)
+        val people = arrayOf(
+            Person(1, "Alice"),
+            Person(2, "Bob"),
+            Person(3, "Charlie")
+        )
+        val peopleModel = SwingUtils.createComboBoxModel(people) { "Person: ${it.name}" }
+        
+        assertEquals(3, peopleModel.size)
+        for (i in people.indices) {
+            val displayItem = peopleModel.getElementAt(i)
+            assertEquals(people[i], displayItem.item)
+            assertEquals("Person: ${people[i].name}", displayItem.toString())
+        }
+    }
+    
+    @Test
+    fun testCreateComboBoxModelFromCollection() {
+        // Test with list of strings
+        val items = listOf("Item 1", "Item 2", "Item 3")
+        val model = SwingUtils.createComboBoxModel(items) { it }
+        
+        assertEquals(3, model.size)
+        for (i in items.indices) {
+            val displayItem = model.getElementAt(i)
+            assertEquals(items[i], displayItem.item)
+            assertEquals(items[i], displayItem.toString())
+        }
+        
+        // Test with set of integers and custom display function
+        val numbers = setOf(10, 20, 30)
+        val numbersModel = SwingUtils.createComboBoxModel(numbers) { "Number: $it" }
+        
+        assertEquals(3, numbersModel.size)
+        val modelItems = (0 until numbersModel.size).map { numbersModel.getElementAt(it).item }
+        for (number in numbers) {
+            assertTrue(modelItems.contains(number))
+        }
+    }
+    
+    @Test
+    fun testGetSelectedItem() {
+        data class TestItem(val id: Int, val value: String)
+        val items = listOf(
+            TestItem(1, "One"),
+            TestItem(2, "Two"),
+            TestItem(3, "Three")
+        )
+        val model = SwingUtils.createComboBoxModel(items) { it.value }
+        val comboBox = JComboBox(model)
+        
+        // Test with first item selected
+        comboBox.selectedIndex = 0
+        assertEquals(items[0], SwingUtils.getSelectedItem(comboBox))
+        
+        // Test with second item selected
+        comboBox.selectedIndex = 1
+        assertEquals(items[1], SwingUtils.getSelectedItem(comboBox))
+        
+        // Test with no selection
+        comboBox.selectedIndex = -1
+        assertNull(SwingUtils.getSelectedItem(comboBox))
+    }
+    
+    @Test
+    fun testSetSelectedItem() {
+        data class TestItem(val id: Int, val value: String)
+        val items = listOf(
+            TestItem(1, "One"),
+            TestItem(2, "Two"),
+            TestItem(3, "Three")
+        )
+        val model = SwingUtils.createComboBoxModel(items) { it.value }
+        val comboBox = JComboBox(model)
+        
+        // Test selecting an item that exists
+        assertTrue(SwingUtils.setSelectedItem(comboBox, items[1]))
+        assertEquals(items[1], SwingUtils.getSelectedItem(comboBox))
+        
+        // Test selecting null (should clear selection)
+        assertTrue(SwingUtils.setSelectedItem(comboBox, null))
+        assertEquals(-1, comboBox.selectedIndex)
+        
+        // Test selecting an item that doesn't exist (should select first item)
+        val nonExistentItem = TestItem(4, "Four")
+        assertFalse(SwingUtils.setSelectedItem(comboBox, nonExistentItem))
+        assertEquals(0, comboBox.selectedIndex)
+        
+        // Test with custom matcher
+        val similarItem = TestItem(2, "Different") // Same ID but different value
+        assertTrue(SwingUtils.setSelectedItem(comboBox, similarItem) { a, b -> a.id == b.id })
+        assertEquals(items[1], SwingUtils.getSelectedItem(comboBox))
+    }
+    
+    @Test
+    fun testDisplayItem() {
+        val originalItem = "Test"
+        val displayText = "Display Text"
+        val displayItem = SwingUtils.DisplayItem(originalItem, displayText)
+        
+        assertEquals(originalItem, displayItem.item)
+        assertEquals(displayText, displayItem.toString())
+        
+        // Test equals and hashCode
+        val sameDisplayItem = SwingUtils.DisplayItem(originalItem, displayText)
+        assertEquals(displayItem, sameDisplayItem)
+        assertEquals(displayItem.hashCode(), sameDisplayItem.hashCode())
+        
+        val differentItem = SwingUtils.DisplayItem("Different", displayText)
+        assertNotEquals(displayItem, differentItem)
+        
+        val differentText = SwingUtils.DisplayItem(originalItem, "Different Text")
+        assertNotEquals(displayItem, differentText)
+    }
+    
+    @Test
+    fun testJComboBoxSelected() {
+        val comboBox = JComboBox(arrayOf("Item 1", "Item 2", "Item 3"))
+        
+        // Test with first item selected
+        comboBox.selectedIndex = 0
+        assertEquals("Item 1", comboBox.selected())
+        
+        // Test with second item selected
+        comboBox.selectedIndex = 1
+        assertEquals("Item 2", comboBox.selected())
+        
+        // Test with no selection
+        comboBox.selectedIndex = -1
+        assertNull(comboBox.selected())
+    }
+    
+    @Test
+    fun testJComboBoxOnSelect() {
+        val comboBox = JComboBox(arrayOf("Item 1", "Item 2", "Item 3"))
+        var selectedItem: String? = null
+        var callCount = 0
+        
+        comboBox.onSelect { 
+            selectedItem = it
+            callCount++
+        }
+        
+        // Trigger selection change
+        comboBox.selectedIndex = 1
+        assertEquals("Item 2", selectedItem)
+        assertEquals(1, callCount)
+        
+        // Change selection again
+        comboBox.selectedIndex = 2
+        assertEquals("Item 3", selectedItem)
+        assertEquals(2, callCount)
+        
+        // Clear selection
+        comboBox.selectedIndex = -1
+        assertNull(selectedItem)
+        assertEquals(3, callCount)
     }
 }
