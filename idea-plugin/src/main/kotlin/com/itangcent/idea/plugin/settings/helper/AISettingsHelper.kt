@@ -48,6 +48,14 @@ class AISettingsHelper {
         }
 
     /**
+     * Check if AI method inference is enabled
+     */
+    val methodInferEnabled: Boolean
+        get() = settingBinder.read().run {
+            aiEnable && aiMethodInferEnabled
+        }
+
+    /**
      * Get the target language for API translation
      * Returns the language name (e.g., "English") instead of the language code (e.g., "en")
      */

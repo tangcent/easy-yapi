@@ -1324,7 +1324,8 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
         }
 
         open fun returnObject(
-            needInfer: Boolean = false, readGetter: Boolean = true,
+            needInfer: Boolean = false,
+            readGetter: Boolean = true,
             readSetter: Boolean = true,
         ): Any? {
             val psiType = psiMethod.getResolvedReturnType() ?: return null

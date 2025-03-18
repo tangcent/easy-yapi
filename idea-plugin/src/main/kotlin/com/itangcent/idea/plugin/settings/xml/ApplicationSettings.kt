@@ -63,6 +63,9 @@ interface ApplicationSettingsSupport {
     // API Translation
     var aiTranslationEnabled: Boolean
     var aiTranslationTargetLanguage: String?
+    
+    // AI Method Inference
+    var aiMethodInferEnabled: Boolean
 
     fun copyTo(newSetting: ApplicationSettingsSupport) {
         newSetting.postmanToken = this.postmanToken
@@ -110,6 +113,7 @@ interface ApplicationSettingsSupport {
         newSetting.aiEnableCache = this.aiEnableCache
         newSetting.aiTranslationEnabled = this.aiTranslationEnabled
         newSetting.aiTranslationTargetLanguage = this.aiTranslationTargetLanguage
+        newSetting.aiMethodInferEnabled = this.aiMethodInferEnabled
     }
 }
 
@@ -227,6 +231,9 @@ class ApplicationSettings : ApplicationSettingsSupport {
     // API Translation
     override var aiTranslationEnabled: Boolean = false
     override var aiTranslationTargetLanguage: String? = null
+    
+    // AI Method Inference
+    override var aiMethodInferEnabled: Boolean = false
 
     fun copy(): ApplicationSettings {
         val applicationSettings = ApplicationSettings()

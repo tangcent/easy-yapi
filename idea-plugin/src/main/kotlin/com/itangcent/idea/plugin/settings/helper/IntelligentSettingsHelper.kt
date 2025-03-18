@@ -28,7 +28,7 @@ class IntelligentSettingsHelper {
     }
 
     fun inferEnable(): Boolean {
-        return settingBinder.read().inferEnable
+        return settingBinder.read().run { inferEnable or aiMethodInferEnabled }
     }
 
     fun inferMaxDeep(): Int {

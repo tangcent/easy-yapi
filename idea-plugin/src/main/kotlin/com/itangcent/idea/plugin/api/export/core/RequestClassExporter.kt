@@ -803,7 +803,6 @@ abstract class RequestClassExporter : ClassExporter {
                 -> {
                 logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
-//                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }
 
             else -> psiClassHelper!!.getTypeObject(
