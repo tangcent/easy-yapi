@@ -19,7 +19,6 @@ import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.PsiClassUtils
-import com.itangcent.spi.SpiCompositeLoader
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -68,9 +67,8 @@ class AIMethodInferHelper : MethodInferHelper {
     @Inject
     private lateinit var cacheSwitcher: CacheSwitcher
 
-    private val aiService: AIService by lazy {
-        SpiCompositeLoader.load<AIService>(actionContext).first()
-    }
+    @Inject
+    private lateinit var aiService: AIService
 
     // Cache for storing AI inference results to avoid repeated API calls
     private val inferCache: ConcurrentHashMap<String, Any?> = ConcurrentHashMap()

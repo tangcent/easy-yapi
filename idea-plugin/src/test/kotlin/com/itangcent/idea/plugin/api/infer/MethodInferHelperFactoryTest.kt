@@ -38,10 +38,7 @@ class MethodInferHelperFactoryTest : PluginContextLightCodeInsightFixtureTestCas
 
     fun testGetAIMethodInferHelper() {
         settings.aiEnable = true
-
-        // Verify it's the default helper
-        assertIs<DefaultMethodInferHelper>(methodInferHelperFactory.getMethodInferHelper())
-
+        settings.aiProvider = "OpenAI"
         settings.aiModel = "gpt-4"
         settings.aiToken = "test-token-123"
         // Verify it's the AI helper

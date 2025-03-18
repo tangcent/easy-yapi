@@ -1,9 +1,11 @@
 package com.itangcent.idea.plugin.api.export.core
 
-import com.google.inject.ImplementedBy
+import com.google.inject.ProvidedBy
+import com.google.inject.Singleton
 import com.itangcent.common.model.*
+import com.itangcent.spi.SpiCompositeBeanProvider
 
-@ImplementedBy(CompositeRequestBuilderListener::class)
+@ProvidedBy(RequestBuilderListenerCompositeProvider::class)
 interface RequestBuilderListener {
 
     fun setName(
@@ -127,6 +129,9 @@ interface RequestBuilderListener {
 
     fun processCompleted(methodExportContext: MethodExportContext, request: Request)
 }
+
+@Singleton
+class RequestBuilderListenerCompositeProvider : SpiCompositeBeanProvider<RequestBuilderListener>()
 
 //region utils------------------------------------------------------------------
 

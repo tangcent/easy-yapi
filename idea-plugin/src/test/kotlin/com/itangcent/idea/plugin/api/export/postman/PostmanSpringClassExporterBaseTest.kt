@@ -4,8 +4,6 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiClass
 import com.itangcent.idea.plugin.api.export.ExportChannel
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
-import com.itangcent.idea.plugin.api.export.core.CompositeRequestBuilderListener
-import com.itangcent.idea.plugin.api.export.core.RequestBuilderListener
 import com.itangcent.idea.plugin.api.export.spring.SpringRequestClassExporter
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings

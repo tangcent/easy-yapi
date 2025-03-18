@@ -1,5 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.google.inject.ProvidedBy
+import com.google.inject.Singleton
 import com.intellij.openapi.ui.Messages
 import com.itangcent.common.concurrent.ValueHolder
 import com.itangcent.common.utils.toBool
@@ -9,11 +11,13 @@ import com.itangcent.idea.swing.MessagesHelper
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.sub
+import com.itangcent.spi.SpiCompositeBeanProvider
 
 /**
  * Workflow interface that allows for customized yapi save action.
  */
-internal interface YapiSaveInterceptor {
+@ProvidedBy(YapiSaveInterceptorCompositeProvider::class)
+interface YapiSaveInterceptor {
     /**
      * Called before [YapiApiHelper] save an apiInfo to yapi server.
      *
@@ -22,6 +26,9 @@ internal interface YapiSaveInterceptor {
      */
     fun beforeSaveApi(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>): Boolean?
 }
+
+@Singleton
+class YapiSaveInterceptorCompositeProvider : SpiCompositeBeanProvider<YapiSaveInterceptor>()
 
 /**
  * Immutable [YapiSaveInterceptor] that always return true.

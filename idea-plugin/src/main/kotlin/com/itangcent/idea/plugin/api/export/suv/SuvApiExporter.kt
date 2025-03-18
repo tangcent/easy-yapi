@@ -381,10 +381,6 @@ open class SuvApiExporter {
             builder.bindInstance(ExportChannel::class, ExportChannel.of("yapi"))
             builder.bindInstance(ExportDoc::class, ExportDoc.of("request", "methodDoc"))
 
-            builder.bind(MethodDocBuilderListener::class) {
-                it.with(CompositeMethodDocBuilderListener::class).singleton()
-            }
-
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
 
