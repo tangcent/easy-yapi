@@ -153,6 +153,11 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
      * Target language for API translation
      */
     override var aiTranslationTargetLanguage: String? = null
+    
+    /**
+     * Enable AI for method return type inference
+     */
+    override var aiMethodInferEnabled: Boolean = false
 
     //endregion AI integration--------------------------
 
@@ -218,6 +223,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (aiEnableCache != other.aiEnableCache) return false
         if (aiTranslationEnabled != other.aiTranslationEnabled) return false
         if (aiTranslationTargetLanguage != other.aiTranslationTargetLanguage) return false
+        if (aiMethodInferEnabled != other.aiMethodInferEnabled) return false
 
         return true
     }
@@ -272,6 +278,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + aiEnableCache.hashCode()
         result = 31 * result + aiTranslationEnabled.hashCode()
         result = 31 * result + (aiTranslationTargetLanguage?.hashCode() ?: 0)
+        result = 31 * result + aiMethodInferEnabled.hashCode()
         return result
     }
 
@@ -307,7 +314,8 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
                 "aiModel=$aiModel, " +
                 "aiEnableCache=$aiEnableCache, " +
                 "aiTranslationEnabled=$aiTranslationEnabled, " +
-                "aiTranslationTargetLanguage=$aiTranslationTargetLanguage)"
+                "aiTranslationTargetLanguage=$aiTranslationTargetLanguage, " +
+                "aiMethodInferEnabled=$aiMethodInferEnabled)"
     }
 
     companion object {

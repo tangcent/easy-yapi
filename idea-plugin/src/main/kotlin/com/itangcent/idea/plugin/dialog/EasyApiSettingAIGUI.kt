@@ -22,6 +22,7 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
     private var aiEnableCacheCheckBox: JCheckBox? = null
     private var aiTranslationEnabledCheckBox: JCheckBox? = null
     private var translationTargetLanguageComboBox: JComboBox<DisplayItem<Language>>? = null
+    private var aiMethodInferEnabledCheckBox: JCheckBox? = null
 
     // Store the last selected AI Provider to detect changes
     private var lastSelectedAIProvider: AIProvider? = null
@@ -115,6 +116,9 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
         settings.aiTranslationTargetLanguage = translationTargetLanguageComboBox?.let { 
             SwingUtils.getSelectedItem(it)?.code 
         }
+        
+        // Method inference settings
+        settings.aiMethodInferEnabled = aiMethodInferEnabledCheckBox?.isSelected == true
     }
 
     /**
@@ -170,5 +174,8 @@ class EasyApiSettingAIGUI : AbstractEasyApiSettingGUI() {
                 SwingUtils.setSelectedItem(translationTargetLanguageComboBox!!, Language.getDefault()) { a, b -> a.code == b.code }
             }
         }
+
+        // Method inference settings
+        aiMethodInferEnabledCheckBox?.isSelected = settings.aiMethodInferEnabled
     }
 } 

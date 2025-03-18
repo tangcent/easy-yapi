@@ -33,7 +33,7 @@ class MethodInferHelperFactory {
      */
     fun getMethodInferHelper(): MethodInferHelper {
         // Check if AI inference is enabled in settings
-        if (aiSettingsHelper.aiEnable) {
+        if (aiSettingsHelper.methodInferEnabled) {
             try {
                 LOG.info("Using AI-based method inference")
                 return aiMethodInferHelperProvider.get()
