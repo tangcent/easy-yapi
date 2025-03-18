@@ -1,3 +1,17 @@
+* 2.7.8
+	* refactor: Enhance EasyApiSettingAI layout  [(#1209)](https://github.com/tangcent/easy-yapi/pull/1209)
+
+	* docs: Update README to include AI-powered features and configuration details  [(#1210)](https://github.com/tangcent/easy-yapi/pull/1210)
+
+	* refactor: Refactor SPI BeanProvider logic  [(#1208)](https://github.com/tangcent/easy-yapi/pull/1208)
+
+	* feat: Add AI-powered translation support for API documentation  [(#1207)](https://github.com/tangcent/easy-yapi/pull/1207)
+
+	* refactor(postman): standardize rule key naming pattern  [(#1206)](https://github.com/tangcent/easy-yapi/pull/1206)
+
+	* feat: Add support for AI-powered method inference  [(#1205)](https://github.com/tangcent/easy-yapi/pull/1205)
+
+	* fix: Fix project cache size always showing as zero in settings  [(#1204)](https://github.com/tangcent/easy-yapi/pull/1204)
 * 2.7.7
 	* fix: several ApiExport actions cannot export method docs  [(#1201)](https://github.com/tangcent/easy-yapi/pull/1201)
 * 2.7.6
