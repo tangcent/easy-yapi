@@ -8,7 +8,34 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-skip:
+    runs-on: ubuntu-latest
+    outputs:
+      should-skip: ${{ steps.check-labels.outputs.should-skip }}
+    steps:
+      - id: check-labels
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const labels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const docLabel = labels.data.find(label => label.name === 'type: doc');
+            if (docLabel) {
+              console.log('PR has type: doc label, skipping CI');
+              return core.setOutput('should-skip', 'true');
+            }
+            
+            console.log('PR does not have type: doc label, continuing with CI');
+            return core.setOutput('should-skip', 'false');
+
   build-test:
+    needs: check-skip
+    if: ${{ github.event_name != 'pull_request' || needs.check-skip.outputs.should-skip != 'true' }}
     name: "Unit Test On ${{ matrix.os }} - jdk${{ matrix.java-version }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: true
