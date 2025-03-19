@@ -1,0 +1,112 @@
+name: 'Create Release'
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: extract_version
+        run: |
+          # First try to get version from commit message
+          VERSION=$(echo "${{ github.event.head_commit.message }}" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | sed 's/^v//')
+          
+          # If no version in commit message, try to get it from gradle.properties
+          if [ -z "$VERSION" ]; then
+            if [ -f "gradle.properties" ]; then
+              # Use dos2unix to handle line endings and remove any trailing whitespace
+              VERSION=$(grep "^plugin_version=" gradle.properties | cut -d'=' -f2 | tr -d '\r' | xargs)
+              if [ -z "$VERSION" ]; then
+                echo "Error: No plugin_version found in gradle.properties"
+                cat gradle.properties
+                exit 1
+              fi
+              # Convert version format from v2.3.8.212.0 to v2.3.8
+              VERSION=$(echo "$VERSION" | sed -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
+            else
+              echo "Error: gradle.properties file not found"
+              exit 1
+            fi
+          fi
+          
+          # Add 'v' prefix if not present
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v$VERSION"
+          fi
+          
+          echo "Extracted version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git tag -l "${{ steps.extract_version.outputs.version }}" | grep -q "${{ steps.extract_version.outputs.version }}"; then
+            echo "Tag ${{ steps.extract_version.outputs.version }} already exists. Skipping release creation."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag ${{ steps.extract_version.outputs.version }} does not exist. Proceeding with release creation."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up JDK
+        if: steps.check_tag.outputs.skip == 'false'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'zulu'
+          cache: gradle
+
+      - name: Package Plugin
+        if: steps.check_tag.outputs.skip == 'false'
+        run: |
+          chmod +x plugin-script/package_plugin.sh
+          ./plugin-script/package_plugin.sh
+
+      - name: Generate Release Notes
+        if: steps.check_tag.outputs.skip == 'false'
+        id: generate_notes
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "v0.0.0")
+          CURRENT_TAG=${{ steps.extract_version.outputs.version }}
+          
+          # Generate the release notes
+          NOTES="**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURRENT_TAG}\n\n"
+          
+          # Add commit messages since last tag
+          COMMITS=$(git log --pretty=format:"* %s" $PREV_TAG..HEAD | grep -E '^\* (refactor|feat|fix)')
+          NOTES="${NOTES}${COMMITS}\n\n"
+          
+          # Add the plugin support table
+          NOTES="${NOTES}---\n\n"
+          NOTES="${NOTES}| plugin | support |\n"
+          NOTES="${NOTES}| ------------ | ------------ |\n"
+          # Remove 'v' prefix for the download link
+          DOWNLOAD_VERSION=$(echo "$CURRENT_TAG" | sed 's/^v//')
+          NOTES="${NOTES}| [easy-yapi-${DOWNLOAD_VERSION}.212.0.zip](https://github.com/${{ github.repository }}/releases/download/${CURRENT_TAG}/easy-yapi-${DOWNLOAD_VERSION}.212.0.zip) | idea 2021.2+ |\n"
+          
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        if: contains(github.event.head_commit.message, 'release') && steps.check_tag.outputs.skip == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.extract_version.outputs.version }}
+          name: ${{ steps.extract_version.outputs.version }}
+          body: ${{ steps.generate_notes.outputs.notes }}
+          draft: true
+          prerelease: true
+          files: |
+            plugin/easy-yapi-*.zip
