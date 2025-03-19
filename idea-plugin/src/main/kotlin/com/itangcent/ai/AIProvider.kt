@@ -27,6 +27,13 @@ enum class AIProvider(val displayName: String, val models: List<AIModel>) {
             AIModel("deepseek-chat", "DeepSeek-V3"),
             AIModel("deepseek-reasoner", "DeepSeek-R1")
         )
+    ),
+
+    /**
+     * Local LLM service
+     */
+    LOCALLM(
+        "LocalLLM", emptyList()
     );
 
     companion object {
@@ -34,7 +41,7 @@ enum class AIProvider(val displayName: String, val models: List<AIModel>) {
          * Get AIProvider by its display name (case-insensitive)
          */
         fun fromDisplayName(name: String?): AIProvider? {
-            return values().find { it.displayName.equals(name, ignoreCase = true) }
+            return entries.find { it.displayName.equals(name, ignoreCase = true) }
         }
 
         /**

@@ -130,6 +130,11 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
     override var aiToken: String? = null
 
     /**
+     * Local LLM server URL (for LocalLLM provider)
+     */
+    override var aiLocalServerUrl: String? = null
+
+    /**
      * Enable AI integration
      */
     override var aiEnable: Boolean = false
@@ -218,6 +223,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (!remoteConfig.contentEquals(other.remoteConfig)) return false
         if (aiProvider != other.aiProvider) return false
         if (aiToken != other.aiToken) return false
+        if (aiLocalServerUrl != other.aiLocalServerUrl) return false
         if (aiEnable != other.aiEnable) return false
         if (aiModel != other.aiModel) return false
         if (aiEnableCache != other.aiEnableCache) return false
@@ -273,6 +279,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + remoteConfig.contentHashCode()
         result = 31 * result + (aiProvider?.hashCode() ?: 0)
         result = 31 * result + (aiToken?.hashCode() ?: 0)
+        result = 31 * result + (aiLocalServerUrl?.hashCode() ?: 0)
         result = 31 * result + aiEnable.hashCode()
         result = 31 * result + (aiModel?.hashCode() ?: 0)
         result = 31 * result + aiEnableCache.hashCode()
@@ -310,6 +317,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
                 "remoteConfig=${remoteConfig.contentToString()}, " +
                 "aiProvider=$aiProvider, " +
                 "aiToken=$aiToken, " +
+                "aiLocalServerUrl=$aiLocalServerUrl, " +
                 "aiEnable=$aiEnable, " +
                 "aiModel=$aiModel, " +
                 "aiEnableCache=$aiEnableCache, " +
