@@ -56,6 +56,7 @@ interface ApplicationSettingsSupport {
     // AI integration
     var aiProvider: String?
     var aiToken: String?
+    var aiLocalServerUrl: String?
     var aiEnable: Boolean
     var aiModel: String?
     var aiEnableCache: Boolean
@@ -108,6 +109,7 @@ interface ApplicationSettingsSupport {
         newSetting.remoteConfig = this.remoteConfig
         newSetting.aiProvider = this.aiProvider
         newSetting.aiToken = this.aiToken
+        newSetting.aiLocalServerUrl = this.aiLocalServerUrl
         newSetting.aiEnable = this.aiEnable
         newSetting.aiModel = this.aiModel
         newSetting.aiEnableCache = this.aiEnableCache
@@ -219,6 +221,8 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var aiProvider: String? = null
     
     override var aiToken: String? = null
+    
+    override var aiLocalServerUrl: String? = null
     
     override var aiEnable: Boolean = false
     

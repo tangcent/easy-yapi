@@ -9,6 +9,7 @@ import com.itangcent.spi.SpiSingleBeanProvider
  */
 @ProvidedBy(AIServiceProvider::class)
 interface AIService {
+
     /**
      * Sends a prompt to the AI service and returns the response
      * @param prompt The user prompt to send to the AI service

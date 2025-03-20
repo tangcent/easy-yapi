@@ -30,6 +30,11 @@ class AISettingsHelper {
     val aiToken: String? get() = settingBinder.read().aiToken
 
     /**
+     * Get the local LLM server URL from settings
+     */
+    val aiLocalServerUrl: String? get() = settingBinder.read().aiLocalServerUrl
+
+    /**
      * Get the AI provider from settings
      */
     val aiProvider: String? get() = settingBinder.read().aiProvider
