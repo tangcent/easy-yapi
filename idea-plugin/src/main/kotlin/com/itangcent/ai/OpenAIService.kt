@@ -6,7 +6,6 @@ import com.itangcent.common.logger.traceError
 import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.idea.plugin.settings.helper.AISettingsHelper
 import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelper
-import com.itangcent.idea.plugin.utils.AIUtils
 import com.itangcent.intellij.logger.Logger
 import com.openai.client.OpenAIClient
 import com.openai.client.okhttp.OpenAIOkHttpClient
@@ -64,8 +63,7 @@ open class OpenAIService : AIService {
             val content = response.choices().firstOrNull()?.message()?.content()
                 ?.orElse("")
 
-            return content?.let { AIUtils.cleanMarkdownCodeBlocks(it) }
-                ?: throw AIApiException("Empty response from OpenAI API")
+            return content ?: throw AIApiException("Empty response from OpenAI API")
         } catch (e: OpenAIException) {
             logger.traceError("OpenAI API error: ${e.message}", e)
             throw AIApiException("OpenAI API error: ${e.message}", e)

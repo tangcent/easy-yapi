@@ -12,6 +12,7 @@ import com.itangcent.cache.withoutCache
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.GsonUtils
+import com.itangcent.idea.plugin.utils.AIUtils
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.context.ThreadFlag
 import com.itangcent.intellij.extend.isNotActive
@@ -371,14 +372,18 @@ class AIMethodInferHelper : MethodInferHelper {
                 // Call the AI API with the system message and prompt
                 val aiResponse = if (currentRetry > 0) {
                     cacheSwitcher.withoutCache {
-                        aiService.sendPrompt(AIPromptFormatter.METHOD_RETURN_TYPE_INFERENCE_MESSAGE, prompt)
+                        AIUtils.getGeneralContent(
+                            aiService.sendPrompt(AIPromptFormatter.METHOD_RETURN_TYPE_INFERENCE_MESSAGE, prompt)
+                        )
                     }
                 } else {
-                    aiService.sendPrompt(AIPromptFormatter.METHOD_RETURN_TYPE_INFERENCE_MESSAGE, prompt)
+                    AIUtils.getGeneralContent(
+                        aiService.sendPrompt(AIPromptFormatter.METHOD_RETURN_TYPE_INFERENCE_MESSAGE, prompt)
+                    )
                 }
 
                 // Check if the response is valid before parsing
-                if (aiResponse.isBlank()) {
+                if (aiResponse.isEmpty()) {
                     logger.warn("Empty AI response received for method ${methodInfo.className}.${methodInfo.methodName}, attempt ${currentRetry + 1}/$maxRetries")
                     currentRetry++
                     continue
