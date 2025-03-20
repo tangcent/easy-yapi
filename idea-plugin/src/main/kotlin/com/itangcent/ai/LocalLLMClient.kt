@@ -4,7 +4,6 @@ import com.itangcent.common.utils.GsonUtils
 import com.itangcent.http.HttpClient
 import com.itangcent.http.RawContentType
 import com.itangcent.http.contentType
-import com.itangcent.idea.plugin.utils.AIUtils
 import com.itangcent.intellij.extend.sub
 
 /**
@@ -61,8 +60,7 @@ class LocalLLMClient(
             val content = jsonElement.sub("choices")?.asJsonArray?.firstOrNull()
                 ?.asJsonObject?.sub("message")?.sub("content")?.asString
             val errMsg = jsonElement.sub("error")?.asString
-            return content?.let { AIUtils.cleanMarkdownCodeBlocks(it) }
-                ?: throw AIApiException(errMsg ?: "Could not parse response from Local LLM server")
+            return content ?: throw AIApiException(errMsg ?: "Could not parse response from Local LLM server")
         } catch (e: AIException) {
             throw e
         } catch (e: Exception) {

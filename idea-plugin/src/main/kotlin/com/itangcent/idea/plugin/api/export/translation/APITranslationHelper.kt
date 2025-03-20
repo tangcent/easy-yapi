@@ -12,6 +12,7 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.idea.plugin.settings.helper.AISettingsHelper
+import com.itangcent.idea.plugin.utils.AIUtils
 import com.itangcent.intellij.logger.Logger
 import java.util.concurrent.ConcurrentHashMap
 
@@ -375,10 +376,10 @@ class APITranslationHelper {
                     "Return only the translated text without any explanations or additional formatting."
 
             // Send translation request to AI
-            val translatedText = aiService.sendPrompt(systemMessage, text)
+            val translatedText = AIUtils.getGeneralContent(aiService.sendPrompt(systemMessage, text))
 
             // Cache the result
-            if (translatedText.notNullOrEmpty()) {
+            if (translatedText.isNotEmpty()) {
                 translationCache[cacheKey] = translatedText
                 return translatedText
             }
@@ -434,10 +435,10 @@ class APITranslationHelper {
             """.trimIndent()
 
             // Send translation request to AI
-            val translatedJson = aiService.sendPrompt(systemMessage, jsonString)
+            val translatedJson = AIUtils.getGeneralContent(aiService.sendPrompt(systemMessage, jsonString))
 
             // Cache the result if it's valid JSON
-            if (translatedJson.notNullOrEmpty() && isValidJson(translatedJson)) {
+            if (translatedJson.isNotEmpty() && isValidJson(translatedJson)) {
                 return translatedJson
             }
 

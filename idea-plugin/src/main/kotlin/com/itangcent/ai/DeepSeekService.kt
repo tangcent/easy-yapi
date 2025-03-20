@@ -8,7 +8,6 @@ import com.itangcent.http.RawContentType
 import com.itangcent.http.contentType
 import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.idea.plugin.settings.helper.AISettingsHelper
-import com.itangcent.idea.plugin.utils.AIUtils
 import com.itangcent.intellij.extend.sub
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.suv.http.HttpClientProvider
@@ -87,8 +86,7 @@ open class DeepSeekService : AIService {
             val jsonElement = GsonUtils.parseToJsonTree(responseBody)
             val content = jsonElement.sub("choices")?.asJsonArray?.firstOrNull()
                 ?.asJsonObject?.sub("message")?.sub("content")?.asString
-            return content?.let { AIUtils.cleanMarkdownCodeBlocks(it) }
-                ?: throw AIApiException("Could not parse response from DeepSeek API")
+            return content ?: throw AIApiException("Could not parse response from DeepSeek API")
         } catch (e: AIException) {
             // Re-throw AI exceptions
             throw e
