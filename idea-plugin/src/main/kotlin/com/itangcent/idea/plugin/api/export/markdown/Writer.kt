@@ -61,8 +61,10 @@ class TableWriterBuilder {
                     ignoreColumns.add(index)
                     return@forEachIndexed
                 }
-                validHeaders.add((configReader.first("md.table.${tableId}.${header}.name") ?: header)
-                        to configReader.first("md.table.${tableId}.${header}.align"))
+                validHeaders.add(
+                    (configReader.first("md.table.${tableId}.${header}.name") ?: header)
+                            to configReader.first("md.table.${tableId}.${header}.align")
+                )
             }
             this.headers = validHeaders.toTypedArray()
             this.ignoreColumns = ignoreColumns.toTypedArray()
@@ -152,7 +154,7 @@ class ObjectWriterBuilder() {
         }
     }
 
-    private abstract inner class AbstractObjectWriter(val writer: Writer) : ObjectWriter {
+    abstract class AbstractObjectWriter(val writer: Writer) : ObjectWriter {
 
         abstract val tableWriter: TableWriter
 
@@ -166,7 +168,7 @@ class ObjectWriterBuilder() {
 
         abstract fun writeBody(obj: Any?, name: String, desc: String)
 
-        protected fun addBodyProperty(deep: Int, vararg columns: Any?) {
+        protected open fun addBodyProperty(deep: Int, vararg columns: Any?) {
             tableWriter.addRow(columns.mapIndexed { index, any ->
                 if (index == 0 && deep > 1) {
                     return@mapIndexed "&ensp;&ensp;".repeat(deep - 1) + "&#124;─" + any
@@ -178,8 +180,10 @@ class ObjectWriterBuilder() {
     }
 
     private inner class SimpleObjectWriter(tableId: String, writer: Writer) : AbstractObjectWriter(writer) {
-        override val tableWriter: TableWriter = tableRenderBuilder.build(writer, tableId,
-            arrayOf("name", "type", "desc"))
+        override val tableWriter: TableWriter = tableRenderBuilder.build(
+            writer, tableId,
+            arrayOf("name", "type", "desc")
+        )
 
         override fun writeBody(obj: Any?, name: String, desc: String) {
             writeBody(obj, name, desc, 0)
@@ -197,6 +201,7 @@ class ObjectWriterBuilder() {
                 } else {
                     "number"
                 }
+
                 is Boolean -> type = "boolean"
             }
             if (type != null) {
@@ -230,7 +235,7 @@ class ObjectWriterBuilder() {
                 var comment: Map<String, Any?>? = null
                 try {
                     comment = obj[Attrs.COMMENT_ATTR] as Map<String, Any?>?
-                } catch (e: Throwable) {
+                } catch (_: Throwable) {
                 }
                 obj.forEachValid { k, v ->
                     val propertyDesc = KVUtils.getUltimateComment(comment, k)
@@ -243,8 +248,10 @@ class ObjectWriterBuilder() {
     }
 
     private inner class UltimateObjectWriter(tableId: String, writer: Writer) : AbstractObjectWriter(writer) {
-        override val tableWriter: TableWriter = tableRenderBuilder.build(writer, tableId,
-            arrayOf("name", "type", "required", "default", "desc"))
+        override val tableWriter: TableWriter = tableRenderBuilder.build(
+            writer, tableId,
+            arrayOf("name", "type", "required", "default", "desc")
+        )
 
         override fun writeBody(obj: Any?, name: String, desc: String) {
             writeBody(obj, name, null, null, desc, 0)
@@ -262,6 +269,7 @@ class ObjectWriterBuilder() {
                 } else {
                     "number"
                 }
+
                 is Boolean -> type = "boolean"
             }
             if (type != null) {

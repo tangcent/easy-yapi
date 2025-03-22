@@ -10,9 +10,6 @@ class ImmutableSystemProvider : SystemProvider {
 
     var runtime: Runtime? = null
 
-
-    constructor()
-
     constructor(currentTimeMillis: Long) {
         this.currentTimeMillis = currentTimeMillis
     }

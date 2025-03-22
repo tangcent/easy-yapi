@@ -93,6 +93,30 @@ class EnhancedConfigReader : BaseConfigReader() {
     private var currentConfigContentHash: String? = null
 
     /**
+     * Get the parent path from a ConfigContent.
+     * For local files, it will use the file's parent directory.
+     * For remote URLs or invalid file paths, it will use the URL's parent path.
+     */
+    private fun ConfigContent.getContentPath(): String? {
+        val url = url ?: return null
+        try {
+            val path = if (url.startsWith("file:")) {
+                url.substringAfter("file:")
+            } else {
+                url
+            }
+            val file = java.io.File(path)
+            if (file.exists()) {
+                // For existing local files, use File.parent
+                return file.parentFile.path
+            }
+        } catch (_: Exception) {
+        }
+        // For non-existent files or invalid file paths (like URLs), get the parent path from URL
+        return url.substringBeforeLast('/')
+    }
+
+    /**
      * Collect configuration contents from all providers, handling any errors gracefully.
      */
     private fun loadConfigList() {
@@ -114,7 +138,19 @@ class EnhancedConfigReader : BaseConfigReader() {
                 this.currentConfigContentHash = configContentHash
                 super.reset()
                 configContentList.forEach { configContent ->
-                    super.loadConfigInfoContent(configContent.content, configContent.type)
+                    val prePath = configInfo.getFirst("_curr_path")
+                    try {
+                        configContent.getContentPath()?.let { path ->
+                            configInfo.replace("_curr_path", path)
+                        }
+                        super.loadConfigInfoContent(configContent.content, configContent.type)
+                    } finally {
+                        if (prePath == null) {
+                            configInfo.removeAll("_curr_path")
+                        } else {
+                            configInfo.replace("_curr_path", prePath)
+                        }
+                    }
                 }
             } finally {
                 loading = null
