@@ -487,7 +487,7 @@ open class SuvApiExporter {
                     return
                 }
                 logger.info("Start parse apis")
-                val apiInfo = markdownFormatter.parseRequests(docs)
+                val apiInfo = markdownFormatter.parseDocs(docs)
                 docs.clear()
                 actionContext.runAsync {
                     try {

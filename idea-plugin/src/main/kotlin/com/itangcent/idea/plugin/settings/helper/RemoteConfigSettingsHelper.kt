@@ -54,7 +54,8 @@ class RemoteConfigSettingsHelper {
     fun loadConfig(url: String): ConfigContent {
         return ConfigContent(
             content = beanDAO.get(url) ?: refreshConfig(url) ?: "",
-            type = getContentTypeFromUrl(url)
+            type = getContentTypeFromUrl(url),
+            url = url
         )
     }
 
@@ -79,14 +80,15 @@ class RemoteConfigSettingsHelper {
 typealias RemoteConfig = LinkedList<Pair<Boolean, String>>
 
 fun Array<String>.parse(): RemoteConfig {
-    return LinkedList(this
-        .map {
-            if (it.startsWith('!')) {
-                false to it.substring(1)
-            } else {
-                true to it
-            }
-        })
+    return LinkedList(
+        this
+            .map {
+                if (it.startsWith('!')) {
+                    false to it.substring(1)
+                } else {
+                    true to it
+                }
+            })
 }
 
 fun RemoteConfig.toConfig(): Array<String> {
