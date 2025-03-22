@@ -56,6 +56,13 @@ open class CachedResourceResolver : DefaultResourceResolver() {
 
     open inner class CachedURLResource(url: URL) : URLResource(url) {
 
+        private val urlCacheExpire: Long
+            get() = (configReader.first(URL_CACHE_EXPIRE)?.let { str -> TimeSpanUtils.parse(str) }
+                ?: TimeUnit.HOURS.toMillis(2))
+
+        private val timeOut: Int
+            get() = httpSettingsHelper.httpTimeOut(TimeUnit.MILLISECONDS)
+
         private fun loadCache(): ByteArray? {
             val rawUrl = url.toString()
             val key = rawUrl.toByteArray(Charsets.UTF_8)
@@ -67,7 +74,7 @@ open class CachedResourceResolver : DefaultResourceResolver() {
                     return byteArrayOf()
                 }
                 try {
-                    valueBytes = actionContext.callWithTimeout(timeOut().toLong()) {
+                    valueBytes = actionContext.callWithTimeout(timeOut.toLong()) {
                         super.inputStream?.use { it.readBytes() }
                     }
                 } catch (e: Exception) {
@@ -92,8 +99,8 @@ open class CachedResourceResolver : DefaultResourceResolver() {
                 valueBytes?.let {
                     beanDAO.set(
                         key, it, System.currentTimeMillis() +
-                            (configReader.first(URL_CACHE_EXPIRE)?.let { str -> TimeSpanUtils.parse(str) }
-                                ?: TimeUnit.HOURS.toMillis(2)))
+                                urlCacheExpire
+                    )
                 }
             }
             return valueBytes
@@ -112,11 +119,8 @@ open class CachedResourceResolver : DefaultResourceResolver() {
             get() = loadCache()?.let { String(it, Charsets.UTF_8) }
 
         override fun onConnection(connection: URLConnection) {
-            val httpTimeOut = timeOut()
-            connection.connectTimeout = httpTimeOut
-            connection.readTimeout = httpTimeOut
+            connection.connectTimeout = timeOut
+            connection.readTimeout = timeOut
         }
-
-        private fun timeOut() = httpSettingsHelper.httpTimeOut(TimeUnit.MILLISECONDS)
     }
 }

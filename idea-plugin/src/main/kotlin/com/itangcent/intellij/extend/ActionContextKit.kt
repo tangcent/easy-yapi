@@ -11,6 +11,7 @@ import com.itangcent.intellij.util.ActionUtils
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.reflect.KClass
 
 /**
  * Runs the specified action asynchronously with the given ActionContext instance.
@@ -149,6 +150,18 @@ fun ActionContext.runInNormalThread(action: () -> Unit) {
 fun ActionContext.findCurrentMethod(): PsiMethod? {
     return this.cacheOrCompute("_currentMethod") {
         ActionUtils.findCurrentMethod()
+    }
+}
+
+inline fun <reified T : Any> lazyBean(): Lazy<T> {
+    return lazyBean<T>(T::class)
+}
+
+fun <T : Any> lazyBean(cls: KClass<T>): Lazy<T> {
+    return lazy {
+        val actionContext = ActionContext.getContext()
+            ?: throw IllegalStateException("ActionContext is not initialized.")
+        actionContext.instance(cls)
     }
 }
 
