@@ -51,7 +51,7 @@ class MarkdownApiExporter {
             NotificationUtils.notifyInfo(project, "No API found to export")
             return
         }
-        val apiInfo = markdownFormatter!!.parseRequests(docs)
+        val apiInfo = markdownFormatter!!.parseDocs(docs)
         fileSaveHelper!!.saveOrCopy(apiInfo, markdownSettingsHelper.outputCharset(), {
             NotificationUtils.notifyInfo(project, "API documentation copied to clipboard")
         }, {
