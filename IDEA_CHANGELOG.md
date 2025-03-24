@@ -1,3 +1,13 @@
+* 2.7.9
+	* feat: Implement template-based Markdown formatting for API documentation  [(#1216)](https://github.com/tangcent/easy-yapi/pull/1216)
+
+	* build: update Kotlin daemon JVM arguments  [(#1215)](https://github.com/tangcent/easy-yapi/pull/1215)
+
+	* refactor: improve AI response content handling  [(#1214)](https://github.com/tangcent/easy-yapi/pull/1214)
+
+	* feat: Support Local LLM service  [(#1212)](https://github.com/tangcent/easy-yapi/pull/1212)
+
+	* build(ci): add GitHub Actions workflow for automated releases  [(#1213)](https://github.com/tangcent/easy-yapi/pull/1213)
 * 2.7.8
 	* refactor: Enhance EasyApiSettingAI layout  [(#1209)](https://github.com/tangcent/easy-yapi/pull/1209)
 

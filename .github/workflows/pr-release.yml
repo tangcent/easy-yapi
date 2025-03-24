@@ -1,0 +1,119 @@
+name: 'Update Release PR'
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  update-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Check if branch is release branch and add label if needed
+        uses: actions/github-script@v7
+        id: check_branch
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue: { number: issueNumber }, repo: { owner, repo } } = context;
+            const branchName = '${{ github.event.pull_request.head.ref }}';
+            
+            console.log(`Branch name: ${branchName}`);
+            
+            // Check if branch follows 'release/xxx' pattern
+            const isReleaseBranch = branchName.startsWith('release/');
+            
+            if (isReleaseBranch) {
+              console.log('This is a release branch');
+              
+              // Get current labels
+              const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+                owner,
+                repo,
+                issue_number: issueNumber
+              });
+              
+              // Check if 'release' label is already applied
+              const hasReleaseLabel = currentLabels.some(label => label.name === 'release');
+              
+              if (!hasReleaseLabel) {
+                console.log('Adding release label');
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  labels: ['release']
+                });
+              } else {
+                console.log('Release label already exists');
+              }
+              
+              return true;
+            } else {
+              console.log('Not a release branch');
+              return false;
+            }
+
+      - name: Fetch base branch
+        if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Generate PR content
+        if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
+        id: generate_content
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Find the most recent version tag (vx.x.x format)
+          LATEST_TAG=$(git tag -l "v*.*.*" | sort -V | tail -n1)
+          
+          # Skip the latest commit (the current PR commit)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No version tags found. Using all commits in branch except the latest."
+            COMMITS=$(git log --pretty=format:"* %s" HEAD~1)
+          else
+            echo "Found latest tag: $LATEST_TAG"
+            # Get all commits since the latest tag, excluding the latest commit
+            COMMITS=$(git log --pretty=format:"* %s" $LATEST_TAG..HEAD~1)
+          fi
+          
+          # If no commits found, provide a clearer message
+          if [ -z "$COMMITS" ]; then
+            COMMITS="* No new commits since last release tag ($LATEST_TAG)"
+          fi
+          
+          # Create PR body content with the commits
+          PR_BODY="## Release Changes\n\n"
+          PR_BODY="${PR_BODY}${COMMITS}"
+          
+          # Save to file to maintain formatting
+          echo -e "$PR_BODY" > pr_body.txt
+          
+          # Use delimiter for multiline output
+          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
+          cat pr_body.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update Pull Request
+        if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue: { number: issueNumber }, repo: { owner, repo } } = context;
+            
+            const prBody = `${{ steps.generate_content.outputs.pr_body }}`;
+            
+            github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: prBody
+            }); 
