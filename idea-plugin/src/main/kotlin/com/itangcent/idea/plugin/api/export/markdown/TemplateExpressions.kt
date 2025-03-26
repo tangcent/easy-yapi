@@ -276,7 +276,7 @@ class MDTableExpression(
     override fun eval(context: TemplateContext, stringBuilder: StringBuilder) {
         //append header
         for ((_, title) in titles) {
-            stringBuilder.append("| $title ")
+            stringBuilder.append("| ${MarkdownEscapeUtils.escape(title)} ")
         }
         stringBuilder.append("|\n")
 
@@ -290,7 +290,7 @@ class MDTableExpression(
         for (row in rows) {
             for ((property, _) in titles) {
                 val value = row.getPropertyValue(property)
-                stringBuilder.append("| ${context.asText(value)} ")
+                stringBuilder.append("| ${MarkdownEscapeUtils.escape(context.asText(value))} ")
             }
             stringBuilder.append("|\n")
         }
@@ -470,19 +470,13 @@ class CustomObjectWriter(
                 }
 
                 escape -> {
-                    escape(context.asText(any))
+                    MarkdownEscapeUtils.escape(context.asText(any))
                 }
 
                 else -> {
                     context.asText(any)
                 }
             }
-        }
-
-        private fun escape(str: String?): String {
-            if (str.isNullOrBlank()) return ""
-            return str.replace("\n", "<br>")
-                .replace("|", "\\|")
         }
     }
 

@@ -5,7 +5,6 @@ import com.itangcent.common.model.Request
 import com.itangcent.common.utils.safeComputeIfAbsent
 import com.itangcent.idea.plugin.api.export.core.Folder
 import com.itangcent.idea.plugin.api.export.core.FormatFolderHelper
-import com.itangcent.idea.plugin.api.export.markdown.eval
 import com.itangcent.intellij.config.resource.Resource
 import com.itangcent.intellij.extend.lazyBean
 
