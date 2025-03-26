@@ -179,7 +179,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             request.paths!!.first().let {
                 assertEquals("type", it.name)
                 assertEquals(
-                    "user type [user type]\n" +
+                    "user type \n" +
                             "1 :administration\n" +
                             "2 :a person, an animal or a plant\n" +
                             "3 :Anonymous visitor", it.desc

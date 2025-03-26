@@ -482,7 +482,7 @@ test apis
 
 | name | type | desc |
 | ------------ | ------------ | ------------ |
-|  | integer | user type [type of user]<br>ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
+|  | integer | user type <br>ADMIN :administration<br>MEM :a person, an animal or a plant<br>GUEST :Anonymous visitor |
 
 **Response Demo:**
 

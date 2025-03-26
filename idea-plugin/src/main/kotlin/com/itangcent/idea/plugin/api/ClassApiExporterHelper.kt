@@ -8,7 +8,9 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiType
 import com.itangcent.common.logger.Log
 import com.itangcent.common.model.Doc
-import com.itangcent.common.utils.*
+import com.itangcent.common.utils.notNullOrBlank
+import com.itangcent.common.utils.notNullOrEmpty
+import com.itangcent.common.utils.toBool
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.core.ClassExporter
 import com.itangcent.idea.plugin.api.export.core.LinkResolver
@@ -83,15 +85,18 @@ open class ClassApiExporterHelper {
 
                 val options: ArrayList<HashMap<String, Any?>> = ArrayList()
                 val comment = linkExtractor.extract(value, psiMethod, object : AbstractLinkResolve() {
-
                     override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
-                        psiClassHelper.resolveEnumOrStatic(
+                        val enumOrStaticOptions = psiClassHelper.resolveEnumOrStatic(
                             plainText,
                             parameters.firstOrNull { it.name == name } ?: psiMethod,
                             name
-                        )?.let { options.addAll(it) }
-
-                        return super.linkToPsiElement(plainText, linkTo)
+                        )
+                        if (enumOrStaticOptions != null) {
+                            options.addAll(enumOrStaticOptions)
+                            return ""
+                        } else {
+                            return super.linkToPsiElement(plainText, linkTo)
+                        }
                     }
 
                     override fun linkToClass(plainText: String, linkClass: PsiClass): String? {
