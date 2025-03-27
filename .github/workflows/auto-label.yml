@@ -1,0 +1,140 @@
+name: 'Auto Label PR'
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  label-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Auto Label PR Based on Commits
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue: { number: issue_number }, repo: { owner, repo } } = context;
+            
+            // Get commits in the PR
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner,
+              repo,
+              pull_number: issue_number
+            });
+            
+            // Define valid types and their corresponding labels
+            const typeToLabel = {
+              'feat': 'type: new feature',
+              'fix': 'type: bug',
+              'docs': 'type: doc',
+              'test': 'type: test',
+              'chore': 'type: chore',
+              'enhance': 'type: enhancement',
+              'amend': 'type: amend',
+              'style': 'type: chore',
+              'refactor': 'type: enhancement',
+              'perf': 'type: enhancement',
+              'build': 'type: chore'
+            };
+            
+            const validTypes = Object.keys(typeToLabel);
+            const pattern = new RegExp(`^(${validTypes.join('|')})(\(.+\))?!?: .+`);
+            
+            let isValid = true;
+            let invalidCommits = [];
+            
+            // Check each commit
+            for (const commit of commits) {
+              const message = commit.commit.message.split('\n')[0]; // Get first line
+              if (!pattern.test(message)) {
+                isValid = false;
+                invalidCommits.push(message);
+              }
+            }
+            
+            // Get the first valid commit to determine the type
+            const firstValidCommit = commits.find(commit => {
+              const message = commit.commit.message.split('\n')[0];
+              return pattern.test(message);
+            });
+            
+            // Get existing type labels
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number
+            });
+            
+            if (isValid && firstValidCommit) {
+              // Extract type from first valid commit
+              const type = firstValidCommit.commit.message.match(pattern)[1];
+              const labelToAdd = typeToLabel[type];
+              
+              // Check if the label already exists
+              const labelExists = currentLabels.some(label => label.name === labelToAdd);
+              
+              if (!labelExists) {
+                // Remove other type labels if they exist
+                for (const label of currentLabels) {
+                  if (label.name.startsWith('type:') && label.name !== labelToAdd) {
+                    await github.rest.issues.removeLabel({
+                      owner,
+                      repo,
+                      issue_number,
+                      name: label.name
+                    });
+                  }
+                }
+                
+                // Add the new label
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number,
+                  labels: [labelToAdd]
+                });
+              }
+            } else {
+              // Create error comment
+              const errorMessage = `
+              ❌ Some commit messages don't follow the conventional format.
+            
+              Invalid commits:
+              ${invalidCommits.map(msg => `- \`${msg}\``).join('\n')}
+            
+              Please update your commits to follow the format:
+              \`\`\`
+              type: description
+            
+              Valid types:
+              - feat: New feature (type: new feature)
+              - fix: Bug fix (type: bug)
+              - docs: Documentation changes (type: doc)
+              - test: Adding/updating tests (type: test)
+              - chore: Maintenance tasks (type: chore)
+              - enhance: Enhancement to existing features (type: enhancement)
+              - amend: Small amendments (type: amend)
+              - style: Code formatting (type: chore)
+              - refactor: Code restructuring (type: enhancement)
+              - perf: Performance improvements (type: enhancement)
+              - build: Build system changes (type: chore)
+              \`\`\`
+            
+              You can update your commit messages using:
+              \`\`\`bash
+              git rebase -i HEAD~n  # where n is the number of commits to edit
+              # Change 'pick' to 'reword' for commits you want to edit
+              \`\`\`
+              `;
+            
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: errorMessage
+              });
+            } 
