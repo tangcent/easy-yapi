@@ -304,7 +304,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
             assertEquals(
-                "user type [type of user]\n" +
+                "user type \n" +
                         "1 :administration\n" +
                         "2 :a person, an animal or a plant\n" +
                         "3 :Anonymous visitor",
@@ -317,7 +317,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("/test/return/result/enum/field", request.path.toString())
             assertEquals("GET", request.method)
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nuser type [type of user]\\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\"},\"msg\":\"\",\"data\":0}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nuser type \\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\"},\"msg\":\"\",\"data\":0}",
                 request.response!![0].body.toJson()
             )
             assertNull(request.response!![0].bodyDesc)
@@ -560,7 +560,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.response!![0].body.toJson()
             )
             assertEquals(
-                "user type [type of user]\n" +
+                "user type \n" +
                         "1 :administration\n" +
                         "2 :a person, an animal or a plant\n" +
                         "3 :Anonymous visitor",
@@ -573,7 +573,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("/test/return/result/enum/field", request.path.toString())
             assertEquals("GET", request.method)
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nuser type [type of user]\\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\"},\"msg\":\"\",\"data\":0}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\\nuser type \\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\"},\"msg\":\"\",\"data\":0}",
                 request.response!![0].body.toJson()
             )
             assertNull(request.response!![0].bodyDesc)

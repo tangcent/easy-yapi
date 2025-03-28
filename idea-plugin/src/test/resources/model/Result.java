@@ -19,6 +19,9 @@ public class Result<T> implements IResult {
         this.data = data;
     }
 
+    /**
+     * create success result
+     */
     public static <T> Result<T> success(T data) {
         return new Result<>(0, "success", data);
     }

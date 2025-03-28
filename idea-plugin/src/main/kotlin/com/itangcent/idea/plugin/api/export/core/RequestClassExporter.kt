@@ -13,10 +13,10 @@ import com.itangcent.common.model.hasBodyOrForm
 import com.itangcent.common.utils.*
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.plugin.api.ClassApiExporterHelper
-import com.itangcent.idea.plugin.api.infer.MethodInferHelper
 import com.itangcent.idea.plugin.api.export.condition.ConditionOnDoc
 import com.itangcent.idea.plugin.api.export.rule.RequestRuleWrap
 import com.itangcent.idea.plugin.api.export.spring.SpringClassName
+import com.itangcent.idea.plugin.api.infer.MethodInferHelper
 import com.itangcent.idea.plugin.settings.helper.IntelligentSettingsHelper
 import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.idea.psi.PsiMethodSet
@@ -389,10 +389,13 @@ abstract class RequestClassExporter : ClassExporter {
 
                             override fun linkToPsiElement(plainText: String, linkTo: Any?): String? {
 
-                                psiClassHelper!!.resolveEnumOrStatic(plainText, context, "")
-                                    ?.let { options.addAll(it) }
-
-                                return super.linkToPsiElement(plainText, linkTo)
+                                val enumOrStaticOptions = psiClassHelper!!.resolveEnumOrStatic(plainText, context, "")
+                                if (enumOrStaticOptions != null) {
+                                    options.addAll(enumOrStaticOptions)
+                                    return ""
+                                } else {
+                                    return super.linkToPsiElement(plainText, linkTo)
+                                }
                             }
 
                             override fun linkToType(plainText: String, linkType: PsiType): String? {
@@ -732,7 +735,7 @@ abstract class RequestClassExporter : ClassExporter {
                                         (parent?.getAs<Boolean>(Attrs.DEFAULT_VALUE_ATTR, key)
                                             ?: value.takeIfNotOriginal())
                                     )?.toString(),
-                                    parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) ?: false,
+                                    parent?.getAs<Boolean>(Attrs.REQUIRED_ATTR, key) == true,
                                     KVUtils.getUltimateComment(parent?.getAs(Attrs.COMMENT_ATTR), key)
                                 )
                             }

@@ -68,7 +68,6 @@ internal class YapiLinkResolverTest : PluginContextLightCodeInsightFixtureTestCa
     fun testLinkToProperty() {
         assertEquals("[PsiClass:UserCtrl]", linkResolver.linkToProperty(userCtrlPsiClass))
         assertEquals("[PsiMethod:greeting]", linkResolver.linkToProperty(userCtrlPsiClass.methods[0]))
-        assertEquals("[user id]", linkResolver.linkToProperty(userInfoPsiClass.fields[0]))
+        assertEquals("[com.itangcent.model.UserInfo#id(user id)]", linkResolver.linkToProperty(userInfoPsiClass.fields[0]))
     }
-
 }

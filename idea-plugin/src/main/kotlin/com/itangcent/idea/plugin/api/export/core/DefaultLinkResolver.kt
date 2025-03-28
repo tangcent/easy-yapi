@@ -8,7 +8,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PropertyUtil
 import com.itangcent.common.utils.notNullOrBlank
 import com.itangcent.intellij.jvm.DocHelper
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil
 
 @Singleton
 open class DefaultLinkResolver : LinkResolver {
@@ -23,7 +23,7 @@ open class DefaultLinkResolver : LinkResolver {
         val attrOfClass = docHelper!!.getAttrOfDocComment(linkClass)
         return when {
             attrOfClass.isNullOrBlank() -> "[${linkClass.name}]"
-            else -> "[$attrOfClass]"
+            else -> "[${linkClass.name}($attrOfClass)]"
         }
     }
 
@@ -31,10 +31,11 @@ open class DefaultLinkResolver : LinkResolver {
         if (linkMethod !is PsiMethod) {
             return "[$linkMethod]"
         }
+        val fullNameOfMethod = PsiClassUtil.fullNameOfMethod(linkMethod)
         val attrOfMethod = docHelper!!.getAttrOfDocComment(linkMethod)
-                ?.lines()?.first { it.isNotBlank() }
+            ?.lines()?.first { it.isNotBlank() }
         if (attrOfMethod.notNullOrBlank()) {
-            return "[$attrOfMethod]"
+            return "[$fullNameOfMethod($attrOfMethod)]"
         }
 
         //resolve getter
@@ -45,7 +46,7 @@ open class DefaultLinkResolver : LinkResolver {
             }
         }
 
-        return "[${PsiClassUtils.fullNameOfMethod(linkMethod)}]"
+        return "[$fullNameOfMethod]"
     }
 
     override fun linkToProperty(linkField: Any): String? {
@@ -53,9 +54,13 @@ open class DefaultLinkResolver : LinkResolver {
             return "[$linkField]"
         }
         val attrOfProperty = docHelper!!.getAttrOfField(linkField)
+        val fullNameOfField = PsiClassUtil.fullNameOfField(linkField)
         return when {
-            attrOfProperty.isNullOrBlank() -> "[${PsiClassUtils.fullNameOfField(linkField)}]"
-            else -> "[$attrOfProperty]"
+            attrOfProperty.isNullOrBlank() -> {
+                "[$fullNameOfField]"
+            }
+
+            else -> "[$fullNameOfField($attrOfProperty)]"
         }
     }
 
