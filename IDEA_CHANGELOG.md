@@ -1,3 +1,9 @@
+* 2.8.0
+	* feat: improve link resolution in Markdown Documentation Comments  [(#1220)](https://github.com/tangcent/easy-yapi/pull/1220)
+
+	* build: add commit message validation workflow  [(#1219)](https://github.com/tangcent/easy-yapi/pull/1219)
+
+	* fix: escape special characters in markdown template tables  [(#1218)](https://github.com/tangcent/easy-yapi/pull/1218)
 * 2.7.9
 	* feat: Implement template-based Markdown formatting for API documentation  [(#1216)](https://github.com/tangcent/easy-yapi/pull/1216)
 
