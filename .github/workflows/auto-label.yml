@@ -38,11 +38,13 @@ jobs:
               'style': 'type: chore',
               'refactor': 'type: enhancement',
               'perf': 'type: enhancement',
-              'build': 'type: chore'
+              'build': 'type: chore',
+              'release': 'type: release'
             };
             
             const validTypes = Object.keys(typeToLabel);
             const pattern = new RegExp(`^(${validTypes.join('|')})(\(.+\))?!?: .+`);
+            const releaseVersionPattern = new RegExp(`^release\\s+\\d+\\.\\d+\\.\\d+$`);
             
             let isValid = true;
             let invalidCommits = [];
@@ -50,7 +52,7 @@ jobs:
             // Check each commit
             for (const commit of commits) {
               const message = commit.commit.message.split('\n')[0]; // Get first line
-              if (!pattern.test(message)) {
+              if (!pattern.test(message) && !releaseVersionPattern.test(message)) {
                 isValid = false;
                 invalidCommits.push(message);
               }
@@ -59,7 +61,7 @@ jobs:
             // Get the first valid commit to determine the type
             const firstValidCommit = commits.find(commit => {
               const message = commit.commit.message.split('\n')[0];
-              return pattern.test(message);
+              return pattern.test(message) || releaseVersionPattern.test(message);
             });
             
             // Get existing type labels
@@ -70,8 +72,15 @@ jobs:
             });
             
             if (isValid && firstValidCommit) {
-              // Extract type from first valid commit
-              const type = firstValidCommit.commit.message.match(pattern)[1];
+              const message = firstValidCommit.commit.message.split('\n')[0];
+              let type;
+              
+              if (releaseVersionPattern.test(message)) {
+                type = 'release';
+              } else {
+                type = message.match(pattern)[1];
+              }
+              
               const labelToAdd = typeToLabel[type];
               
               // Check if the label already exists
@@ -109,6 +118,9 @@ jobs:
               Please update your commits to follow the format:
               \`\`\`
               type: description
+              # or for releases:
+              release x.y.z
+              \`\`\`
             
               Valid types:
               - feat: New feature (type: new feature)
@@ -122,7 +134,7 @@ jobs:
               - refactor: Code restructuring (type: enhancement)
               - perf: Performance improvements (type: enhancement)
               - build: Build system changes (type: chore)
-              \`\`\`
+              - release: Release version (type: release)
             
               You can update your commit messages using:
               \`\`\`bash
@@ -137,4 +149,4 @@ jobs:
                 issue_number,
                 body: errorMessage
               });
-            } 
+            }
