@@ -85,6 +85,7 @@ internal class RecommendConfigLoaderTest {
                 "module",
                 "ignore",
                 "deprecated_java",
+                "ignore_system_fields",
                 "deprecated_kotlin",
                 "not_ignore_irregular_api_method",
                 "Jackson",
@@ -142,7 +143,7 @@ internal class RecommendConfigLoaderTest {
     @Test
     fun testSelectedCodes() {
         assertEquals(
-            "[module, ignore, Jackson, Gson, ignore_transient_field, spring.validations, jakarta.validation, is_file, yapi_tag_kotlin, yapi_status, yapi_mock, import_spring_properties, ignore_serialVersionUID, properties, Fastjson, enum_auto_select_field_by_type, ignore_some_common_classes]",
+            "[module, ignore, ignore_system_fields, Jackson, Gson, ignore_transient_field, spring.validations, jakarta.validation, is_file, yapi_tag_kotlin, yapi_status, yapi_mock, import_spring_properties, ignore_serialVersionUID, properties, Fastjson, enum_auto_select_field_by_type, ignore_some_common_classes]",
             RecommendConfigLoader.selectedCodes("-Jackson_JsonIgnoreProperties,-converts,-yapi_tag,-spring.ui,-import_spring_properties,-support_mock_for_general,-deprecated_java,-deprecated_kotlin,-spring_Entity,-spring_webflux,-javax.validation,-javax.validation(strict),-support_mock_for_javax_validation,import_spring_properties")
                 .contentToString()
         )
@@ -151,7 +152,7 @@ internal class RecommendConfigLoaderTest {
     @Test
     fun testDefaultCodes() {
         assertEquals(
-            "module,ignore,deprecated_java,deprecated_kotlin,Jackson,Gson,ignore_transient_field,converts,spring_Entity,spring.validations,spring.ui,jakarta.validation,javax.validation,is_file,yapi_tag,yapi_tag_kotlin,yapi_status,yapi_mock,yapi_tag,ignore_serialVersionUID,support_mock_for_general,support_mock_for_javax_validation,properties,Fastjson,enum_auto_select_field_by_type,ignore_some_common_classes",
+            "module,ignore,deprecated_java,ignore_system_fields,deprecated_kotlin,Jackson,Gson,ignore_transient_field,converts,spring_Entity,spring.validations,spring.ui,jakarta.validation,javax.validation,is_file,yapi_tag,yapi_tag_kotlin,yapi_status,yapi_mock,yapi_tag,ignore_serialVersionUID,support_mock_for_general,support_mock_for_javax_validation,properties,Fastjson,enum_auto_select_field_by_type,ignore_some_common_classes",
             RecommendConfigLoader.defaultCodes()
         )
     }
