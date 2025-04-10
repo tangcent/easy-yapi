@@ -122,4 +122,21 @@ tasks {
         sinceBuild.set(intellijSince)
         untilBuild.set("")
     }
+    
+    // Add a task to clean the bin directory
+    register<Delete>("cleanBin") {
+        delete("bin")
+        doLast {
+            println("Cleaned bin directory")
+        }
+    }
+    
+    // Hook into existing tasks
+    getByName("clean") {
+        dependsOn("cleanBin")
+    }
+    
+    getByName("build") {
+        finalizedBy("cleanBin")
+    }
 }

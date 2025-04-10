@@ -26,6 +26,7 @@ hs_err_pid*
 /build
 /idea-plugin/build
 /idea-plugin/idea-sandbox/
+/idea-plugin/bin/
 
 \.DS_Store
 
