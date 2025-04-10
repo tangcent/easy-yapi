@@ -139,7 +139,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
     override fun copyApi(from: Map<String, String>, target: Map<String, String>) {
         val fromToken = from.getToken() ?: throw IllegalArgumentException("no token be found in from")
         val targetToken = target.getToken() ?: throw IllegalArgumentException("no token be found in target")
-        val targetCatId = target["catId"]
+        val targetCatId = target["catid"]
         listApis(from) { api ->
             val copyApi = HashMap(api)
             copyApi.remove("_id")
@@ -187,7 +187,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             return
         }
 
-        val catId = from["catId"]
+        val catId = from["catid"]
         if (catId != null) {
             listApis(fromToken, catId)?.map { it.asMap() }?.forEach(api)
             return
@@ -211,7 +211,7 @@ abstract class AbstractYapiApiHelper : YapiApiHelper {
             }
         }
         return try {
-            httpClientProvide!!.getHttpClient()
+            httpClientProvide.getHttpClient()
                 .get(rawUrl)
                 .call()
                 .use { it.string() }

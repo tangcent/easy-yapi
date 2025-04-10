@@ -29,7 +29,7 @@ interface YapiSaveInterceptor {
      * @return return {@code false} [YapiApiHelper] will discard this apiInfo.
      * else [YapiApiHelper] will save this apiInfo to yapi server.
      */
-    fun beforeSaveApi(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>): Boolean?
+    fun beforeSaveApi(actionContext: ActionContext, apiInfo: HashMap<String, Any?>): Boolean?
 }
 
 @Singleton
@@ -44,7 +44,7 @@ class YapiSaveInterceptorCompositeProvider : SpiCompositeBeanProvider<YapiSaveIn
  */
 @ConditionOnSetting("yapiExportMode", havingValue = "ALWAYS_UPDATE")
 class AlwaysUpdateYapiSaveInterceptor : YapiSaveInterceptor {
-    override fun beforeSaveApi(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>): Boolean {
+    override fun beforeSaveApi(actionContext: ActionContext, apiInfo: HashMap<String, Any?>): Boolean {
         return true
     }
 }
@@ -57,8 +57,9 @@ val ALWAYS_UPDATE_API_SAVE_INTERCEPTOR = AlwaysUpdateYapiSaveInterceptor()
  */
 @ConditionOnSetting("yapiExportMode", havingValue = "NEVER_UPDATE")
 class NeverUpdateYapiSaveInterceptor : YapiSaveInterceptor {
-    override fun beforeSaveApi(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>): Boolean {
-        return !apiHelper.existed(apiInfo)
+    override fun beforeSaveApi(actionContext: ActionContext, apiInfo: HashMap<String, Any?>): Boolean {
+        val yapiApiHelper = actionContext.instance(YapiApiHelper::class)
+        return !yapiApiHelper.existed(apiInfo)
     }
 }
 
@@ -73,22 +74,24 @@ class AlwaysAskYapiSaveInterceptor : YapiSaveInterceptor {
     private var selectedYapiSaveInterceptor: YapiSaveInterceptor? = null
 
     @Synchronized
-    override fun beforeSaveApi(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>): Boolean? {
+    override fun beforeSaveApi(actionContext: ActionContext, apiInfo: HashMap<String, Any?>): Boolean? {
         if (selectedYapiSaveInterceptor != null) {
-            return selectedYapiSaveInterceptor!!.beforeSaveApi(apiHelper, apiInfo)
+            return selectedYapiSaveInterceptor!!.beforeSaveApi(actionContext, apiInfo)
         }
-        if (!apiHelper.existed(apiInfo)) {
+        
+        val yapiApiHelper = actionContext.instance(YapiApiHelper::class)
+        if (!yapiApiHelper.existed(apiInfo)) {
             return true
         }
+        
         val valueHolder = ValueHolder<Boolean>()
-        val context = ActionContext.getContext() ?: return true
-        context.instance(MessagesHelper::class).showAskWithApplyAllDialog(
+        actionContext.instance(MessagesHelper::class).showAskWithApplyAllDialog(
             "The api [${apiInfo["title"]}] already existed in the project.\n" +
                     "Do you want update it?",
             ConfirmationDialogLabels(okText = "Update", noText = "Skip", cancelText = "Cancel")
         ) { ret, applyAll ->
             if (ret == Messages.CANCEL) {
-                context.stop()
+                actionContext.stop()
                 valueHolder.success(false)
                 return@showAskWithApplyAllDialog
             }
@@ -115,8 +118,15 @@ class AlwaysAskYapiSaveInterceptor : YapiSaveInterceptor {
  * Only works when the configuration "yapi.no_update.description" is set to true.
  */
 class NoUpdateDescriptionYapiSaveInterceptor : YapiSaveInterceptor {
-    override fun beforeSaveApi(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>): Boolean? {
-        recoverDescription(apiHelper, apiInfo)
+    override fun beforeSaveApi(actionContext: ActionContext, apiInfo: HashMap<String, Any?>): Boolean? {
+        val noUpdateDescription = actionContext
+            .instance(ConfigReader::class)
+            .first("yapi.no_update.description")
+            ?.toBool(false) == true
+        
+        if (noUpdateDescription) {
+            recoverDescription(actionContext, apiInfo)
+        }
         return null
     }
 
@@ -124,16 +134,11 @@ class NoUpdateDescriptionYapiSaveInterceptor : YapiSaveInterceptor {
      * Retrieves the existing API information from YAPI and copies the description and markdown
      * fields to the new API information to prevent them from being overwritten.
      */
-    private fun recoverDescription(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>) {
-        val disable = ActionContext.getContext()
-            ?.instance(ConfigReader::class)
-            ?.first("yapi.no_update.description")
-            ?.toBool(false) ?: false
-        if (!disable) return
-
-        val existedApi = apiHelper.findExistApi(apiInfo) ?: return
+    private fun recoverDescription(actionContext: ActionContext, apiInfo: HashMap<String, Any?>) {
+        val yapiApiHelper = actionContext.instance(YapiApiHelper::class)
+        val existedApi = yapiApiHelper.findExistApi(apiInfo) ?: return
         val apiId = existedApi.sub("_id")?.asString ?: return
-        val existedApiInfo = apiHelper.getApiInfo(apiInfo["token"] as String, apiId)
+        val existedApiInfo = yapiApiHelper.getApiInfo(apiInfo["token"] as String, apiId)
 
         val existedDescription = existedApiInfo.sub("desc")?.asString ?: ""
         apiInfo["desc"] = existedDescription
@@ -149,17 +154,17 @@ class NoUpdateDescriptionYapiSaveInterceptor : YapiSaveInterceptor {
  */
 @ConditionOnSetting("yapiExportMode", havingValue = "UPDATE_IF_CHANGED")
 class UpdateIfChangedYapiSaveInterceptor : YapiSaveInterceptor {
-    @Inject
-    private lateinit var logger: Logger
-
-    override fun beforeSaveApi(apiHelper: YapiApiHelper, apiInfo: HashMap<String, Any?>): Boolean? {
-        if (!apiHelper.existed(apiInfo)) {
+    override fun beforeSaveApi(actionContext: ActionContext, apiInfo: HashMap<String, Any?>): Boolean? {
+        val yapiApiHelper = actionContext.instance(YapiApiHelper::class)
+        val logger = actionContext.instance(Logger::class)
+        
+        if (!yapiApiHelper.existed(apiInfo)) {
             return true
         }
 
-        val existedApi = apiHelper.findExistApi(apiInfo) ?: return true
+        val existedApi = yapiApiHelper.findExistApi(apiInfo) ?: return true
         val apiId = existedApi.sub("_id")?.asString ?: return true
-        val existedApiInfo = apiHelper.getApiInfo(apiInfo["token"] as String, apiId) ?: return true
+        val existedApiInfo = yapiApiHelper.getApiInfo(apiInfo["token"] as String, apiId) ?: return true
 
         // Compare key fields that determine if the API has changed
         if (isApiUnchanged(apiInfo, existedApiInfo)) {
