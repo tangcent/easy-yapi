@@ -2,6 +2,8 @@
 module=#module
 #Ignore class/api
 ignore=#ignore
+#ignore fields from java.lang system classes
+field.ignore=groovy:!it.containingClass().name().startsWith("java.lang")&&it.defineClass().name().startsWith("java.lang")
 #Support for Jackson annotations
 field.name=@com.fasterxml.jackson.annotation.JsonProperty#value
 field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value
