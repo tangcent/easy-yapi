@@ -14,5 +14,6 @@ enum class YapiExportMode(var desc: String) {
      */
     ALWAYS_UPDATE("always update existed api"),
     NEVER_UPDATE("never update existed api"),
-    ALWAYS_ASK("always popup a window to ask whether to override the api")
+    ALWAYS_ASK("always popup a window to ask whether to override the api"),
+    UPDATE_IF_CHANGED("update only if the API content has changed")
 }

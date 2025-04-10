@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.google.gson.Gson
 import com.google.gson.JsonArray
-import com.google.gson.JsonObject
 import com.intellij.openapi.ui.Messages
 import com.itangcent.idea.plugin.dialog.ConfirmationDialogLabels
 import com.itangcent.idea.plugin.settings.SettingBinder
@@ -38,22 +38,64 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
     private val api1: HashMap<String, Any?> = hashMapOf(
         "_id" to 1,
-        "name" to "test api",
-        "path" to "/test",
+        "title" to "get user info",
+        "path" to "/user/get/{id}",
         "method" to "GET",
-        "token" to "123",
-        "desc" to "test api description",
-        "markdown" to "test api markdown"
+        "token" to "token111111",
+        "desc" to "<p>get user info of specified id</p>",
+        "markdown" to "get user info of specified id",
+        "req_headers" to listOf(
+            mapOf(
+                "name" to "Content-Type",
+                "value" to "application/json",
+                "example" to "application/json",
+                "required" to 1
+            ),
+            mapOf(
+                "name" to "token",
+                "value" to "",
+                "desc" to "auth token",
+                "required" to 1
+            )
+        ),
+        "req_query" to listOf(
+            mapOf(
+                "name" to "id",
+                "value" to 0,
+                "desc" to "user id",
+                "required" to 0
+            )
+        ),
+        "res_body_type" to "json",
+        "res_body" to "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"description\":\"response data\"}},\"\$schema\":\"http://json-schema.org/draft-04/schema#\"}"
     )
 
     private val api2: HashMap<String, Any?> = hashMapOf(
         "_id" to 2,
-        "name" to "test api 2",
-        "path" to "/test2",
+        "title" to "create an user",
+        "path" to "/user/add",
         "method" to "POST",
-        "token" to "123",
-        "desc" to "test api description 2",
-        "markdown" to "test api markdown 2"
+        "token" to "token111111",
+        "desc" to "<p>create an new user</p>",
+        "markdown" to "create an new user",
+        "req_headers" to listOf(
+            mapOf(
+                "name" to "Content-Type",
+                "value" to "application/json",
+                "example" to "application/json",
+                "required" to 1
+            ),
+            mapOf(
+                "name" to "token",
+                "value" to "",
+                "desc" to "auth token",
+                "required" to 1
+            )
+        ),
+        "req_body_type" to "json",
+        "req_body_other" to "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"\$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+        "res_body_type" to "json",
+        "res_body" to "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"description\":\"response data\"}},\"\$schema\":\"http://json-schema.org/draft-04/schema#\"}"
     )
 
     override fun bind(builder: ActionContextBuilder) {
@@ -65,8 +107,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
         yapiApiHelper = mock()
         val apis = JsonArray()
-        val api = JsonObject()
-        api1.forEach { (k, v) -> api.addProperty(k, v?.toString()) }
+        val api = Gson().toJsonTree(api1).asJsonObject
         apis.add(api)
         Mockito.`when`(yapiApiHelper.getProjectIdByToken(any()))
             .thenReturn("123")
@@ -104,6 +145,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
     @Test
     fun `test AlwaysUpdateYapiSaveInterceptor`() {
         settings.yapiExportMode = YapiExportMode.ALWAYS_UPDATE.name
+        settings.builtInConfig = ""
         val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
         assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
         assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
@@ -112,6 +154,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
     @Test
     fun `test NeverUpdateYapiSaveInterceptor`() {
         settings.yapiExportMode = YapiExportMode.NEVER_UPDATE.name
+        settings.builtInConfig = ""
         val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
 
         answerTask = Messages.YES
@@ -128,6 +171,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
         run {
             settings.yapiExportMode = YapiExportMode.ALWAYS_ASK.name
+            settings.builtInConfig = ""
             val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
 
             answerTask = Messages.YES
@@ -141,6 +185,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
         run {
             settings.yapiExportMode = YapiExportMode.ALWAYS_ASK.name
+            settings.builtInConfig = ""
             val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
 
             answerTask = Messages.YES
@@ -156,6 +201,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
         run {
             settings.yapiExportMode = YapiExportMode.ALWAYS_ASK.name
+            settings.builtInConfig = ""
             val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
 
             answerTask = Messages.NO
@@ -171,6 +217,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
         run {
             settings.yapiExportMode = YapiExportMode.ALWAYS_ASK.name
+            settings.builtInConfig = ""
             val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
 
             answerTask = Messages.CANCEL
@@ -190,8 +237,8 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
         val saveInterceptor = NoUpdateDescriptionYapiSaveInterceptor()
 
         val apiInfo = hashMapOf<String, Any?>(
-            "name" to "test api",
-            "path" to "/test",
+            "title" to "get user info",
+            "path" to "/user/get/{id}",
             "method" to "GET",
             "token" to "123",
             "desc" to "New description",
@@ -202,7 +249,79 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
         assertEquals(null, saveInterceptor.beforeSaveApi(yapiApiHelper, apiInfo))
 
         // Assert that the existing description and markdown are retained
-        assertEquals("test api description", apiInfo["desc"])
-        assertEquals("test api markdown", apiInfo["markdown"])
+        assertEquals("<p>get user info of specified id</p>", apiInfo["desc"])
+        assertEquals("get user info of specified id", apiInfo["markdown"])
+    }
+
+    @Test
+    fun `test UpdateIfChangedYapiSaveInterceptor`() {
+        settings.yapiExportMode = YapiExportMode.UPDATE_IF_CHANGED.name
+        settings.builtInConfig = ""
+
+        val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
+
+        // Test case 1: API doesn't exist - should return true to allow creation
+        val newApi = hashMapOf<String, Any?>(
+            "title" to "new api",
+            "path" to "/new",
+            "method" to "GET",
+            "token" to "token111111"
+        )
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, newApi))
+
+        // Test case 2: API exists but hasn't changed - should return false to skip update
+        assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
+
+        // Test case 3: API exists and has changed - should return true to allow update
+        val changedApi = HashMap(api1)
+        changedApi["desc"] = "updated description"
+        changedApi["req_body_other"] = """{"newField": "value"}"""
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, changedApi))
+
+        // Test cases for individual field changes
+        // title change
+        val titleChangedApi = HashMap(api1)
+        titleChangedApi["title"] = "new title"
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, titleChangedApi))
+
+        // desc change
+        val descChangedApi = HashMap(api1)
+        descChangedApi["desc"] = "new description"
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, descChangedApi))
+
+        // req_body_type change
+        val reqBodyTypeChangedApi = HashMap(api1)
+        reqBodyTypeChangedApi["req_body_type"] = "form"
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqBodyTypeChangedApi))
+
+        // res_body_type change
+        val resBodyTypeChangedApi = HashMap(api1)
+        resBodyTypeChangedApi["res_body_type"] = "raw"
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, resBodyTypeChangedApi))
+
+        // req_body_other change
+        val reqBodyOtherChangedApi = HashMap(api1)
+        reqBodyOtherChangedApi["req_body_other"] = """{"newField": "value"}"""
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqBodyOtherChangedApi))
+
+        // res_body change
+        val resBodyChangedApi = HashMap(api1)
+        resBodyChangedApi["res_body"] = """{"newField": "value"}"""
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, resBodyChangedApi))
+
+        // req_headers change
+        val reqHeadersChangedApi = HashMap(api1)
+        reqHeadersChangedApi["req_headers"] = listOf(mapOf("name" to "Content-Type", "value" to "application/json"))
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqHeadersChangedApi))
+
+        // req_query change
+        val reqQueryChangedApi = HashMap(api1)
+        reqQueryChangedApi["req_query"] = listOf(mapOf("name" to "param", "value" to "value"))
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqQueryChangedApi))
+
+        // req_params change
+        val reqParamsChangedApi = HashMap(api1)
+        reqParamsChangedApi["req_params"] = listOf(mapOf("name" to "param", "value" to "value"))
+        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqParamsChangedApi))
     }
 }
