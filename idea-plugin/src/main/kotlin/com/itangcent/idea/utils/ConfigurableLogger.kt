@@ -6,8 +6,6 @@ import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.annotation.script.ScriptUnIgnore
 import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
-import com.itangcent.idea.plugin.settings.helper.currentLogLevel
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.AbstractLogger
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.logger.Logger.Level
@@ -20,20 +18,16 @@ class ConfigurableLogger : AbstractLogger() {
     @Named("delegate.logger")
     private var delegateLogger: Logger? = null
 
-    @Inject(optional = true)
-    private val commonSettingsHelper: CommonSettingsHelper? = null
+    @Inject
+    private lateinit var commonSettingsHelper: CommonSettingsHelper
 
-    private lateinit var currentLogLevel: Level
-
-    @PostConstruct
-    @ScriptIgnore
-    fun init() {
-        currentLogLevel = commonSettingsHelper.currentLogLevel()
+    private val currentLogLevel: Level by lazy {
+        commonSettingsHelper.currentLogLevel()
     }
 
     @ScriptUnIgnore
     override fun log(msg: String) {
-        super.log(CommonSettingsHelper.CoarseLogLevel.EMPTY, msg)
+        super.log(CommonSettingsHelper.VerbosityLevel.EMPTY, msg)
     }
 
     @ScriptIgnore
@@ -49,7 +43,6 @@ class ConfigurableLogger : AbstractLogger() {
     @ScriptIgnore
     override fun processLog(logData: String?) {
         //This method will not be called
-        throw IllegalArgumentException("ConfigurableLogger#processLog not be implemented")
+        throw NotImplementedError("ConfigurableLogger#processLog not be implemented")
     }
-
 }

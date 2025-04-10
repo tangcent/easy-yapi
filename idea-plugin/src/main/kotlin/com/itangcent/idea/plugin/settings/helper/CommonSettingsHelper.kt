@@ -21,24 +21,20 @@ class CommonSettingsHelper {
         return settingBinder.read().logLevel
     }
 
-    fun logCharset(): Charset {
-        return Charsets.forName(settingBinder.read().logCharset)?.charset() ?: kotlin.text.Charsets.UTF_8
-    }
-
     fun currentLogLevel(): Logger.Level {
         val logLevel: Int = logLevel()
-        return logLevel.let { CoarseLogLevel.toLevel(it) }
+        return logLevel.let { VerbosityLevel.toLevel(it) }
     }
 
-    enum class CoarseLogLevel : Logger.Level {
+    enum class VerbosityLevel : Logger.Level {
         EMPTY(1000) {
             override fun getLevelStr(): String {
                 return ""
             }
         },
-        LOW(50),
-        MEDIUM(250),
-        HIGH(450)
+        VERBOSE(50),
+        NORMAL(250),
+        QUIET(450)
         ;
 
         private val level: Int
@@ -48,7 +44,7 @@ class CommonSettingsHelper {
         }
 
         override fun getLevelStr(): String {
-            throw UnsupportedOperationException("CoarseLogLevel only be used as level")
+            throw UnsupportedOperationException("VerbosityLevel only be used as level")
         }
 
         override fun getLevel(): Int {
@@ -62,25 +58,25 @@ class CommonSettingsHelper {
         companion object {
 
             fun toLevel(level: Int): Logger.Level {
-                return toLevel(level, LOW)
+                return toLevel(level, VERBOSE)
             }
 
             fun toLevel(level: Int, defaultLevel: Logger.Level): Logger.Level {
                 return when (level) {
-                    LOW.level -> LOW
-                    MEDIUM.level -> MEDIUM
-                    HIGH.level -> HIGH
+                    VERBOSE.level -> VERBOSE
+                    NORMAL.level -> NORMAL
+                    QUIET.level -> QUIET
                     else -> Logger.BasicLevel.toLevel(level, defaultLevel)
                 }
             }
 
-            fun editableValues(): Array<CoarseLogLevel> {
-                return values().filter { it != EMPTY }.toTypedArray()
+            fun editableValues(): Array<VerbosityLevel> {
+                return entries.filter { it != EMPTY }.toTypedArray()
             }
         }
     }
 }
 
 fun CommonSettingsHelper?.currentLogLevel(): Logger.Level {
-    return this?.currentLogLevel() ?: CommonSettingsHelper.CoarseLogLevel.LOW
+    return this?.currentLogLevel() ?: CommonSettingsHelper.VerbosityLevel.VERBOSE
 }
