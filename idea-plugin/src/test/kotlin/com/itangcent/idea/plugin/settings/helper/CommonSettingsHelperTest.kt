@@ -24,14 +24,6 @@ internal class CommonSettingsHelperTest : SettingsHelperTest() {
     }
 
     @Test
-    fun testLogCharset() {
-        for (charset in Charsets.SUPPORTED_CHARSETS) {
-            settings.logCharset = charset.displayName()
-            assertEquals(charset.charset(), commonSettingsHelper.logCharset())
-        }
-    }
-
-    @Test
     fun testLogLevel() {
         for (level in Logger.BasicLevel.values()) {
             settings.logLevel = level.getLevel()
@@ -41,23 +33,23 @@ internal class CommonSettingsHelperTest : SettingsHelperTest() {
 
     @Test
     fun testCurrentLogLevel() {
-        settings.logLevel = CommonSettingsHelper.CoarseLogLevel.LOW.getLevel()
-        assertEquals(CommonSettingsHelper.CoarseLogLevel.LOW, commonSettingsHelper.currentLogLevel())
-        settings.logLevel = CommonSettingsHelper.CoarseLogLevel.HIGH.getLevel()
-        assertEquals(CommonSettingsHelper.CoarseLogLevel.HIGH, commonSettingsHelper.currentLogLevel())
+        settings.logLevel = CommonSettingsHelper.VerbosityLevel.QUIET.getLevel()
+        assertEquals(CommonSettingsHelper.VerbosityLevel.QUIET, commonSettingsHelper.currentLogLevel())
+        settings.logLevel = CommonSettingsHelper.VerbosityLevel.VERBOSE.getLevel()
+        assertEquals(CommonSettingsHelper.VerbosityLevel.VERBOSE, commonSettingsHelper.currentLogLevel())
 
-        for (level in Logger.BasicLevel.values()) {
+        for (level in Logger.BasicLevel.entries) {
             settings.logLevel = level.getLevel()
             assertEquals(level, commonSettingsHelper.currentLogLevel())
         }
     }
 
     @Test
-    fun testCoarseLogLevel() {
-        val editableValues = CommonSettingsHelper.CoarseLogLevel.editableValues()
-        assertFalse(editableValues.contains(CommonSettingsHelper.CoarseLogLevel.EMPTY))
+    fun testVerbosityLevel() {
+        val editableValues = CommonSettingsHelper.VerbosityLevel.editableValues()
+        assertFalse(editableValues.contains(CommonSettingsHelper.VerbosityLevel.EMPTY))
 
         val helper: CommonSettingsHelper? = null
-        assertEquals(CommonSettingsHelper.CoarseLogLevel.LOW, helper.currentLogLevel())
+        assertEquals(CommonSettingsHelper.VerbosityLevel.VERBOSE, helper.currentLogLevel())
     }
 }

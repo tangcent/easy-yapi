@@ -49,7 +49,7 @@ If applicable, add screenshots to help explain your problem.
    ```
 
 2. Console output `easy_api`
-   - Please set <kbd>Preferences(Settings)</kbd> > <kbd>Other Settings</kbd> > <kbd>EasyApi</kbd> > <kbd> Common</kbd> > <kbd>log</kbd> to `LOW```
+   - Please set <kbd>Preferences(Settings)</kbd> > <kbd>Other Settings</kbd> > <kbd>EasyApi</kbd> > <kbd> Common</kbd> > <kbd>log</kbd> to `VERBOSE```
    
 3. Logs of IDEA: <br>
    The easiest way to find the product log file is the Help menu, the item name would depend on the IDE version and OS:- Show Log in Explorer

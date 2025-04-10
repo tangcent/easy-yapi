@@ -45,7 +45,6 @@ interface ApplicationSettingsSupport {
     var useRecommendConfig: Boolean
     var recommendConfigs: String
     var logLevel: Int
-    var logCharset: String
     var outputDemo: Boolean
     var outputCharset: String
     var markdownFormatType: String
@@ -97,7 +96,6 @@ interface ApplicationSettingsSupport {
         newSetting.useRecommendConfig = this.useRecommendConfig
         newSetting.recommendConfigs = this.recommendConfigs
         newSetting.logLevel = this.logLevel
-        newSetting.logCharset = this.logCharset
         newSetting.outputDemo = this.outputDemo
         newSetting.outputCharset = this.outputCharset
         newSetting.markdownFormatType = this.markdownFormatType
@@ -198,13 +196,6 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var recommendConfigs: String = RecommendConfigLoader.defaultCodes()
 
     override var logLevel: Int = 50
-
-    /**
-     * Charset for out put file
-     */
-    override var logCharset: String = Charsets.UTF_8.displayName()
-
-    // markdown
 
     override var outputDemo: Boolean = true
 

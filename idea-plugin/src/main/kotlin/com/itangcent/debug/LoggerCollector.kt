@@ -1,5 +1,6 @@
 package com.itangcent.debug
 
+import com.itangcent.debug.LoggerCollector.Companion.buffer
 import com.itangcent.intellij.logger.AbstractLogger
 import com.itangcent.intellij.logger.Logger
 

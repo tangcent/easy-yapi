@@ -31,13 +31,12 @@ internal class ConfigurableLoggerTest : BaseContextTest() {
     @ParameterizedTest
     @CsvSource(
         "EMPTY,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-        "LOW,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-        "MEDIUM,[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-        "HIGH,[ERROR]\terrorlog",
+        "VERBOSE,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+        "NORMAL,[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
+        "QUIET,[ERROR]\terrorlog",
     )
-    fun testLog(level: CommonSettingsHelper.CoarseLogLevel, output: String) {
+    fun testLog(level: CommonSettingsHelper.VerbosityLevel, output: String) {
         settings.logLevel = level.getLevel()
-        (logger as ConfigurableLogger).init()
         logger.trace("trace")
         logger.debug("debug")
         logger.info("info")
