@@ -6,7 +6,6 @@ import com.itangcent.common.spi.Setup
 import com.itangcent.common.spi.SpiUtils
 import com.itangcent.idea.config.CachedResourceResolver
 import com.itangcent.idea.plugin.Initializer
-import com.itangcent.idea.utils.ConfigurableLogger
 import com.itangcent.intellij.actions.KotlinAnAction
 import com.itangcent.intellij.config.resource.ResourceResolver
 import com.itangcent.intellij.context.ActionContext
@@ -14,10 +13,11 @@ import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.kotlin.KotlinAutoInject
-import com.itangcent.intellij.logger.IdeaConsoleLogger
 import com.itangcent.intellij.logger.Logger
+import com.itangcent.intellij.logger.MultiWindowConsoleLogger
 import com.itangcent.intellij.spi.IdeaAutoInject
 import com.itangcent.intellij.tip.OnlyOnceInContextTipSetup
+import com.itangcent.logger.LoggerProvider
 import javax.swing.Icon
 
 abstract class BasicAnAction : KotlinAnAction {
@@ -34,8 +34,7 @@ abstract class BasicAnAction : KotlinAnAction {
 
         super.onBuildActionContext(event, builder)
 
-        builder.bind(Logger::class) { it.with(ConfigurableLogger::class).singleton() }
-        builder.bind(Logger::class, "delegate.logger") { it.with(IdeaConsoleLogger::class).singleton() }
+        builder.bind(Logger::class) { it.toProvider(LoggerProvider::class.java).singleton() }
 
         builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }
 

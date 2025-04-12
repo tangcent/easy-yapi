@@ -1,42 +1,28 @@
 package com.itangcent.idea.utils
 
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.idea.plugin.settings.SettingBinder
-import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
-import com.itangcent.intellij.context.ActionContextBuilder
-import com.itangcent.intellij.extend.guice.singleton
-import com.itangcent.intellij.extend.guice.with
-import com.itangcent.intellij.logger.Logger
-import com.itangcent.mock.BaseContextTest
-import com.itangcent.mock.SettingBinderAdaptor
+import com.itangcent.logger.ConfigurableLogger
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import kotlin.test.assertEquals
 
 /**
- * Test case of [ConfigurableLogger]
+ * Test case of [com.itangcent.logger.ConfigurableLogger]
  */
-internal class ConfigurableLoggerTest : BaseContextTest() {
-
-    private val settings = Settings()
-
-    override fun bind(builder: ActionContextBuilder) {
-        super.bind(builder)
-        builder.bind(Logger::class) { it.with(ConfigurableLogger::class) }
-        builder.bind(Logger::class, "delegate.logger") { it.with(LoggerCollector::class).singleton() }
-        builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
-    }
+internal class ConfigurableLoggerTest {
 
     @ParameterizedTest
     @CsvSource(
-        "EMPTY,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-        "VERBOSE,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-        "NORMAL,[INFO]\tinfo[WARN]\twarn[ERROR]\terrorlog",
-        "QUIET,[ERROR]\terrorlog",
+        "VERBOSE,[TRACE]\ttrace[DEBUG]\tdebug[INFO]\tinfo[WARN]\twarn[ERROR]\terror[INFO]\tlog",
+        "NORMAL,[INFO]\tinfo[WARN]\twarn[ERROR]\terror[INFO]\tlog",
+        "QUIET,[ERROR]\terror",
     )
     fun testLog(level: CommonSettingsHelper.VerbosityLevel, output: String) {
-        settings.logLevel = level.getLevel()
+        val logger = ConfigurableLogger(
+            LoggerCollector(),
+            level.level
+        )
         logger.trace("trace")
         logger.debug("debug")
         logger.info("info")

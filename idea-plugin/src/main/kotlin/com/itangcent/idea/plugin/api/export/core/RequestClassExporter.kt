@@ -125,7 +125,7 @@ abstract class RequestClassExporter : ClassExporter {
             }
 
             shouldIgnore(cls) -> {
-                logger.info("ignore class:$clsQualifiedName")
+                logger.debug("ignore class:$clsQualifiedName")
                 return true
             }
         }

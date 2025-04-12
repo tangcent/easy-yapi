@@ -1,5 +1,6 @@
 package com.itangcent.idea.plugin.settings
 
+import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
 import com.itangcent.idea.plugin.settings.xml.ApplicationSettingsSupport
 import com.itangcent.idea.plugin.settings.xml.ProjectSettingsSupport
@@ -98,6 +99,12 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
     override var logLevel: Int = 50
 
     /**
+     * Type of logger to use for displaying logs
+     * @see com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper.LoggerConsoleType
+     */
+    override var loggerConsoleType: String = CommonSettingsHelper.LoggerConsoleType.SINGLE_CONSOLE.name
+
+    /**
      * Charset for output file
      */
     override var outputCharset: String = Charsets.UTF_8.displayName()
@@ -118,7 +125,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
      * AI service provider (e.g., OpenAI, DeepSeek, etc.)
      */
     override var aiProvider: String? = null
-    
+
     /**
      * AI service API token
      */
@@ -133,7 +140,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
      * Enable AI integration
      */
     override var aiEnable: Boolean = false
-    
+
     /**
      * AI model to use (e.g., gpt-3.5-turbo, gpt-4, etc.)
      */
@@ -143,17 +150,17 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
      * Enable caching of AI API responses
      */
     override var aiEnableCache: Boolean = false
-    
+
     /**
      * Enable API translation feature
      */
     override var aiTranslationEnabled: Boolean = false
-    
+
     /**
      * Target language for API translation
      */
     override var aiTranslationTargetLanguage: String? = null
-    
+
     /**
      * Enable AI for method return type inference
      */
@@ -210,6 +217,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         if (useRecommendConfig != other.useRecommendConfig) return false
         if (recommendConfigs != other.recommendConfigs) return false
         if (logLevel != other.logLevel) return false
+        if (loggerConsoleType != other.loggerConsoleType) return false
         if (outputDemo != other.outputDemo) return false
         if (outputCharset != other.outputCharset) return false
         if (markdownFormatType != other.markdownFormatType) return false
@@ -265,6 +273,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
         result = 31 * result + useRecommendConfig.hashCode()
         result = 31 * result + recommendConfigs.hashCode()
         result = 31 * result + logLevel
+        result = 31 * result + loggerConsoleType.hashCode()
         result = 31 * result + outputDemo.hashCode()
         result = 31 * result + outputCharset.hashCode()
         result = 31 * result + markdownFormatType.hashCode()
@@ -304,6 +313,7 @@ class Settings : ProjectSettingsSupport, ApplicationSettingsSupport {
                 "httpClient='$httpClient', trustHosts=${trustHosts.contentToString()}," +
                 "useRecommendConfig=$useRecommendConfig, " +
                 "recommendConfigs='$recommendConfigs', logLevel=$logLevel, " +
+                "loggerType=$loggerConsoleType, " +
                 "outputDemo=$outputDemo, " +
                 "outputCharset='$outputCharset', markdownFormatType='$markdownFormatType', " +
                 "builtInConfig=$builtInConfig, " +

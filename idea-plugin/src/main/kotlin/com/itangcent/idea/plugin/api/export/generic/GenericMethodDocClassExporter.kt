@@ -115,7 +115,7 @@ open class GenericMethodDocClassExporter : ClassExporter {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger.info("ignore class: $clsQualifiedName")
+                    logger.debug("ignore class: $clsQualifiedName")
                     disposable()
                     return true
                 }

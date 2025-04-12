@@ -41,7 +41,7 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
     }
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     protected val settingBinder: SettingBinder? = null
@@ -72,12 +72,12 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
                 }
 
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class: $clsQualifiedName")
+                    logger.debug("ignore class: $clsQualifiedName")
                     return true
                 }
 
                 else -> {
-                    logger!!.info("search api from: $clsQualifiedName")
+                    logger.info("search api from: $clsQualifiedName")
 
                     val fields = linkedMapOf<String, Any?>()
 
@@ -91,7 +91,7 @@ open class SimpleGenericMethodDocClassExporter : ClassExporter {
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError(e)
+            logger.traceError(e)
         }
 
         return true

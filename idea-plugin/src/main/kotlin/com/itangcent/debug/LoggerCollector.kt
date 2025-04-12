@@ -1,18 +1,17 @@
 package com.itangcent.debug
 
 import com.itangcent.debug.LoggerCollector.Companion.buffer
-import com.itangcent.intellij.logger.AbstractLogger
+import com.itangcent.intellij.logger.Level
 import com.itangcent.intellij.logger.Logger
 
 /**
  *
  * This interface represents [Logger] which collect all appended logs to a buffer.
  */
-class LoggerCollector : AbstractLogger() {
+class LoggerCollector : Logger {
 
-    override fun processLog(logData: String?) {
-        buffer.append(logData)
-            .appendLine()
+    override fun log(level: Level, msg: String) {
+        buffer.append("[${level.name}]\t$msg").appendLine()
     }
 
     companion object {

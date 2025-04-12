@@ -56,7 +56,7 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
     }
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     protected lateinit var ruleComputer: RuleComputer
@@ -80,12 +80,12 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
                 }
 
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class: $clsQualifiedName")
+                    logger.debug("ignore class: $clsQualifiedName")
                     return true
                 }
 
                 else -> {
-                    logger!!.info("search api from: $clsQualifiedName")
+                    logger.info("search api from: $clsQualifiedName")
 
 
                     classApiExporterHelper.foreachPsiMethod(cls) { method ->
@@ -94,7 +94,7 @@ open class SimpleSpringRequestClassExporter : ClassExporter {
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError(e)
+            logger.traceError(e)
         }
         return true
     }
