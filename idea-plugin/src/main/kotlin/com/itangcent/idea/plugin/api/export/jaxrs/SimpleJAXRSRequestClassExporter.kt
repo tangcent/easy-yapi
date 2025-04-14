@@ -52,7 +52,7 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter {
     }
 
     @Inject
-    private val logger: Logger? = null
+    private lateinit var logger: Logger
 
     @Inject
     private lateinit var ruleComputer: RuleComputer
@@ -74,18 +74,18 @@ open class SimpleJAXRSRequestClassExporter : ClassExporter {
                     return false
                 }
                 shouldIgnore(cls) -> {
-                    logger!!.info("ignore class: $clsQualifiedName")
+                    logger.debug("ignore class: $clsQualifiedName")
                     return true
                 }
                 else -> {
-                    logger!!.info("search api from: $clsQualifiedName")
+                    logger.info("search api from: $clsQualifiedName")
                     classApiExporterHelper.foreachPsiMethod(cls) { method ->
                         exportMethodApi(cls, method, docHandle)
                     }
                 }
             }
         } catch (e: Exception) {
-            logger!!.traceError(e)
+            logger.traceError(e)
         }
         return true
     }

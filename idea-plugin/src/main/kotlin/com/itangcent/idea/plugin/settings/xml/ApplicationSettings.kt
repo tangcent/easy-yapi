@@ -4,6 +4,7 @@ import com.itangcent.idea.plugin.settings.MarkdownFormatType
 import com.itangcent.idea.plugin.settings.PostmanJson5FormatType
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.plugin.settings.YapiExportMode
+import com.itangcent.idea.plugin.settings.helper.CommonSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.RecommendConfigLoader
 import com.itangcent.idea.utils.Charsets
 
@@ -44,14 +45,17 @@ interface ApplicationSettingsSupport {
     //enable to use recommend config
     var useRecommendConfig: Boolean
     var recommendConfigs: String
+
+    // Logger settings
     var logLevel: Int
+    var loggerConsoleType: String
     var outputDemo: Boolean
     var outputCharset: String
     var markdownFormatType: String
     var builtInConfig: String?
 
     var remoteConfig: Array<String>
-    
+
     // AI integration
     var aiProvider: String?
     var aiToken: String?
@@ -59,11 +63,11 @@ interface ApplicationSettingsSupport {
     var aiEnable: Boolean
     var aiModel: String?
     var aiEnableCache: Boolean
-    
+
     // API Translation
     var aiTranslationEnabled: Boolean
     var aiTranslationTargetLanguage: String?
-    
+
     // AI Method Inference
     var aiMethodInferEnabled: Boolean
 
@@ -96,6 +100,7 @@ interface ApplicationSettingsSupport {
         newSetting.useRecommendConfig = this.useRecommendConfig
         newSetting.recommendConfigs = this.recommendConfigs
         newSetting.logLevel = this.logLevel
+        newSetting.loggerConsoleType = this.loggerConsoleType
         newSetting.outputDemo = this.outputDemo
         newSetting.outputCharset = this.outputCharset
         newSetting.markdownFormatType = this.markdownFormatType
@@ -197,6 +202,12 @@ class ApplicationSettings : ApplicationSettingsSupport {
 
     override var logLevel: Int = 50
 
+    // Logger settings
+    /**
+     * Type of logger to use for displaying logs
+     */
+    override var loggerConsoleType: String = CommonSettingsHelper.LoggerConsoleType.SINGLE_CONSOLE.name
+
     override var outputDemo: Boolean = true
 
     override var outputCharset: String = Charsets.UTF_8.displayName()
@@ -206,27 +217,27 @@ class ApplicationSettings : ApplicationSettingsSupport {
     override var builtInConfig: String? = null
 
     override var remoteConfig: Array<String> = emptyArray()
-    
+
     //region AI integration--------------------------
-    
+
     override var aiProvider: String? = null
-    
+
     override var aiToken: String? = null
-    
+
     override var aiLocalServerUrl: String? = null
-    
+
     override var aiEnable: Boolean = false
-    
+
     override var aiModel: String? = null
-    
+
     override var aiEnableCache: Boolean = false
-    
+
     //endregion
 
     // API Translation
     override var aiTranslationEnabled: Boolean = false
     override var aiTranslationTargetLanguage: String? = null
-    
+
     // AI Method Inference
     override var aiMethodInferEnabled: Boolean = false
 
