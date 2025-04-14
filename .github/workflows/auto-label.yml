@@ -39,7 +39,7 @@ jobs:
               'refactor': 'type: enhancement',
               'perf': 'type: enhancement',
               'build': 'type: chore',
-              'release': 'type: release'
+              'release': 'release'
             };
             
             const validTypes = Object.keys(typeToLabel);
