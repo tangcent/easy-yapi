@@ -1,6 +1,7 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.inject.ImplementedBy
 import com.itangcent.common.logger.traceError
@@ -65,7 +66,17 @@ fun YapiApiHelper.findExistApi(apiInfo: HashMap<String, Any?>): JsonObject? {
     val path = apiInfo["path"] as? String ?: return null
     val method = apiInfo["method"] as? String ?: return null
     val token = apiInfo["token"] as? String ?: return null
-    return this.findExistApi(token, path, method)
+    val catId = apiInfo["catid"]?.toString()
+
+    return if (catId != null) {
+        // If catId is provided, search in that specific category
+        this.listApis(token, catId, null)?.find { api ->
+            api.matchesPathAndMethod(path, method)
+        } as? JsonObject
+    } else {
+        // Otherwise, search in all categories
+        this.findExistApi(token, path, method)
+    }
 }
 
 fun YapiApiHelper.findExistApi(token: String, path: String, method: String): JsonObject? {
@@ -74,13 +85,20 @@ fun YapiApiHelper.findExistApi(token: String, path: String, method: String): Jso
     for (cart in carts) {
         val catId = (cart as? Map<*, *>)?.get("_id")?.toString() ?: continue
         val api = this.listApis(token, catId, null)?.find { api ->
-            api.sub("path")?.asString == path && api.sub("method")?.asString == method
+            api.matchesPathAndMethod(path, method)
         }
         if (api != null) {
             return api as JsonObject
         }
     }
     return null
+}
+
+/**
+ * Check if the JsonElement matches the given path and method
+ */
+private fun JsonElement.matchesPathAndMethod(path: String, method: String): Boolean {
+    return this.sub("path")?.asString == path && this.sub("method")?.asString == method
 }
 
 fun YapiApiHelper.getCartForFolder(folder: Folder, privateToken: String): CartInfo? {

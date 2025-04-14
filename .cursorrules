@@ -1,0 +1,5 @@
+{
+  "excluded": [
+    "idea-plugin/bin/"
+  ]
+} 

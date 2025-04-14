@@ -274,29 +274,29 @@ internal class DefaultYapiApiHelperTest : AdvancedContextTest() {
         settings.yapiServer = VALID_YAPI_SERVER
 
         yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1), mapOf("token" to VALID_TOKEN_2))
-        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1), mapOf("token" to VALID_TOKEN_2, "catId" to "470386"))
-        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1, "catId" to "470386"), mapOf("token" to VALID_TOKEN_2))
+        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1), mapOf("token" to VALID_TOKEN_2, "catid" to "470386"))
+        yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1, "catid" to "470386"), mapOf("token" to VALID_TOKEN_2))
         yapiApiHelper.copyApi(
-            mapOf("token" to VALID_TOKEN_1, "catId" to CART_1),
-            mapOf("token" to VALID_TOKEN_2, "catId" to "470386")
+            mapOf("token" to VALID_TOKEN_1, "catid" to CART_1),
+            mapOf("token" to VALID_TOKEN_2, "catid" to "470386")
         )
         yapiApiHelper.copyApi(mapOf("token" to VALID_TOKEN_1, "id" to INTER_1), mapOf("token" to VALID_TOKEN_2))
         yapiApiHelper.copyApi(
             mapOf("token" to VALID_TOKEN_1, "id" to INTER_1),
-            mapOf("token" to VALID_TOKEN_2, "catId" to "470386")
+            mapOf("token" to VALID_TOKEN_2, "catid" to "470386")
         )
 
         yapiApiHelper.copyApi(mapOf("module" to "module1"), mapOf("module" to "module2"))
-        yapiApiHelper.copyApi(mapOf("module" to "module1"), mapOf("module" to "module2", "catId" to "470386"))
-        yapiApiHelper.copyApi(mapOf("module" to "module1", "catId" to "470386"), mapOf("module" to "module2"))
+        yapiApiHelper.copyApi(mapOf("module" to "module1"), mapOf("module" to "module2", "catid" to "470386"))
+        yapiApiHelper.copyApi(mapOf("module" to "module1", "catid" to "470386"), mapOf("module" to "module2"))
         yapiApiHelper.copyApi(
-            mapOf("module" to "module1", "catId" to CART_1),
-            mapOf("module" to "module2", "catId" to "470386")
+            mapOf("module" to "module1", "catid" to CART_1),
+            mapOf("module" to "module2", "catid" to "470386")
         )
         yapiApiHelper.copyApi(mapOf("module" to "module1", "id" to INTER_1), mapOf("module" to "module2"))
         yapiApiHelper.copyApi(
             mapOf("module" to "module1", "id" to INTER_1),
-            mapOf("module" to "module2", "catId" to "470386")
+            mapOf("module" to "module2", "catid" to "470386")
         )
     }
 

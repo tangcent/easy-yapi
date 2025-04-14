@@ -147,8 +147,8 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
         settings.yapiExportMode = YapiExportMode.ALWAYS_UPDATE.name
         settings.builtInConfig = ""
         val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api1))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
     }
 
     @Test
@@ -158,12 +158,12 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
         val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
 
         answerTask = Messages.YES
-        assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+        assertEquals(false, saveInterceptor.beforeSaveApi(actionContext, api1))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
 
         answerTask = Messages.NO
-        assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+        assertEquals(false, saveInterceptor.beforeSaveApi(actionContext, api1))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
     }
 
     @Test
@@ -175,12 +175,12 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
             val saveInterceptor = SpiCompositeLoader.loadComposite<YapiSaveInterceptor>()
 
             answerTask = Messages.YES
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api1))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
 
             answerTask = Messages.NO
-            assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+            assertEquals(false, saveInterceptor.beforeSaveApi(actionContext, api1))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
         }
 
         run {
@@ -190,13 +190,13 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
             answerTask = Messages.YES
             answerApplyAll = true
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api1))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
 
             answerTask = Messages.NO
             answerApplyAll = true
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api1))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
         }
 
         run {
@@ -206,13 +206,13 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
             answerTask = Messages.NO
             answerApplyAll = true
-            assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+            assertEquals(false, saveInterceptor.beforeSaveApi(actionContext, api1))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
 
             answerTask = Messages.YES
             answerApplyAll = true
-            assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
-            assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, api2))
+            assertEquals(false, saveInterceptor.beforeSaveApi(actionContext, api1))
+            assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, api2))
         }
 
         run {
@@ -222,7 +222,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
 
             answerTask = Messages.CANCEL
             answerApplyAll = false
-            assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
+            assertEquals(false, saveInterceptor.beforeSaveApi(actionContext, api1))
             WaitHelper.waitUtil(5000) { actionContext.isStopped() }
         }
     }
@@ -246,7 +246,7 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
         )
 
         // Run interceptor
-        assertEquals(null, saveInterceptor.beforeSaveApi(yapiApiHelper, apiInfo))
+        assertEquals(null, saveInterceptor.beforeSaveApi(actionContext, apiInfo))
 
         // Assert that the existing description and markdown are retained
         assertEquals("<p>get user info of specified id</p>", apiInfo["desc"])
@@ -267,61 +267,61 @@ internal class YapiSaveInterceptorTest : BaseContextTest() {
             "method" to "GET",
             "token" to "token111111"
         )
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, newApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, newApi))
 
         // Test case 2: API exists but hasn't changed - should return false to skip update
-        assertEquals(false, saveInterceptor.beforeSaveApi(yapiApiHelper, api1))
+        assertEquals(false, saveInterceptor.beforeSaveApi(actionContext, api1))
 
         // Test case 3: API exists and has changed - should return true to allow update
         val changedApi = HashMap(api1)
         changedApi["desc"] = "updated description"
         changedApi["req_body_other"] = """{"newField": "value"}"""
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, changedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, changedApi))
 
         // Test cases for individual field changes
         // title change
         val titleChangedApi = HashMap(api1)
         titleChangedApi["title"] = "new title"
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, titleChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, titleChangedApi))
 
         // desc change
         val descChangedApi = HashMap(api1)
         descChangedApi["desc"] = "new description"
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, descChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, descChangedApi))
 
         // req_body_type change
         val reqBodyTypeChangedApi = HashMap(api1)
         reqBodyTypeChangedApi["req_body_type"] = "form"
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqBodyTypeChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, reqBodyTypeChangedApi))
 
         // res_body_type change
         val resBodyTypeChangedApi = HashMap(api1)
         resBodyTypeChangedApi["res_body_type"] = "raw"
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, resBodyTypeChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, resBodyTypeChangedApi))
 
         // req_body_other change
         val reqBodyOtherChangedApi = HashMap(api1)
         reqBodyOtherChangedApi["req_body_other"] = """{"newField": "value"}"""
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqBodyOtherChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, reqBodyOtherChangedApi))
 
         // res_body change
         val resBodyChangedApi = HashMap(api1)
         resBodyChangedApi["res_body"] = """{"newField": "value"}"""
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, resBodyChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, resBodyChangedApi))
 
         // req_headers change
         val reqHeadersChangedApi = HashMap(api1)
         reqHeadersChangedApi["req_headers"] = listOf(mapOf("name" to "Content-Type", "value" to "application/json"))
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqHeadersChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, reqHeadersChangedApi))
 
         // req_query change
         val reqQueryChangedApi = HashMap(api1)
         reqQueryChangedApi["req_query"] = listOf(mapOf("name" to "param", "value" to "value"))
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqQueryChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, reqQueryChangedApi))
 
         // req_params change
         val reqParamsChangedApi = HashMap(api1)
         reqParamsChangedApi["req_params"] = listOf(mapOf("name" to "param", "value" to "value"))
-        assertEquals(true, saveInterceptor.beforeSaveApi(yapiApiHelper, reqParamsChangedApi))
+        assertEquals(true, saveInterceptor.beforeSaveApi(actionContext, reqParamsChangedApi))
     }
 }
