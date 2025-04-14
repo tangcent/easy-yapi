@@ -135,7 +135,7 @@
                         </constraints>
                         <properties>
                           <font/>
-                          <text value="load"/>
+                          <text value="Load"/>
                         </properties>
                       </component>
                       <component id="9d8f5" class="javax.swing.JButton" binding="saveButton">
@@ -147,7 +147,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="save"/>
+                          <text value="Save"/>
                         </properties>
                       </component>
                     </children>
@@ -184,7 +184,7 @@
                         </constraints>
                         <properties>
                           <selected value="true"/>
-                          <text value="auto execute"/>
+                          <text value="Auto Execute"/>
                         </properties>
                       </component>
                     </children>
