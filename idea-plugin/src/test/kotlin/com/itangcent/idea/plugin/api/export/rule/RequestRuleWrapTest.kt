@@ -511,7 +511,7 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         )
         requestRuleWrap.setHeader("y", "3", true, "Another value of the y axis")
         assertEquals(
-            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"The value of the x axis\",\"required\":false},{\"name\":\"y\",\"value\":\"3\",\"desc\":\"The value of the y axis Another value of the y axis\",\"required\":true}]",
+            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"The value of the x axis\",\"required\":false},{\"name\":\"y\",\"value\":\"3\",\"desc\":\"Another value of the y axis\",\"required\":true}]",
             request.headers.toJson()
         )
     }
@@ -561,7 +561,7 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         )
         requestRuleWrap.setPathParam("y", "3", "Another value of the y axis")
         assertEquals(
-            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"The value of the x axis\"},{\"name\":\"y\",\"value\":\"3\",\"desc\":\"The value of the y axis Another value of the y axis\"}]",
+            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"The value of the x axis\"},{\"name\":\"y\",\"value\":\"3\",\"desc\":\"Another value of the y axis\"}]",
             request.paths.toJson()
         )
     }
@@ -706,5 +706,467 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         val copyHeader = headWrap.copy()
         assertEquals(headWrap.hashCode(), copyHeader.hashCode())
         assertEquals(headWrap, copyHeader)
+    }
+    
+    fun testParams() {
+        request.querys = arrayListOf(
+            Param().also {
+                it.name = "x"
+                it.value = "1"
+                it.required = false
+                it.desc = "The value of the x axis"
+            },
+            Param().also {
+                it.name = "y"
+                it.value = "2"
+                it.required = true
+                it.desc = "The value of the y axis"
+            },
+            Param().also {
+                it.name = "y"
+                it.value = "3"
+                it.required = true
+                it.desc = "Another value of the y axis"
+            }
+        )
+        val params = requestRuleWrap.params()
+        assertNotNull(params)
+        assertEquals(3, params!!.size)
+        assertEquals("x", params[0].name())
+        assertEquals("1", params[0].value())
+        assertEquals("The value of the x axis", params[0].desc())
+        assertEquals(false, params[0].required())
+        
+        assertEquals("y", params[1].name())
+        assertEquals("2", params[1].value())
+        assertEquals("The value of the y axis", params[1].desc())
+        assertEquals(true, params[1].required())
+        
+        assertEquals("y", params[2].name())
+        assertEquals("3", params[2].value())
+        assertEquals("Another value of the y axis", params[2].desc())
+        assertEquals(true, params[2].required())
+    }
+    
+    fun testParam() {
+        request.querys = arrayListOf(
+            Param().also {
+                it.name = "x"
+                it.value = "1"
+                it.required = false
+                it.desc = "The value of the x axis"
+            },
+            Param().also {
+                it.name = "y"
+                it.value = "2"
+                it.required = true
+                it.desc = "The value of the y axis"
+            },
+            Param().also {
+                it.name = "y"
+                it.value = "3"
+                it.required = true
+                it.desc = "Another value of the y axis"
+            }
+        )
+        val param = requestRuleWrap.param("x")
+        assertNotNull(param)
+        assertEquals("x", param!!.name())
+        assertEquals("1", param.value())
+        assertEquals("The value of the x axis", param.desc())
+        assertEquals(false, param.required())
+        
+        val paramY = requestRuleWrap.param("y")
+        assertNotNull(paramY)
+        assertEquals("y", paramY!!.name())
+        assertEquals("2", paramY.value())
+        assertEquals("The value of the y axis", paramY.desc())
+        assertEquals(true, paramY.required())
+        
+        val paramZ = requestRuleWrap.param("z")
+        assertNull(paramZ)
+    }
+    
+    fun testParamsByName() {
+        request.querys = arrayListOf(
+            Param().also {
+                it.name = "x"
+                it.value = "1"
+                it.required = false
+                it.desc = "The value of the x axis"
+            },
+            Param().also {
+                it.name = "y"
+                it.value = "2"
+                it.required = true
+                it.desc = "The value of the y axis"
+            },
+            Param().also {
+                it.name = "y"
+                it.value = "3"
+                it.required = true
+                it.desc = "Another value of the y axis"
+            }
+        )
+        val paramsX = requestRuleWrap.params("x")
+        assertNotNull(paramsX)
+        assertEquals(1, paramsX!!.size)
+        assertEquals("x", paramsX[0].name())
+        assertEquals("1", paramsX[0].value())
+        
+        val paramsY = requestRuleWrap.params("y")
+        assertNotNull(paramsY)
+        assertEquals(2, paramsY!!.size)
+        assertEquals("y", paramsY[0].name())
+        assertEquals("2", paramsY[0].value())
+        assertEquals("y", paramsY[1].name())
+        assertEquals("3", paramsY[1].value())
+        
+        val paramsZ = requestRuleWrap.params("z")
+        assertNotNull(paramsZ)
+        assertEquals(0, paramsZ!!.size)
+    }
+    
+    fun testFormParams() {
+        request.formParams = arrayListOf(
+            FormParam().also {
+                it.name = "x"
+                it.value = "1"
+                it.required = false
+                it.desc = "The value of the x axis"
+                it.type = "text"
+            },
+            FormParam().also {
+                it.name = "y"
+                it.value = "2"
+                it.required = true
+                it.desc = "The value of the y axis"
+                it.type = "text"
+            },
+            FormParam().also {
+                it.name = "y"
+                it.value = "3"
+                it.required = true
+                it.desc = "Another value of the y axis"
+                it.type = "file"
+            }
+        )
+        val formParams = requestRuleWrap.formParams()
+        assertNotNull(formParams)
+        assertEquals(3, formParams!!.size)
+        assertEquals("x", formParams[0].name())
+        assertEquals("1", formParams[0].value())
+        assertEquals("The value of the x axis", formParams[0].desc())
+        assertEquals(false, formParams[0].required())
+        assertEquals("text", formParams[0].type())
+        
+        assertEquals("y", formParams[1].name())
+        assertEquals("2", formParams[1].value())
+        assertEquals("The value of the y axis", formParams[1].desc())
+        assertEquals(true, formParams[1].required())
+        assertEquals("text", formParams[1].type())
+        
+        assertEquals("y", formParams[2].name())
+        assertEquals("3", formParams[2].value())
+        assertEquals("Another value of the y axis", formParams[2].desc())
+        assertEquals(true, formParams[2].required())
+        assertEquals("file", formParams[2].type())
+    }
+    
+    fun testFormParam() {
+        request.formParams = arrayListOf(
+            FormParam().also {
+                it.name = "x"
+                it.value = "1"
+                it.required = false
+                it.desc = "The value of the x axis"
+                it.type = "text"
+            },
+            FormParam().also {
+                it.name = "y"
+                it.value = "2"
+                it.required = true
+                it.desc = "The value of the y axis"
+                it.type = "text"
+            },
+            FormParam().also {
+                it.name = "y"
+                it.value = "3"
+                it.required = true
+                it.desc = "Another value of the y axis"
+                it.type = "file"
+            }
+        )
+        val formParam = requestRuleWrap.formParam("x")
+        assertNotNull(formParam)
+        assertEquals("x", formParam!!.name())
+        assertEquals("1", formParam.value())
+        assertEquals("The value of the x axis", formParam.desc())
+        assertEquals(false, formParam.required())
+        assertEquals("text", formParam.type())
+        
+        val formParamY = requestRuleWrap.formParam("y")
+        assertNotNull(formParamY)
+        assertEquals("y", formParamY!!.name())
+        assertEquals("2", formParamY.value())
+        assertEquals("The value of the y axis", formParamY.desc())
+        assertEquals(true, formParamY.required())
+        assertEquals("text", formParamY.type())
+        
+        val formParamZ = requestRuleWrap.formParam("z")
+        assertNull(formParamZ)
+    }
+    
+    fun testFormParamsByName() {
+        request.formParams = arrayListOf(
+            FormParam().also {
+                it.name = "x"
+                it.value = "1"
+                it.required = false
+                it.desc = "The value of the x axis"
+                it.type = "text"
+            },
+            FormParam().also {
+                it.name = "y"
+                it.value = "2"
+                it.required = true
+                it.desc = "The value of the y axis"
+                it.type = "text"
+            },
+            FormParam().also {
+                it.name = "y"
+                it.value = "3"
+                it.required = true
+                it.desc = "Another value of the y axis"
+                it.type = "file"
+            }
+        )
+        val formParamsX = requestRuleWrap.formParams("x")
+        assertNotNull(formParamsX)
+        assertEquals(1, formParamsX!!.size)
+        assertEquals("x", formParamsX[0].name())
+        assertEquals("1", formParamsX[0].value())
+        assertEquals("text", formParamsX[0].type())
+        
+        val formParamsY = requestRuleWrap.formParams("y")
+        assertNotNull(formParamsY)
+        assertEquals(2, formParamsY!!.size)
+        assertEquals("y", formParamsY[0].name())
+        assertEquals("2", formParamsY[0].value())
+        assertEquals("text", formParamsY[0].type())
+        assertEquals("y", formParamsY[1].name())
+        assertEquals("3", formParamsY[1].value())
+        assertEquals("file", formParamsY[1].type())
+        
+        val formParamsZ = requestRuleWrap.formParams("z")
+        assertNotNull(formParamsZ)
+        assertEquals(0, formParamsZ!!.size)
+    }
+    
+    fun testPathParams() {
+        request.paths = arrayListOf(
+            PathParam().also {
+                it.name = "x"
+                it.value = "1"
+                it.desc = "The value of the x axis"
+            },
+            PathParam().also {
+                it.name = "y"
+                it.value = "2"
+                it.desc = "The value of the y axis"
+            },
+            PathParam().also {
+                it.name = "y"
+                it.value = "3"
+                it.desc = "Another value of the y axis"
+            }
+        )
+        val pathParams = requestRuleWrap.pathParams()
+        assertNotNull(pathParams)
+        assertEquals(3, pathParams!!.size)
+        assertEquals("x", pathParams[0].name())
+        assertEquals("1", pathParams[0].value())
+        assertEquals("The value of the x axis", pathParams[0].desc())
+        
+        assertEquals("y", pathParams[1].name())
+        assertEquals("2", pathParams[1].value())
+        assertEquals("The value of the y axis", pathParams[1].desc())
+        
+        assertEquals("y", pathParams[2].name())
+        assertEquals("3", pathParams[2].value())
+        assertEquals("Another value of the y axis", pathParams[2].desc())
+    }
+    
+    fun testPathParam() {
+        request.paths = arrayListOf(
+            PathParam().also {
+                it.name = "x"
+                it.value = "1"
+                it.desc = "The value of the x axis"
+            },
+            PathParam().also {
+                it.name = "y"
+                it.value = "2"
+                it.desc = "The value of the y axis"
+            },
+            PathParam().also {
+                it.name = "y"
+                it.value = "3"
+                it.desc = "Another value of the y axis"
+            }
+        )
+        val pathParam = requestRuleWrap.pathParam("x")
+        assertNotNull(pathParam)
+        assertEquals("x", pathParam!!.name())
+        assertEquals("1", pathParam.value())
+        assertEquals("The value of the x axis", pathParam.desc())
+        
+        val pathParamY = requestRuleWrap.pathParam("y")
+        assertNotNull(pathParamY)
+        assertEquals("y", pathParamY!!.name())
+        assertEquals("2", pathParamY.value())
+        assertEquals("The value of the y axis", pathParamY.desc())
+        
+        val pathParamZ = requestRuleWrap.pathParam("z")
+        assertNull(pathParamZ)
+    }
+    
+    fun testPathParamsByName() {
+        request.paths = arrayListOf(
+            PathParam().also {
+                it.name = "x"
+                it.value = "1"
+                it.desc = "The value of the x axis"
+            },
+            PathParam().also {
+                it.name = "y"
+                it.value = "2"
+                it.desc = "The value of the y axis"
+            },
+            PathParam().also {
+                it.name = "y"
+                it.value = "3"
+                it.desc = "Another value of the y axis"
+            }
+        )
+        val pathParamsX = requestRuleWrap.pathParams("x")
+        assertNotNull(pathParamsX)
+        assertEquals(1, pathParamsX!!.size)
+        assertEquals("x", pathParamsX[0].name())
+        assertEquals("1", pathParamsX[0].value())
+        
+        val pathParamsY = requestRuleWrap.pathParams("y")
+        assertNotNull(pathParamsY)
+        assertEquals(2, pathParamsY!!.size)
+        assertEquals("y", pathParamsY[0].name())
+        assertEquals("2", pathParamsY[0].value())
+        assertEquals("y", pathParamsY[1].name())
+        assertEquals("3", pathParamsY[1].value())
+        
+        val pathParamsZ = requestRuleWrap.pathParams("z")
+        assertNotNull(pathParamsZ)
+        assertEquals(0, pathParamsZ!!.size)
+    }
+    
+    fun testParamRuleWrap() {
+        val param = Param()
+        val paramWrap = ParamRuleWrap(request, param)
+        request.querys = arrayListOf(param)
+        
+        paramWrap.setName("x")
+        assertEquals("x", param.name)
+        assertEquals("x", paramWrap.name())
+        
+        paramWrap.setValue("1")
+        assertEquals("1", param.value)
+        assertEquals("1", paramWrap.value())
+        
+        paramWrap.setDesc("The value of the x axis")
+        assertEquals("The value of the x axis", param.desc)
+        assertEquals("The value of the x axis", paramWrap.desc())
+        
+        paramWrap.setRequired(true)
+        assertEquals(true, param.required)
+        assertEquals(true, paramWrap.required())
+        
+        assertEquals(
+            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"The value of the x axis\",\"required\":true}]",
+            request.querys.toJson()
+        )
+        paramWrap.remove()
+        assertEquals("[]", request.querys.toJson())
+        
+        param.setExt("time", 9999)
+        val copyParam = paramWrap.copy()
+        assertEquals(paramWrap.hashCode(), copyParam.hashCode())
+        assertEquals(paramWrap, copyParam)
+    }
+    
+    fun testFormParamRuleWrap() {
+        val formParam = FormParam()
+        val formParamWrap = FormParamRuleWrap(request, formParam)
+        request.formParams = arrayListOf(formParam)
+        
+        formParamWrap.setName("x")
+        assertEquals("x", formParam.name)
+        assertEquals("x", formParamWrap.name())
+        
+        formParamWrap.setValue("1")
+        assertEquals("1", formParam.value)
+        assertEquals("1", formParamWrap.value())
+        
+        formParamWrap.setDesc("The value of the x axis")
+        assertEquals("The value of the x axis", formParam.desc)
+        assertEquals("The value of the x axis", formParamWrap.desc())
+        
+        formParamWrap.setRequired(true)
+        assertEquals(true, formParam.required)
+        assertEquals(true, formParamWrap.required())
+        
+        formParamWrap.setType("file")
+        assertEquals("file", formParam.type)
+        assertEquals("file", formParamWrap.type())
+        
+        assertEquals(
+            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"The value of the x axis\",\"required\":true,\"type\":\"file\"}]",
+            request.formParams.toJson()
+        )
+        formParamWrap.remove()
+        assertEquals("[]", request.formParams.toJson())
+        
+        formParam.setExt("time", 9999)
+        val copyFormParam = formParamWrap.copy()
+        assertEquals(formParamWrap.hashCode(), copyFormParam.hashCode())
+        assertEquals(formParamWrap, copyFormParam)
+    }
+    
+    fun testPathParamRuleWrap() {
+        val pathParam = PathParam()
+        val pathParamWrap = PathParamRuleWrap(request, pathParam)
+        request.paths = arrayListOf(pathParam)
+        
+        pathParamWrap.setName("x")
+        assertEquals("x", pathParam.name)
+        assertEquals("x", pathParamWrap.name())
+        
+        pathParamWrap.setValue("1")
+        assertEquals("1", pathParam.value)
+        assertEquals("1", pathParamWrap.value())
+        
+        pathParamWrap.setDesc("The value of the x axis")
+        assertEquals("The value of the x axis", pathParam.desc)
+        assertEquals("The value of the x axis", pathParamWrap.desc())
+        
+        assertEquals(
+            "[{\"name\":\"x\",\"value\":\"1\",\"desc\":\"The value of the x axis\"}]",
+            request.paths.toJson()
+        )
+        pathParamWrap.remove()
+        assertEquals("[]", request.paths.toJson())
+        
+        pathParam.setExt("time", 9999)
+        val copyPathParam = pathParamWrap.copy()
+        assertEquals(pathParamWrap.hashCode(), copyPathParam.hashCode())
+        assertEquals(pathParamWrap, copyPathParam)
     }
 }
