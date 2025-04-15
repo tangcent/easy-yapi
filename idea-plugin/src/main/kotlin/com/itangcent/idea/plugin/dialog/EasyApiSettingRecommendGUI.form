@@ -16,7 +16,7 @@
           </grid>
         </constraints>
         <properties/>
-        <border type="none" title="select config"/>
+        <border type="none" title="Select Config"/>
         <children>
           <scrollpane id="78111">
             <constraints>
@@ -41,7 +41,7 @@
           </grid>
         </constraints>
         <properties/>
-        <border type="none" title="preview"/>
+        <border type="none" title="Preview"/>
         <children>
           <scrollpane id="c745a">
             <constraints>

@@ -63,7 +63,7 @@
                               </grid>
                             </constraints>
                             <properties>
-                              <text value="log:"/>
+                              <text value="Log:"/>
                             </properties>
                           </component>
                         </children>
@@ -115,7 +115,7 @@
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
-                              <text value="console:"/>
+                              <text value="Console:"/>
                             </properties>
                           </component>
                         </children>
@@ -179,7 +179,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="methodDoc"/>
+                          <text value="MethodDoc"/>
                           <toolTipText value="enable export method doc(rpc)"/>
                         </properties>
                       </component>
@@ -202,7 +202,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="generic export"/>
+                          <text value="Generic Export"/>
                         </properties>
                       </component>
                     </children>
@@ -234,7 +234,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="feign"/>
+                          <text value="Feign"/>
                         </properties>
                       </component>
                     </children>
@@ -256,7 +256,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="jaxrs(quarkus | jersey)"/>
+                          <text value="JAX-RS (Quarkus | Jersey)"/>
                         </properties>
                       </component>
                     </children>
@@ -288,7 +288,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="actuator"/>
+                          <text value="Actuator"/>
                         </properties>
                       </component>
                     </children>
@@ -333,7 +333,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="pull newest data before upload"/>
+                      <text value="Pull Newest Data Before Upload"/>
                     </properties>
                   </component>
                 </children>
@@ -373,7 +373,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="token:"/>
+                          <text value="Token:"/>
                         </properties>
                       </component>
                     </children>
@@ -435,7 +435,7 @@
                               </grid>
                             </constraints>
                             <properties>
-                              <text value="workspace:"/>
+                              <text value="Workspace:"/>
                             </properties>
                           </component>
                         </children>
@@ -481,7 +481,7 @@
                               </grid>
                             </constraints>
                             <properties>
-                              <text value="refresh"/>
+                              <text value="Refresh"/>
                             </properties>
                           </component>
                         </children>
@@ -505,7 +505,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="build example"/>
+                          <text value="Build Example"/>
                         </properties>
                       </component>
                     </children>
@@ -537,7 +537,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="wrap collection"/>
+                          <text value="Wrap Collection"/>
                           <toolTipText value="always wrap a collection"/>
                         </properties>
                       </component>
@@ -560,7 +560,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="auto merge script"/>
+                          <text value="Auto Merge Script"/>
                           <toolTipText value="automatically merges script"/>
                         </properties>
                       </component>
@@ -597,7 +597,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="export mode:"/>
+                          <text value="Export mode:"/>
                         </properties>
                       </component>
                       <grid id="81b4c" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -647,7 +647,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="use json5:"/>
+                          <text value="Use json5:"/>
                         </properties>
                       </component>
                       <component id="8a533" class="javax.swing.JComboBox" binding="postmanJson5FormatTypeComboBox">
@@ -708,7 +708,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="Button"/>
+                          <text value="Clear"/>
                         </properties>
                       </component>
                     </children>
@@ -730,7 +730,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="collections:"/>
+                          <text value="Collections:"/>
                         </properties>
                       </component>
                     </children>
@@ -766,7 +766,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="server:"/>
+                      <text value="Server:"/>
                     </properties>
                   </component>
                   <component id="3d31e" class="javax.swing.JTextField" binding="yapiServerTextField">
@@ -806,7 +806,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="tokens:"/>
+                          <text value="Tokens:"/>
                         </properties>
                       </component>
                     </children>
@@ -869,7 +869,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="enableUrlTemplating"/>
+                          <text value="Enable URL Templating"/>
                           <toolTipText value="append `RequestMapping#params` to path"/>
                         </properties>
                       </component>
@@ -892,7 +892,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="switch notice"/>
+                          <text value="Switch notice"/>
                           <toolTipText value="send notice email while update api."/>
                         </properties>
                       </component>
@@ -925,7 +925,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="use json5(request)"/>
+                          <text value="Use json5(request)"/>
                         </properties>
                       </component>
                     </children>
@@ -947,7 +947,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="use json5(response)"/>
+                          <text value="Use json5(response)"/>
                         </properties>
                       </component>
                     </children>
@@ -979,7 +979,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="loginMode"/>
+                          <text value="Login Mode"/>
                         </properties>
                       </component>
                     </children>
@@ -1005,7 +1005,7 @@
                           </grid>
                         </constraints>
                         <properties>
-                          <text value="export mode:"/>
+                          <text value="Export mode:"/>
                         </properties>
                       </component>
                       <component id="9158e" class="javax.swing.JComboBox" binding="yapiExportModeComboBox">
@@ -1049,7 +1049,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="outputDemo"/>
+                      <text value="Output Demo"/>
                     </properties>
                   </component>
                 </children>
@@ -1075,7 +1075,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="charset:"/>
+                      <text value="Charset:"/>
                     </properties>
                   </component>
                   <component id="f9571" class="javax.swing.JComboBox" binding="outputCharsetComboBox">
@@ -1111,7 +1111,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="format type:"/>
+                      <text value="Format type:"/>
                     </properties>
                   </component>
                   <component id="915c1" class="javax.swing.JComboBox" binding="markdownFormatTypeComboBox">
@@ -1153,7 +1153,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="global:"/>
+                      <text value="Global:"/>
                     </properties>
                   </component>
                   <component id="62cf1" class="javax.swing.JLabel" binding="globalCacheSizeLabel">
@@ -1177,7 +1177,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="clear"/>
+                      <text value="Clear"/>
                     </properties>
                   </component>
                 </children>
@@ -1199,7 +1199,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="project:"/>
+                      <text value="Project:"/>
                     </properties>
                   </component>
                   <component id="eafc7" class="javax.swing.JLabel" binding="projectCacheSizeLabel">
@@ -1223,7 +1223,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="clear"/>
+                      <text value="Clear"/>
                     </properties>
                   </component>
                 </children>
@@ -1255,7 +1255,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="enable infer"/>
+                      <text value="Enable Infer"/>
                       <toolTipText value="try infer return generic type of api method"/>
                     </properties>
                   </component>
@@ -1282,7 +1282,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="max infer deep:"/>
+                      <text value="Max infer deep:"/>
                     </properties>
                   </component>
                   <component id="9bab4" class="javax.swing.JTextField" binding="maxDeepTextField">
@@ -1319,7 +1319,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="setter as field"/>
+                      <text value="Setter as field"/>
                     </properties>
                   </component>
                 </children>
@@ -1341,7 +1341,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="getter as field"/>
+                      <text value="Getter as field"/>
                     </properties>
                   </component>
                 </children>
@@ -1363,7 +1363,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="expanded form"/>
+                      <text value="Expanded form"/>
                       <toolTipText value="support form key a.b.c"/>
                     </properties>
                   </component>
@@ -1386,7 +1386,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="expanded query"/>
+                      <text value="Expanded query"/>
                       <toolTipText value="support query key a.b.c"/>
                     </properties>
                   </component>
@@ -1409,7 +1409,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="use recommend config"/>
+                      <text value="Use recommend config"/>
                       <toolTipText value="support form key a.b.c"/>
                     </properties>
                   </component>
@@ -1428,7 +1428,7 @@
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="export current method only"/>
+                      <text value="Export current method only"/>
                     </properties>
                   </component>
                 </children>
@@ -1462,7 +1462,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="timeOut(s):"/>
+                      <text value="TimeOut(s):"/>
                     </properties>
                   </component>
                   <component id="6e088" class="javax.swing.JTextField" binding="httpTimeOutTextField">
@@ -1494,7 +1494,7 @@
                       </grid>
                     </constraints>
                     <properties>
-                      <text value="trust hosts:"/>
+                      <text value="Trust hosts:"/>
                     </properties>
                   </component>
                   <grid id="7438f" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -1549,7 +1549,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="unsafeSsl"/>
+                          <text value="Unsafe SSL"/>
                         </properties>
                       </component>
                     </children>
@@ -1571,7 +1571,7 @@
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text value="http client:"/>
+                          <text value="Http client:"/>
                         </properties>
                       </component>
                       <component id="c4bb7" class="javax.swing.JComboBox" binding="httpClientComboBox">
