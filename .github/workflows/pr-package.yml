@@ -33,18 +33,15 @@ jobs:
           fi
 
       - name: Package plugin
-        if: steps.check_issue.outputs.has_issue == 'true'
         run: ./plugin-script/package_plugin.sh
 
       - name: Get plugin filename
-        if: steps.check_issue.outputs.has_issue == 'true'
         id: get_filename
         run: |
           FILENAME=$(ls plugin/easy-yapi-*.zip | xargs basename)
           echo "plugin_filename=${FILENAME}" >> $GITHUB_OUTPUT
 
       - name: Upload plugin artifact
-        if: steps.check_issue.outputs.has_issue == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.get_filename.outputs.plugin_filename }}
@@ -57,16 +54,28 @@ jobs:
         with:
           script: |
             const pr = context.payload.pull_request;
-            const issueNumber = pr.body.match(/#(\d+)/)?.[1];
+            const issueNumber = '${{ steps.check_issue.outputs.issue_number }}';
             const pluginFilename = '${{ steps.get_filename.outputs.plugin_filename }}';
+            const workflowRunUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             
-            if (issueNumber) {
-              const workflowRunUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-              
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                body: `A PR (#${pr.number}) has been opened to fix this issue. You can download the packaged plugin \`${pluginFilename}\` from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown.`
-              });
-            } 
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `A PR (#${pr.number}) has been opened to fix this issue. You can download the packaged plugin \`${pluginFilename}\` from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown.`
+            });
+
+      - name: Comment on PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const pluginFilename = '${{ steps.get_filename.outputs.plugin_filename }}';
+            const workflowRunUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: `📦 Plugin has been packaged for this PR. You can download \`${pluginFilename}\` from the [GitHub Actions workflow run](${workflowRunUrl}) by clicking on the "Artifacts" dropdown.`
+            }); 
