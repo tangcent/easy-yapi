@@ -1,3 +1,25 @@
+* 2.8.1
+	* feat: Enhance script object 'api' with parameter accessor methods  [(#1241)](https://github.com/tangcent/easy-yapi/pull/1241)
+
+	* refactor: Standardize capitalization in form labels  [(#1236)](https://github.com/tangcent/easy-yapi/pull/1236)
+
+	* build: update release label in auto-label workflow configuration  [(#1237)](https://github.com/tangcent/easy-yapi/pull/1237)
+
+	* build: Enhance PR workflow to comment on both issues and PRs  [(#1239)](https://github.com/tangcent/easy-yapi/pull/1239)
+
+	* feat: Add multi-window console logging capability  [(#1235)](https://github.com/tangcent/easy-yapi/pull/1235)
+
+	* refactor: implement cache invalidation for CachedYapiApiHelper  [(#1233)](https://github.com/tangcent/easy-yapi/pull/1233)
+
+	* build: add cleanBin task in build.gradle.kts  [(#1232)](https://github.com/tangcent/easy-yapi/pull/1232)
+
+	* feat: ignore fields from java.lang system classes to prevent complex exported types  [(#1229)](https://github.com/tangcent/easy-yapi/pull/1229)
+
+	* feat: support skipping unchanged API updates to YAPI  [(#1224)](https://github.com/tangcent/easy-yapi/pull/1224)
+
+	* refactor: Remove unused charset setting from log configuration  [(#1231)](https://github.com/tangcent/easy-yapi/pull/1231)
+
+	* build(ci): Add workflow to package plugin and notify on PRs  [(#1226)](https://github.com/tangcent/easy-yapi/pull/1226)
 * 2.8.0
 	* feat: improve link resolution in Markdown Documentation Comments  [(#1220)](https://github.com/tangcent/easy-yapi/pull/1220)
 
