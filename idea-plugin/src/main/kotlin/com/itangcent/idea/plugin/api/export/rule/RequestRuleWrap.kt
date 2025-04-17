@@ -4,8 +4,8 @@ import com.itangcent.annotation.script.ScriptIgnore
 import com.itangcent.annotation.script.ScriptTypeName
 import com.itangcent.common.constant.HttpMethod
 import com.itangcent.common.model.*
-import com.itangcent.common.utils.*
-import com.itangcent.idea.plugin.api.export.*
+import com.itangcent.common.utils.asInt
+import com.itangcent.common.utils.mapToTypedArray
 import com.itangcent.idea.plugin.api.export.core.*
 import com.itangcent.idea.psi.resource
 import com.itangcent.intellij.context.ActionContext
@@ -17,6 +17,8 @@ import com.itangcent.utils.setExts
 import java.util.*
 
 class RequestRuleWrap(private val methodExportContext: MethodExportContext?, private val request: Request) {
+
+    private val requestBuilderListener: RequestBuilderListener by lazy { ActionContext.local() }
 
     //region request
 
@@ -160,20 +162,75 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         addModelClassAsFormParam(modelClass)
     }
 
-    fun addFormParam(formParam: FormParam) {
-        requestBuilderListener.addFormParam(methodExportContext!!, request, formParam)
+    fun setJsonBody(body: Any?, bodyAttr: String?) {
+        requestBuilderListener.setJsonBody(methodExportContext!!, request, body, bodyAttr)
+    }
+
+    // Header methods
+    fun headers(): Array<HeaderRuleWrap> {
+        return this.request.headers?.mapToTypedArray { HeaderRuleWrap(this.request, it) } ?: emptyArray()
+    }
+
+    fun header(name: String): HeaderRuleWrap? {
+        return this.request.headers
+            ?.firstOrNull { it.name == name }
+            ?.let { HeaderRuleWrap(this.request, it) }
+    }
+
+    fun headers(name: String): Array<HeaderRuleWrap> {
+        return this.request.headers
+            ?.filter { it.name == name }
+            ?.mapToTypedArray { HeaderRuleWrap(this.request, it) }
+            ?: emptyArray()
+    }
+
+    fun removeHeader(name: String) {
+        this.request.headers?.removeIf { it.name == name }
+    }
+
+    fun addHeader(name: String, value: String?) {
+        requestBuilderListener.addHeader(methodExportContext!!, request, name, value)
+    }
+
+    fun addHeaderIfMissed(name: String, value: String?): Boolean {
+        return requestBuilderListener.addHeaderIfMissed(methodExportContext!!, request, name, value)
+    }
+
+    fun addHeader(name: String, value: String?, required: Boolean?, desc: String?) {
+        val header = Header()
+        header.name = name
+        header.value = value
+        header.required = required
+        header.desc = desc
+        requestBuilderListener.addHeader(methodExportContext!!, request, header)
+    }
+
+    fun setHeader(name: String, value: String?, required: Boolean?, desc: String?) {
+        val header = request.headers?.firstOrNull { it.name == name }
+        if (header == null) {
+            addHeader(name, value, required, desc)
+        } else {
+            header.value = value
+            header.desc = desc
+            header.required = required
+        }
+    }
+
+    // Query parameter methods
+    fun params(): Array<ParamRuleWrap>? {
+        return request.querys?.map { ParamRuleWrap(request, it) }?.toTypedArray()
+    }
+
+    fun param(name: String): ParamRuleWrap? {
+        return request.querys?.firstOrNull { it.name == name }?.let { ParamRuleWrap(request, it) }
+    }
+
+    fun params(name: String): Array<ParamRuleWrap>? {
+        return request.querys?.filter { it.name == name }?.map { ParamRuleWrap(request, it) }?.toTypedArray()
     }
 
     fun addParam(param: Param) {
         requestBuilderListener.addParam(methodExportContext!!, request, param)
-    }
-
-    fun addPathParam(pathParam: PathParam) {
-        requestBuilderListener.addPathParam(methodExportContext!!, request, pathParam)
-    }
-
-    fun setJsonBody(body: Any?, bodyAttr: String?) {
-        requestBuilderListener.setJsonBody(methodExportContext!!, request, body, bodyAttr)
     }
 
     fun addParam(paramName: String, defaultVal: Any?, desc: String?) {
@@ -200,6 +257,23 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
             param.desc = desc
             param.required = required
         }
+    }
+
+    // Form parameter methods
+    fun formParams(): Array<FormParamRuleWrap>? {
+        return request.formParams?.map { FormParamRuleWrap(request, it) }?.toTypedArray()
+    }
+
+    fun formParam(name: String): FormParamRuleWrap? {
+        return request.formParams?.firstOrNull { it.name == name }?.let { FormParamRuleWrap(request, it) }
+    }
+
+    fun formParams(name: String): Array<FormParamRuleWrap>? {
+        return request.formParams?.filter { it.name == name }?.map { FormParamRuleWrap(request, it) }?.toTypedArray()
+    }
+
+    fun addFormParam(formParam: FormParam) {
+        requestBuilderListener.addFormParam(methodExportContext!!, request, formParam)
     }
 
     fun addFormParam(paramName: String, defaultVal: String?, desc: String?) {
@@ -245,53 +319,21 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
         }
     }
 
-    fun headers(): Array<HeaderRuleWrap> {
-        return this.request.headers?.mapToTypedArray { HeaderRuleWrap(this.request, it) } ?: emptyArray()
+    // Path parameter methods
+    fun pathParams(): Array<PathParamRuleWrap>? {
+        return request.paths?.map { PathParamRuleWrap(request, it) }?.toTypedArray()
     }
 
-    fun header(name: String): HeaderRuleWrap? {
-        return this.request.headers
-            ?.firstOrNull { it.name == name }
-            ?.let { HeaderRuleWrap(this.request, it) }
+    fun pathParam(name: String): PathParamRuleWrap? {
+        return request.paths?.firstOrNull { it.name == name }?.let { PathParamRuleWrap(request, it) }
     }
 
-    fun headers(name: String): Array<HeaderRuleWrap> {
-        return this.request.headers
-            ?.filter { it.name == name }
-            ?.mapToTypedArray { HeaderRuleWrap(this.request, it) }
-            ?: emptyArray()
+    fun pathParams(name: String): Array<PathParamRuleWrap>? {
+        return request.paths?.filter { it.name == name }?.map { PathParamRuleWrap(request, it) }?.toTypedArray()
     }
 
-    fun removeHeader(name: String) {
-        this.request.headers?.removeIf { it.name == name }
-    }
-
-    fun addHeader(name: String, value: String?) {
-        requestBuilderListener.addHeader(methodExportContext!!, request, name, value)
-    }
-
-    fun addHeaderIfMissed(name: String, value: String?): Boolean {
-        return requestBuilderListener.addHeaderIfMissed(methodExportContext!!, request, name, value)
-    }
-
-    fun addHeader(name: String, value: String?, required: Boolean?, desc: String?) {
-        val header = Header()
-        header.name = name
-        header.value = value
-        header.required = required
-        header.desc = desc
-        requestBuilderListener.addHeader(methodExportContext!!, request, header)
-    }
-
-    fun setHeader(name: String, value: String?, required: Boolean?, desc: String?) {
-        val header = request.headers?.firstOrNull { it.name == name }
-        if (header == null) {
-            addHeader(name, value, required, desc)
-        } else {
-            header.value = value
-            header.desc = header.desc.append(desc)
-            header.required = required
-        }
+    fun addPathParam(pathParam: PathParam) {
+        requestBuilderListener.addPathParam(methodExportContext!!, request, pathParam)
     }
 
     fun addPathParam(name: String, desc: String?) {
@@ -312,7 +354,7 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
             addPathParam(name, value, desc)
         } else {
             param.value = value
-            param.desc = param.desc.append(desc)
+            param.desc = desc
         }
     }
 
@@ -406,13 +448,11 @@ class RequestRuleWrap(private val methodExportContext: MethodExportContext?, pri
     }
 
     //endregion response
-
-    companion object {
-        val requestBuilderListener: RequestBuilderListener = ActionContext.local()
-    }
 }
 
 class MethodDocRuleWrap(private val methodExportContext: MethodExportContext?, private val methodDoc: MethodDoc) {
+
+    private val methodDocBuilderListener: MethodDocBuilderListener by lazy { ActionContext.local() }
 
     fun name(): String? {
         return methodDoc.name
@@ -448,10 +488,6 @@ class MethodDocRuleWrap(private val methodExportContext: MethodExportContext?, p
 
     fun appendRetDesc(retDesc: String?) {
         methodDocBuilderListener.appendRetDesc(methodExportContext!!, methodDoc, retDesc)
-    }
-
-    companion object {
-        val methodDocBuilderListener: MethodDocBuilderListener = ActionContext.local()
     }
 }
 
@@ -522,6 +558,219 @@ class HeaderRuleWrap(
     override fun hashCode(): Int {
         var result = request.hashCode()
         result = 31 * result + header.hashCode()
+        return result
+    }
+}
+
+@ScriptTypeName("param")
+class ParamRuleWrap(
+    private val request: Request,
+    private val param: Param,
+) {
+
+    fun name(): String? {
+        return param.name
+    }
+
+    fun setName(name: String?) {
+        param.name = name
+    }
+
+    fun value(): Any? {
+        return param.value
+    }
+
+    fun setValue(value: Any?) {
+        param.value = value
+    }
+
+    fun desc(): String? {
+        return param.desc
+    }
+
+    fun setDesc(desc: String?) {
+        param.desc = desc
+    }
+
+    fun required(): Boolean? {
+        return param.required
+    }
+
+    fun setRequired(required: Boolean?) {
+        param.required = required
+    }
+
+    fun remove() {
+        request.querys?.remove(this.param)
+    }
+
+    fun copy(): ParamRuleWrap {
+        val param = Param()
+        param.name = this.param.name
+        param.desc = this.param.desc
+        param.value = this.param.value
+        param.required = this.param.required
+        this.param.exts()?.let { param.setExts(it) }
+        return ParamRuleWrap(request, param)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ParamRuleWrap
+
+        if (request != other.request) return false
+        if (param != other.param) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = request.hashCode()
+        result = 31 * result + param.hashCode()
+        return result
+    }
+}
+
+@ScriptTypeName("formParam")
+class FormParamRuleWrap(
+    private val request: Request,
+    private val formParam: FormParam,
+) {
+
+    fun name(): String? {
+        return formParam.name
+    }
+
+    fun setName(name: String?) {
+        formParam.name = name
+    }
+
+    fun value(): String? {
+        return formParam.value
+    }
+
+    fun setValue(value: String?) {
+        formParam.value = value
+    }
+
+    fun desc(): String? {
+        return formParam.desc
+    }
+
+    fun setDesc(desc: String?) {
+        formParam.desc = desc
+    }
+
+    fun required(): Boolean? {
+        return formParam.required
+    }
+
+    fun setRequired(required: Boolean?) {
+        formParam.required = required
+    }
+
+    fun type(): String? {
+        return formParam.type
+    }
+
+    fun setType(type: String?) {
+        formParam.type = type
+    }
+
+    fun remove() {
+        request.formParams?.remove(this.formParam)
+    }
+
+    fun copy(): FormParamRuleWrap {
+        val formParam = FormParam()
+        formParam.name = this.formParam.name
+        formParam.desc = this.formParam.desc
+        formParam.value = this.formParam.value
+        formParam.required = this.formParam.required
+        formParam.type = this.formParam.type
+        this.formParam.exts()?.let { formParam.setExts(it) }
+        return FormParamRuleWrap(request, formParam)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FormParamRuleWrap
+
+        if (request != other.request) return false
+        if (formParam != other.formParam) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = request.hashCode()
+        result = 31 * result + formParam.hashCode()
+        return result
+    }
+}
+
+@ScriptTypeName("pathParam")
+class PathParamRuleWrap(
+    private val request: Request,
+    private val pathParam: PathParam,
+) {
+
+    fun name(): String? {
+        return pathParam.name
+    }
+
+    fun setName(name: String?) {
+        pathParam.name = name
+    }
+
+    fun value(): String? {
+        return pathParam.value
+    }
+
+    fun setValue(value: String?) {
+        pathParam.value = value
+    }
+
+    fun desc(): String? {
+        return pathParam.desc
+    }
+
+    fun setDesc(desc: String?) {
+        pathParam.desc = desc
+    }
+
+    fun remove() {
+        request.paths?.remove(this.pathParam)
+    }
+
+    fun copy(): PathParamRuleWrap {
+        val pathParam = PathParam()
+        pathParam.name = this.pathParam.name
+        pathParam.desc = this.pathParam.desc
+        pathParam.value = this.pathParam.value
+        this.pathParam.exts()?.let { pathParam.setExts(it) }
+        return PathParamRuleWrap(request, pathParam)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as PathParamRuleWrap
+
+        if (request != other.request) return false
+        if (pathParam != other.pathParam) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = request.hashCode()
+        result = 31 * result + pathParam.hashCode()
         return result
     }
 }
