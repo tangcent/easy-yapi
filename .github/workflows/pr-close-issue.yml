@@ -1,0 +1,70 @@
+name: Remove WIP Label On PR Close
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  remove-wip-label:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Check for issue number
+        id: check_issue
+        shell: bash
+        run: |
+          # Store PR body in a file to avoid shell interpretation issues
+          echo '${{ github.event.pull_request.body }}' > pr_body.txt
+          
+          # Check for issue reference pattern
+          if grep -q "#[0-9]\\+" pr_body.txt; then
+            ISSUE_NUM=$(grep -o "#[0-9]\\+" pr_body.txt | head -n 1 | tr -d '#')
+            echo "issue_number=${ISSUE_NUM}" >> $GITHUB_OUTPUT
+            echo "has_issue=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issue=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Remove WIP label
+        if: steps.check_issue.outputs.has_issue == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issueNumber = '${{ steps.check_issue.outputs.issue_number }}';
+            
+            try {
+              // Get current labels
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber
+              });
+              
+              // Check if the WIP label exists
+              const hasWipLabel = issue.labels.some(label => 
+                label.name === 'status: work-in-progress');
+              
+              if (hasWipLabel) {
+                // Remove the WIP label
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  name: 'status: work-in-progress'
+                });
+                
+                console.log(`Removed "status: work-in-progress" label from issue #${issueNumber}`);
+                
+                // Add a comment to the issue
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: `✅ The "status: work-in-progress" label has been automatically removed as PR #${context.payload.pull_request.number} was merged.`
+                });
+              } else {
+                console.log(`Issue #${issueNumber} does not have the "status: work-in-progress" label.`);
+              }
+            } catch (error) {
+              console.error(`Error processing issue #${issueNumber}: ${error}`);
+            } 
