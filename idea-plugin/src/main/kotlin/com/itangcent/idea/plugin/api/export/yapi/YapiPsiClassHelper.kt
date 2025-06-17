@@ -62,13 +62,22 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
             }
 
         //compute `field.advanced`
+        logger.debug("-".repeat(30))
+        logger.debug("Computing advanced value for field: ${accessibleField.jsonFieldName()}")
+        logger.debug(
+            "Loaded rules:" + configReader.read(YapiClassExportRuleKeys.FIELD_ADVANCED.name())?.joinToString("\n")
+        )
         val advancedValue = ruleComputer.computer(
             YapiClassExportRuleKeys.FIELD_ADVANCED,
             accessibleField
         )
         if (advancedValue.notNullOrEmpty()) {
             fields.sub(Attrs.ADVANCED_ATTR)[accessibleField.jsonFieldName()] = advancedValue
+            logger.debug("Computed advanced value for field ${accessibleField.jsonFieldName()}: $advancedValue")
+        } else {
+            logger.debug("No advanced value computed for field: ${accessibleField.jsonFieldName()}")
         }
+        logger.debug("-".repeat(30))
 
         super.afterParseField(accessibleField, resourcePsiClass, resolveContext, fields)
     }
