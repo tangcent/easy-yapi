@@ -29,7 +29,7 @@ import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleConfig
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import java.util.*
 import javax.script.ScriptContext
 import javax.script.ScriptEngine
@@ -1333,8 +1333,8 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
                 needInfer && (!duckTypeHelper.isQualified(
                     psiType,
                     psiMethod
-                ) || PsiClassUtils.isInterface(psiType)) -> {
-                    logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
+                ) || PsiClassUtil.isInterface(psiType)) -> {
+                    logger.info("try infer return type of method[" + PsiClassUtil.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper.inferReturn(psiMethod)
                 }
 
@@ -1353,8 +1353,8 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
                 needInfer && (!duckTypeHelper.isQualified(
                     psiType,
                     psiMethod
-                ) || PsiClassUtils.isInterface(psiType)) -> {
-                    logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
+                ) || PsiClassUtil.isInterface(psiType)) -> {
+                    logger.info("try infer return type of method[" + PsiClassUtil.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper.inferReturn(psiMethod)
                 }
 
@@ -1381,7 +1381,7 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
             val duckType = explicitMethod.getReturnType() ?: return null
             return when {
                 needInfer && !duckTypeHelper.isQualified(duckType) -> {
-                    logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
+                    logger.info("try infer return type of method[" + PsiClassUtil.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper.inferReturn(psiMethod)
                 }
 
@@ -1398,7 +1398,7 @@ abstract class ScriptRuleParser : AbstractRuleParser() {
             val duckType = explicitMethod.getReturnType() ?: return null
             return when {
                 needInfer && !duckTypeHelper.isQualified(duckType) -> {
-                    logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(psiMethod) + "]")
+                    logger.info("try infer return type of method[" + PsiClassUtil.fullNameOfMethod(psiMethod) + "]")
                     methodReturnInferHelper.inferReturn(psiMethod)
                 }
 

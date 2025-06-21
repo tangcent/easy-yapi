@@ -123,16 +123,16 @@ access user info
 
 | name | type | required | default | desc |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
-| code | integer |  |  | response code |
-| msg | string |  |  | message |
-| data | object |  |  | response data |
-| &ensp;&ensp;&#124;─id | integer |  |  | user id |
-| &ensp;&ensp;&#124;─type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
-| &ensp;&ensp;&#124;─name | string |  |  | user name |
-| &ensp;&ensp;&#124;─age | integer |  |  | user age |
-| &ensp;&ensp;&#124;─sex | integer |  |  |  |
-| &ensp;&ensp;&#124;─birthDay | string |  |  | user birthDay |
-| &ensp;&ensp;&#124;─regtime | string |  |  | user regtime |
+| code | integer | NO |  | response code |
+| msg | string | NO |  | message |
+| data | object | NO |  | response data |
+| &ensp;&ensp;&#124;─id | integer | NO |  | user id |
+| &ensp;&ensp;&#124;─type | integer | NO |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| &ensp;&ensp;&#124;─name | string | NO |  | user name |
+| &ensp;&ensp;&#124;─age | integer | NO |  | user age |
+| &ensp;&ensp;&#124;─sex | integer | NO |  |  |
+| &ensp;&ensp;&#124;─birthDay | string | NO |  | user birthDay |
+| &ensp;&ensp;&#124;─regtime | string | NO |  | user regtime |
 
 **Response Demo:**
 
@@ -177,13 +177,13 @@ access user info
 
 | name | type | required | default | desc |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
-| id | integer |  |  | user id |
-| type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
-| name | string |  |  | user name |
-| age | integer |  |  | user age |
-| sex | integer |  |  |  |
-| birthDay | string |  |  | user birthDay |
-| regtime | string |  |  | user regtime |
+| id | integer | NO |  | user id |
+| type | integer | NO |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| name | string | NO |  | user name |
+| age | integer | NO |  | user age |
+| sex | integer | NO |  |  |
+| birthDay | string | NO |  | user birthDay |
+| regtime | string | NO |  | user regtime |
 
 **Request Demo:**
 
@@ -213,16 +213,16 @@ access user info
 
 | name | type | required | default | desc |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
-| code | integer |  |  | response code |
-| msg | string |  |  | message |
-| data | object |  |  | response data |
-| &ensp;&ensp;&#124;─id | integer |  |  | user id |
-| &ensp;&ensp;&#124;─type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
-| &ensp;&ensp;&#124;─name | string |  |  | user name |
-| &ensp;&ensp;&#124;─age | integer |  |  | user age |
-| &ensp;&ensp;&#124;─sex | integer |  |  |  |
-| &ensp;&ensp;&#124;─birthDay | string |  |  | user birthDay |
-| &ensp;&ensp;&#124;─regtime | string |  |  | user regtime |
+| code | integer | NO |  | response code |
+| msg | string | NO |  | message |
+| data | object | NO |  | response data |
+| &ensp;&ensp;&#124;─id | integer | NO |  | user id |
+| &ensp;&ensp;&#124;─type | integer | NO |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| &ensp;&ensp;&#124;─name | string | NO |  | user name |
+| &ensp;&ensp;&#124;─age | integer | NO |  | user age |
+| &ensp;&ensp;&#124;─sex | integer | NO |  |  |
+| &ensp;&ensp;&#124;─birthDay | string | NO |  | user birthDay |
+| &ensp;&ensp;&#124;─regtime | string | NO |  | user regtime |
 
 **Response Demo:**
 
@@ -289,16 +289,16 @@ access user info
 
 | name | type | required | default | desc |
 | ------------ | ------------ | ------------ | ------------ | ------------ |
-| code | integer |  |  | response code |
-| msg | string |  |  | message |
-| data | object |  |  | response data |
-| &ensp;&ensp;&#124;─id | integer |  |  | user id |
-| &ensp;&ensp;&#124;─type | integer |  |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
-| &ensp;&ensp;&#124;─name | string |  |  | user name |
-| &ensp;&ensp;&#124;─age | integer |  |  | user age |
-| &ensp;&ensp;&#124;─sex | integer |  |  |  |
-| &ensp;&ensp;&#124;─birthDay | string |  |  | user birthDay |
-| &ensp;&ensp;&#124;─regtime | string |  |  | user regtime |
+| code | integer | NO |  | response code |
+| msg | string | NO |  | message |
+| data | object | NO |  | response data |
+| &ensp;&ensp;&#124;─id | integer | NO |  | user id |
+| &ensp;&ensp;&#124;─type | integer | NO |  | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| &ensp;&ensp;&#124;─name | string | NO |  | user name |
+| &ensp;&ensp;&#124;─age | integer | NO |  | user age |
+| &ensp;&ensp;&#124;─sex | integer | NO |  |  |
+| &ensp;&ensp;&#124;─birthDay | string | NO |  | user birthDay |
+| &ensp;&ensp;&#124;─regtime | string | NO |  | user regtime |
 
 **Response Demo:**
 

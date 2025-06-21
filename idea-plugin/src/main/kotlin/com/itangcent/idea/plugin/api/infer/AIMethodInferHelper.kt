@@ -19,7 +19,7 @@ import com.itangcent.intellij.extend.isNotActive
 import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.jvm.PsiResolver
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -676,14 +676,14 @@ class AIMethodInferHelper : MethodInferHelper {
      * Generates a cache key for a method
      */
     private fun getCacheKey(psiMethod: PsiMethod): String {
-        return PsiClassUtils.fullNameOfMethod(psiMethod)
+        return PsiClassUtil.fullNameOfMethod(psiMethod)
     }
 
     /**
      * Generates a cache key for a method with caller and args
      */
     private fun getCacheKey(psiMethod: PsiMethod, caller: Any?, args: Array<Any?>?): String {
-        val baseKey = PsiClassUtils.fullNameOfMethod(psiMethod)
+        val baseKey = PsiClassUtil.fullNameOfMethod(psiMethod)
 
         // If no caller or args, just use the method name
         if (caller == null && args == null) {

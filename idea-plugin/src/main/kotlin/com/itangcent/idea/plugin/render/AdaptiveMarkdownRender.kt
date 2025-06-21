@@ -6,9 +6,9 @@ import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
+import javax.annotation.PostConstruct
 
 @Singleton
 class AdaptiveMarkdownRender : MarkdownRender {

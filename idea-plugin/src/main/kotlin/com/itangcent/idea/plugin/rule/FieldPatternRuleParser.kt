@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
-import com.itangcent.idea.utils.ParseScriptContext
+import com.itangcent.idea.psi.ParseScriptContext
 import com.itangcent.intellij.config.rule.*
 import com.itangcent.intellij.jvm.element.ExplicitField
 import com.itangcent.intellij.jvm.element.ExplicitMethod

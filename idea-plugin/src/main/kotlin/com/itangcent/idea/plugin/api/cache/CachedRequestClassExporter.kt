@@ -16,8 +16,8 @@ import com.itangcent.idea.psi.PsiMethodResource
 import com.itangcent.idea.psi.resourceMethod
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.withBoundary
+import com.itangcent.intellij.jvm.psi.PsiClassUtil
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.ActionUtils
 import com.itangcent.intellij.util.FileUtils
 import java.io.File
@@ -87,7 +87,7 @@ class CachedRequestClassExporter : ClassExporter {
                 actionContext.withBoundary {
                     delegateClassExporter.export(cls, requestOnly { request ->
                         docHandle(request)
-                        val fullName = PsiClassUtils.fullNameOfMember(cls, request.resourceMethod()!!)
+                        val fullName = PsiClassUtil.fullNameOfMember(cls, request.resourceMethod()!!)
                         requests.add(
                             RequestWithKey(
                                 fullName, request
@@ -116,7 +116,7 @@ class CachedRequestClassExporter : ClassExporter {
         cls: PsiClass, fileApiCache: FileApiCache, requestHandle: DocHandle,
     ) {
         fileApiCache.requests?.forEach { request ->
-            val method = request.key?.let { PsiClassUtils.findMethodFromFullName(it, cls as PsiElement) }
+            val method = request.key?.let { PsiClassUtil.findMethodFromFullName(it, cls as PsiElement) }
             if (method == null) {
                 logger.warn("${request.key} not be found")
                 return@forEach

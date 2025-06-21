@@ -11,7 +11,7 @@ import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.utils.CustomizedPsiClassHelper
+import com.itangcent.idea.psi.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.context.ActionContextBuilder
@@ -35,6 +35,9 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
 
     @Inject
     private lateinit var classExporter: ClassExporter
+
+    @Inject
+    private lateinit var psiClassHelper: PsiClassHelper
 
     private lateinit var baseControllerPsiClass: PsiClass
 
@@ -131,7 +134,6 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
         builder.bind(ClassExporter::class) { it.with(SpringRequestClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class) }
-        builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
     }
 
     fun testExportFromUserCtrl() {
@@ -416,7 +418,7 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
                 request.querys.toJson()
             )
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":0,\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
                 request.response!![0].body.toJson()
             )
         }
@@ -668,11 +670,11 @@ internal class SpringRequestClassExporterTest : PluginContextLightCodeInsightFix
             assertEquals("/test/call/page/user/array", request.path.toString())
             assertEquals("GET", request.method)
             assertEquals(
-                "[{\"name\":\"id\",\"value\":\"0\",\"desc\":\"user id\",\"required\":false},{\"name\":\"type\",\"value\":0,\"desc\":\"user type\\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"required\":false},{\"name\":\"name\",\"value\":\"tangcent\",\"desc\":\"user name\",\"required\":false},{\"name\":\"age\",\"value\":0,\"desc\":\"user age\",\"required\":false},{\"name\":\"sex\",\"value\":0,\"desc\":\"\",\"required\":false},{\"name\":\"birthDay\",\"value\":\"\",\"desc\":\"user birthDay\",\"required\":false},{\"name\":\"regtime\",\"value\":\"\",\"desc\":\"user regtime\",\"required\":false}]",
+                "[{\"name\":\"id\",\"value\":0,\"desc\":\"user id\",\"required\":false},{\"name\":\"type\",\"value\":0,\"desc\":\"user type\\n1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"required\":false},{\"name\":\"name\",\"value\":\"tangcent\",\"desc\":\"user name\",\"required\":false},{\"name\":\"age\",\"value\":0,\"desc\":\"user age\",\"required\":false},{\"name\":\"sex\",\"value\":0,\"desc\":\"\",\"required\":false},{\"name\":\"birthDay\",\"value\":\"\",\"desc\":\"user birthDay\",\"required\":false},{\"name\":\"regtime\",\"value\":\"\",\"desc\":\"user regtime\",\"required\":false}]",
                 request.querys.toJson()
             )
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":0,\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
                 request.response!![0].body.toJson()
             )
         }

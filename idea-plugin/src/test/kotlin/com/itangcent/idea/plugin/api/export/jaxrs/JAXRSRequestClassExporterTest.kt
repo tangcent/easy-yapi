@@ -11,7 +11,7 @@ import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.utils.CustomizedPsiClassHelper
+import com.itangcent.idea.psi.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.context.ActionContextBuilder
@@ -116,7 +116,6 @@ internal class JAXRSRequestClassExporterTest : PluginContextLightCodeInsightFixt
         builder.bind(ClassExporter::class) { it.with(JAXRSRequestClassExporter::class).singleton() }
         builder.bind(SettingBinder::class) { it.toInstance(SettingBinderAdaptor(settings)) }
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class) }
-        builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
     }
 
     fun testExportFromUserResource() {

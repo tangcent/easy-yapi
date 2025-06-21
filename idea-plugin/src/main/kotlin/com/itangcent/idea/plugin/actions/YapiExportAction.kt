@@ -34,8 +34,6 @@ class YapiExportAction : ApiExportAction("Export Yapi") {
         builder.bindInstance("file.save.default", "yapi.json")
         builder.bindInstance("file.save.last.location.key", "com.itangcent.yapi.export.path")
 
-        builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
-
         builder.bind(YapiTokenChecker::class) { it.with(YapiTokenCheckerSupport::class).singleton() }
 
         builder.bind(AdditionalParseHelper::class) { it.with(YapiAdditionalParseHelper::class).singleton() }

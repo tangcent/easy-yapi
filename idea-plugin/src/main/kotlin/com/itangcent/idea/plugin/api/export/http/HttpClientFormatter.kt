@@ -8,7 +8,7 @@ import com.itangcent.common.utils.IDUtils
 import com.itangcent.http.RequestUtils
 import com.itangcent.idea.psi.resource
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 
 /**
  * `HttpClientFormatter` is a utility class responsible for formatting and parsing HTTP client requests.
@@ -201,7 +201,7 @@ class HttpClientFormatter {
             .append("\n")
 
     private fun Request.ref(): String = resource()?.let {
-        actionContext.callInReadUI { PsiClassUtils.fullNameOfMember(it) }
+        actionContext.callInReadUI { PsiClassUtil.fullNameOfMember(it) }
     } ?: IDUtils.shortUUID()
 }
 

@@ -1,0 +1,3 @@
+com.itangcent.idea.psi.ContextualPsiClassHelper
+com.itangcent.idea.psi.CustomizedPsiClassHelper
+com.itangcent.idea.plugin.api.export.yapi.YapiPsiClassHelper

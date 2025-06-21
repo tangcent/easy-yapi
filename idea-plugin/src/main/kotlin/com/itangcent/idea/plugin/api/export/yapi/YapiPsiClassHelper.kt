@@ -1,19 +1,22 @@
 package com.itangcent.idea.plugin.api.export.yapi
 
+import com.google.inject.Singleton
 import com.intellij.psi.PsiElement
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.kit.KVUtils
 import com.itangcent.common.utils.notNullOrEmpty
 import com.itangcent.common.utils.sub
 import com.itangcent.idea.plugin.api.export.AdditionalField
-import com.itangcent.idea.utils.CustomizedPsiClassHelper
+import com.itangcent.idea.plugin.api.export.condition.ConditionOnChannel
+import com.itangcent.idea.psi.CustomizedPsiClassHelper
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.jvm.AccessibleField
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.psi.ResolveContext
 import com.itangcent.intellij.psi.computer
+import com.itangcent.order.Order
+import javax.annotation.PostConstruct
 
 /**
  * support rules:
@@ -21,6 +24,9 @@ import com.itangcent.intellij.psi.computer
  * 2. field.demo
  * 3. field.advanced
  */
+@Singleton
+@Order(-1000)
+@ConditionOnChannel("yapi")
 class YapiPsiClassHelper : CustomizedPsiClassHelper() {
 
     private var resolveProperty: Boolean = true
@@ -54,7 +60,6 @@ class YapiPsiClassHelper : CustomizedPsiClassHelper() {
                     ?.let {
                         populateFieldValue(
                             accessibleField.jsonFieldName(),
-                            accessibleField.jsonFieldType(),
                             fields,
                             it
                         )

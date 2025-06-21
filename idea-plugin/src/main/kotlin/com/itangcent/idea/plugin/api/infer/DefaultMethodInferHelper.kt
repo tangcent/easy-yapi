@@ -16,7 +16,7 @@ import com.itangcent.intellij.jvm.*
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ClassRuleKeys
 import com.itangcent.intellij.psi.ObjectHolder
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import com.itangcent.intellij.psi.getOrResolve
 import com.itangcent.intellij.util.Magics
 import com.siyeh.ig.psiutils.ClassUtils
@@ -103,7 +103,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 if (inferRet == CALL_FAILED) {
                     if (allowQuickCall(option)) {
                         val returnType = psiMethod.returnType
-                        if (returnType != null && !PsiClassUtils.isInterface(returnType)
+                        if (returnType != null && !PsiClassUtil.isInterface(returnType)
                             && duckTypeHelper!!.isQualified(returnType, psiMethod)
                         ) {
                             return psiClassHelper!!.getTypeObject(psiMethod.returnType, psiMethod, jsonOption)
@@ -580,7 +580,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                 return false
             }
 
-            return PsiClassUtils.hasImplement(method.containingClass, superMethod.containingClass)
+            return PsiClassUtil.hasImplement(method.containingClass, superMethod.containingClass)
 
         }
 
@@ -1028,7 +1028,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
                     if (inits.add(variableName)) {
                         val variableType = psiElement.type
 
-                        if (!PsiClassUtils.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(
+                        if (!PsiClassUtil.isInterface(variableType) && methodReturnInferHelper.duckTypeHelper!!.isQualified(
                                 variableType,
                                 psiElement
                             )
@@ -1549,7 +1549,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
 
         override fun toString(): String {
-            return "MethodReturnInfer(${PsiClassUtils.fullNameOfMethod(psiMethod)})"
+            return "MethodReturnInfer(${PsiClassUtil.fullNameOfMethod(psiMethod)})"
         }
     }
 
@@ -1679,7 +1679,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
         }
 
         override fun toString(): String {
-            return "QuicklyMethodReturnInfer(${PsiClassUtils.fullNameOfMethod(psiMethod)})"
+            return "QuicklyMethodReturnInfer(${PsiClassUtil.fullNameOfMethod(psiMethod)})"
         }
     }
 
@@ -1736,7 +1736,7 @@ class DefaultMethodInferHelper : MethodInferHelper {
             return if (constructor == null) {
                 "NewExpressionInfer(${psiNewExpression.text})"
             } else {
-                "NewExpressionInfer(${PsiClassUtils.fullNameOfMethod(constructor)})"
+                "NewExpressionInfer(${PsiClassUtil.fullNameOfMethod(constructor)})"
             }
         }
     }

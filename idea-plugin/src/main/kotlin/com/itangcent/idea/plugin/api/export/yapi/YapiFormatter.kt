@@ -26,7 +26,7 @@ import com.itangcent.intellij.extend.takeIfNotOriginal
 import com.itangcent.intellij.extend.takeIfSpecial
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import com.itangcent.intellij.tip.OnlyOnceInContextTip
 import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.forEachValid
@@ -189,7 +189,7 @@ open class YapiFormatter {
             return path!!
         }
 
-        return formatPath(PsiClassUtils.fullNameOfMethod(methodDoc.resourceMethod()!!))
+        return formatPath(PsiClassUtil.fullNameOfMethod(methodDoc.resourceMethod()!!))
     }
 
     private fun getHttpMethodOfMethodDoc(methodDoc: MethodDoc): String {

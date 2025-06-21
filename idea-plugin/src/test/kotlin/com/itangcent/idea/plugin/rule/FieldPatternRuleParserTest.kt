@@ -1,7 +1,7 @@
 package com.itangcent.idea.plugin.rule
 
 import com.itangcent.debug.LoggerCollector
-import com.itangcent.idea.utils.ParseScriptContext
+import com.itangcent.idea.psi.ParseScriptContext
 import com.itangcent.intellij.config.rule.parseBooleanRule
 import com.itangcent.intellij.config.rule.parseEventRule
 import com.itangcent.intellij.context.ActionContextBuilder

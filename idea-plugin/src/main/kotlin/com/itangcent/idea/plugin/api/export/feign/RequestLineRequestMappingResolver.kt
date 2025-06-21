@@ -8,7 +8,7 @@ import com.itangcent.idea.plugin.api.export.spring.SpringRequestMappingResolver
 import com.itangcent.idea.plugin.condition.ConditionOnSetting
 import com.itangcent.intellij.jvm.AnnotationHelper
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import com.itangcent.order.Order
 import com.itangcent.order.Ordered
 import java.util.regex.Matcher
@@ -40,14 +40,14 @@ class RequestLineRequestMappingResolver : SpringRequestMappingResolver {
             annotationHelper.findAttrAsString(psiElement, SpringFeignClassName.REQUEST_LINE_ANNOTATION) ?: return null
 
         if (requestLineValue.isEmpty()) {
-            logger.error("RequestLine annotation was empty on method ${PsiClassUtils.fullNameOfMember(psiElement)}.")
+            logger.error("RequestLine annotation was empty on method ${PsiClassUtil.fullNameOfMember(psiElement)}.")
             return null
         }
         val requestLineMatcher: Matcher = REQUEST_LINE_PATTERN.matcher(requestLineValue)
         if (!requestLineMatcher.find()) {
             logger.error(
                 "RequestLine annotation didn't start with an HTTP verb on method ${
-                    PsiClassUtils.fullNameOfMember(
+                    PsiClassUtil.fullNameOfMember(
                         psiElement
                     )
                 }"
