@@ -4,6 +4,7 @@ import com.itangcent.common.model.Header
 import com.itangcent.common.model.Param
 import com.itangcent.common.model.Request
 import com.itangcent.common.model.URL
+import com.itangcent.common.utils.asUrl
 import com.itangcent.intellij.config.resource.Resource
 import com.itangcent.test.StringResource
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
@@ -277,7 +278,7 @@ class TemplateMarkdownFormatterTest : PluginContextLightCodeInsightFixtureTestCa
     fun testUnreachableTemplate() {
         val resource = object : Resource() {
             override val url: java.net.URL
-                get() = java.net.URL("file:template.md")
+                get() = "file:template.md".asUrl()
 
             override val content: String?
                 get() = "template content"

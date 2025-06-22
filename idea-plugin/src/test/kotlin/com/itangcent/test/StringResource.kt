@@ -1,5 +1,6 @@
 package com.itangcent.test
 
+import com.itangcent.common.utils.asUrl
 import com.itangcent.intellij.config.resource.Resource
 import java.io.InputStream
 import java.net.URL
@@ -9,7 +10,7 @@ class StringResource(
     private val str: String,
 ) : Resource() {
     override val url: URL
-        get() = URL(_url)
+        get() = _url.asUrl()
 
     override val bytes: ByteArray
         get() = str.toByteArray(Charsets.UTF_8)
