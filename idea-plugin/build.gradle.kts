@@ -6,6 +6,7 @@ group = "com.itangcent"
 version = properties["plugin_version"]!!
 
 val intellijVersions = arrayOf(
+    mapOf("jdk" to 21, "version" to "2025.1.2", "since" to "251"),
     mapOf("jdk" to 17, "version" to "2023.1.3", "since" to "231"),
     mapOf("jdk" to 15, "version" to "2022.2.3", "since" to "223"),
     mapOf("jdk" to 11, "version" to "2021.2.1", "since" to "212")
@@ -95,6 +96,7 @@ dependencies {
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
+    testImplementation("junit:junit:4.13.2")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${properties["junit_version"]}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${properties["junit_version"]}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${properties["junit_version"]}")
@@ -122,7 +124,7 @@ tasks {
         sinceBuild.set(intellijSince)
         untilBuild.set("")
     }
-    
+
     // Add a task to clean the bin directory
     register<Delete>("cleanBin") {
         delete("bin")
@@ -130,12 +132,12 @@ tasks {
             println("Cleaned bin directory")
         }
     }
-    
+
     // Hook into existing tasks
     getByName("clean") {
         dependsOn("cleanBin")
     }
-    
+
     getByName("build") {
         finalizedBy("cleanBin")
     }
