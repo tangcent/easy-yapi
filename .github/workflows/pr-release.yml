@@ -15,7 +15,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Check if branch is release branch and add label if needed
-        uses: actions/github-script@v7
+        uses: actions/github-script@v6
         id: check_branch
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -103,7 +103,7 @@ jobs:
 
       - name: Update Pull Request
         if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -116,4 +116,4 @@ jobs:
               repo,
               issue_number: issueNumber,
               body: prBody
-            }); 
+            });
