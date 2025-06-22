@@ -1,3 +1,10 @@
+* 2.8.2
+chore: Replace deprecated `URL` constructor calls with `asUrl()` extension
+	* fix: Fix compatibility with IntelliJ IDEA Ultimate IU-251.26094.121+  [(#1249)](https://github.com/tangcent/easy-yapi/pull/1249)
+
+	* refactor: Refactor PsiClassHelper utilities  [(#1248)](https://github.com/tangcent/easy-yapi/pull/1248)
+
+	* build: auto-remove WIP label when PR closes related issue  [(#1243)](https://github.com/tangcent/easy-yapi/pull/1243)
 * 2.8.1
 	* feat: Enhance script object 'api' with parameter accessor methods  [(#1241)](https://github.com/tangcent/easy-yapi/pull/1241)
 
