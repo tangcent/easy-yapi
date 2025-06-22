@@ -3,6 +3,7 @@ package com.itangcent.idea.icons
 import com.intellij.util.ReflectionUtil
 import com.itangcent.common.logger.Log
 import com.itangcent.common.spi.SpiUtils
+import com.itangcent.common.utils.asUrl
 import com.itangcent.common.utils.invokeMethod
 import com.itangcent.common.utils.safe
 import com.itangcent.idea.sqlite.encodeBase64
@@ -155,7 +156,7 @@ object EasyIcons : Log() {
     }
 
     private fun tryLoadByUrl(vararg urls: String): Icon? {
-        return tryLoadByUrl(*urls.map { URL(it) }.toTypedArray())
+        return tryLoadByUrl(*urls.map { it.asUrl() }.toTypedArray())
     }
 
     private fun tryLoadByUrl(vararg urls: URL): Icon? {

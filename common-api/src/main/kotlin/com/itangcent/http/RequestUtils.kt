@@ -2,7 +2,6 @@ package com.itangcent.http
 
 import com.itangcent.common.constant.Attrs
 import com.itangcent.common.utils.*
-import java.net.URL
 
 object RequestUtils {
 
@@ -57,7 +56,7 @@ object RequestUtils {
             return url
         }
         return try {
-            URL(url)
+            url.asUrl()
             url
         } catch (e: Exception) {
             protocol.removeSuffix("://") + "://" + url
@@ -79,11 +78,11 @@ object RequestUtils {
             return this
         }
 
-        fun host(host: String?): UrlBuild {
+        fun host(host: String): UrlBuild {
             try {
-                val parsedURL = URL(host)
+                val parsedURL = host.asUrl()
                 this.protocol = parsedURL.protocol
-                this.host = host!!.removePrefix(this.protocol!! + "://")
+                this.host = host.removePrefix(this.protocol!! + "://")
             } catch (e: Exception) {
                 this.host = host
             }

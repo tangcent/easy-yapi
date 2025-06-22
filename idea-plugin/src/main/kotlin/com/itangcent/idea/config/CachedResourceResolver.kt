@@ -5,6 +5,7 @@ import com.google.inject.Singleton
 import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.TimeSpanUtils
+import com.itangcent.common.utils.asUrl
 import com.itangcent.idea.plugin.api.cache.ProjectCacheRepository
 import com.itangcent.idea.plugin.settings.helper.HttpSettingsHelper
 import com.itangcent.idea.sqlite.SqliteDataResourceHelper
@@ -51,7 +52,7 @@ open class CachedResourceResolver : DefaultResourceResolver() {
     }
 
     override fun createUrlResource(url: String): URLResource {
-        return CachedURLResource(URL(url))
+        return CachedURLResource(url.asUrl())
     }
 
     open inner class CachedURLResource(url: URL) : URLResource(url) {

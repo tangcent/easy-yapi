@@ -4,11 +4,11 @@ import com.google.inject.ImplementedBy
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import com.intellij.openapi.ui.Messages
+import com.itangcent.common.utils.asUrl
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.update
 import com.itangcent.idea.plugin.utils.RegexUtils
 import com.itangcent.idea.swing.MessagesHelper
-import java.net.URL
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
@@ -104,7 +104,7 @@ class HttpSettingsHelperImpl : HttpSettingsHelper {
             HOST_RESOLVERS.forEach { resolver ->
                 resolver(url)?.let { return it.removeSuffix("/") }
             }
-            return URL(url).let { "${it.protocol}://${it.host}" }.removeSuffix("/")
+            return url.asUrl().let { "${it.protocol}://${it.host}" }.removeSuffix("/")
         } catch (e: Exception) {
             return url
         }
