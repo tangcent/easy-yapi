@@ -2,6 +2,7 @@ package com.itangcent.idea.utils
 
 import com.itangcent.common.kit.toJson
 import com.itangcent.debug.LoggerCollector
+import com.itangcent.idea.psi.ContextualPsiClassHelper
 import com.itangcent.intellij.context.ActionContextBuilder
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.jvm.PsiClassHelper
@@ -10,7 +11,7 @@ import com.itangcent.mock.toUnixString
 import com.itangcent.test.ResultLoader
 
 /**
- * Test case of [ContextualPsiClassHelper]
+ * Test case of [com.itangcent.idea.psi.ContextualPsiClassHelper]
  */
 internal abstract class ContextualPsiClassHelperTest : ContextualPsiClassHelperBaseTest() {
 

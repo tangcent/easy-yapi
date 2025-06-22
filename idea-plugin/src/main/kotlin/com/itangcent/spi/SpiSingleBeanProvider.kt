@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
 abstract class SpiSingleBeanProvider<T : Any> : AbstractSpiBeanProvider<T>() {
 
     override fun loadBean(actionContext: ActionContext, kClass: KClass<T>): T {
-        val services = SpiCompositeLoader.load<T>(actionContext, kClass)
+        val services = SpiCompositeLoader.load(actionContext, kClass)
         if (services.isEmpty()) {
             throw IllegalStateException("No services found for ${kClass.qualifiedName}")
         }

@@ -8,11 +8,11 @@ import com.itangcent.common.utils.safe
 import com.itangcent.idea.utils.initAfterShown
 import com.itangcent.intellij.constant.EventKey
 import com.itangcent.intellij.context.ActionContext
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.logger.Logger
 import java.awt.Dimension
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import javax.annotation.PostConstruct
 import javax.swing.JDialog
 import javax.swing.WindowConstants
 

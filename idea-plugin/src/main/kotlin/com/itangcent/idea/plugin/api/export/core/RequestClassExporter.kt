@@ -31,9 +31,9 @@ import com.itangcent.intellij.jvm.duck.DuckType
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.jvm.element.ExplicitMethod
+import com.itangcent.intellij.jvm.psi.PsiClassUtil
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
-import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.*
 import kotlin.reflect.KClass
 
@@ -804,7 +804,7 @@ abstract class RequestClassExporter : ClassExporter {
 
             this.intelligentSettingsHelper.inferEnable() && !duckTypeHelper.isQualified(duckType)
                 -> {
-                logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(method.psi()) + "]")
+                logger.info("try infer return type of method[" + PsiClassUtil.fullNameOfMethod(method.psi()) + "]")
                 methodReturnInferHelper!!.inferReturn(method.psi())
             }
 

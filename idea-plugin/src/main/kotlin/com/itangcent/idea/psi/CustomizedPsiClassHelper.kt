@@ -1,6 +1,7 @@
-package com.itangcent.idea.utils
+package com.itangcent.idea.psi
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
@@ -11,7 +12,6 @@ import com.itangcent.common.utils.*
 import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.settings.EventRecords
-import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.AccessibleField
 import com.itangcent.intellij.jvm.PsiExpressionResolver
 import com.itangcent.intellij.jvm.duck.DuckType
@@ -20,6 +20,7 @@ import com.itangcent.intellij.psi.ObjectHolder
 import com.itangcent.intellij.psi.ResolveContext
 import com.itangcent.intellij.psi.computer
 import com.itangcent.intellij.psi.getOrResolve
+import com.itangcent.order.Order
 import com.itangcent.utils.isCollections
 
 /**
@@ -27,6 +28,8 @@ import com.itangcent.utils.isCollections
  * 1. field.required
  * 2. field.default.value
  */
+@Singleton
+@Order(-100)
 open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
 
     @Inject
@@ -47,14 +50,21 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         val defaultValue = ruleComputer.computer(ClassExportRuleKeys.FIELD_DEFAULT_VALUE, accessibleField)
         if (defaultValue.isNullOrEmpty()) {
             accessibleField.field?.psi()?.let { field ->
-                field.initializer?.let { psiExpressionResolver.process(it) }?.toPrettyString()
+                field.initializer
+                    ?.let { psiExpressionResolver.process(it) }
                     ?.let { fields.sub(Attrs.DEFAULT_VALUE_ATTR)[accessibleField.jsonFieldName()] = it }
             }
         } else {
             fields.sub(Attrs.DEFAULT_VALUE_ATTR)[accessibleField.jsonFieldName()] = defaultValue
             parseAsFieldValue(defaultValue)
                 ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEFAULT_VALUE_ATTR) }
-                ?.let { populateFieldValue(accessibleField.jsonFieldName(), accessibleField.jsonFieldType(), fields, it) }
+                ?.let {
+                    populateFieldValue(
+                        accessibleField.jsonFieldName(),
+                        fields,
+                        it
+                    )
+                }
         }
 
         //compute `field.demo`
@@ -66,7 +76,13 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
             fields.sub(Attrs.DEMO_ATTR)[accessibleField.jsonFieldName()] = demoValue
             demoValue?.let { parseAsFieldValue(it) }
                 ?.also { KVUtils.useFieldAsAttr(it, Attrs.DEMO_ATTR) }
-                ?.let { populateFieldValue(accessibleField.jsonFieldName(), accessibleField.jsonFieldType(), fields, it) }
+                ?.let {
+                    populateFieldValue(
+                        accessibleField.jsonFieldName(),
+                        fields,
+                        it
+                    )
+                }
         }
 
         super.afterParseField(accessibleField, resourcePsiClass, resolveContext, fields)
@@ -88,16 +104,16 @@ open class CustomizedPsiClassHelper : ContextualPsiClassHelper() {
         valueText: String
     ): Any? {
         return try {
-            GsonUtils.fromJson<Any>(valueText)?.takeIf { it.isCollections() && !it.isOriginal() }
-                ?.let { it.copyUnsafe() }
-        } catch (e: Exception) {
+            GsonUtils.fromJson<Any>(valueText)
+                ?.takeIf { it.isCollections() && !it.isOriginal() }
+                ?.copyUnsafe()
+        } catch (_: Exception) {
             null
         }
     }
 
     protected fun populateFieldValue(
         fieldName: String,
-        fieldType: DuckType,
         fields: MutableMap<String, Any?>,
         fieldValue: Any
     ) {

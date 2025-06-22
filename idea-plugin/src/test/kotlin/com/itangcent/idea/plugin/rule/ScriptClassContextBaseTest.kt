@@ -5,6 +5,11 @@ import com.itangcent.common.kit.toJson
 import com.itangcent.common.utils.GsonUtils
 import com.itangcent.idea.plugin.rule.ScriptRuleParser.ScriptClassContext
 import com.itangcent.intellij.config.rule.RuleParser
+import com.itangcent.intellij.context.ActionContextBuilder
+import com.itangcent.intellij.extend.guice.singleton
+import com.itangcent.intellij.extend.guice.with
+import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.psi.DefaultPsiClassHelper
 import com.itangcent.testFramework.PluginContextLightCodeInsightFixtureTestCase
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -68,6 +73,13 @@ abstract class ScriptClassContextBaseTest : PluginContextLightCodeInsightFixture
         validationGroupedDemoDtoPsiClass = loadClass("model/ValidationGroupedDemoDto.java")!!
         userTypePsiClass = loadClass("constant/UserType.java")!!
         userInfoPsiClass = loadClass("model/UserInfo.java")!!
+    }
+
+    override fun bind(builder: ActionContextBuilder) {
+        super.bind(builder)
+        builder.bind(PsiClassHelper::class) {
+            it.with(DefaultPsiClassHelper::class).singleton()
+        }
     }
 
     override fun customConfig(): String? {

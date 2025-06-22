@@ -11,7 +11,7 @@ import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.utils.CustomizedPsiClassHelper
+import com.itangcent.idea.psi.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.context.ActionContextBuilder
@@ -166,7 +166,7 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             assertEquals(primitiveUserClientPsiClass.methods[0], (request.resource as PsiResource).resource())
             assertNull(request.body)
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":0,\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}}",
                 request.response!!.first().body.toJson()
             )
         }
@@ -195,11 +195,11 @@ internal class FeignRequestClassExporterTest : PluginContextLightCodeInsightFixt
             }
             assertEquals(primitiveUserClientPsiClass.methods[1], (request.resource as PsiResource).resource())
             assertEquals(
-                "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}",
+                "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":0,\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}",
                 request.body.toJson()
             )
             assertEquals(
-                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":\"0\",\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
+                "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"\",\"data\":[{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":0,\"name\":\"tangcent\"},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"type@options\":[{\"value\":1,\"desc\":\"administration\"},{\"value\":2,\"desc\":\"a person, an animal or a plant\"},{\"value\":3,\"desc\":\"Anonymous visitor\"}],\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"@demo\":{\"sex\":\"1\"},\"birthDay\":\"\",\"regtime\":\"\"}]}",
                 request.response!!.first().body.toJson()
             )
         }

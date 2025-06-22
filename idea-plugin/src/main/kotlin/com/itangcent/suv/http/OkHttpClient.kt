@@ -211,21 +211,25 @@ class OkHttpCookie(private val cookie: okhttp3.Cookie) : Cookie {
         return cookie.secure
     }
 
+    @Deprecated("For compatibility only")
     override fun getComment(): String? {
         // OkHttp's Cookie class does not support comments; return null or an empty string if needed.
         return null
     }
 
+    @Deprecated("For compatibility only")
     override fun getCommentURL(): String? {
         // OkHttp's Cookie class does not support comment URLs; return null.
         return null
     }
 
+    @Deprecated("For compatibility only")
     override fun getPorts(): IntArray? {
         // OkHttp's Cookie class does not support ports; return null.
         return null
     }
 
+    @Deprecated("For compatibility only")
     override fun getVersion(): Int {
         // OkHttp's Cookie class does not explicitly handle version; typically version 1 (Netscape spec) is assumed.
         return 1

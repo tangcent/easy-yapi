@@ -9,7 +9,7 @@ import com.itangcent.idea.plugin.api.export.core.requestOnly
 import com.itangcent.idea.plugin.settings.SettingBinder
 import com.itangcent.idea.plugin.settings.Settings
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.utils.CustomizedPsiClassHelper
+import com.itangcent.idea.psi.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.context.ActionContextBuilder

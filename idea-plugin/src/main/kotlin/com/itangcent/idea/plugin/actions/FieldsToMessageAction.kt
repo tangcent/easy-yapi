@@ -8,7 +8,6 @@ import com.intellij.psi.PsiType
 import com.itangcent.common.logger.traceError
 import com.itangcent.idea.plugin.config.EnhancedConfigReader
 import com.itangcent.idea.plugin.rule.SuvRuleParser
-import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
@@ -20,7 +19,6 @@ import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
 import com.itangcent.intellij.jvm.JvmClassHelper
-import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
 import com.itangcent.intellij.util.ActionUtils
@@ -54,7 +52,6 @@ abstract class FieldsToMessageAction : BasicAnAction {
         builder.bind(LocalFileRepository::class) { it.with(DefaultLocalFileRepository::class).singleton() }
 
         builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
-        builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(EnhancedConfigReader::class).singleton() }
     }
 

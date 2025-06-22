@@ -197,7 +197,7 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         request.resource = userCtrlPsiClass
         requestRuleWrap.setBodyClass("com.itangcent.model.UserInfo")
         assertEquals(
-            "{\"id\":0,\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":0},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
             request.body.toJson()
         )
     }
@@ -585,7 +585,7 @@ internal class RequestRuleWrapTest : PluginContextLightCodeInsightFixtureTestCas
         request.resource = userCtrlPsiClass
         requestRuleWrap.setResponseBodyClass("com.itangcent.model.UserInfo")
         assertEquals(
-            "{\"id\":0,\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
+            "{\"id\":0,\"@required\":{\"id\":false,\"type\":false,\"name\":false,\"age\":false,\"sex\":false,\"birthDay\":false,\"regtime\":false},\"@default\":{\"id\":0},\"@comment\":{\"id\":\"user id\",\"type\":\"user type\",\"name\":\"user name\",\"age\":\"user age\",\"sex\":\"\",\"birthDay\":\"user birthDay\",\"regtime\":\"user regtime\"},\"type\":0,\"name\":\"\",\"age\":0,\"sex\":0,\"birthDay\":\"\",\"regtime\":\"\"}",
             request.response!!.first().body.toJson()
         )
         requestRuleWrap.setResponseBodyClass("text", "java.lang.String")

@@ -51,7 +51,7 @@ internal class DefaultMethodInferHelperTest : PluginContextLightCodeInsightFixtu
             }
         }
         assertEquals(
-            "{\"code\":0,\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"success\",\"data\":[{\"key1\":\"string\",\"@comment\":{\"key1\":\"This is the key for the test\",\"key2\":\"This is a test key valued 666\",\"key3\":\"This is a child for test\"},\"key2\":666,\"key3\":{\"subKey\":\"string\",\"@comment\":{\"subKey\":\"This is the key of the child\"}}},{}]}",
+            "{\"code\":0,\"@required\":{\"code\":false,\"msg\":false,\"data\":false},\"@comment\":{\"code\":\"response code\",\"msg\":\"message\",\"data\":\"response data\"},\"msg\":\"success\",\"data\":[{\"key1\":\"string\",\"@comment\":{\"key1\":\"This is the key for the test\",\"key2\":\"This is a test key valued 666\",\"key3\":\"This is a child for test\"},\"key2\":666,\"key3\":{\"subKey\":\"string\",\"@comment\":{\"subKey\":\"This is the key of the child\"}}},{}]}",
             GsonUtils.toJson(inferReturn)
         )
     }

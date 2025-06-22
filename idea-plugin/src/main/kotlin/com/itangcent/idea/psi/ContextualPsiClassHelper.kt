@@ -1,9 +1,11 @@
-package com.itangcent.idea.utils
+package com.itangcent.idea.psi
 
 import com.google.inject.Inject
+import com.google.inject.Singleton
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.itangcent.common.constant.Attrs
+import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.utils.asBool
 import com.itangcent.common.utils.sub
@@ -11,20 +13,22 @@ import com.itangcent.idea.plugin.api.export.AdditionalField
 import com.itangcent.idea.plugin.api.export.core.AdditionalParseHelper
 import com.itangcent.idea.plugin.api.export.core.ClassExportRuleKeys
 import com.itangcent.idea.plugin.api.export.yapi.YapiClassExportRuleKeys
-import com.itangcent.idea.plugin.rule.SuvRuleContext
+import com.itangcent.idea.plugin.rule.suvRuleContext
+import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.ConfigReader
 import com.itangcent.intellij.config.rule.RuleComputeListener
 import com.itangcent.intellij.config.rule.RuleContext
 import com.itangcent.intellij.config.rule.RuleKey
 import com.itangcent.intellij.config.rule.lookUp
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.intellij.jvm.AccessibleField
 import com.itangcent.intellij.jvm.JsonOption
 import com.itangcent.intellij.jvm.JsonOption.has
 import com.itangcent.intellij.jvm.duck.SingleDuckType
 import com.itangcent.intellij.jvm.element.ExplicitClass
 import com.itangcent.intellij.psi.*
+import com.itangcent.order.Order
 import java.util.*
+import javax.annotation.PostConstruct
 
 /**
  * support config:
@@ -33,7 +37,10 @@ import java.util.*
  * 1. field.parse.before
  * 2. field.parse.after
  * 3. field.order.with
+ * 4. json.additional.field
  */
+@Singleton
+@Order(-10)
 open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
 
     @Inject
@@ -117,9 +124,12 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
     private fun clearCachePotentially() {
         if (configReader.first("json.cache.disable").asBool() == true) {
             devEnv?.dev {
-                logger.info("clear json cache")
+                logger.info("Clearing JSON cache due to json.cache.disable=true")
             }
             resolvedInfo.clear()
+            LOG.debug("JSON cache cleared successfully")
+        } else {
+            LOG.trace("JSON cache remains enabled")
         }
     }
 
@@ -159,26 +169,32 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
             resolveContext,
             fields
         )
-        popField(accessibleField.jsonFieldName())
+        popField()
     }
 
     override fun collectFields(explicitClass: ExplicitClass, option: Int): Collection<DefaultAccessibleField> {
+        LOG.debug("Collecting fields for class: ${explicitClass.name()}")
         var fields = super.collectFields(explicitClass, option)
+
         if (ruleLookUp.lookUp(ClassExportRuleKeys.FIELD_ORDER_WITH).isNotEmpty()) {
+            LOG.debug("Applying field ordering rules")
             try {
                 fields = fields.asSequence().withIndex().sortedWith { (index1, field1), (index2, field2) ->
                     ruleComputer.computer(
-                        ClassExportRuleKeys.FIELD_ORDER_WITH, SuvRuleContext()
-                            .apply {
-                                setExt("a", field1.explicitElement)
-                                setExt("b", field2.explicitElement)
-                            }, null
+                        ruleKey = ClassExportRuleKeys.FIELD_ORDER_WITH,
+                        target = suvRuleContext {
+                            setExt("a", field1.explicitElement)
+                            setExt("b", field2.explicitElement)
+                        },
+                        context = null
                     ) ?: (index1.compareTo(index2))
                 }.map { it.value }.toList()
+                LOG.debug("Successfully sorted ${fields.size} fields")
             } catch (e: Exception) {
                 logger.traceError("Failed to sort fields. Please check the rule of ${ClassRuleKeys.FIELD_ORDER}", e)
             }
         }
+        LOG.trace("Returning ${fields.size} collected fields")
         return fields
     }
 
@@ -196,32 +212,52 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         )
 
         ruleComputer.computer(ClassExportRuleKeys.JSON_FIELD_PARSE_AFTER, accessibleField)
-        popField(accessibleField.jsonFieldName())
         computeAdditionalField(accessibleField.psi, resolveContext, fields)
+        popField()
     }
 
+    /**
+     * Processes additional fields configured via JSON rules.
+     *
+     * Expected field format (JSON string):
+     * {
+     *   "name": "fieldName",
+     *   "type": "fieldType",
+     *   "desc": "fieldDescription" (optional)
+     * }
+     *
+     * Multiple fields can be specified as newline-separated JSON strings.
+     *
+     * @param context The PsiElement context for rule computation
+     * @param resolveContext Current resolution context
+     * @param fields Map to store parsed field values
+     */
     protected open fun computeAdditionalField(
         context: PsiElement,
         resolveContext: ResolveContext,
         fields: MutableMap<String, Any?>,
     ) {
-        //support json.additional.field
+        LOG.debug("Checking for additional fields in context: ${context.text}")
         val additionalFields = ruleComputer.computer(ClassExportRuleKeys.JSON_ADDITIONAL_FIELD, context)
         if (!additionalFields.isNullOrBlank()) {
+            LOG.info("Found ${additionalFields.lines().size} additional field(s) to process")
             for (additionalField in additionalFields.lines()) {
-                val field = additionalParseHelper.parseFieldFromJson(additionalField)
-                if (field.name.isNullOrBlank()
-                    || field.type.isNullOrBlank()
-                ) {
-                    logger.error("Illegal additional field: $additionalField")
-                    return
+                try {
+                    val field = additionalParseHelper.parseFieldFromJson(additionalField)
+                    if (field.name.isNullOrBlank() || field.type.isNullOrBlank()) {
+                        logger.warn("Skipping invalid additional field - missing name/type: $additionalField")
+                        continue
+                    }
+                    val fieldName = field.name!!
+                    if (fields.containsKey(fieldName)) {
+                        logger.warn("Skipping duplicate additional field [$fieldName]")
+                        continue
+                    }
+                    LOG.debug("Processing additional field: $fieldName (${field.type})")
+                    resolveAdditionalField(field, context, resolveContext, fields)
+                } catch (e: Exception) {
+                    logger.traceError("Failed to process additional field: $additionalField", e)
                 }
-                val fieldName = field.name
-                if (fields.containsKey(fieldName)) {
-                    logger.debug("additional field [$fieldName] is already existed.")
-                    continue
-                }
-                resolveAdditionalField(field, context, resolveContext, fields)
             }
         }
     }
@@ -232,7 +268,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         resolveContext: ResolveContext,
         fields: MutableMap<String, Any?>,
     ) {
-        val additionalFieldType = duckTypeHelper!!.resolve(additionalField.type!!, context)
+        val additionalFieldType = duckTypeHelper.resolve(additionalField.type!!, context)
         val fieldName = additionalField.name!!
         if (additionalFieldType == null) {
             fields[fieldName] = null
@@ -244,7 +280,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    private fun popField(fieldName: String) {
+    private fun popField() {
         parseContext.get()?.removeLast()
         devEnv?.dev {
             logger.info("path -> ${parseScriptContext.path()}")
@@ -286,7 +322,7 @@ open class ContextualPsiClassHelper : DefaultPsiClassHelper() {
         }
     }
 
-    companion object {
+    companion object : Log() {
         val JSON_RULE_KEYS = arrayOf(
             ClassRuleKeys.FIELD_IGNORE,
             ClassRuleKeys.FIELD_DOC,

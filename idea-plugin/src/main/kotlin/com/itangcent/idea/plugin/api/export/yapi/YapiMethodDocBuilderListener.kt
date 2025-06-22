@@ -12,7 +12,7 @@ import com.itangcent.intellij.config.rule.RuleComputer
 import com.itangcent.intellij.config.rule.computer
 import org.apache.commons.lang3.StringUtils
 
-@ConditionOnChannel("yap")
+@ConditionOnChannel("yapi")
 class YapiMethodDocBuilderListener : MethodDocBuilderListener {
 
     @Inject

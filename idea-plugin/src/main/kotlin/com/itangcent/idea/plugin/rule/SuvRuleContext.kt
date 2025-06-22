@@ -58,6 +58,10 @@ open class SuvRuleContext : SimpleExtensible, RuleContext {
     }
 }
 
+fun suvRuleContext(init: SuvRuleContext.() -> Unit): SuvRuleContext {
+    return SuvRuleContext().apply { init(this) }
+}
+
 fun SuvRuleContext.setDoc(doc: Doc) {
     this.setExt("doc", doc)//for compatible
     if (doc is Request) {
@@ -68,7 +72,6 @@ fun SuvRuleContext.setDoc(doc: Doc) {
         this.setExt("methodDoc", MethodDocRuleWrap(doc.createMethodExportContext(), doc))
     }
 }
-
 
 private val explicitCache = ConcurrentHashMap<PsiClass, ArrayList<ExplicitMethod>>()
 

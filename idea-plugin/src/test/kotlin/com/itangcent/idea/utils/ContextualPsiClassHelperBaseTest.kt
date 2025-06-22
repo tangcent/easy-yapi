@@ -13,7 +13,7 @@ import java.util.*
 import java.util.Collection
 
 /**
- * Base test case of [ContextualPsiClassHelper]
+ * Base test case of [com.itangcent.idea.psi.ContextualPsiClassHelper]
  */
 internal abstract class ContextualPsiClassHelperBaseTest : PluginContextLightCodeInsightFixtureTestCase() {
 

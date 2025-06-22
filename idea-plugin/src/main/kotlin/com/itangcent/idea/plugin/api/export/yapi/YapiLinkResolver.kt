@@ -7,7 +7,7 @@ import com.itangcent.common.logger.Log
 import com.itangcent.idea.plugin.api.export.core.DefaultLinkResolver
 import com.itangcent.idea.utils.ModuleHelper
 import com.itangcent.intellij.jvm.DocHelper
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import org.apache.commons.lang3.StringUtils
 
 class YapiLinkResolver : DefaultLinkResolver() {
@@ -100,7 +100,7 @@ class YapiLinkResolver : DefaultLinkResolver() {
                 }
             }
         } catch (e: Exception) {
-            LOG.warn("error to linkToMethod:" + PsiClassUtils.fullNameOfMethod(linkMethod))
+            LOG.warn("error to linkToMethod:" + PsiClassUtil.fullNameOfMethod(linkMethod))
         }
         return super.linkToMethod(linkMethod)
     }

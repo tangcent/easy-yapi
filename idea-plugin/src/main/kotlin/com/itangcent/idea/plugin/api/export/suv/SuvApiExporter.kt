@@ -36,7 +36,6 @@ import com.itangcent.idea.plugin.settings.helper.MarkdownSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.YapiSettingsHelper
 import com.itangcent.idea.plugin.settings.helper.YapiTokenChecker
 import com.itangcent.idea.psi.PsiResource
-import com.itangcent.idea.utils.CustomizedPsiClassHelper
 import com.itangcent.idea.utils.FileSaveHelper
 import com.itangcent.idea.utils.RuleComputeListenerRegistry
 import com.itangcent.intellij.config.ConfigReader
@@ -53,7 +52,6 @@ import com.itangcent.intellij.extend.logger
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.DefaultLocalFileRepository
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.jvm.PsiClassHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.tip.TipsHelper
 import com.itangcent.intellij.util.UIUtils
@@ -249,11 +247,8 @@ open class SuvApiExporter {
 
             builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
             builder.bind(RuleComputeListener::class) { it.with(RuleComputeListenerRegistry::class).singleton() }
-            builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
-
             builder.bind(ResourceResolver::class) { it.with(CachedResourceResolver::class).singleton() }
             builder.bind(FileApiCacheRepository::class) { it.with(DefaultFileApiCacheRepository::class).singleton() }
-
             builder.bind(ConfigReader::class) { it.with(EnhancedConfigReader::class).singleton() }
 
             afterBuildActionContext(actionContext, builder)
@@ -383,8 +378,6 @@ open class SuvApiExporter {
 
             builder.bindInstance("file.save.default", "api.json")
             builder.bindInstance("file.save.last.location.key", "com.itangcent.api.export.path")
-
-            builder.bind(PsiClassHelper::class) { it.with(YapiPsiClassHelper::class).singleton() }
 
             builder.bind(YapiTokenChecker::class) { it.with(YapiTokenCheckerSupport::class).singleton() }
 

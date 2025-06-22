@@ -29,7 +29,7 @@ import com.itangcent.intellij.jvm.element.ExplicitMethod
 import com.itangcent.intellij.jvm.element.ExplicitParameter
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import com.itangcent.order.Order
 import com.itangcent.utils.disposable
 import kotlin.reflect.KClass
@@ -371,7 +371,7 @@ open class GenericMethodDocClassExporter : ClassExporter {
         return when {
             needInfer() && (!duckTypeHelper!!.isQualified(duckType) ||
                     jvmClassHelper.isInterface(duckType)) -> {
-                logger.info("try infer return type of method[" + PsiClassUtils.fullNameOfMethod(methodExportContext.psi()) + "]")
+                logger.info("try infer return type of method[" + PsiClassUtil.fullNameOfMethod(methodExportContext.psi()) + "]")
                 methodInferHelper!!.inferReturn(methodExportContext.psi())
 //                actionContext!!.callWithTimeout(20000) { methodReturnInferHelper.inferReturn(method) }
             }

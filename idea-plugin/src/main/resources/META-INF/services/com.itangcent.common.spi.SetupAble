@@ -5,3 +5,4 @@ com.itangcent.idea.psi.DisableDocSupport
 com.itangcent.suv.http.HttpClientScriptInterceptorSupport
 com.itangcent.intellij.context.AutoClearSupporter
 com.itangcent.ai.AIServiceCacheSupport
+com.itangcent.idea.psi.PsiClassHelperProviderSupport

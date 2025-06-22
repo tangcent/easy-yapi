@@ -55,9 +55,8 @@ import com.itangcent.intellij.extend.guice.singleton
 import com.itangcent.intellij.extend.guice.with
 import com.itangcent.intellij.extend.withBoundary
 import com.itangcent.intellij.file.LocalFileRepository
-import com.itangcent.intellij.jvm.PsiClassHelper
+import com.itangcent.intellij.jvm.psi.PsiClassUtil
 import com.itangcent.intellij.logger.Logger
-import com.itangcent.intellij.psi.PsiClassUtils
 import com.itangcent.intellij.util.FileType
 import com.itangcent.suv.http.CookiePersistenceHelper
 import com.itangcent.suv.http.HttpClientProvider
@@ -168,7 +167,6 @@ class ApiDashboardService(private val project: Project) {
         builder.bind(ClassExporter::class) { it.with(CachedRequestClassExporter::class).singleton() }
         builder.bind(LocalFileRepository::class) { it.with(ProjectCacheRepository::class).singleton() }
         builder.bindInstance(ExportDoc::class, ExportDoc.of("request"))
-        builder.bind(PsiClassHelper::class) { it.with(CustomizedPsiClassHelper::class).singleton() }
         builder.bind(MethodFilter::class) { it.with(CustomizedMethodFilter::class).singleton() }
         builder.bind(ConfigReader::class) { it.with(EnhancedConfigReader::class).singleton() }
         builder.bind(RuleParser::class) { it.with(SuvRuleParser::class).singleton() }
@@ -577,7 +575,7 @@ class ApiDashboardService(private val project: Project) {
 
     private fun Request.cacheKey(): String {
         return actionContext.callInReadUI {
-            PsiClassUtils.fullNameOfMember(resourceClass(), resourceMethod()!!)
+            PsiClassUtil.fullNameOfMember(resourceClass(), resourceMethod()!!)
         } ?: path?.url() ?: ""
     }
 

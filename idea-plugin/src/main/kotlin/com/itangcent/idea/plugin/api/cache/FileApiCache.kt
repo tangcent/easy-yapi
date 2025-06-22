@@ -77,7 +77,7 @@ class RequestWithKey {
     /**
      * maybe full name of method
      *
-     * @see com.itangcent.intellij.psi.PsiClassUtils.fullNameOfMethod
+     * @see com.itangcent.intellij.jvm.psi.PsiClassUtil .fullNameOfMethod
      */
     var key: String? = null
 

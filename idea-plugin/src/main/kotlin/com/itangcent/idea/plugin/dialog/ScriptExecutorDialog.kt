@@ -32,7 +32,7 @@ import com.itangcent.intellij.jvm.DuckTypeHelper
 import com.itangcent.intellij.jvm.element.ExplicitElement
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.psi.ContextSwitchListener
-import com.itangcent.intellij.psi.PsiClassUtils
+import com.itangcent.intellij.jvm.psi.PsiClassUtil 
 import com.itangcent.intellij.util.ToolUtils
 import org.apache.commons.lang3.exception.ExceptionUtils
 import java.awt.Dimension
@@ -696,7 +696,7 @@ class ScriptExecutorDialog : ContextDialog() {
             }
             name = actionContext.callInReadUI {
                 when (element) {
-                    is PsiElement -> PsiClassUtils.fullNameOfMember(element as PsiElement)
+                    is PsiElement -> PsiClassUtil.fullNameOfMember(element as PsiElement)
                     else -> element.toString()
                 }
             }

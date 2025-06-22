@@ -6,9 +6,9 @@ import com.itangcent.common.logger.Log
 import com.itangcent.common.logger.traceError
 import com.itangcent.common.spi.SetupAble
 import com.itangcent.intellij.extend.guice.FieldHandler
-import com.itangcent.intellij.extend.guice.PostConstruct
 import com.itangcent.utils.ActionKeys
 import java.lang.reflect.Field
+import javax.annotation.PostConstruct
 
 /**
  * Supports automatic clearing of fields marked with @AutoClear annotation.
