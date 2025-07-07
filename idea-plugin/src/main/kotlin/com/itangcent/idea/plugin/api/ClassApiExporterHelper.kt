@@ -239,6 +239,9 @@ open class ClassApiExporterHelper {
                     break
                 }
             } else {
+                for (innerClass in psiClass.innerClasses) {
+                    psiClassQueue.add(innerClass)
+                }
                 val classQualifiedName = actionContext.callInReadUI { psiClass.qualifiedName }
                 LOG.info("Processing API for class: $classQualifiedName")
                 actionContext.withBoundary {

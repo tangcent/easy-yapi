@@ -1854,6 +1854,194 @@
             ],
             "url": {
               "path": [
+                "profile",
+                "ctrl",
+                "name"
+              ],
+              "query": [],
+              "host": [
+                "{{test_default}}"
+              ],
+              "raw": "{{test_default}}/profile/ctrl/name"
+            }
+          },
+          "response": [
+            {
+              "name": "current ctrl name-Example",
+              "originalRequest": {
+                "method": "GET",
+                "description": "",
+                "header": [
+                  {
+                    "key": "token",
+                    "value": "",
+                    "type": "text",
+                    "description": "auth token"
+                  }
+                ],
+                "url": {
+                  "path": [
+                    "profile",
+                    "ctrl",
+                    "name"
+                  ],
+                  "query": [],
+                  "host": [
+                    "{{test_default}}"
+                  ],
+                  "raw": "{{test_default}}/profile/ctrl/name"
+                }
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "date",
+                  "key": "date",
+                  "value": "Sun, 11 Apr 202106:56:34 GMT",
+                  "description": "The date and time that the message was sent"
+                },
+                {
+                  "name": "server",
+                  "key": "server",
+                  "value": "Apache-Coyote/1.1",
+                  "description": "A name for the server"
+                },
+                {
+                  "name": "transfer-encoding",
+                  "key": "transfer-encoding",
+                  "value": "chunked",
+                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                },
+                {
+                  "name": "content-type",
+                  "key": "content-type",
+                  "value": "application/json;charset=UTF-8"
+                }
+              ],
+              "body": "\"\""
+            }
+          ],
+          "name": "current ctrl name"
+        },
+        {
+          "request": {
+            "method": "GET",
+            "description": "",
+            "header": [
+              {
+                "key": "token",
+                "value": "",
+                "type": "text",
+                "description": "auth token"
+              }
+            ],
+            "url": {
+              "path": [
+                "profile",
+                "settings",
+                ":userId"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "",
+                  "equals": true,
+                  "description": "The ID of the user whose profile settings to retrieve"
+                }
+              ],
+              "host": [
+                "{{test_default}}"
+              ],
+              "raw": "{{test_default}}/profile/settings/{userId}"
+            }
+          },
+          "response": [
+            {
+              "name": "Get user profile settings-Example",
+              "originalRequest": {
+                "method": "GET",
+                "description": "",
+                "header": [
+                  {
+                    "key": "token",
+                    "value": "",
+                    "type": "text",
+                    "description": "auth token"
+                  }
+                ],
+                "url": {
+                  "path": [
+                    "profile",
+                    "settings",
+                    ":userId"
+                  ],
+                  "query": [
+                    {
+                      "key": "userId",
+                      "value": "",
+                      "equals": true,
+                      "description": "The ID of the user whose profile settings to retrieve"
+                    }
+                  ],
+                  "host": [
+                    "{{test_default}}"
+                  ],
+                  "raw": "{{test_default}}/profile/settings/{userId}"
+                }
+              },
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "name": "date",
+                  "key": "date",
+                  "value": "Sun, 11 Apr 202106:56:34 GMT",
+                  "description": "The date and time that the message was sent"
+                },
+                {
+                  "name": "server",
+                  "key": "server",
+                  "value": "Apache-Coyote/1.1",
+                  "description": "A name for the server"
+                },
+                {
+                  "name": "transfer-encoding",
+                  "key": "transfer-encoding",
+                  "value": "chunked",
+                  "description": "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                },
+                {
+                  "name": "content-type",
+                  "key": "content-type",
+                  "value": "application/json;charset=UTF-8"
+                }
+              ],
+              "body": "{\n    \"code\": 0, //response code\n    \"msg\": \"\", //message\n    \"data\": { //response data\n        \"id\": 0, //user id\n        /**\n         * user type\n         * 1 :administration\n         * 2 :a person, an animal or a plant\n         * 3 :Anonymous visitor\n         */\n        \"type\": 0,\n        \"name\": \"\", //user name\n        \"age\": 0, //user age\n        \"sex\": 0,\n        \"birthDay\": \"\", //user birthDay\n        \"regtime\": \"\" //user regtime\n    }\n}"
+            }
+          ],
+          "name": "Get user profile settings"
+        }
+      ],
+      "name": "Nested API for user profile operations",
+      "description": "Nested API for user profile operations"
+    },
+    {
+      "item": [
+        {
+          "request": {
+            "method": "GET",
+            "description": "",
+            "header": [
+              {
+                "key": "token",
+                "value": "",
+                "type": "text",
+                "description": "auth token"
+              }
+            ],
+            "url": {
+              "path": [
                 "user",
                 "ctrl",
                 "name"

@@ -908,6 +908,123 @@ test apis
 
 
 
+## Nested API for user profile operations
+
+Nested API for user profile operations
+
+
+---
+### current ctrl name
+
+> BASIC
+
+**Path:** /profile/ctrl/name
+
+**Method:** GET
+
+> REQUEST
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+
+
+> RESPONSE
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |  |
+
+**Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+|  | string |  |
+
+**Response Demo:**
+
+```json
+
+```
+
+
+
+
+---
+### Get user profile settings
+
+> BASIC
+
+**Path:** /profile/settings/{userId}
+
+**Method:** GET
+
+> REQUEST
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| token |  | YES | auth token |
+
+**Query:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| userId |  | NO | The ID of the user whose profile settings to retrieve |
+
+
+
+> RESPONSE
+
+**Headers:**
+
+| name | value | required | desc |
+| ------------ | ------------ | ------------ | ------------ |
+| content-type | application/json;charset=UTF-8 | NO |  |
+
+**Body:**
+
+| name | type | desc |
+| ------------ | ------------ | ------------ |
+| code | integer | response code |
+| msg | string | message |
+| data | object | response data |
+| &ensp;&ensp;&#124;─id | integer | user id |
+| &ensp;&ensp;&#124;─type | integer | user type<br>1 :administration<br>2 :a person, an animal or a plant<br>3 :Anonymous visitor |
+| &ensp;&ensp;&#124;─name | string | user name |
+| &ensp;&ensp;&#124;─age | integer | user age |
+| &ensp;&ensp;&#124;─sex | integer |  |
+| &ensp;&ensp;&#124;─birthDay | string | user birthDay |
+| &ensp;&ensp;&#124;─regtime | string | user regtime |
+
+**Response Demo:**
+
+```json
+{
+  "code": 0,
+  "msg": "",
+  "data": {
+    "id": 0,
+    "type": 0,
+    "name": "",
+    "age": 0,
+    "sex": 0,
+    "birthDay": "",
+    "regtime": ""
+  }
+}
+```
+
+
+
+
+
 ## apis about user
 
 apis about user

@@ -8,7 +8,7 @@ version = properties["plugin_version"]!!
 val intellijVersions = arrayOf(
     mapOf("jdk" to 21, "version" to "2025.1.2", "since" to "251"),
     mapOf("jdk" to 17, "version" to "2023.1.3", "since" to "231"),
-    mapOf("jdk" to 15, "version" to "2022.2.3", "since" to "223"),
+    mapOf("jdk" to 15, "version" to "2022.2.3", "since" to "222"),
     mapOf("jdk" to 11, "version" to "2021.2.1", "since" to "212")
 )
 
