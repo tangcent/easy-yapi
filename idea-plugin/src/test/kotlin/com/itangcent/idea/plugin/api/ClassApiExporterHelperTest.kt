@@ -78,9 +78,14 @@ class ClassApiExporterHelperTest : PluginContextLightCodeInsightFixtureTestCase(
         }
         actionContext.waitComplete()
 
+        //not contains methods from innerclass
+        assertEquals(4, methods.size)
+
         assertTrue(methods.contains("create"))
         assertTrue(methods.contains("get"))
         assertFalse(methods.contains("toString"))
+        //not contains methods from innerclass
+        assertFalse(methods.contains("getProfileSettings"))
     }
 
     fun testExport() {
@@ -89,6 +94,7 @@ class ClassApiExporterHelperTest : PluginContextLightCodeInsightFixtureTestCase(
 
         assertNotNull(docs)
         assertTrue(docs.isNotEmpty())
+        assertEquals(5, docs.size)
 
         // Verify first API doc
         docs[0].let { doc ->

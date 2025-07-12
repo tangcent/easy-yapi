@@ -112,6 +112,8 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
             builder.mock<YapiApiHelper> {
                 this.on { it.findCart(eq("token111111"), eq("apis about user")) }
                     .thenReturn(null, "111111")
+                this.on { it.findCart(eq("token111111"), eq("Nested API for user profile operations")) }
+                    .thenReturn("333333")
                 this.on { it.getProjectIdByToken(eq("token111111")) }
                     .thenReturn("12345")
                 this.on { it.addCart(any(), any(), any()) }
@@ -166,6 +168,8 @@ internal abstract class YapiApiExporterTest : PluginContextLightCodeInsightFixtu
                     .thenReturn("111111")
                 this.on { it.findCart(eq("token111111"), eq("test apis")) }
                     .thenReturn("222222")
+                this.on { it.findCart(eq("token111111"), eq("Nested API for user profile operations")) }
+                    .thenReturn("333333")
                 this.on { it.getProjectIdByToken(eq("token111111")) }
                     .thenReturn("12345")
                 this.on { it.getCartWeb(any(""), any("")) }

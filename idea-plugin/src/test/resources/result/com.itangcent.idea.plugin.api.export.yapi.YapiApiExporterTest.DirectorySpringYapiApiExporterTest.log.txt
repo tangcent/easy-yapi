@@ -11,3 +11,4 @@
 [INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequestWithPost(PageRequest<UserInfo>)]
 [INFO]	search api from: com.itangcent.api.UserCtrl
 [INFO]	try infer return type of method[com.itangcent.api.UserCtrl#get(java.lang.Long)]
+[INFO]	search api from: com.itangcent.api.UserCtrl.ProfileApi

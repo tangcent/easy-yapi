@@ -7,6 +7,7 @@ import com.itangcent.model.Result;
 import com.itangcent.model.UserInfo;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,6 +65,31 @@ public class UserCtrl extends BaseController {
     @PutMapping("/update")
     public Result<UserInfo> update(@ModelAttribute UserInfo userInfo) {
         return Result.success(userInfo);
+    }
+
+    /**
+     * Nested API for user profile operations
+     * 
+     * @module user-profiles
+     */
+    @RestController
+    @RequestMapping(value = "/profile")
+    public static class ProfileApi extends BaseController {
+        
+        /**
+         * Get user profile settings
+         * 
+         * @param userId The ID of the user whose profile settings to retrieve
+         * @return User profile settings
+         */
+        @GetMapping("/settings/{userId}")
+        public Result<UserInfo> getProfileSettings(@PathVariable("userId") Long userId) {
+            UserInfo userInfo = new UserInfo();
+            userInfo.setId(userId);
+            userInfo.setName("Profile User");
+            userInfo.setAge(30);
+            return Result.success(userInfo);
+        }
     }
 
 }
