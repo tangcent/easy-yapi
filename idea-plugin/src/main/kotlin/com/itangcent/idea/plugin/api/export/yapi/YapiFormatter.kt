@@ -24,6 +24,7 @@ import com.itangcent.intellij.config.rule.SimpleRuleParser
 import com.itangcent.intellij.context.ActionContext
 import com.itangcent.intellij.extend.takeIfNotOriginal
 import com.itangcent.intellij.extend.takeIfSpecial
+import com.itangcent.intellij.extend.toPrettyString
 import com.itangcent.intellij.jvm.DocHelper
 import com.itangcent.intellij.logger.Logger
 import com.itangcent.intellij.jvm.psi.PsiClassUtil 
@@ -615,7 +616,7 @@ open class YapiFormatter {
                     mocks?.get(key)?.let { addMock(propertyInfo, it) }
                     advancedInfo?.get(key)?.let { addAdvanced(propertyInfo, it) }
                     default?.get(k)?.takeIf { !it.anyIsNullOrBlank() }
-                        ?.let { propertyInfo["default"] = it }
+                        ?.let { propertyInfo["default"] = it.toPrettyString() }
 
                     properties[key] = propertyInfo
                 } catch (e: Exception) {
