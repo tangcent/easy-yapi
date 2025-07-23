@@ -1,3 +1,7 @@
+* 2.8.3
+	* fix: Format default values as strings in YAPI export  [(#1261)](https://github.com/tangcent/easy-yapi/pull/1261)
+
+	* feat: Add support for processing inner classes in API export  [(#1258)](https://github.com/tangcent/easy-yapi/pull/1258)
 * 2.8.2
 	* chore: Replace deprecated `URL` constructor calls with `asUrl()` extension  [(#1251)](https://github.com/tangcent/easy-yapi/pull/1251)
 
