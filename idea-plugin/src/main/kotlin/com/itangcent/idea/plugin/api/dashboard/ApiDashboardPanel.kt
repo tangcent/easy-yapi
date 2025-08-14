@@ -2,7 +2,6 @@ package com.itangcent.idea.plugin.api.dashboard
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.ui.BooleanTableCellEditor
@@ -44,7 +43,6 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
 import kotlin.concurrent.thread
-import com.itangcent.idea.utils.FileSelectHelper
 
 class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPanel>(BorderLayout()), Disposable {
     companion object : Log()
@@ -80,6 +78,9 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
     private val contentTypeChangeThrottle = throttle()
     private val statusLabel: JLabel
     private val statusPanel: JPanel
+
+    private lateinit var requestResponseTabs: JTabbedPane
+    private lateinit var responseContentPanel: JTabbedPane
 
     private lateinit var service: ApiDashboardService
     private var apis: List<ProjectNodeData> = emptyList()
@@ -176,9 +177,9 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
             add(treeScrollPane, BorderLayout.CENTER)
         }
 
-        // Create request details panel
-        val requestDetailsPanel = JPanel(BorderLayout()).apply {
-            // Top panel containing method, URL and send button
+        // Create controls panel that will always be visible
+        val controlsPanel = JPanel(BorderLayout()).apply {
+            // Top row with method, host, URL and send button
             add(JPanel().apply {
                 layout = BoxLayout(this, BoxLayout.X_AXIS)
                 add(methodComboBox)
@@ -190,56 +191,60 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
                 add(sendButton)
             }, BorderLayout.NORTH)
 
-            // Center panel containing content type and request body
-            add(JPanel(BorderLayout()).apply {
-                // Content type selection at the top
-                add(JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.X_AXIS)
-                    add(JLabel("Content Type:"))
-                    add(Box.createRigidArea(Dimension(5, 0)))
-                    add(contentTypeComboBox)
-                }, BorderLayout.NORTH)
+            // Content type on its own line below
+            add(JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                add(JLabel("Content Type:"))
+                add(Box.createRigidArea(Dimension(5, 0)))
+                add(contentTypeComboBox)
+            }, BorderLayout.CENTER)
+        }
 
-                // Request tabs taking up the remaining space
-                add(JTabbedPane().apply {
-                    addTab("Headers", JBScrollPane(headerArea))
-                    addTab("Params", JBScrollPane(paramsTable))
-                    addTab("Form", JBScrollPane(formTable))
-                    addTab("Body", JBScrollPane(bodyArea))
-                }, BorderLayout.CENTER)
+        // Create request details panel (without controls)
+        val requestDetailsPanel = JPanel(BorderLayout()).apply {
+            add(JTabbedPane().apply {
+                addTab("Headers", JBScrollPane(headerArea))
+                addTab("Params", JBScrollPane(paramsTable))
+                addTab("Form", JBScrollPane(formTable))
+                addTab("Body", JBScrollPane(bodyArea))
             }, BorderLayout.CENTER)
         }
 
         // Create response panel
         val responsePanel = JPanel(BorderLayout()).apply {
-            // Response toolbar
-            add(JPanel().apply {
-                layout = BoxLayout(this, BoxLayout.X_AXIS)
-                add(JLabel("Response"))
-                add(Box.createHorizontalGlue())
-                add(statusPanel)
-                add(Box.createRigidArea(Dimension(10, 0)))
-                add(saveButton)
-            }, BorderLayout.NORTH)
+            responseContentPanel = JTabbedPane()
 
             // Response content
-            add(JTabbedPane().apply {
+            add(responseContentPanel.apply {
                 addTab("Body", JBScrollPane(responseArea))
                 addTab("Raw", JBScrollPane(rawResponseArea))
                 addTab("Headers", JBScrollPane(responseHeadersTextArea))
             }, BorderLayout.CENTER)
+
+            // Response toolbar at the bottom
+            add(JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                add(Box.createHorizontalGlue())
+                add(statusPanel)
+                add(Box.createRigidArea(Dimension(10, 0)))
+                add(saveButton)
+            }, BorderLayout.SOUTH)
         }
 
-        // Create split pane for request details and response
-        val splitPane = com.intellij.ui.JBSplitter(true, 0.5f).apply {
-            firstComponent = requestDetailsPanel
-            secondComponent = responsePanel
+        // Create tabbed pane for request/response
+        requestResponseTabs = JTabbedPane().apply {
+            addTab("Request", requestDetailsPanel)
+            addTab("Response", responsePanel)
         }
 
-        // Create main split pane
+        // Create main split pane with API tree visible by default
         val mainSplitPane = com.intellij.ui.JBSplitter(true, 0.3f).apply {
             firstComponent = contentPanel
-            secondComponent = splitPane
+            secondComponent = JPanel(BorderLayout()).apply {
+                add(controlsPanel, BorderLayout.NORTH)
+                add(requestResponseTabs, BorderLayout.CENTER)
+            }
+            proportion = 0.3f // Explicitly set divider position to show API tree
         }
 
         // Add to main panel
@@ -659,6 +664,13 @@ class ApiDashboardPanel(private val project: Project) : JBPanel<ApiDashboardPane
                     responseHeadersTextArea.text = headerText
                     statusLabel.text = response.code().toString()
                     statusPanel.isVisible = true
+                    // Switch to Response tab and show body by default if tabs exist
+                    if (requestResponseTabs.tabCount > 1) {
+                        requestResponseTabs.selectedIndex = 1
+                    }
+                    if (responseContentPanel.tabCount > 0) {
+                        responseContentPanel.selectedIndex = 0
+                    }
                     actionContext.call(ActionKeys.ACTION_COMPLETED)
                 }
             } catch (e: Exception) {
