@@ -1,3 +1,5 @@
+* 2.8.4
+	* refactor: Simplify API dashboard panel layout and tab management  [(#1264)](https://github.com/tangcent/easy-yapi/pull/1264)
 * 2.8.3
 	* fix: Format default values as strings in YAPI export  [(#1261)](https://github.com/tangcent/easy-yapi/pull/1261)
 
