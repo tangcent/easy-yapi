@@ -14,9 +14,11 @@ interface ModuleHelper {
 
     fun findModule(resource: Any): String?
 
+    fun findModule(psiClass: PsiClass, psiMethod: PsiMethod): String?
+
     fun findModule(psiMethod: PsiMethod): String?
 
-    fun findModule(cls: PsiClass): String?
+    fun findModule(psiClass: PsiClass): String?
 
     fun findModule(psiFile: PsiFile): String?
 

@@ -7,10 +7,9 @@ import com.itangcent.common.model.Doc
 
 interface PsiResource {
 
-    fun resourceClass(): PsiClass?
+    fun resourceClass(): PsiClass
 
-    fun resource(): PsiElement?
-
+    fun resource(): PsiElement
 }
 
 fun Doc?.resourceClass(): PsiClass? {

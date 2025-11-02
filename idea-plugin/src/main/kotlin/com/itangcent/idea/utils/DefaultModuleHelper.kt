@@ -38,17 +38,32 @@ class DefaultModuleHelper : ModuleHelper {
     override fun findModule(resource: Any): String? {
         return actionContext!!.callInReadUI {
             when (resource) {
-                is PsiResource -> findModule(
-                    resource.resource() ?: resource.resourceClass()
-                    ?: return@callInReadUI null
-                )
-
-                is PsiMethod -> findModule(resource)
-                is PsiClass -> findModule(resource)
-                is PsiFile -> findModule(resource)
+                is PsiResource -> findModule(psiResource = resource)
+                is PsiMethod -> findModule(psiMethod = resource)
+                is PsiClass -> findModule(psiClass = resource)
+                is PsiFile -> findModule(psiFile = resource)
                 else -> null
             }
         }
+    }
+
+    private fun findModule(psiResource: PsiResource): String? {
+        val resource = psiResource.resource()
+        if (resource is PsiMethod) {
+            return findModule(psiResource.resourceClass(), resource)
+        }
+        return findModule(resource = resource)
+    }
+
+    override fun findModule(psiClass: PsiClass, psiMethod: PsiMethod): String? {
+        val moduleByRule = NonReentrant.call("findModule") {
+            ruleComputer!!.computer(ClassExportRuleKeys.MODULE, psiMethod)
+        }
+        if (moduleByRule.notNullOrBlank()) {
+            return moduleByRule
+        }
+
+        return findModule(psiClass)
     }
 
     override fun findModule(psiMethod: PsiMethod): String? {
@@ -72,20 +87,20 @@ class DefaultModuleHelper : ModuleHelper {
         return null
     }
 
-    override fun findModule(cls: PsiClass): String? {
+    override fun findModule(psiClass: PsiClass): String? {
 
-        val moduleByRule = ruleComputer!!.computer(ClassExportRuleKeys.MODULE, cls)
+        val moduleByRule = ruleComputer!!.computer(ClassExportRuleKeys.MODULE, psiClass)
 
         if (moduleByRule.notNullOrBlank()) {
             return moduleByRule
         }
 
-        val module = ModuleUtil.findModuleForPsiElement(cls)
+        val module = ModuleUtil.findModuleForPsiElement(psiClass)
         if (module != null) {
             return module.name
         }
 
-        return findModule(cls.containingFile)
+        return findModule(psiClass.containingFile)
     }
 
     override fun findModule(psiFile: PsiFile): String? {
