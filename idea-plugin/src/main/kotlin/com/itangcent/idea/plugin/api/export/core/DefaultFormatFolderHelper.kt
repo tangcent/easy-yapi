@@ -52,14 +52,10 @@ open class DefaultFormatFolderHelper : FormatFolderHelper {
         }
 
         if (resource is PsiResource) {
-            resource.resource()?.let {
-                tryResolveFolder(it, false)
-            }?.let {
+            tryResolveFolder(resource.resource(), false)?.let {
                 return it
             }
-            resource.resourceClass()?.let {
-                return tryResolveFolder(it)
-            }
+            return tryResolveFolder(resource.resourceClass())
         }
 
         if (resource is PsiClass) {

@@ -17,6 +17,7 @@ internal class DefaultModuleHelperTest : PluginContextLightCodeInsightFixtureTes
 
     private lateinit var testCtrlPsiFile: PsiFile
     private lateinit var testCtrlPsiClass: PsiClass
+    private lateinit var baseControllerPsiClass: PsiClass
     private lateinit var userCtrlPsiFile: PsiFile
     private lateinit var userCtrlPsiClass: PsiClass
 
@@ -27,6 +28,7 @@ internal class DefaultModuleHelperTest : PluginContextLightCodeInsightFixtureTes
         super.setUp()
         testCtrlPsiFile = loadFile("api/TestCtrl.java")!!
         testCtrlPsiClass = (testCtrlPsiFile as PsiClassOwner).classes[0]
+        baseControllerPsiClass = loadClass("api/BaseController.java")!!
         userCtrlPsiFile = loadFile("api/UserCtrl.java")!!
         userCtrlPsiClass = (userCtrlPsiFile as PsiClassOwner).classes[0]
     }
@@ -40,24 +42,55 @@ internal class DefaultModuleHelperTest : PluginContextLightCodeInsightFixtureTes
         return "module=#module"
     }
 
-    fun testFindModule() {
+    fun testFindModuleWithString() {
+        // Test findModule with String parameter
         assertEquals(null, moduleHelper.findModule("any thing"))
+    }
+
+    fun testFindModuleWithPsiFile() {
+        // Test findModule with PsiFile parameter
         assertEquals(this.module.name, moduleHelper.findModule(testCtrlPsiFile))
         assertEquals(this.module.name, moduleHelper.findModule(testCtrlPsiFile as Any))
+        assertEquals(this.module.name, moduleHelper.findModule(userCtrlPsiFile))
+        assertEquals(this.module.name, moduleHelper.findModule(userCtrlPsiFile as Any))
+    }
+
+    fun testFindModuleWithPsiClass() {
+        // Test findModule with PsiClass parameter
         assertEquals(this.module.name, moduleHelper.findModule(testCtrlPsiClass))
         assertEquals(this.module.name, moduleHelper.findModule(testCtrlPsiClass as Any))
         assertEquals(this.module.name, moduleHelper.findModule(PsiClassResource(testCtrlPsiClass)))
+        assertEquals("users", moduleHelper.findModule(userCtrlPsiClass))
+        assertEquals("users", moduleHelper.findModule(userCtrlPsiClass as Any))
+    }
+
+    fun testFindModuleWithPsiMethod() {
+        // Test findModule with PsiMethod parameter
         assertEquals("test-only", moduleHelper.findModule(testCtrlPsiClass.methods[0]))
         assertEquals("test-only", moduleHelper.findModule(testCtrlPsiClass.methods[0] as Any))
         assertEquals("test-only", moduleHelper.findModule(PsiMethodResource(testCtrlPsiClass.methods[0], testCtrlPsiClass)))
-        assertEquals(this.module.name, moduleHelper.findModule(userCtrlPsiFile))
-        assertEquals(this.module.name, moduleHelper.findModule(userCtrlPsiFile as Any))
-        assertEquals("users", moduleHelper.findModule(userCtrlPsiClass))
-        assertEquals("users", moduleHelper.findModule(userCtrlPsiClass as Any))
         assertEquals("users", moduleHelper.findModule(userCtrlPsiClass.methods[0]))
         assertEquals("users", moduleHelper.findModule(userCtrlPsiClass.methods[0] as Any))
+    }
 
-        //findModuleByPath--------------------------------------------
+    fun testFindModuleWithInheritedMethods() {
+        // Test findModule with inherited methods (issue #1267)
+        // Calling with explicit class+method should prioritize subclass's module
+        assertEquals(
+            "users",
+            moduleHelper.findModule(userCtrlPsiClass, baseControllerPsiClass.methods[0])
+        )
+        // Calling via PsiMethodResource with resourceClass=subclass should also return subclass module
+        assertEquals(
+            "users",
+            moduleHelper.findModule(
+                PsiMethodResource(baseControllerPsiClass.methods[0], userCtrlPsiClass)
+            )
+        )
+    }
+
+    fun testFindModuleByPath() {
+        // Test findModuleByPath with various path formats
         assertEquals("idea-plugin", moduleHelper.findModuleByPath("easy-yapi/idea-plugin/src/main/kotlin/com/itangcent"))
         assertEquals("idea-plugin", moduleHelper.findModuleByPath("easy-yapi/idea-plugin/src/main/java/com/itangcent"))
         assertEquals("idea-plugin", moduleHelper.findModuleByPath("easy-yapi/idea-plugin/src/main/scala/com/itangcent"))
@@ -66,6 +99,5 @@ internal class DefaultModuleHelperTest : PluginContextLightCodeInsightFixtureTes
         assertEquals("idea-plugin", moduleHelper.findModuleByPath("easy-yapi/idea-plugin/kotlin/com/itangcent"))
         assertEquals("idea-plugin", moduleHelper.findModuleByPath("easy-yapi/idea-plugin/java/com/itangcent"))
         assertEquals("idea-plugin", moduleHelper.findModuleByPath("easy-yapi/idea-plugin/scala/com/itangcent"))
-
     }
 }

@@ -13,11 +13,18 @@ class ConstantModuleHelper(private val module: String) : ModuleHelper {
         return module
     }
 
+    override fun findModule(
+        psiClass: PsiClass,
+        psiMethod: PsiMethod
+    ): String? {
+        return module
+    }
+
     override fun findModule(psiMethod: PsiMethod): String {
         return module
     }
 
-    override fun findModule(cls: PsiClass): String {
+    override fun findModule(psiClass: PsiClass): String {
         return module
     }
 
