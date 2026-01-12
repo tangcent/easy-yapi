@@ -1,3 +1,7 @@
+* 2.8.4
+	* fix: improve module finding logic by prioritizing subclass context for inherited API methods  [(#1268)](https://github.com/tangcent/easy-yapi/pull/1268)
+
+	* refactor: Simplify API dashboard panel layout and tab management  [(#1264)](https://github.com/tangcent/easy-yapi/pull/1264)
 * 2.8.3
 	* fix: Format default values as strings in YAPI export  [(#1261)](https://github.com/tangcent/easy-yapi/pull/1261)
 
