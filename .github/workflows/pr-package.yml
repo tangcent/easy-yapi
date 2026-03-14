@@ -19,9 +19,11 @@ jobs:
       - name: Check for issue number
         id: check_issue
         shell: bash
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          # Store PR body in a file to avoid shell interpretation issues
-          echo '${{ github.event.pull_request.body }}' > pr_body.txt
+          # Store PR body in a file using env var to avoid shell interpretation issues
+          printf '%s' "$PR_BODY" > pr_body.txt
           
           # Check for issue reference pattern
           if grep -q "#[0-9]\\+" pr_body.txt; then
