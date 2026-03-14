@@ -27,9 +27,12 @@
     <depends optional="true">org.jetbrains.idea.maven</depends>
     <depends optional="true">com.intellij.gradle</depends>
 
+    <!-- EasyYapi is a superset of EasyApi. They share the same action IDs, so they cannot coexist. -->
+    <incompatible-with>com.itangcent.idea.plugin.easy-api</incompatible-with>
+
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add the tool window extension -->
-        <toolWindow id="API Dashboard" 
+        <toolWindow id="API Dashboard"
                    secondary="true"
                    icon="AllIcons.Toolwindows.ToolWindowRun"
                    anchor="right"

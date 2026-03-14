@@ -49,3 +49,5 @@ plugin-adapter/build/
 plugin-adapter/plugin-adapter-markdown/build/
 gradle/wrapper/caches
 gradle/wrapper/daemon
+build
+bin
