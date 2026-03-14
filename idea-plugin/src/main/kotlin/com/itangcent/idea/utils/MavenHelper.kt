@@ -32,6 +32,8 @@ object MavenHelper {
 
     /**
      * Retrieves the Maven ID of a PsiClass using Maven.
+     * Uses reflection to access MavenId to avoid binary incompatibility
+     * with newer IntelliJ versions where MavenId class may be in a different classloader.
      *
      * @param psiClass the PsiClass for which the Maven ID is to be retrieved.
      * @return MavenIdData if found, null otherwise.
@@ -43,11 +45,16 @@ object MavenHelper {
 
         val mavenProjectsManager = MavenProjectsManager.getInstance(project)
         val mavenProject = mavenProjectsManager.findProject(module) ?: return null
-        val mavenId = mavenProject.mavenId
+        // Use reflection to access mavenId and its properties to avoid direct dependency on
+        // org.jetbrains.idea.maven.model.MavenId which may not be resolvable in some IDEA versions
+        val mavenId = mavenProject.javaClass.getMethod("getMavenId").invoke(mavenProject) ?: return null
+        val groupId = mavenId.javaClass.getMethod("getGroupId").invoke(mavenId) as? String ?: return null
+        val artifactId = mavenId.javaClass.getMethod("getArtifactId").invoke(mavenId) as? String ?: return null
+        val version = mavenId.javaClass.getMethod("getVersion").invoke(mavenId) as? String ?: return null
         return MavenIdData(
-            groupId = mavenId.groupId!!,
-            artifactId = mavenId.artifactId!!,
-            version = mavenId.version!!
+            groupId = groupId,
+            artifactId = artifactId,
+            version = version
         )
     }
 
