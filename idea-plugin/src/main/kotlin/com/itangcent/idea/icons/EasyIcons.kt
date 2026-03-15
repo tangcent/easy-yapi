@@ -183,7 +183,8 @@ object DefaultIconLoader : IconLoader {
 
     override fun findIcon(url: URL?): Icon? {
         url ?: return null
-        return com.intellij.openapi.util.IconLoader.findIcon(tryLoadCache(url))
+        val cachedUrl = tryLoadCache(url)
+        return javax.swing.ImageIcon(cachedUrl)
     }
 
     private fun tryLoadCache(url: URL): URL {
