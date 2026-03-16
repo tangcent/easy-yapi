@@ -1,3 +1,11 @@
+* 2.8.5
+	* fix: fix IconLoader compatibility  [(#1281)](https://github.com/tangcent/easy-yapi/pull/1281)
+
+	* fix: use reflection to access MavenId to avoid binary incompatibility with IDEA 261+  [(#1279)](https://github.com/tangcent/easy-yapi/pull/1279)
+
+	* fix: avoid shell interpretation of PR body in CI workflows  [(#1280)](https://github.com/tangcent/easy-yapi/pull/1280)
+
+	* fix: declare incompatible-with easy-api to prevent action ID conflicts  [(#1278)](https://github.com/tangcent/easy-yapi/pull/1278)
 * 2.8.4
 	* fix: improve module finding logic by prioritizing subclass context for inherited API methods  [(#1268)](https://github.com/tangcent/easy-yapi/pull/1268)
 
