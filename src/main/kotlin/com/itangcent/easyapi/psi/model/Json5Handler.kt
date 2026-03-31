@@ -13,7 +13,7 @@ import com.itangcent.easyapi.psi.type.JsonType
  *
  * Field comments are rendered as:
  * - End-of-line comments for simple types
- * - Block comments for complex types (arrays, maps, objects) or multi-line comments
+ * - Block comments for complex types or multi-line comments
  *
  * ## Output Example
  * ```json5
@@ -112,7 +112,12 @@ object Json5Handler : ObjectModelJsonHandler {
     private fun canUseEndlineComment(model: ObjectModel, comment: String?): Boolean {
         if (comment.isNullOrBlank()) return false
         if (comment.contains("\n")) return false
-        return model is ObjectModel.Single
+        return when (model) {
+            is ObjectModel.Single -> true
+            is ObjectModel.Array -> model.item is ObjectModel.Single
+            is ObjectModel.Object -> false
+            is ObjectModel.MapModel -> false
+        }
     }
     
     private fun appendBlockComment(builder: StringBuilder, comment: String, indent: Int) {

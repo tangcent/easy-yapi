@@ -1,4 +1,4 @@
-rootProject.name = "easy-api"
+rootProject.name = "easy-yapi"
 
 pluginManagement {
     repositories {

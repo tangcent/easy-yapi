@@ -13,6 +13,7 @@ interface ProjectSettingsSupport {
     var postmanExportMode: String?
     var postmanCollections: String?
     var postmanBuildExample: Boolean
+    var yapiTokens: String?
 
     /**
      * Copies settings to another instance.
@@ -24,6 +25,7 @@ interface ProjectSettingsSupport {
         newSetting.postmanExportMode = this.postmanExportMode
         newSetting.postmanCollections = this.postmanCollections
         newSetting.postmanBuildExample = this.postmanBuildExample
+        this.yapiTokens?.let { newSetting.yapiTokens = it }
     }
 }
 
@@ -44,8 +46,13 @@ interface ApplicationSettingsSupport {
     var pathMulti: String
     /** When true, auto-detect the generic field in response wrapper types as the return main field */
     var inferReturnMain: Boolean
+    var yapiServer: String?
+    var yapiTokens: String?
     var enableUrlTemplating: Boolean
     var switchNotice: Boolean
+    var yapiExportMode: String
+    var yapiReqBodyJson5: Boolean
+    var yapiResBodyJson5: Boolean
     var httpTimeOut: Int
     var unsafeSsl: Boolean
     var httpClient: String
@@ -74,8 +81,13 @@ interface ApplicationSettingsSupport {
         newSetting.formExpanded = this.formExpanded
         newSetting.pathMulti = this.pathMulti
         newSetting.inferReturnMain = this.inferReturnMain
+        newSetting.yapiServer = this.yapiServer
+        newSetting.yapiTokens = this.yapiTokens
         newSetting.enableUrlTemplating = this.enableUrlTemplating
         newSetting.switchNotice = this.switchNotice
+        newSetting.yapiExportMode = this.yapiExportMode
+        newSetting.yapiReqBodyJson5 = this.yapiReqBodyJson5
+        newSetting.yapiResBodyJson5 = this.yapiResBodyJson5
         newSetting.recommendConfigs = this.recommendConfigs
         newSetting.logLevel = this.logLevel
         newSetting.outputDemo = this.outputDemo

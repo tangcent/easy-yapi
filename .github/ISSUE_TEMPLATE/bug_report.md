@@ -1,61 +1,49 @@
 ---
-name: Bug report
+name: Bug Report
 about: Create a report to help us improve
-title: ''
-labels: ''
+title: '[BUG] '
+labels: 'bug'
 assignees: ''
-
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Bug Description
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+<!-- A clear and concise description of what the bug is -->
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Steps to Reproduce
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+1.
+2.
+3.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## Expected Behavior
 
-1. Add config:
-   
-   ```properties
-   http.call.before=groovy:logger.info("call:"+request.url())
-   http.call.after=groovy:logger.info("response:"+response.string())
-   api.class.parse.before=groovy:logger.info("[api] before parse class:"+it)
-   api.class.parse.after=groovy:logger.info("[api] after parse class:"+it)
-   api.method.parse.before=groovy:logger.info("[api] before parse method:"+it)
-   api.method.parse.after=groovy:logger.info("[api] after parse method:"+it)
-   api.param.parse.before=groovy:logger.info("[api] before parse param:"+it)
-   api.param.parse.after=groovy:logger.info("[api] after parse param:"+it)
-   json.class.parse.before=groovy:logger.info("[json] before parse class:"+it)
-   json.class.parse.after=groovy:logger.info("[json] after parse class:"+it)
-   json.method.parse.before=groovy:logger.info("[json] before parse method:"+it)
-   json.method.parse.after=groovy:logger.info("[json] after parse method:"+it)
-   json.field.parse.before=groovy:logger.info("[json] before parse field:"+it)
-   json.field.parse.after=groovy:logger.info("[json] after parse field:"+it)
-   ```
+<!-- What you expected to happen -->
 
-2. Console output `easy_api`
-   - Please set <kbd>Preferences(Settings)</kbd> > <kbd>Other Settings</kbd> > <kbd>EasyApi</kbd> > <kbd> Common</kbd> > <kbd>log</kbd> to `VERBOSE```
-   
-3. Logs of IDEA: <br>
-   The easiest way to find the product log file is the Help menu, the item name would depend on the IDE version and OS:- Show Log in Explorer
-   - Show Log in Finder
-   - Show Log in Konqueror/Nautilus
-   - Reveal Log in Explorer
-   - Reveal Log in Finder/Finder/Nautilus
+## Actual Behavior
 
-**Additional context**
-Add any other context about the problem here.
+<!-- What actually happened -->
+
+## Environment
+
+- **Plugin Version**: <!-- e.g., 3.0.0 -->
+- **IDE**: <!-- e.g., IntelliJ IDEA 2023.1.3 -->
+- **IDE Edition**: <!-- Community or Ultimate -->
+- **JDK Version**: <!-- e.g., 17 -->
+- **OS**: <!-- e.g., macOS 13.0, Windows 11, Ubuntu 22.04 -->
+
+## Screenshots
+
+<!-- If applicable, add screenshots to help explain your problem -->
+
+## Additional Context
+
+<!-- Add any other context about the problem here -->
+
+## Logs
+
+<!-- If applicable, paste relevant log entries here -->
+
+```
+<!-- Paste logs here -->
+```

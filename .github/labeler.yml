@@ -1,0 +1,31 @@
+# Auto-labeling configuration for pull requests
+
+'type: doc':
+  - '**/*.md'
+  - 'docs/**/*'
+
+'type: test':
+  - 'src/test/**/*'
+  - '**/*Test.kt'
+  - '**/*Tests.kt'
+
+'type: build':
+  - 'build.gradle.kts'
+  - 'gradle.properties'
+  - 'settings.gradle.kts'
+  - '.github/workflows/**'
+
+'area: core':
+  - 'src/main/kotlin/com/itangcent/easyapi/core/**/*'
+
+'area: psi':
+  - 'src/main/kotlin/com/itangcent/easyapi/psi/**/*'
+
+'area: exporter':
+  - 'src/main/kotlin/com/itangcent/easyapi/exporter/**/*'
+
+'area: settings':
+  - 'src/main/kotlin/com/itangcent/easyapi/settings/**/*'
+
+'area: ide':
+  - 'src/main/kotlin/com/itangcent/easyapi/ide/**/*'

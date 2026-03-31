@@ -20,6 +20,7 @@ import com.itangcent.easyapi.settings.MarkdownFormatType
 import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
 import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.YapiExportMode
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
@@ -425,6 +426,61 @@ class PostmanSettingsPanel : SettingsPanel {
     companion object : IdeaLog
 }
 
+class YapiSettingsPanel : SettingsPanel {
+    private val yapiServer = JBTextField()
+    private val yapiTokens = JBTextArea(5, 40)
+    private val enableUrlTemplating = JBCheckBox("Enable URL templating", true)
+    private val switchNotice = JBCheckBox("Switch notice", true)
+    private val yapiExportModeCombo = ComboBox(YapiExportMode.values())
+    private val yapiReqBodyJson5 = JBCheckBox("Request body JSON5")
+    private val yapiResBodyJson5 = JBCheckBox("Response body JSON5")
+
+    override val component: JComponent = FormBuilder.createFormBuilder()
+        .addLabeledComponent("Yapi Server:", yapiServer)
+        .addLabeledComponent("Tokens (module=token per line):", JScrollPane(yapiTokens))
+        .addComponent(enableUrlTemplating)
+        .addComponent(switchNotice)
+        .addLabeledComponent("Export Mode:", yapiExportModeCombo)
+        .addComponent(yapiReqBodyJson5)
+        .addComponent(yapiResBodyJson5)
+        .addComponentFillVertically(JPanel(), 0)
+        .panel
+
+    override fun resetFrom(settings: Settings?) {
+        yapiServer.text = settings?.yapiServer ?: ""
+        yapiTokens.text = settings?.yapiTokens ?: ""
+        enableUrlTemplating.isSelected = settings?.enableUrlTemplating ?: true
+        switchNotice.isSelected = settings?.switchNotice ?: true
+        yapiExportModeCombo.selectedItem = settings?.yapiExportMode?.let {
+            runCatching { YapiExportMode.valueOf(it) }.getOrNull()
+        } ?: YapiExportMode.ALWAYS_UPDATE
+        yapiReqBodyJson5.isSelected = settings?.yapiReqBodyJson5 ?: false
+        yapiResBodyJson5.isSelected = settings?.yapiResBodyJson5 ?: false
+    }
+
+    override fun applyTo(settings: Settings) {
+        settings.yapiServer = yapiServer.text.takeIf { it.isNotBlank() }
+        settings.yapiTokens = yapiTokens.text.takeIf { it.isNotBlank() }
+        settings.enableUrlTemplating = enableUrlTemplating.isSelected
+        settings.switchNotice = switchNotice.isSelected
+        settings.yapiExportMode =
+            (yapiExportModeCombo.selectedItem as? YapiExportMode)?.name ?: YapiExportMode.ALWAYS_UPDATE.name
+        settings.yapiReqBodyJson5 = yapiReqBodyJson5.isSelected
+        settings.yapiResBodyJson5 = yapiResBodyJson5.isSelected
+    }
+
+    override fun isModified(settings: Settings?): Boolean {
+        val s = settings ?: return false
+        return yapiServer.text != (s.yapiServer ?: "") ||
+                yapiTokens.text != (s.yapiTokens ?: "") ||
+                enableUrlTemplating.isSelected != s.enableUrlTemplating ||
+                switchNotice.isSelected != s.switchNotice ||
+                yapiExportModeCombo.selectedItem?.toString() != s.yapiExportMode ||
+                yapiReqBodyJson5.isSelected != s.yapiReqBodyJson5 ||
+                yapiResBodyJson5.isSelected != s.yapiResBodyJson5
+    }
+}
+
 class HttpSettingsPanel : SettingsPanel {
     private val httpClientCombo = ComboBox(HttpClientType.values().map { it.value }.toTypedArray())
     private val httpTimeout = JBTextField("30")
@@ -652,7 +708,7 @@ class RemoteConfigPanel : SettingsPanel {
 
     companion object {
         private const val DEFAULT_REMOTE_URL =
-            "https://raw.githubusercontent.com/tangcent/easy-api/master/.default.remote.easy.api.config"
+            "https://raw.githubusercontent.com/tangcent/easy-yapi/master/.default.remote.easy.api.config"
     }
 }
 
@@ -702,7 +758,7 @@ class OtherSettingsPanel : SettingsPanel {
             border = BorderFactory.createTitledBorder("Info")
             val infoText = JBTextArea().apply {
                 text = """
-                    |easyapi Plugin Settings
+                    |EasyYapi Plugin Settings
                     |
                     |Import/Export your settings as JSON file.
                     |
@@ -772,6 +828,13 @@ class OtherSettingsPanel : SettingsPanel {
         settings.postmanJson5FormatType = imported.postmanJson5FormatType
         settings.queryExpanded = imported.queryExpanded
         settings.formExpanded = imported.formExpanded
+        settings.yapiServer = imported.yapiServer
+        settings.yapiTokens = imported.yapiTokens
+        settings.enableUrlTemplating = imported.enableUrlTemplating
+        settings.switchNotice = imported.switchNotice
+        settings.yapiExportMode = imported.yapiExportMode
+        settings.yapiReqBodyJson5 = imported.yapiReqBodyJson5
+        settings.yapiResBodyJson5 = imported.yapiResBodyJson5
         settings.httpTimeOut = imported.httpTimeOut
         settings.unsafeSsl = imported.unsafeSsl
         settings.httpClient = imported.httpClient

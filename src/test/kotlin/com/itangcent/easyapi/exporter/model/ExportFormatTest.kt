@@ -28,11 +28,12 @@ class ExportFormatTest {
     @Test
     fun testAllValues() {
         val values = ExportFormat.values()
-        assertEquals(4, values.size)
+        assertEquals(5, values.size)
         assertTrue(values.contains(ExportFormat.MARKDOWN))
         assertTrue(values.contains(ExportFormat.POSTMAN))
         assertTrue(values.contains(ExportFormat.CURL))
         assertTrue(values.contains(ExportFormat.HTTP_CLIENT))
+        assertTrue(values.contains(ExportFormat.YAPI))
     }
 
     @Test

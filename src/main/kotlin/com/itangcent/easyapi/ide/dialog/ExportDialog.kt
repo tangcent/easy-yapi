@@ -12,6 +12,7 @@ import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.PostmanExportOptions
+import com.itangcent.easyapi.exporter.model.YapiExportOptions
 import com.itangcent.easyapi.exporter.postman.CachedPostmanApiClient
 import com.itangcent.easyapi.exporter.postman.PostmanApiClient
 import com.itangcent.easyapi.exporter.postman.asCached
@@ -27,10 +28,12 @@ import javax.swing.*
  *
  * Provides a unified UI for exporting APIs to multiple formats:
  * - Markdown (file-based)
+ * - YAPI (token-based project selection)
  * - Postman (workspace and collection selection)
  *
  * ## Features
  * - Format selection dropdown with dynamic options panel
+ * - YAPI: Select existing project or input new token
  * - Postman: Workspace and collection selection with API integration
  * - File export: Output directory and filename configuration
  *
@@ -64,6 +67,26 @@ class ExportDialog(
         columns = 30
     }
 
+    // --- YAPI fields ---
+    // Existing projects parsed from settings yapiTokens ("module=token" per line)
+    private data class YapiProject(val projectId: String, val token: String) {
+        override fun toString(): String {
+            val maskedToken = if (token.length > 8) token.take(4) + "..." + token.takeLast(4) else token
+            return "$projectId ($maskedToken)"
+        }
+    }
+
+    private val yapiProjects = mutableListOf<YapiProject>()
+    private val yapiProjectComboBox = ComboBox<String>().apply { isEnabled = true }
+    private val yapiNewTokenField = JBTextField().apply { columns = 30 }
+    private val yapiModeComboBox = ComboBox(arrayOf(YAPI_MODE_SELECT, YAPI_MODE_NEW_TOKEN)).apply {
+        addItemListener { e ->
+            if (e.stateChange == ItemEvent.SELECTED) updateYapiMode()
+        }
+    }
+    private val yapiSelectPanel = JPanel(BorderLayout(8, 0))
+    private val yapiNewTokenPanel = JPanel(BorderLayout(8, 0))
+
     // --- Postman fields ---
     private data class PostmanCollectionItem(val name: String, val id: String, val uid: String? = null) {
         override fun toString(): String = name
@@ -90,6 +113,7 @@ class ExportDialog(
     private val optionsPanel = JPanel(cardLayout)
 
     private val fileOptionsPanel: JPanel
+    private val yapiOptionsPanel: JPanel
     private val postmanOptionsPanel: JPanel
 
     var selectedFormat: ExportFormat = ExportFormat.MARKDOWN
@@ -102,9 +126,11 @@ class ExportDialog(
         title = "Export API Endpoints ($endpointCount endpoints)"
 
         fileOptionsPanel = createFileOptionsPanel()
+        yapiOptionsPanel = createYapiOptionsPanel()
         postmanOptionsPanel = createPostmanOptionsPanel()
 
         optionsPanel.add(fileOptionsPanel, FILE_OPTIONS)
+        optionsPanel.add(yapiOptionsPanel, YAPI_OPTIONS)
         optionsPanel.add(postmanOptionsPanel, POSTMAN_OPTIONS)
 
         loadDefaultValues()
@@ -120,7 +146,32 @@ class ExportDialog(
     }
 
     private fun loadDefaultValues() {
-        // No default values to load currently
+        val settings = SettingBinder.getInstance(project).read()
+
+        // Parse YAPI projects from yapiTokens (format: "module=token" per line)
+        val yapiTokens = settings.yapiTokens
+        if (!yapiTokens.isNullOrBlank()) {
+            yapiTokens.lines()
+                .map { it.trim() }
+                .filter { it.contains("=") && !it.startsWith("#") }
+                .forEach { line ->
+                    val projectId = line.substringBefore("=").trim()
+                    val token = line.substringAfter("=").trim()
+                    if (projectId.isNotBlank() && token.isNotBlank()) {
+                        yapiProjects.add(YapiProject(projectId, token))
+                    }
+                }
+        }
+        if (yapiProjects.isNotEmpty()) {
+            yapiProjectComboBox.model = DefaultComboBoxModel(yapiProjects.map { it.toString() }.toTypedArray())
+            yapiProjectComboBox.selectedIndex = 0
+        } else {
+            // No existing projects — force new token mode
+            yapiModeComboBox.selectedItem = YAPI_MODE_NEW_TOKEN
+            yapiModeComboBox.isEnabled = false
+        }
+
+        updateYapiMode()
     }
 
     private fun loadPostmanDataFromApi() {
@@ -266,6 +317,25 @@ class ExportDialog(
         }
     }
 
+    private fun createYapiOptionsPanel(): JPanel {
+        yapiSelectPanel.add(JLabel("Project:"), BorderLayout.WEST)
+        yapiSelectPanel.add(yapiProjectComboBox, BorderLayout.CENTER)
+
+        yapiNewTokenPanel.add(JLabel("Token:"), BorderLayout.WEST)
+        yapiNewTokenPanel.add(yapiNewTokenField, BorderLayout.CENTER)
+
+        return JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(JPanel(BorderLayout(8, 0)).apply {
+                add(JLabel("Mode:"), BorderLayout.WEST)
+                add(yapiModeComboBox, BorderLayout.CENTER)
+            })
+            add(Box.createVerticalStrut(5))
+            add(yapiSelectPanel)
+            add(yapiNewTokenPanel)
+        }
+    }
+
     private fun createPostmanOptionsPanel(): JPanel {
         // Track which collection the user picks from the dropdown
         postmanCollectionComboBox.addItemListener { e ->
@@ -311,9 +381,16 @@ class ExportDialog(
         }
     }
 
+    private fun updateYapiMode() {
+        val isNew = yapiModeComboBox.selectedItem == YAPI_MODE_NEW_TOKEN
+        yapiSelectPanel.isVisible = !isNew
+        yapiNewTokenPanel.isVisible = isNew
+    }
+
     private fun updateOptionsPanel() {
         val format = formatComboBox.selectedItem as ExportFormat
         when (format) {
+            ExportFormat.YAPI -> cardLayout.show(optionsPanel, YAPI_OPTIONS)
             ExportFormat.POSTMAN -> {
                 cardLayout.show(optionsPanel, POSTMAN_OPTIONS)
                 ensurePostmanDataLoaded()
@@ -334,6 +411,26 @@ class ExportDialog(
         selectedFormat = formatComboBox.selectedItem as ExportFormat
 
         val config = when (selectedFormat) {
+            ExportFormat.YAPI -> {
+                val isNew = yapiModeComboBox.selectedItem == YAPI_MODE_NEW_TOKEN
+                val yapiOptions = if (isNew) {
+                    val token = yapiNewTokenField.text.trim()
+                    if (token.isNotBlank()) {
+                        YapiExportOptions(selectedToken = token, useCustomProject = true)
+                    } else null
+                } else {
+                    val idx = yapiProjectComboBox.selectedIndex
+                    if (idx >= 0 && idx < yapiProjects.size) {
+                        val proj = yapiProjects[idx]
+                        YapiExportOptions(
+                            selectedToken = proj.token,
+                            useCustomProject = false
+                        )
+                    } else null
+                }
+                OutputConfig(yapiOptions = yapiOptions)
+            }
+
             ExportFormat.POSTMAN -> {
                 val wsIdx = postmanWorkspaceComboBox.selectedIndex
                 val ws = if (wsIdx >= 0 && wsIdx < postmanWorkspaces.size) postmanWorkspaces[wsIdx] else null
@@ -372,7 +469,11 @@ class ExportDialog(
 
     companion object {
         private const val FILE_OPTIONS = "FILE_OPTIONS"
+        private const val YAPI_OPTIONS = "YAPI_OPTIONS"
         private const val POSTMAN_OPTIONS = "POSTMAN_OPTIONS"
+
+        private const val YAPI_MODE_SELECT = "Select Existing Project"
+        private const val YAPI_MODE_NEW_TOKEN = "Input New Token"
 
         fun show(
             project: Project,

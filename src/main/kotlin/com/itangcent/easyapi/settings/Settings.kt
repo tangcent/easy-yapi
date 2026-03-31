@@ -10,6 +10,7 @@ import com.itangcent.easyapi.settings.state.ProjectSettingsSupport
  * This data class holds both project-level and application-level settings:
  * - Framework enablement (Feign, JAX-RS, Actuator)
  * - Postman export configuration
+ * - YApi export configuration
  * - HTTP client settings
  * - Output formatting options
  *
@@ -36,8 +37,13 @@ data class Settings(
     override var formExpanded: Boolean = true,
     override var pathMulti: String = "ALL",
     override var inferReturnMain: Boolean = true,
+    override var yapiServer: String? = null,
+    override var yapiTokens: String? = null,
     override var enableUrlTemplating: Boolean = true,
     override var switchNotice: Boolean = true,
+    override var yapiExportMode: String = YapiExportMode.ALWAYS_UPDATE.name,
+    override var yapiReqBodyJson5: Boolean = false,
+    override var yapiResBodyJson5: Boolean = false,
     override var httpTimeOut: Int = 5,
     override var unsafeSsl: Boolean = false,
     override var httpClient: String = HttpClientType.APACHE.value,
@@ -76,6 +82,8 @@ data class Settings(
         if (inferReturnMain != other.inferReturnMain) return false
         if (enableUrlTemplating != other.enableUrlTemplating) return false
         if (switchNotice != other.switchNotice) return false
+        if (yapiReqBodyJson5 != other.yapiReqBodyJson5) return false
+        if (yapiResBodyJson5 != other.yapiResBodyJson5) return false
         if (httpTimeOut != other.httpTimeOut) return false
         if (unsafeSsl != other.unsafeSsl) return false
         if (logLevel != other.logLevel) return false
@@ -85,6 +93,9 @@ data class Settings(
         if (postmanExportMode != other.postmanExportMode) return false
         if (postmanCollections != other.postmanCollections) return false
         if (postmanJson5FormatType != other.postmanJson5FormatType) return false
+        if (yapiServer != other.yapiServer) return false
+        if (yapiTokens != other.yapiTokens) return false
+        if (yapiExportMode != other.yapiExportMode) return false
         if (httpClient != other.httpClient) return false
         if (recommendConfigs != other.recommendConfigs) return false
         if (outputCharset != other.outputCharset) return false
@@ -108,6 +119,8 @@ data class Settings(
         result = 31 * result + inferReturnMain.hashCode()
         result = 31 * result + enableUrlTemplating.hashCode()
         result = 31 * result + switchNotice.hashCode()
+        result = 31 * result + yapiReqBodyJson5.hashCode()
+        result = 31 * result + yapiResBodyJson5.hashCode()
         result = 31 * result + httpTimeOut
         result = 31 * result + unsafeSsl.hashCode()
         result = 31 * result + logLevel
@@ -117,6 +130,9 @@ data class Settings(
         result = 31 * result + (postmanExportMode?.hashCode() ?: 0)
         result = 31 * result + (postmanCollections?.hashCode() ?: 0)
         result = 31 * result + postmanJson5FormatType.hashCode()
+        result = 31 * result + (yapiServer?.hashCode() ?: 0)
+        result = 31 * result + (yapiTokens?.hashCode() ?: 0)
+        result = 31 * result + yapiExportMode.hashCode()
         result = 31 * result + httpClient.hashCode()
         result = 31 * result + recommendConfigs.hashCode()
         result = 31 * result + outputCharset.hashCode()

@@ -66,8 +66,8 @@ tasks.withType<Test>().configureEach {
 
 intellijPlatform {
     pluginConfiguration {
-        id = "com.itangcent.idea.plugin.easy-api"
-        name = "Easyapi"
+        id = "com.itangcent.idea.plugin.easy-yapi"
+        name = "EasyYapi"
         version = project.version.toString()
         description = file("src/main/resources/pluginDescription.html").readText()
         changeNotes = provider {

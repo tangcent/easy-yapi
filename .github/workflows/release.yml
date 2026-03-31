@@ -22,12 +22,13 @@ jobs:
           # If no version in commit message, try to get it from build.gradle.kts
           if [ -z "$VERSION" ]; then
             if [ -f "build.gradle.kts" ]; then
-              VERSION=$(grep '^version\s*=' build.gradle.kts | sed -E 's/.*"([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+              VERSION=$(grep '^version\s*=' build.gradle.kts | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r' | xargs)
               if [ -z "$VERSION" ]; then
                 echo "Error: No version found in build.gradle.kts"
-                cat build.gradle.kts
                 exit 1
               fi
+              # Convert version format (e.g. 3.0.0.212.0 -> 3.0.0)
+              VERSION=$(echo "$VERSION" | sed -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
             else
               echo "Error: build.gradle.kts file not found"
               exit 1
@@ -61,35 +62,40 @@ jobs:
           distribution: 'zulu'
           cache: gradle
 
-      - name: Package Plugin
+      - name: Build Plugin
         if: steps.check_tag.outputs.skip == 'false'
-        run: ./gradlew buildPlugin --stacktrace
+        run: ./gradlew buildPlugin
 
       - name: Generate Release Notes
         if: steps.check_tag.outputs.skip == 'false'
         id: generate_notes
         run: |
-          # Get the previous tag
+          # Get the previous tag (if any)
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           CURRENT_TAG=${{ steps.extract_version.outputs.version }}
           
           # Generate the release notes
           if [ -n "$PREV_TAG" ]; then
             NOTES="**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURRENT_TAG}\n\n"
-            COMMITS=$(git log --pretty=format:"* %s" ${PREV_TAG}..HEAD | grep -E '^\* (refactor|feat|fix)' || true)
+            COMMITS=$(git log --pretty=format:"* %s" $PREV_TAG..HEAD | grep -E '^\* (refactor|feat|fix|perf|docs)' || true)
           else
-            NOTES="**Full Changelog**: https://github.com/${{ github.repository }}/commits/${CURRENT_TAG}\n\n"
-            COMMITS=$(git log --pretty=format:"* %s" | grep -E '^\* (refactor|feat|fix)' || true)
+            NOTES="**Initial Release**\n\n"
+            COMMITS=$(git log --pretty=format:"* %s" | grep -E '^\* (refactor|feat|fix|perf|docs)' || true)
           fi
-          NOTES="${NOTES}${COMMITS}\n\n"
+          
+          # Add commit messages
+          if [ -n "$COMMITS" ]; then
+            NOTES="${NOTES}### Changes\n${COMMITS}\n\n"
+          fi
           
           # Add the plugin support table
           NOTES="${NOTES}---\n\n"
-          NOTES="${NOTES}| plugin | support |\n"
-          NOTES="${NOTES}| ------------ | ------------ |\n"
+          NOTES="${NOTES}### Downloads\n\n"
+          NOTES="${NOTES}| Plugin | IDE Support |\n"
+          NOTES="${NOTES}| ------ | ----------- |\n"
           # Remove 'v' prefix for the download link
           DOWNLOAD_VERSION=$(echo "$CURRENT_TAG" | sed 's/^v//')
-          NOTES="${NOTES}| [easy-api-${DOWNLOAD_VERSION}.252.0.zip](https://github.com/${{ github.repository }}/releases/download/${CURRENT_TAG}/easy-api-${DOWNLOAD_VERSION}.252.0.zip) | idea 2025.2+ |\n"
+          NOTES="${NOTES}| [easy-yapi-${DOWNLOAD_VERSION}.zip](https://github.com/${{ github.repository }}/releases/download/${CURRENT_TAG}/easy-yapi-${DOWNLOAD_VERSION}.zip) | IntelliJ IDEA 2023.1+ |\n"
           
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo -e "$NOTES" >> $GITHUB_OUTPUT
@@ -107,4 +113,4 @@ jobs:
           draft: true
           prerelease: true
           files: |
-            build/distributions/easy-api-*.zip
+            build/distributions/easy-yapi-*.zip

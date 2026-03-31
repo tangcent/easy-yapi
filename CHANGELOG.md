@@ -40,4 +40,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.8.4] - Previous Release
 
-For changes in version 2.x and earlier, please refer to the [easy-api repository](https://github.com/tangcent/easy-api).
+For changes in version 2.x and earlier, please refer to the [easy-yapi repository](https://github.com/tangcent/easy-yapi).

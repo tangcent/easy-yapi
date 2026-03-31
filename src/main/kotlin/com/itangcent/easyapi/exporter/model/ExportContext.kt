@@ -75,6 +75,7 @@ data class ExportContext(
  */
 enum class ExportFormat {
     MARKDOWN,
+    YAPI,
     POSTMAN,
     CURL,
     HTTP_CLIENT;
@@ -85,6 +86,7 @@ enum class ExportFormat {
     val displayName: String
         get() = when (this) {
             MARKDOWN -> "Markdown"
+            YAPI -> "YAPI"
             POSTMAN -> "Postman"
             CURL -> "cURL"
             HTTP_CLIENT -> "HTTP Client"
@@ -97,12 +99,14 @@ enum class ExportFormat {
  * @param outputDir The output directory
  * @param fileName The output file name
  * @param host The API host URL
+ * @param yapiOptions YAPI-specific options
  * @param postmanOptions Postman-specific options
  */
 data class OutputConfig(
     val outputDir: String? = null,
     val fileName: String? = null,
     val host: String? = null,
+    val yapiOptions: YapiExportOptions? = null,
     val postmanOptions: PostmanExportOptions? = null
 ) {
     companion object {
@@ -112,6 +116,17 @@ data class OutputConfig(
         val DEFAULT = OutputConfig()
     }
 }
+
+/**
+ * YAPI-specific export options.
+ *
+ * @param selectedToken The selected YAPI project token
+ * @param useCustomProject Whether to use a custom project
+ */
+data class YapiExportOptions(
+    val selectedToken: String? = null,
+    val useCustomProject: Boolean = false
+)
 
 /**
  * Postman-specific export options.

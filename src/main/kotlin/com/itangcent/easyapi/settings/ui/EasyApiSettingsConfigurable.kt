@@ -19,6 +19,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
 
     private val generalPanel = GeneralSettingsPanel(project)
     private val postmanPanel = PostmanSettingsPanel()
+    private val yapiPanel = YapiSettingsPanel()
     private val httpPanel = HttpSettingsPanel()
     private val intelligentPanel = IntelligentSettingsPanel()
     private val recommendPanel = RecommendConfigPanel()
@@ -40,6 +41,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
             tabs = JTabbedPane().also { t ->
                 t.addTab("General", wrapNorth(generalPanel.component))
                 t.addTab("Postman", wrapNorth(postmanPanel.component))
+                t.addTab("Yapi", wrapNorth(yapiPanel.component))
                 t.addTab("HTTP", wrapNorth(httpPanel.component))
                 t.addTab("Intelligent", wrapNorth(intelligentPanel.component))
                 t.addTab("Recommend", recommendPanel.component)
@@ -74,7 +76,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     override fun isModified(): Boolean {
         val settings = settingBinder.read()
         return listOf(
-            generalPanel, postmanPanel, httpPanel,
+            generalPanel, postmanPanel, yapiPanel, httpPanel,
             intelligentPanel, recommendPanel, remotePanel, builtInPanel, otherPanel
         ).any { it.isModified(settings) }
     }
@@ -86,6 +88,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         val settings = settingBinder.read()
         generalPanel.applyTo(settings)
         postmanPanel.applyTo(settings)
+        yapiPanel.applyTo(settings)
         httpPanel.applyTo(settings)
         intelligentPanel.applyTo(settings)
         recommendPanel.applyTo(settings)
@@ -102,6 +105,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         val settings = settingBinder.read()
         generalPanel.resetFrom(settings)
         postmanPanel.resetFrom(settings)
+        yapiPanel.resetFrom(settings)
         httpPanel.resetFrom(settings)
         intelligentPanel.resetFrom(settings)
         recommendPanel.resetFrom(settings)

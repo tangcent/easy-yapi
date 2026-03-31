@@ -14,7 +14,7 @@ jobs:
     steps:
       - id: check-labels
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v6
         with:
           script: |
             const labels = await github.rest.issues.listLabelsOnIssue({
@@ -43,6 +43,7 @@ jobs:
         java-version: [17]
     env:
       OS: ${{ matrix.os }}
+      DISPLAY: ':99'
 
     steps:
       - uses: actions/checkout@v4
@@ -51,22 +52,20 @@ jobs:
         with:
           java-version: ${{ matrix.java-version }}
           distribution: 'zulu'
+          cache: gradle
       - name: Install Xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Start Xvfb
         run: Xvfb :99 -screen 0 1024x768x24 &
       - name: Generate coverage report
-        run: |
-          ./gradlew check --stacktrace
-          ./gradlew jacocoTestReport
+        run: ./gradlew test jacocoTestReport --stacktrace
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: build/reports/jacoco/report.xml
+          files: build/reports/jacoco/report.xml
           flags: unittests
           env_vars: OS
           name: codecov-umbrella
           fail_ci_if_error: true
-          path_to_write_report: ./coverage/codecov_report.txt
           verbose: true

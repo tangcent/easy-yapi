@@ -17,6 +17,8 @@ class EnhancedSettingsPanelsTest {
         val settings = Settings().apply {
             postmanBuildExample = false
             autoMergeScript = true
+            yapiServer = "http://yapi.example.com"
+            yapiTokens = "test-token-123"
         }
         
         panel.resetFrom(settings)

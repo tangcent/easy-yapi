@@ -7,6 +7,7 @@ import com.itangcent.easyapi.exporter.httpclient.HttpClientExporter
 import com.itangcent.easyapi.exporter.markdown.MarkdownExporter
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.postman.PostmanExporter
+import com.itangcent.easyapi.exporter.yapi.YapiExporter
 
 /**
  * Registry for API exporters, providing access to exporter instances by format.
@@ -45,6 +46,7 @@ class ApiExporterRegistry(private val project: Project) {
     fun getExporter(format: ExportFormat): ApiExporter? {
         return when (format) {
             ExportFormat.MARKDOWN -> MarkdownExporter.getInstance(project)
+            ExportFormat.YAPI -> YapiExporter.getInstance(project)
             ExportFormat.POSTMAN -> PostmanExporter.getInstance(project)
             ExportFormat.CURL -> CurlExporter.getInstance(project)
             ExportFormat.HTTP_CLIENT -> HttpClientExporter.getInstance(project)
@@ -59,6 +61,7 @@ class ApiExporterRegistry(private val project: Project) {
     fun getAllExporters(): Collection<ApiExporter> {
         return listOf(
             MarkdownExporter.getInstance(project),
+            YapiExporter.getInstance(project),
             PostmanExporter.getInstance(project),
             CurlExporter.getInstance(project),
             HttpClientExporter.getInstance(project)

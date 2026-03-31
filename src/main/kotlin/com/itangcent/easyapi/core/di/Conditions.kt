@@ -93,6 +93,8 @@ object ConditionEvaluator {
         "httpTimeOut" -> settings.httpTimeOut.toString()
         "unsafeSsl" -> settings.unsafeSsl.toString()
         "httpClient" -> settings.httpClient
+        "yapiServer" -> settings.yapiServer
+        "yapiToken" -> settings.yapiTokens
         "postmanToken" -> settings.postmanToken
         "feignEnable" -> settings.feignEnable.toString()
         "jaxrsEnable" -> settings.jaxrsEnable.toString()

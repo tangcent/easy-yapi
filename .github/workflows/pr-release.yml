@@ -9,47 +9,55 @@ jobs:
   update-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Check if branch is release branch and add label if needed
+        uses: actions/github-script@v6
         id: check_branch
-        run: |
-          # Check if branch follows 'release/xxx' pattern
-          if [[ "${{ github.event.pull_request.head.ref }}" == release/* ]]; then
-            echo "This is a release branch"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue: { number: issueNumber }, repo: { owner, repo } } = context;
+            const branchName = '${{ github.event.pull_request.head.ref }}';
             
-            # Get current labels
-            LABELS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels)
+            console.log(`Branch name: ${branchName}`);
             
-            # Check if 'release' label exists
-            if ! echo "$LABELS" | grep -q '"name": "release"'; then
-              echo "Adding release label"
-              curl -s -X POST \
-                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github.v3+json" \
-                https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels \
-                -d '{"labels":["release"]}'
-            else
-              echo "Release label already exists"
-            fi
+            // Check if branch follows 'release/xxx' pattern
+            const isReleaseBranch = branchName.startsWith('release/');
             
-            echo "result=true" >> $GITHUB_OUTPUT
-          else
-            echo "Not a release branch"
-            echo "result=false" >> $GITHUB_OUTPUT
-          fi
+            if (isReleaseBranch) {
+              console.log('This is a release branch');
+              
+              // Get current labels
+              const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+                owner,
+                repo,
+                issue_number: issueNumber
+              });
+              
+              // Check if 'release' label is already applied
+              const hasReleaseLabel = currentLabels.some(label => label.name === 'release');
+              
+              if (!hasReleaseLabel) {
+                console.log('Adding release label');
+                await github.rest.issues.addLabels({
+                  owner,
+                  repo,
+                  issue_number: issueNumber,
+                  labels: ['release']
+                });
+              } else {
+                console.log('Release label already exists');
+              }
+              
+              return true;
+            } else {
+              console.log('Not a release branch');
+              return false;
+            }
 
       - name: Fetch base branch
         if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
@@ -95,17 +103,17 @@ jobs:
 
       - name: Update Pull Request
         if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
-        run: |
-          if [ -f pr_body.txt ]; then
-            # Read PR body from file and format as proper JSON
-            PR_BODY=$(jq -Rs . < pr_body.txt)
-            curl -s -X PATCH \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              -H "Content-Type: application/json" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }} \
-              -d "{\"body\":$PR_BODY}"
-          else
-            echo "Error: pr_body.txt not found"
-            exit 1
-          fi
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue: { number: issueNumber }, repo: { owner, repo } } = context;
+            
+            const prBody = `${{ steps.generate_content.outputs.pr_body }}`;
+            
+            github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: prBody
+            });

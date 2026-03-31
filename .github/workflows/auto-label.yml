@@ -44,7 +44,7 @@ jobs:
             
             const validTypes = Object.keys(typeToLabel);
             const pattern = new RegExp(`^(${validTypes.join('|')})(\(.+\))?!?: .+`);
-            const releaseVersionPattern = new RegExp(`^release\\s+\\d+\\.\\d+\\.\\d+$`);
+            const releaseVersionPattern = new RegExp(`^release\\s+\\d+\\.\\d+\\.\\d+`);
             
             let isValid = true;
             let invalidCommits = [];

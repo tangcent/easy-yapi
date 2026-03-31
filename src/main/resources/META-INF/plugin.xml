@@ -1,6 +1,6 @@
 <idea-plugin>
-    <id>com.itangcent.idea.plugin.easy-api</id>
-    <name>EasyApi</name>
+    <id>com.itangcent.idea.plugin.easy-yapi</id>
+    <name>EasyYapi</name>
     <version>3.0.0.252.0</version>
     <vendor email="pentatangcent@gmail.com" url="https://github.com/tangcent">Tangcent</vendor>
 
@@ -30,7 +30,8 @@
         <projectService serviceInterface="com.itangcent.easyapi.settings.SettingBinder"
                         serviceImplementation="com.itangcent.easyapi.settings.DefaultSettingBinder"/>
         <projectService serviceImplementation="com.itangcent.easyapi.settings.state.ProjectSettingsState"/>
-
+        <projectService serviceInterface="com.itangcent.easyapi.exporter.yapi.YapiSettingsHelper"
+                        serviceImplementation="com.itangcent.easyapi.exporter.yapi.DefaultYapiSettingsHelper"/>
         <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
 
         <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>
@@ -89,7 +90,10 @@
                     class="com.itangcent.easyapi.ide.action.ExportToPostmanAction" text="ExportToPostman"
                     description="ExportToPostman">
             </action>
-
+            <action id="com.itangcent.idea.easy_api.actions.YapiExportAction"
+                    class="com.itangcent.easyapi.ide.action.ExportToYapiAction" text="ExportToYapi"
+                    description="ExportToYapi">
+            </action>
             <action id="com.itangcent.idea.easy_api.actions.MarkdownExportAction"
                     class="com.itangcent.easyapi.ide.action.ExportToMarkdownAction" text="ExportMarkdown"
                     description="ExportToMarkdown">

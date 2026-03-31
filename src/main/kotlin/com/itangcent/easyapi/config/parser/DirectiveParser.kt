@@ -88,6 +88,8 @@ class DirectiveParser(
             "httpTimeOut" -> s.httpTimeOut.toString()
             "unsafeSsl" -> s.unsafeSsl.toString()
             "httpClient" -> s.httpClient
+            "yapiServer" -> s.yapiServer
+            "yapiToken" -> s.yapiTokens
             "postmanToken" -> s.postmanToken
             "feignEnable" -> s.feignEnable.toString()
             "jaxrsEnable" -> s.jaxrsEnable.toString()

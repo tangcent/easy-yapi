@@ -44,13 +44,14 @@ class ApiExporterRegistryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testGetAllExporters() {
         val exporters = registry.getAllExporters()
-        assertEquals(4, exporters.size)
+        assertEquals(5, exporters.size)
         
         val exporterTypes = exporters.map { it::class.simpleName }.toSet()
         assertTrue(exporterTypes.contains("MarkdownExporter"))
         assertTrue(exporterTypes.contains("PostmanExporter"))
         assertTrue(exporterTypes.contains("CurlExporter"))
         assertTrue(exporterTypes.contains("HttpClientExporter"))
+        assertTrue(exporterTypes.contains("YapiExporter"))
     }
 
     fun testAllExportersAreUnique() {
