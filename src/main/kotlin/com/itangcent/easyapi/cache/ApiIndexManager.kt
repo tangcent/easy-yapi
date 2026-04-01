@@ -48,6 +48,9 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
 
     private val scope = CoroutineScope(SupervisorJob() + IdeDispatchers.Background + exceptionHandler)
 
+    private var lastScanTime = 0L
+    private val minScanIntervalMs = 10000L
+
     /**
      * Conflated channel for full scan requests — multiple requests coalesce into one.
      */
@@ -81,7 +84,8 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
      */
     fun requestScan() {
         LOG.info("Full scan requested")
-        fullScanChannel.trySend(Unit)
+        val sent = fullScanChannel.trySend(Unit)
+        LOG.info("Full scan request sent: ${sent.isSuccess}")
     }
 
     /**
@@ -110,6 +114,14 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
 
     private suspend fun processIncrementalScans() {
         for (filePaths in incrementalScanChannel) {
+            // Throttle: skip if last scan was too recent
+            val now = System.currentTimeMillis()
+            val timeSinceLastScan = now - lastScanTime
+            if (timeSinceLastScan < minScanIntervalMs) {
+                LOG.debug("Throttling scan, only ${timeSinceLastScan}ms since last scan")
+                delay(minScanIntervalMs - timeSinceLastScan)
+            }
+
             // Drain any additional pending batches to coalesce work
             val allFiles = filePaths.toMutableSet()
             while (true) {
@@ -134,6 +146,7 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
                 }
 
                 apiIndex.updateEndpointsByClasses(classEndpoints)
+                lastScanTime = System.currentTimeMillis()
                 LOG.info("Incremental scan completed, updated ${newEndpoints.size} endpoints from ${changedClasses.size} classes")
             } catch (e: CancellationException) {
                 throw e
@@ -144,29 +157,39 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
         }
     }
 
-    private suspend fun findClassesFromFiles(filePaths: List<String>): List<PsiClass> = read {
-        val psiManager = PsiManager.getInstance(project)
+    private suspend fun findClassesFromFiles(filePaths: List<String>): List<PsiClass> {
         val classes = mutableListOf<PsiClass>()
 
-        for (filePath in filePaths) {
-            try {
-                val virtualFile = LocalFileSystem.getInstance().findFileByPath(filePath)
-                if (virtualFile != null && virtualFile.exists()) {
-                    val psiFile = psiManager.findFile(virtualFile)
-                    if (psiFile != null) {
-                        val fileClasses = psiFile.children.filterIsInstance<PsiClass>()
-                        val apiClasses = fileClasses.filter { psiClass ->
-                            isApiClassFast(psiClass)
+        // Process in chunks to avoid blocking UI
+        filePaths.chunked(10).forEach { chunk ->
+            val chunkClasses = read {
+                val psiManager = PsiManager.getInstance(project)
+                val result = mutableListOf<PsiClass>()
+
+                for (filePath in chunk) {
+                    try {
+                        val virtualFile = LocalFileSystem.getInstance().findFileByPath(filePath)
+                        if (virtualFile != null && virtualFile.exists()) {
+                            val psiFile = psiManager.findFile(virtualFile)
+                            if (psiFile != null) {
+                                val fileClasses = psiFile.children.filterIsInstance<PsiClass>()
+                                val apiClasses = fileClasses.filter { psiClass ->
+                                    isApiClassFast(psiClass)
+                                }
+                                result.addAll(apiClasses)
+                            }
                         }
-                        classes.addAll(apiClasses)
+                    } catch (e: Exception) {
+                        LOG.warn("Error finding class for file: $filePath", e)
                     }
                 }
-            } catch (e: Exception) {
-                LOG.warn("Error finding class for file: $filePath", e)
+                result
             }
+            classes.addAll(chunkClasses)
+            yield() // Allow other coroutines to run
         }
 
-        classes
+        return classes
     }
 
     private fun isApiClassFast(psiClass: PsiClass): Boolean {

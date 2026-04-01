@@ -53,7 +53,8 @@ data class Settings(
     override var outputCharset: String = "UTF-8",
     override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name,
     override var builtInConfig: String? = null,
-    override var remoteConfig: Array<String> = emptyArray()
+    override var remoteConfig: Array<String> = emptyArray(),
+    override var autoScanEnabled: Boolean = true
 ) : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     companion object {

@@ -173,4 +173,20 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Endpoint should have method", endpoint.method)
         assertNotNull("Endpoint should have className", endpoint.className)
     }
+
+    fun testThrottling() = runTest {
+        apiIndexManager.start()
+
+        // Trigger multiple reindex calls rapidly
+        val files = listOf("test1.java", "test2.java")
+        apiIndexManager.reIndex(files)
+        apiIndexManager.reIndex(files)
+        apiIndexManager.reIndex(files)
+
+        // Wait for throttle delay
+        delay(12000)
+
+        // Should complete without errors
+        assertTrue("Cache should be valid", apiIndex.isValid())
+    }
 }

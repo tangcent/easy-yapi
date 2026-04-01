@@ -22,21 +22,33 @@ jobs:
         shell: bash
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
           # Write PR body via env var to avoid shell interpretation issues
           printf '%s' "$PR_BODY" > pr_body.txt
-          
-          # Check for issue reference pattern: #123 or full GitHub issues URL
-          if grep -qoE "issues/[0-9]+" pr_body.txt; then
-            ISSUE_NUM=$(grep -oE "issues/[0-9]+" pr_body.txt | head -n 1 | grep -oE "[0-9]+")
-            echo "issue_number=${ISSUE_NUM}" >> $GITHUB_OUTPUT
-            echo "has_issue=true" >> $GITHUB_OUTPUT
-          elif grep -qoE "#[0-9]+" pr_body.txt; then
-            ISSUE_NUM=$(grep -oE "#[0-9]+" pr_body.txt | head -n 1 | tr -d '#')
+
+          # Case 1: full issue URL for current repository only.
+          CURRENT_REPO_ISSUE_URL_REGEX="https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/[0-9]+"
+          if grep -qoE "$CURRENT_REPO_ISSUE_URL_REGEX" pr_body.txt; then
+            ISSUE_NUM=$(grep -oE "$CURRENT_REPO_ISSUE_URL_REGEX" pr_body.txt | head -n 1 | grep -oE "[0-9]+$")
             echo "issue_number=${ISSUE_NUM}" >> $GITHUB_OUTPUT
             echo "has_issue=true" >> $GITHUB_OUTPUT
           else
-            echo "has_issue=false" >> $GITHUB_OUTPUT
+            # Case 2: plain #123 only.
+            # Exclude:
+            # - bracketed forms like [#123]
+            # - markdown links
+            # - cross-repo shorthand like owner/repo#123
+            sed -E 's/\[[^][]*\]\([^()]*\)//g; s/\[[^][]*\]//g; s@[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[0-9]+@@g' pr_body.txt > pr_body_for_plain_issue.txt
+
+            if grep -qoE "#[0-9]+" pr_body_for_plain_issue.txt; then
+              ISSUE_NUM=$(grep -oE "#[0-9]+" pr_body_for_plain_issue.txt | head -n 1 | tr -d '#')
+              echo "issue_number=${ISSUE_NUM}" >> $GITHUB_OUTPUT
+              echo "has_issue=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_issue=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Build plugin

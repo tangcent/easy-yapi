@@ -55,7 +55,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var outputCharset: String = "UTF-8",
         override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name,
         override var builtInConfig: String? = null,
-        override var remoteConfig: Array<String> = emptyArray()
+        override var remoteConfig: Array<String> = emptyArray(),
+        override var autoScanEnabled: Boolean = true
     ) : ApplicationSettingsSupport {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -91,6 +92,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (markdownFormatType != other.markdownFormatType) return false
             if (builtInConfig != other.builtInConfig) return false
             if (!remoteConfig.contentEquals(other.remoteConfig)) return false
+            if (autoScanEnabled != other.autoScanEnabled) return false
 
             return true
         }
@@ -124,6 +126,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + markdownFormatType.hashCode()
             result = 31 * result + (builtInConfig?.hashCode() ?: 0)
             result = 31 * result + remoteConfig.contentHashCode()
+            result = 31 * result + autoScanEnabled.hashCode()
             return result
         }
     }
