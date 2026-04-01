@@ -21,6 +21,8 @@ import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.psi.type.searchAnnotation
 import com.itangcent.easyapi.rule.engine.RuleEngine
 
 /**
@@ -71,26 +73,29 @@ class JaxRsClassExporter(
         val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
         LOG.info("before parse class:$className")
 
+        val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
         val endpoints = ArrayList<ApiEndpoint>()
-        for (method in psiClass.methods) {
-            if (method.isConstructor) continue
-            endpoints.addAll(exportMethod(psiClass, method))
+        for (resolvedMethod in resolvedType.methods()) {
+            val httpMethodAnn = resolvedMethod.searchAnnotation(JAXRS_HTTP_METHOD_ANNOTATIONS)
+                ?: continue
+            val annotatedMethod = (httpMethodAnn.owner as? PsiMethod) ?: resolvedMethod.psiMethod
+            endpoints.addAll(exportMethod(psiClass, resolvedMethod.psiMethod, annotatedMethod))
         }
         LOG.info("after parse class:$className")
         return endpoints
     }
 
-    private suspend fun exportMethod(psiClass: PsiClass, method: PsiMethod): List<ApiEndpoint> {
+    private suspend fun exportMethod(psiClass: PsiClass, method: PsiMethod, annotatedMethod: PsiMethod): List<ApiEndpoint> {
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
 
-        val httpMethod = methodResolver.resolve(method)
+        val httpMethod = methodResolver.resolve(annotatedMethod)
         if (httpMethod == null) {
             LOG.info("after parse method:$methodKey")
             return emptyList()
         }
-        val path = pathResolver.resolve(psiClass, method)
-        val types = contentTypeResolver.resolve(psiClass, method)
+        val path = pathResolver.resolve(psiClass, annotatedMethod)
+        val types = contentTypeResolver.resolve(psiClass, annotatedMethod)
 
         val name = metadataResolver.resolveApiName(method)
         val folder = metadataResolver.resolveFolderName(method, psiClass)
@@ -209,6 +214,15 @@ class JaxRsClassExporter(
         return result
     }
 
-    companion object : IdeaLog
+    companion object : IdeaLog {
+        val JAXRS_HTTP_METHOD_ANNOTATIONS = setOf(
+            "javax.ws.rs.GET", "javax.ws.rs.POST", "javax.ws.rs.PUT",
+            "javax.ws.rs.DELETE", "javax.ws.rs.PATCH", "javax.ws.rs.HEAD",
+            "javax.ws.rs.OPTIONS",
+            "jakarta.ws.rs.GET", "jakarta.ws.rs.POST", "jakarta.ws.rs.PUT",
+            "jakarta.ws.rs.DELETE", "jakarta.ws.rs.PATCH", "jakarta.ws.rs.HEAD",
+            "jakarta.ws.rs.OPTIONS"
+        )
+    }
 }
 

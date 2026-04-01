@@ -74,12 +74,12 @@ class SpringMvcClassExporter(
 
         engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
 
+        val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
         val endpoints = ArrayList<ApiEndpoint>()
         try {
-            for (method in psiClass.allMethods) {
-                if (!isHandlerMethod(method)) continue
-                if (metadataResolver.isIgnored(method)) continue
-                endpoints.addAll(exportMethod(psiClass, method))
+            for (resolvedMethod in resolvedType.methods()) {
+                if (metadataResolver.isIgnored(resolvedMethod.psiMethod)) continue
+                endpoints.addAll(exportMethod(psiClass, resolvedType, resolvedMethod))
             }
         } finally {
             engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
@@ -88,32 +88,24 @@ class SpringMvcClassExporter(
         return endpoints
     }
 
-    private fun isHandlerMethod(method: PsiMethod): Boolean {
-        if (method.isConstructor) return false
-        if (method.name == "toString" || method.name == "hashCode" || method.name == "equals") return false
-        val containingClass = method.containingClass
-        if (containingClass?.qualifiedName == "java.lang.Object") return false
-        return true
-    }
-
-    private suspend fun exportMethod(psiClass: PsiClass, method: PsiMethod): List<ApiEndpoint> {
+    private suspend fun exportMethod(psiClass: PsiClass, classType: ResolvedType.ClassType, resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiEndpoint> {
+        val method = resolvedMethod.psiMethod
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
 
         engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
 
         try {
-            val mappings = mappingResolver.resolve(psiClass, method)
+            val mappings = mappingResolver.resolve(classType, resolvedMethod)
             if (mappings.isEmpty()) {
                 LOG.info("after parse method:$methodKey")
                 return emptyList()
             }
 
             // Build generic context from the class hierarchy.
-            // resolveGenericParams walks the full super type chain, so for
-            // StringCtrl extends GenericBaseCtrl<String>, this maps T→String.
             val genericContext = GenericContext(TypeResolver.resolveGenericParams(psiClass, emptyList()))
 
+            // Use the concrete method for metadata resolution
             val apiName = metadataResolver.resolveApiName(method)
             val folder = metadataResolver.resolveFolderName(method, psiClass)
             val description = metadataResolver.resolveMethodDoc(method)

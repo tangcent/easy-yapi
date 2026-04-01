@@ -6,6 +6,10 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifierListOwner
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.psi.helper.AnnotationHelper
+import com.itangcent.easyapi.psi.type.ResolvedMethod
+import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.psi.type.allSuperClasses
+import com.itangcent.easyapi.psi.type.superMethods
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import java.util.concurrent.ConcurrentHashMap
@@ -74,17 +78,121 @@ class RequestMappingResolver(
         return results.distinctBy { it.method.name + ":" + it.path + ":" + it.consumes.joinToString(",") + ":" + it.produces.joinToString(",") }
     }
 
+    /**
+     * Resolves request mappings for a [ResolvedMethod] within a [ResolvedType.ClassType].
+     *
+     * This is the preferred entry point for exporters using the ResolvedType API.
+     * It tries the method itself first, then walks [ResolvedMethod.superMethods] until
+     * a mapping is found. Class-level mappings are resolved from the [classType] and
+     * its supertypes via [ResolvedType.ClassType.superClasses].
+     *
+     * This correctly handles all inheritance cases including custom meta-annotations
+     * on super methods and class-level @RequestMapping on supertypes.
+     *
+     * @param classType The concrete controller ClassType (for class-level mapping resolution)
+     * @param resolvedMethod The resolved method to find mappings for
+     * @return The resolved mappings, or empty if no mapping found in the chain
+     */
+    suspend fun resolve(classType: ResolvedType.ClassType, resolvedMethod: ResolvedMethod): List<ResolvedMapping> {
+        val psiClass = classType.psiClass
+
+        // Resolve method-level mapping: try the method itself, then walk super methods
+        val methodMappings = extractMethodMapping(resolvedMethod)
+
+        // If no method-level mapping found at all, skip (no endpoint to export)
+        if (methodMappings == MappingInfo.EMPTY) return emptyList()
+
+        // Resolve class-level mapping: try the class itself, then walk supertypes
+        val classMappings = extractClassMapping(classType)
+
+        val method = resolvedMethod.psiMethod
+        val classPrefix = ruleEngine.evaluate(RuleKeys.CLASS_PREFIX_PATH, psiClass).orEmpty()
+        val endpointPrefix = ruleEngine.evaluate(RuleKeys.ENDPOINT_PREFIX_PATH, method).orEmpty()
+
+        val classPaths = if (classMappings.paths.isEmpty()) listOf("") else classMappings.paths
+        val methodPaths = if (methodMappings.paths.isEmpty()) listOf("") else methodMappings.paths
+
+        val results = ArrayList<ResolvedMapping>()
+        val methods = if (methodMappings.methods.isNotEmpty()) methodMappings.methods else classMappings.methods
+        val httpMethods = if (methods.isNotEmpty()) methods else listOf(HttpMethod.NO_METHOD)
+
+        for (cp in classPaths) {
+            for (mp in methodPaths) {
+                val base = joinPaths(joinPaths(classPrefix, cp), endpointPrefix)
+                val path = normalizePath(joinPaths(base, mp))
+                for (hm in httpMethods) {
+                    results.add(
+                        ResolvedMapping(
+                            path = path,
+                            method = hm,
+                            consumes = methodMappings.consumes.ifEmpty { classMappings.consumes },
+                            produces = methodMappings.produces.ifEmpty { classMappings.produces },
+                            headers = (classMappings.headers + methodMappings.headers).distinctBy { it.first.lowercase() }
+                        )
+                    )
+                }
+            }
+        }
+        return results.distinctBy { it.method.name + ":" + it.path + ":" + it.consumes.joinToString(",") + ":" + it.produces.joinToString(",") }
+    }
+
+    /**
+     * Extracts class-level mapping from the ClassType, walking supertypes if needed.
+     */
+    private suspend fun extractClassMapping(classType: ResolvedType.ClassType): MappingInfo {
+        val mapping = mappingFromRequestMapping(classType.psiClass)
+        if (mapping != MappingInfo.EMPTY) return mapping
+        for (superClassType in classType.allSuperClasses()) {
+            val superMapping = mappingFromRequestMapping(superClassType.psiClass)
+            if (superMapping != MappingInfo.EMPTY) return superMapping
+        }
+        return MappingInfo.EMPTY
+    }
+
+    /**
+     * Extracts method-level mapping from the ResolvedMethod, walking super methods if needed.
+     * Supports standard annotations, @RequestMapping, and custom meta-annotations.
+     */
+    private suspend fun extractMethodMapping(resolvedMethod: ResolvedMethod): MappingInfo {
+        val mapping = mappingFromMethod(resolvedMethod.psiMethod)
+        if (mapping != MappingInfo.EMPTY) return mapping
+        for (superMethod in resolvedMethod.superMethods()) {
+            val superMapping = mappingFromMethod(superMethod.psiMethod)
+            if (superMapping != MappingInfo.EMPTY) return superMapping
+        }
+        return MappingInfo.EMPTY
+    }
+
     private suspend fun extractMapping(target: Any, method: PsiMethod?): MappingInfo {
-        val direct = when (target) {
+        return when (target) {
             is PsiClass -> {
-                mappingFromRequestMapping(target)
+                val mapping = mappingFromRequestMapping(target)
+                if (mapping != MappingInfo.EMPTY) mapping
+                else findClassMappingFromSupertypes(target)
             }
             is PsiMethod -> {
                 mappingFromMethod(target)
             }
             else -> MappingInfo.EMPTY
         }
-        return direct
+    }
+
+    /**
+     * Walks the supertype hierarchy to find a class-level @RequestMapping.
+     * Uses superTypes + resolve() for compatibility with light test fixtures.
+     */
+    private suspend fun findClassMappingFromSupertypes(psiClass: PsiClass): MappingInfo {
+        for (superType in psiClass.superTypes) {
+            val classType = superType as? com.intellij.psi.PsiClassType ?: continue
+            val superClass = classType.resolve() ?: continue
+            if (superClass.qualifiedName == "java.lang.Object") continue
+            val mapping = mappingFromRequestMapping(superClass)
+            if (mapping != MappingInfo.EMPTY) return mapping
+            // Recurse into super's supertypes
+            val deep = findClassMappingFromSupertypes(superClass)
+            if (deep != MappingInfo.EMPTY) return deep
+        }
+        return MappingInfo.EMPTY
     }
 
     private suspend fun mappingFromMethod(psiMethod: PsiMethod): MappingInfo {

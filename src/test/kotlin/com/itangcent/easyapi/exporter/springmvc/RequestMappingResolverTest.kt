@@ -100,4 +100,56 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
             assertEquals(HttpMethod.GET, mapping.method)
         }
     }
+
+    fun testResolveClassType_NoMethodMapping_ReturnsEmpty() = runTest {
+        // Verifies the early-exit: a method with no mapping annotation (on itself or supers)
+        // returns empty without walking supertypes for class-level mapping.
+        loadFile("spring/RequestMapping.java")
+        loadFile("spring/GetMapping.java")
+        loadFile("spring/PostMapping.java")
+        loadFile("model/Result.java")
+        loadFile("model/IResult.java")
+        loadFile("model/UserInfo.java")
+        loadFile("api/inherit/PlainBaseCtrl.java")
+        loadFile("api/inherit/PlainSubCtrl.java")
+        // PlainSubCtrl extends AnnotatedBaseCtrl — but here we use PlainBaseCtrl which has no annotations
+        // Load a plain sub that has no method annotations and no super method annotations
+        loadFile("api/inherit/AnnotatedBaseCtrl.java")
+
+        val psiClass = findClass("com.itangcent.api.inherit.PlainBaseCtrl")!!
+        val classType = com.itangcent.easyapi.psi.type.ResolvedType.ClassType(psiClass, emptyList())
+        val methods = classType.methods()
+        val getItem = methods.first { it.name == "getItem" }
+
+        // PlainBaseCtrl.getItem has no mapping annotation, and no super with one either
+        val mappings = resolver.resolve(classType, getItem)
+        assertTrue("Method with no mapping should return empty list", mappings.isEmpty())
+    }
+
+    fun testResolveClassType_InheritedMethodAnnotation() = runTest {
+        // Verifies that resolve(classType, resolvedMethod) finds annotations on super methods.
+        loadFile("spring/RequestMapping.java")
+        loadFile("spring/GetMapping.java")
+        loadFile("spring/PostMapping.java")
+        loadFile("model/Result.java")
+        loadFile("model/IResult.java")
+        loadFile("model/UserInfo.java")
+        loadFile("api/inherit/AnnotatedBaseCtrl.java")
+        loadFile("api/inherit/PlainSubCtrl.java")
+
+        val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
+        val classType = com.itangcent.easyapi.psi.type.ResolvedType.ClassType(psiClass, emptyList())
+        val methods = classType.methods()
+        val getItem = methods.first { it.name == "getItem" }
+
+        // PlainSubCtrl.getItem has no @GetMapping, but AnnotatedBaseCtrl.getItem does
+        // Class-level @RequestMapping("/annotated-base") is on AnnotatedBaseCtrl
+        val mappings = resolver.resolve(classType, getItem)
+        assertTrue("Should resolve inherited method annotation", mappings.isNotEmpty())
+        assertEquals(HttpMethod.GET, mappings.first().method)
+        assertTrue(
+            "Path should include class prefix from AnnotatedBaseCtrl",
+            mappings.first().path.contains("annotated-base")
+        )
+    }
 }

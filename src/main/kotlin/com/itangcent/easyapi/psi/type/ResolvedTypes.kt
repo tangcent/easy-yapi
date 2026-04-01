@@ -43,26 +43,60 @@ sealed class ResolvedType {
         val psiClass: PsiClass,
         val typeArgs: List<ResolvedType> = emptyList()
     ) : ResolvedType() {
-        private val genericContext: GenericContext by lazy {
+        internal val genericContext: GenericContext by lazy {
             GenericContext(TypeResolver.resolveGenericParams(psiClass, typeArgs))
         }
 
+        /**
+         * Returns deduplicated, generics-resolved methods.
+         * Deduplicates by name#paramCount, preferring the override from [psiClass].
+         * Each [ResolvedMethod] gets [ResolvedMethod.ownerClassType] = this.
+         */
         fun methods(): List<ResolvedMethod> {
-            return psiClass.allMethods.map { method ->
+            val seen = LinkedHashMap<String, PsiMethod>()
+            for (method in psiClass.allMethods) {
+                if (method.isConstructor) continue
+                if (method.containingClass?.qualifiedName == "java.lang.Object") continue
+                val key = "${method.name}#${method.parameterList.parametersCount}"
+                if (key !in seen) {
+                    seen[key] = method
+                } else if (method.containingClass == psiClass) {
+                    seen[key] = method
+                }
+            }
+            return seen.values.map { method ->
                 ResolvedMethod(
                     name = method.name,
                     psiMethod = method,
-                    returnType = TypeResolver.substitute(TypeResolver.resolve(method.returnType, genericContext), genericContext),
+                    returnType = TypeResolver.substitute(
+                        TypeResolver.resolve(method.returnType, genericContext), genericContext
+                    ),
                     params = method.parameterList.parameters.map { p ->
                         ResolvedParam(
                             p.name ?: "",
                             p,
-                            TypeResolver.substitute(TypeResolver.resolve(p.type, genericContext), genericContext)
+                            TypeResolver.substitute(
+                                TypeResolver.resolve(p.type, genericContext), genericContext
+                            )
                         )
                     },
-                    annotations = method.annotations.toList(),
-                    containClass = psiClass
+                    containClass = psiClass,
+                    ownerClassType = this
                 )
+            }
+        }
+
+        /**
+         * Returns immediate supertypes as [ClassType] instances with resolved type args.
+         * Excludes java.lang.Object.
+         */
+        fun superClasses(): Sequence<ClassType> = sequence {
+            for (superType in psiClass.superTypes) {
+                val classType = superType as? com.intellij.psi.PsiClassType ?: continue
+                val superClass = classType.resolve() ?: continue
+                if (superClass.qualifiedName == "java.lang.Object") continue
+                val args = classType.parameters.map { TypeResolver.resolve(it, genericContext) }
+                yield(ClassType(superClass, args))
             }
         }
 
@@ -129,21 +163,65 @@ enum class PrimitiveKind {
 /**
  * Represents a resolved method with its signature and metadata.
  *
+ * Each method holds a reference to its [ownerClassType] for hierarchy navigation.
+ * Use [superMethod] to find the super declaration, and the extension functions
+ * [superMethods], [searchAnnotation] for composable hierarchy traversal.
+ *
  * @param name The method name
- * @param psiMethod The underlying PSI method
- * @param returnType The resolved return type
- * @param params The resolved parameters
- * @param annotations The method annotations
- * @param containClass The containing class, if available
+ * @param psiMethod The PsiMethod (for overrides, this is the override from the concrete class)
+ * @param returnType The resolved return type (with generics substituted)
+ * @param params The resolved parameters (with generics substituted)
+ * @param containClass The concrete class this method is resolved from
+ * @param ownerClassType The ClassType that produced this ResolvedMethod, for hierarchy navigation
  */
 data class ResolvedMethod(
     val name: String,
     val psiMethod: PsiMethod,
     val returnType: ResolvedType,
     val params: List<ResolvedParam>,
-    val annotations: List<PsiAnnotation>,
-    val containClass: PsiClass? = null
-)
+    val containClass: PsiClass? = null,
+    val ownerClassType: ResolvedType.ClassType? = null
+) {
+    /**
+     * Finds the super declaration of this method in the immediate supertypes.
+     * Returns a [ResolvedMethod] resolved in the super [ResolvedType.ClassType]'s generic context,
+     * or null if no super declaration exists.
+     */
+    fun superMethod(): ResolvedMethod? {
+        val owner = ownerClassType ?: return null
+        val paramCount = psiMethod.parameterList.parametersCount
+        for (superClassType in owner.superClasses()) {
+            // Search directly in the supertype's declared + inherited methods without
+            // going through the full deduplication pass — we just need the first match.
+            val superMethod = superClassType.psiClass.allMethods.firstOrNull { m ->
+                !m.isConstructor &&
+                m.containingClass?.qualifiedName != "java.lang.Object" &&
+                m.name == name &&
+                m.parameterList.parametersCount == paramCount
+            } ?: continue
+            val superGenericContext = superClassType.genericContext
+            return ResolvedMethod(
+                name = superMethod.name,
+                psiMethod = superMethod,
+                returnType = TypeResolver.substitute(
+                    TypeResolver.resolve(superMethod.returnType, superGenericContext), superGenericContext
+                ),
+                params = superMethod.parameterList.parameters.map { p ->
+                    ResolvedParam(
+                        p.name ?: "",
+                        p,
+                        TypeResolver.substitute(
+                            TypeResolver.resolve(p.type, superGenericContext), superGenericContext
+                        )
+                    )
+                },
+                containClass = superClassType.psiClass,
+                ownerClassType = superClassType
+            )
+        }
+        return null
+    }
+}
 
 /**
  * Represents a resolved field with its type and metadata.
@@ -299,8 +377,12 @@ object TypeResolver {
     /**
      * Recursively collect type parameter bindings from the super type hierarchy.
      * For class B<X> extends A<X, String>, this resolves A's T→X→(whatever X is) and R→String.
+     *
+     * Uses a scoped map per supertype level to avoid name collisions when different levels
+     * in the hierarchy reuse the same type parameter name (e.g., both use `T`).
      */
     private fun collectSuperTypeBindings(psiClass: PsiClass, map: MutableMap<String, ResolvedType>) {
+        // Build a context from the current bindings to substitute type args at this level
         val context = GenericContext(map)
         for (superType in psiClass.superTypes) {
             val classType = superType as? com.intellij.psi.PsiClassType ?: continue
@@ -309,16 +391,65 @@ object TypeResolver {
 
             val superParams = superClass.typeParameters
             val superArgs = classType.parameters
+
+            // Build a scoped map for this supertype's params, resolved in the current context
+            val superBindings = LinkedHashMap<String, ResolvedType>()
             for (i in superParams.indices) {
                 val name = superParams[i].name ?: continue
-                if (map.containsKey(name)) continue
                 val arg = superArgs.getOrNull(i)
                 val resolved = resolve(arg, context)
-                map[name] = substitute(resolved, context)
+                superBindings[name] = substitute(resolved, context)
             }
 
-            // Recurse into super class to handle multi-level inheritance
-            collectSuperTypeBindings(superClass, map)
+            // Merge into the shared map, but only for names not already bound at a lower level
+            for ((name, resolved) in superBindings) {
+                if (!map.containsKey(name)) {
+                    map[name] = resolved
+                }
+            }
+
+            // Recurse into super class to handle multi-level inheritance,
+            // using a merged context so deeper levels can resolve through the full chain
+            val mergedMap = LinkedHashMap(superBindings)
+            mergedMap.putAll(map)
+            collectSuperTypeBindingsScoped(superClass, map, GenericContext(mergedMap))
+        }
+    }
+
+    /**
+     * Scoped variant used during recursion to avoid polluting the shared map with
+     * intermediate type param names from higher levels of the hierarchy.
+     */
+    private fun collectSuperTypeBindingsScoped(
+        psiClass: PsiClass,
+        map: MutableMap<String, ResolvedType>,
+        context: GenericContext
+    ) {
+        for (superType in psiClass.superTypes) {
+            val classType = superType as? com.intellij.psi.PsiClassType ?: continue
+            val superClass = classType.resolve() ?: continue
+            if (superClass.qualifiedName == "java.lang.Object") continue
+
+            val superParams = superClass.typeParameters
+            val superArgs = classType.parameters
+
+            val superBindings = LinkedHashMap<String, ResolvedType>()
+            for (i in superParams.indices) {
+                val name = superParams[i].name ?: continue
+                val arg = superArgs.getOrNull(i)
+                val resolved = resolve(arg, context)
+                superBindings[name] = substitute(resolved, context)
+            }
+
+            for ((name, resolved) in superBindings) {
+                if (!map.containsKey(name)) {
+                    map[name] = resolved
+                }
+            }
+
+            val mergedMap = LinkedHashMap(superBindings)
+            mergedMap.putAll(map)
+            collectSuperTypeBindingsScoped(superClass, map, GenericContext(mergedMap))
         }
     }
 
@@ -367,4 +498,80 @@ object TypeResolver {
             }
         }
     }
+}
+
+
+// ========== Extension functions for hierarchy navigation ==========
+
+/**
+ * Walks up the super method chain, yielding each ancestor declaration.
+ * Does NOT include `this` — only ancestors.
+ */
+fun ResolvedMethod.superMethods(): Sequence<ResolvedMethod> = sequence {
+    var current = superMethod()
+    while (current != null) {
+        yield(current)
+        current = current.superMethod()
+    }
+}
+
+/**
+ * Walks the entire supertype hierarchy from this ClassType in BFS order.
+ * Excludes java.lang.Object. Includes transitive supertypes.
+ */
+fun ResolvedType.ClassType.allSuperClasses(): Sequence<ResolvedType.ClassType> = sequence {
+    val visited = HashSet<String>()
+    val queue = ArrayDeque<ResolvedType.ClassType>()
+    for (s in superClasses()) {
+        val qn = s.psiClass.qualifiedName ?: continue
+        if (visited.add(qn)) queue.add(s)
+    }
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst()
+        yield(current)
+        for (s in current.superClasses()) {
+            val qn = s.psiClass.qualifiedName ?: continue
+            if (visited.add(qn)) queue.add(s)
+        }
+    }
+}
+
+/**
+ * Searches this method and its super methods for an annotation with the given FQN.
+ * Returns the first found [PsiAnnotation], or null.
+ */
+fun ResolvedMethod.searchAnnotation(annotationFqn: String): PsiAnnotation? {
+    psiMethod.getAnnotation(annotationFqn)?.let { return it }
+    for (sup in superMethods()) {
+        sup.psiMethod.getAnnotation(annotationFqn)?.let { return it }
+    }
+    return null
+}
+
+/**
+ * Searches this method and its super methods for any annotation from the given set.
+ * Returns the first found [PsiAnnotation], or null.
+ */
+fun ResolvedMethod.searchAnnotation(annotationFqns: Set<String>): PsiAnnotation? {
+    for (fqn in annotationFqns) {
+        psiMethod.getAnnotation(fqn)?.let { return it }
+    }
+    for (sup in superMethods()) {
+        for (fqn in annotationFqns) {
+            sup.psiMethod.getAnnotation(fqn)?.let { return it }
+        }
+    }
+    return null
+}
+
+/**
+ * Searches this class and its supertypes for an annotation with the given FQN.
+ * Returns the first found [PsiAnnotation], or null.
+ */
+fun ResolvedType.ClassType.searchAnnotation(annotationFqn: String): PsiAnnotation? {
+    psiClass.getAnnotation(annotationFqn)?.let { return it }
+    for (superClassType in allSuperClasses()) {
+        superClassType.psiClass.getAnnotation(annotationFqn)?.let { return it }
+    }
+    return null
 }

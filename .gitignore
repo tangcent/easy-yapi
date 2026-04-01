@@ -12,3 +12,6 @@ bin/
 .bin/
 .intellijPlatform/
 .DS_Store
+.kiro/
+.trae/
+.qodo/
