@@ -11,3 +11,4 @@ bin/
 /plugin
 .bin/
 .intellijPlatform/
+.DS_Store

@@ -155,4 +155,6 @@ open class ScriptItContext(protected val context: RuleContext) {
      * Set an extension value on the rule context.
      */
     fun setExt(name: String, value: Any?) = context.setExt(name, value)
+
+    override fun toString(): String = name()
 }

@@ -3,17 +3,11 @@ package com.itangcent.easyapi.property
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.rule.context.RuleContext
-import com.itangcent.easyapi.rule.context.ScriptPsiClassContext
-import com.itangcent.easyapi.rule.context.ScriptPsiFieldContext
-import com.itangcent.easyapi.rule.context.ScriptPsiMethodContext
-import com.itangcent.easyapi.rule.context.ScriptPsiParameterContext
-import com.itangcent.easyapi.rule.context.asScriptIt
+import com.itangcent.easyapi.rule.context.*
 
 class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
 
@@ -371,6 +365,83 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         val getNameMethod = returnType.methods().first { it.name() == "getName" }
         assertEquals("Dog", getNameMethod.containingClass()?.name())
         assertEquals("Animal", getNameMethod.defineClass()?.name())
+    }
+
+    fun testMethodContextToString() {
+        myFixture.addFileToProject(
+            "demo/ToStringDemo.java",
+            """
+            package demo;
+            public class ToStringDemo {
+              public String greet(){ return null; }
+            }
+            """.trimIndent()
+        )
+        val method = findClass("demo.ToStringDemo")!!.methods.first { it.name == "greet" }
+        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        assertEquals("ToStringDemo#greet", wrapper.toString())
+    }
+
+    fun testMethodContextIsEnumField() {
+        myFixture.addFileToProject(
+            "demo/EnumFieldDemo.java",
+            """
+            package demo;
+            public class EnumFieldDemo {
+              public String value(){ return null; }
+            }
+            """.trimIndent()
+        )
+        val method = findClass("demo.EnumFieldDemo")!!.methods.first { it.name == "value" }
+        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        assertFalse(wrapper.isEnumField())
+    }
+
+    fun testFieldContextToString() {
+        myFixture.addFileToProject(
+            "demo/FieldToStringDemo.java",
+            """
+            package demo;
+            public class FieldToStringDemo {
+              public String name;
+            }
+            """.trimIndent()
+        )
+        val field = findClass("demo.FieldToStringDemo")!!.fields.first { it.name == "name" }
+        val wrapper = RuleContext.from(actionContext(), field).asScriptIt() as ScriptPsiFieldContext
+        assertEquals("FieldToStringDemo#name", wrapper.toString())
+    }
+
+    fun testParameterContextToString() {
+        myFixture.addFileToProject(
+            "demo/ParamToStringDemo.java",
+            """
+            package demo;
+            public class ParamToStringDemo {
+              public void process(String inputName){}
+            }
+            """.trimIndent()
+        )
+        val method = findClass("demo.ParamToStringDemo")!!.methods.first { it.name == "process" }
+        val param = method.parameterList.parameters.first()
+        val wrapper = RuleContext.from(actionContext(), param).asScriptIt() as ScriptPsiParameterContext
+        assertEquals("inputName", wrapper.toString())
+    }
+
+    fun testEnumConstantContextToString() {
+        myFixture.addFileToProject(
+            "demo/Status.java",
+            """
+            package demo;
+            public enum Status {
+              ACTIVE, INACTIVE
+            }
+            """.trimIndent()
+        )
+        val enumClass = findClass("demo.Status")!!
+        val activeField = enumClass.fields.first { it.name == "ACTIVE" } as com.intellij.psi.PsiEnumConstant
+        val wrapper = ScriptPsiEnumConstantContext(RuleContext.from(actionContext(), activeField), activeField)
+        assertEquals("ACTIVE", wrapper.toString())
     }
 
     private fun addAnnotationStubs() {

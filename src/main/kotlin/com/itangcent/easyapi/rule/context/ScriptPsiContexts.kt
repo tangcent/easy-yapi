@@ -63,7 +63,7 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
     open fun methods(): Array<ScriptPsiMethodContext> {
         val cls = psiClass()
         val methods = cls.allMethods
-        return Array(methods.size) { i -> 
+        return Array(methods.size) { i ->
             ScriptPsiMethodInClassContext(context.withElement(methods[i]), cls)
         }
     }
@@ -73,7 +73,7 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
     open fun fields(): Array<ScriptPsiFieldContext> {
         val cls = psiClass()
         val fields = cls.allFields
-        return Array(fields.size) { i -> 
+        return Array(fields.size) { i ->
             ScriptPsiFieldInClassContext(context.withElement(fields[i]), cls)
         }
     }
@@ -185,7 +185,15 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
 
     open fun defineClass(): ScriptPsiClassContext? = containingClass()
 
+    /* for backward compatibility only */
+    fun isEnumField(): Boolean = false
+
     override fun contextType(): String = "method"
+
+    override fun toString(): String {
+        val cls = containingClass()
+        return if (cls != null) "${cls.name()}#${name()}" else name()
+    }
 }
 
 class ScriptPsiMethodInClassContext(
@@ -247,6 +255,11 @@ open class ScriptPsiFieldContext(context: RuleContext) : ScriptItContext(context
     }
 
     override fun contextType(): String = "field"
+
+    override fun toString(): String {
+        val cls = containingClass()
+        return if (cls != null) "${cls.name()}#${name()}" else name()
+    }
 }
 
 class ScriptPsiFieldInClassContext(
@@ -316,6 +329,8 @@ open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(con
     }
 
     override fun contextType(): String = "param"
+
+    override fun toString(): String = name()
 }
 
 /**
@@ -347,8 +362,8 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
 
     fun name(): String = when (resolvedType) {
         is ResolvedType.ClassType -> (resolvedType.psiClass.qualifiedName ?: resolvedType.psiClass.name ?: "Anonymous") +
-            resolvedType.typeArgs.takeIf { it.isNotEmpty() }?.joinToString(prefix = "<", postfix = ">") { ScriptTypeContext(context, it).name() }
-                .orEmpty()
+                resolvedType.typeArgs.takeIf { it.isNotEmpty() }?.joinToString(prefix = "<", postfix = ">") { ScriptTypeContext(context, it).name() }
+                    .orEmpty()
         is ResolvedType.ArrayType -> ScriptTypeContext(context, resolvedType.componentType).name() + "[]"
         is ResolvedType.UnresolvedType -> resolvedType.canonicalText
         is ResolvedType.PrimitiveType -> resolvedType.kind.name.lowercase()
@@ -430,13 +445,13 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
             is ResolvedType.ClassType -> {
                 val name = name()
                 name == "java.lang.Integer" ||
-                    name == "java.lang.Long" ||
-                    name == "java.lang.Float" ||
-                    name == "java.lang.Double" ||
-                    name == "java.lang.Boolean" ||
-                    name == "java.lang.Byte" ||
-                    name == "java.lang.Short" ||
-                    name == "java.lang.Character"
+                        name == "java.lang.Long" ||
+                        name == "java.lang.Float" ||
+                        name == "java.lang.Double" ||
+                        name == "java.lang.Boolean" ||
+                        name == "java.lang.Byte" ||
+                        name == "java.lang.Short" ||
+                        name == "java.lang.Character"
             }
             else -> false
         }
@@ -569,4 +584,6 @@ class ScriptPsiEnumConstantContext(private val context: RuleContext, private val
     }
 
     fun getParam(name: String): Any? = getParams()[name]
+
+    override fun toString(): String = name()
 }
