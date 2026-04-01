@@ -1,0 +1,33 @@
+codecov:
+  require_ci_to_pass: yes
+
+coverage:
+  precision: 3
+  round: nearest
+  range: "60...80"
+  status:
+    patch: off
+    project: off
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: no
+
+ignore:
+  - ".github"
+  - "gradle"
+  - "script"
+  - "**/*.sh"
+  - "**/*.png"
+  - "**/*.yml"
+  - "**/*.gradle"
+  - "**/*.md"
+  - "**/*.properties"
+  - "gradlew"
+  - "gradlew.bat"
+  - "**/*Dialog.kt"
+  - "**/*Configurable.kt"
+  - "**/*Action.kt"

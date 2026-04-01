@@ -1,0 +1,45 @@
+[
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"minStr\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@string(10)\"},\"minLength\":10},\"maxStr\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@string(0,100)\"},\"maxLength\":100},\"rangeStr\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@string(10,100)\"},\"minLength\":10,\"maxLength\":100},\"regexStr\":{\"type\":\"string\",\"description\":\"\",\"pattern\":\"\\\\d{0,5}[a-z]{1,3}\"},\"minInt\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(666)\"},\"minimum\":666},\"maxInt\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(0,999)\"},\"maximum\":999},\"minDouble\":{\"type\":\"object\",\"properties\":{},\"description\":\"\",\"minimum\":666},\"maxDouble\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(0,999)\"},\"maximum\":999},\"rangeInt\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(666,999)\"},\"maximum\":999,\"minimum\":666},\"rangeFloat\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(66,9999,2)\"},\"maximum\":9999,\"minimum\":66},\"rangeLong\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(666,9999)\"},\"maximum\":9999,\"exclusiveMaximum\":false,\"minimum\":666,\"exclusiveMinimum\":true},\"rangeDouble\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(666,9999,2)\"},\"maximum\":9999,\"exclusiveMaximum\":true,\"minimum\":666,\"exclusiveMinimum\":false},\"digitLong\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(-999999,999999)\"},\"minimum\":-999999,\"maximum\":999999},\"digitDouble\":{\"type\":\"object\",\"properties\":{},\"description\":\"\"},\"negative\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(-9999,-1)\"},\"maximum\":-1},\"negativeOrZero\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(-9999,0)\"},\"maximum\":0},\"positive\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(1,9999)\"},\"minimum\":1},\"positiveOrZero\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(0,9999)\"},\"minimum\":0},\"positiveFloat\":{\"type\":\"object\",\"properties\":{},\"description\":\"\"},\"positiveOrZeroFloat\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(0,9999,2)\"},\"minimum\":0},\"email\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@email\"},\"format\":\"email\"},\"assertTrue\":{\"type\":\"boolean\",\"description\":\"\",\"mock\":{\"mock\":\"true\"}},\"assertFalse\":{\"type\":\"boolean\",\"description\":\"\",\"mock\":{\"mock\":\"false\"}},\"minArr\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"\",\"minItems\":1},\"maxArr\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"\",\"maxItems\":5},\"rangeArr\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"\",\"minItems\":1,\"maxItems\":5}},\"required\":[\"minStr\",\"maxStr\",\"rangeStr\",\"minArr\",\"maxArr\",\"rangeArr\"],\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/validation/demo",
+      "params": []
+    },
+    "method": "POST",
+    "req_body_type": "json",
+    "res_body_type": "json",
+    "index": 0,
+    "req_body_other": "{\"type\":\"object\",\"properties\":{\"minStr\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@string(10)\"},\"minLength\":10},\"maxStr\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@string(0,100)\"},\"maxLength\":100},\"rangeStr\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@string(10,100)\"},\"minLength\":10,\"maxLength\":100},\"regexStr\":{\"type\":\"string\",\"description\":\"\",\"pattern\":\"\\\\d{0,5}[a-z]{1,3}\"},\"minInt\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(666)\"},\"minimum\":666},\"maxInt\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(0,999)\"},\"maximum\":999},\"minDouble\":{\"type\":\"object\",\"properties\":{},\"description\":\"\",\"minimum\":666},\"maxDouble\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(0,999)\"},\"maximum\":999},\"rangeInt\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(666,999)\"},\"maximum\":999,\"minimum\":666},\"rangeFloat\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(66,9999,2)\"},\"maximum\":9999,\"minimum\":66},\"rangeLong\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(666,9999)\"},\"maximum\":9999,\"exclusiveMaximum\":false,\"minimum\":666,\"exclusiveMinimum\":true},\"rangeDouble\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(666,9999,2)\"},\"maximum\":9999,\"exclusiveMaximum\":true,\"minimum\":666,\"exclusiveMinimum\":false},\"digitLong\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(-999999,999999)\"},\"minimum\":-999999,\"maximum\":999999},\"digitDouble\":{\"type\":\"object\",\"properties\":{},\"description\":\"\"},\"negative\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(-9999,-1)\"},\"maximum\":-1},\"negativeOrZero\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(-9999,0)\"},\"maximum\":0},\"positive\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(1,9999)\"},\"minimum\":1},\"positiveOrZero\":{\"type\":\"integer\",\"description\":\"\",\"mock\":{\"mock\":\"@integer(0,9999)\"},\"minimum\":0},\"positiveFloat\":{\"type\":\"object\",\"properties\":{},\"description\":\"\"},\"positiveOrZeroFloat\":{\"type\":\"number\",\"description\":\"\",\"mock\":{\"mock\":\"@float(0,9999,2)\"},\"minimum\":0},\"email\":{\"type\":\"string\",\"description\":\"\",\"mock\":{\"mock\":\"@email\"},\"format\":\"email\"},\"assertTrue\":{\"type\":\"boolean\",\"description\":\"\",\"mock\":{\"mock\":\"true\"}},\"assertFalse\":{\"type\":\"boolean\",\"description\":\"\",\"mock\":{\"mock\":\"false\"}},\"minArr\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"\",\"minItems\":1},\"maxArr\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"\",\"maxItems\":5},\"rangeArr\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"\",\"minItems\":1,\"maxItems\":5}},\"required\":[\"minStr\",\"maxStr\",\"rangeStr\",\"minArr\",\"maxArr\",\"rangeArr\"],\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "type": "static",
+    "title": "demo",
+    "req_body_form": [],
+    "path": "/test/validation/demo",
+    "req_body_is_json_schema": true,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json",
+        "example": "application/json",
+        "required": 1
+      },
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "example": "123456",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  }
+]

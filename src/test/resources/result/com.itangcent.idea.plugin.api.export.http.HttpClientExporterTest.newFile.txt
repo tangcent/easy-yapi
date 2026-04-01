@@ -1,0 +1,96 @@
+### ref: com.itangcent.api.BaseController#ctrlName()
+### current ctrl name
+
+GET http://localhost:8080/user/ctrl/name
+
+
+###
+
+### ref: com.itangcent.api.UserCtrl#greeting()
+### say hello
+
+// not update anything
+GET http://localhost:8080/user/greeting
+
+
+###
+
+### ref: com.itangcent.api.UserCtrl#get(java.lang.Long)
+### get user info
+
+GET http://localhost:8080/user/get/{id}?id=0
+
+
+###
+
+### ref: com.itangcent.api.UserCtrl#create(com.itangcent.model.UserInfo)
+### create an user
+
+POST http://localhost:8080/user/add
+Content-Type: application/json
+
+{
+  "id": 0,
+  "type": 0,
+  "name": "",
+  "age": 0,
+  "sex": 0,
+  "birthDay": "",
+  "regtime": ""
+}
+
+###
+
+### ref: com.itangcent.api.UserCtrl#update(com.itangcent.model.UserInfo)
+### update user info
+
+PUT http://localhost:8080/user/update
+Content-Type: multipart/form-data
+
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="id"
+
+[id]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="type"
+
+[type]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="name"
+
+[name]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="age"
+
+[age]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="sex"
+
+[sex]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="birthDay"
+
+[birthDay]
+--WebAppBoundary--
+
+--WebAppBoundary
+Content-Disposition: form-data; name="regtime"
+
+[regtime]
+--WebAppBoundary--
+
+
+###
+

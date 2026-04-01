@@ -1,0 +1,1108 @@
+[
+  {
+    "query_path": {
+      "path": "/user/add",
+      "params": []
+    },
+    "req_body_type": "json",
+    "res_body_type": "json",
+    "req_body_other": "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\",\"default\":\"0\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "type": "static",
+    "title": "create an user",
+    "path": "/user/add",
+    "catid": "111111",
+    "req_body_is_json_schema": true,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json",
+        "example": "application/json",
+        "required": 1
+      },
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "tag": [],
+    "req_query": [],
+    "res_body_is_json_schema": true,
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\",\"default\":\"0\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "method": "POST",
+    "index": 0,
+    "req_body_form": [],
+    "switch_notice": true,
+    "token": "token111111",
+    "up_time": 1618124194,
+    "api_opened": false,
+    "add_time": 1618124194,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "query_path": {
+      "path": "/user/update",
+      "params": []
+    },
+    "req_body_type": "form",
+    "res_body_type": "json",
+    "type": "static",
+    "title": "update user info",
+    "path": "/user/update",
+    "catid": "111111",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "Content-Type",
+        "value": "multipart/form-data",
+        "example": "multipart/form-data",
+        "required": 1
+      },
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "tag": [],
+    "req_query": [],
+    "res_body_is_json_schema": true,
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\",\"default\":\"0\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "method": "PUT",
+    "index": 0,
+    "req_body_form": [
+      {
+        "name": "id",
+        "type": "text",
+        "required": 0,
+        "desc": "user id"
+      },
+      {
+        "name": "type",
+        "type": "text",
+        "required": 0,
+        "desc": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor"
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "required": 0,
+        "desc": "user name"
+      },
+      {
+        "name": "age",
+        "type": "text",
+        "required": 0,
+        "desc": "user age"
+      },
+      {
+        "name": "sex",
+        "type": "text",
+        "required": 0,
+        "desc": ""
+      },
+      {
+        "name": "birthDay",
+        "type": "text",
+        "required": 0,
+        "desc": "user birthDay"
+      },
+      {
+        "name": "regtime",
+        "type": "text",
+        "required": 0,
+        "desc": "user regtime"
+      }
+    ],
+    "switch_notice": true,
+    "token": "token111111",
+    "up_time": 1618124194,
+    "api_opened": false,
+    "add_time": 1618124194,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "query_path": {
+      "path": "/test/return/Void",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Void",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/Void",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "query_path": {
+      "path": "/test/return/void",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return void",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/void",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"integer\",\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"user type {@link com.itangcent.constant.UserType}\"}",
+    "query_path": {
+      "path": "/test/return/enum/field",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Enum field",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/enum/field",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"description\":\"response data\",\"type\":\"null\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/result/Void",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Result<Void>",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/result/Void",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\",\"default\":\"0\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}}},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/call/page/user/array",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "user page query with array",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/call/page/user/array",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [
+      {
+        "name": "id",
+        "value": 0,
+        "desc": "user id",
+        "required": 0
+      },
+      {
+        "name": "type",
+        "value": 0,
+        "desc": "user type\n1 :administration\n2 :a person, an animal or a plant\n3 :Anonymous visitor",
+        "required": 0
+      },
+      {
+        "name": "name",
+        "value": "",
+        "desc": "user name",
+        "required": 0
+      },
+      {
+        "name": "age",
+        "value": 0,
+        "desc": "user age",
+        "required": 0
+      },
+      {
+        "name": "sex",
+        "value": 0,
+        "desc": "",
+        "required": 0
+      },
+      {
+        "name": "birthDay",
+        "value": "",
+        "desc": "user birthDay",
+        "required": 0
+      },
+      {
+        "name": "regtime",
+        "value": "",
+        "desc": "user regtime",
+        "required": 0
+      }
+    ],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"integer\",\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"user type {@link com.itangcent.constant.UserType}\"}",
+    "query_path": {
+      "path": "/test/return/result/enum/field",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Result<Enum field>",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/result/enum/field",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\",\"default\":\"0\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"User profile settings\"}",
+    "query_path": {
+      "path": "/profile/settings/{userId}",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "Get user profile settings",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/profile/settings/{userId}",
+    "catid": "333333",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [
+      {
+        "name": "userId",
+        "value": 0,
+        "desc": "The ID of the user whose profile settings to retrieve",
+        "required": 0
+      }
+    ],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"description\":\"user id\",\"default\":\"0\"},\"type\":{\"type\":\"integer\",\"description\":\"user type\",\"enum\":[1,2,3],\"enumDesc\":\"1 :administration\\n2 :a person, an animal or a plant\\n3 :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([1,2,3])\"}},\"name\":{\"type\":\"string\",\"description\":\"user name\"},\"age\":{\"type\":\"integer\",\"description\":\"user age\"},\"sex\":{\"type\":\"integer\",\"description\":\"\"},\"birthDay\":{\"type\":\"string\",\"description\":\"user birthDay\"},\"regtime\":{\"type\":\"string\",\"description\":\"user regtime\"}},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/user/get/{id}",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "get user info",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/user/get/{id}",
+    "catid": "111111",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [
+      {
+        "name": "id",
+        "value": 0,
+        "desc": "user id",
+        "required": 0
+      }
+    ],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/call/page/user",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "user page query",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/call/page/user",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/call/page/user/form",
+      "params": []
+    },
+    "method": "POST",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "user page query with ModelAttribute",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/call/page/user/form",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/call/page/user/post",
+      "params": []
+    },
+    "method": "POST",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "user page query with POST",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/call/page/user/post",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/customMap",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "return customMap",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/customMap",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/node",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "return nested node",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/node",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"object\",\"properties\":{},\"description\":\"response data\"}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/root",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "return root with nested nodes",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/root",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"object\",\"properties\":{\"code\":{\"type\":\"integer\",\"description\":\"response code\"},\"msg\":{\"type\":\"string\",\"description\":\"message\"},\"data\":{\"type\":\"string\",\"description\":\"response data\",\"enum\":[\"ADMIN\",\"MEM\",\"GUEST\"],\"enumDesc\":\"ADMIN :administration\\nMEM :a person, an animal or a plant\\nGUEST :Anonymous visitor\",\"mock\":{\"mock\":\"@pick([\\\"ADMIN\\\",\\\"MEM\\\",\\\"GUEST\\\"])\"}}},\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/result/enum",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Result<Enum>",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/result/enum",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\",\"description\":\"token output\"}",
+    "query_path": {
+      "path": "/test/header",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test RequestHeader",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/header",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "input token",
+        "required": 0
+      }
+    ],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/profile/ctrl/name",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "current ctrl name",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/profile/ctrl/name",
+    "catid": "333333",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/arrays",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test query with array parameters",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/arrays",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [
+      {
+        "name": "strings",
+        "value": "",
+        "desc": "string array",
+        "required": 0
+      },
+      {
+        "name": "ints",
+        "value": 0,
+        "desc": "integer array",
+        "required": 0
+      },
+      {
+        "name": "fake",
+        "value": 0,
+        "desc": "it was only a joke",
+        "required": 0
+      }
+    ],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/ctrl/name",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "current ctrl name",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/ctrl/name",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/httpServletRequest",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test query with javax.servlet.http.HttpServletRequest",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/httpServletRequest",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/httpServletResponse",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test query with javax.servlet.http.HttpServletResponse",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/httpServletResponse",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/ignore",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test ignored method",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/ignore",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/test/return/enum",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "test api return Enum",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/test/return/enum",
+    "catid": "222222",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/user/ctrl/name",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "current ctrl name",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/user/ctrl/name",
+    "catid": "111111",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "",
+    "req_headers": [
+      {
+        "name": "token",
+        "value": "",
+        "desc": "auth token",
+        "required": 1
+      }
+    ],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p></p>"
+  },
+  {
+    "res_body": "{\"type\":\"string\",\"$schema\":\"http://json-schema.org/draft-04/schema#\"}",
+    "query_path": {
+      "path": "/user/greeting",
+      "params": []
+    },
+    "method": "GET",
+    "res_body_type": "json",
+    "index": 0,
+    "type": "static",
+    "title": "say hello",
+    "switch_notice": true,
+    "token": "token111111",
+    "path": "/user/greeting",
+    "catid": "111111",
+    "req_body_is_json_schema": false,
+    "__v": 0,
+    "markdown": "not update anything",
+    "req_headers": [],
+    "edit_uid": 0,
+    "up_time": 1618124194,
+    "tag": [],
+    "req_query": [],
+    "api_opened": false,
+    "add_time": 1618124194,
+    "res_body_is_json_schema": true,
+    "status": "done",
+    "desc": "<p>not update anything</p>"
+  }
+]

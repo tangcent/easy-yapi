@@ -1,0 +1,40 @@
+## current ctrl name
+```bash
+curl -X GET http://localhost:8080/user/ctrl/name
+```
+
+---
+
+## say hello
+```bash
+curl -X GET http://localhost:8080/user/greeting
+```
+
+---
+
+## get user info
+```bash
+curl -X GET http://localhost:8080/user/get/{id}?id=
+```
+
+---
+
+## create an user
+```bash
+curl -X POST -H 'Content-Type: application/json' -d '{
+  "id": 0,
+  "type": 0,
+  "name": "",
+  "age": 0,
+  "sex": 0,
+  "birthDay": "",
+  "regtime": ""
+}' http://localhost:8080/user/add
+```
+
+---
+
+## update user info
+```bash
+curl -X PUT -H 'Content-Type: multipart/form-data' -F 'id=' -F 'type=' -F 'name=' -F 'age=' -F 'sex=' -F 'birthDay=' -F 'regtime=' http://localhost:8080/user/update
+```

@@ -1,0 +1,14 @@
+[INFO]	Starting API export process...
+[INFO]	search api from: com.itangcent.api.TestCtrl
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#returnNode(Node)]
+[WARN]	error to resolve class:Node
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#returnRoot(Root)]
+[WARN]	error to resolve class:Root
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#returnAjaxResult(CustomMap)]
+[WARN]	error to resolve class:CustomMap
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequest(PageRequest<UserInfo>)]
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequestWithModelAttribute(PageRequest<UserInfo>)]
+[INFO]	try infer return type of method[com.itangcent.api.TestCtrl#pageRequestWithPost(PageRequest<UserInfo>)]
+[INFO]	search api from: com.itangcent.api.UserCtrl
+[INFO]	try infer return type of method[com.itangcent.api.UserCtrl#get(java.lang.Long)]
+[INFO]	search api from: com.itangcent.api.UserCtrl.ProfileApi

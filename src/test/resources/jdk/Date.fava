@@ -1,0 +1,6 @@
+package java.util;
+
+public class Date {
+    public Date() {}
+    public Date(long time) {}
+}

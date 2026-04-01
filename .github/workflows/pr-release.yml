@@ -1,0 +1,111 @@
+name: 'Update Release PR'
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  update-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Check if branch is release branch and add label if needed
+        id: check_branch
+        run: |
+          # Check if branch follows 'release/xxx' pattern
+          if [[ "${{ github.event.pull_request.head.ref }}" == release/* ]]; then
+            echo "This is a release branch"
+            
+            # Get current labels
+            LABELS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels)
+            
+            # Check if 'release' label exists
+            if ! echo "$LABELS" | grep -q '"name": "release"'; then
+              echo "Adding release label"
+              curl -s -X POST \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels \
+                -d '{"labels":["release"]}'
+            else
+              echo "Release label already exists"
+            fi
+            
+            echo "result=true" >> $GITHUB_OUTPUT
+          else
+            echo "Not a release branch"
+            echo "result=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fetch base branch
+        if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Generate PR content
+        if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
+        id: generate_content
+        run: |
+          # Fetch all tags
+          git fetch --tags
+          
+          # Find the most recent version tag (vx.x.x format)
+          LATEST_TAG=$(git tag -l "v*.*.*" | sort -V | tail -n1)
+          
+          # Skip the latest commit (the current PR commit)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No version tags found. Using all commits in branch except the latest."
+            COMMITS=$(git log --pretty=format:"* %s" HEAD~1)
+          else
+            echo "Found latest tag: $LATEST_TAG"
+            # Get all commits since the latest tag, excluding the latest commit
+            COMMITS=$(git log --pretty=format:"* %s" $LATEST_TAG..HEAD~1)
+          fi
+          
+          # If no commits found, provide a clearer message
+          if [ -z "$COMMITS" ]; then
+            COMMITS="* No new commits since last release tag ($LATEST_TAG)"
+          fi
+          
+          # Create PR body content with the commits
+          PR_BODY="## Release Changes\n\n"
+          PR_BODY="${PR_BODY}${COMMITS}"
+          
+          # Save to file to maintain formatting
+          echo -e "$PR_BODY" > pr_body.txt
+          
+          # Use delimiter for multiline output
+          echo "pr_body<<EOF" >> $GITHUB_OUTPUT
+          cat pr_body.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update Pull Request
+        if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
+        run: |
+          if [ -f pr_body.txt ]; then
+            # Read PR body from file and format as proper JSON
+            PR_BODY=$(jq -Rs . < pr_body.txt)
+            curl -s -X PATCH \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Content-Type: application/json" \
+              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }} \
+              -d "{\"body\":$PR_BODY}"
+          else
+            echo "Error: pr_body.txt not found"
+            exit 1
+          fi

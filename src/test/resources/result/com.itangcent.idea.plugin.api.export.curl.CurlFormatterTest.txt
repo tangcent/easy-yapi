@@ -1,0 +1,180 @@
+## current ctrl name
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/user/ctrl/name
+```
+
+---
+
+## say hello
+```bash
+curl -X GET http://localhost:8080/user/greeting
+```
+
+---
+
+## get user info
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/user/get/{id}?id=
+```
+
+---
+
+## create an user
+```bash
+curl -X POST -H 'Content-Type: application/json' -H 'token: ' -d '{
+  "id": 0,
+  "type": 0,
+  "name": "",
+  "age": 0,
+  "sex": 0,
+  "birthDay": "",
+  "regtime": ""
+}' http://localhost:8080/user/add
+```
+
+---
+
+## update user info
+```bash
+curl -X PUT -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'id=' -F 'type=' -F 'name=' -F 'age=' -F 'sex=' -F 'birthDay=' -F 'regtime=' http://localhost:8080/user/update
+```
+
+---
+
+## current ctrl name
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/ctrl/name
+```
+
+---
+
+## test RequestHeader
+```bash
+curl -X GET -H 'x-token: ' -H 'token: ' http://localhost:8080/test/header
+```
+
+---
+
+## test query with array parameters
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/arrays?string=\&int=1\&none=1
+```
+
+---
+
+## test ignored method
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/ignore
+```
+
+---
+
+## test query with javax.servlet.http.HttpServletRequest
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/httpServletRequest
+```
+
+---
+
+## test query with javax.servlet.http.HttpServletResponse
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/httpServletResponse
+```
+
+---
+
+## test api return void
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/void
+```
+
+---
+
+## test api return Void
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/Void
+```
+
+---
+
+## test api return Result<Void>
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/result/Void
+```
+
+---
+
+## test api return Enum
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/enum
+```
+
+---
+
+## test api return Result<Enum>
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/result/enum
+```
+
+---
+
+## test api return Enum field
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/enum/field
+```
+
+---
+
+## test api return Result<Enum field>
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/result/enum/field
+```
+
+---
+
+## return nested node
+```bash
+curl -X POST -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'id=' -F 'code=' -F 'parent.id=' -F 'parent.code=' -F 'parent.parent.key=' -F 'parent.sub[0].key=' -F 'parent.siblings[0].key=' -F 'sub[0].id=' -F 'sub[0].code=' -F 'sub[0].parent.key=' -F 'sub[0].sub[0].key=' -F 'sub[0].siblings[0].key=' -F 'siblings[0].id=' -F 'siblings[0].code=' -F 'siblings[0].parent.key=' -F 'siblings[0].sub[0].key=' -F 'siblings[0].siblings[0].key=' http://localhost:8080/test/return/node
+```
+
+---
+
+## return root with nested nodes
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/root?id=\&children[0].id=\&children[0].code=\&children[0].parent.key=\&children[0].sub[0].key=\&children[0].siblings[0].key=
+```
+
+---
+
+## return customMap
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/return/customMap?key=
+```
+
+---
+
+## user page query
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/call/page/user?size=\&user.id=\&user.type=\&user.name=\&user.age=\&user.sex=\&user.birthDay=\&user.regtime=\&users[0].id=\&users[0].type=\&users[0].name=\&users[0].age=\&users[0].sex=\&users[0].birthDay=\&users[0].regtime=\&t.id=\&t.type=\&t.name=\&t.age=\&t.sex=\&t.birthDay=\&t.regtime=
+```
+
+---
+
+## user page query with ModelAttribute
+```bash
+curl -X POST -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'size=' -F 'user.id=' -F 'user.type=' -F 'user.name=' -F 'user.age=' -F 'user.sex=' -F 'user.birthDay=' -F 'user.regtime=' -F 'users[0].id=' -F 'users[0].type=' -F 'users[0].name=' -F 'users[0].age=' -F 'users[0].sex=' -F 'users[0].birthDay=' -F 'users[0].regtime=' -F 't.id=' -F 't.type=' -F 't.name=' -F 't.age=' -F 't.sex=' -F 't.birthDay=' -F 't.regtime=' http://localhost:8080/test/call/page/user/form
+```
+
+---
+
+## user page query with POST
+```bash
+curl -X POST -H 'Content-Type: multipart/form-data' -H 'token: ' -F 'size=' -F 'user.id=' -F 'user.type=' -F 'user.name=' -F 'user.age=' -F 'user.sex=' -F 'user.birthDay=' -F 'user.regtime=' -F 'users[0].id=' -F 'users[0].type=' -F 'users[0].name=' -F 'users[0].age=' -F 'users[0].sex=' -F 'users[0].birthDay=' -F 'users[0].regtime=' -F 't.id=' -F 't.type=' -F 't.name=' -F 't.age=' -F 't.sex=' -F 't.birthDay=' -F 't.regtime=' http://localhost:8080/test/call/page/user/post
+```
+
+---
+
+## user page query with array
+```bash
+curl -X GET -H 'token: ' http://localhost:8080/test/call/page/user/array?id=\&type=\&name=\&age=\&sex=\&birthDay=\&regtime=
+```

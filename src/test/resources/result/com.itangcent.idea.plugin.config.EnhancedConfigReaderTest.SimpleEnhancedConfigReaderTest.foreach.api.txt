@@ -1,0 +1,4 @@
+api.tag[@kotlin.Deprecated]=deprecated
+api.tag[groovy:it.containingClass().hasAnn("kotlin.Deprecated")]=deprecated
+api.status[#undone]=undone
+api.status[#todo]=undone

@@ -1,0 +1,133 @@
+package com.itangcent.easyapi.ide.action
+
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.backgroundAsync
+import com.itangcent.easyapi.core.threading.swing
+import com.itangcent.easyapi.exporter.ApiExporterRegistry
+import com.itangcent.easyapi.exporter.ExportOrchestrator
+import com.itangcent.easyapi.exporter.model.ExportFormat
+import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.ide.support.SelectedHelper
+import com.itangcent.easyapi.ide.support.SelectionScope
+import com.itangcent.easyapi.ide.support.runWithProgress
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/**
+ * Base class for API export actions.
+ *
+ * Provides common functionality for exporting APIs to various formats:
+ * - Progress indicator management
+ * - Selection resolution
+ * - Result handling
+ *
+ * Subclasses must implement:
+ * - [exportFormat]: The target export format
+ * - [actionName]: The display name for the action
+ *
+ * @see ExportOrchestrator for the export process
+ * @see ExportFormat for available formats
+ */
+abstract class BaseExportAction : EasyApiAction(), IdeaLog {
+
+    /**
+     * The export format for this action.
+     */
+    abstract val exportFormat: ExportFormat
+
+    /**
+     * The display name shown in the progress dialog.
+     */
+    protected abstract val actionName: String
+
+    override fun update(e: AnActionEvent) {
+        e.presentation.isEnabled = e.project != null
+    }
+
+    override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val selection = SelectedHelper.resolveSelection(e)
+
+        backgroundAsync {
+            runWithProgress(project, actionName) { indicator ->
+                performExport(project, selection, indicator)
+            }
+        }
+    }
+
+    private suspend fun performExport(
+        project: Project,
+        selection: SelectionScope?,
+        indicator: ProgressIndicator
+    ) {
+        val context = ActionContext.forProject(project)
+
+        try {
+            val orchestrator = ExportOrchestrator.getInstance(project)
+            val result = orchestrator.orchestrateExport(selection, exportFormat, indicator = indicator)
+
+            swing {
+                handleExportResult(project, result)
+            }
+        } catch (ex: Exception) {
+            LOG.error("Export failed", ex)
+            IdeaConsoleProvider.getInstance(project).getConsole().error("Export failed", ex)
+            swing {
+                showExportError(project, ex.message ?: "Unknown error")
+            }
+        } finally {
+            context.stop()
+        }
+    }
+
+    protected open suspend fun handleExportResult(project: Project, result: ExportResult) {
+        when (result) {
+            is ExportResult.Success -> {
+                val exporterRegistry = ApiExporterRegistry.getInstance(project)
+                val exporter = exporterRegistry.getExporter(exportFormat)
+
+                val handled = exporter?.handleExportResult(project, result) ?: false
+
+                if (!handled) {
+                    showSuccessMessage(project, result)
+                }
+            }
+
+            is ExportResult.Cancelled -> {
+            }
+
+            is ExportResult.Error -> {
+                showExportError(project, result.message)
+            }
+        }
+    }
+
+    protected open fun showSuccessMessage(project: Project, result: ExportResult.Success) {
+        val message = buildString {
+            append("Successfully exported ${result.count} endpoints to ${result.target}")
+            result.metadata?.formatDisplay()?.let { append(" $it") }
+        }
+        com.intellij.openapi.ui.Messages.showInfoMessage(
+            project,
+            message,
+            "Export API"
+        )
+    }
+
+    protected open fun showExportError(project: Project, message: String) {
+        com.intellij.openapi.ui.Messages.showErrorDialog(
+            project,
+            "Export failed: $message",
+            "Export API"
+        )
+    }
+}

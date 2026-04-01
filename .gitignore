@@ -1,0 +1,13 @@
+.gradle/
+build/
+.idea/
+.kotlin/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.log
+idea-sandbox/
+bin/
+/.spec
+/plugin
+.bin/
+.intellijPlatform/
