@@ -28,7 +28,8 @@ class YapiFormatter(
     private val jsonSchemaBuilder: JsonSchemaBuilder = JsonSchemaBuilder(),
     private val reqBodyJson5: Boolean = false,
     private val resBodyJson5: Boolean = false,
-    private val mockGenerator: MockDataGenerator? = MockDataGenerator()
+    private val mockGenerator: MockDataGenerator? = MockDataGenerator(),
+    private val autoFormatUrl: Boolean = true
 ) {
     /**
      * Legacy constructor for backward compatibility.
@@ -42,7 +43,7 @@ class YapiFormatter(
         jsonSchemaBuilder: JsonSchemaBuilder = JsonSchemaBuilder(),
         useJson5: Boolean,
         mockGenerator: MockDataGenerator? = MockDataGenerator()
-    ) : this(jsonSchemaBuilder, reqBodyJson5 = useJson5, resBodyJson5 = useJson5, mockGenerator = mockGenerator)
+    ) : this(jsonSchemaBuilder, reqBodyJson5 = useJson5, resBodyJson5 = useJson5, mockGenerator = mockGenerator, autoFormatUrl = true)
     /**
      * Formats an API endpoint as a YAPI document.
      * Converts all parameters, headers, and body definitions to YAPI format.
@@ -140,7 +141,7 @@ class YapiFormatter(
 
         return YapiApiDoc(
             title = endpoint.name ?: "${endpoint.method.name} ${endpoint.path}",
-            path = endpoint.path,
+            path = formatPath(endpoint.path),
             method = endpoint.method.name.lowercase(),
             desc = endpoint.description,
             status = endpoint.status,
@@ -175,7 +176,7 @@ class YapiFormatter(
         }
 
         return alternativePaths.map { url ->
-            baseDoc.copy(path = url)
+            baseDoc.copy(path = formatPath(url))
         }
     }
 
@@ -222,6 +223,33 @@ class YapiFormatter(
     }
 
     /**
+     * Formats a path for YAPI compatibility.
+     * Ensures the path starts with `/` and only contains allowed characters.
+     * Invalid characters are replaced with `/`, and redundant slashes are collapsed.
+     *
+     * YAPI path requirements:
+     * - Must start with `/`
+     * - Only allows: letters, digits, `-`, `/`, `_`, `:`, `.`, `{`, `}`, `?`, `=`, `!`
+     *
+     * @param path The raw API path
+     * @return A sanitized path safe for YAPI
+     */
+    private fun formatPath(path: String?): String {
+        if (!autoFormatUrl) {
+            return path ?: ""
+        }
+        return when {
+            path.isNullOrEmpty() -> "/"
+            path.startsWith("/") -> path
+            else -> "/$path"
+        }.let {
+            REGEX_URL_CONSIST.replace(it, "/")
+        }.let {
+            REGEX_URL_REDUNDANT_SLASH.replace(it, "/")
+        }
+    }
+
+    /**
      * Formats an object model as JSON5 string.
      * JSON5 is a more readable JSON format with comments and trailing commas.
      * 
@@ -230,5 +258,12 @@ class YapiFormatter(
      */
     private fun formatAsJson5(model: ObjectModel): String {
         return ObjectModelJsonConverter.toJson5(model)
+    }
+
+    companion object {
+        /** Matches any character not allowed in YAPI paths */
+        val REGEX_URL_CONSIST = Regex("[^a-zA-Z0-9-/_:.{}?=!]")
+        /** Matches consecutive slashes */
+        val REGEX_URL_REDUNDANT_SLASH = Regex("//+")
     }
 }
