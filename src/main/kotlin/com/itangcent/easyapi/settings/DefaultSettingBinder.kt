@@ -34,7 +34,7 @@ class DefaultSettingBinder(
         fun getInstance(project: Project): DefaultSettingBinder = project.service()
     }
 
-    private val cachedSettingBinder by lazy { XmlSettingBinder(project).lazy() }
+    private val cachedSettingBinder by lazy { XmlSettingBinder(project).lazy(30_000L) }
 
     override fun read(): Settings {
         return cachedSettingBinder.read()

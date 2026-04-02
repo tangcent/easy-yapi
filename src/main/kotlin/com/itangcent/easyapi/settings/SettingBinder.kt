@@ -65,10 +65,11 @@ fun SettingBinder.update(updater: Settings.() -> Unit) {
 /**
  * Wraps this SettingBinder with a caching layer.
  *
+ * @param cacheTimeoutMillis Cache timeout in milliseconds, defaults to 30000 (30 seconds)
  * @return A cached SettingBinder
  */
-fun SettingBinder.lazy(): SettingBinder {
-    return CachedSettingBinder(this)
+fun SettingBinder.lazy(cacheTimeoutMillis: Long = 30_000L): SettingBinder {
+    return CachedSettingBinder(this, cacheTimeoutMillis)
 }
 
 /**
@@ -76,27 +77,74 @@ fun SettingBinder.lazy(): SettingBinder {
  *
  * Caches settings in memory to avoid repeated reads.
  * Thread-safe implementation using volatile and synchronized.
+ * Cache expires after [cacheTimeoutMillis] milliseconds (default 30 seconds).
+ *
+ * Note: The cache returns the same Settings instance to avoid expensive deep copies.
+ * Callers should NOT mutate the returned Settings object - use [SettingBinder.update]
+ * or call [save] with a modified copy instead. This is safe because:
+ * 1. Cache expires every 30 seconds, limiting staleness
+ * 2. [save] creates a defensive copy before caching
  *
  * @param delegate The underlying SettingBinder
+ * @param cacheTimeoutMillis Cache timeout in milliseconds, defaults to 30000 (30 seconds)
  */
 class CachedSettingBinder(
-    private val delegate: SettingBinder
+    private val delegate: SettingBinder,
+    private val cacheTimeoutMillis: Long = 30_000L
 ) : SettingBinder {
     @Volatile
     private var cached: Settings? = null
 
+    @Volatile
+    private var cacheTimestamp: Long = 0L
+
+    private fun isCacheExpired(): Boolean {
+        return System.currentTimeMillis() - cacheTimestamp > cacheTimeoutMillis
+    }
+
+    private fun refreshCache() {
+        cacheTimestamp = System.currentTimeMillis()
+    }
+
     override fun read(): Settings {
-        return cached?.copy() ?: synchronized(this) {
-            cached?.copy() ?: delegate.read().copy().also { cached = it }
+        val cachedResult = cached
+        if (cachedResult != null && !isCacheExpired()) {
+            return cachedResult
+        }
+        return synchronized(this) {
+            val recheckCache = cached
+            if (recheckCache != null && !isCacheExpired()) {
+                recheckCache
+            } else {
+                delegate.read().also {
+                    cached = it
+                    refreshCache()
+                }
+            }
         }
     }
 
     override fun save(settings: Settings?) {
         delegate.save(settings)
         cached = settings?.copy()
+        refreshCache()
     }
 
     override fun tryRead(): Settings? {
-        return cached?.copy() ?: delegate.tryRead()?.copy()?.also { cached = it }
+        val cachedResult = cached
+        if (cachedResult != null && !isCacheExpired()) {
+            return cachedResult
+        }
+        return synchronized(this) {
+            val recheckCache = cached
+            if (recheckCache != null && !isCacheExpired()) {
+                recheckCache
+            } else {
+                delegate.tryRead()?.also {
+                    cached = it
+                    refreshCache()
+                }
+            }
+        }
     }
 }
