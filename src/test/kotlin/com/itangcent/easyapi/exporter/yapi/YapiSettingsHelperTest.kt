@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.exporter.yapi
 
+import com.itangcent.easyapi.exporter.yapi.model.TokenValidationResult
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
@@ -47,7 +48,9 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
 
         val token = runBlocking {
-            helper.resolveToken("module-b") { it == "token-b" }
+            helper.resolveToken("module-b") { token ->
+                if (token == "token-b") TokenValidationResult.Valid("test") else TokenValidationResult.Failed("test")
+            }
         }
 
         assertEquals("token-b", token)
@@ -65,7 +68,9 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
 
         val token = runBlocking {
-            helper.resolveToken("module-a") { it == "token-a" }
+            helper.resolveToken("module-a") { token ->
+                if (token == "token-a") TokenValidationResult.Valid("test") else TokenValidationResult.Failed("test")
+            }
         }
 
         assertEquals("token-a", token)

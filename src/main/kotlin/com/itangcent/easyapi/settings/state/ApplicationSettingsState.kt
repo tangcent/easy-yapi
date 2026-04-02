@@ -46,7 +46,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var yapiExportMode: String = YapiExportMode.ALWAYS_UPDATE.name,
         override var yapiReqBodyJson5: Boolean = false,
         override var yapiResBodyJson5: Boolean = false,
-        override var httpTimeOut: Int = 5,
+        override var httpTimeOut: Int = 30,
         override var unsafeSsl: Boolean = false,
         override var httpClient: String = HttpClientType.APACHE.value,
         override var recommendConfigs: String = Settings().recommendConfigs,

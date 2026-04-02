@@ -111,7 +111,7 @@ class YapiExporter(private val project: Project) : ApiExporter {
         for ((module, endpoints) in endpointsByModule) {
             val resolvedToken = context.outputConfig.yapiOptions?.selectedToken
                 ?: settingsHelper.resolveToken(module) { token ->
-                    YapiApiClient(serverUrl, token, httpClient = httpClient).validateToken().isValid
+                    YapiApiClient(serverUrl, token, httpClient = httpClient).validateToken()
                 }
 
             if (resolvedToken == null) {
