@@ -9,6 +9,7 @@ import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.KeyValue
 import com.itangcent.easyapi.util.GsonUtils
 import com.google.gson.JsonObject
+import com.itangcent.easyapi.logging.IdeaLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
@@ -40,7 +41,7 @@ class YapiApiClient(
     private var cachedProjectId: String? = null
 
     /** API endpoint paths */
-    companion object {
+    companion object : IdeaLog {
         private const val GET_PROJECT = "/api/project/get"
         private const val SAVE_API = "/api/interface/save"
         private const val GET_CAT_MENU = "/api/interface/getCatMenu"
@@ -78,7 +79,7 @@ class YapiApiClient(
     /**
      * Validates the token by attempting to resolve the project ID.
      * Returns detailed validation result with error reasons.
-     * 
+     *
      * @return Valid result with project ID, or Failed result with reason
      */
     suspend fun validateToken(): TokenValidationResult {
@@ -101,21 +102,27 @@ class YapiApiClient(
                             cachedProjectId = id
                             TokenValidationResult.Valid(id)
                         } else {
-                            TokenValidationResult.Failed("Could not resolve project ID from response")
+                            TokenValidationResult.Failed("Could not resolve project ID from response. URL: $url")
                         }
                     } else {
                         val errMsg = json.get("errmsg")?.asString ?: "Unknown error"
-                        TokenValidationResult.Failed("Token may be invalid: $errMsg (errcode: $errCode)")
+                        TokenValidationResult.Failed("Token may be invalid: $errMsg (errcode: $errCode). URL: $url")
                     }
                 } else {
-                    TokenValidationResult.Failed("YAPI server returned HTTP ${resp.code}")
+                    TokenValidationResult.Failed("YAPI server returned HTTP ${resp.code}. URL: $url")
                 }
+            } catch (e: java.net.SocketTimeoutException) {
+                val url = "$baseUrl$GET_PROJECT?token=${enc(token)}"
+                TokenValidationResult.Failed("Request timeout - YAPI server took too long to respond. Try increasing timeout in Settings > EasyApi > Http. URL: $url")
             } catch (e: java.net.ConnectException) {
-                TokenValidationResult.Failed("Cannot connect to YAPI server: ${e.message}")
+                val url = "$baseUrl$GET_PROJECT?token=${enc(token)}"
+                TokenValidationResult.Failed("Cannot connect to YAPI server: ${e.message}. URL: $url")
             } catch (e: java.net.UnknownHostException) {
-                TokenValidationResult.Failed("Cannot resolve YAPI server host: ${e.message}")
+                val url = "$baseUrl$GET_PROJECT?token=${enc(token)}"
+                TokenValidationResult.Failed("Cannot resolve YAPI server host: ${e.message}. URL: $url")
             } catch (e: Exception) {
-                TokenValidationResult.Failed("Failed to validate token: ${e.message}")
+                val url = "$baseUrl$GET_PROJECT?token=${enc(token)}"
+                TokenValidationResult.Failed("Failed to validate token: ${e.message}. URL: $url")
             }
         }
     }
@@ -138,18 +145,19 @@ class YapiApiClient(
                 if (resp.code == 200) {
                     val json = GsonUtils.fromJson<JsonObject>(resp.body ?: "")
                     if (json.get("errcode")?.asInt == 0) {
-                        json.getAsJsonArray("data")?.map { element ->
+                        return@withContext json.getAsJsonArray("data")?.map { element ->
                             val obj = element.asJsonObject
                             YapiCart(
                                 id = obj.get("_id").asLong,
                                 name = obj.get("name").asString
                             )
                         } ?: emptyList()
-                    } else emptyList()
-                } else emptyList()
+                    }
+                }
             } catch (_: Exception) {
-                emptyList()
+                null
             }
+            emptyList()
         }
     }
 

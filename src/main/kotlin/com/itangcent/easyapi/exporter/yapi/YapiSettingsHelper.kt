@@ -5,6 +5,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.core.threading.swing
+import com.itangcent.easyapi.exporter.yapi.model.TokenValidationResult
 import com.itangcent.easyapi.settings.SettingBinder
 import java.io.ByteArrayOutputStream
 import java.util.Properties
@@ -13,7 +14,7 @@ interface YapiSettingsHelper {
 
     suspend fun resolveServerUrl(dumb: Boolean = false): String?
 
-    suspend fun resolveToken(module: String, validator: suspend (String) -> Boolean): String?
+    suspend fun resolveToken(module: String, validator: suspend (String) -> TokenValidationResult): String?
 
     fun resetPromptedModules()
 
@@ -60,18 +61,25 @@ class DefaultYapiSettingsHelper(private val project: Project) : YapiSettingsHelp
 
     override suspend fun resolveToken(
         module: String,
-        validator: suspend (String) -> Boolean
+        validator: suspend (String) -> TokenValidationResult
     ): String? {
         val token = getTokenForModule(module)
 
         if (token.isNullOrBlank()) return null
 
-        if (validator(token)) return token
+        val validationResult = validator(token)
+        if (validationResult.isValid) return token
+
+        val errorMessage = if (validationResult is TokenValidationResult.Failed) {
+            "Token for module '$module' is invalid.\n\nReason: ${validationResult.reason}\n\nPlease input a new Private Token:"
+        } else {
+            "Token for module '$module' is invalid.\n\nPlease input a new Private Token:"
+        }
 
         val newToken = swing {
             Messages.showInputDialog(
                 project,
-                "Token for module '$module' is invalid.\n\nPlease input a new Private Token:",
+                errorMessage,
                 "Yapi Private Token",
                 Messages.getWarningIcon(),
                 null,
@@ -80,9 +88,21 @@ class DefaultYapiSettingsHelper(private val project: Project) : YapiSettingsHelp
         }
         if (newToken.isNullOrBlank()) return null
 
-        if (validator(newToken)) {
+        val newValidationResult = validator(newToken)
+        if (newValidationResult.isValid) {
             setToken(module, newToken)
             return newToken
+        }
+
+        // Show error for the new token as well
+        if (newValidationResult is TokenValidationResult.Failed) {
+            swing {
+                Messages.showErrorDialog(
+                    project,
+                    "Token validation failed:\n\n${newValidationResult.reason}",
+                    "Invalid Token"
+                )
+            }
         }
 
         return null

@@ -2,6 +2,7 @@ package com.itangcent.easyapi.http
 
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.HttpClientType
@@ -39,7 +40,7 @@ class HttpClientProvider(private val actionContext: ActionContext) {
     ): HttpClient {
         val settings = actionContext.instanceOrNull(SettingBinder::class)?.read()
         val resolvedHttpClient = httpClient ?: settings?.httpClient ?: HttpClientType.APACHE.value
-        val resolvedHttpTimeOutSec = httpTimeOut ?: settings?.httpTimeOut ?: 5
+        val resolvedHttpTimeOutSec = httpTimeOut ?: settings?.httpTimeOut ?: 30
         val resolvedHttpTimeOutMs = resolvedHttpTimeOutSec * 1000
         val resolvedUnsafeSsl = unsafeSsl ?: settings?.unsafeSsl ?: false
 
@@ -49,7 +50,7 @@ class HttpClientProvider(private val actionContext: ActionContext) {
             null
         }
         val raw = getRawClient(resolvedHttpClient, resolvedHttpTimeOutMs, resolvedUnsafeSsl)
-        return HttpClientScriptInterceptor(raw, ruleEngine)
+        return HttpClientScriptInterceptor(raw.logging(), ruleEngine)
     }
 
     fun dispose() {
@@ -85,5 +86,30 @@ class HttpClientProvider(private val actionContext: ActionContext) {
          */
         fun getInstance(actionContext: ActionContext): HttpClientProvider =
             actionContext.instance(HttpClientProvider::class)
+    }
+}
+
+fun HttpClient.logging() = LoggingHttpClient(this)
+
+class LoggingHttpClient(private val delegate: HttpClient) : HttpClient by delegate {
+    companion object : IdeaLog
+
+    override suspend fun execute(request: HttpRequest): HttpResponse {
+        val start = System.currentTimeMillis()
+        LOG.info("--> ${request.method} ${request.buildUrl()}")
+        try {
+            val response = delegate.execute(request)
+            val elapsed = System.currentTimeMillis() - start
+            LOG.info(
+                "<-- ${request.method} ${request.buildUrl()}: ${response.code} (${elapsed}ms):\n-------\n" +
+                        "${response.body}\n" +
+                        "-------"
+            )
+            return response
+        } catch (e: Exception) {
+            val elapsed = System.currentTimeMillis() - start
+            LOG.info("<-- FAILED (${elapsed}ms) ${e.message}", e)
+            throw e
+        }
     }
 }
