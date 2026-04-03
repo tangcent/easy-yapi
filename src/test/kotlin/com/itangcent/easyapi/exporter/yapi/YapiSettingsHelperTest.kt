@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.exporter.yapi
 
-import com.itangcent.easyapi.exporter.yapi.model.TokenValidationResult
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
@@ -20,21 +19,15 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     @org.junit.Test
     fun `test resolveServerUrl returns normalized configured server`() {
-        updateSettings {
-            yapiServer = " http://localhost:3000/ "
-        }
-
+        updateSettings { yapiServer = " http://localhost:3000/ " }
         val serverUrl = runBlocking { helper.resolveServerUrl() }
-
         assertEquals("http://localhost:3000", serverUrl)
     }
 
     @org.junit.Test
     fun `test resolveServerUrl in dumb mode returns null when server is missing`() {
         setSettings(createSettings())
-
         val serverUrl = runBlocking { helper.resolveServerUrl(dumb = true) }
-
         assertNull(serverUrl)
     }
 
@@ -46,13 +39,9 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
                 module-b=token-b
             """.trimIndent()
         }
-
         val token = runBlocking {
-            helper.resolveToken("module-b") { token ->
-                if (token == "token-b") TokenValidationResult.Valid("test") else TokenValidationResult.Failed("test")
-            }
+            helper.resolveToken("module-b") { it == "token-b" }
         }
-
         assertEquals("token-b", token)
     }
 
@@ -66,13 +55,9 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
                 module-b=
             """.trimIndent()
         }
-
         val token = runBlocking {
-            helper.resolveToken("module-a") { token ->
-                if (token == "token-a") TokenValidationResult.Valid("test") else TokenValidationResult.Failed("test")
-            }
+            helper.resolveToken("module-a") { it == "token-a" }
         }
-
         assertEquals("token-a", token)
     }
 }

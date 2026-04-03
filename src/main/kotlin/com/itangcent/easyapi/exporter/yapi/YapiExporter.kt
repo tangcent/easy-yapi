@@ -3,21 +3,19 @@ package com.itangcent.easyapi.exporter.yapi
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.http.HttpClientProvider
-import com.itangcent.easyapi.rule.RuleKeys
-import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.rule.RuleKeys
+import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.util.ide.ModuleHelper
-import kotlinx.coroutines.withContext
 
 /**
  * Exporter for uploading API endpoints to YAPI platform.
@@ -61,45 +59,23 @@ class YapiExporter(private val project: Project) : ApiExporter {
      * @return Success with count and cart links, or error result
      */
     override suspend fun export(context: ExportContext): ExportResult {
-        val settingsHelper = YapiSettingsHelper.getInstance(project)
-        val serverUrl = settingsHelper.resolveServerUrl()
-            ?: return ExportResult.Error("YAPI server URL is not configured. Please configure it in Settings.")
-        val settings = settingBinder.read()
-
-        settingsHelper.resetPromptedModules()
-
         val actionContext = context.actionContext ?: ActionContext.forProject(project)
-        val httpClient = HttpClientProvider.getInstance(actionContext).getClient()
+        val clientProvider = DefaultYapiApiClientProvider(project, actionContext)
+        runCatching { clientProvider.init() }
+            .onFailure { return ExportResult.Error(it.message ?: "Export failed: $it") }
+
+        val serverUrl = clientProvider.serverUrl
+        val settings = settingBinder.read()
         val formatter = YapiFormatter(
             reqBodyJson5 = settings.yapiReqBodyJson5,
             resBodyJson5 = settings.yapiResBodyJson5
         )
+        val engine = RuleEngine.getInstance(actionContext)
 
         var successCount = 0
         var failCount = 0
         val errors = mutableListOf<String>()
-        // cartName -> cartUrl, for the success notification
-        val exportedCarts = mutableMapOf<String, String>()
-
-        val engine = RuleEngine.getInstance(actionContext)
-
-        val endpointsByModule = withContext(IdeDispatchers.ReadAction) {
-            val docHelper = actionContext.instanceOrNull(DocHelper::class)
-            val metadataResolver = if (docHelper != null) ApiMetadataResolver(engine, docHelper) else null
-            context.endpointsToExport.groupBy { endpoint ->
-                val psiMethod = endpoint.sourceMethod
-                val psiClass = endpoint.sourceClass
-                // Priority: module rule on method > module rule on class > IDE module name > project name
-                val ruleModule = when {
-                    psiMethod != null && metadataResolver != null -> metadataResolver.resolveModule(psiMethod)
-                    psiClass != null && metadataResolver != null -> metadataResolver.resolveModule(psiClass)
-                    else -> null
-                }
-                ruleModule?.takeIf { it.isNotBlank() }
-                    ?: psiClass?.let { ModuleHelper.resolveModule(it)?.name }
-                    ?: project.name
-            }
-        }
+        val exportedCarts = mutableMapOf<String, String>() // cartName -> cartUrl
 
         val indicator = context.indicator
         val totalEndpoints = context.endpointsToExport.size
@@ -108,85 +84,84 @@ class YapiExporter(private val project: Project) : ApiExporter {
         // Fire yapi.export.before once before the export loop
         engine.evaluate(RuleKeys.YAPI_EXPORT_BEFORE)
 
-        for ((module, endpoints) in endpointsByModule) {
-            val resolvedToken = context.outputConfig.yapiOptions?.selectedToken
-                ?: settingsHelper.resolveToken(module) { token ->
-                    YapiApiClient(serverUrl, token, httpClient = httpClient).validateToken()
-                }
+        val docHelper = actionContext.instanceOrNull(DocHelper::class)
+        val metadataResolver = if (docHelper != null) ApiMetadataResolver(engine, docHelper) else null
 
-            if (resolvedToken == null) {
-                failCount += endpoints.size
-                errors.add("No valid token for module '$module'")
-                continue
-            }
+        for (endpoint in context.endpointsToExport) {
+            indicator?.checkCanceled()
+            indicator?.text = endpoint.name ?: endpoint.path
+            indicator?.fraction = processedCount.toDouble() / totalEndpoints
 
-            val client = YapiApiClient(serverUrl, resolvedToken, httpClient = httpClient)
-            val projectId = client.getProjectId()
-
-            val endpointsByFolder = endpoints.groupBy { it.folder ?: "anonymous" }
-
-            for ((folderName, folderEndpoints) in endpointsByFolder) {
-                val catId = try {
-                    client.findOrCreateCart(folderName)
-                } catch (e: Exception) {
-                    null
-                }
-
-                if (catId == null) {
-                    for (endpoint in folderEndpoints) {
-                        failCount++
-                        errors.add("${endpoint.name}: Failed to resolve cart '$folderName'")
+            try {
+                val module = read {
+                    val psiMethod = endpoint.sourceMethod
+                    val psiClass = endpoint.sourceClass
+                    val ruleModule = when {
+                        psiMethod != null && metadataResolver != null -> metadataResolver.resolveModule(psiMethod)
+                        psiClass != null && metadataResolver != null -> metadataResolver.resolveModule(psiClass)
+                        else -> null
                     }
+                    ruleModule?.takeIf { it.isNotBlank() }
+                        ?: psiClass?.let { ModuleHelper.resolveModule(it)?.name }
+                        ?: project.name
+                }
+
+                val client = clientProvider.getYapiApiClient(
+                    module = module,
+                    selectedToken = context.outputConfig.yapiOptions?.selectedToken
+                )
+                if (client == null) {
+                    failCount++
+                    errors.add("${endpoint.name}: No valid token for module '$module'")
+                    processedCount++
                     continue
                 }
 
-                var folderSuccess = false
-                for (endpoint in folderEndpoints) {
-                    indicator?.checkCanceled()
-                    indicator?.text = endpoint.name ?: endpoint.path
-                    indicator?.fraction = processedCount.toDouble() / totalEndpoints
-                    try {
-                        val yapiDoc = formatter.format(endpoint)
-
-                        // Fire yapi.save.before hook
-                        val psiElement = endpoint.sourceMethod ?: endpoint.sourceClass
-                        if (psiElement != null) {
-                            engine.evaluate(RuleKeys.YAPI_SAVE_BEFORE, psiElement) { ctx ->
-                                ctx.setExt("yapiInfo", yapiDoc)
-                                ctx.setExt("endpoint", endpoint)
-                            }
-                        }
-
-                        val result = client.uploadApi(yapiDoc, catId)
-
-                        // Fire yapi.save.after hook
-                        if (psiElement != null) {
-                            engine.evaluate(RuleKeys.YAPI_SAVE_AFTER, psiElement) { ctx ->
-                                ctx.setExt("yapiInfo", yapiDoc)
-                                ctx.setExt("endpoint", endpoint)
-                                ctx.setExt("result", result)
-                            }
-                        }
-
-                        if (result.success) {
-                            successCount++
-                            folderSuccess = true
-                        } else {
-                            failCount++
-                            result.message?.let { errors.add("${endpoint.name}: $it") }
-                        }
-                    } catch (e: Exception) {
-                        failCount++
-                        errors.add("${endpoint.name}: ${e.message}")
-                    }
+                val folderName = endpoint.folder ?: "anonymous"
+                val catId = client.findOrCreateCart(folderName).getOrNull()
+                if (catId == null) {
+                    failCount++
+                    errors.add("${endpoint.name}: Failed to resolve cart '$folderName'")
                     processedCount++
+                    continue
                 }
 
-                if (folderSuccess && projectId != null) {
-                    val cartUrl = YapiUrls.cartUrl(serverUrl, projectId, catId)
-                    exportedCarts[folderName] = cartUrl
+                val yapiDoc = formatter.format(endpoint)
+                val psiElement = endpoint.sourceMethod ?: endpoint.sourceClass
+
+                psiElement?.let {
+                    engine.evaluate(RuleKeys.YAPI_SAVE_BEFORE, it) { ctx ->
+                        ctx.setExt("yapiInfo", yapiDoc)
+                        ctx.setExt("endpoint", endpoint)
+                    }
                 }
+
+                val result = client.uploadApi(yapiDoc, catId)
+
+                psiElement?.let {
+                    engine.evaluate(RuleKeys.YAPI_SAVE_AFTER, it) { ctx ->
+                        ctx.setExt("yapiInfo", yapiDoc)
+                        ctx.setExt("endpoint", endpoint)
+                        ctx.setExt("result", result)
+                    }
+                }
+
+                if (result.isSuccess) {
+                    successCount++
+                    if (catId !in exportedCarts) {
+                        client.getProjectId().getOrNull()?.let { projectId ->
+                            exportedCarts[folderName] = YapiUrls.cartUrl(serverUrl, projectId, catId)
+                        }
+                    }
+                } else {
+                    failCount++
+                    result.errorMessage()?.let { errors.add("${endpoint.name}: $it") }
+                }
+            } catch (e: Exception) {
+                failCount++
+                errors.add("${endpoint.name}: ${e.message}")
             }
+            processedCount++
         }
 
         val metadata = if (exportedCarts.isNotEmpty()) YapiExportMetadata(exportedCarts) else null
