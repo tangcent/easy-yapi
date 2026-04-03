@@ -3,7 +3,7 @@ package com.itangcent.easyapi.core.threading
 import com.intellij.openapi.application.ApplicationManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import java.util.concurrent.CancellationException
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -27,7 +27,15 @@ class ReadActionDispatcher : CoroutineDispatcher() {
             // Dispatch to IO thread pool and acquire read lock there
             // This avoids blocking the current thread
             Dispatchers.IO.dispatch(context) {
-                application.runReadAction(block)
+                try {
+                    application.runReadAction(block)
+                } catch (_: CancellationException) {
+                    // The coroutine was cancelled while acquiring the read lock.
+                    // In newer IntelliJ versions, runReadAction uses a coroutine-based
+                    // read mutex that can throw JobCancellationException when the parent
+                    // coroutine completes during lock acquisition. Swallow it here to
+                    // prevent it from leaking as an unhandled coroutine exception.
+                }
             }
         }
     }
