@@ -300,4 +300,35 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
             assertFalse(m.psiMethod.containingClass?.qualifiedName == "java.lang.Object")
         }
     }
+
+    // ========== Overloaded methods with same param count but different types ==========
+
+    fun testOverloaded_BothMethodsExported() = runTest {
+        loadFile("org/springframework/web/multipart/MultipartFile.java")
+        loadFile("api/inherit/OverloadedCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.OverloadedCtrl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val addMethods = methods.filter { it.name == "add" }
+        assertEquals(
+            "Both overloaded add() methods should be exported",
+            2, addMethods.size
+        )
+    }
+
+    fun testOverloaded_DistinctByParamTypes() = runTest {
+        loadFile("org/springframework/web/multipart/MultipartFile.java")
+        loadFile("api/inherit/OverloadedCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.OverloadedCtrl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val addMethods = methods.filter { it.name == "add" }
+
+        // One has MultipartFile, the other has MultipartFile[]
+        val paramSignatures = addMethods.map { m ->
+            m.psiMethod.parameterList.parameters.joinToString(",") { it.type.canonicalText }
+        }.toSet()
+        assertEquals(
+            "Overloaded methods should have distinct parameter type signatures",
+            2, paramSignatures.size
+        )
+    }
 }

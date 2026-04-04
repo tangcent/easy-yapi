@@ -146,7 +146,7 @@ class SpringMvcClassExporter(
                 val pathParamsFromPath = pathVariablePatterns.map { pattern ->
                     ApiParameter(
                         name = pattern.name,
-                        type = "string",
+                        type = ParameterType.TEXT,
                         required = true,
                         binding = ParameterBinding.Path,
                         defaultValue = pattern.defaultValue,
@@ -191,12 +191,7 @@ class SpringMvcClassExporter(
         }
     }
 
-    private fun isFileTypeName(type: String?): Boolean {
-        if (type.isNullOrBlank()) return false
-        return type == "file" || type == "file[]" ||
-                type.contains("MultipartFile", ignoreCase = true) ||
-                type.contains("Part", ignoreCase = true)
-    }
+    private fun isFileTypeName(type: ParameterType): Boolean = type == ParameterType.FILE
 
     private suspend fun resolveContentType(
         method: PsiMethod,
@@ -305,7 +300,8 @@ class SpringMvcClassExporter(
     ): ApiParameter {
         val name = metadataResolver.resolveParamName(p, paramName)
         val required = metadataResolver.isParamRequired(p)
-        val type = metadataResolver.resolveParamType(p, p.type.canonicalText)
+        val rawType = metadataResolver.resolveParamType(p, p.type.canonicalText)
+        val type = ParameterType.fromTypeName(rawType)
         val doc = metadataResolver.resolveParamDoc(p)
         val defaultValue = metadataResolver.resolveParamDefaultValue(p)
         val demo = metadataResolver.resolveParamDemo(p)
@@ -320,6 +316,7 @@ class SpringMvcClassExporter(
             example = demo ?: mock
         )
     }
+
 
     private fun mergePathParameters(
         methodParams: List<ApiParameter>,
@@ -436,13 +433,11 @@ class SpringMvcClassExporter(
                 qualifiedName.startsWith("kotlin.collections.")
     }
 
-    private fun resolveFieldType(fieldModel: FieldModel): String {
+    private fun resolveFieldType(fieldModel: FieldModel): ParameterType {
         val model = fieldModel.model
-
         return when {
-            isFileType(model) -> "file"
-            isFileArrayType(model) -> "file[]"
-            else -> extractTypeName(model)
+            isFileType(model) || isFileArrayType(model) -> ParameterType.FILE
+            else -> ParameterType.TEXT
         }
     }
 
@@ -458,14 +453,6 @@ class SpringMvcClassExporter(
         return isFileType(array.item)
     }
 
-    private fun extractTypeName(model: ObjectModel): String {
-        return when (model) {
-            is ObjectModel.Single -> model.type
-            is ObjectModel.Array -> "${extractTypeName(model.item)}[]"
-            is ObjectModel.Object -> "object"
-            is ObjectModel.MapModel -> "map"
-        }
-    }
 
     private suspend fun extractParamHeaders(bindings: List<ResolvedParamBinding>): List<ApiHeader> {
         val headers = ArrayList<ApiHeader>()

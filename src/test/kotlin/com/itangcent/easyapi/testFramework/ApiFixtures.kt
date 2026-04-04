@@ -5,6 +5,7 @@ import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.settings.Settings
 
 object ApiFixtures {
@@ -39,11 +40,11 @@ object ApiFixtures {
             folder = "User API",
             parameters = listOf(
                 ApiParameter(
-                    name = "id",
-                    type = "Long",
-                    binding = ParameterBinding.Path,
-                    description = "User ID",
-                    required = true
+                name = "id",
+                type = ParameterType.TEXT,
+                binding = ParameterBinding.Path,
+                description = "User ID",
+                required = true
                 )
             ),
             headers = listOf(
@@ -64,20 +65,20 @@ object ApiFixtures {
             folder = "User API",
             parameters = listOf(
                 ApiParameter(
-                    name = "name",
-                    type = "String",
-                    binding = ParameterBinding.Body,
-                    description = "User name",
-                    required = true,
-                    example = "John Doe"
+                name = "name",
+                type = ParameterType.TEXT,
+                binding = ParameterBinding.Body,
+                description = "User name",
+                required = true,
+                example = "John Doe"
                 ),
                 ApiParameter(
-                    name = "email",
-                    type = "String",
-                    binding = ParameterBinding.Body,
-                    description = "User email",
-                    required = true,
-                    example = "john@example.com"
+                name = "email",
+                type = ParameterType.TEXT,
+                binding = ParameterBinding.Body,
+                description = "User email",
+                required = true,
+                example = "john@example.com"
                 )
             ),
             headers = listOf(
@@ -103,6 +104,31 @@ object ApiFixtures {
                 path = "/api/users/{id}",
                 method = HttpMethod.DELETE,
                 folder = "User API"
+            )
+        )
+    }
+
+    fun createFileUploadEndpoint(
+        name: String = "uploadFile",
+        path: String = "/api/upload"
+    ): ApiEndpoint {
+        return ApiEndpoint(
+            name = name,
+            path = path,
+            method = HttpMethod.POST,
+            description = "Upload a file",
+            folder = "File API",
+            parameters = listOf(
+                ApiParameter(
+                    name = "file",
+                    type = ParameterType.FILE,
+                    binding = ParameterBinding.Form,
+                    description = "File to upload",
+                    required = true
+                )
+            ),
+            headers = listOf(
+                ApiHeader("Content-Type", "multipart/form-data")
             )
         )
     }

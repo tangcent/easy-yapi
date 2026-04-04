@@ -5,8 +5,8 @@ import com.intellij.psi.PsiField
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.psi.helper.AnnotationHelper
-import com.itangcent.easyapi.psi.type.JsonType
 
 /**
  * Resolves API parameters from JAX-RS parameter annotations.
@@ -41,12 +41,11 @@ class JaxRsParameterResolver(
         }
 
         val name = parameter.name ?: "param"
-        val type = JsonType.fromPsiType(parameter.type)
 
         return listOf(
             ApiParameter(
                 name = resolveName(parameter) ?: name,
-                type = type,
+                type = ParameterType.TEXT,
                 required = false,
                 binding = resolveBinding(parameter)
             )
@@ -86,7 +85,6 @@ class JaxRsParameterResolver(
 
     private suspend fun expandBeanField(field: PsiField): List<ApiParameter> {
         val name = field.name ?: return emptyList()
-        val type = JsonType.fromPsiType(field.type)
         val binding = when {
             hasAny(field, "QueryParam") -> ParameterBinding.Query
             hasAny(field, "PathParam") -> ParameterBinding.Path
@@ -100,7 +98,7 @@ class JaxRsParameterResolver(
             ?: findValue(field, "HeaderParam")
             ?: findValue(field, "CookieParam")
             ?: findValue(field, "FormParam")
-        return listOf(ApiParameter(name = alias ?: name, type = type, binding = binding))
+        return listOf(ApiParameter(name = alias ?: name, type = ParameterType.TEXT, binding = binding))
     }
 
     private suspend fun hasAny(target: Any, simpleName: String): Boolean {

@@ -6,6 +6,7 @@ import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.postman.model.*
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
@@ -207,17 +208,23 @@ class PostmanFormatter(
         }
 
         if (preRequestScripts.isNotEmpty()) {
-            events.add(PostmanEvent(
-                listen = "prerequest",
-                script = PostmanScript(exec = preRequestScripts.flatMap { it.lines().filter { l -> l.isNotBlank() } })
-            ))
+            events.add(
+                PostmanEvent(
+                    listen = "prerequest",
+                    script = PostmanScript(exec = preRequestScripts.flatMap {
+                        it.lines().filter { l -> l.isNotBlank() }
+                    })
+                )
+            )
         }
 
         if (testScripts.isNotEmpty()) {
-            events.add(PostmanEvent(
-                listen = "test",
-                script = PostmanScript(exec = testScripts.flatMap { it.lines().filter { l -> l.isNotBlank() } })
-            ))
+            events.add(
+                PostmanEvent(
+                    listen = "test",
+                    script = PostmanScript(exec = testScripts.flatMap { it.lines().filter { l -> l.isNotBlank() } })
+                )
+            )
         }
 
         return events
@@ -304,17 +311,23 @@ class PostmanFormatter(
         ruleTest?.let { testScripts.add(it) }
 
         if (preRequestScripts.isNotEmpty()) {
-            events.add(PostmanEvent(
-                listen = "prerequest",
-                script = PostmanScript(exec = preRequestScripts.flatMap { it.lines().filter { l -> l.isNotBlank() } })
-            ))
+            events.add(
+                PostmanEvent(
+                    listen = "prerequest",
+                    script = PostmanScript(exec = preRequestScripts.flatMap {
+                        it.lines().filter { l -> l.isNotBlank() }
+                    })
+                )
+            )
         }
 
         if (testScripts.isNotEmpty()) {
-            events.add(PostmanEvent(
-                listen = "test",
-                script = PostmanScript(exec = testScripts.flatMap { it.lines().filter { l -> l.isNotBlank() } })
-            ))
+            events.add(
+                PostmanEvent(
+                    listen = "test",
+                    script = PostmanScript(exec = testScripts.flatMap { it.lines().filter { l -> l.isNotBlank() } })
+                )
+            )
         }
 
         return events
@@ -340,47 +353,57 @@ class PostmanFormatter(
         val responseHeaders = mutableListOf<PostmanHeader>()
 
         if (response.headers.none { it.name.equals("content-type", ignoreCase = true) }) {
-            responseHeaders.add(PostmanHeader(
-                name = "content-type",
-                key = "content-type",
-                value = "application/json;charset=UTF-8",
-                description = "The mime type of this content"
-            ))
+            responseHeaders.add(
+                PostmanHeader(
+                    name = "content-type",
+                    key = "content-type",
+                    value = "application/json;charset=UTF-8",
+                    description = "The mime type of this content"
+                )
+            )
         }
 
         if (response.headers.none { it.name.equals("date", ignoreCase = true) }) {
-            responseHeaders.add(PostmanHeader(
-                name = "date",
-                key = "date",
-                value = formatDateGMT(systemTimeProvider()),
-                description = "The date and time that the message was sent"
-            ))
+            responseHeaders.add(
+                PostmanHeader(
+                    name = "date",
+                    key = "date",
+                    value = formatDateGMT(systemTimeProvider()),
+                    description = "The date and time that the message was sent"
+                )
+            )
         }
 
         if (response.headers.none { it.name.equals("server", ignoreCase = true) }) {
-            responseHeaders.add(PostmanHeader(
-                name = "server",
-                key = "server",
-                value = "Apache-Coyote/1.1",
-                description = "A name for the server"
-            ))
+            responseHeaders.add(
+                PostmanHeader(
+                    name = "server",
+                    key = "server",
+                    value = "Apache-Coyote/1.1",
+                    description = "A name for the server"
+                )
+            )
         }
 
         if (response.headers.none { it.name.equals("transfer-encoding", ignoreCase = true) }) {
-            responseHeaders.add(PostmanHeader(
-                name = "transfer-encoding",
-                key = "transfer-encoding",
-                value = "chunked",
-                description = "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
-            ))
+            responseHeaders.add(
+                PostmanHeader(
+                    name = "transfer-encoding",
+                    key = "transfer-encoding",
+                    value = "chunked",
+                    description = "The form of encoding used to safely transfer the entity to the user. Currently defined methods are: chunked, compress, deflate, gzip, identity."
+                )
+            )
         }
 
         response.headers.forEach {
-            responseHeaders.add(PostmanHeader(
-                name = it.name,
-                key = it.name,
-                value = it.value ?: ""
-            ))
+            responseHeaders.add(
+                PostmanHeader(
+                    name = it.name,
+                    key = it.name,
+                    value = it.value ?: ""
+                )
+            )
         }
 
         return PostmanResponse(
@@ -450,8 +473,10 @@ class PostmanFormatter(
                 } else {
                     ObjectModelJsonConverter.toJson(endpoint.body)
                 }
+
                 bodyParams.isNotEmpty() -> bodyParams.associate { it.name to (it.example ?: it.defaultValue ?: "") }
                     .let { GsonUtils.prettyJson(it) }
+
                 else -> "{}"
             }
             return PostmanBody(
@@ -468,7 +493,7 @@ class PostmanFormatter(
                     PostmanFormParam(
                         key = it.name,
                         value = it.example ?: it.defaultValue ?: "",
-                        type = it.type ?: "text",
+                        type = it.type.rawType(),
                         description = it.description
                     )
                 }
@@ -482,7 +507,7 @@ class PostmanFormatter(
                     PostmanFormParam(
                         key = it.name,
                         value = it.example ?: it.defaultValue ?: "",
-                        type = it.type ?: "text",
+                        type = it.type.rawType(),
                         description = it.description
                     )
                 }
@@ -513,6 +538,7 @@ class PostmanFormatter(
     companion object {
         /** Type flag for request body formatting */
         const val REQUEST_BODY_TYPE = 1
+
         /** Type flag for response body formatting */
         const val RESPONSE_BODY_TYPE = 8
 

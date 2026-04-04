@@ -1,14 +1,21 @@
 package com.itangcent.easyapi.exporter.postman
 
+import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.postman.model.*
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
+import com.itangcent.easyapi.testFramework.TestConfigReader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -172,6 +179,140 @@ class PostmanFormatterTest {
         assertTrue(body?.raw?.contains("address") == true)
         assertTrue(body?.raw?.contains("city") == true)
     }
+
+    @Test
+    fun testToItemWithFormFileType() = runBlocking {
+        val context = ActionContext.builder()
+            .bind(ConfigReader::class, TestConfigReader.EMPTY)
+            .dispatcher(Dispatchers.Unconfined)
+            .withSpiBindings().build()
+        withContext(context.coroutineContext) {
+            val formatter = PostmanFormatter(actionContext = context)
+            val endpoint = ApiEndpoint(
+                name = "Upload File",
+                path = "/api/upload",
+                method = HttpMethod.POST,
+                contentType = "multipart/form-data",
+                parameters = listOf(
+                    ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/file.txt"),
+                    ApiParameter(name = "description", type = ParameterType.TEXT, binding = ParameterBinding.Form, example = "Test file")
+                )
+            )
+            val item = formatter.toItem(endpoint)
+            assertNotNull(item)
+            assertEquals("Upload File", item.name)
+            assertNotNull(item.request?.body)
+            assertEquals("formdata", item.request?.body?.mode)
+            assertNotNull(item.request?.body?.formdata)
+            val formdata = item.request?.body?.formdata
+            assertEquals(2, formdata?.size ?: 0)
+            val fileParam = formdata?.firstOrNull { it.key == "file" }
+            assertNotNull(fileParam)
+            assertEquals("file", fileParam?.type)
+        }
+    }
+
+    @Test
+    fun testToItemWithUrlencodedFileType() = runBlocking {
+        val context = ActionContext.builder()
+            .bind(ConfigReader::class, TestConfigReader.EMPTY)
+            .dispatcher(Dispatchers.Unconfined)
+            .withSpiBindings().build()
+        withContext(context.coroutineContext) {
+            val formatter = PostmanFormatter(actionContext = context)
+            val endpoint = ApiEndpoint(
+                name = "Submit Form",
+                path = "/api/submit",
+                method = HttpMethod.POST,
+                contentType = "application/x-www-form-urlencoded",
+                parameters = listOf(
+                    ApiParameter(name = "profileImg", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/image.png"),
+                    ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Form, example = "John")
+                )
+            )
+            val item = formatter.toItem(endpoint)
+            assertNotNull(item)
+            assertNotNull(item.request?.body)
+            assertEquals("urlencoded", item.request?.body?.mode)
+            assertNotNull(item.request?.body?.urlencoded)
+            val urlencoded = item.request?.body?.urlencoded
+            assertEquals(2, urlencoded?.size ?: 0)
+            val fileParam = urlencoded?.firstOrNull { it.key == "profileImg" }
+            assertNotNull(fileParam)
+            assertEquals("file", fileParam?.type)
+        }
+    }
+
+    @Test
+    fun testFormatWithJsonBody() = runBlocking {
+        val context = ActionContext.builder()
+            .bind(ConfigReader::class, TestConfigReader.EMPTY)
+            .dispatcher(Dispatchers.Unconfined)
+            .withSpiBindings().build()
+        withContext(context.coroutineContext) {
+            val formatter = PostmanFormatter(
+                actionContext = context,
+                options = PostmanFormatOptions(appendTimestamp = false)
+            )
+            val endpoint = ApiEndpoint(
+                name = "Create User",
+                path = "/api/users",
+                method = HttpMethod.POST,
+                contentType = "application/json",
+                body = ObjectModel.Object(
+                    mapOf(
+                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
+                        "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                    )
+                )
+            )
+            val collection = formatter.format(listOf(endpoint), "Test API")
+            assertNotNull(collection)
+            assertEquals("Test API", collection.info?.name)
+            assertTrue(collection.item?.isNotEmpty() == true)
+            val item = collection.item?.firstOrNull()
+            assertNotNull(item?.request?.body)
+            assertEquals("raw", item?.request?.body?.mode)
+        }
+    }
+
+    @Test
+    fun testFormatMultipleEndpoints() = runBlocking {
+        val context = ActionContext.builder()
+            .bind(ConfigReader::class, TestConfigReader.EMPTY)
+            .dispatcher(Dispatchers.Unconfined)
+            .withSpiBindings().build()
+        withContext(context.coroutineContext) {
+            val formatter = PostmanFormatter(
+                actionContext = context,
+                options = PostmanFormatOptions(appendTimestamp = false)
+            )
+            val endpoints = listOf(
+                ApiEndpoint(
+                    name = "Get User",
+                    path = "/api/users/{id}",
+                    method = HttpMethod.GET,
+                    parameters = listOf(
+                        ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1")
+                    )
+                ),
+                ApiEndpoint(
+                    name = "Create User",
+                    path = "/api/users",
+                    method = HttpMethod.POST,
+                    contentType = "application/json",
+                    parameters = listOf(
+                        ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "John")
+                    )
+                )
+            )
+            val collection = formatter.format(endpoints, "Test API")
+            assertNotNull(collection)
+            assertEquals("Test API", collection.info?.name)
+            assertTrue(collection.item?.isNotEmpty() == true)
+            assertEquals(2, collection.item?.size ?: 0)
+        }
+    }
 }
 
 class TestablePostmanFormatter {
@@ -237,7 +378,7 @@ class TestablePostmanFormatter {
                     PostmanFormParam(
                         key = it.name,
                         value = it.example ?: it.defaultValue ?: "",
-                        type = it.type ?: "text",
+                        type = it.type.rawType(),
                         description = it.description
                     )
                 }
@@ -251,7 +392,7 @@ class TestablePostmanFormatter {
                     PostmanFormParam(
                         key = it.name,
                         value = it.example ?: it.defaultValue ?: "",
-                        type = it.type ?: "text",
+                        type = it.type.rawType(),
                         description = it.description
                     )
                 }

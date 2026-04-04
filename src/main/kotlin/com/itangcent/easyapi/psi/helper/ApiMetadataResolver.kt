@@ -6,6 +6,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.model.PathSelector
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKeys
@@ -221,7 +222,7 @@ class ApiMetadataResolver(
                 result.add(
                     ApiParameter(
                         name = name,
-                        type = map["type"]?.toString(),
+                        type = ParameterType.fromTypeName(map["type"]?.toString()),
                         required = map["required"]?.toString()?.toBooleanStrictOrNull() ?: false,
                         description = map["desc"]?.toString(),
                         defaultValue = map["value"]?.toString()

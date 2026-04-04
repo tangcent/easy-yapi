@@ -12,10 +12,31 @@ class SpecialTypeHandlerTest : TestCase() {
         assertTrue(SpecialTypeHandler.isFileType("java.nio.file.Path"))
         assertTrue(SpecialTypeHandler.isFileType("org.springframework.core.io.Resource"))
         assertTrue(SpecialTypeHandler.isFileType("org.springframework.web.multipart.commons.CommonsMultipartFile"))
-        
+
         assertFalse(SpecialTypeHandler.isFileType("java.lang.String"))
         assertFalse(SpecialTypeHandler.isFileType("java.util.Date"))
         assertFalse(SpecialTypeHandler.isFileType(null))
+    }
+
+    fun testIsFileTypeCanonical() {
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("org.springframework.web.multipart.MultipartFile"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("javax.servlet.http.Part"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("jakarta.servlet.http.Part"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("java.io.File"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("java.nio.file.Path"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("org.springframework.core.io.Resource"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("org.springframework.web.multipart.commons.CommonsMultipartFile"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("MultipartFile"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("Part"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("File"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("Path"))
+        assertTrue(SpecialTypeHandler.isFileTypeCanonical("Resource"))
+
+        assertFalse(SpecialTypeHandler.isFileTypeCanonical("java.lang.String"))
+        assertFalse(SpecialTypeHandler.isFileTypeCanonical("java.util.Date"))
+        assertFalse(SpecialTypeHandler.isFileTypeCanonical("String"))
+        assertFalse(SpecialTypeHandler.isFileTypeCanonical("Date"))
+        assertFalse(SpecialTypeHandler.isFileTypeCanonical(null))
     }
 
     fun testIsDateTimeAsString() {
@@ -144,6 +165,38 @@ class SpecialTypeHandlerTest : TestCase() {
         assertTrue(patterns.any { it.contains("java.util.Date") })
         assertTrue(patterns.any { it.contains("java.time.LocalDateTime") })
         assertTrue(patterns.all { it.contains("java.lang.String") })
+    }
+
+    fun testSingleTypeName() {
+        assertEquals("String", SpecialTypeHandler.singleTypeName("String"))
+        assertEquals("MultipartFile", SpecialTypeHandler.singleTypeName("MultipartFile[]"))
+        assertEquals("org.springframework.web.multipart.MultipartFile", SpecialTypeHandler.singleTypeName("org.springframework.web.multipart.MultipartFile[]"))
+        assertEquals("file", SpecialTypeHandler.singleTypeName("file[]"))
+        assertEquals("file", SpecialTypeHandler.singleTypeName("file"))
+    }
+
+    fun testIsFileTypeName() {
+        // json type strings
+        assertTrue(SpecialTypeHandler.isFileTypeName("file"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("file[]"))
+        // simple class names
+        assertTrue(SpecialTypeHandler.isFileTypeName("MultipartFile"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("MultipartFile[]"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("Part"))
+        // fully-qualified class names
+        assertTrue(SpecialTypeHandler.isFileTypeName("org.springframework.web.multipart.MultipartFile"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("org.springframework.web.multipart.MultipartFile[]"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("javax.servlet.http.Part"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("jakarta.servlet.http.Part"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("java.io.File"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("java.io.File[]"))
+        assertTrue(SpecialTypeHandler.isFileTypeName("java.nio.file.Path"))
+        // non-file types
+        assertFalse(SpecialTypeHandler.isFileTypeName(null))
+        assertFalse(SpecialTypeHandler.isFileTypeName(""))
+        assertFalse(SpecialTypeHandler.isFileTypeName("String"))
+        assertFalse(SpecialTypeHandler.isFileTypeName("java.lang.String"))
+        assertFalse(SpecialTypeHandler.isFileTypeName("Long"))
     }
 
     fun testGetRecommendedConfig() {

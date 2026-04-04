@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.exporter.model
 
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 
 /**
  * Represents a single API endpoint extracted from source code.
@@ -54,10 +55,38 @@ data class ApiEndpoint(
 )
 
 /**
+ * The wire-level type of an HTTP parameter.
+ *
+ * Only two values matter at the HTTP layer:
+ * - [TEXT] — a plain scalar/string value sent as form field or query string
+ * - [FILE] — a binary file upload (single or multiple)
+ */
+enum class ParameterType {
+    TEXT,
+    FILE;
+
+    fun rawType(): String = name.lowercase()
+
+    companion object {
+        /**
+         * Resolves a [ParameterType] from a raw Java class name or JSON type string.
+         *
+         * Returns [FILE] for any name that represents a file upload type
+         * (e.g. `"file"`, `"file[]"`, `"MultipartFile"`, `"Part"`, fully-qualified variants).
+         * Returns [TEXT] for everything else, including `null`.
+         */
+        fun fromTypeName(typeName: String?): ParameterType {
+            if (typeName.isNullOrBlank()) return TEXT
+            return if (SpecialTypeHandler.isFileTypeName(typeName)) FILE else TEXT
+        }
+    }
+}
+
+/**
  * Represents a parameter for an API endpoint.
  *
  * @param name The parameter name
- * @param type The parameter type
+ * @param type The wire-level parameter type (text or file). Defaults to [ParameterType.TEXT].
  * @param required Whether the parameter is required
  * @param binding The parameter binding location (query, path, etc.)
  * @param defaultValue The default value
@@ -67,7 +96,7 @@ data class ApiEndpoint(
  */
 data class ApiParameter(
     val name: String,
-    val type: String? = null,
+    val type: ParameterType = ParameterType.TEXT,
     val required: Boolean = false,
     val binding: ParameterBinding? = null,
     val defaultValue: String? = null,
@@ -133,16 +162,22 @@ enum class HttpMethod {
 sealed class ParameterBinding {
     /** Query string parameter (?name=value) */
     data object Query : ParameterBinding()
+
     /** URL path parameter (/users/{id}) */
     data object Path : ParameterBinding()
+
     /** HTTP header */
     data object Header : ParameterBinding()
+
     /** Cookie value */
     data object Cookie : ParameterBinding()
+
     /** Request body */
     data object Body : ParameterBinding()
+
     /** Form data */
     data object Form : ParameterBinding()
+
     /** Framework-injected parameter that should be ignored (e.g. HttpServletRequest, HttpServletResponse) */
     data object Ignored : ParameterBinding()
 }

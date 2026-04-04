@@ -5,6 +5,7 @@ import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
@@ -23,7 +24,7 @@ class DefaultMarkdownFormatterTest {
             path = "/api/users/{id}",
             method = HttpMethod.GET,
             parameters = listOf(
-                ApiParameter(name = "id", type = "Long", binding = ParameterBinding.Path, required = true, description = "User ID")
+                ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, required = true, description = "User ID")
             )
         )
 
@@ -58,8 +59,8 @@ class DefaultMarkdownFormatterTest {
             path = "/api/users",
             method = HttpMethod.GET,
             parameters = listOf(
-                ApiParameter(name = "page", type = "Integer", binding = ParameterBinding.Query, required = false, description = "Page number"),
-                ApiParameter(name = "size", type = "Integer", binding = ParameterBinding.Query, required = false, description = "Page size")
+                ApiParameter(name = "page", type = ParameterType.TEXT, binding = ParameterBinding.Query, required = false, description = "Page number"),
+                ApiParameter(name = "size", type = ParameterType.TEXT, binding = ParameterBinding.Query, required = false, description = "Page size")
             )
         )
 
@@ -251,8 +252,8 @@ class DefaultMarkdownFormatterTest {
             path = "/api/upload",
             method = HttpMethod.POST,
             parameters = listOf(
-                ApiParameter(name = "file", type = "file", binding = ParameterBinding.Form, required = true, description = "File to upload"),
-                ApiParameter(name = "description", type = "text", binding = ParameterBinding.Form, required = false, description = "File description")
+                ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, required = true, description = "File to upload"),
+                ApiParameter(name = "description", type = ParameterType.TEXT, binding = ParameterBinding.Form, required = false, description = "File description")
             )
         )
 

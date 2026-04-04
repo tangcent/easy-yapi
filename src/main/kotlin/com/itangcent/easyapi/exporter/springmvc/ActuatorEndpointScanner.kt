@@ -7,6 +7,7 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
@@ -17,8 +18,10 @@ import com.itangcent.easyapi.psi.type.JsonType
 object SpringActuatorConstants {
     const val ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.Endpoint"
     const val WEB_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.WebEndpoint"
-    const val CONTROLLER_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpoint"
-    const val REST_CONTROLLER_ENDPOINT_ANNOTATION = "org.springframework.boot.actuate.endpoint.web.annotation.RestControllerEndpoint"
+    const val CONTROLLER_ENDPOINT_ANNOTATION =
+        "org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpoint"
+    const val REST_CONTROLLER_ENDPOINT_ANNOTATION =
+        "org.springframework.boot.actuate.endpoint.web.annotation.RestControllerEndpoint"
 
     const val READ_OPERATION_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.ReadOperation"
     const val WRITE_OPERATION_ANNOTATION = "org.springframework.boot.actuate.endpoint.annotation.WriteOperation"
@@ -102,7 +105,7 @@ class ActuatorEndpointScanner {
                 pathParams.add(
                     ApiParameter(
                         name = paramName,
-                        type = paramType.presentableText,
+                        type = ParameterType.fromTypeName(paramType.presentableText),
                         description = paramComment,
                         binding = ParameterBinding.Path,
                         required = true
@@ -144,8 +147,8 @@ class ActuatorEndpointScanner {
     }
 
     private fun hasSelectorAnnotation(parameter: PsiParameter): Boolean {
-        return parameter.annotations.any { 
-            it.qualifiedName == SpringActuatorConstants.SELECTOR_ANNOTATION 
+        return parameter.annotations.any {
+            it.qualifiedName == SpringActuatorConstants.SELECTOR_ANNOTATION
         }
     }
 

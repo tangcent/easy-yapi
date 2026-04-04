@@ -264,7 +264,7 @@ class DefaultMarkdownFormatter(
                 .append(escape(p.name)).append(" | ")
                 .append(escape(p.defaultValue ?: "")).append(" | ")
                 .append(if (p.required) "YES" else "NO").append(" | ")
-                .append(escape(p.type ?: "text")).append(" | ")
+                .append(escape(p.type.name.lowercase())).append(" | ")
                 .append(escape(p.description ?: "")).append(" |")
                 .append('\n')
         }

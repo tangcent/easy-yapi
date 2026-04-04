@@ -6,6 +6,7 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.postman.PostmanFormatOptions
 import com.itangcent.easyapi.exporter.postman.PostmanFormatter
 import com.itangcent.easyapi.exporter.curl.CurlFormatter
@@ -23,7 +24,7 @@ class FormatConversionTest {
         path = "/api/users/{id}",
         method = HttpMethod.GET,
         parameters = listOf(
-            ApiParameter(name = "id", type = "Long", binding = ParameterBinding.Path, example = "1")
+            ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1")
         ),
         description = "Retrieve user by ID"
     )
@@ -34,8 +35,8 @@ class FormatConversionTest {
         method = HttpMethod.POST,
         contentType = "application/json",
         parameters = listOf(
-            ApiParameter(name = "name", type = "String", binding = ParameterBinding.Body, example = "John"),
-            ApiParameter(name = "email", type = "String", binding = ParameterBinding.Body, example = "john@example.com")
+            ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "John"),
+            ApiParameter(name = "email", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "john@example.com")
         ),
         description = "Create a new user"
     )
@@ -95,8 +96,8 @@ class FormatConversionTest {
                     method = HttpMethod.PUT,
                     contentType = "application/json",
                     parameters = listOf(
-                        ApiParameter(name = "id", type = "Long", binding = ParameterBinding.Path, example = "1"),
-                        ApiParameter(name = "name", type = "String", binding = ParameterBinding.Body, example = "Updated")
+                        ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1"),
+                        ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "Updated")
                     )
                 ),
                 ApiEndpoint(
@@ -104,7 +105,7 @@ class FormatConversionTest {
                     path = "/api/users/{id}",
                     method = HttpMethod.DELETE,
                     parameters = listOf(
-                        ApiParameter(name = "id", type = "Long", binding = ParameterBinding.Path, example = "1")
+                        ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1")
                     )
                 )
             )

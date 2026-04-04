@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.psi.type
 
 import com.intellij.psi.PsiClass
-import com.itangcent.easyapi.psi.PsiClassHelper
 
 /**
  * Handler for special types that require custom processing.
@@ -84,6 +83,27 @@ object SpecialTypeHandler {
         return FILE_TYPES.any { canonicalText == it.substringAfterLast('.') }
     }
 
+    /**
+     * Returns the element type name by stripping a trailing `[]` suffix.
+     * e.g. `"MultipartFile[]"` → `"MultipartFile"`, `"String"` → `"String"`
+     */
+    fun singleTypeName(typeName: String): String = typeName.removeSuffix("[]")
+
+    /**
+     * Returns true if the given string represents a file upload type in any form:
+     * - Fully-qualified class name (e.g. `"org.springframework.web.multipart.MultipartFile"`)
+     * - Simple class name (e.g. `"MultipartFile"`, `"Part"`)
+     * - JSON type string (e.g. `"file"`, `"file[]"`)
+     * - Array variants of any of the above (e.g. `"MultipartFile[]"`)
+     *
+     * Use this when the input may come from either PSI type resolution or JSON type mapping.
+     */
+    fun isFileTypeName(typeName: String?): Boolean {
+        if (typeName.isNullOrBlank()) return false
+        val t = singleTypeName(typeName.trim())
+        return t == "file" || isFileTypeCanonical(t)
+    }
+
     fun isDateTimeAsString(qualifiedName: String?): Boolean {
         if (qualifiedName == null) return false
         return DATE_TIME_AS_STRING.contains(qualifiedName)
@@ -114,7 +134,7 @@ object SpecialTypeHandler {
         return null
     }
 
-    fun resolveSpecialType(psiClass: PsiClass, psiClassHelper: PsiClassHelper? = null): ResolvedType? {
+    fun resolveSpecialType(psiClass: PsiClass): ResolvedType? {
         val qualifiedName = psiClass.qualifiedName ?: return null
         
         if (isFileType(qualifiedName)) {

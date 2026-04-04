@@ -6,8 +6,8 @@ import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.psi.helper.AnnotationHelper
-import com.itangcent.easyapi.psi.type.JsonType
 
 /**
  * Parser for native Feign annotations.
@@ -110,7 +110,7 @@ class NativeFeignAnnotationParser(
             result.add(
                 ApiParameter(
                     name = v,
-                    type = param?.type?.canonicalText,
+                    type = ParameterType.TEXT,
                     binding = ParameterBinding.Path
                 )
             )
@@ -154,7 +154,7 @@ class NativeFeignAnnotationParser(
             result.add(
                 ApiParameter(
                     name = p.name ?: continue,
-                    type = JsonType.fromPsiType(p.type),
+                    type = ParameterType.TEXT,
                     binding = ParameterBinding.Query
                 )
             )

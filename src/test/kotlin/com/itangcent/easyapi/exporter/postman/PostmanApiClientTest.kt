@@ -6,6 +6,7 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.http.UrlConnectionHttpClient
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +54,7 @@ class PostmanApiClientTest {
             parameters = listOf(
                 ApiParameter(
                     name = "id",
-                    type = "String",
+                    type = ParameterType.TEXT,
                     required = true,
                     binding = ParameterBinding.Query,
                     example = "123"

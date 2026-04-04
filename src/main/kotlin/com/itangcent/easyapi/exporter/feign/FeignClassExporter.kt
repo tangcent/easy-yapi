@@ -12,6 +12,7 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
 import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.logging.IdeaLog
@@ -125,15 +126,15 @@ class FeignClassExporter(
                     }
                 }
             }
-            
+
             val rawPath = normalizePath(join(basePath, m.path))
             val pathVariablePatterns = PathVariablePattern.extractPathVariablesFromPath(rawPath)
             val normalizedPath = PathVariablePattern.normalizePath(rawPath)
-            
+
             val pathParamsFromPath = pathVariablePatterns.map { pattern ->
                 ApiParameter(
                     name = pattern.name,
-                    type = "string",
+                    type = ParameterType.TEXT,
                     required = true,
                     binding = ParameterBinding.Path,
                     defaultValue = pattern.defaultValue,
@@ -141,9 +142,9 @@ class FeignClassExporter(
                     enumValues = pattern.possibleValues
                 )
             }
-            
+
             val mergedParams = mergePathParameters(params, pathParamsFromPath)
-            
+
             ApiEndpoint(
                 name = name,
                 folder = folder,
@@ -191,11 +192,11 @@ class FeignClassExporter(
 
         val name = metadataResolver.resolveApiName(method)
         val classDesc = metadataResolver.resolveClassDoc(psiClass)
-        
+
         val pathParamsFromPath = pathVariablePatterns.map { pattern ->
             ApiParameter(
                 name = pattern.name,
-                type = "string",
+                type = ParameterType.TEXT,
                 required = true,
                 binding = ParameterBinding.Path,
                 defaultValue = pattern.defaultValue,
@@ -203,7 +204,7 @@ class FeignClassExporter(
                 enumValues = pattern.possibleValues
             )
         }
-        
+
         val mergedPathParams = mergePathParameters(pathParams, pathParamsFromPath)
 
         return ApiEndpoint(
@@ -240,7 +241,8 @@ class FeignClassExporter(
 
             val name = metadataResolver.resolveParamName(p, paramName)
             val required = metadataResolver.isParamRequired(p)
-            val type = metadataResolver.resolveParamType(p, p.type.canonicalText)
+            val rawType = metadataResolver.resolveParamType(p, p.type.canonicalText)
+            val type = ParameterType.fromTypeName(rawType)
             val doc = metadataResolver.resolveParamDoc(p)
             result.add(
                 ApiParameter(
@@ -308,7 +310,7 @@ class FeignClassExporter(
         val p = if (path.startsWith("/")) path else "/$path"
         return p.replace(Regex("/+"), "/")
     }
-    
+
     private fun mergePathParameters(
         methodParams: List<ApiParameter>,
         pathParams: List<ApiParameter>
@@ -316,7 +318,7 @@ class FeignClassExporter(
         if (pathParams.isEmpty()) return methodParams
         val pathParamMap = pathParams.associateBy { it.name }
         val result = mutableListOf<ApiParameter>()
-        
+
         for (param in methodParams) {
             if (param.binding == ParameterBinding.Path) {
                 val pathParam = pathParamMap[param.name]
@@ -324,9 +326,9 @@ class FeignClassExporter(
                     result.add(
                         param.copy(
                             enumValues = pathParam.enumValues ?: param.enumValues,
-                            defaultValue = param.defaultValue?.takeIf { it.isNotBlank() } 
+                            defaultValue = param.defaultValue?.takeIf { it.isNotBlank() }
                                 ?: pathParam.defaultValue,
-                            description = param.description?.takeIf { it.isNotBlank() } 
+                            description = param.description?.takeIf { it.isNotBlank() }
                                 ?: pathParam.description
                         )
                     )
@@ -337,16 +339,17 @@ class FeignClassExporter(
                 result.add(param)
             }
         }
-        
+
         val existingNames = result.map { it.name }.toSet()
         for (pathParam in pathParams) {
             if (pathParam.name !in existingNames) {
                 result.add(pathParam)
             }
         }
-        
+
         return result
     }
+
 
     companion object : IdeaLog
 }

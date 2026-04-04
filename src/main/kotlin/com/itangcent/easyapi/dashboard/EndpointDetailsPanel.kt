@@ -1,8 +1,8 @@
 package com.itangcent.easyapi.dashboard
 
-import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.EditorTextField
 import com.intellij.ui.components.JBLabel
@@ -18,13 +18,8 @@ import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
-import com.itangcent.easyapi.http.FormParam
-import com.itangcent.easyapi.http.FormParam.Text
-import com.itangcent.easyapi.http.HttpClient
-import com.itangcent.easyapi.http.HttpRequest
-import com.itangcent.easyapi.http.KeyValue
-import com.itangcent.easyapi.http.name
-import com.itangcent.easyapi.http.value
+import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.http.*
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import kotlinx.coroutines.*
@@ -172,6 +167,8 @@ class EndpointDetailsPanel(
         override fun getColumnClass(columnIndex: Int): Class<*> =
             if (columnIndex == columnCount - 1) JButton::class.java else Any::class.java
     }
+    /** Tracks which form table rows are file-type params (row index -> true) */
+    private val formFileRows: MutableSet<Int> = mutableSetOf()
     /** Table for editing form data parameters */
     private val formTable = JBTable(formTableModel).apply {
         autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
@@ -602,12 +599,15 @@ class EndpointDetailsPanel(
 
         val formParams = endpoint.parameters.filter { it.binding == ParameterBinding.Form }
         formTableModel.rowCount = 0
+        formFileRows.clear()
         val cachedFormParams = cache.formParams.associateBy { it.name }
-        formParams.forEach { p ->
+        formParams.forEachIndexed { index, p ->
             val cachedValue = cachedFormParams[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
             formTableModel.addRow(arrayOf(p.name, cachedValue, p.description ?: "", ""))
+            if (p.type == ParameterType.FILE) formFileRows.add(index)
         }
         ensureEmptyRow(formTableModel)
+        setupFormTableFileEditors()
 
         val isFormData = formParams.isNotEmpty() ||
                 endpoint.contentType?.contains("form-urlencoded", ignoreCase = true) == true ||
@@ -654,10 +654,13 @@ class EndpointDetailsPanel(
 
         val formParams = endpoint.parameters.filter { it.binding == ParameterBinding.Form }
         formTableModel.rowCount = 0
-        formParams.forEach { p ->
+        formFileRows.clear()
+        formParams.forEachIndexed { index, p ->
             formTableModel.addRow(arrayOf(p.name, p.defaultValue ?: p.example ?: "", p.description ?: "", ""))
+            if (p.type == ParameterType.FILE) formFileRows.add(index)
         }
         ensureEmptyRow(formTableModel)
+        setupFormTableFileEditors()
 
         val isFormData = formParams.isNotEmpty() ||
                 endpoint.contentType?.contains("form-urlencoded", ignoreCase = true) == true ||
@@ -719,6 +722,7 @@ class EndpointDetailsPanel(
         clearResponse()
         hasFormData = false
         endpointContentType = null
+        formFileRows.clear()
         rebuildTabs(hasPathParams = false, hasFormParams = false)
         ensureEmptyRow(pathParamsTableModel)
         ensureEmptyRow(paramsTableModel)
@@ -730,17 +734,12 @@ class EndpointDetailsPanel(
         val endpoint = currentEndpoint ?: return
         val host = getSelectedHost()
 
-        var path = pathField.text
-        for (row in 0 until pathParamsTableModel.rowCount) {
-            val key = pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-            val value = pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-            if (key.isNotEmpty() && value.isNotEmpty()) {
-                path = path.replace("{$key}", URLEncoder.encode(value, "UTF-8"))
-            }
+        val pathParams = (0 until pathParamsTableModel.rowCount).map { row ->
+            pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty() to
+                    pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
         }
-
-        val fullUrl = host + (if (path.startsWith("/")) path else "/$path")
-
+        val resolvedPath = EndpointDetailsPanelLogic.resolvePath(pathField.text, pathParams)
+        val fullUrl = host + (if (resolvedPath.startsWith("/")) resolvedPath else "/$resolvedPath")
         hostCacheHelper.addHost(host)
         loadHostHistory()
 
@@ -768,8 +767,7 @@ class EndpointDetailsPanel(
                 val body: String?
                 val finalHeaders: List<KeyValue>
                 if (hasFormData) {
-                    formParams = extractKeyValuesFromTable(formTableModel)
-                        .map { Text(it.name, it.value) }
+                    formParams = buildFormParams()
                     body = null
                     finalHeaders = headers
                 } else {
@@ -883,17 +881,73 @@ class EndpointDetailsPanel(
             .filter { it.name.isNotEmpty() }
     }
 
-    private fun formatJson(json: String): String {
-        if (json.isBlank()) return json
-        return runCatching {
-            val gson = com.google.gson.GsonBuilder()
-                .setPrettyPrinting()
-                .disableHtmlEscaping()
-                .create()
-            val element = gson.fromJson(json, com.google.gson.JsonElement::class.java)
-            gson.toJson(element)
-        }.getOrElse { json }
+
+    /**
+     * Sets up custom renderer and editor for file-type rows in the form table.
+     * File rows show a path field with a "Browse..." button; text rows use normal editing.
+     */
+    private fun setupFormTableFileEditors() {
+        val valueCol = formTable.columnModel.getColumn(1)
+
+        // Renderer: show "(file) <path>" for file rows
+        valueCol.cellRenderer = object : javax.swing.table.DefaultTableCellRenderer() {
+            override fun getTableCellRendererComponent(
+                table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
+            ): java.awt.Component {
+                val text = value?.toString() ?: ""
+                val display = if (row in formFileRows) {
+                    val fileName = if (text.isNotBlank()) java.io.File(text).name else "<no file selected>"
+                    "📎 $fileName"
+                } else text
+                return super.getTableCellRendererComponent(table, display, isSelected, hasFocus, row, column)
+            }
+        }
+
+        // Editor: file rows open a file chooser; text rows use default text field
+        valueCol.cellEditor = object : javax.swing.AbstractCellEditor(), javax.swing.table.TableCellEditor {
+            private val textField = JTextField()
+            private var currentRow = -1
+
+            override fun getCellEditorValue(): Any = textField.text
+
+            override fun getTableCellEditorComponent(
+                table: JTable?, value: Any?, isSelected: Boolean, row: Int, column: Int
+            ): java.awt.Component {
+                currentRow = row
+                textField.text = value?.toString() ?: ""
+                if (row in formFileRows) {
+                    // Trigger file chooser immediately when editing starts
+                    SwingUtilities.invokeLater {
+                        val chooser = javax.swing.JFileChooser()
+                        val current = textField.text
+                        if (current.isNotBlank()) chooser.selectedFile = java.io.File(current)
+                        if (chooser.showOpenDialog(table) == javax.swing.JFileChooser.APPROVE_OPTION) {
+                            textField.text = chooser.selectedFile.absolutePath
+                        }
+                        stopCellEditing()
+                    }
+                }
+                return textField
+            }
+        }
     }
+
+    /**
+     * Builds the list of [FormParam] from the form table, creating [FormParam.File]
+     * entries for file-type rows and [FormParam.Text] for all others.
+     */
+    private fun buildFormParams(): List<FormParam> {
+        val rows = (0 until formTableModel.rowCount).map { row ->
+            Triple(
+                formTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty(),
+                formTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty(),
+                row in formFileRows
+            )
+        }
+        return EndpointDetailsPanelLogic.buildFormParams(rows)
+    }
+
+    private fun formatJson(json: String) = EndpointDetailsPanelLogic.formatJson(json)
 
     private fun formatRequestBody() {
         val currentText = bodyArea.text
@@ -1032,5 +1086,71 @@ class EndpointDetailsPanel(
 
     fun dispose() {
         scope.cancel()
+    }
+}
+
+/**
+ * Pure logic extracted from [EndpointDetailsPanel] for testability.
+ * No UI dependencies — all methods are stateless or take plain data as arguments.
+ */
+internal object EndpointDetailsPanelLogic {
+
+
+    /**
+     * Pretty-prints a JSON string. Returns the original string if it is blank or not valid JSON.
+     */
+    fun formatJson(json: String): String {
+        if (json.isBlank()) return json
+        return runCatching {
+            val gson = com.google.gson.GsonBuilder()
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .create()
+            val element = gson.fromJson(json, com.google.gson.JsonElement::class.java)
+            gson.toJson(element)
+        }.getOrElse { json }
+    }
+
+    /**
+     * Substitutes path template variables (e.g. `{id}`) with URL-encoded values
+     * from [pathParams] (a list of name→value pairs).
+     */
+    fun resolvePath(pathTemplate: String, pathParams: List<Pair<String, String>>): String {
+        var path = pathTemplate
+        for ((key, value) in pathParams) {
+            if (key.isNotEmpty() && value.isNotEmpty()) {
+                path = path.replace("{$key}", URLEncoder.encode(value, "UTF-8"))
+            }
+        }
+        return path
+    }
+
+    /**
+     * Builds a list of [FormParam] from raw row data.
+     *
+     * @param rows list of (name, value, isFile) triples
+     * @param fileLoader reads a file by path, returns null if the file doesn't exist
+     */
+    fun buildFormParams(
+        rows: List<Triple<String, String, Boolean>>,
+        fileLoader: (String) -> Pair<String, ByteArray>? = { path ->
+            val f = java.io.File(path)
+            if (!f.exists()) null
+            else f.name to f.readBytes()
+        }
+    ): List<FormParam> {
+        return rows.mapNotNull { (name, value, isFile) ->
+            if (name.isEmpty()) return@mapNotNull null
+            if (isFile) {
+                if (value.isBlank()) return@mapNotNull null
+                val (fileName, bytes) = fileLoader(value) ?: return@mapNotNull null
+                val mimeType = runCatching {
+                    java.nio.file.Files.probeContentType(java.io.File(value).toPath())
+                }.getOrNull() ?: "application/octet-stream"
+                FormParam.File(name, fileName, mimeType, bytes)
+            } else {
+                FormParam.Text(name, value)
+            }
+        }
     }
 }

@@ -57,7 +57,7 @@ sealed class ResolvedType {
             for (method in psiClass.allMethods) {
                 if (method.isConstructor) continue
                 if (method.containingClass?.qualifiedName == "java.lang.Object") continue
-                val key = "${method.name}#${method.parameterList.parametersCount}"
+                val key = methodSignatureKey(method)
                 if (key !in seen) {
                     seen[key] = method
                 } else if (method.containingClass == psiClass) {
@@ -186,27 +186,31 @@ data class ResolvedMethod(
      * Finds the super declaration of this method in the immediate supertypes.
      * Returns a [ResolvedMethod] resolved in the super [ResolvedType.ClassType]'s generic context,
      * or null if no super declaration exists.
+     *
+     * Uses [PsiMethod.findSuperMethods] for correct JVM signature matching (including erasure),
+     * then resolves the generic context from the owner's supertype hierarchy.
      */
     fun superMethod(): ResolvedMethod? {
         val owner = ownerClassType ?: return null
-        val paramCount = psiMethod.parameterList.parametersCount
-        for (superClassType in owner.superClasses()) {
-            // Search directly in the supertype's declared + inherited methods without
-            // going through the full deduplication pass — we just need the first match.
-            val superMethod = superClassType.psiClass.allMethods.firstOrNull { m ->
-                !m.isConstructor &&
-                m.containingClass?.qualifiedName != "java.lang.Object" &&
-                m.name == name &&
-                m.parameterList.parametersCount == paramCount
-            } ?: continue
+        val superPsiMethods = psiMethod.findSuperMethods()
+        if (superPsiMethods.isEmpty()) return null
+
+        // Build a lookup from class qualified name to the resolved supertype ClassType
+        val superTypesByClass = owner.superClasses().associateBy { it.psiClass.qualifiedName }
+
+        for (superPsiMethod in superPsiMethods) {
+            val containingClass = superPsiMethod.containingClass ?: continue
+            if (containingClass.qualifiedName == "java.lang.Object") continue
+
+            val superClassType = superTypesByClass[containingClass.qualifiedName] ?: continue
             val superGenericContext = superClassType.genericContext
             return ResolvedMethod(
-                name = superMethod.name,
-                psiMethod = superMethod,
+                name = superPsiMethod.name,
+                psiMethod = superPsiMethod,
                 returnType = TypeResolver.substitute(
-                    TypeResolver.resolve(superMethod.returnType, superGenericContext), superGenericContext
+                    TypeResolver.resolve(superPsiMethod.returnType, superGenericContext), superGenericContext
                 ),
-                params = superMethod.parameterList.parameters.map { p ->
+                params = superPsiMethod.parameterList.parameters.map { p ->
                     ResolvedParam(
                         p.name ?: "",
                         p,
@@ -498,6 +502,17 @@ object TypeResolver {
             }
         }
     }
+}
+
+
+/**
+ * Builds a signature key for method deduplication that includes parameter types,
+ * correctly distinguishing overloaded methods like `add(UserInfo, MultipartFile)`
+ * from `add(UserInfo, MultipartFile[])`.
+ */
+private fun methodSignatureKey(method: PsiMethod): String {
+    val params = method.parameterList.parameters.joinToString(",") { it.type.canonicalText }
+    return "${method.name}($params)"
 }
 
 

@@ -78,7 +78,7 @@ class ParameterBindingTest {
     fun testParameterWithBinding() {
         val param = ApiParameter(
             name = "id",
-            type = "String",
+            type = ParameterType.TEXT,
             binding = ParameterBinding.Path
         )
         assertEquals(ParameterBinding.Path, param.binding)
@@ -88,7 +88,7 @@ class ParameterBindingTest {
     fun testParameterWithQueryBinding() {
         val param = ApiParameter(
             name = "search",
-            type = "String",
+            type = ParameterType.TEXT,
             binding = ParameterBinding.Query
         )
         assertEquals(ParameterBinding.Query, param.binding)

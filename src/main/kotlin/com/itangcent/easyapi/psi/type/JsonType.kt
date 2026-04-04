@@ -138,6 +138,8 @@ object JsonType {
         }
         
         if (psiType is com.intellij.psi.PsiArrayType) {
+            val componentCanonical = psiType.componentType.canonicalText
+            if (SpecialTypeHandler.isFileTypeCanonical(componentCanonical)) return "file[]"
             return ARRAY
         }
         
