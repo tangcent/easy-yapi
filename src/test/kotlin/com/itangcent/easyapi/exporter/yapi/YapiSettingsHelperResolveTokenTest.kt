@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.exporter.yapi
 
-import com.itangcent.easyapi.exporter.yapi.model.TokenValidationResult
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
@@ -27,13 +26,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
                 module-a=token-a
             """.trimIndent()
         }
-
-        val token = runBlocking {
-            helper.resolveToken("module-b") { t ->
-                if (t == "token-b") TokenValidationResult.Valid("test") else TokenValidationResult.Failed("test")
-            }
-        }
-
+        val token = runBlocking { helper.resolveToken("module-b") { it == "token-b" } }
         assertEquals("token-b", token)
     }
 
@@ -47,13 +40,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
                 module-b=
             """.trimIndent()
         }
-
-        val token = runBlocking {
-            helper.resolveToken("module-a") { t ->
-                if (t == "token-a") TokenValidationResult.Valid("test") else TokenValidationResult.Failed("test")
-            }
-        }
-
+        val token = runBlocking { helper.resolveToken("module-a") { it == "token-a" } }
         assertEquals("token-a", token)
     }
 
@@ -65,13 +52,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
                 module-x=specific-token-for-x
             """.trimIndent()
         }
-
-        val token = runBlocking {
-            helper.resolveToken("module-x") { t ->
-                if (t == "specific-token-for-x") TokenValidationResult.Valid("pid") else TokenValidationResult.Failed("no")
-            }
-        }
-
+        val token = runBlocking { helper.resolveToken("module-x") { it == "specific-token-for-x" } }
         assertEquals("Should prefer module-specific token", "specific-token-for-x", token)
     }
 
@@ -84,44 +65,20 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
                 service-pay=pay-token-123
             """.trimIndent()
         }
-
-        val userToken = runBlocking {
-            helper.resolveToken("service-user") { t ->
-                if (t == "user-token-abc") TokenValidationResult.Valid("p1") else TokenValidationResult.Failed("no")
-            }
-        }
-        assertEquals("user-token-abc", userToken)
-
-        val orderToken = runBlocking {
-            helper.resolveToken("service-order") { t ->
-                if (t == "order-token-xyz") TokenValidationResult.Valid("p2") else TokenValidationResult.Failed("no")
-            }
-        }
-        assertEquals("order-token-xyz", orderToken)
-
-        val payToken = runBlocking {
-            helper.resolveToken("service-pay") { t ->
-                if (t == "pay-token-123") TokenValidationResult.Valid("p3") else TokenValidationResult.Failed("no")
-            }
-        }
-        assertEquals("pay-token-123", payToken)
+        assertEquals("user-token-abc", runBlocking { helper.resolveToken("service-user") { it == "user-token-abc" } })
+        assertEquals("order-token-xyz", runBlocking { helper.resolveToken("service-order") { it == "order-token-xyz" } })
+        assertEquals("pay-token-123", runBlocking { helper.resolveToken("service-pay") { it == "pay-token-123" } })
     }
 
     @org.junit.Test
     fun `test resolveToken trims whitespace from tokens`() {
         updateSettings { yapiTokens = "  my-module  =  trimmed-token  " }
-
-        val token = runBlocking {
-            helper.resolveToken("my-module") { t ->
-                if (t == "trimmed-token") TokenValidationResult.Valid("pid") else TokenValidationResult.Failed("no")
-            }
-        }
-
+        val token = runBlocking { helper.resolveToken("my-module") { it == "trimmed-token" } }
         assertEquals("trimmed-token", token)
     }
 
     @org.junit.Test
-    fun `test resolveToken skips lines without equals sign that are not raw fallback`() {
+    fun `test resolveToken skips lines without equals sign`() {
         updateSettings {
             yapiTokens = """
                 module-a=token-a
@@ -129,34 +86,15 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
                 module-b=token-b
             """.trimIndent()
         }
-
-        val tokenA = runBlocking {
-            helper.resolveToken("module-a") { t ->
-                if (t == "token-a") TokenValidationResult.Valid("pid") else TokenValidationResult.Failed("no")
-            }
-        }
-        assertEquals("token-a", tokenA)
-
-        val tokenB = runBlocking {
-            helper.resolveToken("module-b") { t ->
-                if (t == "token-b") TokenValidationResult.Valid("pid") else TokenValidationResult.Failed("no")
-            }
-        }
-        assertEquals("token-b", tokenB)
+        assertEquals("token-a", runBlocking { helper.resolveToken("module-a") { it == "token-a" } })
+        assertEquals("token-b", runBlocking { helper.resolveToken("module-b") { it == "token-b" } })
     }
 
     @org.junit.Test
-    fun `test resolveToken is case-sensitive for module names - exact match works`() {
-        updateSettings {
-            yapiTokens = "MyModule=my-token"
-        }
-
-        val exactMatch = runBlocking {
-            helper.resolveToken("MyModule") { t ->
-                if (t == "my-token") TokenValidationResult.Valid("pid") else TokenValidationResult.Failed("no")
-            }
-        }
-        assertEquals("my-token", exactMatch)
+    fun `test resolveToken is case-sensitive for module names`() {
+        updateSettings { yapiTokens = "MyModule=my-token" }
+        val token = runBlocking { helper.resolveToken("MyModule") { it == "my-token" } }
+        assertEquals("my-token", token)
     }
 
     @org.junit.Test

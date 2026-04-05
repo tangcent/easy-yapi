@@ -117,32 +117,19 @@ data class YapiFormParam(
 data class YapiCart(val id: Long, val name: String)
 
 /**
- * Result of saving an API to YAPI.
- * 
- * @property success Whether the save operation succeeded
- * @property message Error message if failed
+ * Generic response wrapper for all YAPI API calls.
+ *
+ * @param T The type of the data payload on success
+ * @property data The response data, present on success
+ * @property error Error message, present on failure
  */
-data class YapiSaveResult(val success: Boolean, val message: String? = null)
+data class YapiResponse<T>(val data: T? = null, val error: String? = null) {
+    val isSuccess: Boolean get() = error == null
+    fun getOrNull(): T? = data
+    fun errorMessage(): String? = error
 
-/**
- * Sealed class representing token validation result.
- * Can be either Valid with project ID, or Failed with reason.
- */
-sealed class TokenValidationResult {
-    /**
-     * Token is valid and resolved to a project.
-     * 
-     * @property projectId The resolved project ID
-     */
-    data class Valid(val projectId: String) : TokenValidationResult()
-    
-    /**
-     * Token validation failed.
-     * 
-     * @property reason The reason for validation failure
-     */
-    data class Failed(val reason: String) : TokenValidationResult()
-
-    /** Whether the validation was successful */
-    val isValid: Boolean get() = this is Valid
+    companion object {
+        fun <T> success(data: T) = YapiResponse(data = data)
+        fun <T> failure(error: String) = YapiResponse<T>(error = error)
+    }
 }
