@@ -178,7 +178,130 @@ class HttpClientExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val metadata = success.metadata as HttpClientExportMetadata
         assertTrue(metadata.content.contains("GET"))
     }
-    
+
+    @org.junit.Test
+    fun `test export with content type in headers`() {
+        val endpoint = createTestEndpoint(
+            name = "Create User",
+            path = "/api/users",
+            method = HttpMethod.POST
+        )
+        
+        val context = createTestContext(listOf(endpoint))
+        val result = runBlocking { exporter.export(context) }
+        
+        assertTrue("Expected Success but got $result", result is ExportResult.Success)
+        val success = result as ExportResult.Success
+        
+        val metadata = success.metadata as HttpClientExportMetadata
+        assertTrue("Content should not be empty", metadata.content.isNotBlank())
+    }
+
+    @org.junit.Test
+    fun `test export metadata contains content`() {
+        val endpoint = createTestEndpoint(
+            name = "Test API",
+            path = "/test",
+            method = HttpMethod.GET
+        )
+        
+        val context = createTestContext(listOf(endpoint))
+        val result = runBlocking { exporter.export(context) }
+        
+        assertTrue("Expected Success but got $result", result is ExportResult.Success)
+        val success = result as ExportResult.Success
+        
+        val metadata = success.metadata as HttpClientExportMetadata
+        assertNotNull("Metadata should not be null", metadata)
+        assertNotNull("Content should not be null", metadata.content)
+        assertTrue("Content should contain endpoint path", metadata.content.contains("/test"))
+    }
+
+    @org.junit.Test
+    fun `test export with host configuration`() {
+        val endpoint = createTestEndpoint(
+            name = "Test API",
+            path = "/test",
+            method = HttpMethod.GET
+        )
+        
+        val customHost = "https://api.example.com"
+        val context = com.itangcent.easyapi.exporter.model.ExportContext(
+            project = project,
+            endpoints = listOf(endpoint),
+            exportFormat = ExportFormat.HTTP_CLIENT,
+            settings = com.itangcent.easyapi.settings.Settings(),
+            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(host = customHost),
+            actionContext = actionContext
+        )
+        
+        val result = runBlocking { exporter.export(context) }
+        
+        assertTrue("Expected Success but got $result", result is ExportResult.Success)
+        val success = result as ExportResult.Success
+        
+        val metadata = success.metadata as HttpClientExportMetadata
+        assertTrue("Content should contain custom host", metadata.content.contains(customHost))
+    }
+
+    @org.junit.Test
+    fun `test export with grpc endpoint`() {
+        val endpoint = com.itangcent.easyapi.exporter.model.ApiEndpoint(
+            name = "SayHello",
+            metadata = com.itangcent.easyapi.exporter.model.GrpcMetadata(
+                path = "/com.example.Greeter/SayHello",
+                serviceName = "Greeter",
+                methodName = "SayHello",
+                packageName = "com.example",
+                streamingType = com.itangcent.easyapi.exporter.model.GrpcStreamingType.UNARY
+            )
+        )
+        
+        val context = createTestContext(listOf(endpoint))
+        val result = runBlocking { exporter.export(context) }
+        
+        assertTrue("Expected Success but got $result", result is ExportResult.Success)
+        val success = result as ExportResult.Success
+        
+        assertEquals(1, success.count)
+        
+        val metadata = success.metadata as HttpClientExportMetadata
+        assertTrue("Content should contain GRPC keyword", metadata.content.contains("GRPC"))
+        assertTrue("Content should contain grpc path", metadata.content.contains("/com.example.Greeter/SayHello"))
+    }
+
+    @org.junit.Test
+    fun `test handleExportResult returns false for invalid metadata`() {
+        val result = ExportResult.Success(
+            count = 1,
+            target = "HTTP Client",
+            metadata = object : com.itangcent.easyapi.exporter.model.ExportMetadata {
+                override fun formatDisplay(): String? = null
+            }
+        )
+        
+        val handled = runBlocking { 
+            exporter.handleExportResult(project, result) 
+        }
+        
+        assertFalse("Should return false for invalid metadata", handled)
+    }
+
+    @org.junit.Test
+    fun `test handleExportResult returns false for null metadata`() {
+        val result = ExportResult.Success(
+            count = 1,
+            target = "HTTP Client",
+            metadata = null
+        )
+        
+        val handled = runBlocking { 
+            exporter.handleExportResult(project, result) 
+        }
+        
+        assertFalse("Should return false for null metadata", handled)
+    }
+
     private fun createTestEndpoint(
         name: String = "Test API",
         path: String = "/api/test",

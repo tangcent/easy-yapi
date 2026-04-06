@@ -44,23 +44,23 @@ class ExportApiAction : AnAction() {
         val selection = SelectedHelper.resolveSelection(e)
 
         backgroundAsync {
-            val endpointCount = withContext(IdeDispatchers.ReadAction) {
+            val endpoints = withContext(IdeDispatchers.ReadAction) {
                 val apiIndex = ApiIndex.getInstance(project)
                 val scanner = ApiScanner.getInstance(project)
                 if (selection != null) {
                     val classes = selection.classes().toList()
                     if (classes.isNotEmpty()) {
-                        scanner.scanClasses(classes).toList().size
+                        scanner.scanClasses(classes).toList()
                     } else {
-                        apiIndex.endpoints().size
+                        apiIndex.endpoints()
                     }
                 } else {
-                    apiIndex.endpoints().size
+                    apiIndex.endpoints()
                 }
             }
 
             swing {
-                val result = ExportDialog.show(project, endpointCount)
+                val result = ExportDialog.show(project, endpoints.size, endpoints)
                 if (result != null) {
                     performExport(project, selection, result)
                 }

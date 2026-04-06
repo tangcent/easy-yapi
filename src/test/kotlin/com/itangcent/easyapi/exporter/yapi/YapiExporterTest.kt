@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.exporter.yapi
 
 import com.itangcent.easyapi.exporter.model.ExportFormat
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.YapiExportOptions
@@ -170,9 +171,11 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     ): com.itangcent.easyapi.exporter.model.ApiEndpoint {
         return com.itangcent.easyapi.exporter.model.ApiEndpoint(
             name = name,
-            path = path,
-            method = method,
-            description = description
+            description = description,
+            metadata = HttpMetadata(
+                path = path,
+                method = method
+            )
         )
     }
 

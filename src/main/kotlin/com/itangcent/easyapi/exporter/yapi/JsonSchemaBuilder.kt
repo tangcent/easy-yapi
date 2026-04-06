@@ -80,7 +80,7 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
         params.forEach { param ->
             val propSchema = linkedMapOf<String, Any?>()
 
-            param.type?.let { type ->
+            param.type.rawType().let { type ->
                 propSchema["type"] = mapJsonTypeToSchemaType(type)
             }
 
@@ -291,6 +291,8 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
             JsonType.ARRAY -> "array"
             JsonType.OBJECT -> "object"
             "null" -> "null"
+            "text" -> "string"
+            "file" -> "string"
             else -> "string"
         }
     }

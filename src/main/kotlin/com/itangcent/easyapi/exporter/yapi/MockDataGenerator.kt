@@ -28,7 +28,7 @@ class MockDataGenerator(
      * @return A mock expression string, or null if unable to determine
      */
     fun mockFor(param: ApiParameter): String? {
-        val type = param.type ?: return null
+        val type = param.type.rawType()
         val name = param.name.lowercase()
         
         return when {
@@ -72,7 +72,7 @@ class MockDataGenerator(
      */
     private fun mockByRules(param: ApiParameter): String? {
         val name = param.name
-        val type = param.type ?: return null
+        val type = param.type.rawType()
         
         val keyPatterns = listOf(
             "${name}|$type",
@@ -162,6 +162,8 @@ class MockDataGenerator(
             JsonType.FILE -> "@file"
             JsonType.DATE -> "@date"
             JsonType.DATETIME -> "@datetime"
+            "text" -> "@string"
+            "file" -> "@file"
             else -> null
         }
     }

@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBTextField
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
+import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.PostmanExportOptions
@@ -39,18 +40,26 @@ import javax.swing.*
  *
  * @param project The IntelliJ project context
  * @param endpointCount The number of endpoints to export (shown in title)
+ * @param endpoints The list of endpoints to export (used to filter available formats)
  * @see ExportDialogResult for the dialog output
  */
 class ExportDialog(
     private val project: Project,
-    endpointCount: Int
+    endpointCount: Int,
+    private val endpoints: List<ApiEndpoint> = emptyList()
 ) : DialogWrapper(project) {
 
     private val actionContext by lazy {
         ActionContext.forProject(project)
     }
-    private val formatComboBox = JComboBox(ExportFormat.values()).apply {
-        selectedItem = ExportFormat.MARKDOWN
+    private val availableFormats: Array<ExportFormat> = ExportFormat.entries
+        .filter { it.isAvailableFor(endpoints) }
+        .toTypedArray()
+
+    private val formatComboBox = JComboBox(availableFormats).apply {
+        if (availableFormats.isNotEmpty()) {
+            selectedItem = availableFormats[0]
+        }
     }
 
     private val outputDirField = TextFieldWithBrowseButton().apply {
@@ -115,6 +124,7 @@ class ExportDialog(
     private val fileOptionsPanel: JPanel
     private val yapiOptionsPanel: JPanel
     private val postmanOptionsPanel: JPanel
+    private val httpClientOptionsPanel: JPanel
 
     var selectedFormat: ExportFormat = ExportFormat.MARKDOWN
         private set
@@ -128,10 +138,12 @@ class ExportDialog(
         fileOptionsPanel = createFileOptionsPanel()
         yapiOptionsPanel = createYapiOptionsPanel()
         postmanOptionsPanel = createPostmanOptionsPanel()
+        httpClientOptionsPanel = createHttpClientOptionsPanel()
 
         optionsPanel.add(fileOptionsPanel, FILE_OPTIONS)
         optionsPanel.add(yapiOptionsPanel, YAPI_OPTIONS)
         optionsPanel.add(postmanOptionsPanel, POSTMAN_OPTIONS)
+        optionsPanel.add(httpClientOptionsPanel, HTTP_CLIENT_OPTIONS)
 
         loadDefaultValues()
 
@@ -381,6 +393,24 @@ class ExportDialog(
         }
     }
 
+    private fun createHttpClientOptionsPanel(): JPanel {
+        return JPanel().apply {
+            layout = BorderLayout()
+            add(JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                add(Box.createVerticalStrut(20))
+                add(JLabel("HTTP Client files will be created in the scratches folder.").apply {
+                    alignmentX = 0.5f
+                })
+                add(Box.createVerticalStrut(10))
+                add(JLabel("The file will be automatically opened in the editor.").apply {
+                    alignmentX = 0.5f
+                })
+                add(Box.createVerticalStrut(20))
+            }, BorderLayout.CENTER)
+        }
+    }
+
     private fun updateYapiMode() {
         val isNew = yapiModeComboBox.selectedItem == YAPI_MODE_NEW_TOKEN
         yapiSelectPanel.isVisible = !isNew
@@ -394,6 +424,10 @@ class ExportDialog(
             ExportFormat.POSTMAN -> {
                 cardLayout.show(optionsPanel, POSTMAN_OPTIONS)
                 ensurePostmanDataLoaded()
+            }
+
+            ExportFormat.HTTP_CLIENT -> {
+                cardLayout.show(optionsPanel, HTTP_CLIENT_OPTIONS)
             }
 
             else -> cardLayout.show(optionsPanel, FILE_OPTIONS)
@@ -455,6 +489,10 @@ class ExportDialog(
                 OutputConfig(postmanOptions = postmanOptions)
             }
 
+            ExportFormat.HTTP_CLIENT -> {
+                OutputConfig()
+            }
+
             else -> {
                 OutputConfig(
                     outputDir = outputDirField.text.takeIf { it.isNotBlank() },
@@ -471,15 +509,17 @@ class ExportDialog(
         private const val FILE_OPTIONS = "FILE_OPTIONS"
         private const val YAPI_OPTIONS = "YAPI_OPTIONS"
         private const val POSTMAN_OPTIONS = "POSTMAN_OPTIONS"
+        private const val HTTP_CLIENT_OPTIONS = "HTTP_CLIENT_OPTIONS"
 
         private const val YAPI_MODE_SELECT = "Select Existing Project"
         private const val YAPI_MODE_NEW_TOKEN = "Input New Token"
 
         fun show(
             project: Project,
-            endpointCount: Int
+            endpointCount: Int,
+            endpoints: List<ApiEndpoint> = emptyList()
         ): ExportDialogResult? {
-            val dialog = ExportDialog(project, endpointCount)
+            val dialog = ExportDialog(project, endpointCount, endpoints)
             return if (dialog.showAndGet()) {
                 ExportDialogResult(
                     format = dialog.selectedFormat,

@@ -413,7 +413,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
             exportFormat = format
             outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig()
         } else {
-            val dialogResult = ExportDialog.show(project, endpoints.size) ?: return
+            val dialogResult = ExportDialog.show(project, endpoints.size, endpoints) ?: return
             exportFormat = dialogResult.format
             outputConfig = dialogResult.outputConfig
         }

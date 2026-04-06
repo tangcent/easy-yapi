@@ -10,6 +10,7 @@ import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.rule.RuleKeys

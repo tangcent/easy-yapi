@@ -1,22 +1,18 @@
 package com.itangcent.easyapi.exporter.httpclient
 
+import com.intellij.ide.scratch.ScratchRootType
+import com.intellij.lang.Language
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.fileChooser.FileChooserFactory
-import com.intellij.openapi.fileChooser.FileSaverDescriptor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.itangcent.easyapi.cache.DefaultHttpContextCacheHelper
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.swing
+import com.itangcent.easyapi.core.threading.write
 import com.itangcent.easyapi.exporter.ApiExporter
 import com.itangcent.easyapi.exporter.formatter.HttpClientFileFormatter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
 
 @Service(Service.Level.PROJECT)
 class HttpClientExporter(private val project: Project) : ApiExporter {
@@ -49,32 +45,33 @@ class HttpClientExporter(private val project: Project) : ApiExporter {
     override suspend fun handleExportResult(project: Project, result: ExportResult.Success): Boolean {
         val metadata = result.metadata as? HttpClientExportMetadata ?: return false
 
-        val targetFile = selectTargetFile(project) ?: return false
+        val fileName = generateFileName()
 
-        withContext(Dispatchers.IO) {
-            targetFile.writeText(metadata.content)
+        val scratchFile = write {
+            ScratchRootType.getInstance().createScratchFile(
+                project,
+                fileName,
+                Language.ANY,
+                metadata.content
+            )
+        } ?: return false
+
+        swing {
+            FileEditorManager.getInstance(project).openFile(scratchFile, true)
         }
 
-        showSuccessMessage(project, result, targetFile.absolutePath)
+        showSuccessMessage(project, result, scratchFile.path)
         return true
     }
 
-    private suspend fun selectTargetFile(project: Project): File? {
-        return swing {
-            val descriptor = FileSaverDescriptor(
-                "Save HTTP Client File",
-                "Choose where to save the HTTP client file"
-            )
-            val saver = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-
-            val wrapper: VirtualFileWrapper? = saver.save(null as VirtualFile?, "api.http")
-            wrapper?.file
-        }
+    private fun generateFileName(): String {
+        val timestamp = System.currentTimeMillis()
+        return "api_$timestamp.http"
     }
 
     private fun showSuccessMessage(project: Project, result: ExportResult.Success, target: String) {
         val message = buildString {
-            append("Successfully exported ${result.count} endpoints to $target")
+            append("Successfully exported ${result.count} endpoints to scratch file")
         }
         com.intellij.openapi.ui.Messages.showInfoMessage(
             project,

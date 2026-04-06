@@ -2,6 +2,8 @@ package com.itangcent.easyapi.exporter.yapi
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.exporter.yapi.model.YapiApiDoc
 import com.itangcent.easyapi.exporter.yapi.model.YapiFormParam
 import com.itangcent.easyapi.exporter.yapi.model.YapiHeader
@@ -52,7 +54,8 @@ class YapiFormatter(
      * @return A YAPI document ready for upload
      */
     fun format(endpoint: ApiEndpoint): YapiApiDoc {
-        val headers = endpoint.headers.map { 
+        val httpMeta = endpoint.httpMetadata
+        val headers = (httpMeta?.headers ?: emptyList()).map { 
             YapiHeader(
                 name = it.name, 
                 value = it.value,
@@ -62,7 +65,8 @@ class YapiFormatter(
             ) 
         }
         
-        val query = endpoint.parameters
+        val parameters = httpMeta?.parameters ?: emptyList()
+        val query = parameters
             .filter { it.binding == ParameterBinding.Query }
             .map { 
                 YapiQuery(
@@ -74,7 +78,7 @@ class YapiFormatter(
                 ) 
             }
         
-        val pathParams = endpoint.parameters
+        val pathParams = parameters
             .filter { it.binding == ParameterBinding.Path }
             .map { 
                 YapiPathParam(
@@ -84,29 +88,29 @@ class YapiFormatter(
                 ) 
             }
         
-        val formParams = endpoint.parameters
+        val formParams = parameters
             .filter { it.binding == ParameterBinding.Form }
             .map { 
                 YapiFormParam(
                     name = it.name, 
                     example = it.example ?: it.defaultValue,
-                    type = it.type ?: "text",
+                    type = it.type.rawType(),
                     required = if (it.required) 1 else 0,
                     desc = it.description
                 ) 
             }
 
-        val hasJsonBody = endpoint.body != null || endpoint.parameters.any { it.binding == ParameterBinding.Body }
+        val hasJsonBody = httpMeta?.body != null || parameters.any { it.binding == ParameterBinding.Body }
         val hasFormBody = formParams.isNotEmpty()
 
-        val reqBodyOther = if (endpoint.body != null) {
+        val reqBodyOther = if (httpMeta?.body != null) {
             if (reqBodyJson5) {
-                formatAsJson5(endpoint.body)
+                formatAsJson5(httpMeta.body)
             } else {
-                jsonSchemaBuilder.build(endpoint.body)
+                jsonSchemaBuilder.build(httpMeta.body)
             }
-        } else if (endpoint.parameters.any { it.binding == ParameterBinding.Body }) {
-            val bodyParams = endpoint.parameters.filter { it.binding == ParameterBinding.Body }
+        } else if (parameters.any { it.binding == ParameterBinding.Body }) {
+            val bodyParams = parameters.filter { it.binding == ParameterBinding.Body }
             if (reqBodyJson5) {
                 // For body params with json5, build an object model and format as json5
                 jsonSchemaBuilder.buildFromParameters(bodyParams)
@@ -126,25 +130,25 @@ class YapiFormatter(
         // req_body_is_json_schema: true when we use JSON schema (not JSON5) for request body
         val reqBodyIsJsonSchema = hasJsonBody && !reqBodyJson5
 
-        val resBody = if (endpoint.responseBody != null) {
+        val resBody = if (httpMeta?.responseBody != null) {
             if (resBodyJson5) {
-                formatAsJson5(endpoint.responseBody)
+                formatAsJson5(httpMeta.responseBody)
             } else {
-                jsonSchemaBuilder.build(endpoint.responseBody)
+                jsonSchemaBuilder.build(httpMeta.responseBody)
             }
         } else {
             null
         }
 
         // res_body_is_json_schema: true when we use JSON schema (not JSON5) for response body
-        val resBodyIsJsonSchema = endpoint.responseBody != null && !resBodyJson5
+        val resBodyIsJsonSchema = httpMeta?.responseBody != null && !resBodyJson5
 
         return YapiApiDoc(
-            title = endpoint.name ?: "${endpoint.method.name} ${endpoint.path}",
+            title = endpoint.name ?: "${httpMeta?.method?.name ?: "UNKNOWN"} ${endpoint.path}",
             path = formatPath(endpoint.path),
-            method = endpoint.method.name.lowercase(),
+            method = httpMeta?.method?.name?.lowercase() ?: "get",
             desc = endpoint.description,
-            status = endpoint.status,
+            status = "done",
             tag = endpoint.tags,
             reqHeaders = headers.ifEmpty { null },
             reqQuery = query.ifEmpty { null },
@@ -154,7 +158,7 @@ class YapiFormatter(
             reqBodyType = reqBodyType,
             reqBodyIsJsonSchema = reqBodyIsJsonSchema,
             resBody = resBody,
-            resBodyType = if (endpoint.responseBody != null) "json" else null,
+            resBodyType = if (httpMeta?.responseBody != null) "json" else null,
             resBodyIsJsonSchema = resBodyIsJsonSchema,
             tags = endpoint.tags.ifEmpty { null }
         )
@@ -170,7 +174,7 @@ class YapiFormatter(
     fun formatWithUrls(endpoint: ApiEndpoint): List<YapiApiDoc> {
         val baseDoc = format(endpoint)
         
-        val alternativePaths = endpoint.alternativePaths
+        val alternativePaths = endpoint.httpMetadata?.alternativePaths
         if (alternativePaths.isNullOrEmpty()) {
             return listOf(baseDoc)
         }
@@ -189,9 +193,10 @@ class YapiFormatter(
      */
     fun formatWithMock(endpoint: ApiEndpoint): YapiApiDoc {
         val doc = format(endpoint)
+        val parameters = endpoint.httpMetadata?.parameters ?: emptyList()
         
         mockGenerator?.let { generator ->
-            val pathParamMap = endpoint.parameters
+            val pathParamMap = parameters
                 .filter { it.binding == ParameterBinding.Path }
                 .associateBy { it.name }
             
@@ -202,7 +207,7 @@ class YapiFormatter(
                     ?: generator.mockForParam(param.name))
             }
             
-            val queryParamMap = endpoint.parameters
+            val queryParamMap = parameters
                 .filter { it.binding == ParameterBinding.Query }
                 .associateBy { it.name }
             

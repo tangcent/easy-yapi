@@ -114,12 +114,14 @@ object HttpClientFileFormatter {
 
         sb.append("${meta.method.name} $url\n")
 
+        val contentType = meta.contentType
         for (header in meta.headers) {
             val value = header.value ?: continue
-            sb.append("${header.name}: $value\n")
+            if (contentType.isNullOrBlank() || !header.name.equals("Content-Type", ignoreCase = true)) {
+                sb.append("${header.name}: $value\n")
+            }
         }
 
-        val contentType = meta.contentType
         if (!contentType.isNullOrBlank()) {
             sb.append("Content-Type: $contentType\n")
         }
@@ -182,10 +184,12 @@ object HttpClientFileFormatter {
             sb.append('?').append(query.joinToString("&") { "${it.name}=${it.example ?: it.defaultValue ?: ""}" })
         }
         sb.append('\n')
-        for (h in meta.headers) {
-            sb.append(h.name).append(": ").append(h.value ?: "").append('\n')
-        }
         val contentType = meta.contentType
+        for (h in meta.headers) {
+            if (contentType.isNullOrBlank() || !h.name.equals("Content-Type", ignoreCase = true)) {
+                sb.append(h.name).append(": ").append(h.value ?: "").append('\n')
+            }
+        }
         if (!contentType.isNullOrBlank()) {
             sb.append("Content-Type: ").append(contentType).append('\n')
         }
