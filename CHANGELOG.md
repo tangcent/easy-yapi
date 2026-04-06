@@ -5,23 +5,45 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] - 2026-04-06
+
+### Added
+
+- add gRPC support
+- support file-type form params in API dashboard
+- refactor YapiApiClient - extract interface, add provider, fix project ID resolution
+
+### Fixed
+
+- correct version extraction in release workflow
+- catch CancellationException in ReadActionDispatcher to prevent unhandled coroutine exception
+
+### Improved
+
+- amend: improve HTTP client export and add format filtering
+
+---
+
 ## [3.0.1] - 2026-04-02
 
 ### Added
--  add toString() methods to ScriptPsi contexts
+
+- add toString() methods to ScriptPsi contexts
 
 ### Fixed
--  expire setting binder cache after timeout
--  improve yapi token diagnostics and test coverage (#1292)
--  improve API scan performance and add auto-scan toggle
--  inherited controller export — superMethod perf, generic param scoping, resolver early-exit
--  add path formatting/sanitization for YAPI export (#1288)
+
+- expire setting binder cache after timeout
+- improve yapi token diagnostics and test coverage (#1292)
+- improve API scan performance and add auto-scan toggle
+- inherited controller export — superMethod perf, generic param scoping, resolver early-exit
+- add path formatting/sanitization for YAPI export (#1288)
 
 ---
 
 ## [3.0.0] - TBD
 
 ### Added
+
 - Complete rewrite with modern Kotlin architecture
 - Kotlin coroutines for all async operations
 - Structured concurrency with custom IdeDispatchers
@@ -32,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modern event bus implementation using Kotlin Flow
 
 ### Changed
+
 - Migrated from Java/Guice to Kotlin/coroutines
 - Replaced ThreadPool with CoroutineScope
 - Updated minimum IDE version to 2023.1.3
@@ -39,12 +62,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kotlin version updated to 2.1.0
 
 ### Improved
+
 - Better error handling with Result types
 - More maintainable code structure
 - Improved performance with structured concurrency
 - Enhanced language adapter system (Java, Kotlin, Scala, Groovy)
 
 ### Migration Notes
+
 - This is a major version with breaking changes in internal APIs
 - Plugin ID remains the same for seamless user migration
 - All user-facing features from v2.x are preserved
@@ -54,4 +79,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.8.4] - Previous Release
 
-For changes in version 2.x and earlier, please refer to the [easy-yapi repository](https://github.com/tangcent/easy-yapi).
+For changes in version 2.x and earlier, please refer to
+the [easy-yapi repository](https://github.com/tangcent/easy-yapi).
