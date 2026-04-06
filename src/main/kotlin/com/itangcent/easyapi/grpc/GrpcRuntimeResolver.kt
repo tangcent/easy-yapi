@@ -4,7 +4,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.repository.RepositoryConfig
 import com.itangcent.easyapi.repository.RepositoryService
 import com.itangcent.easyapi.repository.RepositoryType
 import com.itangcent.easyapi.settings.DefaultSettingBinder
@@ -38,9 +37,9 @@ data class ResolvedRuntime(val jars: List<Path>, val version: String)
  * @see GrpcRequiredArtifacts for required dependencies
  */
 @Service(Service.Level.PROJECT)
-class GrpcRuntimeResolver(private val project: Project) : IdeaLog {
+class GrpcRuntimeResolver(private val project: Project) {
 
-    companion object {
+    companion object : IdeaLog {
         fun getInstance(project: Project): GrpcRuntimeResolver = project.service()
     }
 
@@ -378,6 +377,7 @@ class GrpcRuntimeResolver(private val project: Project) : IdeaLog {
                 RepositoryType.MAVEN_LOCAL, RepositoryType.CUSTOM -> {
                     resolveVersionsFromMaven(repoPath, versions)
                 }
+
                 RepositoryType.GRADLE_CACHE -> {
                     resolveVersionsFromGradle(repoPath, versions)
                 }

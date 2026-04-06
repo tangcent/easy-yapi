@@ -5,6 +5,8 @@ import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import io.grpc.stub.annotations.RpcMethod
+import java.io.File
 
 /**
  * Tests for [GrpcMethodResolver].
@@ -18,10 +20,12 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  * - Extracts package names from the class hierarchy
  * - Resolves request/response PsiClass types
  * - Filters out non-RPC methods (Object methods, lifecycle methods)
+ * - Extracts method info from @RpcMethod annotation on static methods
  * 
  * Test fixtures:
  * - `EchoServiceImpl`: Contains both unary (`echo`) and client-streaming (`echoStream`) methods
  * - `UserInfo`: Non-gRPC class to verify empty result
+ * - Generated `EchoServiceGrpc`: Uses @RpcMethod annotations on static methods
  */
 class GrpcMethodResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -30,6 +34,7 @@ class GrpcMethodResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
+        loadGeneratedGrpcFiles()
         resolver = GrpcMethodResolver.getInstance(project)
     }
 
@@ -42,6 +47,32 @@ class GrpcMethodResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("grpc/EchoServiceGrpc.java")
         loadFile("grpc/EchoServiceImpl.java")
         loadFile("grpc/UserInfo.java")
+    }
+
+    private fun loadGeneratedGrpcFiles() {
+        loadSource(RpcMethod::class.java)
+        
+        val generatedGrpcDir = File("build/generated/source/proto/test/grpc/com/itangcent/easyapi/grpc/test")
+        if (generatedGrpcDir.exists()) {
+            generatedGrpcDir.listFiles()?.forEach { file ->
+                if (file.name.endsWith(".java")) {
+                    val content = file.readText()
+                    val path = "com/itangcent/easyapi/grpc/test/${file.name}"
+                    loadFile(path, content)
+                }
+            }
+        }
+        
+        val generatedJavaDir = File("build/generated/source/proto/test/java/com/itangcent/easyapi/grpc/test")
+        if (generatedJavaDir.exists()) {
+            generatedJavaDir.listFiles()?.forEach { file ->
+                if (file.name.endsWith(".java")) {
+                    val content = file.readText()
+                    val path = "com/itangcent/easyapi/grpc/test/${file.name}"
+                    loadFile(path, content)
+                }
+            }
+        }
     }
 
     override fun createConfigReader() = TestConfigReader.EMPTY
@@ -234,5 +265,98 @@ class GrpcMethodResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
             assertEquals("psiMethod name should match methodName", 
                 methodInfo.methodName, methodInfo.psiMethod.name)
         }
+    }
+
+    // ── @RpcMethod Annotation Tests ─────────────────────────────────────
+
+    /**
+     * Tests that static methods with @RpcMethod annotation are resolved
+     * from generated gRPC classes.
+     * 
+     * Uses the auto-generated EchoServiceGrpc from test_service.proto.
+     */
+    fun testResolveFromRpcMethodAnnotation() = runTest {
+        val psiClass = findClass("com.itangcent.easyapi.grpc.test.EchoServiceGrpc")
+        assertNotNull("Should find EchoServiceGrpc class", psiClass)
+
+        val methods = resolver.resolveRpcMethods(psiClass!!)
+        assertEquals("Should resolve 3 methods from @RpcMethod annotation", 3, methods.size)
+    }
+
+    /**
+     * Tests extraction of UNARY streaming type from @RpcMethod annotation.
+     */
+    fun testResolveUnaryFromAnnotation() = runTest {
+        val psiClass = findClass("com.itangcent.easyapi.grpc.test.EchoServiceGrpc")
+        assertNotNull("Should find EchoServiceGrpc class", psiClass)
+
+        val methods = resolver.resolveRpcMethods(psiClass!!)
+        val echoMethod = methods.find { it.methodName == "Echo" }
+
+        assertNotNull("Should find Echo method", echoMethod)
+        assertEquals("Streaming type should be UNARY", GrpcStreamingType.UNARY, echoMethod!!.streamingType)
+    }
+
+    /**
+     * Tests that service name and method name are extracted from fullMethodName.
+     * Format: "package.ServiceName/MethodName"
+     */
+    fun testParseFullMethodNameFromAnnotation() = runTest {
+        val psiClass = findClass("com.itangcent.easyapi.grpc.test.EchoServiceGrpc")
+        assertNotNull("Should find EchoServiceGrpc class", psiClass)
+
+        val methods = resolver.resolveRpcMethods(psiClass!!)
+        val echoMethod = methods.find { it.methodName == "Echo" }
+
+        assertNotNull("Should find Echo method", echoMethod)
+        assertEquals("Service name should be EchoService", "EchoService", echoMethod!!.serviceName)
+        assertEquals("Method name should be Echo", "Echo", echoMethod.methodName)
+    }
+
+    /**
+     * Tests that request and response types are extracted from annotation.
+     */
+    fun testExtractTypesFromAnnotation() = runTest {
+        val psiClass = findClass("com.itangcent.easyapi.grpc.test.EchoServiceGrpc")
+        assertNotNull("Should find EchoServiceGrpc class", psiClass)
+
+        val methods = resolver.resolveRpcMethods(psiClass!!)
+        val echoMethod = methods.find { it.methodName == "Echo" }
+
+        assertNotNull("Should find Echo method", echoMethod)
+        assertNotNull("Request type should be resolved", echoMethod!!.requestType)
+        assertNotNull("Response type should be resolved", echoMethod.responseType)
+        assertEquals("Request type should be EchoRequest", 
+            "com.itangcent.easyapi.grpc.test.EchoRequest", echoMethod.requestType!!.qualifiedName)
+        assertEquals("Response type should be EchoResponse", 
+            "com.itangcent.easyapi.grpc.test.EchoResponse", echoMethod.responseType!!.qualifiedName)
+    }
+
+    /**
+     * Tests that full path is built correctly from annotation data.
+     */
+    fun testBuildFullPathFromAnnotation() = runTest {
+        val psiClass = findClass("com.itangcent.easyapi.grpc.test.EchoServiceGrpc")
+        assertNotNull("Should find EchoServiceGrpc class", psiClass)
+
+        val methods = resolver.resolveRpcMethods(psiClass!!)
+        val echoMethod = methods.find { it.methodName == "Echo" }
+
+        assertNotNull("Should find Echo method", echoMethod)
+        assertEquals("Full path should be correct", 
+            "/com.itangcent.easyapi.grpc.test.EchoService/Echo", echoMethod!!.fullPath)
+    }
+
+    /**
+     * Tests that static methods without @RpcMethod annotation are excluded.
+     */
+    fun testStaticMethodsWithoutAnnotationExcluded() = runTest {
+        val psiClass = findClass("com.itangcent.easyapi.grpc.test.EchoServiceGrpc")
+        assertNotNull("Should find EchoServiceGrpc class", psiClass)
+
+        val methods = resolver.resolveRpcMethods(psiClass!!)
+        val getServiceDescriptor = methods.find { it.methodName == "getServiceDescriptor" }
+
+        assertNull("getServiceDescriptor should not be included", getServiceDescriptor)
     }
 }

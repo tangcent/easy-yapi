@@ -1,11 +1,14 @@
 package com.itangcent.easyapi.psi.helper
 
+import com.intellij.openapi.project.Project
+import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiAnnotation
 import com.intellij.psi.PsiAnnotationMemberValue
 import com.intellij.psi.PsiArrayInitializerMemberValue
 import com.intellij.psi.PsiClassObjectAccessExpression
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiEnumConstant
+import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiReferenceExpression
 import com.itangcent.easyapi.core.threading.IdeDispatchers
@@ -31,6 +34,7 @@ import kotlinx.coroutines.withContext
  * - Class references → canonical class name
  * - Arrays → List<Any?>
  * - Enum references → enum constant name
+ * - Constant expressions → evaluated value (e.g., `A + "/" + B`)
  *
  * @see AnnotationHelper for the interface
  * @see PsiLanguageAdapter for language-specific handling
@@ -56,7 +60,7 @@ class UnifiedAnnotationHelper(
 
     override suspend fun findAnnMap(element: PsiElement, annFqn: String): Map<String, Any?>? {
         return readAction {
-            findPsiAnnotations(element, annFqn).firstOrNull()?.let { normalizeAttributes(it) }
+            findPsiAnnotations(element, annFqn).firstOrNull()?.let { normalizeAttributes(it, element.project) }
         }
     }
 
@@ -64,7 +68,7 @@ class UnifiedAnnotationHelper(
         return readAction {
             val anns = findPsiAnnotations(element, annFqn)
             if (anns.isEmpty()) return@readAction null
-            anns.map { normalizeAttributes(it) }
+            anns.map { normalizeAttributes(it, element.project) }
         }
     }
 
@@ -72,7 +76,7 @@ class UnifiedAnnotationHelper(
         return readAction {
             val ann = findPsiAnnotations(element, annFqn).firstOrNull() ?: return@readAction null
             val value = ann.findAttributeValue(attr) ?: return@readAction null
-            normalizeValue(value)
+            normalizeValue(value, element.project)
         }
     }
 
@@ -89,30 +93,41 @@ class UnifiedAnnotationHelper(
         return adapter.resolveAnnotations(element).filter { it.qualifiedName == annFqn }
     }
 
-    private fun normalizeAttributes(ann: PsiAnnotation): Map<String, Any?> {
+    private fun normalizeAttributes(ann: PsiAnnotation, project: Project): Map<String, Any?> {
         val result = LinkedHashMap<String, Any?>()
         val attrs = ann.parameterList.attributes
         for (attr in attrs) {
             val name = attr.name ?: "value"
             val value = attr.value ?: continue
-            result[name] = normalizeValue(value)
+            result[name] = normalizeValue(value, project)
         }
         return result
     }
 
-    private fun normalizeValue(value: PsiAnnotationMemberValue): Any? {
+    private fun normalizeValue(value: PsiAnnotationMemberValue, project: Project): Any? {
         return when (value) {
             is PsiLiteralExpression -> value.value
             is PsiClassObjectAccessExpression -> value.operand.type.canonicalText
-            is PsiArrayInitializerMemberValue -> value.initializers.mapNotNull { normalizeValue(it) }
+            is PsiArrayInitializerMemberValue -> value.initializers.mapNotNull { normalizeValue(it, project) }
             is PsiReferenceExpression -> {
                 val resolved = value.resolve()
                 when (resolved) {
                     is PsiEnumConstant -> resolved.name
-                    else -> value.text
+                    else -> evaluateConstantExpression(value, project) ?: value.text
                 }
             }
+            is PsiExpression -> evaluateConstantExpression(value, project) ?: value.text.trim('"')
             else -> value.text.trim('"')
+        }
+    }
+
+    private fun evaluateConstantExpression(expression: PsiExpression, project: Project): Any? {
+        return try {
+            JavaPsiFacade.getInstance(project)
+                .constantEvaluationHelper
+                .computeConstantExpression(expression)
+        } catch (_: Exception) {
+            null
         }
     }
 }
