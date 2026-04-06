@@ -4,6 +4,7 @@ import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
@@ -21,24 +22,28 @@ class FormatConversionTest {
 
     private val testEndpoint = ApiEndpoint(
         name = "Get User",
-        path = "/api/users/{id}",
-        method = HttpMethod.GET,
-        parameters = listOf(
-            ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1")
-        ),
-        description = "Retrieve user by ID"
+        description = "Retrieve user by ID",
+        metadata = HttpMetadata(
+            path = "/api/users/{id}",
+            method = HttpMethod.GET,
+            parameters = listOf(
+                ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1")
+            )
+        )
     )
 
     private val testPostEndpoint = ApiEndpoint(
         name = "Create User",
-        path = "/api/users",
-        method = HttpMethod.POST,
-        contentType = "application/json",
-        parameters = listOf(
-            ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "John"),
-            ApiParameter(name = "email", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "john@example.com")
-        ),
-        description = "Create a new user"
+        description = "Create a new user",
+        metadata = HttpMetadata(
+            path = "/api/users",
+            method = HttpMethod.POST,
+            contentType = "application/json",
+            parameters = listOf(
+                ApiParameter(name = "name", binding = ParameterBinding.Body, example = "John"),
+                ApiParameter(name = "email", binding = ParameterBinding.Body, example = "john@example.com")
+            )
+        )
     )
 
     @Test
@@ -92,20 +97,24 @@ class FormatConversionTest {
                 testPostEndpoint,
                 ApiEndpoint(
                     name = "Update User",
-                    path = "/api/users/{id}",
-                    method = HttpMethod.PUT,
-                    contentType = "application/json",
-                    parameters = listOf(
-                        ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1"),
-                        ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "Updated")
+                    metadata = HttpMetadata(
+                        path = "/api/users/{id}",
+                        method = HttpMethod.PUT,
+                        contentType = "application/json",
+                        parameters = listOf(
+                            ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1"),
+                            ApiParameter(name = "name", binding = ParameterBinding.Body, example = "Updated")
+                        )
                     )
                 ),
                 ApiEndpoint(
                     name = "Delete User",
-                    path = "/api/users/{id}",
-                    method = HttpMethod.DELETE,
-                    parameters = listOf(
-                        ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1")
+                    metadata = HttpMetadata(
+                        path = "/api/users/{id}",
+                        method = HttpMethod.DELETE,
+                        parameters = listOf(
+                            ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1")
+                        )
                     )
                 )
             )

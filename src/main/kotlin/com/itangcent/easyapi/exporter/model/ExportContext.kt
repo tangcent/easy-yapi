@@ -73,24 +73,39 @@ data class ExportContext(
 /**
  * Supported export formats.
  */
-enum class ExportFormat {
-    MARKDOWN,
-    YAPI,
-    POSTMAN,
-    CURL,
-    HTTP_CLIENT;
+enum class ExportFormat(
+    /**
+     * Whether this format supports HTTP endpoints.
+     */
+    val supportsHttp: Boolean = true,
+
+    /**
+     * Whether this format supports gRPC endpoints.
+     * Postman does not support gRPC exports.
+     */
+    val supportsGrpc: Boolean,
 
     /**
      * The display name for UI purposes.
      */
     val displayName: String
-        get() = when (this) {
-            MARKDOWN -> "Markdown"
-            YAPI -> "YAPI"
-            POSTMAN -> "Postman"
-            CURL -> "cURL"
-            HTTP_CLIENT -> "HTTP Client"
-        }
+) {
+    MARKDOWN(supportsGrpc = true, displayName = "Markdown"),
+    YAPI(supportsGrpc = false, displayName = "Yapi"),
+    POSTMAN(supportsGrpc = false, displayName = "Postman"),
+    CURL(supportsGrpc = true, displayName = "cURL"),
+    HTTP_CLIENT(supportsGrpc = true, displayName = "HTTP Client"), ;
+
+    /**
+     * Checks if this format is available for the given endpoints.
+     * A format is available if it supports at least one of the endpoint types.
+     */
+    fun isAvailableFor(endpoints: List<ApiEndpoint>): Boolean {
+        if (endpoints.isEmpty()) return true
+        val hasGrpc = endpoints.any { it.isGrpc }
+        val hasHttp = endpoints.any { it.isHttp }
+        return (hasGrpc && supportsGrpc) || (hasHttp && supportsHttp)
+    }
 }
 
 /**

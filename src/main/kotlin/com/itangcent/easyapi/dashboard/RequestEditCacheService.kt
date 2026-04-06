@@ -6,9 +6,13 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.cache.ProjectCacheRepository
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiHeader
-import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.grpcMetadata
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.isGrpc
+import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import com.itangcent.easyapi.util.GsonUtils
 import com.itangcent.easyapi.util.storage.DbBeanBinder
 import com.itangcent.easyapi.util.storage.SqliteDataResourceHelper
@@ -25,119 +29,116 @@ import com.itangcent.easyapi.util.storage.SqliteDataResourceHelper
 @Service(Service.Level.PROJECT)
 class RequestEditCacheService(private val project: Project) {
 
-    /** Lazy-initialized SQLite helper for data persistence */
     private val sqliteHelper: SqliteDataResourceHelper by lazy {
         val cacheFile = ProjectCacheRepository.getInstance(project).resolve("request_edits.db")
         SqliteDataResourceHelper(cacheFile)
     }
 
-    /** Data binder for serializing/deserializing cache objects */
-    private val beanBinder: DbBeanBinder<RequestEditCache> by lazy {
+    private val httpBeanBinder: DbBeanBinder<HttpRequestEditCache> by lazy {
         DbBeanBinder(
             sqliteHelper,
-            "request_edit",
+            "http_request_edit",
             { GsonUtils.toJson(it) },
             { GsonUtils.fromJson(it) }
         )
     }
 
-    /**
-     * Saves the edit cache for an endpoint.
-     * 
-     * @param endpoint The API endpoint being edited
-     * @param cache The cache object containing user modifications
-     * @param key The unique cache key for the endpoint
-     */
-    fun save(endpoint: ApiEndpoint, cache: RequestEditCache, key: String) {
-        if (key.isNotBlank()) {
-            beanBinder.save(key, cache.copy(key = key))
-        }
-    }
-
-    /**
-     * Loads the cached edits for an endpoint.
-     * 
-     * @param endpoint The API endpoint to load cache for
-     * @param key The unique cache key for the endpoint
-     * @return The cached edits, or null if not found
-     */
-    fun load(endpoint: ApiEndpoint, key: String): RequestEditCache? {
-        if (key.isBlank()) return null
-        return beanBinder.load(key)
-    }
-
-    /**
-     * Deletes the cached edits for an endpoint.
-     * 
-     * @param key The unique cache key for the endpoint
-     */
-    fun delete(key: String) {
-        if (key.isNotBlank()) {
-            beanBinder.delete(key)
-        }
-    }
-
-    /**
-     * Creates a default cache object from an endpoint's definition.
-     * Extracts headers, parameters, and body from the endpoint model.
-     * 
-     * @param endpoint The API endpoint to create cache from
-     * @param key The unique cache key for the endpoint
-     * @param host Optional host URL to use
-     * @return A new RequestEditCache with default values
-     */
-    fun createDefaultCache(endpoint: ApiEndpoint, key: String, host: String? = null): RequestEditCache {
-        return RequestEditCache(
-            key = key,
-            name = endpoint.name,
-            path = endpoint.path,
-            method = endpoint.method.name,
-            host = host,
-            headers = endpoint.headers.map { EditableKeyValue(it.name, it.value ?: it.example ?: "", it.description) } +
-                endpoint.parameters
-                    .filter { it.binding == ParameterBinding.Header }
-                    .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
-            pathParams = endpoint.parameters
-                .filter { it.binding == ParameterBinding.Path }
-                .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
-            queryParams = endpoint.parameters
-                .filter { it.binding == ParameterBinding.Query || it.binding == ParameterBinding.Cookie }
-                .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
-            formParams = endpoint.parameters
-                .filter { it.binding == ParameterBinding.Form }
-                .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
-            body = endpoint.body?.let { com.itangcent.easyapi.psi.model.ObjectModelJsonConverter.toJson(it) },
-            contentType = endpoint.contentType
+    private val grpcBeanBinder: DbBeanBinder<GrpcRequestEditCache> by lazy {
+        DbBeanBinder(
+            sqliteHelper,
+            "grpc_request_edit",
+            { GsonUtils.toJson(it) },
+            { GsonUtils.fromJson(it) }
         )
     }
 
-    /**
-     * Generates a cache key for an endpoint based on its source location.
-     * 
-     * @return A unique key in the format "fully.qualified.ClassName#methodName"
-     */
+    fun save(endpoint: ApiEndpoint, cache: RequestEditCache, key: String) {
+        if (key.isBlank()) return
+        when (cache) {
+            is HttpRequestEditCache -> httpBeanBinder.save(key, cache.copy(key = key))
+            is GrpcRequestEditCache -> grpcBeanBinder.save(key, cache.copy(key = key))
+        }
+    }
+
+    fun load(endpoint: ApiEndpoint, key: String): RequestEditCache? {
+        if (key.isBlank()) return null
+        return if (endpoint.isGrpc) {
+            grpcBeanBinder.load(key)
+        } else {
+            httpBeanBinder.load(key)
+        }
+    }
+
+    fun delete(key: String, isGrpc: Boolean) {
+        if (key.isBlank()) return
+        if (isGrpc) {
+            grpcBeanBinder.delete(key)
+        } else {
+            httpBeanBinder.delete(key)
+        }
+    }
+
+    fun createDefaultCache(endpoint: ApiEndpoint, key: String, host: String? = null): RequestEditCache {
+        return if (endpoint.isGrpc) {
+            createDefaultGrpcCache(endpoint, key, host)
+        } else {
+            createDefaultHttpCache(endpoint, key, host)
+        }
+    }
+
+    private fun createDefaultHttpCache(endpoint: ApiEndpoint, key: String, host: String?): HttpRequestEditCache {
+        val meta = endpoint.httpMetadata
+        val parameters = meta?.parameters ?: emptyList()
+        val headers = meta?.headers ?: emptyList()
+        return HttpRequestEditCache(
+            key = key,
+            name = endpoint.name,
+            path = meta?.path ?: "",
+            method = meta?.method?.name ?: endpoint.metadata.protocol,
+            host = host,
+            headers = headers.map { EditableKeyValue(it.name, it.value ?: it.example ?: "", it.description) } +
+                parameters
+                    .filter { it.binding == ParameterBinding.Header }
+                    .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
+            pathParams = parameters
+                .filter { it.binding == ParameterBinding.Path }
+                .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
+            queryParams = parameters
+                .filter { it.binding == ParameterBinding.Query || it.binding == ParameterBinding.Cookie }
+                .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
+            formParams = parameters
+                .filter { it.binding == ParameterBinding.Form }
+                .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
+            body = meta?.body?.let { ObjectModelJsonConverter.toJson(it) },
+            contentType = meta?.contentType
+        )
+    }
+
+    private fun createDefaultGrpcCache(endpoint: ApiEndpoint, key: String, host: String?): GrpcRequestEditCache {
+        val meta = endpoint.grpcMetadata
+        return GrpcRequestEditCache(
+            key = key,
+            name = endpoint.name,
+            host = host,
+            serviceName = meta?.serviceName,
+            methodName = meta?.methodName,
+            packageName = meta?.packageName,
+            body = meta?.body?.let { ObjectModelJsonConverter.toJson(it) }
+        )
+    }
+
     private fun ApiEndpoint.cacheKey(): String {
         val method = sourceMethod ?: return ""
         val cls = sourceClass ?: method.containingClass ?: return ""
         return fullNameOfMember(cls, method)
     }
 
-    /**
-     * Creates a fully qualified name for a class method.
-     * 
-     * @param psiClass The containing class
-     * @param psiMethod The method
-     * @return A unique identifier string
-     */
     private fun fullNameOfMember(psiClass: PsiClass, psiMethod: PsiMethod): String {
         val className = psiClass.qualifiedName ?: psiClass.name ?: ""
         val methodName = psiMethod.name
         return "$className#$methodName"
     }
 
-    /**
-     * Returns the service instance for the given project.
-     */
     companion object {
         fun getInstance(project: Project): RequestEditCacheService =
             project.getService(RequestEditCacheService::class.java)

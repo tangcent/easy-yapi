@@ -13,6 +13,9 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.editor.ScrollType
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.HttpMetadata
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.logging.IdeaLog
 import kotlinx.coroutines.runBlocking
 import javax.swing.ListCellRenderer
@@ -86,7 +89,7 @@ class ApiSearchEverywhereContributor(
     }
 
     private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean {
-        if (query.httpMethod != null && endpoint.method != query.httpMethod) {
+        if (query.httpMethod != null && endpoint.httpMetadata?.method != query.httpMethod) {
             return false
         }
 
@@ -95,8 +98,13 @@ class ApiSearchEverywhereContributor(
         }
 
         val searchLower = query.searchText.lowercase()
+        val path = when (val meta = endpoint.metadata) {
+            is HttpMetadata -> meta.path
+            is GrpcMetadata -> meta.path
+            else -> ""
+        }
 
-        return endpoint.path.lowercase().contains(searchLower) ||
+        return path.lowercase().contains(searchLower) ||
                 endpoint.name?.lowercase()?.contains(searchLower) == true ||
                 endpoint.className?.lowercase()?.contains(searchLower) == true ||
                 endpoint.description?.lowercase()?.contains(searchLower) == true ||

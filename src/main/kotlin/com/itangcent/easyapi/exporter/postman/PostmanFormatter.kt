@@ -5,8 +5,10 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
-import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.isHttp
 import com.itangcent.easyapi.exporter.postman.model.*
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
@@ -106,13 +108,16 @@ class PostmanFormatter(
     private val ruleEngine: RuleEngine by lazy { RuleEngine.getInstance(actionContext) }
 
     suspend fun format(endpoints: List<ApiEndpoint>, moduleName: String): PostmanCollection {
-        val contexts = endpoints.flatMap { endpoint ->
-            val paths = endpoint.alternativePaths
+        // Postman doesn't support gRPC exports, filter to HTTP only
+        val httpEndpoints = endpoints.filter { it.isHttp }
+        val contexts = httpEndpoints.flatMap { endpoint ->
+            val meta = endpoint.httpMetadata ?: return@flatMap emptyList()
+            val paths = meta.alternativePaths
             if (paths.isNullOrEmpty()) {
                 listOf(endpoint.toContext())
             } else {
                 paths.map { path ->
-                    endpoint.copy(path = path).toContext()
+                    endpoint.copy(metadata = meta.copy(path = path)).toContext()
                 }
             }
         }
@@ -236,9 +241,19 @@ class PostmanFormatter(
 
     suspend fun toItemWithContext(context: PostmanEndpointContext): PostmanItem {
         val endpoint = context.endpoint
+        val meta = endpoint.httpMetadata
+            ?: throw IllegalArgumentException("PostmanFormatter only supports HTTP endpoints, got: ${endpoint.metadata.protocol}")
+        return toHttpItem(context, endpoint, meta)
+    }
+
+    private suspend fun toHttpItem(
+        context: PostmanEndpointContext,
+        endpoint: ApiEndpoint,
+        meta: HttpMetadata
+    ): PostmanItem {
         val hostVar = resolveHost(context)
-        val url = buildUrl(endpoint, hostVar)
-        val headers = endpoint.headers.map {
+        val url = buildUrl(endpoint, meta, hostVar)
+        val headers = meta.headers.map {
             PostmanHeader(
                 key = it.name,
                 value = it.value ?: "",
@@ -246,9 +261,9 @@ class PostmanFormatter(
                 description = ""
             )
         }
-        val body = buildBody(endpoint)
+        val body = buildBody(endpoint, meta)
         val request = PostmanRequest(
-            method = endpoint.method.name,
+            method = meta.method.name,
             header = headers,
             body = body,
             url = url,
@@ -263,7 +278,7 @@ class PostmanFormatter(
         val events = buildEvents(context)
 
         val item = PostmanItem(
-            name = endpoint.name ?: "${endpoint.method.name} ${endpoint.path}",
+            name = endpoint.name ?: "${meta.method.name} ${meta.path}",
             request = request,
             response = responses,
             event = events
@@ -424,8 +439,8 @@ class PostmanFormatter(
         )
     }
 
-    private fun buildUrl(endpoint: ApiEndpoint, hostVar: String): PostmanUrl {
-        val query = endpoint.parameters
+    private fun buildUrl(endpoint: ApiEndpoint, meta: HttpMetadata, hostVar: String): PostmanUrl {
+        val query = meta.parameters
             .filter { it.binding == ParameterBinding.Query }
             .map {
                 PostmanQuery(
@@ -436,9 +451,9 @@ class PostmanFormatter(
                 )
             }
 
-        val pathSegments = parsePath(endpoint.path)
+        val pathSegments = parsePath(meta.path)
 
-        val pathVariables = endpoint.parameters
+        val pathVariables = meta.parameters
             .filter { it.binding == ParameterBinding.Path }
             .map {
                 PostmanPathVariable(
@@ -460,18 +475,18 @@ class PostmanFormatter(
         )
     }
 
-    private fun buildBody(endpoint: ApiEndpoint): PostmanBody? {
-        val contentType = endpoint.contentType?.lowercase().orEmpty()
-        val bodyParams = endpoint.parameters.filter { it.binding == ParameterBinding.Body }
-        val formParams = endpoint.parameters.filter { it.binding == ParameterBinding.Form }
+    private fun buildBody(endpoint: ApiEndpoint, meta: HttpMetadata): PostmanBody? {
+        val contentType = meta.contentType?.lowercase().orEmpty()
+        val bodyParams = meta.parameters.filter { it.binding == ParameterBinding.Body }
+        val formParams = meta.parameters.filter { it.binding == ParameterBinding.Form }
 
         if (contentType.contains("json")) {
             val useJson5 = options.json5FormatType.needUseJson5(REQUEST_BODY_TYPE)
             val raw = when {
-                endpoint.body != null -> if (useJson5) {
-                    ObjectModelJsonConverter.toJson5(endpoint.body)
+                meta.body != null -> if (useJson5) {
+                    ObjectModelJsonConverter.toJson5(meta.body)
                 } else {
-                    ObjectModelJsonConverter.toJson(endpoint.body)
+                    ObjectModelJsonConverter.toJson(meta.body)
                 }
 
                 bodyParams.isNotEmpty() -> bodyParams.associate { it.name to (it.example ?: it.defaultValue ?: "") }
@@ -514,14 +529,14 @@ class PostmanFormatter(
             )
         }
 
-        if (endpoint.body != null) {
+        if (meta.body != null) {
             val useJson5 = options.json5FormatType.needUseJson5(REQUEST_BODY_TYPE)
             return PostmanBody(
                 mode = "raw",
                 raw = if (useJson5) {
-                    ObjectModelJsonConverter.toJson5(endpoint.body)
+                    ObjectModelJsonConverter.toJson5(meta.body)
                 } else {
-                    ObjectModelJsonConverter.toJson(endpoint.body)
+                    ObjectModelJsonConverter.toJson(meta.body)
                 },
                 options = mapOf("raw" to mapOf("language" to "json"))
             )

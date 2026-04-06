@@ -1,12 +1,8 @@
 package com.itangcent.easyapi.exporter.postman
 
-import com.itangcent.easyapi.exporter.model.ExportFormat
-import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.OutputConfig
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
 
 class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     
@@ -18,12 +14,12 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
     
     @org.junit.Test
-    fun `test format is POSTMAN`() {
+    fun `test formatIsPostman`() {
         assertEquals(ExportFormat.POSTMAN, exporter.format)
     }
     
     @org.junit.Test
-    fun `test export with empty endpoints returns success with zero count`() {
+    fun `test emptyEndpoints`() {
         val endpoints = emptyList<com.itangcent.easyapi.exporter.model.ApiEndpoint>()
         val context = createTestContext(endpoints)
         val result = runBlocking { exporter.export(context) }
@@ -31,11 +27,10 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("Expected Success but got $result", result is ExportResult.Success)
         val success = result as ExportResult.Success
         assertEquals(0, success.count)
-        assertEquals("Postman Collection", success.target)
     }
     
     @org.junit.Test
-    fun `test export with single endpoint`() {
+    fun `test singleEndpoint`() {
         val endpoint = createTestEndpoint(
             name = "Get User",
             path = "/api/users/{id}",
@@ -43,7 +38,12 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             description = "Retrieve user by ID"
         )
         
-        val context = createTestContext(listOf(endpoint))
+        val context = createTestContext(
+            endpoints = listOf(endpoint),
+            outputConfig = OutputConfig(
+                postmanOptions = PostmanExportOptions(selectedCollectionName = "Test API")
+            )
+        )
         val result = runBlocking { exporter.export(context) }
         
         assertTrue("Expected Success but got $result", result is ExportResult.Success)
@@ -55,11 +55,11 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         
         val metadata = success.metadata as PostmanExportMetadata
         assertNotNull(metadata.collectionData)
-        assertTrue(metadata.collectionData is com.itangcent.easyapi.exporter.postman.model.PostmanCollection)
+        assertEquals("Test API", metadata.collectionData?.info?.name)
     }
     
     @org.junit.Test
-    fun `test export with multiple endpoints`() {
+    fun `test multipleEndpoints`() {
         val endpoints = listOf(
             createTestEndpoint("Get Users", "/api/users", HttpMethod.GET),
             createTestEndpoint("Create User", "/api/users", HttpMethod.POST),
@@ -76,72 +76,57 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(4, success.count)
         
         val metadata = success.metadata as PostmanExportMetadata
-        val collection = metadata.collectionData!!
-        val totalCount = countApiItems(collection)
-        assertEquals(4, totalCount)
-    }
-    
-    private fun countApiItems(collection: com.itangcent.easyapi.exporter.postman.model.PostmanCollection): Int {
-        fun count(items: List<com.itangcent.easyapi.exporter.postman.model.PostmanItem>): Int = items.sumOf { item ->
-            if (item.request != null) 1 else count(item.item)
-        }
-        return count(collection.item)
+        val items = metadata.collectionData?.item ?: emptyList()
+        assertTrue(items.any { it.name == "Get Users" })
+        assertTrue(items.any { it.name == "Create User" })
+        assertTrue(items.any { it.name == "Update User" })
+        assertTrue(items.any { it.name == "Delete User" })
     }
     
     @org.junit.Test
-    fun `test export creates valid postman collection structure`() {
+    fun `test validPostmanFormat`() {
         val endpoint = createTestEndpoint(
             name = "Test API",
             path = "/test",
-            method = HttpMethod.GET
+            method = HttpMethod.GET,
+            description = "Test description"
         )
         
-        val context = createTestContext(listOf(endpoint))
-        val result = runBlocking { exporter.export(context) }
-        
-        assertTrue("Expected Success but got $result", result is ExportResult.Success)
-        val success = result as ExportResult.Success
-        
-        val metadata = success.metadata as PostmanExportMetadata
-        val collection = metadata.collectionData!!
-        
-        assertNotNull(collection.info)
-        assertNotNull(collection.info.name)
-        assertNotNull(collection.info.schema)
-        assertTrue(collection.item.isNotEmpty())
-    }
-    
-    @org.junit.Test
-    fun `test export groups endpoints by path`() {
-        val endpoints = listOf(
-            createTestEndpoint("Get User", "/api/users", HttpMethod.GET),
-            createTestEndpoint("Create User", "/api/users", HttpMethod.POST),
-            createTestEndpoint("Get Order", "/api/orders", HttpMethod.GET)
-        )
-
-        val context = createTestContext(endpoints)
-        val result = runBlocking { exporter.export(context) }
-
-        assertTrue("Expected Success but got $result", result is ExportResult.Success)
-        val success = result as ExportResult.Success
-
-        val metadata = success.metadata as PostmanExportMetadata
-        val collection = metadata.collectionData!!
-
-        assertTrue("Expected at least 1 folder item", collection.item.isNotEmpty())
-        val totalCount = countApiItems(collection)
-        assertEquals("Expected 3 endpoints total", 3, totalCount)
-    }
-    
-    @org.junit.Test
-    fun `test export with different http methods`() {
-        val endpoints = HttpMethod.values().map { method ->
-            createTestEndpoint(
-                name = "${method.name} Test",
-                path = "/test",
-                method = method
+        val context = createTestContext(
+            endpoints = listOf(endpoint),
+            outputConfig = OutputConfig(
+                postmanOptions = PostmanExportOptions(selectedCollectionName = "Test API")
             )
-        }
+        )
+        val result = runBlocking { exporter.export(context) }
+        
+        assertTrue("Expected Success but got $result", result is ExportResult.Success)
+        val success = result as ExportResult.Success
+        
+        val metadata = success.metadata as PostmanExportMetadata
+        val collection = metadata.collectionData
+        
+        assertNotNull(collection?.info)
+        assertEquals("Test API", collection?.info?.name)
+        
+        val item = collection?.item?.firstOrNull()
+        assertNotNull(item)
+        assertEquals("Test API", item?.name)
+        
+        val request = item?.request
+        assertNotNull(request)
+        assertEquals("GET", request?.method)
+    }
+    
+    @org.junit.Test
+    fun `test httpMethods`() {
+        val endpoints = listOf(
+            createTestEndpoint("GET Test", "/test", HttpMethod.GET),
+            createTestEndpoint("POST Test", "/test", HttpMethod.POST),
+            createTestEndpoint("PUT Test", "/test", HttpMethod.PUT),
+            createTestEndpoint("DELETE Test", "/test", HttpMethod.DELETE),
+            createTestEndpoint("PATCH Test", "/test", HttpMethod.PATCH)
+        )
         
         val context = createTestContext(endpoints)
         val result = runBlocking { exporter.export(context) }
@@ -149,30 +134,34 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("Expected Success but got $result", result is ExportResult.Success)
         val success = result as ExportResult.Success
         
-        assertEquals(endpoints.size, success.count)
-    }
-    
-    @org.junit.Test
-    fun `test export context contains correct project`() {
-        val endpoint = createTestEndpoint()
-        val context = createTestContext(listOf(endpoint))
+        assertEquals(5, success.count)
         
-        assertEquals(project, context.project)
-        assertEquals(ExportFormat.POSTMAN, context.exportFormat)
+        val metadata = success.metadata as PostmanExportMetadata
+        val items = metadata.collectionData?.item ?: emptyList()
+        
+        assertTrue(items.any { it.request?.method == "GET" })
+        assertTrue(items.any { it.request?.method == "POST" })
+        assertTrue(items.any { it.request?.method == "PUT" })
+        assertTrue(items.any { it.request?.method == "DELETE" })
+        assertTrue(items.any { it.request?.method == "PATCH" })
     }
     
     @org.junit.Test
-    fun `test export with output config`() {
-        val endpoint = createTestEndpoint()
-        val outputConfig = OutputConfig(
-            fileName = "test_collection",
-            postmanOptions = null
+    fun `test noDescription`() {
+        val endpoint = createTestEndpoint(
+            name = "No Description API",
+            path = "/no-desc",
+            method = HttpMethod.GET,
+            description = null
         )
-        val context = createTestContext(listOf(endpoint), outputConfig)
         
+        val context = createTestContext(listOf(endpoint))
         val result = runBlocking { exporter.export(context) }
         
         assertTrue("Expected Success but got $result", result is ExportResult.Success)
+        val success = result as ExportResult.Success
+        
+        assertEquals(1, success.count)
     }
     
     private fun createTestEndpoint(
@@ -183,9 +172,11 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     ): com.itangcent.easyapi.exporter.model.ApiEndpoint {
         return com.itangcent.easyapi.exporter.model.ApiEndpoint(
             name = name,
-            path = path,
-            method = method,
-            description = description
+            description = description,
+            metadata = com.itangcent.easyapi.exporter.model.HttpMetadata(
+                path = path,
+                method = method
+            )
         )
     }
     

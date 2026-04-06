@@ -5,6 +5,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
+import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
 import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointRecognizer
 import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
@@ -32,6 +33,9 @@ class CompositeApiClassRecognizer(private val project: Project) {
             }
             if (settings.actuatorEnable) {
                 add(ActuatorEndpointRecognizer(enabled = true))
+            }
+            if (settings.grpcEnable) {
+                add(GrpcServiceRecognizer())
             }
         }
     }

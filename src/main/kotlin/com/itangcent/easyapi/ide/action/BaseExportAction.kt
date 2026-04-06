@@ -10,6 +10,7 @@ import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporterRegistry
 import com.itangcent.easyapi.exporter.ExportOrchestrator
+import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.ide.support.SelectedHelper
@@ -50,7 +51,35 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
     protected abstract val actionName: String
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabled = e.project != null
+        val project = e.project
+        if (project == null) {
+            e.presentation.isEnabled = false
+            return
+        }
+
+        // Check if format supports the selected elements
+        val selection = SelectedHelper.resolveSelection(e)
+        val hasGrpc = selection?.let { hasGrpcEndpoints(it) } ?: false
+
+        e.presentation.isEnabled = if (hasGrpc) {
+            exportFormat.supportsGrpc
+        } else {
+            exportFormat.supportsHttp
+        }
+    }
+
+    /**
+     * Quick check if the selection might contain gRPC endpoints.
+     * This is a heuristic check without full scanning.
+     */
+    private fun hasGrpcEndpoints(selection: SelectionScope): Boolean {
+        // Check if any selected class is a gRPC service
+        for (psiClass in selection.classes()) {
+            if (GrpcServiceRecognizer.extendsBindableService(psiClass)) {
+                return true
+            }
+        }
+        return false
     }
 
     override fun actionPerformed(e: AnActionEvent) {

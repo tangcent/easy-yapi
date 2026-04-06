@@ -94,6 +94,7 @@ object RuleKeys {
     val CLASS_IS_FEIGN_CTRL = RuleKey.boolean("class.is.feign.ctrl")
     val CLASS_IS_JAXRS_CTRL = RuleKey.boolean("class.is.jaxrs.ctrl")
     val CLASS_IS_QUARKUS_CTRL = RuleKey.boolean("class.is.quarkus.ctrl")
+    val CLASS_IS_GRPC         = RuleKey.boolean("class.is.grpc")
 
     // ── Postman rules ─────────────────────────────────────────────
     val POSTMAN_PREREQUEST            = RuleKey.string("postman.prerequest", StringRuleMode.MERGE)

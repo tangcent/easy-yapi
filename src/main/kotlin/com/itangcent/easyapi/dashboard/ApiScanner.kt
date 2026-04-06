@@ -14,6 +14,7 @@ import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
 import com.itangcent.easyapi.exporter.feign.FeignClassExporter
+import com.itangcent.easyapi.exporter.grpc.GrpcClassExporter
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointExporter
@@ -133,19 +134,23 @@ class ApiScanner(private val project: Project) {
                 val annotationClass = javaFacade.findClass(annotationFqn, GlobalSearchScope.allScope(project))
                 if (annotationClass != null) {
                     LOG.debug("Found annotation class: $annotationFqn")
-                    try {
-                        val annotated = AnnotatedElementsSearch.searchPsiClasses(annotationClass, scope)
-                        val found = annotated.findAll().filter { !it.isAnnotationType }
-                        LOG.debug("Found ${found.size} classes annotated with $annotationFqn")
-                        controllerClasses.addAll(found)
+                    if (!annotationClass.isAnnotationType) {
+                        LOG.debug("Skipping $annotationFqn — not an annotation type (interface or class)")
+                    } else {
+                        try {
+                            val annotated = AnnotatedElementsSearch.searchPsiClasses(annotationClass, scope)
+                            val found = annotated.findAll().filter { !it.isAnnotationType }
+                            LOG.debug("Found ${found.size} classes annotated with $annotationFqn")
+                            controllerClasses.addAll(found)
 
-                        val metaAnnotated = findMetaAnnotatedClasses(annotationClass, scope)
-                        if (metaAnnotated.isNotEmpty()) {
-                            LOG.debug("Found ${metaAnnotated.size} meta-annotated classes for $annotationFqn")
-                            controllerClasses.addAll(metaAnnotated)
+                            val metaAnnotated = findMetaAnnotatedClasses(annotationClass, scope)
+                            if (metaAnnotated.isNotEmpty()) {
+                                LOG.debug("Found ${metaAnnotated.size} meta-annotated classes for $annotationFqn")
+                                controllerClasses.addAll(metaAnnotated)
+                            }
+                        } catch (e: Exception) {
+                            LOG.warn("Error searching for classes annotated with $annotationFqn: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        LOG.warn("Error searching for classes annotated with $annotationFqn: ${e.message}")
                     }
                 } else {
                     LOG.debug("Annotation class not found: $annotationFqn (project may not have this dependency)")
@@ -329,6 +334,10 @@ class ApiScanner(private val project: Project) {
 
             if (settings.actuatorEnable) {
                 add(ActuatorEndpointExporter())
+            }
+
+            if (settings.grpcEnable) {
+                add(GrpcClassExporter(context))
             }
         }
     }

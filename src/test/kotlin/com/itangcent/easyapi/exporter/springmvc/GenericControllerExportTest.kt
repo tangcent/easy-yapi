@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.exporter.springmvc
 
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -59,14 +61,14 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         println("StringCtrl all methods: $allMethods")
 
         val endpoints = exporter.export(psiClass)
-        println("Exported endpoints: ${endpoints.map { "${it.method} ${it.path}" }}")
+        println("Exported endpoints: ${endpoints.map { "${it.httpMetadata?.method} ${it.path}" }}")
         // Should have at least 2 endpoints: GET /string/item and POST /string/item
         assertTrue("StringCtrl should export at least 2 inherited endpoints, got ${endpoints.size}", endpoints.size >= 2)
 
-        val getItem = endpoints.find { it.path == "/string/item" && it.method == com.itangcent.easyapi.exporter.model.HttpMethod.GET }
+        val getItem = endpoints.find { it.path == "/string/item" && it.httpMetadata?.method == com.itangcent.easyapi.exporter.model.HttpMethod.GET }
         assertNotNull("Should export GET /string/item", getItem)
 
-        val postItem = endpoints.find { it.path == "/string/item" && it.method == com.itangcent.easyapi.exporter.model.HttpMethod.POST }
+        val postItem = endpoints.find { it.path == "/string/item" && it.httpMetadata?.method == com.itangcent.easyapi.exporter.model.HttpMethod.POST }
         assertNotNull("Should export POST /string/item", postItem)
     }
 
@@ -80,10 +82,10 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val getItem = endpoints.find { it.path == "/string/item" && it.method == com.itangcent.easyapi.exporter.model.HttpMethod.GET }
+        val getItem = endpoints.find { it.path == "/string/item" && it.httpMetadata?.method == com.itangcent.easyapi.exporter.model.HttpMethod.GET }
         assertNotNull("Should export GET /string/item", getItem)
 
-        val responseBody = getItem!!.responseBody
+        val responseBody = getItem!!.httpMetadata?.responseBody
         assertNotNull("responseBody should be populated", responseBody)
         assertTrue("responseBody should be Object", responseBody is ObjectModel.Object)
 
@@ -110,7 +112,7 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val postItem = endpoints.find { it.path == "/string/item" && it.method == com.itangcent.easyapi.exporter.model.HttpMethod.POST }
+        val postItem = endpoints.find { it.path == "/string/item" && it.httpMetadata?.method == com.itangcent.easyapi.exporter.model.HttpMethod.POST }
         assertNotNull("Should export POST /string/item", postItem)
 
         // For String body, the exporter skips expansion (simple type), so body may be null
@@ -152,7 +154,7 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         val query = endpoints.find { it.path == "/concrete/query" }
         assertNotNull("Should export /concrete/query", query)
 
-        val responseBody = query!!.responseBody
+        val responseBody = query!!.httpMetadata?.responseBody
         assertNotNull("responseBody should be populated", responseBody)
         assertTrue("responseBody should be Object", responseBody is ObjectModel.Object)
 

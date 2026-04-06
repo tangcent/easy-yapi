@@ -16,11 +16,20 @@ import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.GrpcStreamingType
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.http.*
+import com.itangcent.easyapi.grpc.DynamicJarClient
+import com.itangcent.easyapi.grpc.GrpcStatus
 import com.itangcent.easyapi.logging.IdeaLog
+import com.intellij.openapi.ui.Messages
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.grpcMetadata
+import com.itangcent.easyapi.exporter.model.isGrpc
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import kotlinx.coroutines.*
 import java.awt.BorderLayout
@@ -57,28 +66,37 @@ class EndpointDetailsPanel(
 
     /** Coroutine scope for managing background HTTP requests */
     private val scope = CoroutineScope(SupervisorJob() + IdeDispatchers.Background)
+
     /** Current active HTTP request job, can be cancelled */
     private var currentRequestJob: Job? = null
+
     /** Timer for showing loading animation during requests */
     private var loadingTimer: Timer? = null
+
     /** Helper for managing host history cache */
     private val hostCacheHelper: HttpContextCacheHelper = DefaultHttpContextCacheHelper.getInstance(project)
+
     /** Service for persisting user edits */
     private val editCacheService: RequestEditCacheService = RequestEditCacheService.getInstance(project)
 
     /** Label displaying the endpoint name */
     private val nameLabel = JBLabel("").apply { font = font.deriveFont(font.size + 2f) }
+
     /** Label displaying the HTTP method with color coding */
     private val methodLabel = JBLabel("")
+
     /** Combo box for selecting/editing the host URL */
     private val hostComboBox: JComboBox<String> = JComboBox<String>().apply {
         isEditable = true
         preferredSize = Dimension(200, preferredSize.height)
     }
+
     /** Text field for the request path */
     private val pathField = JTextField().apply { isEditable = true }
+
     /** Button to send the HTTP request */
     private val sendButton = JButton("Send")
+
     /** Button to reset modifications to default values */
     private val resetButton = JButton("Reset").apply {
         toolTipText = "Reset to default values"
@@ -91,6 +109,7 @@ class EndpointDetailsPanel(
         override fun getColumnClass(columnIndex: Int): Class<*> =
             if (columnIndex == columnCount - 1) JButton::class.java else Any::class.java
     }
+
     /** Table for editing path parameters */
     private val pathParamsTable = JBTable(pathParamsTableModel).apply {
         autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
@@ -141,6 +160,7 @@ class EndpointDetailsPanel(
         override fun getColumnClass(columnIndex: Int): Class<*> =
             if (columnIndex == columnCount - 1) JButton::class.java else Any::class.java
     }
+
     /** Table for editing query parameters */
     private val paramsTable = JBTable(paramsTableModel).apply {
         autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
@@ -154,6 +174,7 @@ class EndpointDetailsPanel(
         override fun getColumnClass(columnIndex: Int): Class<*> =
             if (columnIndex == columnCount - 1) JButton::class.java else Any::class.java
     }
+
     /** Table for editing request headers */
     private val headersTable = JBTable(headersTableModel).apply {
         autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
@@ -167,8 +188,10 @@ class EndpointDetailsPanel(
         override fun getColumnClass(columnIndex: Int): Class<*> =
             if (columnIndex == columnCount - 1) JButton::class.java else Any::class.java
     }
+
     /** Tracks which form table rows are file-type params (row index -> true) */
     private val formFileRows: MutableSet<Int> = mutableSetOf()
+
     /** Table for editing form data parameters */
     private val formTable = JBTable(formTableModel).apply {
         autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
@@ -201,6 +224,7 @@ class EndpointDetailsPanel(
     private val responseHeadersTableModel = object : DefaultTableModel(arrayOf("Name", "Value"), 0) {
         override fun isCellEditable(row: Int, column: Int) = false
     }
+
     /** Table for displaying response headers */
     private val responseHeadersTable = JBTable(responseHeadersTableModel).apply {
         autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
@@ -217,6 +241,7 @@ class EndpointDetailsPanel(
     // Response body state
     /** Raw response body text */
     private var rawResponseBody: String = ""
+
     /** Whether response is displayed in pretty JSON format */
     private var isPrettyJson: Boolean = true
 
@@ -226,6 +251,7 @@ class EndpointDetailsPanel(
         toolTipText = "Toggle between formatted and raw JSON"
         addActionListener { togglePrettyJson() }
     }
+
     /** Button to copy response body to clipboard */
     private val copyResponseBtn = JButton("Copy").apply {
         toolTipText = "Copy response body to clipboard"
@@ -234,6 +260,7 @@ class EndpointDetailsPanel(
 
     /** Tab pane for request parameters (Path, Params, Headers, Form/Body) */
     private val tabPane = JTabbedPane()
+
     /** The currently displayed API endpoint */
     private var currentEndpoint: ApiEndpoint? = null
 
@@ -356,7 +383,6 @@ class EndpointDetailsPanel(
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
         }
 
-        // Float the Raw/Format toggle at the top-right corner of the response body
         val wrapper = object : JPanel(null) {
             override fun getPreferredSize(): java.awt.Dimension = responseBodyScrollPane.preferredSize
             override fun getMinimumSize(): java.awt.Dimension = responseBodyScrollPane.minimumSize
@@ -380,6 +406,35 @@ class EndpointDetailsPanel(
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
         })
+    }
+
+    private fun buildGrpcResponseView() {
+        responseTabPane.removeAll()
+
+        val responseBodyScrollPane = JBScrollPane(responseBodyArea).apply {
+            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+        }
+
+        val wrapper = object : JPanel(null) {
+            override fun getPreferredSize(): java.awt.Dimension = responseBodyScrollPane.preferredSize
+            override fun getMinimumSize(): java.awt.Dimension = responseBodyScrollPane.minimumSize
+
+            override fun doLayout() {
+                responseBodyScrollPane.setBounds(0, 0, width, height)
+                val btnSize = prettyToggleBtn.preferredSize
+                prettyToggleBtn.setBounds(
+                    width - btnSize.width - 22,
+                    4,
+                    btnSize.width,
+                    btnSize.height
+                )
+            }
+        }
+        wrapper.add(prettyToggleBtn)
+        wrapper.add(responseBodyScrollPane)
+
+        responseTabPane.addTab("Response", wrapper)
     }
 
     private fun setupDeleteButtonColumn(table: JBTable, model: DefaultTableModel) {
@@ -528,26 +583,142 @@ class EndpointDetailsPanel(
         try {
             currentEndpoint = endpoint
             currentEndpointKey = computeCacheKey(endpoint)
-            nameLabel.text = endpoint.name ?: "Unnamed"
-            methodLabel.text = endpoint.method.name
-            methodLabel.foreground = getMethodColor(endpoint.method)
 
-            val cachedEdit = editCacheService.load(endpoint, currentEndpointKey)
-            if (cachedEdit != null) {
-                loadFromCache(endpoint, cachedEdit)
-            } else {
-                loadFromEndpoint(endpoint)
+            when (val meta = endpoint.metadata) {
+                is GrpcMetadata -> showGrpcEndpoint(endpoint, meta)
+                is HttpMetadata -> {
+                    nameLabel.text = endpoint.name ?: "Unnamed"
+                    methodLabel.text = meta.method.name
+                    methodLabel.foreground = getMethodColor(meta.method)
+
+                    buildResponseTabs()
+
+                    val cachedEdit = editCacheService.load(endpoint, currentEndpointKey) as? HttpRequestEditCache
+                    if (cachedEdit != null) {
+                        loadFromCache(endpoint, cachedEdit)
+                    } else {
+                        loadFromEndpoint(endpoint)
+                    }
+
+                    clearResponse()
+                    autoSelectTab()
+                }
             }
-
-            clearResponse()
-            autoSelectTab()
         } finally {
             isLoading = false
         }
     }
 
-    private fun loadFromCache(endpoint: ApiEndpoint, cache: RequestEditCache) {
-        pathField.text = cache.path ?: endpoint.path
+    private fun showGrpcEndpoint(endpoint: ApiEndpoint, meta: GrpcMetadata) {
+        nameLabel.text = endpoint.name ?: "Unnamed"
+
+        val streamingBadge = when (meta.streamingType) {
+            GrpcStreamingType.UNARY -> "UNARY"
+            GrpcStreamingType.SERVER_STREAMING -> "SERVER_STREAMING"
+            GrpcStreamingType.CLIENT_STREAMING -> "CLIENT_STREAMING"
+            GrpcStreamingType.BIDIRECTIONAL -> "BIDIRECTIONAL"
+        }
+        methodLabel.text = "gRPC [$streamingBadge]"
+        methodLabel.foreground = Color(0x8B5CF6)
+
+        pathField.text = "${meta.packageName}/${meta.methodName}"
+        pathField.isEditable = false
+
+        buildGrpcResponseView()
+
+        val cachedEdit = editCacheService.load(endpoint, currentEndpointKey) as? GrpcRequestEditCache
+        if (cachedEdit != null) {
+            loadGrpcFromCache(meta, cachedEdit)
+        } else {
+            loadGrpcFromEndpoint(meta)
+        }
+
+        rebuildTabsForGrpc(meta)
+        clearResponse()
+    }
+
+    private fun loadGrpcFromCache(meta: GrpcMetadata, cache: GrpcRequestEditCache) {
+        cache.host?.let { host ->
+            val hosts = hostCacheHelper.getHosts()
+            hostComboBox.removeAllItems()
+            if (hosts.isEmpty()) {
+                hostComboBox.addItem(host)
+            } else {
+                if (host !in hosts) {
+                    hostComboBox.addItem(host)
+                }
+                hosts.forEach { hostComboBox.addItem(it) }
+                hostComboBox.selectedItem = host
+            }
+        } ?: run {
+            val hosts = hostCacheHelper.getHosts()
+            hostComboBox.removeAllItems()
+            if (hosts.isEmpty()) {
+                hostComboBox.addItem("localhost:50051")
+            } else {
+                hosts.forEach { hostComboBox.addItem(it) }
+            }
+            hostComboBox.selectedIndex = 0
+        }
+
+        bodyArea.text = cache.body ?: meta.body?.let { ObjectModelJsonConverter.toJson(it) } ?: ""
+    }
+
+    private fun loadGrpcFromEndpoint(meta: GrpcMetadata) {
+        val hosts = hostCacheHelper.getHosts()
+        hostComboBox.removeAllItems()
+        if (hosts.isEmpty()) {
+            hostComboBox.addItem("localhost:50051")
+        } else {
+            hosts.forEach { hostComboBox.addItem(it) }
+        }
+        hostComboBox.selectedIndex = 0
+
+        bodyArea.text = meta.body?.let { ObjectModelJsonConverter.toJson(it) } ?: ""
+    }
+
+    private fun rebuildTabsForGrpc(meta: GrpcMetadata) {
+        tabPane.removeAll()
+        tabPane.addTab("Request Message", createBodyPanel())
+        tabPane.addTab("Info", createGrpcInfoPanel(meta))
+    }
+
+    private fun createGrpcInfoPanel(meta: GrpcMetadata): JPanel {
+        val panel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            border = JBUI.Borders.empty(8)
+        }
+
+        fun addRow(label: String, value: String) {
+            val row = JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                alignmentX = java.awt.Component.LEFT_ALIGNMENT
+                border = JBUI.Borders.emptyBottom(4)
+            }
+            row.add(JBLabel("$label:").apply {
+                preferredSize = Dimension(130, preferredSize.height)
+                minimumSize = Dimension(130, minimumSize.height)
+                maximumSize = Dimension(130, maximumSize.height)
+            })
+            row.add(JBLabel(value))
+            row.add(Box.createHorizontalGlue())
+            panel.add(row)
+        }
+
+        addRow("Service", meta.serviceName)
+        addRow("Package", meta.packageName)
+        addRow("Streaming Type", meta.streamingType.name)
+        meta.protoFile?.let { addRow("Proto File", it) }
+
+        panel.add(Box.createVerticalGlue())
+        return panel
+    }
+
+    private fun loadFromCache(endpoint: ApiEndpoint, cache: HttpRequestEditCache) {
+        val meta = endpoint.httpMetadata
+        pathField.text = cache.path ?: meta?.path ?: ""
+        val parameters = meta?.parameters ?: emptyList()
+        val headers = meta?.headers ?: emptyList()
 
         cache.host?.let { host ->
             val hosts = hostCacheHelper.getHosts()
@@ -563,7 +734,7 @@ class EndpointDetailsPanel(
             }
         }
 
-        val pathParams = endpoint.parameters.filter { it.binding == ParameterBinding.Path }
+        val pathParams = parameters.filter { it.binding == ParameterBinding.Path }
         pathParamsTableModel.rowCount = 0
         pathParamsEnumValues.clear()
         val cachedPathParams = cache.pathParams.associateBy { it.name }
@@ -576,7 +747,7 @@ class EndpointDetailsPanel(
 
         paramsTableModel.rowCount = 0
         val cachedQueryParams = cache.queryParams.associateBy { it.name }
-        endpoint.parameters
+        parameters
             .filter { it.binding == ParameterBinding.Query || it.binding == ParameterBinding.Cookie }
             .forEach { p ->
                 val cachedValue = cachedQueryParams[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
@@ -586,18 +757,18 @@ class EndpointDetailsPanel(
 
         headersTableModel.rowCount = 0
         val cachedHeaders = cache.headers.associateBy { it.name }
-        endpoint.headers.forEach { h ->
+        headers.forEach { h ->
             val cachedValue = cachedHeaders[h.name]?.value ?: h.value ?: ""
             headersTableModel.addRow(arrayOf(h.name, cachedValue, ""))
         }
-        endpoint.parameters.filter { it.binding == ParameterBinding.Header }
+        parameters.filter { it.binding == ParameterBinding.Header }
             .forEach { p ->
                 val cachedValue = cachedHeaders[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
                 headersTableModel.addRow(arrayOf(p.name, cachedValue, ""))
             }
         ensureEmptyRow(headersTableModel)
 
-        val formParams = endpoint.parameters.filter { it.binding == ParameterBinding.Form }
+        val formParams = parameters.filter { it.binding == ParameterBinding.Form }
         formTableModel.rowCount = 0
         formFileRows.clear()
         val cachedFormParams = cache.formParams.associateBy { it.name }
@@ -609,23 +780,27 @@ class EndpointDetailsPanel(
         ensureEmptyRow(formTableModel)
         setupFormTableFileEditors()
 
+        val contentType = meta?.contentType
         val isFormData = formParams.isNotEmpty() ||
-                endpoint.contentType?.contains("form-urlencoded", ignoreCase = true) == true ||
-                endpoint.contentType?.contains("form-data", ignoreCase = true) == true
+                contentType?.contains("form-urlencoded", ignoreCase = true) == true ||
+                contentType?.contains("form-data", ignoreCase = true) == true
         hasFormData = isFormData
-        endpointContentType = cache.contentType ?: endpoint.contentType
+        endpointContentType = cache.contentType ?: contentType
 
         bodyArea.text = if (!isFormData) {
-            cache.body ?: endpoint.body?.let { ObjectModelJsonConverter.toJson(it) } ?: ""
+            cache.body ?: meta?.body?.let { ObjectModelJsonConverter.toJson(it) } ?: ""
         } else ""
 
         rebuildTabs(hasPathParams = pathParams.isNotEmpty(), hasFormParams = isFormData)
     }
 
     private fun loadFromEndpoint(endpoint: ApiEndpoint) {
-        pathField.text = endpoint.path
+        val meta = endpoint.httpMetadata
+        pathField.text = meta?.path ?: ""
+        val parameters = meta?.parameters ?: emptyList()
+        val headers = meta?.headers ?: emptyList()
 
-        val pathParams = endpoint.parameters.filter { it.binding == ParameterBinding.Path }
+        val pathParams = parameters.filter { it.binding == ParameterBinding.Path }
         pathParamsTableModel.rowCount = 0
         pathParamsEnumValues.clear()
         pathParams.forEachIndexed { index, p ->
@@ -635,7 +810,7 @@ class EndpointDetailsPanel(
         ensureEmptyRow(pathParamsTableModel)
 
         paramsTableModel.rowCount = 0
-        endpoint.parameters
+        parameters
             .filter { it.binding == ParameterBinding.Query || it.binding == ParameterBinding.Cookie }
             .forEach { p ->
                 paramsTableModel.addRow(arrayOf(p.name, p.defaultValue ?: p.example ?: "", p.description ?: "", ""))
@@ -643,16 +818,16 @@ class EndpointDetailsPanel(
         ensureEmptyRow(paramsTableModel)
 
         headersTableModel.rowCount = 0
-        endpoint.headers.forEach { h ->
+        headers.forEach { h ->
             headersTableModel.addRow(arrayOf(h.name, h.value ?: "", ""))
         }
-        endpoint.parameters.filter { it.binding == ParameterBinding.Header }
+        parameters.filter { it.binding == ParameterBinding.Header }
             .forEach { p ->
                 headersTableModel.addRow(arrayOf(p.name, p.defaultValue ?: p.example ?: "", ""))
             }
         ensureEmptyRow(headersTableModel)
 
-        val formParams = endpoint.parameters.filter { it.binding == ParameterBinding.Form }
+        val formParams = parameters.filter { it.binding == ParameterBinding.Form }
         formTableModel.rowCount = 0
         formFileRows.clear()
         formParams.forEachIndexed { index, p ->
@@ -662,14 +837,15 @@ class EndpointDetailsPanel(
         ensureEmptyRow(formTableModel)
         setupFormTableFileEditors()
 
+        val contentType = meta?.contentType
         val isFormData = formParams.isNotEmpty() ||
-                endpoint.contentType?.contains("form-urlencoded", ignoreCase = true) == true ||
-                endpoint.contentType?.contains("form-data", ignoreCase = true) == true
+                contentType?.contains("form-urlencoded", ignoreCase = true) == true ||
+                contentType?.contains("form-data", ignoreCase = true) == true
         hasFormData = isFormData
-        endpointContentType = endpoint.contentType
+        endpointContentType = contentType
 
         bodyArea.text = if (!isFormData) {
-            endpoint.body?.let { ObjectModelJsonConverter.toJson(it) } ?: ""
+            meta?.body?.let { ObjectModelJsonConverter.toJson(it) } ?: ""
         } else ""
 
         rebuildTabs(hasPathParams = pathParams.isNotEmpty(), hasFormParams = isFormData)
@@ -732,23 +908,91 @@ class EndpointDetailsPanel(
 
     private fun sendRequest() {
         val endpoint = currentEndpoint ?: return
-        val host = getSelectedHost()
 
-        val pathParams = (0 until pathParamsTableModel.rowCount).map { row ->
-            pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty() to
-                    pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+        if (endpoint.isGrpc) {
+            if (!checkGrpcCallReady()) {
+                return
+            }
         }
-        val resolvedPath = EndpointDetailsPanelLogic.resolvePath(pathField.text, pathParams)
-        val fullUrl = host + (if (resolvedPath.startsWith("/")) resolvedPath else "/$resolvedPath")
+
+        val host = getSelectedHost()
         hostCacheHelper.addHost(host)
         loadHostHistory()
 
-        LOG.info("Sending ${endpoint.method.name} request to $fullUrl")
+        prepareSendUI(endpoint)
 
+        currentRequestJob = scope.launch {
+            val response = if (endpoint.isGrpc) {
+                sendGrpcRequestInternal(endpoint, host)
+            } else {
+                sendHttpRequestInternal(endpoint, host)
+            }
+
+            handleResponse(endpoint, response)
+        }
+    }
+
+    private fun checkGrpcCallReady(): Boolean {
+        val settings = com.itangcent.easyapi.settings.SettingBinder.getInstance(project).read()
+        
+        if (!settings.grpcCallEnabled) {
+            val result = Messages.showOkCancelDialog(
+                project,
+                "gRPC call is not enabled. Would you like to enable it now?",
+                "gRPC Call Not Enabled",
+                "Open Settings",
+                "Cancel",
+                Messages.getQuestionIcon()
+            )
+            if (result == Messages.OK) {
+                openGrpcSettings()
+            }
+            return false
+        }
+
+        val resolver = com.itangcent.easyapi.grpc.GrpcRuntimeResolver.getInstance(project)
+        val resolved = resolver.resolve()
+        if (resolved == null) {
+            val result = Messages.showOkCancelDialog(
+                project,
+                "gRPC runtime packages are not available. Would you like to configure them now?",
+                "gRPC Runtime Not Available",
+                "Open Settings",
+                "Cancel",
+                Messages.getWarningIcon()
+            )
+            if (result == Messages.OK) {
+                openGrpcSettings()
+            }
+            return false
+        }
+
+        return true
+    }
+
+    private fun openGrpcSettings() {
+        com.itangcent.easyapi.settings.ui.EasyApiSettingsConfigurable.selectTab(
+            com.itangcent.easyapi.settings.ui.EasyApiSettingsConfigurable.TAB_GRPC
+        )
+        com.intellij.openapi.options.ShowSettingsUtil.getInstance().showSettingsDialog(
+            project,
+            com.itangcent.easyapi.settings.ui.EasyApiSettingsConfigurable::class.java
+        )
+    }
+
+    private fun prepareSendUI(endpoint: ApiEndpoint) {
+        val meta = endpoint.metadata
+        val path = when (meta) {
+            is HttpMetadata -> meta.path
+            is GrpcMetadata -> meta.path
+            else -> ""
+        }
+        LOG.info("Sending ${if (endpoint.isGrpc) "gRPC" else endpoint.httpMetadata?.method?.name ?: "HTTP"} request to $path")
         sendButton.isEnabled = false
         sendButton.text = "Sending..."
         responseBodyArea.text = ""
         responseStatusLabel.text = "Sending..."
+        responseStatusLabel.foreground = null
 
         var loadingDots = 0
         loadingTimer = Timer(300) {
@@ -757,90 +1001,163 @@ class EndpointDetailsPanel(
             sendButton.text = "Sending$dots"
             responseStatusLabel.text = "Sending$dots"
         }.apply { start() }
+    }
 
-        currentRequestJob = scope.launch {
-            try {
-                val headers = extractKeyValuesFromTable(headersTableModel)
-                val query = extractKeyValuesFromTable(paramsTableModel)
+    private data class RequestResult(
+        val body: String,
+        val isError: Boolean,
+        val statusCode: Int? = null,
+        val headers: List<Pair<String, String>> = emptyList()
+    )
 
-                val formParams: List<FormParam>
-                val body: String?
-                val finalHeaders: List<KeyValue>
-                if (hasFormData) {
-                    formParams = buildFormParams()
-                    body = null
-                    finalHeaders = headers
-                } else {
-                    formParams = emptyList()
-                    body = bodyArea.text.takeIf { it.isNotBlank() }
-                    finalHeaders = headers
-                }
+    private suspend fun sendHttpRequestInternal(endpoint: ApiEndpoint, host: String): RequestResult {
+        return try {
+            val pathParams = (0 until pathParamsTableModel.rowCount).map { row ->
+                pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty() to
+                        pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+            }
+            val resolvedPath = EndpointDetailsPanelLogic.resolvePath(pathField.text, pathParams)
+            val fullUrl = host + (if (resolvedPath.startsWith("/")) resolvedPath else "/$resolvedPath")
 
-                val request = HttpRequest(
-                    url = fullUrl,
-                    method = endpoint.method.name,
-                    headers = finalHeaders,
-                    query = query,
-                    body = body,
-                    formParams = formParams,
-                    contentType = endpointContentType
+            LOG.info("HTTP request to $fullUrl")
+
+            val headers = extractKeyValuesFromTable(headersTableModel)
+            val query = extractKeyValuesFromTable(paramsTableModel)
+
+            val formParams: List<FormParam>
+            val body: String?
+            val finalHeaders: List<KeyValue>
+            if (hasFormData) {
+                formParams = buildFormParams()
+                body = null
+                finalHeaders = headers
+            } else {
+                formParams = emptyList()
+                body = bodyArea.text.takeIf { it.isNotBlank() }
+                finalHeaders = headers
+            }
+
+            val request = HttpRequest(
+                url = fullUrl,
+                method = endpoint.httpMetadata?.method?.name ?: endpoint.metadata.protocol,
+                headers = finalHeaders,
+                query = query,
+                body = body,
+                formParams = formParams,
+                contentType = endpointContentType
+            )
+            LOG.debug("Request: ${request.method} ${request.url}, headers=${request.headers.size}, hasBody=${request.body != null}")
+            val response = httpClient.execute(request)
+            LOG.info("Response: status=${response.code}, bodyLength=${response.body?.length ?: 0}")
+
+            RequestResult(
+                body = response.body ?: "",
+                isError = response.code !in 200..299,
+                statusCode = response.code,
+                headers = response.headers.map { (k, v) -> k to v.joinToString(", ") }
+            )
+        } catch (_: CancellationException) {
+            LOG.debug("Request cancelled")
+            RequestResult(body = "Request cancelled", isError = true)
+        } catch (e: Exception) {
+            LOG.warn("Request failed: ${e.message}", e)
+            RequestResult(body = "Error: ${e.message}", isError = true)
+        }
+    }
+
+    private suspend fun sendGrpcRequestInternal(endpoint: ApiEndpoint, host: String): RequestResult {
+        val meta = endpoint.grpcMetadata ?: return RequestResult(body = "Error: Not a gRPC endpoint", isError = true)
+        LOG.info("gRPC request initiated from UI: endpoint=${endpoint.name}, path=${meta.path}")
+
+        val grpcClient = DynamicJarClient.getInstance(project)
+
+        if (!grpcClient.isAvailable()) {
+            LOG.warn("gRPC client not available for request to ${meta.path}")
+            swing {
+                Messages.showInfoMessage(
+                    project,
+                    "No gRPC client is available. Please configure the gRPC runtime in Settings.\n\n" +
+                            "The plugin requires gRPC runtime JARs. Download them from the gRPC settings panel.",
+                    "gRPC Client Not Available"
                 )
-                LOG.debug("Request: ${request.method} ${request.url}, headers=${request.headers.size}, hasBody=${request.body != null}")
-                val response = httpClient.execute(request)
-                LOG.info("Response: status=${response.code}, bodyLength=${response.body?.length ?: 0}")
-                swing {
-                    if (currentEndpoint != endpoint) {
-                        LOG.debug("Endpoint changed, discarding response")
-                        return@swing
+            }
+            return RequestResult(body = "Error: gRPC client not available", isError = true)
+        }
+
+        val body = bodyArea.text.takeIf { it.isNotBlank() }
+        LOG.info("gRPC request details: host=$host, bodyLength=${body?.length ?: 0}")
+
+        return try {
+            val sm = readSync { endpoint.sourceMethod }
+            val grpcResult = if (sm != null) {
+                grpcClient.invoke(host, meta.path, body, sm)
+            } else {
+                grpcClient.invoke(host, meta.path, body)
+            }
+
+            LOG.info("gRPC response received: endpoint=${meta.path}, isError=${grpcResult.isError}, statusCode=${grpcResult.statusCode}, length=${grpcResult.body.length}")
+
+            RequestResult(
+                body = grpcResult.body,
+                isError = grpcResult.isError,
+                statusCode = grpcResult.statusCode,
+                headers = if (grpcResult.statusName != null) listOf("grpc-status" to grpcResult.statusName) else emptyList()
+            )
+        } catch (e: Exception) {
+            LOG.warn("gRPC request failed with exception: ${e.message}", e)
+            RequestResult(body = "Error: ${e.message ?: e.javaClass.simpleName}", isError = true)
+        }
+    }
+
+    private suspend fun handleResponse(endpoint: ApiEndpoint, response: RequestResult) {
+        swing {
+            if (currentEndpoint != endpoint) {
+                LOG.debug("Endpoint changed, discarding response")
+                return@swing
+            }
+
+            loadingTimer?.stop()
+            loadingTimer = null
+            sendButton.isEnabled = true
+            sendButton.text = "Send"
+
+            rawResponseBody = response.body
+            isPrettyJson = true
+            prettyToggleBtn.text = "Raw"
+            responseBodyArea.text = if (response.isError) response.body else formatJson(response.body)
+
+            when {
+                response.statusCode != null -> {
+                    val isGrpcStatus = response.statusCode in 0..16
+                    val statusText = if (isGrpcStatus) {
+                        GrpcStatus.formatStatus(response.statusCode)
+                    } else {
+                        response.statusCode.toString()
                     }
-
-                    loadingTimer?.stop()
-                    loadingTimer = null
-                    sendButton.isEnabled = true
-                    sendButton.text = "Send"
-
-                    responseStatusLabel.text = "Status: ${response.code}"
+                    responseStatusLabel.text = "Status: $statusText"
                     responseStatusLabel.foreground = when {
-                        response.code in 200..299 -> Color(0x49cc90)
-                        response.code in 400..499 -> Color(0xfca130)
-                        response.code >= 500 -> Color(0xf93e3e)
+                        isGrpcStatus -> {
+                            if (response.statusCode == GrpcStatus.OK) Color(0x49cc90) else Color(0xf93e3e)
+                        }
+                        response.statusCode in 200..299 -> Color(0x49cc90)
+                        response.statusCode in 400..499 -> Color(0xfca130)
+                        response.statusCode >= 500 -> Color(0xf93e3e)
                         else -> null
                     }
-
-                    rawResponseBody = response.body ?: ""
-                    isPrettyJson = true
-                    prettyToggleBtn.text = "Raw"
-                    responseBodyArea.text = formatJson(rawResponseBody)
-
-                    responseHeadersTableModel.rowCount = 0
-                    response.headers.forEach { (k, v) ->
-                        responseHeadersTableModel.addRow(arrayOf(k, v.joinToString(", ")))
-                    }
-
-                    responseTabPane.selectedIndex = 0
                 }
-            } catch (_: CancellationException) {
-                LOG.debug("Request cancelled")
-            } catch (e: Exception) {
-                LOG.warn("Request failed: ${e.message}", e)
-                swing {
-                    if (currentEndpoint != endpoint) {
-                        LOG.debug("Endpoint changed, discarding error")
-                        return@swing
-                    }
 
-                    loadingTimer?.stop()
-                    loadingTimer = null
-                    sendButton.isEnabled = true
-                    sendButton.text = "Send"
-
-                    rawResponseBody = "Error: ${e.message}"
-                    responseBodyArea.text = rawResponseBody
-                    responseStatusLabel.text = "Error"
-                    responseStatusLabel.foreground = Color(0xf93e3e)
-                    responseHeadersTableModel.rowCount = 0
+                else -> {
+                    responseStatusLabel.text = if (response.isError) "Error" else "OK"
+                    responseStatusLabel.foreground = if (response.isError) Color(0xf93e3e) else Color(0x49cc90)
                 }
             }
+
+            responseHeadersTableModel.rowCount = 0
+            response.headers.forEach { (k, v) ->
+                responseHeadersTableModel.addRow(arrayOf(k, v))
+            }
+
+            responseTabPane.selectedIndex = 0
         }
     }
 
@@ -880,7 +1197,6 @@ class EndpointDetailsPanel(
             }
             .filter { it.name.isNotEmpty() }
     }
-
 
     /**
      * Sets up custom renderer and editor for file-type rows in the form table.
@@ -968,13 +1284,23 @@ class EndpointDetailsPanel(
         HttpMethod.NO_METHOD -> Color(0x999999)
     }
 
+    private fun getEndpointColor(endpoint: ApiEndpoint): Color =
+        if (endpoint.isGrpc) Color(0x8B5CF6) else getMethodColor(endpoint.httpMetadata?.method ?: HttpMethod.NO_METHOD)
+
     private fun resetCurrentEndpoint() {
         val endpoint = currentEndpoint ?: return
-        editCacheService.delete(currentEndpointKey)
+        editCacheService.delete(currentEndpointKey, endpoint.isGrpc)
         isLoading = true
         try {
-            loadFromEndpoint(endpoint)
-            autoSelectTab()
+            if (endpoint.isGrpc) {
+                val meta = endpoint.grpcMetadata
+                if (meta != null) {
+                    loadGrpcFromEndpoint(meta)
+                }
+            } else {
+                loadFromEndpoint(endpoint)
+                autoSelectTab()
+            }
             clearResponse()
         } finally {
             isLoading = false
@@ -988,7 +1314,7 @@ class EndpointDetailsPanel(
             val key = readSync {
                 computeCacheKey(endpoint)
             }
-            editCacheService.delete(key)
+            editCacheService.delete(key, endpoint.isGrpc)
         }
     }
 
@@ -999,55 +1325,68 @@ class EndpointDetailsPanel(
     private fun doSaveCurrentEdit() {
         val endpoint = currentEndpoint ?: return
 
-        val headers = (0 until headersTableModel.rowCount)
-            .map { row ->
-                val name = headersTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                val value = headersTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                EditableKeyValue(name, value)
-            }
-            .filter { it.name.isNotEmpty() }
+        if (endpoint.isGrpc) {
+            val cache = GrpcRequestEditCache(
+                key = currentEndpointKey,
+                name = endpoint.name,
+                host = getSelectedHost(),
+                serviceName = endpoint.grpcMetadata?.serviceName,
+                methodName = endpoint.grpcMetadata?.methodName,
+                packageName = endpoint.grpcMetadata?.packageName,
+                body = bodyArea.text.takeIf { it.isNotBlank() }
+            )
+            editCacheService.save(endpoint, cache, currentEndpointKey)
+        } else {
+            val headers = (0 until headersTableModel.rowCount)
+                .map { row ->
+                    val name = headersTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                    val value = headersTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                    EditableKeyValue(name, value)
+                }
+                .filter { it.name.isNotEmpty() }
 
-        val pathParams = (0 until pathParamsTableModel.rowCount)
-            .map { row ->
-                val name = pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                val value = pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                val desc = pathParamsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
-                EditableKeyValue(name, value, desc)
-            }
-            .filter { it.name.isNotEmpty() }
+            val pathParams = (0 until pathParamsTableModel.rowCount)
+                .map { row ->
+                    val name = pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                    val value = pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                    val desc = pathParamsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
+                    EditableKeyValue(name, value, desc)
+                }
+                .filter { it.name.isNotEmpty() }
 
-        val queryParams = (0 until paramsTableModel.rowCount)
-            .map { row ->
-                val name = paramsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                val value = paramsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                val desc = paramsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
-                EditableKeyValue(name, value, desc)
-            }
-            .filter { it.name.isNotEmpty() }
+            val queryParams = (0 until paramsTableModel.rowCount)
+                .map { row ->
+                    val name = paramsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                    val value = paramsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                    val desc = paramsTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
+                    EditableKeyValue(name, value, desc)
+                }
+                .filter { it.name.isNotEmpty() }
 
-        val formParams = (0 until formTableModel.rowCount)
-            .map { row ->
-                val name = formTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
-                val value = formTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
-                val desc = formTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
-                EditableKeyValue(name, value, desc)
-            }
-            .filter { it.name.isNotEmpty() }
+            val formParams = (0 until formTableModel.rowCount)
+                .map { row ->
+                    val name = formTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                    val value = formTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                    val desc = formTableModel.getValueAt(row, 2)?.toString()?.trim().orEmpty()
+                    EditableKeyValue(name, value, desc)
+                }
+                .filter { it.name.isNotEmpty() }
 
-        val cache = RequestEditCache(
-            key = currentEndpointKey,
-            name = endpoint.name,
-            path = pathField.text,
-            method = endpoint.method.name,
-            host = getSelectedHost(),
-            headers = headers,
-            pathParams = pathParams,
-            queryParams = queryParams,
-            formParams = formParams,
-            body = bodyArea.text.takeIf { it.isNotBlank() },
-            contentType = endpointContentType
-        )
-        editCacheService.save(endpoint, cache, currentEndpointKey)
+            val cache = HttpRequestEditCache(
+                key = currentEndpointKey,
+                name = endpoint.name,
+                path = pathField.text,
+                method = endpoint.httpMetadata?.method?.name ?: endpoint.metadata.protocol,
+                host = getSelectedHost(),
+                headers = headers,
+                pathParams = pathParams,
+                queryParams = queryParams,
+                formParams = formParams,
+                body = bodyArea.text.takeIf { it.isNotBlank() },
+                contentType = endpointContentType
+            )
+            editCacheService.save(endpoint, cache, currentEndpointKey)
+        }
     }
 
     private fun setupAutoSaveListeners() {

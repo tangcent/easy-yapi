@@ -5,6 +5,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import kotlinx.coroutines.runBlocking
 
 class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -65,7 +66,7 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val getEndpoints = endpoints.filter { it.method == com.itangcent.easyapi.exporter.model.HttpMethod.GET }
+        val getEndpoints = endpoints.filter { it.httpMetadata?.method == com.itangcent.easyapi.exporter.model.HttpMethod.GET }
         assertTrue(getEndpoints.isNotEmpty())
     }
 
@@ -74,7 +75,7 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val postEndpoints = endpoints.filter { it.method == com.itangcent.easyapi.exporter.model.HttpMethod.POST }
+        val postEndpoints = endpoints.filter { it.httpMetadata?.method == com.itangcent.easyapi.exporter.model.HttpMethod.POST }
         assertTrue(postEndpoints.isNotEmpty())
     }
 
@@ -83,9 +84,9 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val updateWithBody = endpoints.find { it.path == "/user/update-with-body" }
+        val updateWithBody = endpoints.find { it.httpMetadata?.path == "/user/update-with-body" }
         assertNotNull(updateWithBody)
-        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.POST, updateWithBody!!.method)
+        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.POST, updateWithBody!!.httpMetadata?.method)
     }
 
     fun testRequestMappingWithoutBodyDefaultsToGet() = runTest {
@@ -93,9 +94,9 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val simple = endpoints.find { it.path == "/user/simple" }
+        val simple = endpoints.find { it.httpMetadata?.path == "/user/simple" }
         assertNotNull(simple)
-        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.GET, simple!!.method)
+        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.GET, simple!!.httpMetadata?.method)
     }
 
     fun testExplicitGetWithBodyRemainsGet() = runTest {
@@ -103,9 +104,9 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val explicitGet = endpoints.find { it.path == "/user/explicit-get-with-body" }
+        val explicitGet = endpoints.find { it.httpMetadata?.path == "/user/explicit-get-with-body" }
         assertNotNull(explicitGet)
-        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.GET, explicitGet!!.method)
+        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.GET, explicitGet!!.httpMetadata?.method)
     }
 
     fun testRequestMappingWithModelAttributeDefaultsToPost() = runTest {
@@ -113,9 +114,9 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val updateWithModel = endpoints.find { it.path == "/user/update-with-model" }
+        val updateWithModel = endpoints.find { it.httpMetadata?.path == "/user/update-with-model" }
         assertNotNull(updateWithModel)
-        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.POST, updateWithModel!!.method)
+        assertEquals(com.itangcent.easyapi.exporter.model.HttpMethod.POST, updateWithModel!!.httpMetadata?.method)
     }
 
     fun testResponseBodyIsPopulated() = runTest {
@@ -125,12 +126,12 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
 
         // The "create" endpoint returns Result<UserInfo>, so responseBody should be populated
-        val createEndpoint = endpoints.find { it.path == "/user/add" }
+        val createEndpoint = endpoints.find { it.httpMetadata?.path == "/user/add" }
         assertNotNull("Should find /user/add endpoint", createEndpoint)
-        assertNotNull("responseBody should be populated for Result<UserInfo>", createEndpoint!!.responseBody)
+        assertNotNull("responseBody should be populated for Result<UserInfo>", createEndpoint!!.httpMetadata?.responseBody)
 
         // Verify the response body has the expected structure (Result fields: code, msg, data)
-        val responseObj = createEndpoint.responseBody
+        val responseObj = createEndpoint.httpMetadata?.responseBody
         assertNotNull(responseObj)
         assertTrue("responseBody should be an Object model", responseObj is com.itangcent.easyapi.psi.model.ObjectModel.Object)
         val fields = (responseObj as com.itangcent.easyapi.psi.model.ObjectModel.Object).fields
@@ -146,10 +147,10 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
 
         // The "greeting" endpoint returns String
-        val greetingEndpoint = endpoints.find { it.path == "/user/greeting" }
+        val greetingEndpoint = endpoints.find { it.httpMetadata?.path == "/user/greeting" }
         assertNotNull("Should find /user/greeting endpoint", greetingEndpoint)
         // String return type should produce a Single model
-        assertNotNull("responseBody should be populated for String return", greetingEndpoint!!.responseBody)
+        assertNotNull("responseBody should be populated for String return", greetingEndpoint!!.httpMetadata?.responseBody)
     }
 
     fun testRequestBodyIsPopulated() = runTest {
@@ -159,11 +160,11 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
 
         // The "create" endpoint has @RequestBody UserInfo
-        val createEndpoint = endpoints.find { it.path == "/user/add" }
+        val createEndpoint = endpoints.find { it.httpMetadata?.path == "/user/add" }
         assertNotNull("Should find /user/add endpoint", createEndpoint)
-        assertNotNull("body should be populated for @RequestBody UserInfo", createEndpoint!!.body)
+        assertNotNull("body should be populated for @RequestBody UserInfo", createEndpoint!!.httpMetadata?.body)
 
-        val bodyObj = createEndpoint.body
+        val bodyObj = createEndpoint.httpMetadata?.body
         assertTrue("body should be an Object model", bodyObj is com.itangcent.easyapi.psi.model.ObjectModel.Object)
         val fields = (bodyObj as com.itangcent.easyapi.psi.model.ObjectModel.Object).fields
         assertTrue("Body should contain 'name' field", fields.containsKey("name"))
@@ -177,11 +178,11 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
 
         // The "create" endpoint has @RequestBody UserInfo which has field comments
-        val createEndpoint = endpoints.find { it.path == "/user/add" }
+        val createEndpoint = endpoints.find { it.httpMetadata?.path == "/user/add" }
         assertNotNull("Should find /user/add endpoint", createEndpoint)
-        assertNotNull("body should be populated", createEndpoint!!.body)
+        assertNotNull("body should be populated", createEndpoint!!.httpMetadata?.body)
 
-        val bodyObj = createEndpoint.body as? com.itangcent.easyapi.psi.model.ObjectModel.Object
+        val bodyObj = createEndpoint.httpMetadata?.body as? com.itangcent.easyapi.psi.model.ObjectModel.Object
         assertNotNull("body should be an Object model", bodyObj)
 
         // UserInfo.java has: private Long id = 0;//user id
@@ -210,11 +211,11 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
 
         // The "create" endpoint returns Result<UserInfo>
-        val createEndpoint = endpoints.find { it.path == "/user/add" }
+        val createEndpoint = endpoints.find { it.httpMetadata?.path == "/user/add" }
         assertNotNull("Should find /user/add endpoint", createEndpoint)
-        assertNotNull("responseBody should be populated", createEndpoint!!.responseBody)
+        assertNotNull("responseBody should be populated", createEndpoint!!.httpMetadata?.responseBody)
 
-        val responseObj = createEndpoint.responseBody as? com.itangcent.easyapi.psi.model.ObjectModel.Object
+        val responseObj = createEndpoint.httpMetadata?.responseBody as? com.itangcent.easyapi.psi.model.ObjectModel.Object
         assertNotNull("responseBody should be an Object model", responseObj)
 
         // Result has: Integer code, String msg, T data
@@ -254,19 +255,19 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
 
         // /test/httpServletRequest has only HttpServletRequest param — should have no query params
-        val reqEndpoint = endpoints.find { it.path == "/test/httpServletRequest" }
+        val reqEndpoint = endpoints.find { it.httpMetadata?.path == "/test/httpServletRequest" }
         assertNotNull("Should find /test/httpServletRequest", reqEndpoint)
         assertTrue(
             "HttpServletRequest should be ignored, no parameters expected",
-            reqEndpoint!!.parameters.isEmpty()
+            (reqEndpoint!!.httpMetadata?.parameters ?: emptyList()).isEmpty()
         )
 
         // /test/httpServletResponse has only HttpServletResponse param — should have no query params
-        val respEndpoint = endpoints.find { it.path == "/test/httpServletResponse" }
+        val respEndpoint = endpoints.find { it.httpMetadata?.path == "/test/httpServletResponse" }
         assertNotNull("Should find /test/httpServletResponse", respEndpoint)
         assertTrue(
             "HttpServletResponse should be ignored, no parameters expected",
-            respEndpoint!!.parameters.isEmpty()
+            (respEndpoint!!.httpMetadata?.parameters ?: emptyList()).isEmpty()
         )
     }
 
@@ -299,11 +300,11 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val endpoint = endpoints.find { it.path == "/return-doc/test" }
+        val endpoint = endpoints.find { it.httpMetadata?.path == "/return-doc/test" }
         assertNotNull("Should find /return-doc/test", endpoint)
-        assertNotNull("responseBody should be populated", endpoint!!.responseBody)
+        assertNotNull("responseBody should be populated", endpoint!!.httpMetadata?.responseBody)
 
-        val responseObj = endpoint.responseBody as? com.itangcent.easyapi.psi.model.ObjectModel.Object
+        val responseObj = endpoint.httpMetadata?.responseBody as? com.itangcent.easyapi.psi.model.ObjectModel.Object
         assertNotNull(responseObj)
 
         // The "data" field is generic (T) — @return doc should be attached to it

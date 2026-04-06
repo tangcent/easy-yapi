@@ -3,6 +3,8 @@ package com.itangcent.easyapi.exporter.jaxrs
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 
@@ -55,7 +57,7 @@ class JaxRsClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val getEndpoints = endpoints.filter { it.method == HttpMethod.GET }
+        val getEndpoints = endpoints.filter { it.httpMetadata?.method == HttpMethod.GET }
         assertTrue(getEndpoints.isNotEmpty())
     }
 
@@ -64,7 +66,7 @@ class JaxRsClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val postEndpoints = endpoints.filter { it.method == HttpMethod.POST }
+        val postEndpoints = endpoints.filter { it.httpMetadata?.method == HttpMethod.POST }
         assertTrue(postEndpoints.isNotEmpty())
     }
 
@@ -73,7 +75,7 @@ class JaxRsClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val putEndpoints = endpoints.filter { it.method == HttpMethod.PUT }
+        val putEndpoints = endpoints.filter { it.httpMetadata?.method == HttpMethod.PUT }
         assertTrue(putEndpoints.isNotEmpty())
     }
 
@@ -82,7 +84,7 @@ class JaxRsClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val deleteEndpoints = endpoints.filter { it.method == HttpMethod.DELETE }
+        val deleteEndpoints = endpoints.filter { it.httpMetadata?.method == HttpMethod.DELETE }
         assertTrue(deleteEndpoints.isNotEmpty())
     }
 

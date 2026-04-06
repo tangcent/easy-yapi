@@ -3,6 +3,7 @@ package com.itangcent.easyapi.exporter.springmvc
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import kotlinx.coroutines.runBlocking
@@ -56,10 +57,10 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         endpoints[0].let { endpoint ->
             assertEquals("endpointByGet", endpoint.name)
-            assertEquals(HttpMethod.GET, endpoint.method)
-            assertEquals("/actuator/standard/{username}/{age}", endpoint.path)
-            assertEquals(2, endpoint.parameters.size)
-            val pathParams = endpoint.parameters.filter { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path }
+            assertEquals(HttpMethod.GET, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/standard/{username}/{age}", endpoint.httpMetadata?.path)
+            assertEquals(2, endpoint.httpMetadata?.parameters?.size)
+            val pathParams = endpoint.httpMetadata?.parameters?.filter { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path } ?: emptyList()
             assertEquals(2, pathParams.size)
             assertTrue(pathParams.any { it.name == "username" })
             assertTrue(pathParams.any { it.name == "age" })
@@ -67,17 +68,17 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         endpoints[1].let { endpoint ->
             assertEquals("endpointByPost", endpoint.name)
-            assertEquals(HttpMethod.POST, endpoint.method)
-            assertEquals("/actuator/standard/{id}", endpoint.path)
-            assertEquals(1, endpoint.parameters.filter { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path }.size)
-            assertNotNull(endpoint.body)
+            assertEquals(HttpMethod.POST, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/standard/{id}", endpoint.httpMetadata?.path)
+            assertEquals(1, endpoint.httpMetadata?.parameters?.filter { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path }?.size)
+            assertNotNull(endpoint.httpMetadata?.body)
         }
 
         endpoints[2].let { endpoint ->
             assertEquals("endpointByDelete", endpoint.name)
-            assertEquals(HttpMethod.DELETE, endpoint.method)
-            assertEquals("/actuator/standard/{id}", endpoint.path)
-            assertNotNull(endpoint.body)
+            assertEquals(HttpMethod.DELETE, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/standard/{id}", endpoint.httpMetadata?.path)
+            assertNotNull(endpoint.httpMetadata?.body)
         }
     }
 
@@ -88,23 +89,23 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         endpoints[0].let { endpoint ->
             assertEquals("endpointByGet", endpoint.name)
-            assertEquals(HttpMethod.GET, endpoint.method)
-            assertEquals("/actuator/web/{username}/{age}", endpoint.path)
-            assertEquals(2, endpoint.parameters.filter { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path }.size)
+            assertEquals(HttpMethod.GET, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/web/{username}/{age}", endpoint.httpMetadata?.path)
+            assertEquals(2, endpoint.httpMetadata?.parameters?.filter { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path }?.size)
         }
 
         endpoints[1].let { endpoint ->
             assertEquals("endpointByPost", endpoint.name)
-            assertEquals(HttpMethod.POST, endpoint.method)
-            assertEquals("/actuator/web/{id}", endpoint.path)
-            assertNotNull(endpoint.body)
+            assertEquals(HttpMethod.POST, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/web/{id}", endpoint.httpMetadata?.path)
+            assertNotNull(endpoint.httpMetadata?.body)
         }
 
         endpoints[2].let { endpoint ->
             assertEquals("endpointByDelete", endpoint.name)
-            assertEquals(HttpMethod.DELETE, endpoint.method)
-            assertEquals("/actuator/web/{id}", endpoint.path)
-            assertNotNull(endpoint.body)
+            assertEquals(HttpMethod.DELETE, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/web/{id}", endpoint.httpMetadata?.path)
+            assertNotNull(endpoint.httpMetadata?.body)
         }
     }
 
@@ -115,8 +116,8 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         endpoints[0].let { endpoint ->
             assertEquals("endpointByGet", endpoint.name)
-            assertEquals(HttpMethod.GET, endpoint.method)
-            assertEquals("/actuator/controller/{username}/{age}", endpoint.path)
+            assertEquals(HttpMethod.GET, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/controller/{username}/{age}", endpoint.httpMetadata?.path)
         }
     }
 
@@ -127,8 +128,8 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         endpoints[0].let { endpoint ->
             assertEquals("endpointByGet", endpoint.name)
-            assertEquals(HttpMethod.GET, endpoint.method)
-            assertEquals("/actuator/rest/{username}/{age}", endpoint.path)
+            assertEquals(HttpMethod.GET, endpoint.httpMetadata?.method)
+            assertEquals("/actuator/rest/{username}/{age}", endpoint.httpMetadata?.path)
         }
     }
 }

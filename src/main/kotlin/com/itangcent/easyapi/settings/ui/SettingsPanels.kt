@@ -1,16 +1,24 @@
 package com.itangcent.easyapi.settings.ui
 
 import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.ui.CheckBoxList
+import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.*
+import com.intellij.ui.table.TableView
+import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.FormBuilder
+import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
 import com.itangcent.easyapi.cache.AppCacheRepository
 import com.itangcent.easyapi.cache.ProjectCacheRepository
 import com.itangcent.easyapi.exporter.postman.PostmanApiClient
 import com.itangcent.easyapi.exporter.postman.Workspace
 import com.itangcent.easyapi.exporter.postman.asCached
+import com.itangcent.easyapi.repository.DefaultRepositories
+import com.itangcent.easyapi.repository.RepositoryConfig
+import com.itangcent.easyapi.repository.RepositoryType
 import com.itangcent.easyapi.http.ApacheHttpClient
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.recommend.RecommendPresetRegistry
@@ -22,6 +30,7 @@ import com.itangcent.easyapi.settings.PostmanJson5FormatType
 import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.settings.YapiExportMode
 import java.awt.*
+import java.io.File
 import javax.swing.*
 import javax.swing.border.TitledBorder
 import kotlin.concurrent.thread
@@ -87,8 +96,29 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
 
     private val cachePanel: JPanel
 
+    private val repositoryTableModel = ListTableModel<RepositoryConfig>(
+        arrayOf(
+            object : ColumnInfo<RepositoryConfig, String>("Type") {
+                override fun valueOf(item: RepositoryConfig?): String? = item?.displayName()
+            },
+            object : ColumnInfo<RepositoryConfig, String>("Path") {
+                override fun valueOf(item: RepositoryConfig?): String? = item?.path
+            },
+            object : ColumnInfo<RepositoryConfig, Boolean>("Enable") {
+                override fun valueOf(item: RepositoryConfig?): Boolean = item?.enabled ?: true
+                override fun getColumnClass(): Class<*> = java.lang.Boolean::class.java
+                override fun isCellEditable(item: RepositoryConfig?): Boolean = true
+                override fun setValue(item: RepositoryConfig?, value: Boolean) {
+                    item?.enabled = value
+                }
+            }
+        ),
+        mutableListOf()
+    )
+
+    private val repositoryTable = TableView(repositoryTableModel)
+
     init {
-        // Build a compact cache panel similar to "Framework Support" style
         val projectRow = JPanel(FlowLayout(FlowLayout.LEFT, 4, 0)).apply {
             add(JLabel("Project Cache:"))
             add(projectCacheSizeLabel)
@@ -115,6 +145,12 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
             refreshCacheSizes()
             Messages.showInfoMessage("Global cache cleared.", "Clear Cache")
         }
+
+        repositoryTable.setShowGrid(false)
+        repositoryTable.intercellSpacing = Dimension(0, 0)
+        repositoryTable.columnModel.getColumn(0).preferredWidth = 120
+        repositoryTable.columnModel.getColumn(1).preferredWidth = 350
+        repositoryTable.columnModel.getColumn(2).preferredWidth = 60
     }
 
     private fun refreshCacheSizes() {
@@ -161,6 +197,164 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         }
     }
 
+    private fun createRepositoryPanel(): JPanel {
+        return JPanel(BorderLayout()).apply {
+            border = BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(),
+                "Repositories",
+                TitledBorder.LEFT,
+                TitledBorder.TOP
+            )
+            val toolbarDecorator = ToolbarDecorator.createDecorator(repositoryTable)
+                .setAddAction {
+                    showAddRepositoryDialog()
+                }
+                .setRemoveAction {
+                    val selected = repositoryTable.selectedRow
+                    if (selected >= 0) {
+                        repositoryTableModel.removeRow(selected)
+                    }
+                }
+                .setEditAction {
+                    val selected = repositoryTable.selectedRow
+                    if (selected >= 0) {
+                        val config = repositoryTableModel.getItem(selected)
+                        showEditRepositoryDialog(config)
+                    }
+                }
+                .disableUpDownActions()
+            add(toolbarDecorator.createPanel(), BorderLayout.CENTER)
+        }
+    }
+
+    private fun showAddRepositoryDialog() {
+        val dialog = AddRepositoryDialog()
+        if (dialog.showAndGet()) {
+            repositoryTableModel.addRow(dialog.config)
+        }
+    }
+
+    private fun showEditRepositoryDialog(config: RepositoryConfig) {
+        val dialog = EditRepositoryDialog(config)
+        if (dialog.showAndGet()) {
+            repositoryTableModel.fireTableDataChanged()
+        }
+    }
+
+    private inner class AddRepositoryDialog : DialogWrapper(false) {
+        private val typeCombo = JComboBox(arrayOf("Maven Local", "Gradle Cache", "Custom"))
+        private val pathField = JTextField(40)
+        private val browseButton = JButton("Browse...")
+
+        lateinit var config: RepositoryConfig
+
+        init {
+            title = "Add Repository"
+            browseButton.addActionListener {
+                val fileChooser = JFileChooser()
+                fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+                fileChooser.isMultiSelectionEnabled = false
+                if (fileChooser.showOpenDialog(contentPane) == JFileChooser.APPROVE_OPTION) {
+                    pathField.text = fileChooser.selectedFile.absolutePath
+                }
+            }
+            typeCombo.addActionListener {
+                updatePathField()
+            }
+            updatePathField()
+            init()
+        }
+
+        private fun updatePathField() {
+            val isCustom = typeCombo.selectedItem == "Custom"
+            pathField.isEnabled = isCustom
+            browseButton.isEnabled = isCustom
+
+            if (!isCustom) {
+                val path = when (typeCombo.selectedItem) {
+                    "Maven Local" -> DefaultRepositories.MAVEN_LOCAL.toString()
+                    "Gradle Cache" -> DefaultRepositories.GRADLE_CACHE.toString()
+                    else -> ""
+                }
+                pathField.text = path
+            }
+        }
+
+        override fun createCenterPanel(): JComponent {
+            return JPanel(GridLayout(0, 2, 4, 4)).apply {
+                add(JLabel("Type:"))
+                add(typeCombo)
+                add(JLabel("Path:"))
+                val pathPanel = JPanel(BorderLayout()).apply {
+                    add(pathField, BorderLayout.CENTER)
+                    add(browseButton, BorderLayout.EAST)
+                }
+                add(pathPanel)
+                preferredSize = Dimension(500, preferredSize.height)
+            }
+        }
+
+        override fun doOKAction() {
+            val path = pathField.text.trim()
+            if (path.isEmpty()) {
+                return
+            }
+            val type = when (typeCombo.selectedItem) {
+                "Maven Local" -> RepositoryType.MAVEN_LOCAL
+                "Gradle Cache" -> RepositoryType.GRADLE_CACHE
+                else -> RepositoryType.CUSTOM
+            }
+            config = RepositoryConfig(type, path)
+            super.doOKAction()
+        }
+    }
+
+    private inner class EditRepositoryDialog(private val config: RepositoryConfig) : DialogWrapper(false) {
+        private val pathField = JTextField(40)
+        private val browseButton = JButton("Browse...")
+
+        init {
+            title = "Edit Repository: ${config.displayName()}"
+            pathField.text = config.path
+            pathField.isEnabled = config.type == RepositoryType.CUSTOM
+            browseButton.isEnabled = config.type == RepositoryType.CUSTOM
+            browseButton.addActionListener {
+                val fileChooser = JFileChooser()
+                fileChooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+                fileChooser.selectedFile = File(config.path)
+                if (fileChooser.showOpenDialog(contentPane) == JFileChooser.APPROVE_OPTION) {
+                    pathField.text = fileChooser.selectedFile.absolutePath
+                }
+            }
+            init()
+        }
+
+        override fun createCenterPanel(): JComponent {
+            return JPanel(GridLayout(0, 2, 4, 4)).apply {
+                add(JLabel("Type:"))
+                add(JLabel(config.displayName()))
+                add(JLabel("Path:"))
+                val pathPanel = JPanel(BorderLayout()).apply {
+                    add(pathField, BorderLayout.CENTER)
+                    add(browseButton, BorderLayout.EAST)
+                }
+                add(pathPanel)
+                preferredSize = Dimension(500, preferredSize.height)
+            }
+        }
+
+        override fun doOKAction() {
+            if (config.type == RepositoryType.CUSTOM) {
+                val path = pathField.text.trim()
+                if (path.isEmpty()) {
+                    return
+                }
+                config.path = path
+            }
+            super.doOKAction()
+        }
+    }
+
     override val component: JComponent = FormBuilder.createFormBuilder()
         .addComponent(
             createTitledPanel(
@@ -175,6 +369,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         .addComponent(outputDemoCheckBox)
         .addLabeledComponent("Markdown Format:", markdownFormatTypeCombo)
         .addComponent(createTitledPanel("Cache Management", listOf(cachePanel)))
+        .addComponent(createRepositoryPanel())
         .addComponentFillVertically(JPanel(), 0)
         .panel
 
@@ -190,6 +385,13 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
             runCatching { MarkdownFormatType.valueOf(it) }.getOrNull()
         } ?: MarkdownFormatType.SIMPLE
         refreshCacheSizes()
+
+        val userRepos = settings?.grpcRepositories?.mapNotNull { RepositoryConfig.parse(it) }
+        repositoryTableModel.items = if (!userRepos.isNullOrEmpty()) {
+            userRepos.toMutableList()
+        } else {
+            DefaultRepositories.detectFromEnvironment().toMutableList()
+        }
     }
 
     override fun applyTo(settings: Settings) {
@@ -202,10 +404,14 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         settings.outputDemo = outputDemoCheckBox.isSelected
         settings.markdownFormatType =
             (markdownFormatTypeCombo.selectedItem as? MarkdownFormatType)?.name ?: MarkdownFormatType.SIMPLE.name
+
+        val repos = repositoryTableModel.items.map { RepositoryConfig.serialize(it) }
+        settings.grpcRepositories = repos.toTypedArray()
     }
 
     override fun isModified(settings: Settings?): Boolean {
         val s = settings ?: return false
+        val currentRepos = repositoryTableModel.items.map { RepositoryConfig.serialize(it) }.toTypedArray()
         return feignEnable.isSelected != s.feignEnable ||
                 jaxrsEnable.isSelected != s.jaxrsEnable ||
                 actuatorEnable.isSelected != s.actuatorEnable ||
@@ -213,7 +419,8 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
                 (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level != s.logLevel ||
                 outputCharsetCombo.selectedItem?.toString() != s.outputCharset ||
                 outputDemoCheckBox.isSelected != s.outputDemo ||
-                markdownFormatTypeCombo.selectedItem?.toString() != s.markdownFormatType
+                markdownFormatTypeCombo.selectedItem?.toString() != s.markdownFormatType ||
+                !currentRepos.contentEquals(s.grpcRepositories)
     }
 
     companion object : IdeaLog

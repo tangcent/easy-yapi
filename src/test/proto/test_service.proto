@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package test.grpc;
+
+option java_package = "com.itangcent.easyapi.grpc.test";
+option java_multiple_files = true;
+
+service EchoService {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc EchoEmpty(EmptyRequest) returns (EchoResponse);
+  rpc Reverse(ReverseRequest) returns (ReverseResponse);
+}
+
+message EchoRequest {
+  string message = 1;
+  int32 count = 2;
+  string key1 = 3;
+  string value1 = 4;
+  string key2 = 5;
+  string value2 = 6;
+}
+
+message EchoResponse {
+  string echoed = 1;
+  int32 received_count = 2;
+  string key1 = 3;
+  string value1 = 4;
+  string key2 = 5;
+  string value2 = 6;
+  string status = 7;
+}
+
+message EmptyRequest {}
+
+message ReverseRequest {
+  string text = 1;
+}
+
+message ReverseResponse {
+  string reversed = 1;
+  int32 length = 2;
+}

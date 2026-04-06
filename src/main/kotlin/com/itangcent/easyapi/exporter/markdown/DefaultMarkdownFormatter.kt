@@ -2,7 +2,10 @@ package com.itangcent.easyapi.exporter.markdown
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
+import com.itangcent.easyapi.exporter.model.ApiMetadata
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -73,32 +76,81 @@ class DefaultMarkdownFormatter(
     
     /**
      * Formats a single API endpoint as a Markdown section.
-     * 
-     * @param sb The StringBuilder to append to
-     * @param ep The API endpoint to format
-     */
-    /**
-     * Formats a single API endpoint as a Markdown section.
+     * Dispatches to protocol-specific formatting based on metadata type.
      * 
      * @param sb The StringBuilder to append to
      * @param ep The API endpoint to format
      */
     private fun formatEndpoint(sb: StringBuilder, ep: ApiEndpoint) {
+        when (val meta = ep.metadata) {
+            is HttpMetadata -> formatHttpEndpoint(sb, ep, meta)
+            is GrpcMetadata -> formatGrpcEndpoint(sb, ep, meta)
+        }
+    }
+
+    /**
+     * Formats an HTTP endpoint as a Markdown section.
+     * 
+     * @param sb The StringBuilder to append to
+     * @param ep The API endpoint to format
+     * @param meta The HTTP-specific metadata
+     */
+    private fun formatHttpEndpoint(sb: StringBuilder, ep: ApiEndpoint, meta: HttpMetadata) {
         sb.append('\n').append("---\n")
-        sb.append("### ").append(ep.name ?: "${ep.method.name} ${ep.path}").append('\n')
+        sb.append("### ").append(ep.name ?: "${meta.method.name} ${meta.path}").append('\n')
         
         sb.append('\n').append("> BASIC").append('\n').append('\n')
-        sb.append("**Path:** ").append(ep.path).append('\n').append('\n')
-        sb.append("**Method:** ").append(ep.method.name).append('\n').append('\n')
+        sb.append("**Path:** ").append(meta.path).append('\n').append('\n')
+        sb.append("**Method:** ").append(meta.method.name).append('\n').append('\n')
         
         ep.description?.takeIf { it.isNotBlank() }?.let {
             sb.append("**Desc:**").append('\n').append('\n')
             sb.append(it).append('\n').append('\n')
         }
         
-        formatRequest(sb, ep)
+        formatRequest(sb, ep, meta)
         
-        formatResponse(sb, ep)
+        formatResponse(sb, ep, meta)
+    }
+
+    /**
+     * Formats a gRPC endpoint as a Markdown section.
+     * Shows protocol, service name, method name, streaming type, and full path.
+     * Renders request/response body tables but omits HTTP-specific sections.
+     * 
+     * @param sb The StringBuilder to append to
+     * @param ep The API endpoint to format
+     * @param meta The gRPC-specific metadata
+     */
+    private fun formatGrpcEndpoint(sb: StringBuilder, ep: ApiEndpoint, meta: GrpcMetadata) {
+        sb.append("\n---\n")
+        sb.append("### ").append(ep.name ?: meta.path).append('\n')
+        sb.append("\n> BASIC\n\n")
+        sb.append("**Protocol:** gRPC\n\n")
+        sb.append("**Service:** ").append(meta.serviceName).append('\n').append('\n')
+        sb.append("**Method:** ").append(meta.path.substringAfterLast('/')).append('\n').append('\n')
+        sb.append("**Streaming:** ").append(meta.streamingType.name).append('\n').append('\n')
+        sb.append("**Full Path:** ").append(meta.path).append('\n').append('\n')
+
+        ep.description?.takeIf { it.isNotBlank() }?.let {
+            sb.append("**Desc:**").append('\n').append('\n')
+            sb.append(it).append('\n').append('\n')
+        }
+
+        if (meta.body != null) {
+            sb.append('\n').append("> REQUEST").append('\n').append('\n')
+            sb.append("**Request Body:**").append('\n').append('\n')
+            formatBodyTable(sb, meta.body)
+
+            if (outputDemo) {
+                sb.append('\n').append("**Request Demo:**").append('\n').append('\n')
+                sb.append("```json").append('\n')
+                sb.append(ObjectModelJsonConverter.toJson(meta.body))
+                sb.append('\n').append("```").append('\n')
+            }
+        }
+
+        formatResponse(sb, ep, meta)
     }
     
     /**
@@ -115,45 +167,45 @@ class DefaultMarkdownFormatter(
      * @param sb The StringBuilder to append to
      * @param ep The API endpoint
      */
-    private fun formatRequest(sb: StringBuilder, ep: ApiEndpoint) {
+    private fun formatRequest(sb: StringBuilder, ep: ApiEndpoint, meta: HttpMetadata) {
         sb.append('\n').append("> REQUEST").append('\n').append('\n')
         
-        val pathParams = ep.parameters.filter { it.binding == ParameterBinding.Path }
+        val pathParams = meta.parameters.filter { it.binding == ParameterBinding.Path }
         if (pathParams.isNotEmpty()) {
             sb.append("**Path Params:**").append('\n').append('\n')
             formatParamsTable(sb, pathParams)
         }
         
-        val queryParams = ep.parameters.filter { it.binding == ParameterBinding.Query }
+        val queryParams = meta.parameters.filter { it.binding == ParameterBinding.Query }
         if (queryParams.isNotEmpty()) {
             sb.append("**Query:**").append('\n').append('\n')
             formatQueryTable(sb, queryParams)
         }
         
-        if (ep.headers.isNotEmpty()) {
+        if (meta.headers.isNotEmpty()) {
             sb.append("**Headers:**").append('\n').append('\n')
-            formatHeadersTable(sb, ep.headers)
+            formatHeadersTable(sb, meta.headers)
         }
         
-        val formParams = ep.parameters.filter { it.binding == ParameterBinding.Form }
+        val formParams = meta.parameters.filter { it.binding == ParameterBinding.Form }
         if (formParams.isNotEmpty()) {
             sb.append("**Form:**").append('\n').append('\n')
             formatFormTable(sb, formParams)
         }
         
-        if (ep.body != null) {
+        if (meta.body != null) {
             sb.append("**Request Body:**").append('\n').append('\n')
-            formatBodyTable(sb, ep.body)
+            formatBodyTable(sb, meta.body)
             
             if (outputDemo) {
                 sb.append('\n').append("**Request Demo:**").append('\n').append('\n')
                 sb.append("```json").append('\n')
-                sb.append(ObjectModelJsonConverter.toJson(ep.body))
+                sb.append(ObjectModelJsonConverter.toJson(meta.body))
                 sb.append('\n').append("```").append('\n')
             }
         }
         
-        if (pathParams.isEmpty() && queryParams.isEmpty() && ep.headers.isEmpty() && formParams.isEmpty() && ep.body == null) {
+        if (pathParams.isEmpty() && queryParams.isEmpty() && meta.headers.isEmpty() && formParams.isEmpty() && meta.body == null) {
             sb.append('\n')
         }
     }
@@ -170,18 +222,24 @@ class DefaultMarkdownFormatter(
      * @param sb The StringBuilder to append to
      * @param ep The API endpoint
      */
-    private fun formatResponse(sb: StringBuilder, ep: ApiEndpoint) {
-        if (ep.responseBody == null) return
+    private fun formatResponse(sb: StringBuilder, ep: ApiEndpoint, meta: ApiMetadata) {
+        val responseBody = when (meta) {
+            is HttpMetadata -> meta.responseBody
+            is GrpcMetadata -> meta.responseBody
+            else -> null
+        }
+        
+        if (responseBody == null) return
         
         sb.append('\n').append("> RESPONSE").append('\n').append('\n')
         
         sb.append("**Body:**").append('\n').append('\n')
-        formatBodyTable(sb, ep.responseBody)
+        formatBodyTable(sb, responseBody)
         
         if (outputDemo) {
             sb.append('\n').append("**Response Demo:**").append('\n').append('\n')
             sb.append("```json").append('\n')
-            sb.append(ObjectModelJsonConverter.toJson(ep.responseBody))
+            sb.append(ObjectModelJsonConverter.toJson(responseBody))
             sb.append('\n').append("```").append('\n')
         }
     }

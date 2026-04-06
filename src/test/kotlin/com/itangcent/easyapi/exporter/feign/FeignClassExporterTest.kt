@@ -3,6 +3,8 @@ package com.itangcent.easyapi.exporter.feign
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 
@@ -51,7 +53,7 @@ class FeignClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val getEndpoints = endpoints.filter { it.method == HttpMethod.GET }
+        val getEndpoints = endpoints.filter { it.httpMetadata?.method == HttpMethod.GET }
         assertTrue(getEndpoints.isNotEmpty())
     }
 
@@ -60,7 +62,7 @@ class FeignClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val postEndpoints = endpoints.filter { it.method == HttpMethod.POST }
+        val postEndpoints = endpoints.filter { it.httpMetadata?.method == HttpMethod.POST }
         assertTrue(postEndpoints.isNotEmpty())
     }
 
@@ -71,7 +73,7 @@ class FeignClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
         val getEndpoint = endpoints.find { it.path.contains("{id}") }
         assertNotNull(getEndpoint)
-        assertTrue(getEndpoint!!.parameters.any { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path })
+        assertTrue(getEndpoint!!.httpMetadata!!.parameters.any { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Path })
     }
 
     fun testExportWithRequestBody() = runTest {
@@ -79,9 +81,9 @@ class FeignClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val postEndpoint = endpoints.find { it.method == HttpMethod.POST }
+        val postEndpoint = endpoints.find { it.httpMetadata?.method == HttpMethod.POST }
         assertNotNull(postEndpoint)
-        assertTrue(postEndpoint!!.parameters.any { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Body })
+        assertTrue(postEndpoint!!.httpMetadata!!.parameters.any { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Body })
     }
 
     fun testExportNonFeignClient() = runTest {

@@ -10,10 +10,7 @@ import com.itangcent.easyapi.core.context.project
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.exporter.ClassExporter
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiHeader
-import com.itangcent.easyapi.exporter.model.ApiParameter
-import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.DefaultContextSwitchListener
 import com.itangcent.easyapi.psi.PsiClassHelper
@@ -115,19 +112,21 @@ class JaxRsClassExporter(
             ApiEndpoint(
                 name = name,
                 folder = folder,
-                path = path,
-                method = httpMethod,
-                parameters = params,
-                headers = headers,
-                contentType = contentType,
                 description = description,
-                responseType = method.returnType?.canonicalText,
                 sourceClass = psiClass,
                 sourceMethod = method,
                 className = psiClass.qualifiedName ?: psiClass.name,
                 classDescription = classDesc,
-                body = body,
-                responseBody = responseBody
+                metadata = HttpMetadata(
+                    path = path,
+                    method = httpMethod,
+                    parameters = params,
+                    headers = headers,
+                    contentType = contentType,
+                    body = body,
+                    responseBody = responseBody,
+                    responseType = method.returnType?.canonicalText
+                )
             )
         )
     }

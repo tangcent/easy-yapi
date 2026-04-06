@@ -2,6 +2,7 @@ package com.itangcent.easyapi.exporter.markdown
 
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
@@ -194,9 +195,11 @@ class MarkdownExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     ): com.itangcent.easyapi.exporter.model.ApiEndpoint {
         return com.itangcent.easyapi.exporter.model.ApiEndpoint(
             name = name,
-            path = path,
-            method = method,
-            description = description
+            description = description,
+            metadata = com.itangcent.easyapi.exporter.model.HttpMetadata(
+                path = path,
+                method = method
+            )
         )
     }
     

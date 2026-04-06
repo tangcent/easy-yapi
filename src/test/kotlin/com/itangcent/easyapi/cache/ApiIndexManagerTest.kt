@@ -1,7 +1,9 @@
 package com.itangcent.easyapi.cache
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.delay
@@ -90,8 +92,10 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCacheUpdateEndpoints() = runTest {
         val testEndpoints = listOf(
             ApiEndpoint(
-                path = "/test",
-                method = HttpMethod.GET,
+                metadata = HttpMetadata(
+                    path = "/test",
+                    method = HttpMethod.GET
+                ),
                 name = "Test Endpoint",
                 className = "com.test.TestCtrl"
             )
@@ -107,8 +111,10 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCacheInvalidate() = runTest {
         val testEndpoints = listOf(
             ApiEndpoint(
-                path = "/test",
-                method = HttpMethod.GET,
+                metadata = HttpMetadata(
+                    path = "/test",
+                    method = HttpMethod.GET
+                ),
                 name = "Test Endpoint",
                 className = "com.test.TestCtrl"
             )
@@ -125,8 +131,10 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCacheAwait() = runTest {
         val testEndpoints = listOf(
             ApiEndpoint(
-                path = "/test",
-                method = HttpMethod.POST,
+                metadata = HttpMetadata(
+                    path = "/test",
+                    method = HttpMethod.POST
+                ),
                 name = "Create Endpoint",
                 className = "com.test.TestCtrl"
             )
@@ -169,8 +177,8 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("Should have endpoints", endpoints.isNotEmpty())
 
         val endpoint = endpoints.first()
-        assertNotNull("Endpoint should have path", endpoint.path)
-        assertNotNull("Endpoint should have method", endpoint.method)
+        assertNotNull("Endpoint should have path", endpoint.httpMetadata?.path)
+        assertNotNull("Endpoint should have method", endpoint.httpMetadata?.method)
         assertNotNull("Endpoint should have className", endpoint.className)
     }
 

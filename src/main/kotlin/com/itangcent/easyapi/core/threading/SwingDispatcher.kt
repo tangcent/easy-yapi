@@ -9,14 +9,14 @@ import kotlin.coroutines.CoroutineContext
  * A coroutine dispatcher that executes blocks on the Swing Event Dispatch Thread (EDT).
  *
  * This dispatcher is used for UI operations that must be performed on the EDT.
- * It uses [ModalityState.any()] to ensure dispatched work executes even while
- * a modal dialog is open, unlike the default NON_MODAL state which defers
- * execution until all modal dialogs close.
+ * It uses [ModalityState.nonModal()] to ensure dispatched work executes only
+ * when no modal dialogs are active. This prevents "Write-unsafe context" errors
+ * that can occur when VFS operations are triggered during modal dialog transitions.
  *
  * The dispatcher handles several scenarios:
  * - If already on EDT, runs immediately
  * - In unit test mode, runs immediately
- * - Otherwise, invokes later with ModalityState.any()
+ * - Otherwise, invokes later with ModalityState.nonModal()
  *
  * @see IdeDispatchers.Swing
  */
@@ -26,7 +26,7 @@ class SwingDispatcher : CoroutineDispatcher() {
         when {
             application.isDispatchThread -> block.run()
             application.isUnitTestMode -> block.run()
-            else -> application.invokeLater(block, ModalityState.any())
+            else -> application.invokeLater(block, ModalityState.nonModal())
         }
     }
 }

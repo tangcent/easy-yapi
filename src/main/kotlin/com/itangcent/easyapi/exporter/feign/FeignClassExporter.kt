@@ -11,6 +11,7 @@ import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
@@ -148,18 +149,20 @@ class FeignClassExporter(
             ApiEndpoint(
                 name = name,
                 folder = folder,
-                path = normalizedPath,
-                method = m.method,
-                parameters = mergedParams,
-                headers = headers,
-                contentType = contentType,
                 description = description,
                 sourceClass = psiClass,
                 sourceMethod = method,
                 className = psiClass.qualifiedName ?: psiClass.name,
                 classDescription = classDesc,
-                body = body,
-                responseBody = responseBody
+                metadata = HttpMetadata(
+                    path = normalizedPath,
+                    method = m.method,
+                    parameters = mergedParams,
+                    headers = headers,
+                    contentType = contentType,
+                    body = body,
+                    responseBody = responseBody
+                )
             )
         }
     }
@@ -210,17 +213,19 @@ class FeignClassExporter(
         return ApiEndpoint(
             name = name,
             folder = null,
-            path = normalizedPathTemplate,
-            method = requestLine.method,
-            parameters = mergedPathParams + queryParams + bodyParams,
-            headers = finalHeaders,
-            contentType = finalHeaders.firstOrNull { it.name.equals("Content-Type", true) }?.value,
             sourceClass = psiClass,
             sourceMethod = method,
             className = psiClass.qualifiedName ?: psiClass.name,
             classDescription = classDesc,
-            body = expandedBody,
-            responseBody = responseBody
+            metadata = HttpMetadata(
+                path = normalizedPathTemplate,
+                method = requestLine.method,
+                parameters = mergedPathParams + queryParams + bodyParams,
+                headers = finalHeaders,
+                contentType = finalHeaders.firstOrNull { it.name.equals("Content-Type", true) }?.value,
+                body = expandedBody,
+                responseBody = responseBody
+            )
         )
     }
 

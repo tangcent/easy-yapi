@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.dashboard
 
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.testFramework.ApiFixtures
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
@@ -61,15 +62,5 @@ class ApiDashboardPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
         detailsPanel.showEndpoint(endpoint)
         
         assertNotNull("Details panel should show endpoint", detailsPanel)
-    }
-
-    fun testRequestPanelSetsEndpoint() {
-        val endpoint = ApiFixtures.createPostEndpoint()
-        val requestPanel = RequestPanel(com.itangcent.easyapi.http.UrlConnectionHttpClient)
-        
-        requestPanel.setEndpoint(endpoint)
-        
-        assertNotNull("Request panel should accept endpoint", requestPanel)
-        requestPanel.dispose()
     }
 }

@@ -2,6 +2,8 @@ package com.itangcent.easyapi.exporter.springmvc
 
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -59,9 +61,9 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(standardEndpointPsiClass)
         val readOp = endpoints.first { it.name == "endpointByGet" }
 
-        assertEquals(HttpMethod.GET, readOp.method)
+        assertEquals(HttpMethod.GET, readOp.httpMetadata?.method)
         assertEquals("/actuator/standard/{username}/{age}", readOp.path)
-        val pathParams = readOp.parameters.filter { it.binding == ParameterBinding.Path }
+        val pathParams = readOp.httpMetadata?.parameters?.filter { it.binding == ParameterBinding.Path } ?: emptyList()
         assertEquals(2, pathParams.size)
         assertTrue(pathParams.any { it.name == "username" })
         assertTrue(pathParams.any { it.name == "age" })
@@ -71,19 +73,19 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(standardEndpointPsiClass)
         val writeOp = endpoints.first { it.name == "endpointByPost" }
 
-        assertEquals(HttpMethod.POST, writeOp.method)
+        assertEquals(HttpMethod.POST, writeOp.httpMetadata?.method)
         assertEquals("/actuator/standard/{id}", writeOp.path)
-        assertEquals(1, writeOp.parameters.filter { it.binding == ParameterBinding.Path }.size)
-        assertNotNull(writeOp.body)
+        assertEquals(1, writeOp.httpMetadata?.parameters?.filter { it.binding == ParameterBinding.Path }?.size)
+        assertNotNull(writeOp.httpMetadata?.body)
     }
 
     fun testStandardDeleteOperation() = runTest {
         val endpoints = exporter.export(standardEndpointPsiClass)
         val deleteOp = endpoints.first { it.name == "endpointByDelete" }
 
-        assertEquals(HttpMethod.DELETE, deleteOp.method)
+        assertEquals(HttpMethod.DELETE, deleteOp.httpMetadata?.method)
         assertEquals("/actuator/standard/{id}", deleteOp.path)
-        assertNotNull(deleteOp.body)
+        assertNotNull(deleteOp.httpMetadata?.body)
     }
 
     // --- @WebEndpoint ---
@@ -93,7 +95,7 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(3, endpoints.size)
 
         val readOp = endpoints.first { it.name == "endpointByGet" }
-        assertEquals(HttpMethod.GET, readOp.method)
+        assertEquals(HttpMethod.GET, readOp.httpMetadata?.method)
         assertEquals("/actuator/web/{username}/{age}", readOp.path)
     }
 
@@ -104,7 +106,7 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(3, endpoints.size)
 
         val readOp = endpoints.first { it.name == "endpointByGet" }
-        assertEquals(HttpMethod.GET, readOp.method)
+        assertEquals(HttpMethod.GET, readOp.httpMetadata?.method)
         assertEquals("/actuator/controller/{username}/{age}", readOp.path)
     }
 
@@ -115,7 +117,7 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(3, endpoints.size)
 
         val readOp = endpoints.first { it.name == "endpointByGet" }
-        assertEquals(HttpMethod.GET, readOp.method)
+        assertEquals(HttpMethod.GET, readOp.httpMetadata?.method)
         assertEquals("/actuator/rest/{username}/{age}", readOp.path)
     }
 

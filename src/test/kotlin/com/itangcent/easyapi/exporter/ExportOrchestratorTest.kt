@@ -3,6 +3,7 @@ package com.itangcent.easyapi.exporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -119,8 +120,10 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
     ): ApiEndpoint {
         return ApiEndpoint(
             name = name,
-            path = path,
-            method = method
+            metadata = HttpMetadata(
+                path = path,
+                method = method
+            )
         )
     }
 }

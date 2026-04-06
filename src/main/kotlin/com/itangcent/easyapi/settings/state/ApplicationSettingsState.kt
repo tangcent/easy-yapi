@@ -31,6 +31,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var feignEnable: Boolean = false,
         override var jaxrsEnable: Boolean = true,
         override var actuatorEnable: Boolean = false,
+        override var grpcEnable: Boolean = true,
         override var postmanToken: String? = null,
         override var wrapCollection: Boolean = false,
         override var autoMergeScript: Boolean = false,
@@ -56,7 +57,11 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name,
         override var builtInConfig: String? = null,
         override var remoteConfig: Array<String> = emptyArray(),
-        override var autoScanEnabled: Boolean = true
+        override var autoScanEnabled: Boolean = true,
+        override var grpcArtifactConfigs: Array<String> = emptyArray(),
+        override var grpcAdditionalJars: Array<String> = emptyArray(),
+        override var grpcCallEnabled: Boolean = false,
+        override var grpcRepositories: Array<String> = emptyArray()
     ) : ApplicationSettingsSupport {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -67,6 +72,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (feignEnable != other.feignEnable) return false
             if (jaxrsEnable != other.jaxrsEnable) return false
             if (actuatorEnable != other.actuatorEnable) return false
+            if (grpcEnable != other.grpcEnable) return false
             if (wrapCollection != other.wrapCollection) return false
             if (autoMergeScript != other.autoMergeScript) return false
             if (queryExpanded != other.queryExpanded) return false
@@ -93,6 +99,10 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (builtInConfig != other.builtInConfig) return false
             if (!remoteConfig.contentEquals(other.remoteConfig)) return false
             if (autoScanEnabled != other.autoScanEnabled) return false
+            if (!grpcArtifactConfigs.contentEquals(other.grpcArtifactConfigs)) return false
+            if (!grpcAdditionalJars.contentEquals(other.grpcAdditionalJars)) return false
+            if (grpcCallEnabled != other.grpcCallEnabled) return false
+            if (!grpcRepositories.contentEquals(other.grpcRepositories)) return false
 
             return true
         }
@@ -101,6 +111,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             var result = feignEnable.hashCode()
             result = 31 * result + jaxrsEnable.hashCode()
             result = 31 * result + actuatorEnable.hashCode()
+            result = 31 * result + grpcEnable.hashCode()
             result = 31 * result + wrapCollection.hashCode()
             result = 31 * result + autoMergeScript.hashCode()
             result = 31 * result + queryExpanded.hashCode()
@@ -127,6 +138,10 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + (builtInConfig?.hashCode() ?: 0)
             result = 31 * result + remoteConfig.contentHashCode()
             result = 31 * result + autoScanEnabled.hashCode()
+            result = 31 * result + grpcArtifactConfigs.contentHashCode()
+            result = 31 * result + grpcAdditionalJars.contentHashCode()
+            result = 31 * result + grpcCallEnabled.hashCode()
+            result = 31 * result + grpcRepositories.contentHashCode()
             return result
         }
     }

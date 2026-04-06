@@ -1,10 +1,19 @@
 package com.itangcent.easyapi.dashboard
 
 /**
- * Cache for edited request data in the dashboard.
+ * Sealed interface for cached request data in the dashboard.
  *
  * Stores user modifications to request parameters, headers, body, etc.
  * Used to preserve edits when switching between endpoints or sessions.
+ */
+sealed interface RequestEditCache {
+    val key: String?
+
+    fun cacheKey(): String = key ?: ""
+}
+
+/**
+ * Cache for edited HTTP request data in the dashboard.
  *
  * @param key Unique identifier for this cached request
  * @param name The request name
@@ -18,8 +27,8 @@ package com.itangcent.easyapi.dashboard
  * @param body The request body
  * @param contentType The content type
  */
-data class RequestEditCache(
-    val key: String? = null,
+data class HttpRequestEditCache(
+    override val key: String? = null,
     val name: String? = null,
     val path: String? = null,
     val method: String? = null,
@@ -30,12 +39,28 @@ data class RequestEditCache(
     val formParams: List<EditableKeyValue> = emptyList(),
     val body: String? = null,
     val contentType: String? = null
-) {
-    /**
-     * Returns the cache key for this request.
-     */
-    fun cacheKey(): String = key ?: ""
-}
+) : RequestEditCache
+
+/**
+ * Cache for edited gRPC request data in the dashboard.
+ *
+ * @param key Unique identifier for this cached request
+ * @param name The request name
+ * @param host The target host (host:port format)
+ * @param serviceName The gRPC service name
+ * @param methodName The gRPC method name
+ * @param packageName The gRPC package name
+ * @param body The request message body (JSON)
+ */
+data class GrpcRequestEditCache(
+    override val key: String? = null,
+    val name: String? = null,
+    val host: String? = null,
+    val serviceName: String? = null,
+    val methodName: String? = null,
+    val packageName: String? = null,
+    val body: String? = null
+) : RequestEditCache
 
 /**
  * A key-value pair for editable request data.

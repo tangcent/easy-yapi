@@ -18,6 +18,7 @@ import com.itangcent.easyapi.cache.ApiIndexManager
 import com.itangcent.easyapi.exporter.ApiExporterRegistry
 import com.itangcent.easyapi.exporter.ExportOrchestrator
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.ide.dialog.ExportDialog
@@ -317,11 +318,13 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @param endpoints The list of endpoints to export
      */
     private fun addExportMenuItems(menu: JMenu, endpoints: List<ApiEndpoint>) {
-        ExportFormat.entries.forEach { format ->
-            menu.add(createMenuItem("Export to ${format.displayName}") {
-                showExportDialog(endpoints, format)
-            })
-        }
+        ExportFormat.entries
+            .filter { it.isAvailableFor(endpoints) }
+            .forEach { format ->
+                menu.add(createMenuItem("Export to ${format.displayName}") {
+                    showExportDialog(endpoints, format)
+                })
+            }
     }
 
     /**
@@ -500,6 +503,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
             root.add(DefaultMutableTreeNode("Tips:"))
             root.add(DefaultMutableTreeNode("  - Ensure classes have @RestController or @Controller"))
             root.add(DefaultMutableTreeNode("  - Ensure methods have @RequestMapping or similar"))
+            root.add(DefaultMutableTreeNode("  - For gRPC: Ensure classes extend BindableService or have @GrpcService"))
             root.add(DefaultMutableTreeNode("  - Click Refresh to rescan"))
             treeModel.setRoot(root)
             return

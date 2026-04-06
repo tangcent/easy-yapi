@@ -5,9 +5,11 @@ import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.postman.model.*
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -32,8 +34,10 @@ class PostmanFormatterTest {
     fun testBuildUrlSimple() {
         val endpoint = ApiEndpoint(
             name = "Get Users",
-            path = "/api/users",
-            method = HttpMethod.GET
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.GET
+            )
         )
 
         val formatter = TestablePostmanFormatter()
@@ -47,11 +51,13 @@ class PostmanFormatterTest {
     fun testBuildUrlWithQuery() {
         val endpoint = ApiEndpoint(
             name = "List Users",
-            path = "/api/users",
-            method = HttpMethod.GET,
-            parameters = listOf(
-                ApiParameter(name = "page", binding = ParameterBinding.Query, example = "1"),
-                ApiParameter(name = "size", binding = ParameterBinding.Query, example = "10")
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(name = "page", binding = ParameterBinding.Query, example = "1"),
+                    ApiParameter(name = "size", binding = ParameterBinding.Query, example = "10")
+                )
             )
         )
 
@@ -67,10 +73,12 @@ class PostmanFormatterTest {
     fun testBuildUrlWithPathVariable() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            path = "/api/users/{id}",
-            method = HttpMethod.GET,
-            parameters = listOf(
-                ApiParameter(name = "id", binding = ParameterBinding.Path, example = "123")
+            metadata = HttpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(name = "id", binding = ParameterBinding.Path, example = "123")
+                )
             )
         )
 
@@ -86,12 +94,14 @@ class PostmanFormatterTest {
     fun testBuildBodyJson() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            path = "/api/users",
-            method = HttpMethod.POST,
-            contentType = "application/json",
-            parameters = listOf(
-                ApiParameter(name = "name", binding = ParameterBinding.Body, example = "John"),
-                ApiParameter(name = "age", binding = ParameterBinding.Body, example = "25")
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST,
+                contentType = "application/json",
+                parameters = listOf(
+                    ApiParameter(name = "name", binding = ParameterBinding.Body, example = "John"),
+                    ApiParameter(name = "age", binding = ParameterBinding.Body, example = "25")
+                )
             )
         )
 
@@ -108,12 +118,14 @@ class PostmanFormatterTest {
     fun testBuildBodyFormUrlencoded() {
         val endpoint = ApiEndpoint(
             name = "Login",
-            path = "/api/login",
-            method = HttpMethod.POST,
-            contentType = "application/x-www-form-urlencoded",
-            parameters = listOf(
-                ApiParameter(name = "username", binding = ParameterBinding.Form, example = "admin"),
-                ApiParameter(name = "password", binding = ParameterBinding.Form, example = "secret")
+            metadata = HttpMetadata(
+                path = "/api/login",
+                method = HttpMethod.POST,
+                contentType = "application/x-www-form-urlencoded",
+                parameters = listOf(
+                    ApiParameter(name = "username", binding = ParameterBinding.Form, example = "admin"),
+                    ApiParameter(name = "password", binding = ParameterBinding.Form, example = "secret")
+                )
             )
         )
 
@@ -131,12 +143,14 @@ class PostmanFormatterTest {
     fun testBuildBodyMultipart() {
         val endpoint = ApiEndpoint(
             name = "Upload",
-            path = "/api/upload",
-            method = HttpMethod.POST,
-            contentType = "multipart/form-data",
-            parameters = listOf(
-                ApiParameter(name = "file", binding = ParameterBinding.Form, example = "@/path/to/file"),
-                ApiParameter(name = "description", binding = ParameterBinding.Form, example = "My file")
+            metadata = HttpMetadata(
+                path = "/api/upload",
+                method = HttpMethod.POST,
+                contentType = "multipart/form-data",
+                parameters = listOf(
+                    ApiParameter(name = "file", binding = ParameterBinding.Form, example = "@/path/to/file"),
+                    ApiParameter(name = "description", binding = ParameterBinding.Form, example = "My file")
+                )
             )
         )
 
@@ -152,18 +166,20 @@ class PostmanFormatterTest {
     fun testBuildBodyWithEndpointBody() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            path = "/api/users",
-            method = HttpMethod.POST,
-            contentType = "application/json",
-            body = ObjectModel.Object(
-                mapOf(
-                    "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                    "age" to FieldModel(ObjectModel.Single(JsonType.INT)),
-                    "address" to FieldModel(
-                        ObjectModel.Object(
-                            mapOf(
-                                "city" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                                "country" to FieldModel(ObjectModel.Single(JsonType.STRING))
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST,
+                contentType = "application/json",
+                body = ObjectModel.Object(
+                    mapOf(
+                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
+                        "age" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                        "address" to FieldModel(
+                            ObjectModel.Object(
+                                mapOf(
+                                    "city" to FieldModel(ObjectModel.Single(JsonType.STRING)),
+                                    "country" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                                )
                             )
                         )
                     )
@@ -190,12 +206,14 @@ class PostmanFormatterTest {
             val formatter = PostmanFormatter(actionContext = context)
             val endpoint = ApiEndpoint(
                 name = "Upload File",
-                path = "/api/upload",
-                method = HttpMethod.POST,
-                contentType = "multipart/form-data",
-                parameters = listOf(
-                    ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/file.txt"),
-                    ApiParameter(name = "description", type = ParameterType.TEXT, binding = ParameterBinding.Form, example = "Test file")
+                metadata = HttpMetadata(
+                    path = "/api/upload",
+                    method = HttpMethod.POST,
+                    contentType = "multipart/form-data",
+                    parameters = listOf(
+                        ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/file.txt"),
+                        ApiParameter(name = "description", binding = ParameterBinding.Form, example = "Test file")
+                    )
                 )
             )
             val item = formatter.toItem(endpoint)
@@ -222,12 +240,14 @@ class PostmanFormatterTest {
             val formatter = PostmanFormatter(actionContext = context)
             val endpoint = ApiEndpoint(
                 name = "Submit Form",
-                path = "/api/submit",
-                method = HttpMethod.POST,
-                contentType = "application/x-www-form-urlencoded",
-                parameters = listOf(
-                    ApiParameter(name = "profileImg", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/image.png"),
-                    ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Form, example = "John")
+                metadata = HttpMetadata(
+                    path = "/api/submit",
+                    method = HttpMethod.POST,
+                    contentType = "application/x-www-form-urlencoded",
+                    parameters = listOf(
+                        ApiParameter(name = "profileImg", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/image.png"),
+                        ApiParameter(name = "name", binding = ParameterBinding.Form, example = "John")
+                    )
                 )
             )
             val item = formatter.toItem(endpoint)
@@ -256,13 +276,15 @@ class PostmanFormatterTest {
             )
             val endpoint = ApiEndpoint(
                 name = "Create User",
-                path = "/api/users",
-                method = HttpMethod.POST,
-                contentType = "application/json",
-                body = ObjectModel.Object(
-                    mapOf(
-                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                        "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                metadata = HttpMetadata(
+                    path = "/api/users",
+                    method = HttpMethod.POST,
+                    contentType = "application/json",
+                    body = ObjectModel.Object(
+                        mapOf(
+                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
+                            "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                        )
                     )
                 )
             )
@@ -290,19 +312,23 @@ class PostmanFormatterTest {
             val endpoints = listOf(
                 ApiEndpoint(
                     name = "Get User",
-                    path = "/api/users/{id}",
-                    method = HttpMethod.GET,
-                    parameters = listOf(
-                        ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, example = "1")
+                    metadata = HttpMetadata(
+                        path = "/api/users/{id}",
+                        method = HttpMethod.GET,
+                        parameters = listOf(
+                            ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1")
+                        )
                     )
                 ),
                 ApiEndpoint(
                     name = "Create User",
-                    path = "/api/users",
-                    method = HttpMethod.POST,
-                    contentType = "application/json",
-                    parameters = listOf(
-                        ApiParameter(name = "name", type = ParameterType.TEXT, binding = ParameterBinding.Body, example = "John")
+                    metadata = HttpMetadata(
+                        path = "/api/users",
+                        method = HttpMethod.POST,
+                        contentType = "application/json",
+                        parameters = listOf(
+                            ApiParameter(name = "name", binding = ParameterBinding.Body, example = "John")
+                        )
                     )
                 )
             )
@@ -313,11 +339,63 @@ class PostmanFormatterTest {
             assertEquals(2, collection.item?.size ?: 0)
         }
     }
+
+    @Test
+    fun testFormatFiltersOutGrpcEndpoints() = runBlocking {
+        val context = ActionContext.builder()
+            .bind(ConfigReader::class, TestConfigReader.EMPTY)
+            .dispatcher(Dispatchers.Unconfined)
+            .withSpiBindings().build()
+        withContext(context.coroutineContext) {
+            val formatter = PostmanFormatter(
+                actionContext = context,
+                options = PostmanFormatOptions(appendTimestamp = false)
+            )
+            val endpoints = listOf(
+                ApiEndpoint(
+                    name = "Get User",
+                    metadata = HttpMetadata(
+                        path = "/api/users/{id}",
+                        method = HttpMethod.GET
+                    )
+                ),
+                ApiEndpoint(
+                    name = "GetUser",
+                    metadata = com.itangcent.easyapi.exporter.model.GrpcMetadata(
+                        path = "/com.example.UserService/GetUser",
+                        serviceName = "UserService",
+                        methodName = "GetUser",
+                        packageName = "com.example",
+                        streamingType = com.itangcent.easyapi.exporter.model.GrpcStreamingType.UNARY
+                    )
+                ),
+                ApiEndpoint(
+                    name = "Create User",
+                    metadata = HttpMetadata(
+                        path = "/api/users",
+                        method = HttpMethod.POST
+                    )
+                )
+            )
+            val collection = formatter.format(endpoints, "Test API")
+            assertNotNull(collection)
+            assertEquals("Test API", collection.info?.name)
+            // gRPC endpoint should be filtered out, only HTTP endpoints remain
+            assertEquals(2, collection.item?.size ?: 0)
+            val itemNames = collection.item?.map { it.name } ?: emptyList()
+            assertTrue(itemNames.contains("Get User"))
+            assertTrue(itemNames.contains("Create User"))
+            assertFalse(itemNames.contains("GetUser"))
+        }
+    }
 }
 
 class TestablePostmanFormatter {
     fun testBuildUrl(endpoint: ApiEndpoint, hostVar: String): PostmanUrl {
-        val query = endpoint.parameters
+        val httpMeta = endpoint.httpMetadata
+        val parameters = httpMeta?.parameters ?: emptyList()
+
+        val query = parameters
             .filter { it.binding == ParameterBinding.Query }
             .map {
                 PostmanQuery(
@@ -328,9 +406,9 @@ class TestablePostmanFormatter {
                 )
             }
 
-        val pathSegments = PostmanFormatter.parsePath(endpoint.path)
+        val pathSegments = PostmanFormatter.parsePath(httpMeta?.path ?: "")
 
-        val pathVariables = endpoint.parameters
+        val pathVariables = parameters
             .filter { it.binding == ParameterBinding.Path }
             .map {
                 PostmanPathVariable(
@@ -353,13 +431,15 @@ class TestablePostmanFormatter {
     }
 
     fun testBuildBody(endpoint: ApiEndpoint): PostmanBody? {
-        val contentType = endpoint.contentType?.lowercase().orEmpty()
-        val bodyParams = endpoint.parameters.filter { it.binding == ParameterBinding.Body }
-        val formParams = endpoint.parameters.filter { it.binding == ParameterBinding.Form }
+        val httpMeta = endpoint.httpMetadata
+        val contentType = httpMeta?.contentType?.lowercase().orEmpty()
+        val parameters = httpMeta?.parameters ?: emptyList()
+        val bodyParams = parameters.filter { it.binding == ParameterBinding.Body }
+        val formParams = parameters.filter { it.binding == ParameterBinding.Form }
 
         if (contentType.contains("json")) {
             val raw = when {
-                endpoint.body != null -> com.itangcent.easyapi.util.GsonUtils.prettyJson(endpoint.body)
+                httpMeta?.body != null -> com.itangcent.easyapi.util.GsonUtils.prettyJson(httpMeta.body)
                 bodyParams.isNotEmpty() -> bodyParams.associate { it.name to (it.example ?: it.defaultValue ?: "") }
                     .let { com.itangcent.easyapi.util.GsonUtils.prettyJson(it) }
                 else -> "{}"
@@ -399,10 +479,10 @@ class TestablePostmanFormatter {
             )
         }
 
-        if (endpoint.body != null) {
+        if (httpMeta?.body != null) {
             return PostmanBody(
                 mode = "raw",
-                raw = com.itangcent.easyapi.util.GsonUtils.prettyJson(endpoint.body),
+                raw = com.itangcent.easyapi.util.GsonUtils.prettyJson(httpMeta.body),
                 options = mapOf("raw" to mapOf("language" to "json"))
             )
         }

@@ -76,7 +76,7 @@ class OperationScopeTest {
             .bind("test value")
             .build()
 
-        val value: String = scope.get()
+        val value: String = scope.get(String::class)
         assertEquals("test value", value)
     }
 
@@ -86,10 +86,10 @@ class OperationScopeTest {
             .bind("test value")
             .build()
 
-        val value: String? = scope.getOrNull()
+        val value: String? = scope.getOrNull(String::class)
         assertEquals("test value", value)
 
-        val notFound: Int? = scope.getOrNull()
+        val notFound: Int? = scope.getOrNull(Int::class)
         assertNull(notFound)
     }
 
@@ -104,13 +104,13 @@ class OperationScopeTest {
             .bind(3.14)
             .build()
 
-        val testClass = scope.get<TestClass>()
+        val testClass = scope.get(TestClass::class)
         assertEquals("test", testClass.name)
         assertEquals(123, testClass.value)
 
-        assertEquals("string value", scope.get<String>())
-        assertEquals(42, scope.get<Int>())
-        assertEquals(3.14, scope.get<Double>(), 0.001)
+        assertEquals("string value", scope.get(String::class))
+        assertEquals(42, scope.get(Int::class))
+        assertEquals(3.14, scope.get(Double::class), 0.001)
     }
 
     @Test
@@ -123,9 +123,9 @@ class OperationScopeTest {
             }
             .build()
 
-        scope.get<String>()
-        scope.get<String>()
-        scope.get<String>()
+        scope.get(String::class)
+        scope.get(String::class)
+        scope.get(String::class)
 
         assertEquals("Lazy should only be computed once", 1, callCount)
     }

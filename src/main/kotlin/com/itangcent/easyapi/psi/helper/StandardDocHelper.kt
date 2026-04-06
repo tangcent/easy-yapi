@@ -1,9 +1,13 @@
 package com.itangcent.easyapi.psi.helper
 
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.javadoc.PsiDocComment
 import com.intellij.psi.javadoc.PsiDocTag
 import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.read
 import kotlinx.coroutines.withContext
 import java.util.*
 
@@ -19,14 +23,15 @@ val DOC_COMMENT_PREFIXES = listOf<String>(
     "*", "///", "//"
 )
 
+@Service(Service.Level.PROJECT)
 class StandardDocHelper : DocHelper {
 
-    private suspend fun <T> readAction(block: () -> T): T {
-        return withContext(IdeDispatchers.ReadAction) { block() }
+    companion object {
+        fun getInstance(project: Project): StandardDocHelper = project.service()
     }
 
     override suspend fun hasTag(psiElement: PsiElement?, tag: String?): Boolean {
-        return readAction {
+        return read {
             docComment(psiElement) { docComment ->
                 val tags = docComment.findTagByName(tag)
                 tags != null
@@ -35,7 +40,7 @@ class StandardDocHelper : DocHelper {
     }
 
     override suspend fun findDocByTag(psiElement: PsiElement?, tag: String?): String? {
-        return readAction {
+        return read {
             docComment(psiElement) { docComment ->
                 val tags = docComment.findTagsByName(tag)
                 if (tags.isEmpty()) return@docComment null
@@ -83,7 +88,7 @@ class StandardDocHelper : DocHelper {
     }
 
     override suspend fun findDocsByTag(psiElement: PsiElement?, tag: String?): List<String>? {
-        return readAction {
+        return read {
             docComment(psiElement) { docComment ->
                 val tags = docComment.findTagsByName(tag)
                 if (tags.isEmpty()) return@docComment null
@@ -101,7 +106,7 @@ class StandardDocHelper : DocHelper {
 
     override suspend fun findDocsByTagAndName(psiElement: PsiElement?, tag: String, name: String): String? {
         val tagAttr = "@$tag"
-        return readAction {
+        return read {
             docComment(psiElement) { docComment ->
                 loopTags@ for (paramDocTag in docComment.findTagsByName(tag)) {
                     if (paramDocTag.nameElement.text != tagAttr) {
@@ -119,7 +124,7 @@ class StandardDocHelper : DocHelper {
     }
 
     override suspend fun getAttrOfDocComment(psiElement: PsiElement?): String? {
-        return readAction {
+        return read {
             docComment(psiElement) { docComment ->
                 getDocCommentContent(docComment)
             }
@@ -148,7 +153,7 @@ class StandardDocHelper : DocHelper {
     }
 
     override suspend fun getSubTagMapOfDocComment(psiElement: PsiElement?, tag: String): Map<String, String?> {
-        return readAction {
+        return read {
             docComment(psiElement) { docComment ->
                 val subTagMap: HashMap<String, String?> = HashMap()
                 for (paramDocTag in docComment.findTagsByName(tag)) {
@@ -162,7 +167,7 @@ class StandardDocHelper : DocHelper {
     }
 
     override suspend fun getTagMapOfDocComment(psiElement: PsiElement?): Map<String, String?> {
-        return readAction {
+        return read {
             docComment(psiElement) { docComment ->
                 val tagMap: HashMap<String, String?> = HashMap()
                 docComment.tags.forEach { tag ->

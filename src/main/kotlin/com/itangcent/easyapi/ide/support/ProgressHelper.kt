@@ -7,6 +7,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.threading.backgroundAsync
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -45,7 +46,7 @@ suspend fun <T> runWithProgress(
                 ProgressManager.getInstance().run(object : Task.Backgroundable(project, title, cancellable) {
                     override fun run(indicator: ProgressIndicator) {
                         // Use kotlinx.coroutines.runBlocking to bridge suspend function
-                        val result = kotlinx.coroutines.runBlocking { block(indicator) }
+                        val result = runBlocking { block(indicator) }
                         continuation.resume(result)
                     }
 

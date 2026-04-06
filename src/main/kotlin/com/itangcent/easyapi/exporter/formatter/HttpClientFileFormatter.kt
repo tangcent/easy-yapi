@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.exporter.formatter
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 
 /**
  * Formatter for generating IntelliJ HTTP Client file format.
@@ -13,10 +15,11 @@ import com.itangcent.easyapi.exporter.model.ParameterBinding
  * - Headers
  * - Request body (JSON and form data)
  * - Query parameters
+ * - gRPC endpoints using the GRPC method keyword
  * 
  * Output can be directly used in IntelliJ for API testing.
  */
-class HttpClientFileFormatter {
+object HttpClientFileFormatter {
 
     /**
      * Formats a single API endpoint as an HTTP Client request.
@@ -27,54 +30,32 @@ class HttpClientFileFormatter {
      */
     fun format(endpoint: ApiEndpoint, host: String = ""): String {
         val sb = StringBuilder()
-        
-        sb.append("### ${endpoint.name ?: endpoint.path}\n")
-        if (endpoint.description != null) {
-            sb.append("# ${endpoint.description}\n")
+        when (val meta = endpoint.metadata) {
+            is HttpMetadata -> formatHttpEndpoint(sb, endpoint, meta, host)
+            is GrpcMetadata -> formatGrpcEndpoint(sb, endpoint, meta, host)
         }
-        sb.append("\n")
+        return sb.toString()
+    }
 
-        val queryParams = endpoint.parameters
-            .filter { it.binding == ParameterBinding.Query }
-            .mapNotNull { param ->
-                val value = param.defaultValue ?: param.example ?: return@mapNotNull null
-                "${param.name}=$value"
+    /**
+     * Formats multiple API endpoints as an HTTP Client file.
+     * Generates compact format with endpoints separated by "###" delimiters.
+     * 
+     * @param endpoints The list of API endpoints to format
+     * @param host The host URL to prepend to paths
+     * @return A complete HTTP Client file content
+     */
+    fun format(endpoints: List<ApiEndpoint>, host: String): String {
+        val sb = StringBuilder()
+        for ((idx, ep) in endpoints.withIndex()) {
+            when (val meta = ep.metadata) {
+                is HttpMetadata -> formatHttpEndpointCompact(sb, ep, meta, host)
+                is GrpcMetadata -> formatGrpcEndpointCompact(sb, ep, meta, host)
             }
-            .joinToString("&")
-
-        val url = buildString {
-            if (host.isNotBlank()) {
-                append(host.trimEnd('/'))
-            }
-            append(endpoint.path)
-            if (queryParams.isNotEmpty()) {
-                append("?$queryParams")
+            if (idx != endpoints.lastIndex) {
+                sb.append("\n###\n\n")
             }
         }
-
-        sb.append("${endpoint.method.name} $url\n")
-
-        for (header in endpoint.headers) {
-            val value = header.value ?: continue
-            sb.append("${header.name}: $value\n")
-        }
-
-        val bodyParams = endpoint.parameters
-            .filter { it.binding == ParameterBinding.Body }
-        
-        if (bodyParams.isNotEmpty() && endpoint.method in listOf(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH)) {
-            sb.append("\n")
-            sb.append("{\n")
-            bodyParams.forEachIndexed { index, param ->
-                val value = param.example ?: param.defaultValue ?: ""
-                val comma = if (index < bodyParams.size - 1) "," else ""
-                sb.append("  \"${param.name}\": \"$value\"$comma\n")
-            }
-            sb.append("}\n")
-        }
-
-        sb.append("\n")
-        
         return sb.toString()
     }
 
@@ -99,5 +80,138 @@ class HttpClientFileFormatter {
         }
         
         return sb.toString()
+    }
+
+    private fun formatHttpEndpoint(
+        sb: StringBuilder,
+        endpoint: ApiEndpoint,
+        meta: HttpMetadata,
+        host: String
+    ) {
+        sb.append("### ${endpoint.name ?: meta.path}\n")
+        if (endpoint.description != null) {
+            sb.append("# ${endpoint.description}\n")
+        }
+        sb.append("\n")
+
+        val queryParams = meta.parameters
+            .filter { it.binding == ParameterBinding.Query }
+            .mapNotNull { param ->
+                val value = param.defaultValue ?: param.example ?: return@mapNotNull null
+                "${param.name}=$value"
+            }
+            .joinToString("&")
+
+        val url = buildString {
+            if (host.isNotBlank()) {
+                append(host.trimEnd('/'))
+            }
+            append(meta.path)
+            if (queryParams.isNotEmpty()) {
+                append("?$queryParams")
+            }
+        }
+
+        sb.append("${meta.method.name} $url\n")
+
+        for (header in meta.headers) {
+            val value = header.value ?: continue
+            sb.append("${header.name}: $value\n")
+        }
+
+        val contentType = meta.contentType
+        if (!contentType.isNullOrBlank()) {
+            sb.append("Content-Type: $contentType\n")
+        }
+
+        val bodyParams = meta.parameters.filter { it.binding == ParameterBinding.Body }
+        val formParams = meta.parameters.filter { it.binding == ParameterBinding.Form }
+
+        if (bodyParams.isNotEmpty() || formParams.isNotEmpty()) {
+            sb.append("\n")
+        }
+
+        if (bodyParams.isNotEmpty()) {
+            sb.append("{\n")
+            bodyParams.forEachIndexed { index, param ->
+                val value = param.example ?: param.defaultValue ?: ""
+                val comma = if (index < bodyParams.size - 1) "," else ""
+                sb.append("  \"${param.name}\": \"$value\"$comma\n")
+            }
+            sb.append("}\n")
+        } else if (formParams.isNotEmpty()) {
+            sb.append(formParams.joinToString("&") { "${it.name}=${it.example ?: it.defaultValue ?: ""}" })
+            sb.append("\n")
+        }
+
+        sb.append("\n")
+    }
+
+    private fun formatGrpcEndpoint(
+        sb: StringBuilder,
+        endpoint: ApiEndpoint,
+        meta: GrpcMetadata,
+        host: String
+    ) {
+        sb.append("### ${endpoint.name ?: meta.path}\n")
+        if (endpoint.description != null) {
+            sb.append("# ${endpoint.description}\n")
+        }
+        sb.append("\n")
+
+        sb.append("GRPC ${host.trimEnd('/')}${meta.path}\n")
+
+        meta.body?.let { body ->
+            sb.append("\n")
+            sb.append(ObjectModelJsonConverter.toJson(body))
+            sb.append("\n")
+        }
+
+        sb.append("\n")
+    }
+
+    private fun formatHttpEndpointCompact(
+        sb: StringBuilder,
+        endpoint: ApiEndpoint,
+        meta: HttpMetadata,
+        host: String
+    ) {
+        sb.append(meta.method.name).append(' ').append(host.trimEnd('/')).append(meta.path)
+        val query = meta.parameters.filter { it.binding == ParameterBinding.Query }
+        if (query.isNotEmpty()) {
+            sb.append('?').append(query.joinToString("&") { "${it.name}=${it.example ?: it.defaultValue ?: ""}" })
+        }
+        sb.append('\n')
+        for (h in meta.headers) {
+            sb.append(h.name).append(": ").append(h.value ?: "").append('\n')
+        }
+        val contentType = meta.contentType
+        if (!contentType.isNullOrBlank()) {
+            sb.append("Content-Type: ").append(contentType).append('\n')
+        }
+        val bodyParams = meta.parameters.filter { it.binding == ParameterBinding.Body }
+        val formParams = meta.parameters.filter { it.binding == ParameterBinding.Form }
+        if (bodyParams.isNotEmpty() || formParams.isNotEmpty()) {
+            sb.append('\n')
+        }
+        if (bodyParams.isNotEmpty()) {
+            sb.append(bodyParams.joinToString(prefix = "{\n", postfix = "\n}\n") { "  \"${it.name}\": \"${it.example ?: it.defaultValue ?: ""}\"" })
+        } else if (formParams.isNotEmpty()) {
+            sb.append(formParams.joinToString("&") { "${it.name}=${it.example ?: it.defaultValue ?: ""}" }).append('\n')
+        }
+    }
+
+    private fun formatGrpcEndpointCompact(
+        sb: StringBuilder,
+        endpoint: ApiEndpoint,
+        meta: GrpcMetadata,
+        host: String
+    ) {
+        sb.append("GRPC ").append(host.trimEnd('/')).append(meta.path).append('\n')
+        meta.body?.let { body ->
+            sb.append('\n')
+            sb.append(ObjectModelJsonConverter.toJson(body))
+            sb.append('\n')
+        }
     }
 }

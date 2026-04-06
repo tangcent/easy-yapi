@@ -3,6 +3,7 @@ package com.itangcent.easyapi.testFramework
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
@@ -19,12 +20,14 @@ object ApiFixtures {
     ): ApiEndpoint {
         return ApiEndpoint(
             name = name,
-            path = path,
-            method = method,
             description = description,
             folder = folder,
-            parameters = emptyList(),
-            headers = emptyList()
+            metadata = HttpMetadata(
+                path = path,
+                method = method,
+                parameters = emptyList(),
+                headers = emptyList()
+            )
         )
     }
 
@@ -34,21 +37,22 @@ object ApiFixtures {
     ): ApiEndpoint {
         return ApiEndpoint(
             name = name,
-            path = path,
-            method = HttpMethod.GET,
             description = "Get user by ID",
             folder = "User API",
-            parameters = listOf(
-                ApiParameter(
-                name = "id",
-                type = ParameterType.TEXT,
-                binding = ParameterBinding.Path,
-                description = "User ID",
-                required = true
+            metadata = HttpMetadata(
+                path = path,
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(
+                        name = "id",
+                        binding = ParameterBinding.Path,
+                        description = "User ID",
+                        required = true
+                    )
+                ),
+                headers = listOf(
+                    ApiHeader("Authorization", "Bearer token")
                 )
-            ),
-            headers = listOf(
-                ApiHeader("Authorization", "Bearer token")
             )
         )
     }
@@ -59,31 +63,31 @@ object ApiFixtures {
     ): ApiEndpoint {
         return ApiEndpoint(
             name = name,
-            path = path,
-            method = HttpMethod.POST,
             description = "Create a new user",
             folder = "User API",
-            parameters = listOf(
-                ApiParameter(
-                name = "name",
-                type = ParameterType.TEXT,
-                binding = ParameterBinding.Body,
-                description = "User name",
-                required = true,
-                example = "John Doe"
+            metadata = HttpMetadata(
+                path = path,
+                method = HttpMethod.POST,
+                parameters = listOf(
+                    ApiParameter(
+                        name = "name",
+                        binding = ParameterBinding.Body,
+                        description = "User name",
+                        required = true,
+                        example = "John Doe"
+                    ),
+                    ApiParameter(
+                        name = "email",
+                        binding = ParameterBinding.Body,
+                        description = "User email",
+                        required = true,
+                        example = "john@example.com"
+                    )
                 ),
-                ApiParameter(
-                name = "email",
-                type = ParameterType.TEXT,
-                binding = ParameterBinding.Body,
-                description = "User email",
-                required = true,
-                example = "john@example.com"
+                headers = listOf(
+                    ApiHeader("Content-Type", "application/json"),
+                    ApiHeader("Authorization", "Bearer token")
                 )
-            ),
-            headers = listOf(
-                ApiHeader("Content-Type", "application/json"),
-                ApiHeader("Authorization", "Bearer token")
             )
         )
     }
@@ -114,21 +118,23 @@ object ApiFixtures {
     ): ApiEndpoint {
         return ApiEndpoint(
             name = name,
-            path = path,
-            method = HttpMethod.POST,
             description = "Upload a file",
             folder = "File API",
-            parameters = listOf(
-                ApiParameter(
-                    name = "file",
-                    type = ParameterType.FILE,
-                    binding = ParameterBinding.Form,
-                    description = "File to upload",
-                    required = true
+            metadata = HttpMetadata(
+                path = path,
+                method = HttpMethod.POST,
+                parameters = listOf(
+                    ApiParameter(
+                        name = "file",
+                        type = ParameterType.FILE,
+                        binding = ParameterBinding.Form,
+                        description = "File to upload",
+                        required = true
+                    )
+                ),
+                headers = listOf(
+                    ApiHeader("Content-Type", "multipart/form-data")
                 )
-            ),
-            headers = listOf(
-                ApiHeader("Content-Type", "multipart/form-data")
             )
         )
     }

@@ -6,11 +6,15 @@ import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.cache.ApiIndexManager
 import com.itangcent.easyapi.dashboard.ApiDashboardService
+import com.itangcent.easyapi.exporter.core.MetaAnnotationResolver
+import com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver
+import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
@@ -79,7 +83,29 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
 
         return runBlocking {
             apiAnnotations.any { annotationHelper.hasAnn(method, it) }
+                    || isGrpcRpcMethod(method)
         }
+    }
+
+    /**
+     * Detects gRPC RPC methods by signature pattern:
+     * - Unary/server-streaming: (Req, StreamObserver<Resp>) -> void
+     * - Client/bidirectional: (StreamObserver<Resp>) -> StreamObserver<Req>
+     *
+     * Also checks that the containing class is a gRPC service (extends ImplBase or has @GrpcService).
+     */
+    private suspend fun isGrpcRpcMethod(method: PsiMethod): Boolean {
+        val containingClass = method.containingClass ?: return false
+        if (!looksLikeGrpcService(containingClass)) return false
+        val resolver = GrpcMethodResolver.getInstance(method.project)
+        return resolver.resolveStreamingType(method) != null
+    }
+
+    private suspend fun looksLikeGrpcService(cls: PsiClass): Boolean {
+        // Check for @GrpcService or any meta-annotation thereof (via MetaAnnotationResolver)
+        if (MetaAnnotationResolver.hasMetaAnnotation(cls, GrpcServiceRecognizer.GRPC_SERVICE_ANNOTATIONS)) return true
+        // Check for ImplBase superclass anywhere in hierarchy
+        return GrpcServiceRecognizer.extendsBindableService(cls)
     }
 
     private object ApiMethodNavigationHandler : GutterIconNavigationHandler<PsiElement>, IdeaLog {

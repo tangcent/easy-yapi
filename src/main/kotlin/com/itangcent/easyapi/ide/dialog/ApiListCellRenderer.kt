@@ -2,6 +2,8 @@ package com.itangcent.easyapi.ide.dialog
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import java.awt.Color
 import java.awt.Component
 import javax.swing.JLabel
@@ -41,7 +43,7 @@ class ApiListCellRenderer : JLabel(), ListCellRenderer<ApiEndpoint> {
             return this
         }
 
-        val method = value.method.name.padEnd(6)
+        val method = (value.httpMetadata?.method?.name ?: value.metadata.protocol).padEnd(6)
         val path = value.path
         val name = value.name?.let { " - $it" } ?: ""
 
@@ -49,7 +51,8 @@ class ApiListCellRenderer : JLabel(), ListCellRenderer<ApiEndpoint> {
         foreground = if (isSelected) {
             list?.selectionForeground ?: Color.WHITE
         } else {
-            getMethodColor(value.method)
+            val httpMeta = value.httpMetadata
+            if (httpMeta != null) getMethodColor(httpMeta.method) else Color(0x999999)
         }
         background = if (isSelected) {
             list?.selectionBackground ?: Color.BLUE

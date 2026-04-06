@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.exporter.feign
 
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -48,7 +50,7 @@ class FeignTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.client.TitleTestClient")
         assertNotNull(psiClass)
         val endpoints = exporter.export(psiClass!!)
-        val getEndpoint = endpoints.find { it.method == HttpMethod.GET }
+        val getEndpoint = endpoints.find { it.httpMetadata?.method == HttpMethod.GET }
         assertNotNull("Should find GET endpoint", getEndpoint)
         assertEquals("Get order by ID", getEndpoint!!.name)
     }

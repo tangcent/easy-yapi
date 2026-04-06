@@ -5,6 +5,7 @@ import com.itangcent.easyapi.exporter.postman.PostmanFormatter
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.exporter.curl.CurlFormatter
 import com.itangcent.easyapi.exporter.markdown.DefaultMarkdownFormatter
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
@@ -99,12 +100,13 @@ class EndToEndExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("Step: Source discovery - Should find controller class", endpoints.isNotEmpty())
 
         endpoints.forEach { endpoint ->
-            assertNotNull("Step: Path resolution - Path should not be null", endpoint.path)
-            assertTrue("Step: Path resolution - Path should start with /", endpoint.path.startsWith("/"))
+            val path = endpoint.httpMetadata?.path
+            assertNotNull("Step: Path resolution - Path should not be null", path)
+            assertTrue("Step: Path resolution - Path should start with /", path!!.startsWith("/"))
 
-            assertNotNull("Step: HTTP method - Method should not be null", endpoint.method)
+            assertNotNull("Step: HTTP method - Method should not be null", endpoint.httpMetadata?.method)
 
-            endpoint.parameters.forEach { param ->
+            endpoint.httpMetadata?.parameters?.forEach { param ->
                 assertNotNull("Step: Parameter extraction - Parameter name should not be null", param.name)
                 assertNotNull("Step: Parameter binding - Binding should not be null", param.binding)
             }

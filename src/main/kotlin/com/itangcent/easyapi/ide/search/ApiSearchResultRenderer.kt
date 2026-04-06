@@ -7,6 +7,8 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
@@ -56,7 +58,16 @@ class ApiSearchResultRenderer : ListCellRenderer<ApiEndpoint> {
             isOpaque = false
         }
 
-        val methodLabel = createMethodLabel(value.method)
+        val httpMeta = value.httpMetadata
+        val methodLabel = if (httpMeta != null) {
+            createMethodLabel(httpMeta.method)
+        } else {
+            JBLabel(value.metadata.protocol.padEnd(7)).apply {
+                foreground = JBColor.GRAY
+                font = font.deriveFont(java.awt.Font.BOLD, font.size2D + 1)
+                border = BorderFactory.createEmptyBorder(2, 6, 2, 6)
+            }
+        }
         leftPanel.add(methodLabel)
 
         val pathLabel = JBLabel(value.path).apply {

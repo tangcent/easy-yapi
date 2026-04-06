@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.ide.search
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import org.junit.Assert.*
 import org.junit.Test
@@ -15,8 +17,7 @@ class ApiSearchEverywhereContributorTest {
         description: String? = null
     ): ApiEndpoint {
         return ApiEndpoint(
-            path = path,
-            method = method,
+            metadata = HttpMetadata(path = path, method = method),
             name = name,
             className = className,
             description = description
@@ -152,7 +153,7 @@ class ApiSearchEverywhereContributorTest {
     }
 
     private fun matchesQuery(endpoint: ApiEndpoint, query: ApiSearchQuery): Boolean {
-        if (query.httpMethod != null && endpoint.method != query.httpMethod) {
+        if (query.httpMethod != null && endpoint.httpMetadata?.method != query.httpMethod) {
             return false
         }
 
@@ -161,8 +162,9 @@ class ApiSearchEverywhereContributorTest {
         }
 
         val searchLower = query.searchText.lowercase()
+        val path = endpoint.httpMetadata?.path ?: ""
 
-        val matchesPath = endpoint.path.lowercase().contains(searchLower)
+        val matchesPath = path.lowercase().contains(searchLower)
         val matchesName = endpoint.name?.lowercase()?.contains(searchLower) == true
         val matchesClassName = endpoint.className?.lowercase()?.contains(searchLower) == true
         val matchesDescription = endpoint.description?.lowercase()?.contains(searchLower) == true

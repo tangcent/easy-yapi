@@ -5,6 +5,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
@@ -126,13 +127,15 @@ class ActuatorEndpointScanner {
 
         return ApiEndpoint(
             name = apiName,
-            path = path.toString(),
-            method = httpMethod,
-            parameters = pathParams,
-            body = body,
             sourceClass = psiClass,
             sourceMethod = method,
-            className = psiClass.qualifiedName ?: psiClass.name ?: ""
+            className = psiClass.qualifiedName ?: psiClass.name ?: "",
+            metadata = HttpMetadata(
+                path = path.toString(),
+                method = httpMethod,
+                parameters = pathParams,
+                body = body
+            )
         )
     }
 

@@ -7,6 +7,7 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import org.junit.Assert.*
 import org.junit.Before
@@ -46,8 +47,10 @@ class BaseExportActionTest {
     fun testExportContextHasCorrectFormat() {
         val endpoint = ApiEndpoint(
             name = "test",
-            path = "/test",
-            method = HttpMethod.GET
+            metadata = HttpMetadata(
+                path = "/test",
+                method = HttpMethod.GET
+            )
         )
 
         val context = ExportContext(

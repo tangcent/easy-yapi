@@ -1,7 +1,9 @@
 package com.itangcent.easyapi.cache
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
 import kotlinx.coroutines.runBlocking
@@ -36,8 +38,10 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
         runBlocking {
             val endpoint = ApiEndpoint(
                 name = "getUser",
-                path = "/api/users/{id}",
-                method = HttpMethod.GET,
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.GET
+                ),
                 className = "com.example.UserController"
             )
             apiIndex.updateEndpoints(listOf(endpoint))
@@ -54,14 +58,18 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
             val endpoints = listOf(
                 ApiEndpoint(
                     name = "getUser",
-                    path = "/api/users/{id}",
-                    method = HttpMethod.GET,
+                    metadata = HttpMetadata(
+                        path = "/api/users/{id}",
+                        method = HttpMethod.GET
+                    ),
                     className = "com.example.UserController"
                 ),
                 ApiEndpoint(
                     name = "createUser",
-                    path = "/api/users",
-                    method = HttpMethod.POST,
+                    metadata = HttpMetadata(
+                        path = "/api/users",
+                        method = HttpMethod.POST
+                    ),
                     className = "com.example.UserController"
                 )
             )
@@ -79,14 +87,18 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
             val endpoints = listOf(
                 ApiEndpoint(
                     name = "getUser",
-                    path = "/api/users/{id}",
-                    method = HttpMethod.GET,
+                    metadata = HttpMetadata(
+                        path = "/api/users/{id}",
+                        method = HttpMethod.GET
+                    ),
                     className = "com.example.UserController"
                 ),
                 ApiEndpoint(
                     name = "getOrder",
-                    path = "/api/orders/{id}",
-                    method = HttpMethod.GET,
+                    metadata = HttpMetadata(
+                        path = "/api/orders/{id}",
+                        method = HttpMethod.GET
+                    ),
                     className = "com.example.OrderController"
                 )
             )
@@ -112,15 +124,19 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
                 "com.example.UserController" to listOf(
                     ApiEndpoint(
                         name = "getUser",
-                        path = "/api/users/{id}",
-                        method = HttpMethod.GET
+                        metadata = HttpMetadata(
+                            path = "/api/users/{id}",
+                            method = HttpMethod.GET
+                        )
                     )
                 ),
                 "com.example.OrderController" to listOf(
                     ApiEndpoint(
                         name = "getOrder",
-                        path = "/api/orders/{id}",
-                        method = HttpMethod.GET
+                        metadata = HttpMetadata(
+                            path = "/api/orders/{id}",
+                            method = HttpMethod.GET
+                        )
                     )
                 )
             )
@@ -139,8 +155,10 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
                 "com.example.UserController" to listOf(
                     ApiEndpoint(
                         name = "getUser",
-                        path = "/api/users/{id}",
-                        method = HttpMethod.GET
+                        metadata = HttpMetadata(
+                            path = "/api/users/{id}",
+                            method = HttpMethod.GET
+                        )
                     )
                 )
             )
@@ -161,14 +179,18 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
             val endpoints = listOf(
                 ApiEndpoint(
                     name = "getUser",
-                    path = "/api/users/{id}",
-                    method = HttpMethod.GET,
+                    metadata = HttpMetadata(
+                        path = "/api/users/{id}",
+                        method = HttpMethod.GET
+                    ),
                     className = "com.example.UserController"
                 ),
                 ApiEndpoint(
                     name = "getOrder",
-                    path = "/api/orders/{id}",
-                    method = HttpMethod.GET,
+                    metadata = HttpMetadata(
+                        path = "/api/orders/{id}",
+                        method = HttpMethod.GET
+                    ),
                     className = "com.example.OrderController"
                 )
             )
@@ -188,8 +210,10 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
         runBlocking {
             val endpoint = ApiEndpoint(
                 name = "getUser",
-                path = "/api/users/{id}",
-                method = HttpMethod.GET,
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.GET
+                ),
                 className = "com.example.UserController"
             )
             apiIndex.updateEndpoints(listOf(endpoint))
@@ -203,8 +227,10 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
         runBlocking {
             val endpoint = ApiEndpoint(
                 name = "getUser",
-                path = "/api/users/{id}",
-                method = HttpMethod.GET,
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.GET
+                ),
                 className = "com.example.UserController"
             )
             apiIndex.updateEndpoints(listOf(endpoint))

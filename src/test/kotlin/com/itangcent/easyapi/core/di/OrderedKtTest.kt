@@ -10,7 +10,7 @@ class OrderedTest {
         class TestOrdered(override val order: Int) : Ordered
 
         val obj = TestOrdered(10)
-        assertEquals(10, obj.order())
+        assertEquals(10, obj.order)
     }
 
     @Test
@@ -36,7 +36,7 @@ class OrderedTest {
         class BothClass(override val order: Int) : Ordered
 
         val obj = BothClass(40)
-        assertEquals(40, obj.order())
+        assertEquals(40, obj.order)
     }
 
     @Test
@@ -79,10 +79,10 @@ class OrderedTest {
             OrderedClass(-100),
             OrderedClass(50)
         )
-        val sorted = items.sortedBy { it.order() }
+        val sorted = items.sortedBy { it.order }
 
-        assertEquals(-100, sorted[0].order())
-        assertEquals(50, sorted[1].order())
-        assertEquals(100, sorted[2].order())
+        assertEquals(-100, sorted[0].order)
+        assertEquals(50, sorted[1].order)
+        assertEquals(100, sorted[2].order)
     }
 }

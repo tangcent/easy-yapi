@@ -32,6 +32,11 @@
         <projectService serviceImplementation="com.itangcent.easyapi.settings.state.ProjectSettingsState"/>
         <projectService serviceInterface="com.itangcent.easyapi.exporter.yapi.YapiSettingsHelper"
                         serviceImplementation="com.itangcent.easyapi.exporter.yapi.DefaultYapiSettingsHelper"/>
+
+        <projectService serviceImplementation="com.itangcent.easyapi.psi.helper.StandardDocHelper"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.grpc.CompositeDescriptorResolver"/>
+
         <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
 
         <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>

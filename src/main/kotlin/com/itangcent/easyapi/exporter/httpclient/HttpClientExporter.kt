@@ -37,8 +37,7 @@ class HttpClientExporter(private val project: Project) : ApiExporter {
             }
         }
 
-        val formatter = HttpClientFileFormatter()
-        val content = formatter.formatAll(context.endpointsToExport, host, context.outputConfig.fileName ?: "api")
+        val content = HttpClientFileFormatter.formatAll(context.endpointsToExport, host, context.outputConfig.fileName ?: "api")
 
         return ExportResult.Success(
             count = context.endpointsToExport.size,

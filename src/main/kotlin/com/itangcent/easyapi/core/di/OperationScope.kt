@@ -172,7 +172,9 @@ interface OperationScope {
             }
 
             if (!bindings.containsKey(DocHelper::class)) {
-                bindings[DocHelper::class] = lazy { StandardDocHelper() }
+                bindings[DocHelper::class] = lazy {
+                    project?.let { StandardDocHelper.getInstance(it) } ?: StandardDocHelper()
+                }
             }
 
             if (!bindings.containsKey(RuleParser::class)) {

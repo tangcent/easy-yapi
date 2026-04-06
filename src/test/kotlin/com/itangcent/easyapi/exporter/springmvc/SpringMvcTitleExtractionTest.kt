@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.exporter.springmvc
 
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -48,7 +50,7 @@ class SpringMvcTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.api.TitleTestCtrl")
         assertNotNull(psiClass)
         val endpoints = exporter.export(psiClass!!)
-        val getUserEndpoint = endpoints.find { it.path == "/title-test/user/{id}" && it.method == HttpMethod.GET }
+        val getUserEndpoint = endpoints.find { it.path == "/title-test/user/{id}" && it.httpMetadata?.method == HttpMethod.GET }
         assertNotNull("Should find GET endpoint", getUserEndpoint)
         assertEquals("Get user by ID", getUserEndpoint!!.name)
     }

@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.dashboard
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import java.awt.Color
 import java.awt.Component
@@ -51,7 +53,7 @@ class ApiTreeCellRenderer : DefaultTreeCellRenderer() {
         
         if (component is JLabel && endpoint != null) {
             component.text = buildApiText(endpoint)
-            component.foreground = getMethodColor(endpoint.method)
+            component.foreground = getMethodColor(endpoint)
         }
         
         return component
@@ -60,28 +62,34 @@ class ApiTreeCellRenderer : DefaultTreeCellRenderer() {
     /**
      * Builds the display text for an API endpoint.
      * Format: "METHOD name [path]" or "METHOD path" if no name.
+     * For gRPC endpoints, shows "gRPC:U", "gRPC:S", "gRPC:C", "gRPC:B" based on streaming type.
+     * For HTTP endpoints, shows the HTTP method name.
      * 
      * @param endpoint The API endpoint to format
      * @return Formatted display string
      */
     private fun buildApiText(endpoint: ApiEndpoint): String {
+        val path = when (val meta = endpoint.metadata) {
+            is HttpMetadata -> meta.path
+            is GrpcMetadata -> meta.path
+        }
         return buildString {
-            append(endpoint.method.name)
+            when (val meta = endpoint.metadata) {
+                is HttpMetadata -> append(meta.method.name)
+                is GrpcMetadata -> append("gRPC:${meta.streamingType.name.take(1)}")
+            }
             append(" ")
-            append(endpoint.name ?: endpoint.path)
-            endpoint.path.let { path ->
-                if (endpoint.name != null && endpoint.name != path) {
-                    append(" [")
-                    append(path)
-                    append("]")
-                }
+            append(endpoint.name ?: path)
+            if (endpoint.name != null && endpoint.name != path) {
+                append(" [").append(path).append("]")
             }
         }
     }
 
     /**
-     * Returns the color associated with an HTTP method.
-     * Colors follow common API documentation conventions:
+     * Returns the color for an API endpoint based on its protocol and method.
+     * gRPC endpoints use purple (#8B5CF6).
+     * HTTP endpoints use method-specific colors following common API documentation conventions:
      * - GET: Blue (#61affe)
      * - POST: Green (#49cc90)
      * - PUT: Orange (#fca130)
@@ -89,20 +97,23 @@ class ApiTreeCellRenderer : DefaultTreeCellRenderer() {
      * - PATCH: Cyan (#50e3c2)
      * - HEAD: Purple (#9012fe)
      * - OPTIONS: Dark blue (#0d5aa7)
-     * 
-     * @param method The HTTP method
+     *
+     * @param endpoint The API endpoint
      * @return The associated color
      */
-    private fun getMethodColor(method: HttpMethod): Color {
-        return when (method) {
-            HttpMethod.GET -> Color(0x61affe)
-            HttpMethod.POST -> Color(0x49cc90)
-            HttpMethod.PUT -> Color(0xfca130)
-            HttpMethod.DELETE -> Color(0xf93e3e)
-            HttpMethod.PATCH -> Color(0x50e3c2)
-            HttpMethod.HEAD -> Color(0x9012fe)
-            HttpMethod.OPTIONS -> Color(0x0d5aa7)
-            HttpMethod.NO_METHOD -> Color(0x999999)
+    private fun getMethodColor(endpoint: ApiEndpoint): Color {
+        return when (val meta = endpoint.metadata) {
+            is GrpcMetadata -> Color(0x8B5CF6)
+            is HttpMetadata -> when (meta.method) {
+                HttpMethod.GET -> Color(0x61affe)
+                HttpMethod.POST -> Color(0x49cc90)
+                HttpMethod.PUT -> Color(0xfca130)
+                HttpMethod.DELETE -> Color(0xf93e3e)
+                HttpMethod.PATCH -> Color(0x50e3c2)
+                HttpMethod.HEAD -> Color(0x9012fe)
+                HttpMethod.OPTIONS -> Color(0x0d5aa7)
+                HttpMethod.NO_METHOD -> Color(0x999999)
+            }
         }
     }
 }

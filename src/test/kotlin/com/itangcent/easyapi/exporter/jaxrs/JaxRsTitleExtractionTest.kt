@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.exporter.jaxrs
 
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -52,7 +54,7 @@ class JaxRsTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.jaxrs.TitleTestResource")
         assertNotNull(psiClass)
         val endpoints = exporter.export(psiClass!!)
-        val getEndpoint = endpoints.find { it.method == HttpMethod.GET }
+        val getEndpoint = endpoints.find { it.httpMetadata?.method == HttpMethod.GET }
         assertNotNull("Should find GET endpoint", getEndpoint)
         assertEquals("Get all products", getEndpoint!!.name)
     }

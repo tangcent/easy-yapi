@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.1.0"
-    id("org.jetbrains.intellij.platform") version "2.5.0"
+    id("org.jetbrains.intellij.platform") version "2.11.0"
+    id("com.google.protobuf") version "0.9.4"
     jacoco
 }
 
@@ -34,6 +35,35 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
+    val grpcVersion = "1.68.0"
+    val protobufVersion = "3.25.3"
+    testImplementation("io.grpc:grpc-netty-shaded:$grpcVersion")
+    testImplementation("io.grpc:grpc-protobuf:$grpcVersion")
+    testImplementation("io.grpc:grpc-stub:$grpcVersion")
+    testImplementation("io.grpc:grpc-core:$grpcVersion")
+    testImplementation("io.grpc:grpc-services:$grpcVersion")
+    testImplementation("com.google.protobuf:protobuf-java:$protobufVersion")
+    testImplementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
+    testImplementation("javax.annotation:javax.annotation-api:1.3.2")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.25.3"
+    }
+    plugins {
+        create("grpc") {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.68.0"
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins {
+                create("grpc") {}
+            }
+        }
+    }
 }
 
 kotlin {

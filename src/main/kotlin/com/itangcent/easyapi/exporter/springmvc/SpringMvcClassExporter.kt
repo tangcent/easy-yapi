@@ -113,7 +113,6 @@ class SpringMvcClassExporter(
             val tags = metadataResolver.resolveApiTag(method)
                 ?.split("\n")?.map { it.trim() }?.filter { it.isNotBlank() }
                 ?: emptyList()
-            val status = metadataResolver.resolveApiStatus(method)
 
             val resolvedBindings = resolveParameterBindings(method)
             val params = buildParameters(resolvedBindings)
@@ -160,21 +159,22 @@ class SpringMvcClassExporter(
                 ApiEndpoint(
                     name = apiName,
                     folder = folder,
-                    path = normalizedPath,
-                    method = inferredMethod,
-                    parameters = mergedParams,
-                    headers = headers + additionalResponseHeaders,
-                    contentType = contentType,
                     description = description,
-                    responseType = response.toString(),
                     tags = tags,
-                    status = status,
                     sourceClass = psiClass,
                     sourceMethod = method,
                     className = psiClass.qualifiedName ?: psiClass.name,
                     classDescription = classDesc,
-                    body = body,
-                    responseBody = responseBody
+                    metadata = HttpMetadata(
+                        path = normalizedPath,
+                        method = inferredMethod,
+                        parameters = mergedParams,
+                        headers = headers + additionalResponseHeaders,
+                        contentType = contentType,
+                        body = body,
+                        responseBody = responseBody,
+                        responseType = response.toString()
+                    )
                 )
             }
 

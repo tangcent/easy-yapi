@@ -3,11 +3,11 @@ package com.itangcent.easyapi.dashboard
 import org.junit.Assert.*
 import org.junit.Test
 
-class RequestEditCacheTest {
+class HttpRequestEditCacheTest {
 
     @Test
     fun testConstruction() {
-        val cache = RequestEditCache(
+        val cache = HttpRequestEditCache(
             key = "user-get",
             name = "Get User",
             path = "/api/users/{id}",
@@ -35,7 +35,7 @@ class RequestEditCacheTest {
 
     @Test
     fun testConstructionWithDefaults() {
-        val cache = RequestEditCache()
+        val cache = HttpRequestEditCache()
         
         assertNull(cache.key)
         assertNull(cache.name)
@@ -52,19 +52,19 @@ class RequestEditCacheTest {
 
     @Test
     fun testCacheKey() {
-        val cache = RequestEditCache(key = "test-key")
+        val cache = HttpRequestEditCache(key = "test-key")
         assertEquals("test-key", cache.cacheKey())
     }
 
     @Test
     fun testCacheKeyWhenNull() {
-        val cache = RequestEditCache()
+        val cache = HttpRequestEditCache()
         assertEquals("", cache.cacheKey())
     }
 
     @Test
     fun testCopy() {
-        val cache = RequestEditCache(key = "test", method = "GET")
+        val cache = HttpRequestEditCache(key = "test", method = "GET")
         val copy = cache.copy(method = "POST")
         
         assertEquals("test", copy.key)
@@ -73,8 +73,74 @@ class RequestEditCacheTest {
 
     @Test
     fun testEquality() {
-        val cache1 = RequestEditCache(key = "test", method = "GET")
-        val cache2 = RequestEditCache(key = "test", method = "GET")
+        val cache1 = HttpRequestEditCache(key = "test", method = "GET")
+        val cache2 = HttpRequestEditCache(key = "test", method = "GET")
+        
+        assertEquals(cache1, cache2)
+    }
+}
+
+class GrpcRequestEditCacheTest {
+
+    @Test
+    fun testConstruction() {
+        val cache = GrpcRequestEditCache(
+            key = "grpc-user-get",
+            name = "Get User",
+            host = "localhost:50051",
+            serviceName = "UserService",
+            methodName = "GetUser",
+            packageName = "com.example.api",
+            body = """{"id": "1"}"""
+        )
+        
+        assertEquals("grpc-user-get", cache.key)
+        assertEquals("Get User", cache.name)
+        assertEquals("localhost:50051", cache.host)
+        assertEquals("UserService", cache.serviceName)
+        assertEquals("GetUser", cache.methodName)
+        assertEquals("com.example.api", cache.packageName)
+        assertEquals("""{"id": "1"}""", cache.body)
+    }
+
+    @Test
+    fun testConstructionWithDefaults() {
+        val cache = GrpcRequestEditCache()
+        
+        assertNull(cache.key)
+        assertNull(cache.name)
+        assertNull(cache.host)
+        assertNull(cache.serviceName)
+        assertNull(cache.methodName)
+        assertNull(cache.packageName)
+        assertNull(cache.body)
+    }
+
+    @Test
+    fun testCacheKey() {
+        val cache = GrpcRequestEditCache(key = "test-key")
+        assertEquals("test-key", cache.cacheKey())
+    }
+
+    @Test
+    fun testCacheKeyWhenNull() {
+        val cache = GrpcRequestEditCache()
+        assertEquals("", cache.cacheKey())
+    }
+
+    @Test
+    fun testCopy() {
+        val cache = GrpcRequestEditCache(key = "test", serviceName = "TestService")
+        val copy = cache.copy(serviceName = "NewService")
+        
+        assertEquals("test", copy.key)
+        assertEquals("NewService", copy.serviceName)
+    }
+
+    @Test
+    fun testEquality() {
+        val cache1 = GrpcRequestEditCache(key = "test", serviceName = "TestService")
+        val cache2 = GrpcRequestEditCache(key = "test", serviceName = "TestService")
         
         assertEquals(cache1, cache2)
     }

@@ -26,6 +26,25 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     private val remotePanel = RemoteConfigPanel()
     private val builtInPanel = BuiltInConfigPanel()
     private val otherPanel = OtherSettingsPanel()
+    private val grpcPanel = GrpcSettingsPanel(project)
+
+    companion object {
+        private var initialTab: String? = null
+
+        fun selectTab(tabName: String) {
+            initialTab = tabName
+        }
+
+        const val TAB_GENERAL = "General"
+        const val TAB_POSTMAN = "Postman"
+        const val TAB_HTTP = "HTTP"
+        const val TAB_INTELLIGENT = "Intelligent"
+        const val TAB_RECOMMEND = "Recommend"
+        const val TAB_REMOTE = "Remote"
+        const val TAB_BUILT_IN = "Built-in"
+        const val TAB_OTHER = "Other"
+        const val TAB_GRPC = "gRPC"
+    }
 
     /**
      * Returns the display name for the settings dialog.
@@ -39,20 +58,35 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         if (panel == null) {
             panel = JPanel(BorderLayout())
             tabs = JTabbedPane().also { t ->
-                t.addTab("General", wrapNorth(generalPanel.component))
-                t.addTab("Postman", wrapNorth(postmanPanel.component))
+                t.addTab(TAB_GENERAL, wrapNorth(generalPanel.component))
+                t.addTab(TAB_POSTMAN, wrapNorth(postmanPanel.component))
                 t.addTab("Yapi", wrapNorth(yapiPanel.component))
-                t.addTab("HTTP", wrapNorth(httpPanel.component))
-                t.addTab("Intelligent", wrapNorth(intelligentPanel.component))
-                t.addTab("Recommend", recommendPanel.component)
-                t.addTab("Remote", remotePanel.component)
-                t.addTab("Built-in", builtInPanel.component)
-                t.addTab("Other", otherPanel.component)
+                t.addTab(TAB_HTTP, wrapNorth(httpPanel.component))
+                t.addTab(TAB_INTELLIGENT, wrapNorth(intelligentPanel.component))
+                t.addTab(TAB_RECOMMEND, recommendPanel.component)
+                t.addTab(TAB_REMOTE, remotePanel.component)
+                t.addTab(TAB_BUILT_IN, builtInPanel.component)
+                t.addTab(TAB_OTHER, otherPanel.component)
+                t.addTab(TAB_GRPC, wrapNorth(grpcPanel.component))
             }
             panel!!.add(tabs, BorderLayout.CENTER)
         }
         reset()
+        selectInitialTab()
         return panel!!
+    }
+
+    private fun selectInitialTab() {
+        val tabName = initialTab
+        if (tabName != null && tabs != null) {
+            for (i in 0 until tabs!!.tabCount) {
+                if (tabs!!.getTitleAt(i) == tabName) {
+                    tabs!!.selectedIndex = i
+                    break
+                }
+            }
+            initialTab = null
+        }
     }
 
     /**
@@ -77,7 +111,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         val settings = settingBinder.read()
         return listOf(
             generalPanel, postmanPanel, yapiPanel, httpPanel,
-            intelligentPanel, recommendPanel, remotePanel, builtInPanel, otherPanel
+            intelligentPanel, recommendPanel, remotePanel, builtInPanel, otherPanel, grpcPanel
         ).any { it.isModified(settings) }
     }
 
@@ -95,6 +129,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         remotePanel.applyTo(settings)
         builtInPanel.applyTo(settings)
         otherPanel.applyTo(settings)
+        grpcPanel.applyTo(settings)
         settingBinder.save(settings)
     }
 
@@ -112,6 +147,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         remotePanel.resetFrom(settings)
         builtInPanel.resetFrom(settings)
         otherPanel.resetFrom(settings)
+        grpcPanel.resetFrom(settings)
     }
 
     override fun disposeUIResources() {

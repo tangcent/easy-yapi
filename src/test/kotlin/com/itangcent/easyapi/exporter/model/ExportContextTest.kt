@@ -10,13 +10,11 @@ class ExportContextTest {
     fun testHasSelection() {
         val endpoint1 = ApiEndpoint(
             name = "getUser",
-            path = "/api/users/{id}",
-            method = HttpMethod.GET
+            metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
         )
         val endpoint2 = ApiEndpoint(
             name = "createUser",
-            path = "/api/users",
-            method = HttpMethod.POST
+            metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)
         )
 
         val contextWithoutSelection = ExportContext(
@@ -37,13 +35,11 @@ class ExportContextTest {
     fun testEndpointsToExport() {
         val endpoint1 = ApiEndpoint(
             name = "getUser",
-            path = "/api/users/{id}",
-            method = HttpMethod.GET
+            metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
         )
         val endpoint2 = ApiEndpoint(
             name = "createUser",
-            path = "/api/users",
-            method = HttpMethod.POST
+            metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)
         )
 
         val contextWithoutSelection = ExportContext(
@@ -65,13 +61,11 @@ class ExportContextTest {
     fun testWithSelectedEndpoints() {
         val endpoint1 = ApiEndpoint(
             name = "getUser",
-            path = "/api/users/{id}",
-            method = HttpMethod.GET
+            metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
         )
         val endpoint2 = ApiEndpoint(
             name = "createUser",
-            path = "/api/users",
-            method = HttpMethod.POST
+            metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)
         )
 
         val original = ExportContext(

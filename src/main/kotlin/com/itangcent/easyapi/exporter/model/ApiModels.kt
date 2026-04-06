@@ -4,55 +4,49 @@ import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 
 /**
- * Represents a single API endpoint extracted from source code.
- *
- * Contains all information needed to document or export an API:
- * - HTTP method and path
- * - Parameters and headers
- * - Request/response body models
- * - Source code references
+ * Protocol-agnostic API endpoint model.
+ * Contains only fields shared across all API protocols (HTTP, gRPC, etc.).
+ * Protocol-specific fields are held in the [metadata] field.
  *
  * @param name The endpoint name/description
  * @param folder The folder/group for organizing endpoints
- * @param path The URL path (e.g., "/api/users/{id}")
- * @param method The HTTP method
- * @param parameters The request parameters
- * @param headers The request headers
- * @param contentType The request content type
  * @param description The endpoint description
- * @param responseType The response type name
  * @param tags Tags for categorization
  * @param sourceClass The source PSI class
  * @param sourceMethod The source PSI method
  * @param className The source class name
  * @param classDescription The source class description
- * @param body The request body model
- * @param bodyAttr The request body attribute name
- * @param alternativePaths Alternative URL paths
- * @param responseBody The response body model
- * @param status The endpoint status
+ * @param metadata Protocol-specific metadata (HTTP or gRPC)
  */
 data class ApiEndpoint(
     val name: String? = null,
     val folder: String? = null,
-    val path: String,
-    val method: HttpMethod,
-    val parameters: List<ApiParameter> = emptyList(),
-    val headers: List<ApiHeader> = emptyList(),
-    val contentType: String? = null,
     val description: String? = null,
-    val responseType: String? = null,
     val tags: List<String> = emptyList(),
     val sourceClass: com.intellij.psi.PsiClass? = null,
     val sourceMethod: com.intellij.psi.PsiMethod? = null,
     val className: String? = null,
     val classDescription: String? = null,
-    val body: ObjectModel? = null,
-    val bodyAttr: String? = null,
-    val alternativePaths: List<String>? = null,
-    val responseBody: ObjectModel? = null,
-    val status: String? = null
+    val metadata: ApiMetadata
 )
+
+/** Convenience: true if this is an HTTP endpoint */
+val ApiEndpoint.isHttp: Boolean get() = metadata is HttpMetadata
+
+/** Convenience: true if this is a gRPC endpoint */
+val ApiEndpoint.isGrpc: Boolean get() = metadata is GrpcMetadata
+
+/** Convenience accessor for HTTP metadata, or null */
+val ApiEndpoint.httpMetadata: HttpMetadata? get() = metadata as? HttpMetadata
+
+/** Convenience accessor for gRPC metadata, or null */
+val ApiEndpoint.grpcMetadata: GrpcMetadata? get() = metadata as? GrpcMetadata
+
+/** Convenience accessor for path, works for both HTTP and gRPC endpoints */
+val ApiEndpoint.path: String get() = when (val meta = metadata) {
+    is HttpMetadata -> meta.path
+    is GrpcMetadata -> meta.path
+}
 
 /**
  * The wire-level type of an HTTP parameter.
@@ -180,4 +174,88 @@ sealed class ParameterBinding {
 
     /** Framework-injected parameter that should be ignored (e.g. HttpServletRequest, HttpServletResponse) */
     data object Ignored : ParameterBinding()
+}
+
+
+/**
+ * Base sealed interface for protocol-specific API metadata.
+ * Each supported protocol (HTTP, gRPC, etc.) provides its own implementation.
+ */
+sealed interface ApiMetadata {
+    /** Human-readable protocol name for display (e.g., "HTTP", "gRPC") */
+    val protocol: String
+}
+
+/**
+ * HTTP-specific metadata for REST API endpoints.
+ * Contains all fields that are HTTP-specific, extracted from the original ApiEndpoint.
+ *
+ * @param path The URL path
+ * @param method The HTTP method
+ * @param parameters The request parameters
+ * @param headers The request headers
+ * @param contentType The request content type
+ * @param bodyAttr The request body attribute name
+ * @param alternativePaths Alternative URL paths
+ * @param body The request body model
+ * @param responseBody The response body model
+ * @param responseType The response type name
+ */
+data class HttpMetadata(
+    val path: String,
+    val method: HttpMethod,
+    val parameters: List<ApiParameter> = emptyList(),
+    val headers: List<ApiHeader> = emptyList(),
+    val contentType: String? = null,
+    val bodyAttr: String? = null,
+    val alternativePaths: List<String>? = null,
+    val body: ObjectModel? = null,
+    val responseBody: ObjectModel? = null,
+    val responseType: String? = null
+) : ApiMetadata {
+    override val protocol: String = "HTTP"
+}
+
+/**
+ * gRPC-specific metadata for gRPC service endpoints.
+ *
+ * @param path The gRPC service path (e.g., /package.ServiceName/MethodName)
+ * @param serviceName The gRPC service name
+ * @param methodName The gRPC method name
+ * @param packageName The protobuf package name
+ * @param streamingType The gRPC communication pattern
+ * @param protoFile The source .proto file path (optional)
+ * @param body The request body model
+ * @param responseBody The response body model
+ * @param responseType The response type name
+ */
+data class GrpcMetadata(
+    val path: String,
+    val serviceName: String,
+    val methodName: String,
+    val packageName: String,
+    val streamingType: GrpcStreamingType,
+    val protoFile: String? = null,
+    val body: ObjectModel? = null,
+    val responseBody: ObjectModel? = null,
+    val responseType: String? = null
+) : ApiMetadata {
+    override val protocol: String = "gRPC"
+}
+
+/**
+ * The four gRPC communication patterns.
+ */
+enum class GrpcStreamingType {
+    /** Single request, single response */
+    UNARY,
+
+    /** Single request, stream of responses */
+    SERVER_STREAMING,
+
+    /** Stream of requests, single response */
+    CLIENT_STREAMING,
+
+    /** Stream of requests, stream of responses */
+    BIDIRECTIONAL
 }

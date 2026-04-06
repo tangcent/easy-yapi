@@ -2,6 +2,7 @@ package com.itangcent.easyapi.integration
 
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
@@ -50,10 +51,10 @@ class FullExportIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val endpoint = endpoints.first()
         assertNotNull("Endpoint should have name", endpoint.name)
-        assertNotNull("Endpoint should have path", endpoint.path)
-        assertNotNull("Endpoint should have method", endpoint.method)
+        assertNotNull("Endpoint should have path", endpoint.httpMetadata?.path)
+        assertNotNull("Endpoint should have method", endpoint.httpMetadata?.method)
 
-        val json5Output = endpoint.name + " " + endpoint.path + " " + endpoint.method.name
+        val json5Output = endpoint.name + " " + endpoint.httpMetadata?.path + " " + endpoint.httpMetadata?.method?.name
         assertTrue("Output should contain endpoint info", json5Output.isNotEmpty())
     }
 
@@ -64,7 +65,7 @@ class FullExportIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
         assertTrue("Should export multiple endpoints", endpoints.size >= 1)
 
-        val methods = endpoints.map { it.method }.distinct()
+        val methods = endpoints.mapNotNull { it.httpMetadata?.method }.distinct()
         assertTrue("Should have different HTTP methods", methods.isNotEmpty())
     }
 
@@ -73,11 +74,11 @@ class FullExportIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val endpoints = exporter.export(psiClass!!)
-        val endpointsWithParams = endpoints.filter { it.parameters.isNotEmpty() }
+        val endpointsWithParams = endpoints.filter { (it.httpMetadata?.parameters ?: emptyList()).isNotEmpty() }
         assertTrue("Should have endpoints with parameters", endpointsWithParams.isNotEmpty())
 
         val endpoint = endpointsWithParams.first()
-        val param = endpoint.parameters.first()
+        val param = endpoint.httpMetadata!!.parameters.first()
         assertNotNull("Parameter should have name", param.name)
     }
 }

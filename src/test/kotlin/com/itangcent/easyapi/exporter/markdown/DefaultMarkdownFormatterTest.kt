@@ -3,6 +3,7 @@ package com.itangcent.easyapi.exporter.markdown
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
@@ -21,10 +22,12 @@ class DefaultMarkdownFormatterTest {
     fun testFormatSimpleEndpoint() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            path = "/api/users/{id}",
-            method = HttpMethod.GET,
-            parameters = listOf(
-                ApiParameter(name = "id", type = ParameterType.TEXT, binding = ParameterBinding.Path, required = true, description = "User ID")
+            metadata = HttpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(name = "id", binding = ParameterBinding.Path, required = true, description = "User ID")
+                )
             )
         )
 
@@ -42,9 +45,11 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithDescription() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            path = "/api/users/{id}",
-            method = HttpMethod.GET,
-            description = "Retrieve user information by ID"
+            description = "Retrieve user information by ID",
+            metadata = HttpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET
+            )
         )
 
         val markdown = formatter.format(listOf(endpoint), "User API")
@@ -56,11 +61,13 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithQueryParameters() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "List Users",
-            path = "/api/users",
-            method = HttpMethod.GET,
-            parameters = listOf(
-                ApiParameter(name = "page", type = ParameterType.TEXT, binding = ParameterBinding.Query, required = false, description = "Page number"),
-                ApiParameter(name = "size", type = ParameterType.TEXT, binding = ParameterBinding.Query, required = false, description = "Page size")
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(name = "page", binding = ParameterBinding.Query, required = false, description = "Page number"),
+                    ApiParameter(name = "size", binding = ParameterBinding.Query, required = false, description = "Page size")
+                )
             )
         )
 
@@ -77,11 +84,13 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithHeaders() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            path = "/api/users",
-            method = HttpMethod.POST,
-            headers = listOf(
-                ApiHeader(name = "Content-Type", value = "application/json"),
-                ApiHeader(name = "Authorization", value = "Bearer token", required = true)
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST,
+                headers = listOf(
+                    ApiHeader(name = "Content-Type", value = "application/json"),
+                    ApiHeader(name = "Authorization", value = "Bearer token", required = true)
+                )
             )
         )
 
@@ -99,20 +108,26 @@ class DefaultMarkdownFormatterTest {
             ApiEndpoint(
                 name = "Get User",
                 folder = "Users",
-                path = "/api/users/{id}",
-                method = HttpMethod.GET
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.GET
+                )
             ),
             ApiEndpoint(
                 name = "Create User",
                 folder = "Users",
-                path = "/api/users",
-                method = HttpMethod.POST
+                metadata = HttpMetadata(
+                    path = "/api/users",
+                    method = HttpMethod.POST
+                )
             ),
             ApiEndpoint(
                 name = "Get Order",
                 folder = "Orders",
-                path = "/api/orders/{id}",
-                method = HttpMethod.GET
+                metadata = HttpMetadata(
+                    path = "/api/orders/{id}",
+                    method = HttpMethod.GET
+                )
             )
         )
 
@@ -133,10 +148,12 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Create User",
-            path = "/api/users",
-            method = HttpMethod.POST,
-            body = bodyModel,
-            headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST,
+                body = bodyModel,
+                headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
+            )
         )
 
         val markdown = formatter.format(listOf(endpoint), "User API")
@@ -168,9 +185,11 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Get User",
-            path = "/api/users/{id}",
-            method = HttpMethod.GET,
-            responseBody = responseModel
+            metadata = HttpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                responseBody = responseModel
+            )
         )
 
         val markdown = formatter.format(listOf(endpoint), "User API")
@@ -203,9 +222,11 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "List Users",
-            path = "/api/users",
-            method = HttpMethod.GET,
-            responseBody = responseModel
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.GET,
+                responseBody = responseModel
+            )
         )
 
         val markdown = formatter.format(listOf(endpoint), "User API")
@@ -218,8 +239,10 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithNoResponseBody() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Delete User",
-            path = "/api/users/{id}",
-            method = HttpMethod.DELETE
+            metadata = HttpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.DELETE
+            )
         )
 
         val markdown = formatter.format(listOf(endpoint), "User API")
@@ -231,10 +254,10 @@ class DefaultMarkdownFormatterTest {
     @Test
     fun testFormatMultipleEndpoints() = runBlocking {
         val endpoints = listOf(
-            ApiEndpoint(name = "Get User", path = "/api/users/{id}", method = HttpMethod.GET),
-            ApiEndpoint(name = "Create User", path = "/api/users", method = HttpMethod.POST),
-            ApiEndpoint(name = "Update User", path = "/api/users/{id}", method = HttpMethod.PUT),
-            ApiEndpoint(name = "Delete User", path = "/api/users/{id}", method = HttpMethod.DELETE)
+            ApiEndpoint(name = "Get User", metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)),
+            ApiEndpoint(name = "Create User", metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)),
+            ApiEndpoint(name = "Update User", metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.PUT)),
+            ApiEndpoint(name = "Delete User", metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.DELETE))
         )
 
         val markdown = formatter.format(endpoints, "User API")
@@ -249,11 +272,13 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithFormParams() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Upload File",
-            path = "/api/upload",
-            method = HttpMethod.POST,
-            parameters = listOf(
-                ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, required = true, description = "File to upload"),
-                ApiParameter(name = "description", type = ParameterType.TEXT, binding = ParameterBinding.Form, required = false, description = "File description")
+            metadata = HttpMetadata(
+                path = "/api/upload",
+                method = HttpMethod.POST,
+                parameters = listOf(
+                    ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, required = true, description = "File to upload"),
+                    ApiParameter(name = "description", binding = ParameterBinding.Form, required = false, description = "File description")
+                )
             )
         )
 

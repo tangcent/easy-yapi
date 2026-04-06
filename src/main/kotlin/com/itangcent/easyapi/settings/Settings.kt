@@ -25,6 +25,7 @@ data class Settings(
     override var feignEnable: Boolean = false,
     override var jaxrsEnable: Boolean = true,
     override var actuatorEnable: Boolean = false,
+    override var grpcEnable: Boolean = true,
     override var postmanToken: String? = null,
     override var postmanWorkspace: String? = null,
     override var postmanExportMode: String? = PostmanExportMode.CREATE_NEW.name,
@@ -54,7 +55,11 @@ data class Settings(
     override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name,
     override var builtInConfig: String? = null,
     override var remoteConfig: Array<String> = emptyArray(),
-    override var autoScanEnabled: Boolean = true
+    override var autoScanEnabled: Boolean = true,
+    override var grpcArtifactConfigs: Array<String> = emptyArray(),
+    override var grpcAdditionalJars: Array<String> = emptyArray(),
+    override var grpcCallEnabled: Boolean = false,
+    override var grpcRepositories: Array<String> = emptyArray()
 ) : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     companion object {
@@ -74,6 +79,7 @@ data class Settings(
         if (feignEnable != other.feignEnable) return false
         if (jaxrsEnable != other.jaxrsEnable) return false
         if (actuatorEnable != other.actuatorEnable) return false
+        if (grpcEnable != other.grpcEnable) return false
         if (postmanBuildExample != other.postmanBuildExample) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
@@ -103,6 +109,11 @@ data class Settings(
         if (markdownFormatType != other.markdownFormatType) return false
         if (builtInConfig != other.builtInConfig) return false
         if (!remoteConfig.contentEquals(other.remoteConfig)) return false
+        if (autoScanEnabled != other.autoScanEnabled) return false
+        if (!grpcArtifactConfigs.contentEquals(other.grpcArtifactConfigs)) return false
+        if (!grpcAdditionalJars.contentEquals(other.grpcAdditionalJars)) return false
+        if (grpcCallEnabled != other.grpcCallEnabled) return false
+        if (!grpcRepositories.contentEquals(other.grpcRepositories)) return false
 
         return true
     }
@@ -111,6 +122,7 @@ data class Settings(
         var result = feignEnable.hashCode()
         result = 31 * result + jaxrsEnable.hashCode()
         result = 31 * result + actuatorEnable.hashCode()
+        result = 31 * result + grpcEnable.hashCode()
         result = 31 * result + postmanBuildExample.hashCode()
         result = 31 * result + wrapCollection.hashCode()
         result = 31 * result + autoMergeScript.hashCode()
@@ -140,6 +152,11 @@ data class Settings(
         result = 31 * result + markdownFormatType.hashCode()
         result = 31 * result + (builtInConfig?.hashCode() ?: 0)
         result = 31 * result + remoteConfig.contentHashCode()
+        result = 31 * result + autoScanEnabled.hashCode()
+        result = 31 * result + grpcArtifactConfigs.contentHashCode()
+        result = 31 * result + grpcAdditionalJars.contentHashCode()
+        result = 31 * result + grpcCallEnabled.hashCode()
+        result = 31 * result + grpcRepositories.contentHashCode()
         return result
     }
 }
