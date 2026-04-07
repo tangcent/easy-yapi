@@ -1,12 +1,9 @@
 package com.itangcent.easyapi.cache
 
-import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
-import org.mockito.Mockito.*
 
 class ApiFileChangeListenerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
