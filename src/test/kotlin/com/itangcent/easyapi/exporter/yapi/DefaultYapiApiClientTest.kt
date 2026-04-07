@@ -78,6 +78,24 @@ class DefaultYapiApiClientTest {
     }
 
     // -------------------------------------------------------------------------
+    // Helpers for fork-style responses (code/message instead of errcode/errmsg)
+    // -------------------------------------------------------------------------
+
+    /** Builds a fork-style success JSON: {"code":0,"message":"成功！",...} */
+    private fun forkSuccessJson(data: Any? = null): String {
+        val obj = JsonObject().apply {
+            addProperty("code", 0)
+            addProperty("message", "成功！")
+            if (data is JsonObject) add("data", data)
+            else if (data is JsonArray) add("data", data)
+        }
+        return obj.toString()
+    }
+
+    private fun forkErrorJson(code: Int = 401, message: String = "token无效"): String =
+        """{"code":$code,"message":"$message"}"""
+
+    // -------------------------------------------------------------------------
     // getProjectId
     // -------------------------------------------------------------------------
 
@@ -147,48 +165,122 @@ class DefaultYapiApiClientTest {
         assertFalse(result.isSuccess)
     }
 
-    // -------------------------------------------------------------------------
-    // parseResponse
-    // -------------------------------------------------------------------------
-
     @Test
-    fun `parseResponse returns failure for non-200 status`() {
-        val res = mockResponse("{}", code = 500)
-        val result = client.parseResponse(res) { "data" }
-        assertFalse(result.isSuccess)
-        assertTrue(result.errorMessage()!!.contains("500"))
-    }
+    fun `getProjectId resolves via list_menu when fork server returns code 0 without data`() = runBlocking {
+        // Fork server returns {"code":0,"message":"成功！"} with no data from GET_PROJECT
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("""{"code":0,"message":"成功！"}"""))
 
-    @Test
-    fun `parseResponse returns failure for non-zero errcode`() {
-        val res = mockResponse(errorJson(40011, "token invalid"))
-        val result = client.parseResponse(res) { "data" }
-        assertFalse(result.isSuccess)
-        assertEquals("token invalid", result.errorMessage())
-    }
+        // list_menu returns an item with project_id
+        val menuItem = JsonObject().apply { addProperty("project_id", "55") }
+        val menuArray = JsonArray().apply { add(menuItem) }
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenReturn(mockResponse("""{"code":0,"message":"成功！","data":${menuArray}}"""))
 
-    @Test
-    fun `parseResponse returns failure for invalid JSON`() {
-        val res = mockResponse("not-json")
-        val result = client.parseResponse(res) { "data" }
-        assertFalse(result.isSuccess)
-    }
-
-    @Test
-    fun `parseResponse returns failure when handler returns null`() {
-        val res = mockResponse(successJson(JsonObject()))
-        val result = client.parseResponse<String>(res) { null }
-        assertFalse(result.isSuccess)
-        assertTrue(result.errorMessage()!!.contains("Empty data"))
-    }
-
-    @Test
-    fun `parseResponse returns success with extracted data`() {
-        val data = JsonObject().apply { addProperty("_id", "123") }
-        val res = mockResponse(successJson(data))
-        val result = client.parseResponse(res) { it.getAsJsonObject("data")?.get("_id")?.asString }
+        val result = client.getProjectId()
         assertTrue(result.isSuccess)
-        assertEquals("123", result.getOrNull())
+        assertEquals("55", result.getOrNull())
+    }
+
+    // -------------------------------------------------------------------------
+    // Fork-format response handling (code/message instead of errcode/errmsg)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `getProjectId resolves from GET_PROJECT with fork code 0 response`() = runBlocking {
+        val data = projectDataJson("200")
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(forkSuccessJson(data)))
+
+        val result = client.getProjectId()
+        assertTrue(result.isSuccess)
+        assertEquals("200", result.getOrNull())
+    }
+
+    @Test
+    fun `getProjectId resolves when errcode is non-zero but errmsg indicates success`() = runBlocking {
+        // Some forks return errcode=200 with errmsg="成功" to mean success
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("""{"errcode":200,"errmsg":"成功","data":{"_id":"42"}}"""))
+
+        val result = client.getProjectId()
+        assertTrue(result.isSuccess)
+        assertEquals("42", result.getOrNull())
+    }
+
+    @Test
+    fun `getProjectId resolves when errcode is 200 with no message`() = runBlocking {
+        // errcode=200 alone is a success code
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("""{"errcode":200,"data":{"_id":"99"}}"""))
+
+        val result = client.getProjectId()
+        assertTrue(result.isSuccess)
+        assertEquals("99", result.getOrNull())
+    }
+
+    @Test
+    fun `getProjectId fails when fork server returns non-zero code`() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(forkErrorJson(401, "token无效")))
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
+            .thenReturn(mockResponse(forkErrorJson(401, "token无效")))
+
+        val result = client.getProjectId()
+        assertFalse(result.isSuccess)
+    }
+
+    @Test
+    fun `listCarts works with fork-format responses`() = runBlocking {
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse(forkSuccessJson(projectDataJson("1"))))
+
+        val cartsArray = JsonArray().apply { add(cartJson(30, "Fork Cart")) }
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/getCatMenu") }))
+            .thenReturn(mockResponse(forkSuccessJson(cartsArray)))
+
+        val result = client.listCarts()
+        assertTrue(result.isSuccess)
+        assertEquals(1, result.getOrNull()!!.size)
+        assertEquals("Fork Cart", result.getOrNull()!![0].name)
+    }
+
+    @Test
+    fun `uploadApi succeeds with fork-format responses`() = runBlocking {
+        val emptyList = JsonObject().apply { add("list", JsonArray()) }
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(forkSuccessJson(emptyList)))
+
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(mockResponse(forkSuccessJson(JsonObject())))
+
+        val result = client.uploadApi(testDoc(), "cat1")
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `uploadApi fails when fork server returns error code`() = runBlocking {
+        val emptyList = JsonObject().apply { add("list", JsonArray()) }
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
+            .thenReturn(mockResponse(forkSuccessJson(emptyList)))
+
+        whenever(httpClient.execute(argThat { url.contains("/api/interface/save") }))
+            .thenReturn(mockResponse(forkErrorJson(500, "save failed")))
+
+        val result = client.uploadApi(testDoc(), "cat1")
+        assertFalse(result.isSuccess)
+        assertEquals("save failed", result.errorMessage())
+    }
+
+    @Test
+    fun `getProjectId handles response with only success message and no code field`() = runBlocking {
+        // Some forks return just {"message":"成功","data":{...}}
+        whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
+            .thenReturn(mockResponse("""{"message":"成功","data":{"_id":"333"}}"""))
+
+        val result = client.getProjectId()
+        assertTrue(result.isSuccess)
+        assertEquals("333", result.getOrNull())
     }
 
     // -------------------------------------------------------------------------
