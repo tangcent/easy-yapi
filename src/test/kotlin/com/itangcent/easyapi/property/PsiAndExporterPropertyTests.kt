@@ -83,10 +83,11 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val psiClass = findClass("demo.Ctrl")!!
-        val method = psiClass.methods.first { it.name == "x" }
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "x" }
         val engine = RuleEngine(actionContext(), emptyConfig())
         val resolver = RequestMappingResolver(UnifiedAnnotationHelper(), engine)
-        val mappings = resolver.resolve(psiClass, method)
+        val mappings = resolver.resolve(resolvedMethod)
         assertEquals(1, mappings.size)
         assertEquals("/api/x", mappings[0].path)
         assertEquals("GET", mappings[0].method.name)
@@ -108,10 +109,11 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val psiClass = findClass("demo.Ctrl2")!!
-        val method = psiClass.methods.first { it.name == "x" }
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "x" }
         val engine = RuleEngine(actionContext(), emptyConfig())
         val resolver = RequestMappingResolver(UnifiedAnnotationHelper(), engine)
-        val mappings = resolver.resolve(psiClass, method)
+        val mappings = resolver.resolve(resolvedMethod)
         assertEquals(4, mappings.size)
         val paths = mappings.map { it.path }.toSet()
         assertTrue(paths.contains("/a/c"))

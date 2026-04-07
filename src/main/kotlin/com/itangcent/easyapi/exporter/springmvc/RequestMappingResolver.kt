@@ -41,59 +41,28 @@ class RequestMappingResolver(
 ) {
     /**
      * Cache for custom annotation resolution.
-     * Key: annotation FQN, Value: the resolved meta-mapping info from the annotation type, or null if not a mapping annotation.
+     * Key: annotation FQN, Value: the resolved meta-mapping info from the annotation type.
+     * Uses NOT_A_MAPPING_ANNOTATION sentinel to cache "checked but not a mapping annotation".
      */
-    private val customMappingCache = ConcurrentHashMap<String, MappingInfo?>()
-
-    suspend fun resolve(psiClass: PsiClass, method: PsiMethod): List<ResolvedMapping> {
-        val classMappings = extractMapping(psiClass, null)
-        val methodMappings = extractMapping(method, method)
-        val classPrefix = ruleEngine.evaluate(RuleKeys.CLASS_PREFIX_PATH, psiClass).orEmpty()
-        val endpointPrefix = ruleEngine.evaluate(RuleKeys.ENDPOINT_PREFIX_PATH, method).orEmpty()
-
-        val classPaths = if (classMappings.paths.isEmpty()) listOf("") else classMappings.paths
-        val methodPaths = if (methodMappings.paths.isEmpty()) listOf("") else methodMappings.paths
-
-        val results = ArrayList<ResolvedMapping>()
-        val methods = if (methodMappings.methods.isNotEmpty()) methodMappings.methods else classMappings.methods
-        val httpMethods = if (methods.isNotEmpty()) methods else listOf(HttpMethod.NO_METHOD)
-
-        for (cp in classPaths) {
-            for (mp in methodPaths) {
-                val base = joinPaths(joinPaths(classPrefix, cp), endpointPrefix)
-                val path = normalizePath(joinPaths(base, mp))
-                for (hm in httpMethods) {
-                    results.add(
-                        ResolvedMapping(
-                            path = path,
-                            method = hm,
-                            consumes = methodMappings.consumes.ifEmpty { classMappings.consumes },
-                            produces = methodMappings.produces.ifEmpty { classMappings.produces },
-                            headers = (classMappings.headers + methodMappings.headers).distinctBy { it.first.lowercase() }
-                        )
-                    )
-                }
-            }
-        }
-        return results.distinctBy { it.method.name + ":" + it.path + ":" + it.consumes.joinToString(",") + ":" + it.produces.joinToString(",") }
-    }
+    private val customMappingCache = ConcurrentHashMap<String, MappingInfo>()
 
     /**
-     * Resolves request mappings for a [ResolvedMethod] within a [ResolvedType.ClassType].
+     * Resolves request mappings for a [ResolvedMethod].
      *
      * This is the preferred entry point for exporters using the ResolvedType API.
      * It tries the method itself first, then walks [ResolvedMethod.superMethods] until
-     * a mapping is found. Class-level mappings are resolved from the [classType] and
-     * its supertypes via [ResolvedType.ClassType.superClasses].
+     * a mapping is found. Class-level mappings are resolved from the [ResolvedMethod.ownerClassType]
+     * and its supertypes via [ResolvedType.ClassType.superClasses].
      *
      * This correctly handles all inheritance cases including custom meta-annotations
      * on super methods and class-level @RequestMapping on supertypes.
      *
-     * @param classType The concrete controller ClassType (for class-level mapping resolution)
      * @param resolvedMethod The resolved method to find mappings for
      * @return The resolved mappings, or empty if no mapping found in the chain
      */
-    suspend fun resolve(classType: ResolvedType.ClassType, resolvedMethod: ResolvedMethod): List<ResolvedMapping> {
+    suspend fun resolve(resolvedMethod: ResolvedMethod): List<ResolvedMapping> {
+        val classType = resolvedMethod.ownerClassType
+            ?: return emptyList()
         val psiClass = classType.psiClass
 
         // Resolve method-level mapping: try the method itself, then walk super methods
@@ -109,12 +78,12 @@ class RequestMappingResolver(
         val classPrefix = ruleEngine.evaluate(RuleKeys.CLASS_PREFIX_PATH, psiClass).orEmpty()
         val endpointPrefix = ruleEngine.evaluate(RuleKeys.ENDPOINT_PREFIX_PATH, method).orEmpty()
 
-        val classPaths = if (classMappings.paths.isEmpty()) listOf("") else classMappings.paths
-        val methodPaths = if (methodMappings.paths.isEmpty()) listOf("") else methodMappings.paths
+        val classPaths = classMappings.paths.ifEmpty { listOf("") }
+        val methodPaths = methodMappings.paths.ifEmpty { listOf("") }
 
         val results = ArrayList<ResolvedMapping>()
-        val methods = if (methodMappings.methods.isNotEmpty()) methodMappings.methods else classMappings.methods
-        val httpMethods = if (methods.isNotEmpty()) methods else listOf(HttpMethod.NO_METHOD)
+        val methods = methodMappings.methods.ifEmpty { classMappings.methods }
+        val httpMethods = methods.ifEmpty { listOf(HttpMethod.NO_METHOD) }
 
         for (cp in classPaths) {
             for (mp in methodPaths) {
@@ -133,7 +102,11 @@ class RequestMappingResolver(
                 }
             }
         }
-        return results.distinctBy { it.method.name + ":" + it.path + ":" + it.consumes.joinToString(",") + ":" + it.produces.joinToString(",") }
+        return results.distinctBy {
+            it.method.name + ":" + it.path + ":" + it.consumes.joinToString(",") + ":" + it.produces.joinToString(
+                ","
+            )
+        }
     }
 
     /**
@@ -163,47 +136,12 @@ class RequestMappingResolver(
         return MappingInfo.EMPTY
     }
 
-    private suspend fun extractMapping(target: Any, method: PsiMethod?): MappingInfo {
-        return when (target) {
-            is PsiClass -> {
-                val mapping = mappingFromRequestMapping(target)
-                if (mapping != MappingInfo.EMPTY) mapping
-                else findClassMappingFromSupertypes(target)
-            }
-            is PsiMethod -> {
-                mappingFromMethod(target)
-            }
-            else -> MappingInfo.EMPTY
-        }
-    }
-
-    /**
-     * Walks the supertype hierarchy to find a class-level @RequestMapping.
-     * Uses superTypes + resolve() for compatibility with light test fixtures.
-     */
-    private suspend fun findClassMappingFromSupertypes(psiClass: PsiClass): MappingInfo {
-        for (superType in psiClass.superTypes) {
-            val classType = superType as? com.intellij.psi.PsiClassType ?: continue
-            val superClass = classType.resolve() ?: continue
-            if (superClass.qualifiedName == "java.lang.Object") continue
-            val mapping = mappingFromRequestMapping(superClass)
-            if (mapping != MappingInfo.EMPTY) return mapping
-            // Recurse into super's supertypes
-            val deep = findClassMappingFromSupertypes(superClass)
-            if (deep != MappingInfo.EMPTY) return deep
-        }
-        return MappingInfo.EMPTY
-    }
-
     private suspend fun mappingFromMethod(psiMethod: PsiMethod): MappingInfo {
-        mappingFromGetLike(psiMethod, "org.springframework.web.bind.annotation.GetMapping", HttpMethod.GET)?.let { return it }
-        mappingFromGetLike(psiMethod, "org.springframework.web.bind.annotation.PostMapping", HttpMethod.POST)?.let { return it }
-        mappingFromGetLike(psiMethod, "org.springframework.web.bind.annotation.PutMapping", HttpMethod.PUT)?.let { return it }
-        mappingFromGetLike(psiMethod, "org.springframework.web.bind.annotation.DeleteMapping", HttpMethod.DELETE)?.let { return it }
-        mappingFromGetLike(psiMethod, "org.springframework.web.bind.annotation.PatchMapping", HttpMethod.PATCH)?.let { return it }
+        for ((ann, method) in SHORTCUT_MAPPING_ANNOTATIONS) {
+            mappingFromGetLike(psiMethod, ann, method)?.let { return it }
+        }
         val rm = mappingFromRequestMapping(psiMethod)
         if (rm != MappingInfo.EMPTY) return rm
-        // Fall back to custom meta-annotation resolution
         return mappingFromCustomAnnotation(psiMethod)
     }
 
@@ -214,7 +152,13 @@ class RequestMappingResolver(
         val consumes = readStringList(map, "consumes")
         val produces = readStringList(map, "produces")
         val headers = parseHeaderConstraints(readStringList(map, "headers"))
-        return MappingInfo(paths = paths, methods = listOf(method), consumes = consumes, produces = produces, headers = headers)
+        return MappingInfo(
+            paths = paths,
+            methods = listOf(method),
+            consumes = consumes,
+            produces = produces,
+            headers = headers
+        )
     }
 
     private suspend fun mappingFromRequestMapping(target: Any): MappingInfo {
@@ -225,8 +169,14 @@ class RequestMappingResolver(
         }
         if (!has) return MappingInfo.EMPTY
         val map = when (target) {
-            is PsiClass -> annotationHelper.findAnnMap(target, "org.springframework.web.bind.annotation.RequestMapping").orEmpty()
-            is PsiMethod -> annotationHelper.findAnnMap(target, "org.springframework.web.bind.annotation.RequestMapping").orEmpty()
+            is PsiClass -> annotationHelper.findAnnMap(target, "org.springframework.web.bind.annotation.RequestMapping")
+                .orEmpty()
+
+            is PsiMethod -> annotationHelper.findAnnMap(
+                target,
+                "org.springframework.web.bind.annotation.RequestMapping"
+            ).orEmpty()
+
             else -> emptyMap()
         }
         val paths = readPaths(map)
@@ -234,7 +184,13 @@ class RequestMappingResolver(
         val consumes = readStringList(map, "consumes")
         val produces = readStringList(map, "produces")
         val headers = parseHeaderConstraints(readStringList(map, "headers"))
-        return MappingInfo(paths = paths, methods = methods, consumes = consumes, produces = produces, headers = headers)
+        return MappingInfo(
+            paths = paths,
+            methods = methods,
+            consumes = consumes,
+            produces = produces,
+            headers = headers
+        )
     }
 
     /**
@@ -267,21 +223,25 @@ class RequestMappingResolver(
             // Check cache first
             val cached = customMappingCache[annFqn]
             if (cached != null) {
+                // Found a cached result
+                if (cached === NOT_A_MAPPING_ANNOTATION) {
+                    // Cached as "not a mapping annotation"
+                    continue
+                }
                 // Found a cached custom mapping — merge with direct annotation attributes
                 return mergeCustomMapping(cached, annotationHelper.findAnnMap(psiMethod, annFqn).orEmpty())
-            }
-            if (customMappingCache.containsKey(annFqn)) {
-                // Cached as null = not a mapping annotation
-                continue
             }
 
             // Resolve the annotation type and check for meta-annotations
             val annotationType = ann.nameReferenceElement?.resolve() as? PsiClass ?: continue
             val metaMapping = resolveMetaMappingFromAnnotationType(annotationType)
-            customMappingCache[annFqn] = metaMapping
 
             if (metaMapping != null) {
+                customMappingCache[annFqn] = metaMapping
                 return mergeCustomMapping(metaMapping, annotationHelper.findAnnMap(psiMethod, annFqn).orEmpty())
+            } else {
+                // Cache that this annotation is NOT a mapping annotation
+                customMappingCache[annFqn] = NOT_A_MAPPING_ANNOTATION
             }
         }
 
@@ -294,7 +254,8 @@ class RequestMappingResolver(
      */
     private suspend fun resolveMetaMappingFromAnnotationType(annotationType: PsiClass): MappingInfo? {
         // Check for @RequestMapping on the annotation type
-        val rmMap = annotationHelper.findAnnMap(annotationType, "org.springframework.web.bind.annotation.RequestMapping")
+        val rmMap =
+            annotationHelper.findAnnMap(annotationType, "org.springframework.web.bind.annotation.RequestMapping")
         if (rmMap != null) {
             return MappingInfo(
                 paths = readPaths(rmMap),
@@ -370,6 +331,7 @@ class RequestMappingResolver(
                     else -> null
                 }
             }
+
             else -> emptyList()
         }
     }
@@ -388,6 +350,7 @@ class RequestMappingResolver(
                     val value = h.substringAfter("=").trim()
                     name to value
                 }
+
                 else -> h.trim() to ""
             }
         }
@@ -417,6 +380,14 @@ class RequestMappingResolver(
             "org.springframework.web.bind.annotation.PutMapping" to HttpMethod.PUT,
             "org.springframework.web.bind.annotation.DeleteMapping" to HttpMethod.DELETE,
             "org.springframework.web.bind.annotation.PatchMapping" to HttpMethod.PATCH
+        )
+
+        private val NOT_A_MAPPING_ANNOTATION = MappingInfo(
+            paths = listOf("__NOT_A_MAPPING_ANNOTATION__"),
+            methods = emptyList(),
+            consumes = emptyList(),
+            produces = emptyList(),
+            headers = emptyList()
         )
     }
 }

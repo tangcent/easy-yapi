@@ -3,6 +3,7 @@ package com.itangcent.easyapi.exporter.springmvc
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
@@ -35,10 +36,10 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testResolveSimpleGetMapping() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")!!
-        val method = findMethod(psiClass, "greeting")
-        assertNotNull(method)
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "greeting" }
 
-        val mappings = resolver.resolve(psiClass, method!!)
+        val mappings = resolver.resolve(resolvedMethod)
         assertEquals(1, mappings.size)
         
         val mapping = mappings[0]
@@ -48,10 +49,10 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testResolveGetMappingWithPathVariable() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")!!
-        val method = findMethod(psiClass, "get")
-        assertNotNull(method)
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "get" }
 
-        val mappings = resolver.resolve(psiClass, method!!)
+        val mappings = resolver.resolve(resolvedMethod)
         assertEquals(1, mappings.size)
         
         val mapping = mappings[0]
@@ -61,10 +62,10 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testResolvePostMappingWithMultiplePaths() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")!!
-        val method = findMethod(psiClass, "create")
-        assertNotNull(method)
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "create" }
 
-        val mappings = resolver.resolve(psiClass, method!!)
+        val mappings = resolver.resolve(resolvedMethod)
         assertEquals(2, mappings.size)
         
         val paths = mappings.map { it.path }.sorted()
@@ -75,10 +76,10 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testResolvePutMapping() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")!!
-        val method = findMethod(psiClass, "update")
-        assertNotNull(method)
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "update" }
 
-        val mappings = resolver.resolve(psiClass, method!!)
+        val mappings = resolver.resolve(resolvedMethod)
         assertEquals(1, mappings.size)
         
         val mapping = mappings[0]
@@ -88,11 +89,10 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testResolveNestedController() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl.ProfileApi")!!
-        val method = findMethod(psiClass, "getProfileSettings")
-        assertNotNull(method)
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "getProfileSettings" }
 
-        val parentClass = findClass("com.itangcent.api.UserCtrl")!!
-        val mappings = resolver.resolve(parentClass, method!!)
+        val mappings = resolver.resolve(resolvedMethod)
         
         assertTrue(mappings.isNotEmpty())
         mappings.forEach { mapping ->
@@ -117,17 +117,16 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/AnnotatedBaseCtrl.java")
 
         val psiClass = findClass("com.itangcent.api.inherit.PlainBaseCtrl")!!
-        val classType = com.itangcent.easyapi.psi.type.ResolvedType.ClassType(psiClass, emptyList())
-        val methods = classType.methods()
-        val getItem = methods.first { it.name == "getItem" }
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "getItem" }
 
         // PlainBaseCtrl.getItem has no mapping annotation, and no super with one either
-        val mappings = resolver.resolve(classType, getItem)
+        val mappings = resolver.resolve(resolvedMethod)
         assertTrue("Method with no mapping should return empty list", mappings.isEmpty())
     }
 
     fun testResolveClassType_InheritedMethodAnnotation() = runTest {
-        // Verifies that resolve(classType, resolvedMethod) finds annotations on super methods.
+        // Verifies that resolve(resolvedMethod) finds annotations on super methods.
         loadFile("spring/RequestMapping.java")
         loadFile("spring/GetMapping.java")
         loadFile("spring/PostMapping.java")
@@ -138,18 +137,39 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/PlainSubCtrl.java")
 
         val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
-        val classType = com.itangcent.easyapi.psi.type.ResolvedType.ClassType(psiClass, emptyList())
-        val methods = classType.methods()
-        val getItem = methods.first { it.name == "getItem" }
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "getItem" }
 
         // PlainSubCtrl.getItem has no @GetMapping, but AnnotatedBaseCtrl.getItem does
         // Class-level @RequestMapping("/annotated-base") is on AnnotatedBaseCtrl
-        val mappings = resolver.resolve(classType, getItem)
+        val mappings = resolver.resolve(resolvedMethod)
         assertTrue("Should resolve inherited method annotation", mappings.isNotEmpty())
         assertEquals(HttpMethod.GET, mappings.first().method)
         assertTrue(
             "Path should include class prefix from AnnotatedBaseCtrl",
             mappings.first().path.contains("annotated-base")
+        )
+    }
+
+    fun testResolveClassType_CustomAnnotationNotMapping_NoNPE() = runTest {
+        // Test for NPE fix: custom annotations that are NOT mapping annotations should not cause NPE
+        loadFile("api/inherit/SendAuditLog.java")
+        loadFile("api/inherit/OrderApi.java")
+        loadFile("api/inherit/OrderController.java")
+
+        val psiClass = findClass("com.itangcent.api.inherit.OrderController")!!
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethod = classType.methods().first { it.name == "createOrder" }
+
+        // OrderController.createOrder has @SendAuditLog (not a mapping annotation)
+        // OrderApi.createOrder has @PostMapping
+        // Should resolve without NPE
+        val mappings = resolver.resolve(resolvedMethod)
+        assertTrue("Should resolve mapping from interface", mappings.isNotEmpty())
+        assertEquals(HttpMethod.POST, mappings.first().method)
+        assertTrue(
+            "Path should include /order prefix from interface",
+            mappings.first().path.contains("order")
         )
     }
 }

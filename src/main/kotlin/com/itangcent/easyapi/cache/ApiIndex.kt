@@ -3,15 +3,11 @@ package com.itangcent.easyapi.cache
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaLog
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicBoolean
@@ -149,6 +145,15 @@ class ApiIndex {
     fun isValid(): Boolean = cacheValid.get()
 
     fun isReady(): Boolean = cacheReady.isCompleted
+
+    /**
+     * Returns true if the given method is present in the current index.
+     * Safe to call from any thread without suspending — reads the volatile snapshot.
+     */
+    fun containsMethod(method: com.intellij.psi.PsiMethod): Boolean {
+        val className = method.containingClass?.qualifiedName ?: return false
+        return endpointsByClass[className]?.any { it.sourceMethod == method } == true
+    }
 
     companion object : IdeaLog {
         fun getInstance(project: Project): ApiIndex = project.service()

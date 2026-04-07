@@ -5,7 +5,6 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.util.PsiTypesUtil
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
@@ -18,12 +17,12 @@ import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
 import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.DefaultContextSwitchListener
-import com.itangcent.easyapi.psi.JsonOption
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.util.PathVariablePattern
 
@@ -78,16 +77,18 @@ class FeignClassExporter(
         val info = pathResolver.resolve(psiClass)
         val basePath = normalizePath(info.path ?: "")
 
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
         val endpoints = ArrayList<ApiEndpoint>()
-        for (method in psiClass.methods) {
-            if (method.isConstructor) continue
-            endpoints.addAll(exportMethod(basePath, psiClass, method))
+        for (resolvedMethod in classType.methods()) {
+            if (resolvedMethod.psiMethod.isConstructor) continue
+            endpoints.addAll(exportMethod(basePath, psiClass, resolvedMethod))
         }
         LOG.info("after parse class:$className")
         return endpoints
     }
 
-    private suspend fun exportMethod(basePath: String, psiClass: PsiClass, method: PsiMethod): List<ApiEndpoint> {
+    private suspend fun exportMethod(basePath: String, psiClass: PsiClass, resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiEndpoint> {
+        val method = resolvedMethod.psiMethod
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
 
@@ -98,7 +99,7 @@ class FeignClassExporter(
             return listOf(endpoint)
         }
 
-        val mappings = springMappingResolver.resolve(psiClass, method)
+        val mappings = springMappingResolver.resolve(resolvedMethod)
         if (mappings.isEmpty()) {
             LOG.info("after parse method:$methodKey")
             return emptyList()

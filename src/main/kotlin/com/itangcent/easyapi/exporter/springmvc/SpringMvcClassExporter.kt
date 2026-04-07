@@ -79,7 +79,7 @@ class SpringMvcClassExporter(
         try {
             for (resolvedMethod in resolvedType.methods()) {
                 if (metadataResolver.isIgnored(resolvedMethod.psiMethod)) continue
-                endpoints.addAll(exportMethod(psiClass, resolvedType, resolvedMethod))
+                endpoints.addAll(exportMethod(psiClass, resolvedMethod))
             }
         } finally {
             engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
@@ -88,7 +88,7 @@ class SpringMvcClassExporter(
         return endpoints
     }
 
-    private suspend fun exportMethod(psiClass: PsiClass, classType: ResolvedType.ClassType, resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiEndpoint> {
+    private suspend fun exportMethod(psiClass: PsiClass, resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiEndpoint> {
         val method = resolvedMethod.psiMethod
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
@@ -96,7 +96,7 @@ class SpringMvcClassExporter(
         engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
 
         try {
-            val mappings = mappingResolver.resolve(classType, resolvedMethod)
+            val mappings = mappingResolver.resolve(resolvedMethod)
             if (mappings.isEmpty()) {
                 LOG.info("after parse method:$methodKey")
                 return emptyList()

@@ -10,6 +10,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiMethod
+import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.cache.ApiIndexManager
 import com.itangcent.easyapi.dashboard.ApiDashboardService
 import com.itangcent.easyapi.exporter.core.MetaAnnotationResolver
@@ -52,7 +53,7 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
         if (element !is PsiIdentifier) return null
         val parent = element.parent as? PsiMethod ?: return null
 
-        if (!isApiMethod(parent)) return null
+        if (!isApiMethod(parent) && !isIndexedMethod(parent)) return null
 
         return LineMarkerInfo(
             element,
@@ -63,6 +64,10 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
             GutterIconRenderer.Alignment.LEFT,
             { "Open in API Dashboard" }
         )
+    }
+
+    private fun isIndexedMethod(method: PsiMethod): Boolean {
+        return ApiIndex.getInstance(method.project).containsMethod(method)
     }
 
     private fun isApiMethod(method: PsiMethod): Boolean {
