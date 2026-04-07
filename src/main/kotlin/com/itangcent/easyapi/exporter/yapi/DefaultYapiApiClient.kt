@@ -37,23 +37,6 @@ class DefaultYapiApiClient(
     private val httpClient: HttpClient
 ) : YapiApiClient {
 
-    companion object {
-        private const val GET_PROJECT = "/api/project/get"
-        private const val LIST_MENU = "/api/interface/list_menu"
-        private const val SAVE_API = "/api/interface/save"
-        private const val GET_CAT_MENU = "/api/interface/getCatMenu"
-        private const val ADD_CAT = "/api/interface/add_cat"
-        private const val LIST_CAT = "/api/interface/list_cat"
-
-        /**
-         * Page size for [LIST_CAT] requests. Auto-tuned upward (×1.4) when a response hits the
-         * current limit, capped at 5000. Shared across instances so the tuned value persists for
-         * the lifetime of the process.
-         */
-        @Volatile
-        private var apiPageLimit: Int = 1000
-    }
-
     /** Cached project ID for this client instance. Populated on first [getProjectId] call. */
     private var cachedProjectId: String? = null
 
@@ -236,26 +219,57 @@ class DefaultYapiApiClient(
     /**
      * Parses a raw [HttpResponse] into a typed [YapiResponse].
      *
+     * Handles multiple YAPI server response formats:
+     * - Standard YAPI: `{"errcode":0, "errmsg":"...", "data":{...}}`
+     * - Some forks:    `{"code":0, "message":"成功", "data":{...}}`
+     *
+     * Success is determined by: `errcode == 0`, or `code == 0`, or `message` being a known
+     * success string (e.g. "成功", "成功！") when no code field is present.
+     *
      * Failure cases:
      * - HTTP status != 200
      * - Body is not valid JSON
-     * - `errcode` field is non-zero (YAPI application-level error)
+     * - Response code field is non-zero (YAPI application-level error)
      * - [handle] returns null (missing expected data)
      *
      * @param res The raw HTTP response
      * @param handle Extracts the typed result from the parsed JSON body
      */
-    fun <T> parseResponse(res: HttpResponse, handle: (JsonObject) -> T?): YapiResponse<T> {
+    private fun <T> parseResponse(res: HttpResponse, handle: (JsonObject) -> T?): YapiResponse<T> {
         if (res.code != 200) return YapiResponse.failure("HTTP ${res.code}")
         val json = runCatching { GsonUtils.fromJson<JsonObject>(res.body ?: "") }.getOrNull()
             ?: return YapiResponse.failure("Invalid JSON response")
-        val errcode = json.get("errcode")?.asInt
-        if (errcode != 0) {
-            val errmsg = json.get("errmsg")?.asString ?: "Unknown error (errcode: $errcode)"
-            return YapiResponse.failure(errmsg)
+        val errcode = json.get("errcode")?.asInt ?: json.get("code")?.asInt
+        val errmsg = json.get("errmsg")?.asString ?: json.get("message")?.asString
+        val isSuccess = errmsg in SUCCESS_MESSAGES || errcode in SUCCESS_CODES
+        if (!isSuccess) {
+            return YapiResponse.failure(errmsg ?: "Unknown error (errcode: $errcode)")
         }
         return handle(json)?.let { YapiResponse.success(it) }
             ?: YapiResponse.failure("Empty data in response")
+    }
+
+    companion object {
+        private const val GET_PROJECT = "/api/project/get"
+        private const val LIST_MENU = "/api/interface/list_menu"
+        private const val SAVE_API = "/api/interface/save"
+        private const val GET_CAT_MENU = "/api/interface/getCatMenu"
+        private const val ADD_CAT = "/api/interface/add_cat"
+        private const val LIST_CAT = "/api/interface/list_cat"
+
+        /** Known success messages from various YAPI forks. */
+        private val SUCCESS_MESSAGES = setOf("成功", "成功！")
+
+        /** Known success codes: 0 (standard YAPI) and 200 (some forks). */
+        private val SUCCESS_CODES = setOf(0, 200)
+
+        /**
+         * Page size for [LIST_CAT] requests. Auto-tuned upward (×1.4) when a response hits the
+         * current limit, capped at 5000. Shared across instances so the tuned value persists for
+         * the lifetime of the process.
+         */
+        @Volatile
+        private var apiPageLimit: Int = 1000
     }
 
     /**
