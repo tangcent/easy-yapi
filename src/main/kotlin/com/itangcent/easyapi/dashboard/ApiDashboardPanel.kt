@@ -15,26 +15,21 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.cache.ApiIndexManager
+import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.threading.backgroundAsync
+import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporterRegistry
 import com.itangcent.easyapi.exporter.ExportOrchestrator
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.path
+import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.ide.dialog.ExportDialog
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.ide.support.runWithProgress
-import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.threading.IdeDispatchers
-import com.itangcent.easyapi.core.threading.backgroundAsync
-import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.itangcent.easyapi.psi.type.areMethodsRelated
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.KeyAdapter
@@ -668,7 +663,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @param psiClass The class to find endpoints for
      * @return true if an endpoint was found and selected, false otherwise
      */
-    fun selectByClass(psiClass: PsiClass): Boolean {
+    suspend fun selectByClass(psiClass: PsiClass): Boolean {
         val className = psiClass.qualifiedName ?: psiClass.name ?: return false
         return selectNode { node ->
             val userObject = (node as? DefaultMutableTreeNode)?.userObject
@@ -678,14 +673,20 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
 
     /**
      * Selects the first endpoint matching the given method in the tree.
-     * 
+     *
+     * First tries direct method match, then falls back to checking super methods
+     * for interface/base class method navigation.
+     *
      * @param psiMethod The method to find an endpoint for
      * @return true if the endpoint was found and selected, false otherwise
      */
-    fun selectByMethod(psiMethod: PsiMethod): Boolean {
+    suspend fun selectByMethod(psiMethod: PsiMethod): Boolean {
         return selectNode { node ->
             val userObject = (node as? DefaultMutableTreeNode)?.userObject
             userObject is ApiEndpoint && userObject.sourceMethod == psiMethod
+        } || selectNode { node ->
+            val userObject = (node as? DefaultMutableTreeNode)?.userObject
+            userObject is ApiEndpoint && userObject.sourceMethod?.let { areMethodsRelated(psiMethod, it) } == true
         }
     }
 
@@ -696,10 +697,10 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @param predicate Function to test if a node matches the search criteria
      * @return true if a matching node was found and selected, false otherwise
      */
-    private fun selectNode(predicate: (Any?) -> Boolean): Boolean {
+    private suspend fun selectNode(predicate: suspend (Any?) -> Boolean): Boolean {
         val root = treeModel.root as? DefaultMutableTreeNode ?: return false
 
-        fun findNode(node: DefaultMutableTreeNode): DefaultMutableTreeNode? {
+        suspend fun findNode(node: DefaultMutableTreeNode): DefaultMutableTreeNode? {
             if (predicate(node)) return node
 
             for (i in 0 until node.childCount) {
@@ -711,14 +712,16 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
         }
 
         val targetNode = findNode(root) ?: return false
-        val path = TreePath(targetNode.path)
-
-        apiTree.selectionPath = path
-        apiTree.scrollPathToVisible(path)
-
         val endpoint = targetNode.userObject as? ApiEndpoint
-        if (endpoint != null) {
-            endpointDetailsPanel.showEndpoint(endpoint)
+
+        swing {
+            val path = TreePath(targetNode.path)
+            apiTree.selectionPath = path
+            apiTree.scrollPathToVisible(path)
+
+            if (endpoint != null) {
+                endpointDetailsPanel.showEndpoint(endpoint)
+            }
         }
         return true
     }

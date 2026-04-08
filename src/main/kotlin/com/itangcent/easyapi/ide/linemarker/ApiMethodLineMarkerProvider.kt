@@ -119,7 +119,7 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
             val method = element.parent as? PsiMethod ?: return
             val project = element.project
 
-            ApplicationManager.getApplication().invokeLater {
+            IdeDispatchers.backgroundAsync {
                 val service = ApiDashboardService.getInstance(project)
                 val found = service.navigateToMethod(method)
 
@@ -130,16 +130,14 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
                 if (!found) {
                     // Endpoint not in index — trigger re-scan of the containing file,
                     // then retry navigation after the scan completes.
-                    val filePath = method.containingFile?.virtualFile?.path ?: return@invokeLater
+                    val filePath = method.containingFile?.virtualFile?.path ?: return@backgroundAsync
                     LOG.info("Endpoint not found in index, re-scanning file: $filePath")
 
-                    backgroundAsync {
-                        ApiIndexManager.getInstance(project).reIndex(listOf(filePath))
+                    ApiIndexManager.getInstance(project).reIndex(listOf(filePath))
 
-                        // After re-index, retry navigation on EDT
-                        swing {
-                            service.navigateToMethod(method)
-                        }
+                    // After re-index, retry navigation on EDT
+                    swing {
+                        service.navigateToMethod(method)
                     }
                 }
             }

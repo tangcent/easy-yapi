@@ -1,13 +1,7 @@
 package com.itangcent.easyapi.psi.type
 
-import com.intellij.psi.PsiAnnotation
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiField
-import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiParameter
-import com.intellij.psi.PsiPrimitiveType
-import com.intellij.psi.PsiType
-import com.intellij.psi.PsiTypes
+import com.intellij.psi.*
+import com.itangcent.easyapi.core.threading.read
 
 /**
  * Represents a resolved type in the type system.
@@ -92,7 +86,7 @@ sealed class ResolvedType {
          */
         fun superClasses(): Sequence<ClassType> = sequence {
             for (superType in psiClass.superTypes) {
-                val classType = superType as? com.intellij.psi.PsiClassType ?: continue
+                val classType = superType ?: continue
                 val superClass = classType.resolve() ?: continue
                 if (superClass.qualifiedName == "java.lang.Object") continue
                 val args = classType.parameters.map { TypeResolver.resolve(it, genericContext) }
@@ -103,7 +97,7 @@ sealed class ResolvedType {
         fun fields(): List<ResolvedField> {
             return psiClass.allFields.map { field ->
                 ResolvedField(
-                    name = field.name ?: "",
+                    name = field.name,
                     psiField = field,
                     type = TypeResolver.substitute(TypeResolver.resolve(field.type, genericContext), genericContext),
                     annotations = field.annotations.toList(),
@@ -332,15 +326,15 @@ object TypeResolver {
                     val name = psiClass.name ?: return ResolvedType.UnresolvedType(psiType.canonicalText)
                     return context.genericMap[name] ?: ResolvedType.UnresolvedType(psiType.canonicalText)
                 }
-                
+
                 val specialType = SpecialTypeHandler.resolveSpecialType(psiClass)
                 if (specialType != null) return specialType
-                
+
                 val qualifiedName = psiClass.qualifiedName
                 if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
                     return ResolvedType.UnresolvedType(qualifiedName)
                 }
-                
+
                 val args = classType.parameters.map { resolve(it, context) }
                 return ResolvedType.ClassType(psiClass, args)
             }
@@ -474,15 +468,18 @@ object TypeResolver {
                 }
                 if (text == type.canonicalText) type else ResolvedType.UnresolvedType(text)
             }
+
             is ResolvedType.ArrayType -> ResolvedType.ArrayType(substitute(type.componentType, context))
             is ResolvedType.ClassType -> ResolvedType.ClassType(
                 psiClass = type.psiClass,
                 typeArgs = type.typeArgs.map { substitute(it, context) }
             )
+
             is ResolvedType.WildcardType -> ResolvedType.WildcardType(
                 upper = type.upper?.let { substitute(it, context) },
                 lower = type.lower?.let { substitute(it, context) }
             )
+
             is ResolvedType.PrimitiveType -> type
         }
     }
@@ -490,8 +487,10 @@ object TypeResolver {
     private fun canonicalNameOf(type: ResolvedType): String {
         return when (type) {
             is ResolvedType.ClassType -> (type.psiClass.qualifiedName ?: type.psiClass.name ?: "Anonymous") +
-                type.typeArgs.takeIf { it.isNotEmpty() }?.joinToString(prefix = "<", postfix = ">") { canonicalNameOf(it) }
-                    .orEmpty()
+                    type.typeArgs.takeIf { it.isNotEmpty() }
+                        ?.joinToString(prefix = "<", postfix = ">") { canonicalNameOf(it) }
+                        .orEmpty()
+
             is ResolvedType.ArrayType -> canonicalNameOf(type.componentType) + "[]"
             is ResolvedType.UnresolvedType -> type.canonicalText
             is ResolvedType.PrimitiveType -> type.kind.name.lowercase()
@@ -515,6 +514,24 @@ private fun methodSignatureKey(method: PsiMethod): String {
     return "${method.name}($params)"
 }
 
+/**
+ * Checks if two methods are related via inheritance.
+ * Returns true if [method1] is the same as [method2], or if one is a super method of the other.
+ *
+ * This is useful for navigation features where clicking on an interface method
+ * should find the corresponding implementation method in the index.
+ *
+ * Uses read action context to avoid "Slow operations are prohibited on EDT" errors.
+ */
+suspend fun areMethodsRelated(method1: PsiMethod, method2: PsiMethod): Boolean {
+    if (method1 == method2) return true
+    return read {
+        val superMethods1 = method1.findSuperMethods()
+        if (method2 in superMethods1) return@read true
+        val superMethods2 = method2.findSuperMethods()
+        method1 in superMethods2
+    }
+}
 
 // ========== Extension functions for hierarchy navigation ==========
 
@@ -587,6 +604,52 @@ fun ResolvedType.ClassType.searchAnnotation(annotationFqn: String): PsiAnnotatio
     psiClass.getAnnotation(annotationFqn)?.let { return it }
     for (superClassType in allSuperClasses()) {
         superClassType.psiClass.getAnnotation(annotationFqn)?.let { return it }
+    }
+    return null
+}
+
+/**
+ * Searches for an annotation on a method parameter by index, walking up the super method chain.
+ * This handles the case where parameter annotations (like @RequestBody) are declared on
+ * an interface method but not re-declared on the implementing class.
+ *
+ * @param parameterIndex The index of the parameter in the method's parameter list
+ * @param annotationFqn The fully qualified name of the annotation to search for
+ * @return The first found [PsiAnnotation], or null if not found
+ */
+fun ResolvedMethod.searchParameterAnnotation(parameterIndex: Int, annotationFqn: String): PsiAnnotation? {
+    val params = psiMethod.parameterList.parameters
+    if (parameterIndex < 0 || parameterIndex >= params.size) return null
+    params[parameterIndex].getAnnotation(annotationFqn)?.let { return it }
+    for (superMethod in superMethods()) {
+        val superParams = superMethod.psiMethod.parameterList.parameters
+        if (parameterIndex < superParams.size) {
+            superParams[parameterIndex].getAnnotation(annotationFqn)?.let { return it }
+        }
+    }
+    return null
+}
+
+/**
+ * Searches for any annotation from a set on a method parameter by index, walking up the super method chain.
+ *
+ * @param parameterIndex The index of the parameter in the method's parameter list
+ * @param annotationFqns The set of fully qualified annotation names to search for
+ * @return The first found [PsiAnnotation], or null if not found
+ */
+fun ResolvedMethod.searchParameterAnnotation(parameterIndex: Int, annotationFqns: Set<String>): PsiAnnotation? {
+    val params = psiMethod.parameterList.parameters
+    if (parameterIndex < 0 || parameterIndex >= params.size) return null
+    for (fqn in annotationFqns) {
+        params[parameterIndex].getAnnotation(fqn)?.let { return it }
+    }
+    for (superMethod in superMethods()) {
+        val superParams = superMethod.psiMethod.parameterList.parameters
+        if (parameterIndex < superParams.size) {
+            for (fqn in annotationFqns) {
+                superParams[parameterIndex].getAnnotation(fqn)?.let { return it }
+            }
+        }
     }
     return null
 }

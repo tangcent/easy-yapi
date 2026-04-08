@@ -55,7 +55,7 @@ class ApiDashboardService(
      * Navigates to and selects the specified class in the dashboard.
      * @return true if the endpoint was found and selected, false otherwise
      */
-    fun navigateToClass(psiClass: PsiClass): Boolean {
+    suspend fun navigateToClass(psiClass: PsiClass): Boolean {
         return dashboardPanel?.selectByClass(psiClass) ?: false
     }
 
@@ -63,7 +63,7 @@ class ApiDashboardService(
      * Navigates to and selects the specified method in the dashboard.
      * @return true if the endpoint was found and selected, false otherwise
      */
-    fun navigateToMethod(psiMethod: PsiMethod): Boolean {
+    suspend fun navigateToMethod(psiMethod: PsiMethod): Boolean {
         return dashboardPanel?.selectByMethod(psiMethod) ?: false
     }
 

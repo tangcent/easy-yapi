@@ -114,7 +114,7 @@ class SpringMvcClassExporter(
                 ?.split("\n")?.map { it.trim() }?.filter { it.isNotBlank() }
                 ?: emptyList()
 
-            val resolvedBindings = resolveParameterBindings(method)
+            val resolvedBindings = resolveParameterBindings(resolvedMethod)
             val params = buildParameters(resolvedBindings)
             val paramHeaders = extractParamHeaders(resolvedBindings)
             val body = buildRequestBody(resolvedBindings, genericContext)
@@ -241,11 +241,15 @@ class SpringMvcClassExporter(
     /**
      * Resolves bindings for all parameters in a single pass.
      * Ignored parameters (HttpServletRequest, etc.) are excluded from the result.
+     *
+     * Uses [ResolvedMethod] to support annotation inheritance from super methods
+     * (interfaces, base classes).
      */
-    private suspend fun resolveParameterBindings(method: PsiMethod): List<ResolvedParamBinding> {
-        return method.parameterList.parameters.mapNotNull { p ->
-            val binding = bindingResolver.resolve(p) ?: ParameterBinding.Query
-            if (binding == ParameterBinding.Ignored) return@mapNotNull null
+    private suspend fun resolveParameterBindings(resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ResolvedParamBinding> {
+        val method = resolvedMethod.psiMethod
+        return method.parameterList.parameters.mapIndexedNotNull { index, p ->
+            val binding = bindingResolver.resolve(p, resolvedMethod, index) ?: ParameterBinding.Query
+            if (binding == ParameterBinding.Ignored) return@mapIndexedNotNull null
             ResolvedParamBinding(p, binding)
         }
     }

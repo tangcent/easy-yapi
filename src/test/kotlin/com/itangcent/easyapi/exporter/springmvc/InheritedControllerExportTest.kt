@@ -175,4 +175,46 @@ class InheritedControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
             loginAuth.path.contains("user")
         )
     }
+
+    fun testIUserApi_RequestBodyInheritedFromInterface() = runTest {
+        loadFile("model/Model.java")
+        loadFile("api/IUserApi.java")
+        loadFile("api/UserApiImpl.java")
+        val psiClass = findClass("com.itangcent.api.UserApiImpl")!!
+        val endpoints = exporter.export(psiClass)
+
+        // IUserApi.loginAuth has @RequestBody on parameter, UserApiImpl does not re-declare it
+        // The @RequestBody should be inherited from the interface
+        val loginAuth = endpoints.find { it.path.contains("loginAuth") }
+        assertNotNull("Should export loginAuth endpoint", loginAuth)
+
+        val httpMetadata = loginAuth!!.httpMetadata
+        assertNotNull("Should have httpMetadata", httpMetadata)
+
+        val body = httpMetadata!!.body
+        assertNotNull(
+            "Should have request body inherited from interface @RequestBody annotation",
+            body
+        )
+    }
+
+    fun testComposite_RequestBodyInheritedFromGenericBase() = runTest {
+        loadFile("api/inherit/AnnotatedGenericBase.java")
+        loadFile("api/inherit/PlainGenericSub.java")
+        val psiClass = findClass("com.itangcent.api.inherit.PlainGenericSub")!!
+        val endpoints = exporter.export(psiClass)
+
+        // AnnotatedGenericBase.save has @RequestBody on parameter, PlainGenericSub does not re-declare it
+        val postSave = endpoints.find { it.httpMetadata?.method == HttpMethod.POST }
+        assertNotNull("Should export POST /generic-base/save", postSave)
+
+        val httpMetadata = postSave!!.httpMetadata
+        assertNotNull("Should have httpMetadata", httpMetadata)
+
+        val body = httpMetadata!!.body
+        assertNotNull(
+            "Should have request body inherited from generic base @RequestBody annotation",
+            body
+        )
+    }
 }

@@ -3,6 +3,8 @@ package com.itangcent.easyapi.exporter.springmvc
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.psi.helper.AnnotationHelper
+import com.itangcent.easyapi.psi.type.ResolvedMethod
+import com.itangcent.easyapi.psi.type.searchParameterAnnotation
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
@@ -20,6 +22,11 @@ import com.itangcent.easyapi.rule.engine.RuleEngine
  *
  * Also supports rule-based binding via `param.http.type` rule key.
  *
+ * ## Inheritance Support
+ * When a class implements an interface, parameter annotations on the interface method
+ * are inherited by the implementation. This resolver walks up the super method chain
+ * to find annotations declared on interface method parameters.
+ *
  * @param annotationHelper Helper for reading annotations
  * @param ruleEngine Rule engine for custom binding resolution
  * @see ParameterBinding for the binding types
@@ -28,6 +35,63 @@ class SpringParameterBindingResolver(
     private val annotationHelper: AnnotationHelper,
     private val ruleEngine: RuleEngine
 ) {
+    /**
+     * Resolves parameter binding for a parameter within a resolved method context.
+     * This version supports inheritance - it will search for annotations on the parameter
+     * in super methods (interfaces, base classes) if not found on the parameter directly.
+     *
+     * @param parameter The PSI parameter to resolve
+     * @param resolvedMethod The resolved method context for inheritance support
+     * @param parameterIndex The index of the parameter in the method's parameter list
+     * @return The resolved parameter binding, or null if no binding annotation found
+     */
+    suspend fun resolve(
+        parameter: PsiParameter,
+        resolvedMethod: ResolvedMethod,
+        parameterIndex: Int
+    ): ParameterBinding? {
+        val typeText = parameter.type.canonicalText
+        if (isIgnoredType(typeText)) return ParameterBinding.Ignored
+
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.REQUEST_BODY)) {
+            return ParameterBinding.Body
+        }
+
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.REQUEST_PARAM)) {
+            if (isFileType(typeText)) return ParameterBinding.Form
+            return ParameterBinding.Query
+        }
+
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.REQUEST_PART)) {
+            return ParameterBinding.Form
+        }
+
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.PATH_VARIABLE)) {
+            return ParameterBinding.Path
+        }
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.REQUEST_HEADER)) {
+            return ParameterBinding.Header
+        }
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.COOKIE_VALUE)) {
+            return ParameterBinding.Cookie
+        }
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.MODEL_ATTRIBUTE)) {
+            return ParameterBinding.Form
+        }
+        if (hasParameterAnnotation(resolvedMethod, parameterIndex, SpringMvcConstants.Annotations.SESSION_ATTRIBUTE)) {
+            return ParameterBinding.Ignored
+        }
+
+        return resolveByRule(parameter)
+    }
+
+    /**
+     * Resolves parameter binding for a standalone parameter (no inheritance support).
+     * Use [resolve] with [ResolvedMethod] for full inheritance support.
+     *
+     * @param parameter The PSI parameter to resolve
+     * @return The resolved parameter binding, or null if no binding annotation found
+     */
     suspend fun resolve(parameter: PsiParameter): ParameterBinding? {
         val typeText = parameter.type.canonicalText
         if (isIgnoredType(typeText)) return ParameterBinding.Ignored
@@ -61,6 +125,21 @@ class SpringParameterBindingResolver(
             return ParameterBinding.Ignored
         }
 
+        return resolveByRule(parameter)
+    }
+
+    /**
+     * Checks if a parameter has the specified annotation, searching through the method hierarchy.
+     */
+    private fun hasParameterAnnotation(
+        resolvedMethod: ResolvedMethod,
+        parameterIndex: Int,
+        annotationFqn: String
+    ): Boolean {
+        return resolvedMethod.searchParameterAnnotation(parameterIndex, annotationFqn) != null
+    }
+
+    private suspend fun resolveByRule(parameter: PsiParameter): ParameterBinding? {
         val rule = ruleEngine.evaluate(RuleKeys.PARAM_HTTP_TYPE, parameter)?.trim()?.lowercase()
         return when (rule) {
             "body" -> ParameterBinding.Body
@@ -69,7 +148,7 @@ class SpringParameterBindingResolver(
             "header" -> ParameterBinding.Header
             "cookie" -> ParameterBinding.Cookie
             "form" -> ParameterBinding.Form
-            else -> null // No annotation, no rule — caller decides default
+            else -> null
         }
     }
 

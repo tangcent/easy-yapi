@@ -25,7 +25,7 @@ class SettingsTest {
         assertTrue(settings.inferReturnMain)
         assertTrue(settings.enableUrlTemplating)
         assertTrue(settings.switchNotice)
-        assertEquals(5, settings.httpTimeOut)
+        assertEquals(30, settings.httpTimeOut)
         assertFalse(settings.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, settings.httpClient)
         assertEquals(50, settings.logLevel)

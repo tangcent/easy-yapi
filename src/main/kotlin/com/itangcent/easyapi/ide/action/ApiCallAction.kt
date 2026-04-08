@@ -2,10 +2,12 @@ package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.wm.ToolWindowManager
+import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiDashboardService
 import com.itangcent.easyapi.ide.support.SelectionScope
+import kotlinx.coroutines.runBlocking
 
 /**
  * Action to call (execute) an API from the editor.
@@ -27,18 +29,22 @@ class ApiCallAction : EasyApiAction() {
 
             swing {
                 toolWindow?.activate {
-                    navigateToSelection(project, selection)
+                    runBlocking {
+                        navigateToSelection(project, selection)
+                    }
                 }
             }
         }
     }
 
-    private fun navigateToSelection(project: com.intellij.openapi.project.Project, selection: SelectionScope) {
+    private suspend fun navigateToSelection(project: com.intellij.openapi.project.Project, selection: SelectionScope) {
         val dashboardService = ApiDashboardService.getInstance(project)
 
         val psiMethod = selection.method()
         if (psiMethod != null) {
-            dashboardService.navigateToMethod(psiMethod)
+            IdeDispatchers.swingAsync {
+                dashboardService.navigateToMethod(psiMethod)
+            }
             return
         }
 

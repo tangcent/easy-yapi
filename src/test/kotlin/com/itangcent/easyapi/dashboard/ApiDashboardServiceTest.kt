@@ -36,7 +36,7 @@ class ApiDashboardServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
         panel.dispose()
     }
 
-    fun testNavigateToClass() {
+    fun testNavigateToClass() = runBlocking {
         loadTestFiles()
         val panel = ApiDashboardPanel(project)
         apiDashboardService.setDashboardPanel(panel)

@@ -128,4 +128,102 @@ class ResolvedMethodTest : EasyApiLightCodeInsightFixtureTestCase() {
             typeArg is ResolvedType.ClassType && typeArg.psiClass.name == "String"
         )
     }
+
+    // ========== searchParameterAnnotation tests ==========
+
+    fun testSearchParameterAnnotation_FindsOnSelf() = runTest {
+        loadFile("api/inherit/AnnotatedBaseCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.AnnotatedBaseCtrl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val saveItem = methods.first { it.name == "saveItem" }
+        // saveItem has @RequestBody on parameter at index 0
+        val ann = saveItem.searchParameterAnnotation(0, "org.springframework.web.bind.annotation.RequestBody")
+        assertNotNull("Should find @RequestBody on self parameter", ann)
+    }
+
+    fun testSearchParameterAnnotation_FindsOnSuper() = runTest {
+        loadFile("api/inherit/AnnotatedBaseCtrl.java")
+        loadFile("api/inherit/PlainSubCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val saveItem = methods.first { it.name == "saveItem" }
+        // PlainSubCtrl.saveItem has no @RequestBody, but AnnotatedBaseCtrl.saveItem does
+        val ann = saveItem.searchParameterAnnotation(0, "org.springframework.web.bind.annotation.RequestBody")
+        assertNotNull("Should find @RequestBody inherited from super method parameter", ann)
+    }
+
+    fun testSearchParameterAnnotation_InterfaceInheritance() = runTest {
+        loadFile("api/IUserApi.java")
+        loadFile("api/UserApiImpl.java")
+        val psiClass = findClass("com.itangcent.api.UserApiImpl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val loginAuth = methods.first { it.name == "loginAuth" }
+        // UserApiImpl.loginAuth has no @RequestBody, but IUserApi.loginAuth does
+        val ann = loginAuth.searchParameterAnnotation(0, "org.springframework.web.bind.annotation.RequestBody")
+        assertNotNull("Should find @RequestBody inherited from interface method parameter", ann)
+    }
+
+    fun testSearchParameterAnnotation_NotFound() = runTest {
+        loadFile("api/inherit/SimpleCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val list = methods.first { it.name == "list" }
+        val ann = list.searchParameterAnnotation(0, "org.springframework.web.bind.annotation.RequestBody")
+        assertNull("Should not find @RequestBody when not present", ann)
+    }
+
+    fun testSearchParameterAnnotation_SetOverload() = runTest {
+        loadFile("api/inherit/AnnotatedBaseCtrl.java")
+        loadFile("api/inherit/PlainSubCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val saveItem = methods.first { it.name == "saveItem" }
+        val springAnns = setOf(
+            "org.springframework.web.bind.annotation.RequestBody",
+            "org.springframework.web.bind.annotation.RequestParam"
+        )
+        val ann = saveItem.searchParameterAnnotation(0, springAnns)
+        assertNotNull("Should find annotation from set", ann)
+    }
+
+    // ========== areMethodsRelated tests ==========
+
+    fun testAreMethodsRelated_SameMethod() = runTest {
+        loadFile("api/inherit/SimpleCtrl.java")
+        val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
+        val method = psiClass.methods.first { it.name == "list" }
+        assertTrue("Same method should be related", areMethodsRelated(method, method))
+    }
+
+    fun testAreMethodsRelated_InterfaceAndImplementation() = runTest {
+        loadFile("api/IUserApi.java")
+        loadFile("api/UserApiImpl.java")
+        val interfaceClass = findClass("com.itangcent.api.IUserApi")!!
+        val implClass = findClass("com.itangcent.api.UserApiImpl")!!
+        val interfaceMethod = interfaceClass.methods.first { it.name == "loginAuth" }
+        val implMethod = implClass.methods.first { it.name == "loginAuth" }
+        assertTrue("Interface method and implementation should be related", areMethodsRelated(interfaceMethod, implMethod))
+        assertTrue("Implementation and interface method should be related", areMethodsRelated(implMethod, interfaceMethod))
+    }
+
+    fun testAreMethodsRelated_SuperAndSubClass() = runTest {
+        loadFile("api/inherit/AnnotatedBaseCtrl.java")
+        loadFile("api/inherit/PlainSubCtrl.java")
+        val baseClass = findClass("com.itangcent.api.inherit.AnnotatedBaseCtrl")!!
+        val subClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
+        val baseMethod = baseClass.methods.first { it.name == "getItem" }
+        val subMethod = subClass.methods.first { it.name == "getItem" }
+        assertTrue("Base method and override should be related", areMethodsRelated(baseMethod, subMethod))
+        assertTrue("Override and base method should be related", areMethodsRelated(subMethod, baseMethod))
+    }
+
+    fun testAreMethodsRelated_UnrelatedMethods() = runTest {
+        loadFile("api/inherit/SimpleCtrl.java")
+        loadFile("api/inherit/AnnotatedBaseCtrl.java")
+        val simpleClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
+        val baseClass = findClass("com.itangcent.api.inherit.AnnotatedBaseCtrl")!!
+        val simpleMethod = simpleClass.methods.first { it.name == "list" }
+        val baseMethod = baseClass.methods.first { it.name == "getItem" }
+        assertFalse("Unrelated methods should not be related", areMethodsRelated(simpleMethod, baseMethod))
+    }
 }
