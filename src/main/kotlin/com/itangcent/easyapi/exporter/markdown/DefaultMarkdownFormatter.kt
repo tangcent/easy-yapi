@@ -36,7 +36,8 @@ import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
  * @param outputDemo Whether to include JSON demo examples in the output
  */
 class DefaultMarkdownFormatter(
-    private val outputDemo: Boolean = true
+    private val outputDemo: Boolean = true,
+    private val maxVisits: Int = 2
 ) : MarkdownFormatter {
     
     /**
@@ -354,14 +355,28 @@ class DefaultMarkdownFormatter(
      * @param depth The current nesting depth for indentation
      */
     private fun formatObjectModelRecursive(sb: StringBuilder, model: ObjectModel, depth: Int) {
+        val visitCounts = HashMap<Int, Int>()
+        formatObjectModelRecursive(sb, model, depth, visitCounts)
+    }
+
+    private fun formatObjectModelRecursive(
+        sb: StringBuilder,
+        model: ObjectModel,
+        depth: Int,
+        visitCounts: HashMap<Int, Int>
+    ) {
         when (model) {
             is ObjectModel.Object -> {
+                val count = visitCounts.getOrDefault(model.id, 0)
+                if (count >= maxVisits) return
+                visitCounts[model.id] = count + 1
                 for ((fieldName, fieldModel) in model.fields) {
-                    formatFieldRow(sb, fieldName, fieldModel, depth)
+                    formatFieldRow(sb, fieldName, fieldModel, depth, visitCounts)
                 }
+                visitCounts[model.id] = count
             }
             is ObjectModel.Array -> {
-                formatArrayItemRecursive(sb, model.item, "[0]", depth)
+                formatArrayItemRecursive(sb, model.item, "[0]", depth, visitCounts)
             }
             is ObjectModel.Single -> {
                 sb.append("| | ").append(escape(model.type)).append(" | |").append('\n')
@@ -381,15 +396,25 @@ class DefaultMarkdownFormatter(
      * @param prefix The prefix for field names (e.g., "[0]")
      * @param depth The current nesting depth
      */
-    private fun formatArrayItemRecursive(sb: StringBuilder, item: ObjectModel, prefix: String, depth: Int) {
+    private fun formatArrayItemRecursive(
+        sb: StringBuilder,
+        item: ObjectModel,
+        prefix: String,
+        depth: Int,
+        visitCounts: HashMap<Int, Int>
+    ) {
         when (item) {
             is ObjectModel.Object -> {
+                val count = visitCounts.getOrDefault(item.id, 0)
+                if (count >= maxVisits) return
+                visitCounts[item.id] = count + 1
                 for ((fieldName, fieldModel) in item.fields) {
-                    formatFieldRow(sb, "$prefix.$fieldName", fieldModel, depth)
+                    formatFieldRow(sb, "$prefix.$fieldName", fieldModel, depth, visitCounts)
                 }
+                visitCounts[item.id] = count
             }
             is ObjectModel.Array -> {
-                formatArrayItemRecursive(sb, item.item, "$prefix[0]", depth)
+                formatArrayItemRecursive(sb, item.item, "$prefix[0]", depth, visitCounts)
             }
             is ObjectModel.Single -> {
                 sb.append("| ").append(escape(prefix)).append(" | ")
@@ -416,7 +441,13 @@ class DefaultMarkdownFormatter(
      * @param fieldModel The field model containing type and description
      * @param depth The current nesting depth
      */
-    private fun formatFieldRow(sb: StringBuilder, fieldName: String, fieldModel: FieldModel, depth: Int) {
+    private fun formatFieldRow(
+        sb: StringBuilder,
+        fieldName: String,
+        fieldModel: FieldModel,
+        depth: Int,
+        visitCounts: HashMap<Int, Int>
+    ) {
         val indent = if (depth > 0) {
             "&ensp;&ensp;".repeat(depth) + "&#124;─"
         } else {
@@ -434,16 +465,24 @@ class DefaultMarkdownFormatter(
         
         when (val nestedModel = fieldModel.model) {
             is ObjectModel.Object -> {
+                val count = visitCounts.getOrDefault(nestedModel.id, 0)
+                if (count >= maxVisits) return
+                visitCounts[nestedModel.id] = count + 1
                 for ((nestedFieldName, nestedFieldModel) in nestedModel.fields) {
-                    formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1)
+                    formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1, visitCounts)
                 }
+                visitCounts[nestedModel.id] = count
             }
             is ObjectModel.Array -> {
                 when (val item = nestedModel.item) {
                     is ObjectModel.Object -> {
+                        val count = visitCounts.getOrDefault(item.id, 0)
+                        if (count >= maxVisits) return
+                        visitCounts[item.id] = count + 1
                         for ((nestedFieldName, nestedFieldModel) in item.fields) {
-                            formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1)
+                            formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1, visitCounts)
                         }
+                        visitCounts[item.id] = count
                     }
                     else -> {
                         // For simple array types, no nested rows needed

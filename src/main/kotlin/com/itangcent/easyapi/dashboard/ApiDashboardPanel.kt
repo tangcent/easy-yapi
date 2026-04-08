@@ -423,7 +423,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
                 }
 
                 handleExportResult(result, format)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 LOG.warn("Export failed", e)
                 swing {
                     NotificationUtils.notifyError(

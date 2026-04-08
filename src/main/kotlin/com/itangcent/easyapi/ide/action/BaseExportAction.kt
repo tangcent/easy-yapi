@@ -103,7 +103,7 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
         } catch (ce: CancellationException) {
             LOG.info("Export cancelled")
             throw ce
-        } catch (ex: Exception) {
+        } catch (ex: Throwable) {
             LOG.warn("Export failed", ex)
             IdeaConsoleProvider.getInstance(project).getConsole().error("Export failed", ex)
             swing {

@@ -288,4 +288,113 @@ class DefaultMarkdownFormatterTest {
         assertTrue(markdown.contains("file"))
         assertTrue(markdown.contains("description"))
     }
+
+    @Test
+    fun testFormatCircularReferenceDoesNotStackOverflow() = runBlocking {
+        // Simulate a self-referencing type like TreeNode { name: String, children: List<TreeNode> }
+        val fields = mutableMapOf<String, FieldModel>()
+        val treeNode = ObjectModel.Object(fields)
+        fields["name"] = FieldModel(ObjectModel.single(JsonType.STRING), comment = "node name")
+        fields["children"] = FieldModel(ObjectModel.array(treeNode), comment = "child nodes")
+
+        val endpoint = ApiEndpoint(
+            name = "Get Tree",
+            metadata = HttpMetadata(
+                path = "/api/tree",
+                method = HttpMethod.GET,
+                responseBody = treeNode
+            )
+        )
+
+        // Should complete without OOM or StackOverflow
+        val markdown = formatter.format(listOf(endpoint), "Tree API")
+
+        assertTrue(markdown.contains("name"))
+        assertTrue(markdown.contains("children"))
+        // Should contain nested fields (maxVisits=2 allows one level of recursion)
+        assertTrue("Should contain nested name field", markdown.contains("&#124;─name"))
+    }
+
+    @Test
+    fun testFormatDirectCircularObjectReference() = runBlocking {
+        // Object A has a field of type Object A (direct self-reference)
+        val fields = mutableMapOf<String, FieldModel>()
+        val selfRef = ObjectModel.Object(fields)
+        fields["id"] = FieldModel(ObjectModel.single(JsonType.INT), comment = "id")
+        fields["parent"] = FieldModel(selfRef, comment = "parent reference")
+
+        val endpoint = ApiEndpoint(
+            name = "Get Node",
+            metadata = HttpMetadata(
+                path = "/api/node",
+                method = HttpMethod.GET,
+                responseBody = selfRef
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "Node API")
+
+        assertTrue(markdown.contains("| id |"))
+        assertTrue(markdown.contains("| parent |"))
+        // The nested parent.id should appear (first recursion allowed by maxVisits=2)
+        assertTrue("Should contain nested id", markdown.contains("&#124;─id"))
+    }
+
+    @Test
+    fun testFormatMutualCircularReference() = runBlocking {
+        // Object A references Object B, Object B references Object A
+        val fieldsA = mutableMapOf<String, FieldModel>()
+        val fieldsB = mutableMapOf<String, FieldModel>()
+        val objectA = ObjectModel.Object(fieldsA)
+        val objectB = ObjectModel.Object(fieldsB)
+        fieldsA["name"] = FieldModel(ObjectModel.single(JsonType.STRING))
+        fieldsA["refB"] = FieldModel(objectB, comment = "reference to B")
+        fieldsB["value"] = FieldModel(ObjectModel.single(JsonType.INT))
+        fieldsB["refA"] = FieldModel(objectA, comment = "reference to A")
+
+        val endpoint = ApiEndpoint(
+            name = "Get Mutual",
+            metadata = HttpMetadata(
+                path = "/api/mutual",
+                method = HttpMethod.GET,
+                responseBody = objectA
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "Mutual API")
+
+        assertTrue(markdown.contains("name"))
+        assertTrue(markdown.contains("refB"))
+        assertTrue(markdown.contains("value"))
+        assertTrue(markdown.contains("refA"))
+    }
+
+    @Test
+    fun testFormatNonCircularDeepNesting() = runBlocking {
+        // Non-circular deep nesting should render all levels
+        val inner = ObjectModel.Object(
+            mapOf("value" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "inner value"))
+        )
+        val middle = ObjectModel.Object(
+            mapOf("inner" to FieldModel(inner, comment = "inner object"))
+        )
+        val outer = ObjectModel.Object(
+            mapOf("middle" to FieldModel(middle, comment = "middle object"))
+        )
+
+        val endpoint = ApiEndpoint(
+            name = "Get Nested",
+            metadata = HttpMetadata(
+                path = "/api/nested",
+                method = HttpMethod.GET,
+                responseBody = outer
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "Nested API")
+
+        assertTrue(markdown.contains("middle"))
+        assertTrue(markdown.contains("inner"))
+        assertTrue(markdown.contains("value"))
+    }
 }
