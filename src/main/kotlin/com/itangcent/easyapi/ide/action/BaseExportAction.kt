@@ -1,11 +1,9 @@
 package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporterRegistry
@@ -18,10 +16,7 @@ import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Base class for API export actions.
@@ -104,11 +99,12 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
             val orchestrator = ExportOrchestrator.getInstance(project)
             val result = orchestrator.orchestrateExport(selection, exportFormat, indicator = indicator)
 
-            swing {
-                handleExportResult(project, result)
-            }
+            handleExportResult(project, result)
+        } catch (ce: CancellationException) {
+            LOG.info("Export cancelled")
+            throw ce
         } catch (ex: Exception) {
-            LOG.error("Export failed", ex)
+            LOG.warn("Export failed", ex)
             IdeaConsoleProvider.getInstance(project).getConsole().error("Export failed", ex)
             swing {
                 showExportError(project, ex.message ?: "Unknown error")
@@ -124,10 +120,19 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
                 val exporterRegistry = ApiExporterRegistry.getInstance(project)
                 val exporter = exporterRegistry.getExporter(exportFormat)
 
-                val handled = exporter?.handleExportResult(project, result) ?: false
+                val handled = try {
+                    exporter?.handleExportResult(project, result) ?: false
+                } catch (e: Exception) {
+                    LOG.warn("Failed to handle export result", e)
+                    IdeaConsoleProvider.getInstance(project).getConsole()
+                        .error("Failed to save export result", e)
+                    false
+                }
 
                 if (!handled) {
-                    showSuccessMessage(project, result)
+                    swing {
+                        showSuccessMessage(project, result)
+                    }
                 }
             }
 
@@ -135,7 +140,9 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
             }
 
             is ExportResult.Error -> {
-                showExportError(project, result.message)
+                swing {
+                    showExportError(project, result.message)
+                }
             }
         }
     }

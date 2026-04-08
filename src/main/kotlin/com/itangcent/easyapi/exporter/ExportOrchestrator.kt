@@ -68,7 +68,7 @@ class ExportOrchestrator(private val project: Project) {
     ): ExportResult {
         indicator?.text = "Scanning for API endpoints..."
         indicator?.isIndeterminate = true
-        val endpoints = scanEndpoints(selection)
+        val endpoints = scanEndpoints(selection, indicator)
         
         if (endpoints.isEmpty()) {
             return ExportResult.Error("No API endpoints found")
@@ -116,19 +116,19 @@ class ExportOrchestrator(private val project: Project) {
     /**
      * Scans for API endpoints from the given selection or index.
      */
-    private suspend fun scanEndpoints(selection: SelectionScope?): List<ApiEndpoint> {
-        return withContext(IdeDispatchers.ReadAction) {
-            if (selection != null) {
-                val classes = selection.classes().toList()
-                if (classes.isNotEmpty()) {
-                    apiScanner.scanClasses(classes).toList()
-                } else {
-                    apiIndex.endpoints()
-                }
-            } else {
-                apiIndex.endpoints()
+    private suspend fun scanEndpoints(
+        selection: SelectionScope?,
+        indicator: ProgressIndicator? = null
+    ): List<ApiEndpoint> {
+        if (selection != null) {
+            val classes = withContext(IdeDispatchers.ReadAction) {
+                selection.classes().toList()
+            }
+            if (classes.isNotEmpty()) {
+                return apiScanner.scanClasses(classes, indicator).toList()
             }
         }
+        return apiIndex.endpoints()
     }
     
     /**

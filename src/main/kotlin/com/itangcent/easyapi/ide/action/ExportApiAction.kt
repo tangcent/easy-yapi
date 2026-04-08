@@ -12,16 +12,11 @@ import com.itangcent.easyapi.ide.dialog.ExportDialogResult
 import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.ide.support.runWithProgress
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.itangcent.easyapi.logging.IdeaLog
 
 /**
  * Action for exporting APIs with a format selection dialog.
@@ -37,26 +32,24 @@ import kotlinx.coroutines.withContext
  * @see ExportDialog for the configuration dialog
  * @see ExportOrchestrator for the export process
  */
-class ExportApiAction : AnAction() {
+class ExportApiAction : AnAction(), IdeaLog {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val selection = SelectedHelper.resolveSelection(e)
 
         backgroundAsync {
-            val endpoints = withContext(IdeDispatchers.ReadAction) {
-                val apiIndex = ApiIndex.getInstance(project)
-                val scanner = ApiScanner.getInstance(project)
-                if (selection != null) {
-                    val classes = selection.classes().toList()
-                    if (classes.isNotEmpty()) {
-                        scanner.scanClasses(classes).toList()
-                    } else {
-                        apiIndex.endpoints()
-                    }
+            val apiIndex = ApiIndex.getInstance(project)
+            val scanner = ApiScanner.getInstance(project)
+            val endpoints = if (selection != null) {
+                val classes = selection.classes().toList()
+                if (classes.isNotEmpty()) {
+                    scanner.scanClasses(classes).toList()
                 } else {
                     apiIndex.endpoints()
                 }
+            } else {
+                apiIndex.endpoints()
             }
 
             swing {
@@ -80,9 +73,7 @@ class ExportApiAction : AnAction() {
                     selection, dialogResult.format, dialogResult.outputConfig, indicator
                 )
 
-                swing {
-                    handleExportResult(project, exportResult, dialogResult)
-                }
+                handleExportResult(project, exportResult, dialogResult)
             }
         }
     }
@@ -96,15 +87,24 @@ class ExportApiAction : AnAction() {
             is ExportResult.Success -> {
                 val exporter = ApiExporterRegistry.getInstance(project)
                     .getExporter(dialogResult.format)
-                val handled = exporter?.handleExportResult(project, result) ?: false
+                val handled = try {
+                    exporter?.handleExportResult(project, result) ?: false
+                } catch (e: Exception) {
+                    LOG.warn("Failed to handle export result", e)
+                    false
+                }
                 if (!handled) {
-                    val message = "Successfully exported ${result.count} endpoints to ${result.target}"
-                    Messages.showInfoMessage(project, message, "Export Successful")
+                    swing {
+                        val message = "Successfully exported ${result.count} endpoints to ${result.target}"
+                        Messages.showInfoMessage(project, message, "Export Successful")
+                    }
                 }
             }
 
             is ExportResult.Error -> {
-                Messages.showErrorDialog(project, result.message, "Export Failed")
+                swing {
+                    Messages.showErrorDialog(project, result.message, "Export Failed")
+                }
             }
 
             is ExportResult.Cancelled -> {}

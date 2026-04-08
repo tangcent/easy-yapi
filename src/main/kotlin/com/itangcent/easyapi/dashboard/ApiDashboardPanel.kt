@@ -16,6 +16,7 @@ import com.intellij.util.ui.UIUtil
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.cache.ApiIndexManager
 import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporterRegistry
@@ -358,7 +359,9 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     private fun navigateToSource(endpoint: ApiEndpoint) {
         val method = endpoint.sourceMethod ?: return
         if (method.canNavigate()) {
-            method.navigate(true)
+            IdeDispatchers.readSync {
+                method.navigate(true)
+            }
         }
     }
 
@@ -419,9 +422,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
                     orchestrator.exportEndpoints(endpoints, exportFormat, outputConfig, indicator)
                 }
 
-                swing {
-                    handleExportResult(result, format)
-                }
+                handleExportResult(result, format)
             } catch (e: Exception) {
                 LOG.warn("Export failed", e)
                 swing {
@@ -448,7 +449,12 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
                 val exporterRegistry = ApiExporterRegistry.getInstance(project)
                 val exporter = format?.let { exporterRegistry.getExporter(it) }
 
-                val handled = exporter?.handleExportResult(project, result) ?: false
+                val handled = try {
+                    exporter?.handleExportResult(project, result) ?: false
+                } catch (e: Exception) {
+                    LOG.warn("Failed to handle export result", e)
+                    false
+                }
 
                 if (!handled) {
                     showExportSuccessNotification(result)

@@ -21,7 +21,6 @@ import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.exporter.postman.model.postmanGson
 import com.itangcent.easyapi.util.ide.ModuleHelper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -361,11 +360,13 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         val gson = postmanGson()
         val content = gson.toJson(metadata.collectionData)
 
-        withContext(Dispatchers.IO) {
+        withContext(IdeDispatchers.Background) {
             targetFile.writeText(content)
         }
 
-        showSuccessMessage(project, result, targetFile.absolutePath)
+        swing {
+            showSuccessMessage(project, result, targetFile.absolutePath)
+        }
         return true
     }
 

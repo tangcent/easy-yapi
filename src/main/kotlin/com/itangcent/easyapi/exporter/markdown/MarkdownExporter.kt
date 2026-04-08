@@ -6,14 +6,13 @@ import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
-import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.background
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.itangcent.easyapi.logging.IdeaLog
 import java.io.File
 
 /**
@@ -24,7 +23,7 @@ import java.io.File
  * structured documentation with tables for parameters and request/response bodies.
  */
 @Service(Service.Level.PROJECT)
-class MarkdownExporter(private val project: Project) : ApiExporter {
+class MarkdownExporter(private val project: Project) : ApiExporter, IdeaLog {
 
     /** The export format this exporter handles */
     override val format: ExportFormat = ExportFormat.MARKDOWN
@@ -70,11 +69,14 @@ class MarkdownExporter(private val project: Project) : ApiExporter {
 
         val targetFile = selectTargetFile(project) ?: return false
 
-        withContext(Dispatchers.IO) {
+        background {
             targetFile.writeText(metadata.content)
         }
+        LOG.info("Markdown exported to ${targetFile.absolutePath}")
 
-        showSuccessMessage(project, result, targetFile.absolutePath)
+        swing {
+            showSuccessMessage(project, result, targetFile.absolutePath)
+        }
         return true
     }
 

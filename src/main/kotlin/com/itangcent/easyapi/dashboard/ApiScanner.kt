@@ -94,16 +94,28 @@ class ApiScanner(private val project: Project) {
      * Use this when you have a specific set of classes to scan,
      * such as when exporting selected files from the project view.
      *
+     * If [indicator] is provided (e.g. from an outer [runWithProgress]),
+     * it is reused directly to avoid nested progress dialogs.
+     * Otherwise a new progress dialog is shown automatically.
+     *
      * @param classes The classes to scan
+     * @param indicator Optional progress indicator from the caller
      * @return Sequence of discovered API endpoints
      */
-    suspend fun scanClasses(classes: List<PsiClass>): Sequence<ApiEndpoint> {
-        LOG.debug("scanClasses called with ${classes.size} classes")
+    suspend fun scanClasses(
+        classes: List<PsiClass>,
+        indicator: ProgressIndicator? = null
+    ): Sequence<ApiEndpoint> {
+        LOG.info("scanClasses called with ${classes.size} classes")
         DumbModeHelper.waitForSmartMode(project)
 
         LOG.info("Starting API scan for selected classes...")
-        val endpoints = runWithProgress(project, "Scanning ${classes.size} classes...") { indicator ->
+        val endpoints = if (indicator != null) {
             exportClassesSequence(classes, indicator)
+        } else {
+            runWithProgress(project, "Scanning ${classes.size} classes...") { newIndicator ->
+                exportClassesSequence(classes, newIndicator)
+            }
         }
         return endpoints.asSequence()
     }
@@ -252,7 +264,7 @@ class ApiScanner(private val project: Project) {
         classes: List<PsiClass>,
         indicator: ProgressIndicator
     ): List<ApiEndpoint> {
-        LOG.debug("Building ActionContext for sequence scan...")
+        LOG.info("Building ActionContext for sequence scan...")
         val context = ActionContext.forProject(project)
 
         return try {
@@ -261,7 +273,7 @@ class ApiScanner(private val project: Project) {
                 LOG.warn("No exporters enabled")
                 return emptyList()
             }
-            LOG.debug("Enabled exporters: ${exporters.map { it::class.simpleName }}")
+            LOG.info("Enabled exporters: ${exporters.map { it::class.simpleName }}")
 
             indicator.isIndeterminate = false
             indicator.fraction = 0.0
@@ -290,16 +302,16 @@ class ApiScanner(private val project: Project) {
         psiClasses: List<PsiClass>,
         exporters: List<ClassExporter>,
         context: ActionContext,
-        indicator: ProgressIndicator
+        indicator: ProgressIndicator?
     ): List<ApiEndpoint> {
         val endpoints = mutableListOf<ApiEndpoint>()
         val total = psiClasses.size
 
         for ((index, psiClass) in psiClasses.withIndex()) {
-            indicator.checkCanceled()
+            indicator?.checkCanceled()
             val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
-            indicator.text = className
-            indicator.fraction = index.toDouble() / total
+            indicator?.text = className
+            indicator?.fraction = index.toDouble() / total
             LOG.info("search api from: $className")
 
             for (exporter in exporters) {

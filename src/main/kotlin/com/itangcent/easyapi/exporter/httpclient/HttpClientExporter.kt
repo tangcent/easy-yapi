@@ -60,7 +60,9 @@ class HttpClientExporter(private val project: Project) : ApiExporter {
             FileEditorManager.getInstance(project).openFile(scratchFile, true)
         }
 
-        showSuccessMessage(project, result, scratchFile.path)
+        swing {
+            showSuccessMessage(project, result, scratchFile.path)
+        }
         return true
     }
 
