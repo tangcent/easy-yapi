@@ -1,4 +1,4 @@
-# EasyAPI
+# EasyYapi
 
 [![CI](https://github.com/tangcent/easy-yapi/actions/workflows/ci.yml/badge.svg)](https://github.com/tangcent/easy-yapi/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/tangcent/easy-yapi/branch/master/graph/badge.svg?token=J6RUGI54XV)](https://codecov.io/gh/tangcent/easy-yapi)
@@ -7,7 +7,8 @@
 
 [English](README.md) | 中文
 
-> **注意：** 这是 EasyAPI 的 v3.0 重写版本。如需获取稳定版 v2.x 的源代码，请访问 [`stable/v2.x.x`](https://github.com/tangcent/easy-yapi/tree/stable/v2.x.x) 分支。
+> **注意：** 这是 EasyYapi 的 v3.0 重写版本。如需获取稳定版 v2.x 的源代码，请访问 [
+`stable/v2.x.x`](https://github.com/tangcent/easy-yapi/tree/stable/v2.x.x) 分支。
 
 ## 功能特性
 
@@ -33,7 +34,7 @@
 
 ### 运行应用
 
-- `./gradlew runIde` 将运行安装了 EasyAPI 的 IDEA 实例。
+- `./gradlew runIde` 将运行安装了 EasyYapi 的 IDEA 实例。
 - `./gradlew clean test` 将运行所有测试用例。
 
 ### 要求

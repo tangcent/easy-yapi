@@ -1,4 +1,4 @@
-# EasyAPI
+# EasyYapi
 
 [![CI](https://github.com/tangcent/easy-yapi/actions/workflows/ci.yml/badge.svg)](https://github.com/tangcent/easy-yapi/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/tangcent/easy-yapi/branch/master/graph/badge.svg?token=J6RUGI54XV)](https://codecov.io/gh/tangcent/easy-yapi)
@@ -9,19 +9,20 @@
 
 English | [中文](README_CN.md)
 
-> **Note:** This is the v3.0 rewrite of EasyAPI. For the source code of stable v2.x releases, see the [`stable/v2.x.x`](https://github.com/tangcent/easy-yapi/tree/stable/v2.x.x) branch.
+> **Note:** This is the v3.0 rewrite of EasyYapi. For the source code of stable v2.x releases, see the [
+`stable/v2.x.x`](https://github.com/tangcent/easy-yapi/tree/stable/v2.x.x) branch.
 
 ## Feature
 
 - [Export API Documents](https://easyyapi.com/documents/use.html)
 - [Send API requests](http://easyyapi.com/documents/call.html)
 
-|            | Support                                                                                                                                                                                                                                                                                   | Extended Support                  |
-|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
-| language   | java, kotlin                                                                                                                                                                                                                                                                              | scala                             |
-| web        | [spring](https://spring.io/), [feign](https://spring.io/projects/spring-cloud-openfeign), [jaxrs](https://www.oracle.com/technical-resources/articles/java/jax-rs.html) ([quarkus](https://quarkus.io/) or [jersey](https://eclipse-ee4j.github.io/jersey/))                              | -                                 |
-| channels   | [Postman](https://easyyapi.com/documents/export2postman.html), [Yapi](https://easyyapi.com/documents/export2yapi.html), [Markdown](https://easyyapi.com/documents/export2markdown.html) , [Curl](https://curl.se/) , [HttpClient](https://plugins.jetbrains.com/plugin/13121-http-client) | -                                 |
-| frameworks | javax.validation, Jackson, Gson, [swagger](https://swagger.io/)                                                                                                                                                                                                                           | -                                 |
+|            | Support                                                                                                                                                                                                                                                                                   | Extended Support |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| language   | java, kotlin                                                                                                                                                                                                                                                                              | scala            |
+| web        | [spring](https://spring.io/), [feign](https://spring.io/projects/spring-cloud-openfeign), [jaxrs](https://www.oracle.com/technical-resources/articles/java/jax-rs.html) ([quarkus](https://quarkus.io/) or [jersey](https://eclipse-ee4j.github.io/jersey/))                              | -                |
+| channels   | [Postman](https://easyyapi.com/documents/export2postman.html), [Yapi](https://easyyapi.com/documents/export2yapi.html), [Markdown](https://easyyapi.com/documents/export2markdown.html) , [Curl](https://curl.se/) , [HttpClient](https://plugins.jetbrains.com/plugin/13121-http-client) | -                |
+| frameworks | javax.validation, Jackson, Gson, [swagger](https://swagger.io/)                                                                                                                                                                                                                           | -                |
 
 ## Navigation
 
@@ -33,7 +34,7 @@ English | [中文](README_CN.md)
 
 ## Run application
 
-- `./gradlew runIde` will run an IDEA instance with the EasyAPI installed.
+- `./gradlew runIde` will run an IDEA instance with the EasyYapi installed.
 - `./gradlew clean test` will run all test cases.
 
 ## Requirements
