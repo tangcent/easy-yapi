@@ -37,7 +37,7 @@ import kotlin.reflect.KClass
  * // Access from within coroutine
  * suspend fun doWork() {
  *     val ctx = ActionContext.current()
- *     ctx.instance<CacheService>().getCachedData()
+ *     ctx.instance<ConfigReader>().getFirst("api.name")
  * }
  * ```
  *

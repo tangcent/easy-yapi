@@ -32,11 +32,6 @@ class TypeMatchParserTest {
     }
 
     @Test
-    fun testCanParse_excludesJs() {
-        assertFalse(parser.canParse("js:some.code"))
-    }
-
-    @Test
     fun testCanParse_excludesGroovy() {
         assertFalse(parser.canParse("groovy:some.code"))
     }

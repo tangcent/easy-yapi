@@ -38,7 +38,7 @@ import com.itangcent.easyapi.rule.context.RuleContext
  */
 class TypeMatchParser : RuleParser {
     override fun canParse(expression: String): Boolean {
-        return expression.contains(".") && !expression.startsWith("@") && !expression.startsWith("#") && !expression.startsWith("js:") && !expression.startsWith("groovy:")
+        return expression.contains(".") && !expression.startsWith("@") && !expression.startsWith("#") && !expression.startsWith("groovy:")
     }
 
     override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any? {

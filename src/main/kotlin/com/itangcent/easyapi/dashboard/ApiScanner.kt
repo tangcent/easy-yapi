@@ -23,7 +23,10 @@ import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.SettingBinder
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Scans the project for API endpoints from various frameworks.
@@ -66,6 +69,8 @@ class ApiScanner(private val project: Project) {
          * Gets the API scanner instance for the given project.
          */
         fun getInstance(project: Project): ApiScanner = project.service()
+
+        private val PER_CLASS_TIMEOUT_MS = 30_000L.milliseconds
     }
 
     private val apiClassRecognizer = CompositeApiClassRecognizer.getInstance(project)
@@ -316,11 +321,15 @@ class ApiScanner(private val project: Project) {
 
             for (exporter in exporters) {
                 try {
-                    val exported = exporter.export(psiClass)
+                    val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
+                        exporter.export(psiClass)
+                    }
                     if (exported.isNotEmpty()) {
                         LOG.debug("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
                         endpoints.addAll(exported)
                     }
+                } catch (e: TimeoutCancellationException) {
+                    context.console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS})")
                 } catch (e: Exception) {
                     context.console.warn("Error exporting class: $className", e)
                 }

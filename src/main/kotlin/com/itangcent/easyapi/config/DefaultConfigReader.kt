@@ -2,7 +2,6 @@ package com.itangcent.easyapi.config
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.cache.CacheService
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.resource.CachedResourceResolver
 import com.itangcent.easyapi.config.source.BuiltInConfigSource
@@ -16,6 +15,7 @@ import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.psi.DefaultContextSwitchListener
+import com.itangcent.easyapi.util.storage.LocalStorage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -26,7 +26,7 @@ class DefaultConfigReader(
 ) : ConfigReader {
     private val settingBinder = SettingBinder.getInstance(project)
     private val settings by lazy { settingBinder.read() }
-    private val cacheService = CacheService.getInstance(project)
+    private val localStorage = LocalStorage.getInstance(project)
     private val contextSwitchListener = DefaultContextSwitchListener.getInstance(project)
 
     companion object : IdeaLog {
@@ -36,7 +36,7 @@ class DefaultConfigReader(
 
     private val configTextParser by lazy { ConfigTextParser(settings) }
     private val console by lazy { IdeaConsoleProvider.getInstance(project).getConsole() }
-    private val cachedResourceResolver by lazy { CachedResourceResolver(cacheService, console) }
+    private val cachedResourceResolver by lazy { CachedResourceResolver(localStorage, console) }
 
     private val runtimeConfigSource by lazy { RuntimeConfigSource(project.basePath ?: "") }
     private val localFileConfigSource by lazy {

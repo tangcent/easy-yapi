@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.core.di
 
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.cache.CacheService
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.config.DefaultConfigReader
 import com.itangcent.easyapi.exporter.core.EmptyMethodFilter
@@ -129,7 +128,7 @@ interface OperationScope {
         /**
          * Adds standard SPI bindings for common services.
          *
-         * This includes SettingBinder, ConfigReader, CacheService, IdeaConsole,
+         * This includes SettingBinder, ConfigReader, IdeaConsole,
          * MethodFilter, AnnotationHelper, DocHelper, and RuleParser.
          *
          * @param settings Optional settings for filtering SPI implementations
@@ -146,10 +145,6 @@ interface OperationScope {
                     bindLazy(ConfigReader::class) {
                         DefaultConfigReader.getInstance(project)
                     }
-                }
-
-                if (!bindings.containsKey(CacheService::class)) {
-                    bindLazy(CacheService::class) { CacheService.getInstance(project) }
                 }
             }
 

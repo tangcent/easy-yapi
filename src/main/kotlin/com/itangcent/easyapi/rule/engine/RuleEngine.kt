@@ -4,23 +4,10 @@ import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.di.SpiCompositeLoader
-import com.itangcent.easyapi.rule.BooleanRuleMode
-import com.itangcent.easyapi.rule.EventRuleMode
 import com.itangcent.easyapi.rule.IntRuleMode
 import com.itangcent.easyapi.rule.RuleKey
-import com.itangcent.easyapi.rule.StringRuleMode
 import com.itangcent.easyapi.rule.context.RuleContext
-import com.itangcent.easyapi.rule.parser.AnnotationExpressionParser
-import com.itangcent.easyapi.rule.parser.ClassMatchParser
-import com.itangcent.easyapi.rule.parser.GroovyScriptParser
-import com.itangcent.easyapi.rule.parser.JavaScriptParser
-import com.itangcent.easyapi.rule.parser.LiteralParser
-import com.itangcent.easyapi.rule.parser.NegationParser
-import com.itangcent.easyapi.rule.parser.RegexParser
-import com.itangcent.easyapi.rule.parser.RuleEngineAware
-import com.itangcent.easyapi.rule.parser.RuleParser
-import com.itangcent.easyapi.rule.parser.TagExpressionParser
-import com.itangcent.easyapi.rule.parser.TypeMatchParser
+import com.itangcent.easyapi.rule.parser.*
 
 /**
  * Engine for evaluating configuration rules.
@@ -215,7 +202,6 @@ class RuleEngine(
         return (loaded + listOf(
             NegationParser(),
             GroovyScriptParser(),
-            JavaScriptParser(),
             RegexParser(),
             AnnotationExpressionParser(),
             TagExpressionParser(),

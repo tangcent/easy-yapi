@@ -50,6 +50,7 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
 
     private var lastScanTime = 0L
     private val minScanIntervalMs = 10000L
+    private val initialScanDelayMs = 5000L
 
     /**
      * Conflated channel for full scan requests — multiple requests coalesce into one.
@@ -61,15 +62,18 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
      */
     private val incrementalScanChannel = Channel<List<String>>(Channel.UNLIMITED)
 
-    fun start() {
+    fun start(triggerInitialScan: Boolean = true) {
         LOG.info("ApiIndexManager starting...")
 
-        // Launch the scan processor loops
         scope.launch { processFullScans() }
         scope.launch { processIncrementalScans() }
 
-        // Trigger initial full scan
-        fullScanChannel.trySend(Unit)
+        if (triggerInitialScan) {
+            scope.launch {
+                delay(initialScanDelayMs)
+                fullScanChannel.trySend(Unit)
+            }
+        }
     }
 
     fun stop() {

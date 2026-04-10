@@ -72,7 +72,7 @@ class ActionContextBuilder {
     /**
      * Adds standard SPI bindings to the operation scope.
      *
-     * This includes services like ConfigReader, CacheService, AnnotationHelper, etc.
+     * This includes services like ConfigReader, AnnotationHelper, etc.
      *
      * @param settings Optional settings for filtering SPI implementations
      * @return This builder for chaining

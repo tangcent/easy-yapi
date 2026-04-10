@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.rule.context
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiField
@@ -60,51 +61,51 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
 
     private fun psiClass(): PsiClass = context.element as PsiClass
 
-    open fun methods(): Array<ScriptPsiMethodContext> {
+    open fun methods(): Array<ScriptPsiMethodContext> = readAction {
         val cls = psiClass()
         val methods = cls.allMethods
-        return Array(methods.size) { i ->
+        Array(methods.size) { i ->
             ScriptPsiMethodInClassContext(context.withElement(methods[i]), cls)
         }
     }
 
-    fun methodCnt(): Int = psiClass().allMethods.size
+    fun methodCnt(): Int = readAction { psiClass().allMethods.size }
 
-    open fun fields(): Array<ScriptPsiFieldContext> {
+    open fun fields(): Array<ScriptPsiFieldContext> = readAction {
         val cls = psiClass()
         val fields = cls.allFields
-        return Array(fields.size) { i ->
+        Array(fields.size) { i ->
             ScriptPsiFieldInClassContext(context.withElement(fields[i]), cls)
         }
     }
 
-    fun fieldCnt(): Int = psiClass().allFields.size
+    fun fieldCnt(): Int = readAction { psiClass().allFields.size }
 
     fun type(): ScriptTypeContext {
         return ScriptTypeContext(context, ResolvedType.ClassType(psiClass()))
     }
 
-    fun isExtend(superClass: String): Boolean {
-        return InheritanceUtil.isInheritor(psiClass(), superClass)
+    fun isExtend(superClass: String): Boolean = readAction {
+        InheritanceUtil.isInheritor(psiClass(), superClass)
     }
 
-    fun isMap(): Boolean {
-        val fqn = psiClass().qualifiedName ?: return false
-        return fqn == "java.util.Map" || InheritanceUtil.isInheritor(psiClass(), "java.util.Map")
+    fun isMap(): Boolean = readAction {
+        val fqn = psiClass().qualifiedName ?: return@readAction false
+        fqn == "java.util.Map" || InheritanceUtil.isInheritor(psiClass(), "java.util.Map")
     }
 
-    fun isCollection(): Boolean {
-        val fqn = psiClass().qualifiedName ?: return false
-        return fqn == "java.util.Collection" || InheritanceUtil.isInheritor(psiClass(), "java.util.Collection")
+    fun isCollection(): Boolean = readAction {
+        val fqn = psiClass().qualifiedName ?: return@readAction false
+        fqn == "java.util.Collection" || InheritanceUtil.isInheritor(psiClass(), "java.util.Collection")
     }
 
     fun isArray(): Boolean = name().endsWith("[]")
 
-    fun isInterface(): Boolean = psiClass().isInterface
+    fun isInterface(): Boolean = readAction { psiClass().isInterface }
 
-    fun isAnnotationType(): Boolean = psiClass().isAnnotationType
+    fun isAnnotationType(): Boolean = readAction { psiClass().isAnnotationType }
 
-    fun isEnum(): Boolean = psiClass().isEnum
+    fun isEnum(): Boolean = readAction { psiClass().isEnum }
 
     fun isPrimitive(): Boolean = PRIMITIVE_NAMES.contains(name())
 
@@ -115,21 +116,21 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
         return isPrimitive() || isPrimitiveWrapper() || n == "java.lang.String" || n == "java.lang.Object"
     }
 
-    open fun superClass(): ScriptPsiClassContext? {
+    open fun superClass(): ScriptPsiClassContext? = readAction {
         val cls = psiClass()
-        if (cls.isInterface || cls.isAnnotationType || cls.isEnum) return null
-        extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let { return it }
-        return cls.superClass?.let { ScriptPsiClassContext(context.withElement(it)) }
+        if (cls.isInterface || cls.isAnnotationType || cls.isEnum) return@readAction null
+        extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let { return@readAction it }
+        cls.superClass?.let { ScriptPsiClassContext(context.withElement(it)) }
     }
 
-    open fun extends(): Array<ScriptPsiClassContext>? {
-        return psiClass().extendsList?.referencedTypes?.mapNotNull { ref ->
+    open fun extends(): Array<ScriptPsiClassContext>? = readAction {
+        psiClass().extendsList?.referencedTypes?.mapNotNull { ref ->
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
 
-    open fun implements(): Array<ScriptPsiClassContext>? {
-        return psiClass().implementsList?.referencedTypes?.mapNotNull { ref ->
+    open fun implements(): Array<ScriptPsiClassContext>? = readAction {
+        psiClass().implementsList?.referencedTypes?.mapNotNull { ref ->
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
@@ -147,40 +148,63 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
     }
 }
 
+/**
+ * Script context for [PsiMethod] elements.
+ *
+ * Provides method-specific operations for scripts:
+ * - Return type access
+ * - Parameter access
+ * - Containing class access
+ *
+ * ## Usage in Scripts
+ * ```
+ * // Get method name
+ * it.name()
+ *
+ * // Get return type
+ * it.returnType().name()
+ *
+ * // Get parameters
+ * it.args().each { p -> logger.info(p.name()) }
+ *
+ * // Get containing class
+ * it.containingClass().name()
+ * ```
+ */
 open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(context) {
 
     protected fun psiMethod(): PsiMethod = context.element as PsiMethod
 
-    open fun returnType(): ScriptTypeContext? {
-        val type = psiMethod().returnType ?: return null
-        return ScriptTypeContext(context, TypeResolver.resolve(type))
+    open fun returnType(): ScriptTypeContext? = readAction {
+        val type = psiMethod().returnType ?: return@readAction null
+        ScriptTypeContext(context, TypeResolver.resolve(type))
     }
 
     fun type(): ScriptTypeContext? = returnType()
 
-    fun isVarArgs(): Boolean = psiMethod().isVarArgs
+    fun isVarArgs(): Boolean = readAction { psiMethod().isVarArgs }
 
-    open fun args(): Array<ScriptPsiParameterContext> {
+    open fun args(): Array<ScriptPsiParameterContext> = readAction {
         val params = psiMethod().parameterList.parameters
-        return Array(params.size) { i -> ScriptPsiParameterContext(context.withElement(params[i])) }
+        Array(params.size) { i -> ScriptPsiParameterContext(context.withElement(params[i])) }
     }
 
     fun params(): Array<ScriptPsiParameterContext> = args()
 
     fun parameters(): Array<ScriptPsiParameterContext> = args()
 
-    open fun argTypes(): Array<ScriptTypeContext> {
+    open fun argTypes(): Array<ScriptTypeContext> = readAction {
         val params = psiMethod().parameterList.parameters
-        return Array(params.size) { i -> ScriptTypeContext(context, TypeResolver.resolve(params[i].type)) }
+        Array(params.size) { i -> ScriptTypeContext(context, TypeResolver.resolve(params[i].type)) }
     }
 
-    fun argCnt(): Int = psiMethod().parameterList.parametersCount
+    fun argCnt(): Int = readAction { psiMethod().parameterList.parametersCount }
 
     fun paramCnt(): Int = argCnt()
 
-    open fun containingClass(): ScriptPsiClassContext? {
-        val cls = psiMethod().containingClass ?: return null
-        return ScriptPsiClassContext(context.withElement(cls))
+    open fun containingClass(): ScriptPsiClassContext? = readAction {
+        val cls = psiMethod().containingClass ?: return@readAction null
+        ScriptPsiClassContext(context.withElement(cls))
     }
 
     open fun defineClass(): ScriptPsiClassContext? = containingClass()
@@ -237,21 +261,21 @@ open class ScriptPsiFieldContext(context: RuleContext) : ScriptItContext(context
 
     protected fun psiField(): PsiField = context.element as PsiField
 
-    open fun type(): ScriptTypeContext {
-        return ScriptTypeContext(context, TypeResolver.resolve(psiField().type))
+    open fun type(): ScriptTypeContext = readAction {
+        ScriptTypeContext(context, TypeResolver.resolve(psiField().type))
     }
 
-    open fun containingClass(): ScriptPsiClassContext? {
-        val cls = psiField().containingClass ?: return null
-        return ScriptPsiClassContext(context.withElement(cls))
+    open fun containingClass(): ScriptPsiClassContext? = readAction {
+        val cls = psiField().containingClass ?: return@readAction null
+        ScriptPsiClassContext(context.withElement(cls))
     }
 
     open fun defineClass(): ScriptPsiClassContext? = containingClass()
 
-    fun isEnumField(): Boolean = psiField() is PsiEnumConstant
+    fun isEnumField(): Boolean = readAction { psiField() is PsiEnumConstant }
 
-    fun asEnumField(): ScriptPsiEnumConstantContext? {
-        return (psiField() as? PsiEnumConstant)?.let { ScriptPsiEnumConstantContext(context, it) }
+    fun asEnumField(): ScriptPsiEnumConstantContext? = readAction {
+        (psiField() as? PsiEnumConstant)?.let { ScriptPsiEnumConstantContext(context, it) }
     }
 
     override fun contextType(): String = "field"
@@ -303,26 +327,26 @@ open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(con
 
     private fun psiParameter(): PsiParameter = context.element as PsiParameter
 
-    open fun type(): ScriptTypeContext {
-        return ScriptTypeContext(context, TypeResolver.resolve(psiParameter().type))
+    open fun type(): ScriptTypeContext = readAction {
+        ScriptTypeContext(context, TypeResolver.resolve(psiParameter().type))
     }
 
-    fun isVarArgs(): Boolean = psiParameter().isVarArgs
+    fun isVarArgs(): Boolean = readAction { psiParameter().isVarArgs }
 
     /**
      * Returns the method which declares this parameter. May be null.
      */
-    open fun method(): ScriptPsiMethodContext? {
+    open fun method(): ScriptPsiMethodContext? = readAction {
         val scope = psiParameter().declarationScope
-        return if (scope is PsiMethod) ScriptPsiMethodContext(context.withElement(scope)) else null
+        if (scope is PsiMethod) ScriptPsiMethodContext(context.withElement(scope)) else null
     }
 
     /**
      * Returns the element which declares this parameter.
      */
-    open fun declaration(): ScriptItContext? {
+    open fun declaration(): ScriptItContext? = readAction {
         val scope = psiParameter().declarationScope
-        return when (scope) {
+        when (scope) {
             is PsiMethod -> ScriptPsiMethodContext(context.withElement(scope))
             else -> ScriptItContext(context.withElement(scope))
         }
@@ -360,28 +384,41 @@ open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(con
  */
 class ScriptTypeContext(private val context: RuleContext, private val resolvedType: ResolvedType) {
 
-    fun name(): String = when (resolvedType) {
-        is ResolvedType.ClassType -> (resolvedType.psiClass.qualifiedName ?: resolvedType.psiClass.name ?: "Anonymous") +
-                resolvedType.typeArgs.takeIf { it.isNotEmpty() }?.joinToString(prefix = "<", postfix = ">") { ScriptTypeContext(context, it).name() }
-                    .orEmpty()
-        is ResolvedType.ArrayType -> ScriptTypeContext(context, resolvedType.componentType).name() + "[]"
-        is ResolvedType.UnresolvedType -> resolvedType.canonicalText
-        is ResolvedType.PrimitiveType -> resolvedType.kind.name.lowercase()
-        is ResolvedType.WildcardType -> when {
-            resolvedType.upper != null -> "? extends " + ScriptTypeContext(context, resolvedType.upper).name()
-            resolvedType.lower != null -> "? super " + ScriptTypeContext(context, resolvedType.lower).name()
-            else -> "?"
+    private fun <T> readAction(block: () -> T): T {
+        val app = ApplicationManager.getApplication()
+        return if (app.isReadAccessAllowed) {
+            block()
+        } else {
+            app.runReadAction<T>(block)
+        }
+    }
+
+    fun name(): String = readAction {
+        when (resolvedType) {
+            is ResolvedType.ClassType -> (resolvedType.psiClass.qualifiedName ?: resolvedType.psiClass.name ?: "Anonymous") +
+                    resolvedType.typeArgs.takeIf { it.isNotEmpty() }?.joinToString(prefix = "<", postfix = ">") { ScriptTypeContext(context, it).name() }
+                        .orEmpty()
+            is ResolvedType.ArrayType -> ScriptTypeContext(context, resolvedType.componentType).name() + "[]"
+            is ResolvedType.UnresolvedType -> resolvedType.canonicalText
+            is ResolvedType.PrimitiveType -> resolvedType.kind.name.lowercase()
+            is ResolvedType.WildcardType -> when {
+                resolvedType.upper != null -> "? extends " + ScriptTypeContext(context, resolvedType.upper).name()
+                resolvedType.lower != null -> "? super " + ScriptTypeContext(context, resolvedType.lower).name()
+                else -> "?"
+            }
         }
     }
 
     fun getName(): String = name()
 
-    fun simpleName(): String = when (resolvedType) {
-        is ResolvedType.ClassType -> resolvedType.psiClass.name ?: resolvedType.psiClass.qualifiedName ?: "Anonymous"
-        is ResolvedType.ArrayType -> ScriptTypeContext(context, resolvedType.componentType).simpleName() + "[]"
-        is ResolvedType.UnresolvedType -> resolvedType.canonicalText.substringAfterLast('.')
-        is ResolvedType.PrimitiveType -> resolvedType.kind.name.lowercase()
-        is ResolvedType.WildcardType -> "?"
+    fun simpleName(): String = readAction {
+        when (resolvedType) {
+            is ResolvedType.ClassType -> resolvedType.psiClass.name ?: resolvedType.psiClass.qualifiedName ?: "Anonymous"
+            is ResolvedType.ArrayType -> ScriptTypeContext(context, resolvedType.componentType).simpleName() + "[]"
+            is ResolvedType.UnresolvedType -> resolvedType.canonicalText.substringAfterLast('.')
+            is ResolvedType.PrimitiveType -> resolvedType.kind.name.lowercase()
+            is ResolvedType.WildcardType -> "?"
+        }
     }
 
     fun getSimpleName(): String = simpleName()
@@ -390,41 +427,41 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
 
     fun contextType(): String = "class"
 
-    fun methods(): Array<ScriptPsiMethodContext> {
-        val classType = resolvedType as? ResolvedType.ClassType ?: return emptyArray()
+    fun methods(): Array<ScriptPsiMethodContext> = readAction {
+        val classType = resolvedType as? ResolvedType.ClassType ?: return@readAction emptyArray()
         val methods = classType.methods()
-        return Array(methods.size) { i -> ScriptResolvedMethodContext(context, methods[i]) }
+        Array(methods.size) { i -> ScriptResolvedMethodContext(context, methods[i]) }
     }
 
-    fun fields(): Array<ScriptPsiFieldContext> {
-        val classType = resolvedType as? ResolvedType.ClassType ?: return emptyArray()
+    fun fields(): Array<ScriptPsiFieldContext> = readAction {
+        val classType = resolvedType as? ResolvedType.ClassType ?: return@readAction emptyArray()
         val fields = classType.fields()
-        return Array(fields.size) { i -> ScriptResolvedFieldContext(context, fields[i]) }
+        Array(fields.size) { i -> ScriptResolvedFieldContext(context, fields[i]) }
     }
 
     override fun toString(): String = name()
 
-    fun isExtend(superClass: String): Boolean {
-        return when (resolvedType) {
+    fun isExtend(superClass: String): Boolean = readAction {
+        when (resolvedType) {
             is ResolvedType.ClassType -> InheritanceUtil.isInheritor(resolvedType.psiClass, superClass)
             else -> false
         }
     }
 
-    fun isMap(): Boolean {
-        return when (resolvedType) {
+    fun isMap(): Boolean = readAction {
+        when (resolvedType) {
             is ResolvedType.ClassType -> {
-                val fqn = resolvedType.psiClass.qualifiedName ?: return false
+                val fqn = resolvedType.psiClass.qualifiedName ?: return@readAction false
                 fqn == "java.util.Map" || InheritanceUtil.isInheritor(resolvedType.psiClass, "java.util.Map")
             }
             else -> false
         }
     }
 
-    fun isCollection(): Boolean {
-        return when (resolvedType) {
+    fun isCollection(): Boolean = readAction {
+        when (resolvedType) {
             is ResolvedType.ClassType -> {
-                val fqn = resolvedType.psiClass.qualifiedName ?: return false
+                val fqn = resolvedType.psiClass.qualifiedName ?: return@readAction false
                 fqn == "java.util.Collection" || InheritanceUtil.isInheritor(resolvedType.psiClass, "java.util.Collection")
             }
             is ResolvedType.ArrayType -> true
@@ -468,45 +505,45 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
         }
     }
 
-    fun isInterface(): Boolean {
-        return when (resolvedType) {
+    fun isInterface(): Boolean = readAction {
+        when (resolvedType) {
             is ResolvedType.ClassType -> resolvedType.psiClass.isInterface
             else -> false
         }
     }
 
-    fun isAnnotationType(): Boolean {
-        return when (resolvedType) {
+    fun isAnnotationType(): Boolean = readAction {
+        when (resolvedType) {
             is ResolvedType.ClassType -> resolvedType.psiClass.isAnnotationType
             else -> false
         }
     }
 
-    fun isEnum(): Boolean {
-        return when (resolvedType) {
+    fun isEnum(): Boolean = readAction {
+        when (resolvedType) {
             is ResolvedType.ClassType -> resolvedType.psiClass.isEnum
             else -> false
         }
     }
 
-    fun superClass(): ScriptPsiClassContext? {
-        val classType = resolvedType as? ResolvedType.ClassType ?: return null
+    fun superClass(): ScriptPsiClassContext? = readAction {
+        val classType = resolvedType as? ResolvedType.ClassType ?: return@readAction null
         val cls = classType.psiClass
-        if (cls.isInterface || cls.isAnnotationType || cls.isEnum) return null
-        extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let { return it }
-        return cls.superClass?.let { ScriptPsiClassContext(context.withElement(it)) }
+        if (cls.isInterface || cls.isAnnotationType || cls.isEnum) return@readAction null
+        extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let { return@readAction it }
+        cls.superClass?.let { ScriptPsiClassContext(context.withElement(it)) }
     }
 
-    fun extends(): Array<ScriptPsiClassContext>? {
-        val classType = resolvedType as? ResolvedType.ClassType ?: return null
-        return classType.psiClass.extendsList?.referencedTypes?.mapNotNull { ref ->
+    fun extends(): Array<ScriptPsiClassContext>? = readAction {
+        val classType = resolvedType as? ResolvedType.ClassType ?: return@readAction null
+        classType.psiClass.extendsList?.referencedTypes?.mapNotNull { ref ->
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
 
-    fun implements(): Array<ScriptPsiClassContext>? {
-        val classType = resolvedType as? ResolvedType.ClassType ?: return null
-        return classType.psiClass.implementsList?.referencedTypes?.mapNotNull { ref ->
+    fun implements(): Array<ScriptPsiClassContext>? = readAction {
+        val classType = resolvedType as? ResolvedType.ClassType ?: return@readAction null
+        classType.psiClass.implementsList?.referencedTypes?.mapNotNull { ref ->
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
@@ -567,20 +604,28 @@ class ScriptResolvedParameterContext(context: RuleContext, private val resolvedP
  */
 class ScriptPsiEnumConstantContext(private val context: RuleContext, private val psiEnumConstant: PsiEnumConstant) {
 
-    fun name(): String = psiEnumConstant.name
-
-    fun ordinal(): Int {
-        return psiEnumConstant.containingClass?.fields?.indexOf(psiEnumConstant) ?: 0
+    private fun <T> readAction(block: () -> T): T {
+        val app = ApplicationManager.getApplication()
+        return if (app.isReadAccessAllowed) {
+            block()
+        } else {
+            app.runReadAction<T>(block)
+        }
     }
 
-    fun getParams(): Map<String, Any?> {
-        // Simplified: return constructor argument expressions as a map
-        val args = psiEnumConstant.argumentList?.expressions ?: return emptyMap()
+    fun name(): String = readAction { psiEnumConstant.name }
+
+    fun ordinal(): Int = readAction {
+        psiEnumConstant.containingClass?.fields?.indexOf(psiEnumConstant) ?: 0
+    }
+
+    fun getParams(): Map<String, Any?> = readAction {
+        val args = psiEnumConstant.argumentList?.expressions ?: return@readAction emptyMap()
         val result = LinkedHashMap<String, Any?>()
         args.forEachIndexed { index, expr ->
             result["arg$index"] = expr.text
         }
-        return result
+        result
     }
 
     fun getParam(name: String): Any? = getParams()[name]

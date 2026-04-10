@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.rule.context
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
@@ -47,10 +48,19 @@ open class ScriptItContext(protected val context: RuleContext) {
     private val docHelper = context.element?.let { BlockingDocHelper(context.docHelper) }
     private val annotationHelper = context.element?.let { BlockingAnnotationHelper(context.annotationHelper) }
 
+    protected fun <T> readAction(block: () -> T): T {
+        val app = ApplicationManager.getApplication()
+        return if (app.isReadAccessAllowed) {
+            block()
+        } else {
+            app.runReadAction<T>(block)
+        }
+    }
+
     fun psi(): PsiElement? = context.element
 
-    fun getName(): String? {
-        return (context.element as? PsiNamedElement)?.name
+    fun getName(): String? = readAction {
+        (context.element as? PsiNamedElement)?.name
     }
 
     fun name(): String = getName() ?: ""
@@ -81,13 +91,13 @@ open class ScriptItContext(protected val context: RuleContext) {
         return null
     }
 
-    fun hasModifier(modifier: String): Boolean {
-        val owner = context.element as? PsiModifierListOwner ?: return false
-        return owner.hasModifierProperty(modifier)
+    fun hasModifier(modifier: String): Boolean = readAction {
+        val owner = context.element as? PsiModifierListOwner ?: return@readAction false
+        owner.hasModifierProperty(modifier)
     }
 
-    fun modifiers(): List<String> {
-        val owner = context.element as? PsiModifierListOwner ?: return emptyList()
+    fun modifiers(): List<String> = readAction {
+        val owner = context.element as? PsiModifierListOwner ?: return@readAction emptyList()
         val candidates = listOf(
             PsiModifier.PUBLIC,
             PsiModifier.PROTECTED,
@@ -101,7 +111,7 @@ open class ScriptItContext(protected val context: RuleContext) {
             PsiModifier.TRANSIENT,
             PsiModifier.VOLATILE,
         )
-        return candidates.filter { owner.hasModifierProperty(it) }
+        candidates.filter { owner.hasModifierProperty(it) }
     }
 
     fun hasAnn(name: String): Boolean {
@@ -133,7 +143,7 @@ open class ScriptItContext(protected val context: RuleContext) {
         return annotationHelper?.findAnnMaps(el, name)
     }
 
-    open fun sourceCode(): String? = context.element?.text
+    open fun sourceCode(): String? = readAction { context.element?.text }
 
     open fun defineCode(): String? {
         val code = sourceCode()?.trim() ?: return null

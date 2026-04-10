@@ -3,7 +3,6 @@ package com.itangcent.easyapi.rule.parser
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.project
-import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
@@ -18,18 +17,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import javax.script.Bindings
 import javax.script.ScriptContext
-import javax.script.ScriptEngine
-import javax.script.ScriptEngineManager
 
 /**
  * Base class for JSR-223 script-based rule parsers.
  *
  * Provides script execution capabilities for rule evaluation using
- * the javax.script API. Supports multiple scripting languages through
- * JSR-223 compatible engines.
+ * the javax.script API. Supports Groovy through JSR-223 compatible engines.
  *
  * ## Supported Languages
- * - **JavaScript** (`js:` prefix) - Uses JavaScript engine
  * - **Groovy** (`groovy:` prefix) - Uses Groovy engine
  *
  * ## Script Context
@@ -47,49 +42,39 @@ import javax.script.ScriptEngineManager
  *
  * ## Usage
  * ```
- * # JavaScript example
- * js: it.name().startsWith("get") ? "getter" : "other"
- *
  * # Groovy example
  * groovy: it.ann("org.springframework.web.bind.annotation.RequestMapping")?.path()
  * ```
  *
- * @param prefix The expression prefix (e.g., "js:", "groovy:")
+ * @param prefix The expression prefix (e.g., "groovy:")
  * @param engineName The JSR-223 engine name
  * @see RuleParser for the interface
  */
 abstract class Jsr223ScriptParser(
     private val prefix: String,
-    private val engineName: String
+    engineName: String
 ) : RuleParser {
+
+    private val enginePool = EnginePool(engineName)
 
     override fun canParse(expression: String): Boolean = expression.startsWith(prefix)
 
     override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any? {
         val script = expression.removePrefix(prefix)
         if (script.isBlank()) return null
-        LOG.debug("Jsr223ScriptParser: Starting to parse script (engine=$engineName, script length=${script.length})")
+        LOG.debug("Jsr223ScriptParser: Starting to parse script (engine=${enginePool.engineName}, script length=${script.length})")
         return withContext(Dispatchers.IO) {
             LOG.debug("Jsr223ScriptParser: Running on Dispatchers.IO thread=${Thread.currentThread().name}")
-            val engine = createEngine()
-            if (engine == null) {
-                LOG.warn("Jsr223ScriptParser: Failed to create script engine for $engineName")
-                return@withContext null
-            }
-            val bindings = engine.createBindings()
-            bind(bindings, context)
-            engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE)
-            LOG.debug("Jsr223ScriptParser: Executing script under ReadAction...")
-            read {
-                engine.eval(script)
-            }.also { result ->
-                LOG.debug("Jsr223ScriptParser: Script execution completed, result type=${result?.javaClass?.simpleName}")
+            enginePool.withEngine { engine ->
+                val bindings = engine.createBindings()
+                bind(bindings, context)
+                engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE)
+                LOG.debug("Jsr223ScriptParser: Executing script...")
+                engine.eval(script).also { result ->
+                    LOG.debug("Jsr223ScriptParser: Script execution completed, result type=${result?.javaClass?.simpleName}")
+                }
             }
         }
-    }
-
-    private fun createEngine(): ScriptEngine? {
-        return runCatching { ScriptEngineManager().getEngineByName(engineName) }.getOrNull()
     }
 
     private fun bind(bindings: Bindings, context: RuleContext) {
@@ -189,57 +174,39 @@ class ScriptHelper(private val context: RuleContext) {
         return com.itangcent.easyapi.rule.context.ScriptPsiClassContext(context.withElement(psiClass))
     }
 
-    fun resolveLink(canonicalText: String): Any? {
-        val element = context.element ?: return null
-        val resolver = linkResolver ?: return null
-        val resolved = resolver.resolveLink(canonicalText, element) ?: return null
-        return when (resolved) {
+    fun resolveLink(canonicalText: String): Any? = readSync {
+        val element = context.element ?: return@readSync null
+        val resolver = linkResolver ?: return@readSync null
+        val resolved = resolver.resolveLink(canonicalText, element) ?: return@readSync null
+        when (resolved) {
             is com.intellij.psi.PsiClass -> com.itangcent.easyapi.rule.context.ScriptPsiClassContext(
-                context.withElement(
-                    resolved
-                )
+                context.withElement(resolved)
             )
-
             is com.intellij.psi.PsiMethod -> com.itangcent.easyapi.rule.context.ScriptPsiMethodContext(
-                context.withElement(
-                    resolved
-                )
+                context.withElement(resolved)
             )
-
             is com.intellij.psi.PsiField -> com.itangcent.easyapi.rule.context.ScriptPsiFieldContext(
-                context.withElement(
-                    resolved
-                )
+                context.withElement(resolved)
             )
-
             else -> null
         }
     }
 
-    fun resolveLinks(canonicalText: String): List<Any> {
-        val element = context.element ?: return emptyList()
-        val resolver = linkResolver ?: return emptyList()
+    fun resolveLinks(canonicalText: String): List<Any> = readSync {
+        val element = context.element ?: return@readSync emptyList()
+        val resolver = linkResolver ?: return@readSync emptyList()
         val resolved = resolver.resolveAllLinks(canonicalText, element)
-        return resolved.mapNotNull { target ->
+        resolved.mapNotNull { target ->
             when (target) {
                 is com.intellij.psi.PsiClass -> com.itangcent.easyapi.rule.context.ScriptPsiClassContext(
-                    context.withElement(
-                        target
-                    )
+                    context.withElement(target)
                 )
-
                 is com.intellij.psi.PsiMethod -> com.itangcent.easyapi.rule.context.ScriptPsiMethodContext(
-                    context.withElement(
-                        target
-                    )
+                    context.withElement(target)
                 )
-
                 is com.intellij.psi.PsiField -> com.itangcent.easyapi.rule.context.ScriptPsiFieldContext(
-                    context.withElement(
-                        target
-                    )
+                    context.withElement(target)
                 )
-
                 else -> null
             }
         }
@@ -296,8 +263,8 @@ class ScriptRuntime(private val context: RuleContext) {
         }
     }
 
-    fun filePath(): String? {
-        return context.element?.containingFile?.virtualFile?.path
+    fun filePath(): String? = readSync {
+        context.element?.containingFile?.virtualFile?.path
     }
 
     fun getBean(className: String): Any? {
@@ -319,17 +286,14 @@ class ScriptRuntime(private val context: RuleContext) {
     }
 }
 
-class GroovyScriptParser : Jsr223ScriptParser(prefix = "groovy:", engineName = "groovy")
-
 /**
- * JavaScript-based rule parser using the JSR-223 JavaScript engine.
+ * Groovy-based rule parser using the JSR-223 Groovy engine.
  *
- * Parses expressions prefixed with `js:`.
+ * Parses expressions prefixed with `groovy:`.
  *
  * ## Example
  * ```
- * js: it.name().toUpperCase()
- * js: it.methods().filter(m => m.name().startsWith('get'))
+ * groovy: it.ann("org.springframework.web.bind.annotation.RequestMapping")?.path()
  * ```
  */
-class JavaScriptParser : Jsr223ScriptParser(prefix = "js:", engineName = "JavaScript")
+class GroovyScriptParser : Jsr223ScriptParser(prefix = "groovy:", engineName = "groovy")

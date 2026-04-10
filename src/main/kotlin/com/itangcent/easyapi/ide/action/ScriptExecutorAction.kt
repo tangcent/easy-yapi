@@ -11,7 +11,7 @@ import com.itangcent.easyapi.ide.script.ScriptExecutorDialog
 /**
  * Action to execute scripts against the selected PSI element.
  *
- * Opens a [ScriptExecutorDialog] allowing users to test Groovy or JavaScript
+ * Opens a [ScriptExecutorDialog] allowing users to test Groovy
  * expressions in the context of the currently selected element.
  *
  * @see ScriptExecutorDialog for the dialog implementation
