@@ -61,7 +61,7 @@ class MultiFrameworkExportTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testExportFeignClient() = runTest {
-        val psiClass = findClass("com.itangcent.feign.UserClient")
+        val psiClass = findClass("com.itangcent.springboot.demo.client.UserClient")
         assertNotNull(psiClass)
 
         val endpoints = feignExporter.export(psiClass!!)

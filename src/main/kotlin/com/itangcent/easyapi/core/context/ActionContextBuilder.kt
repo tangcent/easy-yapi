@@ -1,18 +1,14 @@
 package com.itangcent.easyapi.core.context
 
 import com.itangcent.easyapi.core.di.OperationScope
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.settings.Settings
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlin.reflect.KClass
 
 /**
  * Builder for constructing [ActionContext] instances.
  *
  * Provides a fluent API for configuring and creating ActionContext instances
- * with custom bindings, dispatchers, and lifecycle settings.
+ * with custom bindings.
  *
  * ## Usage
  * ```kotlin
@@ -20,7 +16,6 @@ import kotlin.reflect.KClass
  *     .bind(project)
  *     .bind(myService)
  *     .withSpiBindings(settings)
- *     .dispatcher(IdeDispatchers.Background)
  *     .build()
  * ```
  *
@@ -29,8 +24,6 @@ import kotlin.reflect.KClass
  */
 class ActionContextBuilder {
     private val scopeBuilder = OperationScope.builder()
-    private var parentJob: Job? = null
-    private var dispatcher: CoroutineDispatcher = IdeDispatchers.Background
 
     /**
      * Binds an instance to its own type in the operation scope.
@@ -82,26 +75,6 @@ class ActionContextBuilder {
     }
 
     /**
-     * Sets a custom parent job for the context's coroutine scope.
-     *
-     * @param job The parent job
-     * @return This builder for chaining
-     */
-    fun parentJob(job: Job): ActionContextBuilder = apply {
-        parentJob = job
-    }
-
-    /**
-     * Sets a custom dispatcher for the context's coroutine scope.
-     *
-     * @param dispatcher The coroutine dispatcher
-     * @return This builder for chaining
-     */
-    fun dispatcher(dispatcher: CoroutineDispatcher): ActionContextBuilder = apply {
-        this.dispatcher = dispatcher
-    }
-
-    /**
      * Builds and returns a new ActionContext instance.
      *
      * @return A new ActionContext configured with the builder's settings
@@ -112,7 +85,6 @@ class ActionContextBuilder {
             context ?: error("ActionContext not yet initialized")
         }
         val operationScope = scopeBuilder.build()
-        return ActionContext(operationScope, parentJob ?: SupervisorJob(), dispatcher)
-            .also { context = it }
+        return ActionContext(operationScope).also { context = it }
     }
 }

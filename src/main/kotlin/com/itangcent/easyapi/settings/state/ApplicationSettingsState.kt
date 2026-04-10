@@ -32,6 +32,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var jaxrsEnable: Boolean = true,
         override var actuatorEnable: Boolean = false,
         override var grpcEnable: Boolean = true,
+        override var swaggerEnable: Boolean = true,
+        override var swagger3Enable: Boolean = true,
         override var postmanToken: String? = null,
         override var wrapCollection: Boolean = false,
         override var autoMergeScript: Boolean = false,
@@ -73,6 +75,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (jaxrsEnable != other.jaxrsEnable) return false
             if (actuatorEnable != other.actuatorEnable) return false
             if (grpcEnable != other.grpcEnable) return false
+            if (swaggerEnable != other.swaggerEnable) return false
+            if (swagger3Enable != other.swagger3Enable) return false
             if (wrapCollection != other.wrapCollection) return false
             if (autoMergeScript != other.autoMergeScript) return false
             if (queryExpanded != other.queryExpanded) return false
@@ -112,6 +116,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + jaxrsEnable.hashCode()
             result = 31 * result + actuatorEnable.hashCode()
             result = 31 * result + grpcEnable.hashCode()
+            result = 31 * result + swaggerEnable.hashCode()
+            result = 31 * result + swagger3Enable.hashCode()
             result = 31 * result + wrapCollection.hashCode()
             result = 31 * result + autoMergeScript.hashCode()
             result = 31 * result + queryExpanded.hashCode()

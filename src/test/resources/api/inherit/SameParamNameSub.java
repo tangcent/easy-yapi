@@ -1,5 +1,6 @@
 package com.itangcent.api.inherit;
 
+import com.itangcent.api.inherit.SameParamNameBase;
 import com.itangcent.model.Result;
 import com.itangcent.model.UserInfo;
 import org.springframework.web.bind.annotation.RestController;

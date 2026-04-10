@@ -2,13 +2,12 @@ package com.itangcent.easyapi.exporter.feign
 
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
-import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.psi.type.searchAnnotation
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
 class FeignAnnotationInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
-
-    private lateinit var annotationHelper: UnifiedAnnotationHelper
 
     override fun setUp() {
         super.setUp()
@@ -24,7 +23,6 @@ class FeignAnnotationInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() 
         loadFile("model/UserInfo.java")
         loadFile("api/feign/BaseUserApi.java")
         loadFile("api/feign/UserFeignClient.java")
-        annotationHelper = UnifiedAnnotationHelper()
     }
 
     override fun createConfigReader() = TestConfigReader.EMPTY
@@ -35,11 +33,14 @@ class FeignAnnotationInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() 
 
     fun testOverrideMethodInheritsGetMappingFromSuperInterface() = runTest {
         val psiClass = findClass("com.itangcent.api.feign.UserFeignClient")!!
-        val getUserById = psiClass.findMethodsByName("getUserById", false).first()
+        val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val getUserById = classType.methods().first { it.name == "getUserById" }
 
-        assertTrue(
-            "Override without @GetMapping should inherit it from BaseUserApi",
-            annotationHelper.hasAnn(getUserById, "org.springframework.web.bind.annotation.GetMapping")
+        // searchAnnotation walks super methods — the correct way to check inherited annotations
+        val ann = getUserById.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")
+        assertNotNull(
+            "Override without @GetMapping should inherit it from BaseUserApi via searchAnnotation",
+            ann
         )
     }
 

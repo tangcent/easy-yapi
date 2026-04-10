@@ -1,30 +1,43 @@
 package com.itangcent.easyapi.exporter.springmvc
 
 import com.intellij.psi.PsiClass
+import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.rule.RuleKeys
+import com.itangcent.easyapi.rule.engine.RuleEngine
 
-/**
- * ClassExporter adapter for Spring Boot Actuator endpoints.
- *
- * Exports API endpoints from classes annotated with Spring Boot Actuator
- * annotations like @Endpoint, @WebEndpoint, @ControllerEndpoint, etc.
- *
- * @see ActuatorEndpointScanner for the scanning logic
- * @see ActuatorEndpointRecognizer for endpoint detection
- */
-class ActuatorEndpointExporter : ClassExporter {
+class ActuatorEndpointExporter(
+    private val actionContext: ActionContext
+) : ClassExporter {
 
     private val scanner = ActuatorEndpointScanner()
     private val recognizer = ActuatorEndpointRecognizer()
+    private val engine = RuleEngine.getInstance(actionContext)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isApiClass(psiClass)) return emptyList()
 
         val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
         LOG.info("before parse actuator endpoint:$className")
-        val endpoints = scanner.scan(psiClass)
+
+        engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
+
+        val endpoints: List<ApiEndpoint>
+        try {
+            endpoints = scanner.scan(psiClass)
+
+            for (endpoint in endpoints) {
+                val method = endpoint.sourceMethod ?: continue
+                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                    ctx.setExt("api", endpoint)
+                }
+            }
+        } finally {
+            engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
+        }
+
         LOG.info("after parse actuator endpoint:$className, found ${endpoints.size} endpoints")
         return endpoints
     }

@@ -10,9 +10,7 @@ import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.testFramework.TestConfigReader
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -29,16 +27,13 @@ class PostmanApiClientTest {
         val context = ActionContext.builder()
             .bind(ConfigReader::class, TestConfigReader.EMPTY)
             .withSpiBindings()
-            .dispatcher(Dispatchers.Unconfined)
             .build()
-        return withContext(context.coroutineContext) {
-            val formatter = PostmanFormatter(
-                actionContext = context,
-                options = PostmanFormatOptions(appendTimestamp = false)
-            )
-            val endpoints = listOf(createTestEndpoint())
-            formatter.format(endpoints, "Test Collection")
-        }
+        val formatter = PostmanFormatter(
+            actionContext = context,
+            options = PostmanFormatOptions(appendTimestamp = false)
+        )
+        val endpoints = listOf(createTestEndpoint())
+        return formatter.format(endpoints, "Test Collection")
     }
 
     private fun createTestEndpoint(): ApiEndpoint {

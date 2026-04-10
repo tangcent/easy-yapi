@@ -49,7 +49,8 @@ class ApiIndexTest : EasyApiLightCodeInsightFixtureTestCase() {
             
             apiIndex.invalidate()
             assertFalse(apiIndex.isValid())
-            assertTrue(apiIndex.endpoints().isEmpty())
+            // Per design: invalidate() does NOT reset cacheReady — it remains completed
+            assertTrue(apiIndex.isReady())
         }
     }
 

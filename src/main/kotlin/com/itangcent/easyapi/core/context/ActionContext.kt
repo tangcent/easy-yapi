@@ -2,7 +2,6 @@ package com.itangcent.easyapi.core.context
 
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.di.OperationScope
-import com.itangcent.easyapi.core.di.OperationScopeElement
 import com.itangcent.easyapi.core.di.get
 import com.itangcent.easyapi.core.event.CoroutineEventBus
 import com.itangcent.easyapi.core.event.EventKeys
@@ -10,15 +9,14 @@ import com.itangcent.easyapi.logging.IdeaConsole
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
-import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
 
 /**
- * The central context for executing API-related operations in the EasyAPI plugin.
+ * The central context for API-related operations in the EasyAPI plugin.
  *
- * ActionContext combines [CoroutineScope] with [OperationScope] to provide:
- * - Structured concurrency for async operations
+ * ActionContext provides:
  * - Dependency injection via OperationScope
  * - Event bus for inter-component communication
  * - Lifecycle management with automatic cleanup
@@ -28,17 +26,8 @@ import kotlin.reflect.KClass
  * // Create context for a project
  * val context = ActionContext.forProject(project)
  *
- * // Run async operations
- * context.runAsync {
- *     val settings = instance<Settings>()
- *     // ... do work
- * }
- *
- * // Access from within coroutine
- * suspend fun doWork() {
- *     val ctx = ActionContext.current()
- *     ctx.instance<ConfigReader>().getFirst("api.name")
- * }
+ * // Access services
+ * val settings = context.instance<Settings>()
  * ```
  *
  * @see OperationScope for dependency injection
@@ -47,30 +36,17 @@ import kotlin.reflect.KClass
 class ActionContext internal constructor(
     @PublishedApi
     internal val operationScope: OperationScope,
-    private val parentJob: Job,
-    dispatcher: CoroutineDispatcher
-) : CoroutineScope {
+) {
 
-    override val coroutineContext: CoroutineContext =
-        parentJob + dispatcher +
-                ActionContextElement(this) +
-                OperationScopeElement(operationScope) +
-                CoroutineName("ActionContext")
+    @Volatile
+    private var stopped = false
 
     /**
      * The console instance for logging output.
      */
-    val console: IdeaConsole get() = operationScope.get(IdeaConsole::class)
+    val console: IdeaConsole by lazy { operationScope.get(IdeaConsole::class) }
 
     private val eventBus by lazy { CoroutineEventBus(console = console) }
-
-    /**
-     * Launches an asynchronous coroutine within this context.
-     *
-     * @param block The suspend function to execute
-     * @return The Job representing the launched coroutine
-     */
-    fun runAsync(block: suspend CoroutineScope.() -> Unit): Job = launch { block() }
 
     /**
      * Registers an event handler for the specified event key.
@@ -83,13 +59,14 @@ class ActionContext internal constructor(
     }
 
     /**
-     * Stops this context and cancels all running coroutines.
+     * Stops this context and fires cleanup events.
      *
-     * Fires the [EventKeys.ON_COMPLETED] event before cancellation.
+     * Fires the [EventKeys.ON_COMPLETED] event for AutoClear handlers.
      */
-    suspend fun stop() {
-        parentJob.cancel(CancellationException("ActionContext stopped"))
-        eventBus.fire(EventKeys.ON_COMPLETED, this)
+    fun stop() {
+        if (stopped) return
+        stopped = true
+        runBlocking { eventBus.fire(EventKeys.ON_COMPLETED, this@ActionContext) }
     }
 
     /**
@@ -97,7 +74,7 @@ class ActionContext internal constructor(
      *
      * @return true if the context is no longer active
      */
-    fun isStopped(): Boolean = !parentJob.isActive
+    fun isStopped(): Boolean = stopped
 
     /**
      * Throws [CancellationException] if this context has been stopped.
@@ -105,7 +82,7 @@ class ActionContext internal constructor(
      * @throws CancellationException if the context was stopped
      */
     fun checkStatus() {
-        if (isStopped()) throw CancellationException("ActionContext was stopped")
+        if (stopped) throw CancellationException("ActionContext was stopped")
     }
 
     /**
@@ -171,33 +148,11 @@ class ActionContext internal constructor(
             project: Project,
             settings: Settings? = null
         ): ActionContext {
-            val settingBinder = SettingBinder.getInstance(project)
-            val actualSettings = settings ?: settingBinder.read()
+            val actualSettings = settings ?: SettingBinder.getInstance(project).read()
             return builder()
                 .bind(Project::class, project)
-                .bind(SettingBinder::class, settingBinder)
                 .withSpiBindings(actualSettings)
                 .build()
-        }
-
-        /**
-         * Retrieves the current ActionContext from the coroutine context.
-         *
-         * @return The current ActionContext
-         * @throws IllegalStateException if no ActionContext is present
-         */
-        suspend fun current(): ActionContext {
-            return currentCoroutineContext()[ActionContextElement]?.context
-                ?: error("No ActionContext in current coroutine context")
-        }
-
-        /**
-         * Retrieves the current ActionContext from the coroutine context, or null if not present.
-         *
-         * @return The current ActionContext, or null if not present
-         */
-        suspend fun currentOrNull(): ActionContext? {
-            return currentCoroutineContext()[ActionContextElement]?.context
         }
     }
 }
@@ -225,6 +180,6 @@ fun ActionContext.projectOrNull(): Project? = instanceOrNull()
  */
 fun ActionContext.registerAutoClear(autoClear: AutoClear) {
     on(EventKeys.ON_COMPLETED) {
-        runCatching { autoClear.cleanup() }.onFailure { e -> console?.warn("AutoClear failed", e) }
+        runCatching { autoClear.cleanup() }.onFailure { e -> console.warn("AutoClear failed", e) }
     }
 }

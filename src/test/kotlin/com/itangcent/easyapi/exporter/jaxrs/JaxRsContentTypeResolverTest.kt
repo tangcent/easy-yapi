@@ -31,7 +31,7 @@ class JaxRsContentTypeResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.jaxrs.UserResource")
         assertNotNull(psiClass)
 
-        val method = findMethod(psiClass!!, "getUser")
+        val method = findMethod(psiClass!!, "get")
         assertNotNull(method)
 
         val contentTypes = resolver.resolve(psiClass, method!!)
@@ -42,7 +42,7 @@ class JaxRsContentTypeResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.jaxrs.UserResource")
         assertNotNull(psiClass)
 
-        val method = findMethod(psiClass!!, "createUser")
+        val method = findMethod(psiClass!!, "add")
         assertNotNull(method)
 
         val contentTypes = resolver.resolve(psiClass, method!!)

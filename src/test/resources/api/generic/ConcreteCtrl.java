@@ -1,5 +1,6 @@
 package com.itangcent.api.generic;
 
+import com.itangcent.api.generic.MiddleCtrl;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 

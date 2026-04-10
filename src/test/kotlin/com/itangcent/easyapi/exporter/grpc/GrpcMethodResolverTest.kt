@@ -343,8 +343,9 @@ class GrpcMethodResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         val echoMethod = methods.find { it.methodName == "Echo" }
 
         assertNotNull("Should find Echo method", echoMethod)
-        assertEquals("Full path should be correct", 
-            "/com.itangcent.easyapi.grpc.test.EchoService/Echo", echoMethod!!.fullPath)
+        // SERVICE_NAME in the generated proto is "test.grpc.EchoService" (from proto package option)
+        assertEquals("Full path should be correct",
+            "/test.grpc.EchoService/Echo", echoMethod!!.fullPath)
     }
 
     /**

@@ -39,12 +39,15 @@ dependencies {
     val grpcVersion = "1.68.0"
     val protobufVersion = "3.25.3"
     testImplementation("io.grpc:grpc-netty-shaded:$grpcVersion")
+    testImplementation("io.grpc:grpc-api:$grpcVersion")
     testImplementation("io.grpc:grpc-protobuf:$grpcVersion")
     testImplementation("io.grpc:grpc-stub:$grpcVersion")
     testImplementation("io.grpc:grpc-core:$grpcVersion")
     testImplementation("io.grpc:grpc-services:$grpcVersion")
     testImplementation("com.google.protobuf:protobuf-java:$protobufVersion")
     testImplementation("com.google.protobuf:protobuf-java-util:$protobufVersion")
+    testImplementation("com.google.guava:guava:33.0.0-jre")
+    testImplementation("com.google.guava:failureaccess:1.0.2")
     testImplementation("javax.annotation:javax.annotation-api:1.3.2")
 }
 
@@ -80,6 +83,7 @@ java {
 
 tasks.withType<Test>().configureEach {
     useJUnit()
+    maxParallelForks = 1
     testLogging {
         events("started", "passed", "failed", "skipped")
         showExceptions = true

@@ -37,13 +37,13 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testResolveSimpleGetMapping() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")!!
         val classType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethod = classType.methods().first { it.name == "greeting" }
+        val resolvedMethod = classType.methods().first { it.name == "get" }
 
         val mappings = resolver.resolve(resolvedMethod)
         assertEquals(1, mappings.size)
         
         val mapping = mappings[0]
-        assertEquals("/user/greeting", mapping.path)
+        assertEquals("/user/get/{id}", mapping.path)
         assertEquals(HttpMethod.GET, mapping.method)
     }
 

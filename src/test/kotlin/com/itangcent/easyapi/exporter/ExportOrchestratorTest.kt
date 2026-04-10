@@ -87,8 +87,9 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testExportEndpointsWithDifferentFormats() = runTest {
         val endpoints = listOf(createTestEndpoint())
-        
-        ExportFormat.values().forEach { format ->
+        // Skip formats that require host selection dialog (CURL, HTTP_CLIENT)
+        val dialogFormats = setOf(ExportFormat.CURL, ExportFormat.HTTP_CLIENT)
+        ExportFormat.values().filter { it !in dialogFormats }.forEach { format ->
             val result = orchestrator.exportEndpoints(endpoints, format, OutputConfig.DEFAULT)
             assertNotNull("Result should not be null for format $format", result)
         }
@@ -107,7 +108,9 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testOrchestratorHandlesAllExportFormats() = runTest {
-        ExportFormat.values().forEach { format ->
+        // Skip formats that require host selection dialog (CURL, HTTP_CLIENT)
+        val dialogFormats = setOf(ExportFormat.CURL, ExportFormat.HTTP_CLIENT)
+        ExportFormat.values().filter { it !in dialogFormats }.forEach { format ->
             val result = orchestrator.orchestrateExport(null, format)
             assertNotNull("Should handle format $format", result)
         }

@@ -116,6 +116,7 @@ data class GrpcArtifactConfig(
 
 object GrpcRequiredArtifacts {
     val GRPC_CORE = Artifact("io.grpc", "grpc-core")
+    val GRPC_API = Artifact("io.grpc", "grpc-api")
     val GRPC_NETTY_SHADED = Artifact("io.grpc", "grpc-netty-shaded")
     val GRPC_PROTOBUF = Artifact("io.grpc", "grpc-protobuf")
     val GRPC_STUB = Artifact("io.grpc", "grpc-stub")
@@ -123,11 +124,13 @@ object GrpcRequiredArtifacts {
     val PROTOBUF_JAVA = Artifact("com.google.protobuf", "protobuf-java")
     val PROTOBUF_JAVA_UTIL = Artifact("com.google.protobuf", "protobuf-java-util")
     val GUAVA = Artifact("com.google.guava", "guava")
+    val FAILURE_ACCESS = Artifact("com.google.guava", "failureaccess")
     val GSON = Artifact("com.google.code.gson", "gson")
     val PERFMARK_API = Artifact("io.perfmark", "perfmark-api")
 
     val ALL: List<Artifact> = listOf(
         GRPC_NETTY_SHADED,
+        GRPC_API,
         GRPC_PROTOBUF,
         GRPC_STUB,
         GRPC_CORE,
@@ -135,6 +138,7 @@ object GrpcRequiredArtifacts {
         PROTOBUF_JAVA,
         PROTOBUF_JAVA_UTIL,
         GUAVA,
+        FAILURE_ACCESS,
         GSON,
         PERFMARK_API
     )
@@ -143,6 +147,7 @@ object GrpcRequiredArtifacts {
 
     val REQUIRED_GRPC_ARTIFACTS: List<Artifact> = listOf(
         GRPC_NETTY_SHADED,
+        GRPC_API,
         GRPC_PROTOBUF,
         GRPC_STUB,
         GRPC_CORE

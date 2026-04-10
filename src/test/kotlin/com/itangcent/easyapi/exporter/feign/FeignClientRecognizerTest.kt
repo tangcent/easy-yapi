@@ -28,7 +28,7 @@ class FeignClientRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun createConfigReader() = TestConfigReader.EMPTY
 
     fun testRecognizeFeignClient() = runTest {
-        val psiClass = findClass("com.itangcent.feign.UserClient")
+        val psiClass = findClass("com.itangcent.springboot.demo.client.UserClient")
         assertNotNull(psiClass)
 
         val isFeignClient = recognizer.isFeignClient(psiClass!!)

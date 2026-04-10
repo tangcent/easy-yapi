@@ -23,6 +23,7 @@ import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.util.PathVariablePattern
 
@@ -74,14 +75,20 @@ class FeignClassExporter(
         val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
         LOG.info("before parse class:$className")
 
+        engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
+
         val info = pathResolver.resolve(psiClass)
         val basePath = normalizePath(info.path ?: "")
 
         val classType = ResolvedType.ClassType(psiClass, emptyList())
         val endpoints = ArrayList<ApiEndpoint>()
-        for (resolvedMethod in classType.methods()) {
-            if (resolvedMethod.psiMethod.isConstructor) continue
-            endpoints.addAll(exportMethod(basePath, psiClass, resolvedMethod))
+        try {
+            for (resolvedMethod in classType.methods()) {
+                if (resolvedMethod.psiMethod.isConstructor) continue
+                endpoints.addAll(exportMethod(basePath, psiClass, resolvedMethod))
+            }
+        } finally {
+            engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
         }
         LOG.info("after parse class:$className")
         return endpoints
@@ -92,79 +99,96 @@ class FeignClassExporter(
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
 
-        val requestLine = nativeParser.parseRequestLine(method)
-        if (requestLine != null) {
-            val endpoint = buildFromNativeFeign(basePath, psiClass, method, requestLine)
-            LOG.info("after parse method:$methodKey")
-            return listOf(endpoint)
-        }
+        engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
 
-        val mappings = springMappingResolver.resolve(resolvedMethod)
-        if (mappings.isEmpty()) {
-            LOG.info("after parse method:$methodKey")
-            return emptyList()
-        }
-
-        val name = metadataResolver.resolveApiName(method)
-        val folder = metadataResolver.resolveFolderName(method, psiClass)
-        val description = metadataResolver.resolveMethodDoc(method)
-        val classDesc = metadataResolver.resolveClassDoc(psiClass)
-
-        val params = buildSpringParams(method)
-        val body = buildSpringRequestBody(method)
-        val responseBody = buildResponseBody(method)
-
-        LOG.info("after parse method:$methodKey")
-
-        return mappings.map { m ->
-            val contentType = m.consumes.firstOrNull()
-            val headers = buildList {
-                if (!contentType.isNullOrBlank()) {
-                    add(ApiHeader(name = "Content-Type", value = contentType))
+        try {
+            val requestLine = nativeParser.parseRequestLine(method)
+            if (requestLine != null) {
+                val endpoint = buildFromNativeFeign(basePath, psiClass, method, requestLine)
+                LOG.info("after parse method:$methodKey")
+                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                    ctx.setExt("api", endpoint)
                 }
-                for ((name, value) in m.headers) {
-                    if (!name.equals("Content-Type", ignoreCase = true)) {
-                        add(ApiHeader(name = name, value = value))
+                return listOf(endpoint)
+            }
+
+            val mappings = springMappingResolver.resolve(resolvedMethod)
+            if (mappings.isEmpty()) {
+                LOG.info("after parse method:$methodKey")
+                return emptyList()
+            }
+
+            val name = metadataResolver.resolveApiName(method)
+            val folder = metadataResolver.resolveFolderName(method, psiClass)
+            val description = metadataResolver.resolveMethodDoc(method)
+            val classDesc = metadataResolver.resolveClassDoc(psiClass)
+
+            val params = buildSpringParams(method)
+            val body = buildSpringRequestBody(method)
+            val responseBody = buildResponseBody(method)
+
+            LOG.info("after parse method:$methodKey")
+
+            val endpoints = mappings.map { m ->
+                val contentType = m.consumes.firstOrNull()
+                val headers = buildList {
+                    if (!contentType.isNullOrBlank()) {
+                        add(ApiHeader(name = "Content-Type", value = contentType))
+                    }
+                    for ((name, value) in m.headers) {
+                        if (!name.equals("Content-Type", ignoreCase = true)) {
+                            add(ApiHeader(name = name, value = value))
+                        }
                     }
                 }
-            }
 
-            val rawPath = normalizePath(join(basePath, m.path))
-            val pathVariablePatterns = PathVariablePattern.extractPathVariablesFromPath(rawPath)
-            val normalizedPath = PathVariablePattern.normalizePath(rawPath)
+                val rawPath = normalizePath(join(basePath, m.path))
+                val pathVariablePatterns = PathVariablePattern.extractPathVariablesFromPath(rawPath)
+                val normalizedPath = PathVariablePattern.normalizePath(rawPath)
 
-            val pathParamsFromPath = pathVariablePatterns.map { pattern ->
-                ApiParameter(
-                    name = pattern.name,
-                    type = ParameterType.TEXT,
-                    required = true,
-                    binding = ParameterBinding.Path,
-                    defaultValue = pattern.defaultValue,
-                    description = "Path variable with possible values: ${pattern.possibleValues.joinToString(", ")}",
-                    enumValues = pattern.possibleValues
+                val pathParamsFromPath = pathVariablePatterns.map { pattern ->
+                    ApiParameter(
+                        name = pattern.name,
+                        type = ParameterType.TEXT,
+                        required = true,
+                        binding = ParameterBinding.Path,
+                        defaultValue = pattern.defaultValue,
+                        description = "Path variable with possible values: ${pattern.possibleValues.joinToString(", ")}",
+                        enumValues = pattern.possibleValues
+                    )
+                }
+
+                val mergedParams = mergePathParameters(params, pathParamsFromPath)
+
+                ApiEndpoint(
+                    name = name,
+                    folder = folder,
+                    description = description,
+                    sourceClass = psiClass,
+                    sourceMethod = method,
+                    className = psiClass.qualifiedName ?: psiClass.name,
+                    classDescription = classDesc,
+                    metadata = HttpMetadata(
+                        path = normalizedPath,
+                        method = m.method,
+                        parameters = mergedParams,
+                        headers = headers,
+                        contentType = contentType,
+                        body = body,
+                        responseBody = responseBody
+                    )
                 )
             }
 
-            val mergedParams = mergePathParameters(params, pathParamsFromPath)
+            for (endpoint in endpoints) {
+                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                    ctx.setExt("api", endpoint)
+                }
+            }
 
-            ApiEndpoint(
-                name = name,
-                folder = folder,
-                description = description,
-                sourceClass = psiClass,
-                sourceMethod = method,
-                className = psiClass.qualifiedName ?: psiClass.name,
-                classDescription = classDesc,
-                metadata = HttpMetadata(
-                    path = normalizedPath,
-                    method = m.method,
-                    parameters = mergedParams,
-                    headers = headers,
-                    contentType = contentType,
-                    body = body,
-                    responseBody = responseBody
-                )
-            )
+            return endpoints
+        } finally {
+            engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
         }
     }
 
@@ -235,11 +259,10 @@ class FeignClassExporter(
         for (p in method.parameterList.parameters) {
             if (metadataResolver.isParamIgnored(p)) continue
             val binding = springParamResolver.resolve(p)
-                ?: ParameterBinding.Query  // default unannotated params to query
+                ?: ParameterBinding.Query
 
             if (binding == ParameterBinding.Ignored) continue
 
-            // Skip body params — they go into endpoint.body
             if (binding == ParameterBinding.Body) continue
 
             val paramName = p.name ?: "param"
@@ -276,7 +299,6 @@ class FeignClassExporter(
 
     private suspend fun buildNativeFeignBody(method: PsiMethod, bodyParams: List<ApiParameter>): ObjectModel? {
         if (bodyParams.isEmpty()) return null
-        // If there are body template variables, try to find a matching parameter and expand its type
         for (p in method.parameterList.parameters) {
             val psiClass = PsiTypesUtil.getPsiClass(p.type) ?: continue
             val qualifiedName = psiClass.qualifiedName ?: continue
@@ -356,7 +378,5 @@ class FeignClassExporter(
         return result
     }
 
-
     companion object : IdeaLog
 }
-

@@ -38,6 +38,8 @@ interface ApplicationSettingsSupport {
     var jaxrsEnable: Boolean
     var actuatorEnable: Boolean
     var grpcEnable: Boolean
+    var swaggerEnable: Boolean
+    var swagger3Enable: Boolean
     var postmanToken: String?
     var wrapCollection: Boolean
     var autoMergeScript: Boolean
@@ -89,6 +91,8 @@ interface ApplicationSettingsSupport {
         newSetting.jaxrsEnable = this.jaxrsEnable
         newSetting.actuatorEnable = this.actuatorEnable
         newSetting.grpcEnable = this.grpcEnable
+        newSetting.swaggerEnable = this.swaggerEnable
+        newSetting.swagger3Enable = this.swagger3Enable
         newSetting.queryExpanded = this.queryExpanded
         newSetting.formExpanded = this.formExpanded
         newSetting.pathMulti = this.pathMulti

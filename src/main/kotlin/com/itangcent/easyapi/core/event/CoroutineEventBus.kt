@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
  * @see EventKeys for predefined event keys
  */
-class CoroutineEventBus(private val console: IdeaConsole? = null) {
+class CoroutineEventBus(private val console: IdeaConsole) {
     private val handlers = ConcurrentHashMap<String, CopyOnWriteArrayList<suspend (ActionContext) -> Unit>>()
 
     /**
@@ -56,7 +56,7 @@ class CoroutineEventBus(private val console: IdeaConsole? = null) {
             try {
                 handler(context)
             } catch (e: Exception) {
-                console?.warn("Event handler failed for key=$key", e)
+                console.warn("Event handler failed for key=$key", e)
             }
         }
     }

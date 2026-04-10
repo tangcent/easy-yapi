@@ -11,6 +11,7 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 
 /**
@@ -47,42 +48,55 @@ class GrpcClassExporter(
         val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
         LOG.info("before parse gRPC class:$className")
 
+        engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
+
         val classDescription = resolveClassDescription(psiClass)
         val folder = classDescription?.lines()?.firstOrNull { it.isNotBlank() }
             ?: psiClass.name
             ?: "Unknown"
 
         val rpcMethods = methodResolver.resolveRpcMethods(psiClass)
-        val endpoints = rpcMethods.mapNotNull { methodInfo ->
-            try {
-                val requestBody = buildRequestBody(methodInfo.requestType)
-                val responseBody = buildResponseBody(methodInfo.responseType)
+        val endpoints: List<ApiEndpoint>
+        try {
+            endpoints = rpcMethods.mapNotNull { methodInfo ->
+                try {
+                    val requestBody = buildRequestBody(methodInfo.requestType)
+                    val responseBody = buildResponseBody(methodInfo.responseType)
 
-                ApiEndpoint(
-                    name = methodInfo.description
-                        ?: methodInfo.methodName,
-                    folder = folder,
-                    description = methodInfo.description,
-                    tags = listOf("gRPC"),
-                    sourceClass = psiClass,
-                    sourceMethod = methodInfo.psiMethod,
-                    className = psiClass.qualifiedName ?: psiClass.name,
-                    classDescription = classDescription,
-                    metadata = GrpcMetadata(
-                        path = methodInfo.fullPath,
-                        serviceName = methodInfo.serviceName,
-                        methodName = methodInfo.methodName,
-                        packageName = methodInfo.packageName,
-                        streamingType = methodInfo.streamingType,
-                        body = requestBody,
-                        responseBody = responseBody,
-                        responseType = methodInfo.responseType?.qualifiedName
+                    ApiEndpoint(
+                        name = methodInfo.description
+                            ?: methodInfo.methodName,
+                        folder = folder,
+                        description = methodInfo.description,
+                        tags = listOf("gRPC"),
+                        sourceClass = psiClass,
+                        sourceMethod = methodInfo.psiMethod,
+                        className = psiClass.qualifiedName ?: psiClass.name,
+                        classDescription = classDescription,
+                        metadata = GrpcMetadata(
+                            path = methodInfo.fullPath,
+                            serviceName = methodInfo.serviceName,
+                            methodName = methodInfo.methodName,
+                            packageName = methodInfo.packageName,
+                            streamingType = methodInfo.streamingType,
+                            body = requestBody,
+                            responseBody = responseBody,
+                            responseType = methodInfo.responseType?.qualifiedName
+                        )
                     )
-                )
-            } catch (e: Exception) {
-                LOG.warn("Failed to export gRPC method: ${methodInfo.methodName}", e)
-                null
+                } catch (e: Exception) {
+                    LOG.warn("Failed to export gRPC method: ${methodInfo.methodName}", e)
+                    null
+                }
             }
+
+            for (endpoint in endpoints) {
+                engine.evaluate(RuleKeys.EXPORT_AFTER, endpoint.sourceMethod!!) { ctx ->
+                    ctx.setExt("api", endpoint)
+                }
+            }
+        } finally {
+            engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
         }
 
         LOG.info("after parse gRPC class:$className, found ${endpoints.size} endpoints")

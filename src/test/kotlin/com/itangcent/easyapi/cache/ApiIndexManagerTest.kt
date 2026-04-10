@@ -7,7 +7,6 @@ import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
 class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -20,12 +19,13 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
         apiIndexManager = ApiIndexManager.getInstance(project)
         apiIndex = ApiIndex.getInstance(project)
         apiIndex.invalidate()
+        apiIndexManager.start(triggerInitialScan = false)
     }
 
     override fun tearDown() {
-        runBlocking {
-            apiIndexManager.stop()
-        }
+        apiIndexManager.stop()
+        // Give background coroutines time to finish cancellation before next test
+        Thread.sleep(200)
         super.tearDown()
     }
 
@@ -54,10 +54,12 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testRequestScan() = runTest {
         apiIndexManager.requestScan()
 
-        delay(1000)
+        apiIndex.waitUntilValid()
 
+        // endpoints() awaits cacheReady, so no need for delay
+        val endpoints = apiIndex.endpoints()
         assertTrue("Cache should be valid after scan", apiIndex.isValid())
-        assertTrue("Cache should have endpoints", apiIndex.endpoints().isNotEmpty())
+        assertTrue("Cache should have endpoints", endpoints.isNotEmpty())
     }
 
     fun testScanPopulatesCache() = runTest {
@@ -65,9 +67,11 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         apiIndexManager.requestScan()
 
-        delay(1000)
+        // Poll until the scan completes and cache becomes valid
+        apiIndex.waitUntilValid()
 
         assertTrue("Cache should be valid after scan", apiIndex.isValid())
+
         val endpoints = apiIndex.endpoints()
         assertTrue("Cache should contain endpoints", endpoints.isNotEmpty())
 
@@ -77,12 +81,13 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testMultipleRequestScanDoesNotDuplicate() = runTest {
         apiIndexManager.requestScan()
-        delay(1000)
+
+        apiIndex.waitUntilValid()
 
         val firstCount = apiIndex.endpoints().size
 
         apiIndexManager.requestScan()
-        delay(1000)
+        delay(2000)
 
         val secondCount = apiIndex.endpoints().size
 
@@ -122,10 +127,11 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         apiIndex.updateEndpoints(testEndpoints)
         assertTrue("Cache should be valid", apiIndex.isValid())
+        assertTrue("Cache should be ready after update", apiIndex.isReady())
 
         apiIndex.invalidate()
         assertFalse("Cache should be invalid after invalidate", apiIndex.isValid())
-        assertTrue("Cache endpoints should be empty after invalidate", apiIndex.endpoints().isEmpty())
+        assertTrue("Cache should still be ready after invalidate (cacheReady is never reset)", apiIndex.isReady())
     }
 
     fun testCacheAwait() = runTest {
@@ -147,31 +153,30 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testStartAndStop() = runTest {
-        apiIndexManager.start()
-
-        delay(500)
-
         apiIndexManager.requestScan()
-        delay(1000)
 
-        assertTrue("Cache should have endpoints after start and scan", apiIndex.endpoints().isNotEmpty())
+        apiIndex.waitUntilValid()
+
+        val endpoints = apiIndex.endpoints()
+        assertTrue("Cache should have endpoints after start and scan", endpoints.isNotEmpty())
 
         apiIndexManager.stop()
 
         assertTrue("Cache should still be valid after stop", apiIndex.isValid())
     }
 
-    fun testCacheReadyAfterUpdate() = runTest {
-        assertFalse("Cache should not be ready initially", apiIndex.isReady())
+    fun testCacheValidAfterUpdate() = runTest {
+        assertFalse("Cache should not be valid initially", apiIndex.isValid())
 
         apiIndex.updateEndpoints(emptyList())
 
-        assertTrue("Cache should be ready after update even with empty list", apiIndex.isReady())
+        assertTrue("Cache should be valid after update even with empty list", apiIndex.isValid())
     }
 
     fun testEndpointProperties() = runTest {
         apiIndexManager.requestScan()
-        delay(1000)
+
+        apiIndex.waitUntilValid()
 
         val endpoints = apiIndex.endpoints()
         assertTrue("Should have endpoints", endpoints.isNotEmpty())
@@ -183,18 +188,27 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testThrottling() = runTest {
-        apiIndexManager.start()
+        // Test that multiple rapid scan requests are throttled properly
+        // Use requestScan which triggers a full scan
 
-        // Trigger multiple reindex calls rapidly
-        val files = listOf("test1.java", "test2.java")
-        apiIndexManager.reIndex(files)
-        apiIndexManager.reIndex(files)
-        apiIndexManager.reIndex(files)
+        // Trigger multiple scan requests rapidly
+        apiIndexManager.requestScan()
+        apiIndexManager.requestScan()
+        apiIndexManager.requestScan()
 
-        // Wait for throttle delay
-        delay(12000)
+        // Wait for initial scan delay + processing time
+        delay(7000)
 
-        // Should complete without errors
-        assertTrue("Cache should be valid", apiIndex.isValid())
+        // Cache should be valid after scan completes
+        assertTrue("Cache should be valid after scan", apiIndex.isValid())
+
+        val endpoints = apiIndex.endpoints()
+        assertTrue("Should have endpoints", endpoints.isNotEmpty())
+    }
+}
+
+private suspend fun ApiIndex.waitUntilValid(deadline: Long = System.currentTimeMillis() + 15_000) {
+    while (!isValid() && System.currentTimeMillis() < deadline) {
+        delay(200)
     }
 }

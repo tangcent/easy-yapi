@@ -30,7 +30,11 @@ import java.util.concurrent.TimeUnit
  * @see CompositeDescriptorResolver for descriptor resolution
  */
 @Service(Service.Level.APP)
-class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
+class DynamicJarClient(val project: Project) : GrpcClient {
+
+    companion object : IdeaLog {
+        fun getInstance(project: Project): DynamicJarClient = project.service()
+    }
 
     private val runtimeResolver: GrpcRuntimeResolver by lazy {
         GrpcRuntimeResolver.getInstance(project)
@@ -38,10 +42,6 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
 
     private val descriptorResolver: CompositeDescriptorResolver by lazy {
         CompositeDescriptorResolver(project)
-    }
-
-    companion object {
-        fun getInstance(project: Project): DynamicJarClient = project.service()
     }
 
     private var cachedClassLoader: ClassLoader? = null
@@ -130,7 +130,7 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
                         isError = true
                     )
                 }
-                
+
                 val actualMethodName = resolvedDescriptor.actualMethodName ?: methodName
                 LOG.info("Descriptor resolved: source=${resolvedDescriptor.source}, service=$serviceName, method=$actualMethodName")
 
@@ -177,6 +177,14 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
                 statusCode = statusCode,
                 statusName = statusName
             )
+        } catch (e: Error) {
+            LOG.warn("gRPC call failed with error: host=$host, path=$path", e)
+            return GrpcResult(
+                body = "Error: ${e.message ?: e.javaClass.simpleName}",
+                isError = true,
+                statusCode = null,
+                statusName = null
+            )
         } finally {
             Thread.currentThread().contextClassLoader = previousContextLoader
         }
@@ -211,10 +219,10 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
             LOG.info("Shutting down gRPC channel")
             // Use the ManagedChannel interface to access methods
             val managedChannelClass = classLoader.loadClass("io.grpc.ManagedChannel")
-            
+
             val shutdownMethod = managedChannelClass.getMethod("shutdown")
             shutdownMethod.invoke(channel)
-            
+
             val isShutdownMethod = managedChannelClass.getMethod("isShutdown")
             val isTerminatedMethod = managedChannelClass.getMethod("isTerminated")
             val awaitTerminationMethod = managedChannelClass.getMethod(
@@ -222,10 +230,10 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
                 Long::class.java,
                 TimeUnit::class.java
             )
-            
+
             // Wait up to 5 seconds for termination
             awaitTerminationMethod.invoke(channel, 5L, TimeUnit.SECONDS)
-            
+
             val isTerminated = isTerminatedMethod.invoke(channel) as Boolean
             if (!isTerminated) {
                 LOG.warn("Channel did not terminate gracefully, forcing shutdown")
@@ -233,8 +241,14 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
                 shutdownNowMethod.invoke(channel)
                 awaitTerminationMethod.invoke(channel, 2L, TimeUnit.SECONDS)
             }
-            
-            LOG.info("gRPC channel shutdown complete (isShutdown=${isShutdownMethod.invoke(channel)}, isTerminated=${isTerminatedMethod.invoke(channel)})")
+
+            LOG.info(
+                "gRPC channel shutdown complete (isShutdown=${isShutdownMethod.invoke(channel)}, isTerminated=${
+                    isTerminatedMethod.invoke(
+                        channel
+                    )
+                })"
+            )
         } catch (e: Exception) {
             LOG.warn("Failed to shutdown gRPC channel: ${e.message}")
             try {
@@ -396,7 +410,10 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
             toByteArrayMethod.invoke(responseMessage) as ByteArray
         } catch (e: Exception) {
             val rootCause = unwrapInvocationTargetException(e)
-            LOG.warn("Failed to call unary method $serviceName/$methodName: ${rootCause.message ?: rootCause.javaClass.simpleName}", rootCause)
+            LOG.warn(
+                "Failed to call unary method $serviceName/$methodName: ${rootCause.message ?: rootCause.javaClass.simpleName}",
+                rootCause
+            )
             throw e
         }
     }
@@ -448,30 +465,32 @@ class DynamicJarClient(val project: Project) : GrpcClient, IdeaLog {
             if (statusRuntimeExceptionClass.isInstance(e)) {
                 val getStatusMethod = statusRuntimeExceptionClass.getMethod("getStatus")
                 val status = getStatusMethod.invoke(e)
-                
+
                 val statusClass = classLoader.loadClass("io.grpc.Status")
                 val getCodeMethod = statusClass.getMethod("getCode")
                 val getDescriptionMethod = statusClass.getMethod("getDescription")
-                
+
                 val codeObj = getCodeMethod.invoke(status)
                 val description = getDescriptionMethod.invoke(status) as? String
-                
+
                 val codeValueMethod = codeObj?.javaClass?.getMethod("value")
                 val statusCode = codeValueMethod?.invoke(codeObj) as? Int
                 val statusName = codeObj?.toString()
-                
+
                 val errorMessage = if (!description.isNullOrBlank()) {
                     "$statusName: $description"
                 } else {
                     statusName ?: e.message ?: e.javaClass.simpleName
                 }
-                
+
                 return Triple(statusCode, statusName, errorMessage)
             }
         } catch (_: Exception) {
             // Fall through to default handling
+        } catch (_: NoClassDefFoundError) {
+            // gRPC classes not fully available in classloader — fall through to default handling
         }
-        
+
         return Triple(null, null, e.message ?: e.javaClass.simpleName)
     }
 

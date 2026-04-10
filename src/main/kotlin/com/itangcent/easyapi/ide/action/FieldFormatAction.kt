@@ -46,7 +46,7 @@ abstract class FieldFormatAction(
                 ), project
             )
         } finally {
-            kotlinx.coroutines.runBlocking { ctx.stop() }
+            ctx.stop()
         }
     }
 

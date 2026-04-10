@@ -5,7 +5,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.core.context.ActionContext
-import kotlinx.coroutines.runBlocking
 
 /**
  * Service for managing the API dashboard state and navigation.
@@ -78,7 +77,7 @@ class ApiDashboardService(
      * Stops the service and cleans up resources.
      */
     fun stop() {
-        actionContext?.let { runBlocking { it.stop() } }
+        actionContext?.stop()
         actionContext = null
         dashboardPanel = null
     }

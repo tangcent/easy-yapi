@@ -1,5 +1,7 @@
 package com.itangcent.model.generic;
 
+import com.itangcent.model.generic.GenericBase;
+
 /**
  * Case 1: Extends GenericBase with concrete type String
  * GenericBase<T> { T data; }

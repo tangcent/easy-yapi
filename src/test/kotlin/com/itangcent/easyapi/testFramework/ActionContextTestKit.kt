@@ -5,9 +5,7 @@ import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
 
 object ActionContextTestKit {
@@ -22,13 +20,12 @@ object ActionContextTestKit {
             .bind(Project::class, project)
             .bind(ConfigReader::class, configReader)
             .bind(SettingBinder::class, ConstantSettingBinder(settings))
-            .dispatcher(Dispatchers.Unconfined)
-        
+
         additionalBindings.forEach { binding ->
             @Suppress("UNCHECKED_CAST")
             builder.bind(binding.kClass as KClass<Any>, binding.instance)
         }
-        
+
         return builder.build()
     }
 
@@ -42,9 +39,7 @@ object ActionContextTestKit {
         val context = createTestContext(project, settings, configReader, additionalBindings)
         return runBlocking {
             try {
-                withContext(context.coroutineContext) {
-                    context.block()
-                }
+                context.block()
             } finally {
                 context.stop()
             }
@@ -55,14 +50,11 @@ object ActionContextTestKit {
         crossinline block: suspend ActionContext.() -> T
     ): T {
         val context = ActionContext.builder()
-            .dispatcher(Dispatchers.Unconfined)
             .withSpiBindings()
             .build()
         return runBlocking {
             try {
-                withContext(context.coroutineContext) {
-                    context.block()
-                }
+                context.block()
             } finally {
                 context.stop()
             }

@@ -67,7 +67,8 @@ class ApiMetadataResolver(
     suspend fun resolveClassDoc(psiClass: PsiClass): String {
         val docComment = docHelper.getAttrOfDocComment(psiClass)
         val ruleClassDesc = engine.evaluate(RuleKeys.CLASS_DOC, psiClass)
-        return docComment.append(ruleClassDesc) ?: psiClass.name ?: "Unknown"
+        val combined = docComment.append(ruleClassDesc)
+        return combined.ifBlank { psiClass.name ?: "Unknown" }
     }
 
     suspend fun resolveMethodDoc(method: PsiMethod): String {

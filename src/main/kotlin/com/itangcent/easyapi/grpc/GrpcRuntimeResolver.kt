@@ -201,17 +201,14 @@ class GrpcRuntimeResolver(private val project: Project) {
         root: Path
     ): ResolvedRuntime {
         LOG.info("Building runtime: version=$version, grpcJars=${grpcJars.size}")
-        grpcJars.forEach { jar ->
-            LOG.info("  gRPC JAR: ${jar.fileName}")
-        }
+        grpcJars.forEach { jar -> LOG.info("  gRPC JAR: ${jar.fileName}") }
 
-        val configs = getArtifactConfigs()
         val allJars = mutableListOf<Path>()
         allJars.addAll(grpcJars)
 
+        val configs = getArtifactConfigs()
         for (config in configs) {
             if (config.artifact.groupId == "io.grpc") continue
-
             val artifact = config.artifact
             val artifactRoot = root.resolve(artifact.groupPath).resolve(artifact.artifactId)
             val jar = findNewestJar(artifactRoot, artifact.artifactId)

@@ -15,9 +15,7 @@ import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.testFramework.TestConfigReader
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -197,196 +195,181 @@ class PostmanFormatterTest {
     }
 
     @Test
-    fun testToItemWithFormFileType() = runBlocking {
+    fun testToItemWithFormFileType(): Unit = runBlocking {
         val context = ActionContext.builder()
             .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .dispatcher(Dispatchers.Unconfined)
             .withSpiBindings().build()
-        withContext(context.coroutineContext) {
-            val formatter = PostmanFormatter(actionContext = context)
-            val endpoint = ApiEndpoint(
-                name = "Upload File",
-                metadata = HttpMetadata(
-                    path = "/api/upload",
-                    method = HttpMethod.POST,
-                    contentType = "multipart/form-data",
-                    parameters = listOf(
-                        ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/file.txt"),
-                        ApiParameter(name = "description", binding = ParameterBinding.Form, example = "Test file")
-                    )
+        val formatter = PostmanFormatter(actionContext = context)
+        val endpoint = ApiEndpoint(
+            name = "Upload File",
+            metadata = HttpMetadata(
+                path = "/api/upload",
+                method = HttpMethod.POST,
+                contentType = "multipart/form-data",
+                parameters = listOf(
+                    ApiParameter(name = "file", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/file.txt"),
+                    ApiParameter(name = "description", binding = ParameterBinding.Form, example = "Test file")
                 )
             )
-            val item = formatter.toItem(endpoint)
-            assertNotNull(item)
-            assertEquals("Upload File", item.name)
-            assertNotNull(item.request?.body)
-            assertEquals("formdata", item.request?.body?.mode)
-            assertNotNull(item.request?.body?.formdata)
-            val formdata = item.request?.body?.formdata
-            assertEquals(2, formdata?.size ?: 0)
-            val fileParam = formdata?.firstOrNull { it.key == "file" }
-            assertNotNull(fileParam)
-            assertEquals("file", fileParam?.type)
-        }
+        )
+        val item = formatter.toItem(endpoint)
+        assertNotNull(item)
+        assertEquals("Upload File", item.name)
+        assertNotNull(item.request?.body)
+        assertEquals("formdata", item.request?.body?.mode)
+        assertNotNull(item.request?.body?.formdata)
+        val formdata = item.request?.body?.formdata
+        assertEquals(2, formdata?.size ?: 0)
+        val fileParam = formdata?.firstOrNull { it.key == "file" }
+        assertNotNull(fileParam)
+        assertEquals("file", fileParam?.type)
     }
 
     @Test
-    fun testToItemWithUrlencodedFileType() = runBlocking {
+    fun testToItemWithUrlencodedFileType(): Unit = runBlocking {
         val context = ActionContext.builder()
             .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .dispatcher(Dispatchers.Unconfined)
             .withSpiBindings().build()
-        withContext(context.coroutineContext) {
-            val formatter = PostmanFormatter(actionContext = context)
-            val endpoint = ApiEndpoint(
-                name = "Submit Form",
-                metadata = HttpMetadata(
-                    path = "/api/submit",
-                    method = HttpMethod.POST,
-                    contentType = "application/x-www-form-urlencoded",
-                    parameters = listOf(
-                        ApiParameter(name = "profileImg", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/image.png"),
-                        ApiParameter(name = "name", binding = ParameterBinding.Form, example = "John")
-                    )
+        val formatter = PostmanFormatter(actionContext = context)
+        val endpoint = ApiEndpoint(
+            name = "Submit Form",
+            metadata = HttpMetadata(
+                path = "/api/submit",
+                method = HttpMethod.POST,
+                contentType = "application/x-www-form-urlencoded",
+                parameters = listOf(
+                    ApiParameter(name = "profileImg", type = ParameterType.FILE, binding = ParameterBinding.Form, example = "/path/to/image.png"),
+                    ApiParameter(name = "name", binding = ParameterBinding.Form, example = "John")
                 )
             )
-            val item = formatter.toItem(endpoint)
-            assertNotNull(item)
-            assertNotNull(item.request?.body)
-            assertEquals("urlencoded", item.request?.body?.mode)
-            assertNotNull(item.request?.body?.urlencoded)
-            val urlencoded = item.request?.body?.urlencoded
-            assertEquals(2, urlencoded?.size ?: 0)
-            val fileParam = urlencoded?.firstOrNull { it.key == "profileImg" }
-            assertNotNull(fileParam)
-            assertEquals("file", fileParam?.type)
-        }
+        )
+        val item = formatter.toItem(endpoint)
+        assertNotNull(item)
+        assertNotNull(item.request?.body)
+        assertEquals("urlencoded", item.request?.body?.mode)
+        assertNotNull(item.request?.body?.urlencoded)
+        val urlencoded = item.request?.body?.urlencoded
+        assertEquals(2, urlencoded?.size ?: 0)
+        val fileParam = urlencoded?.firstOrNull { it.key == "profileImg" }
+        assertNotNull(fileParam)
+        assertEquals("file", fileParam?.type)
     }
 
     @Test
-    fun testFormatWithJsonBody() = runBlocking {
+    fun testFormatWithJsonBody(): Unit = runBlocking {
         val context = ActionContext.builder()
             .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .dispatcher(Dispatchers.Unconfined)
             .withSpiBindings().build()
-        withContext(context.coroutineContext) {
-            val formatter = PostmanFormatter(
-                actionContext = context,
-                options = PostmanFormatOptions(appendTimestamp = false)
+        val formatter = PostmanFormatter(
+            actionContext = context,
+            options = PostmanFormatOptions(appendTimestamp = false)
+        )
+        val endpoint = ApiEndpoint(
+            name = "Create User",
+            metadata = HttpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST,
+                contentType = "application/json",
+                body = ObjectModel.Object(
+                    mapOf(
+                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
+                        "age" to FieldModel(ObjectModel.Single(JsonType.INT))
+                    )
+                )
             )
-            val endpoint = ApiEndpoint(
+        )
+        val collection = formatter.format(listOf(endpoint), "Test API")
+        assertNotNull(collection)
+        assertEquals("Test API", collection.info?.name)
+        assertTrue(collection.item?.isNotEmpty() == true)
+        val item = collection.item?.firstOrNull()
+        assertNotNull(item?.request?.body)
+        assertEquals("raw", item?.request?.body?.mode)
+    }
+
+    @Test
+    fun testFormatMultipleEndpoints(): Unit = runBlocking {
+        val context = ActionContext.builder()
+            .bind(ConfigReader::class, TestConfigReader.EMPTY)
+            .withSpiBindings().build()
+        val formatter = PostmanFormatter(
+            actionContext = context,
+            options = PostmanFormatOptions(appendTimestamp = false)
+        )
+        val endpoints = listOf(
+            ApiEndpoint(
+                name = "Get User",
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.GET,
+                    parameters = listOf(
+                        ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1")
+                    )
+                )
+            ),
+            ApiEndpoint(
                 name = "Create User",
                 metadata = HttpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST,
                     contentType = "application/json",
-                    body = ObjectModel.Object(
-                        mapOf(
-                            "name" to FieldModel(ObjectModel.Single(JsonType.STRING)),
-                            "age" to FieldModel(ObjectModel.Single(JsonType.INT))
-                        )
+                    parameters = listOf(
+                        ApiParameter(name = "name", binding = ParameterBinding.Body, example = "John")
                     )
                 )
             )
-            val collection = formatter.format(listOf(endpoint), "Test API")
-            assertNotNull(collection)
-            assertEquals("Test API", collection.info?.name)
-            assertTrue(collection.item?.isNotEmpty() == true)
-            val item = collection.item?.firstOrNull()
-            assertNotNull(item?.request?.body)
-            assertEquals("raw", item?.request?.body?.mode)
-        }
+        )
+        val collection = formatter.format(endpoints, "Test API")
+        assertNotNull(collection)
+        assertEquals("Test API", collection.info?.name)
+        assertTrue(collection.item?.isNotEmpty() == true)
+        assertEquals(2, collection.item?.size ?: 0)
     }
 
     @Test
-    fun testFormatMultipleEndpoints() = runBlocking {
+    fun testFormatFiltersOutGrpcEndpoints(): Unit = runBlocking {
         val context = ActionContext.builder()
             .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .dispatcher(Dispatchers.Unconfined)
             .withSpiBindings().build()
-        withContext(context.coroutineContext) {
-            val formatter = PostmanFormatter(
-                actionContext = context,
-                options = PostmanFormatOptions(appendTimestamp = false)
-            )
-            val endpoints = listOf(
-                ApiEndpoint(
-                    name = "Get User",
-                    metadata = HttpMetadata(
-                        path = "/api/users/{id}",
-                        method = HttpMethod.GET,
-                        parameters = listOf(
-                            ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1")
-                        )
-                    )
-                ),
-                ApiEndpoint(
-                    name = "Create User",
-                    metadata = HttpMetadata(
-                        path = "/api/users",
-                        method = HttpMethod.POST,
-                        contentType = "application/json",
-                        parameters = listOf(
-                            ApiParameter(name = "name", binding = ParameterBinding.Body, example = "John")
-                        )
-                    )
+        val formatter = PostmanFormatter(
+            actionContext = context,
+            options = PostmanFormatOptions(appendTimestamp = false)
+        )
+        val endpoints = listOf(
+            ApiEndpoint(
+                name = "Get User",
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.GET
+                )
+            ),
+            ApiEndpoint(
+                name = "GetUser",
+                metadata = com.itangcent.easyapi.exporter.model.GrpcMetadata(
+                    path = "/com.example.UserService/GetUser",
+                    serviceName = "UserService",
+                    methodName = "GetUser",
+                    packageName = "com.example",
+                    streamingType = com.itangcent.easyapi.exporter.model.GrpcStreamingType.UNARY
+                )
+            ),
+            ApiEndpoint(
+                name = "Create User",
+                metadata = HttpMetadata(
+                    path = "/api/users",
+                    method = HttpMethod.POST
                 )
             )
-            val collection = formatter.format(endpoints, "Test API")
-            assertNotNull(collection)
-            assertEquals("Test API", collection.info?.name)
-            assertTrue(collection.item?.isNotEmpty() == true)
-            assertEquals(2, collection.item?.size ?: 0)
-        }
-    }
-
-    @Test
-    fun testFormatFiltersOutGrpcEndpoints() = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .dispatcher(Dispatchers.Unconfined)
-            .withSpiBindings().build()
-        withContext(context.coroutineContext) {
-            val formatter = PostmanFormatter(
-                actionContext = context,
-                options = PostmanFormatOptions(appendTimestamp = false)
-            )
-            val endpoints = listOf(
-                ApiEndpoint(
-                    name = "Get User",
-                    metadata = HttpMetadata(
-                        path = "/api/users/{id}",
-                        method = HttpMethod.GET
-                    )
-                ),
-                ApiEndpoint(
-                    name = "GetUser",
-                    metadata = com.itangcent.easyapi.exporter.model.GrpcMetadata(
-                        path = "/com.example.UserService/GetUser",
-                        serviceName = "UserService",
-                        methodName = "GetUser",
-                        packageName = "com.example",
-                        streamingType = com.itangcent.easyapi.exporter.model.GrpcStreamingType.UNARY
-                    )
-                ),
-                ApiEndpoint(
-                    name = "Create User",
-                    metadata = HttpMetadata(
-                        path = "/api/users",
-                        method = HttpMethod.POST
-                    )
-                )
-            )
-            val collection = formatter.format(endpoints, "Test API")
-            assertNotNull(collection)
-            assertEquals("Test API", collection.info?.name)
-            // gRPC endpoint should be filtered out, only HTTP endpoints remain
-            assertEquals(2, collection.item?.size ?: 0)
-            val itemNames = collection.item?.map { it.name } ?: emptyList()
-            assertTrue(itemNames.contains("Get User"))
-            assertTrue(itemNames.contains("Create User"))
-            assertFalse(itemNames.contains("GetUser"))
-        }
+        )
+        val collection = formatter.format(endpoints, "Test API")
+        assertNotNull(collection)
+        assertEquals("Test API", collection.info?.name)
+        // gRPC endpoint should be filtered out, only HTTP endpoints remain
+        assertEquals(2, collection.item?.size ?: 0)
+        val itemNames = collection.item?.map { it.name } ?: emptyList()
+        assertTrue(itemNames.contains("Get User"))
+        assertTrue(itemNames.contains("Create User"))
+        assertFalse(itemNames.contains("GetUser"))
     }
 }
 

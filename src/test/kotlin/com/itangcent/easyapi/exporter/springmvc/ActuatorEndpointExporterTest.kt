@@ -21,7 +21,7 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = ActuatorEndpointExporter()
+        exporter = ActuatorEndpointExporter(actionContext)
     }
 
     private fun loadTestFiles() {

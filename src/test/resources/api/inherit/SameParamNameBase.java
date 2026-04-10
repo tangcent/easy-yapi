@@ -1,7 +1,8 @@
 package com.itangcent.api.inherit;
 
 import com.itangcent.model.Result;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * Fixture for same-named type param collision test.

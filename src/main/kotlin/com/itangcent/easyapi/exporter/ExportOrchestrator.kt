@@ -134,14 +134,14 @@ class ExportOrchestrator(private val project: Project) {
     /**
      * Builds the export context with all required dependencies.
      */
-    private suspend fun buildExportContext(
+    private fun buildExportContext(
         endpoints: List<ApiEndpoint>,
         format: ExportFormat,
         outputConfig: OutputConfig,
         indicator: ProgressIndicator? = null
     ): ExportContext {
         val settings = SettingBinder.getInstance(project).read()
-        val actionContext = ActionContext.currentOrNull() ?: ActionContext.forProject(project)
+        val actionContext = ActionContext.forProject(project)
         return ExportContext(
             project = project,
             endpoints = endpoints,

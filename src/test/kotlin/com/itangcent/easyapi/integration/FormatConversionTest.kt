@@ -12,9 +12,7 @@ import com.itangcent.easyapi.exporter.postman.PostmanFormatOptions
 import com.itangcent.easyapi.exporter.postman.PostmanFormatter
 import com.itangcent.easyapi.exporter.curl.CurlFormatter
 import com.itangcent.easyapi.testFramework.TestConfigReader
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -47,23 +45,20 @@ class FormatConversionTest {
     )
 
     @Test
-    fun testPostmanFormatConversion() = runBlocking {
+    fun testPostmanFormatConversion(): Unit = runBlocking {
         val context = ActionContext.builder()
             .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .dispatcher(Dispatchers.Unconfined)
             .withSpiBindings().build()
-        withContext(context.coroutineContext) {
-            val postmanFormatter = PostmanFormatter(
-                actionContext = context,
-                options = PostmanFormatOptions(buildExample = true, autoMergeScript = true)
-            )
-            val endpoints = listOf(testEndpoint, testPostEndpoint)
-            val collection = postmanFormatter.format(endpoints, "Test API")
+        val postmanFormatter = PostmanFormatter(
+            actionContext = context,
+            options = PostmanFormatOptions(buildExample = true, autoMergeScript = true)
+        )
+        val endpoints = listOf(testEndpoint, testPostEndpoint)
+        val collection = postmanFormatter.format(endpoints, "Test API")
 
-            assertNotNull("Collection should not be null", collection)
-            assertTrue("Collection name should start with Test API", collection.info?.name?.startsWith("Test API") == true)
-            assertTrue("Should have items", collection.item?.isNotEmpty() == true)
-        }
+        assertNotNull("Collection should not be null", collection)
+        assertTrue("Collection name should start with Test API", collection.info?.name?.startsWith("Test API") == true)
+        assertTrue("Should have items", collection.item?.isNotEmpty() == true)
     }
 
     @Test
@@ -82,45 +77,42 @@ class FormatConversionTest {
     }
 
     @Test
-    fun testMultipleEndpointsFormat() = runBlocking {
+    fun testMultipleEndpointsFormat(): Unit = runBlocking {
         val context = ActionContext.builder()
             .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .dispatcher(Dispatchers.Unconfined)
             .withSpiBindings().build()
-        withContext(context.coroutineContext) {
-            val postmanFormatter = PostmanFormatter(
-                actionContext = context,
-                options = PostmanFormatOptions(buildExample = true, autoMergeScript = true)
-            )
-            val endpoints = listOf(
-                testEndpoint,
-                testPostEndpoint,
-                ApiEndpoint(
-                    name = "Update User",
-                    metadata = HttpMetadata(
-                        path = "/api/users/{id}",
-                        method = HttpMethod.PUT,
-                        contentType = "application/json",
-                        parameters = listOf(
-                            ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1"),
-                            ApiParameter(name = "name", binding = ParameterBinding.Body, example = "Updated")
-                        )
+        val postmanFormatter = PostmanFormatter(
+            actionContext = context,
+            options = PostmanFormatOptions(buildExample = true, autoMergeScript = true)
+        )
+        val endpoints = listOf(
+            testEndpoint,
+            testPostEndpoint,
+            ApiEndpoint(
+                name = "Update User",
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.PUT,
+                    contentType = "application/json",
+                    parameters = listOf(
+                        ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1"),
+                        ApiParameter(name = "name", binding = ParameterBinding.Body, example = "Updated")
                     )
-                ),
-                ApiEndpoint(
-                    name = "Delete User",
-                    metadata = HttpMetadata(
-                        path = "/api/users/{id}",
-                        method = HttpMethod.DELETE,
-                        parameters = listOf(
-                            ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1")
-                        )
+                )
+            ),
+            ApiEndpoint(
+                name = "Delete User",
+                metadata = HttpMetadata(
+                    path = "/api/users/{id}",
+                    method = HttpMethod.DELETE,
+                    parameters = listOf(
+                        ApiParameter(name = "id", binding = ParameterBinding.Path, example = "1")
                     )
                 )
             )
+        )
 
-            val collection = postmanFormatter.format(endpoints, "CRUD API")
-            assertTrue("Should have items", collection.item?.isNotEmpty() == true)
-        }
+        val collection = postmanFormatter.format(endpoints, "CRUD API")
+        assertTrue("Should have items", collection.item?.isNotEmpty() == true)
     }
 }

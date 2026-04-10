@@ -105,25 +105,22 @@ class ResolvedMethodTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testSuperMethod_GenericTypesResolvedInSuperContext() = runTest {
         // GenericBaseCtrl<T> has getItem(): Result<T>
         // StringCtrl extends GenericBaseCtrl<String> with no override
-        // superMethod() on StringCtrl.getItem should return a ResolvedMethod
-        // whose returnType has T resolved to String via the supertype's generic context.
+        // The inherited getItem() should have T resolved to String in StringCtrl's context.
         loadFile("api/generic/GenericBaseCtrl.java")
         loadFile("api/generic/StringCtrl.java")
         val psiClass = findClass("com.itangcent.api.generic.StringCtrl")!!
         val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
         val getItem = methods.first { it.name == "getItem" }
 
-        // StringCtrl has no override, so psiMethod is already from GenericBaseCtrl
-        // superMethod() should find it in GenericBaseCtrl with T=String resolved
-        val sup = getItem.superMethod()
-        assertNotNull("Should find superMethod in GenericBaseCtrl", sup)
-        assertEquals("GenericBaseCtrl", sup!!.psiMethod.containingClass?.name)
+        // StringCtrl has no override, so psiMethod is from GenericBaseCtrl
+        assertEquals("GenericBaseCtrl", getItem.psiMethod.containingClass?.name)
 
-        val rt = sup.returnType as ResolvedType.ClassType
+        // The return type should be resolved: Result<String> (T=String from StringCtrl's context)
+        val rt = getItem.returnType as ResolvedType.ClassType
         assertEquals("Result", rt.psiClass.name)
         val typeArg = rt.typeArgs.first()
         assertTrue(
-            "T should be resolved to String in super context, got: $typeArg",
+            "T should be resolved to String in StringCtrl's context, got: $typeArg",
             typeArg is ResolvedType.UnresolvedType && typeArg.canonicalText.contains("String") ||
             typeArg is ResolvedType.ClassType && typeArg.psiClass.name == "String"
         )

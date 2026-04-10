@@ -354,7 +354,7 @@ class ApiScanner(private val project: Project) {
             }
 
             if (settings.actuatorEnable) {
-                add(ActuatorEndpointExporter())
+                add(ActuatorEndpointExporter(context))
             }
 
             if (settings.grpcEnable) {

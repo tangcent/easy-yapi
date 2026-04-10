@@ -47,18 +47,55 @@ sealed class ResolvedType {
          * Each [ResolvedMethod] gets [ResolvedMethod.ownerClassType] = this.
          */
         fun methods(): List<ResolvedMethod> {
-            val seen = LinkedHashMap<String, PsiMethod>()
-            for (method in psiClass.allMethods) {
-                if (method.isConstructor) continue
-                if (method.containingClass?.qualifiedName == "java.lang.Object") continue
-                val key = methodSignatureKey(method)
-                if (key !in seen) {
-                    seen[key] = method
-                } else if (method.containingClass == psiClass) {
-                    seen[key] = method
-                }
+            // Collect all non-constructor, non-Object methods
+            val allMethods = psiClass.allMethods.filter { method ->
+                !method.isConstructor &&
+                method.containingClass?.qualifiedName != "java.lang.Object"
             }
-            return seen.values.map { method ->
+
+            // Group by name + param count to detect generic erasure duplicates
+            // (e.g., interface save(Req) and impl save(UserInfo) have same param count)
+            val result = LinkedHashMap<String, PsiMethod>()
+            for (method in allMethods) {
+                val fullKey = methodSignatureKey(method)
+                val countKey = "${method.name}#${method.parameterList.parametersCount}"
+
+                // Check if there's already a method with the same full signature
+                if (fullKey in result) {
+                    // Same exact signature — prefer concrete class over interface
+                    val existing = result[fullKey]!!
+                    if (shouldPrefer(method, existing, psiClass)) {
+                        result[fullKey] = method
+                    }
+                    continue
+                }
+
+                // Check if there's a method with same name+paramCount but different types
+                // (could be a generic erasure duplicate or a true overload)
+                val sameCountKey = result.entries.find { (k, v) ->
+                    "${v.name}#${v.parameterList.parametersCount}" == countKey
+                }
+
+                if (sameCountKey != null) {
+                    val existing = sameCountKey.value
+                    // If one is from an interface and the other from a class, it's generic erasure
+                    val existingIsInterface = existing.containingClass?.isInterface == true
+                    val newIsInterface = method.containingClass?.isInterface == true
+                    if (existingIsInterface != newIsInterface) {
+                        // Generic erasure: prefer the concrete class method
+                        if (!newIsInterface) {
+                            result.remove(sameCountKey.key)
+                            result[fullKey] = method
+                        }
+                        // else: existing is already the concrete one, skip
+                        continue
+                    }
+                    // Both from same kind (both interface or both class) — true overload, keep both
+                }
+
+                result[fullKey] = method
+            }
+            return result.values.map { method ->
                 ResolvedMethod(
                     name = method.name,
                     psiMethod = method,
@@ -86,10 +123,9 @@ sealed class ResolvedType {
          */
         fun superClasses(): Sequence<ClassType> = sequence {
             for (superType in psiClass.superTypes) {
-                val classType = superType ?: continue
-                val superClass = classType.resolve() ?: continue
+                val superClass = superType.resolve() ?: continue
                 if (superClass.qualifiedName == "java.lang.Object") continue
-                val args = classType.parameters.map { TypeResolver.resolve(it, genericContext) }
+                val args = superType.parameters.map { TypeResolver.resolve(it, genericContext) }
                 yield(ClassType(superClass, args))
             }
         }
@@ -512,6 +548,19 @@ object TypeResolver {
 private fun methodSignatureKey(method: PsiMethod): String {
     val params = method.parameterList.parameters.joinToString(",") { it.type.canonicalText }
     return "${method.name}($params)"
+}
+
+/**
+ * Returns true if [candidate] should replace [existing] in the deduplication map.
+ * Prefers methods from the concrete [psiClass] over inherited ones,
+ * and concrete class methods over interface methods.
+ */
+private fun shouldPrefer(candidate: PsiMethod, existing: PsiMethod, psiClass: PsiClass): Boolean {
+    if (candidate.containingClass == psiClass) return true
+    if (existing.containingClass == psiClass) return false
+    val existingIsInterface = existing.containingClass?.isInterface == true
+    val candidateIsClass = candidate.containingClass?.isInterface == false
+    return existingIsInterface && candidateIsClass
 }
 
 /**

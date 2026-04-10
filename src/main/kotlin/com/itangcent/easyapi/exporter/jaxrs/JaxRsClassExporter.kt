@@ -20,6 +20,7 @@ import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.searchAnnotation
+import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 
 /**
@@ -70,13 +71,19 @@ class JaxRsClassExporter(
         val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
         LOG.info("before parse class:$className")
 
+        engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
+
         val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
         val endpoints = ArrayList<ApiEndpoint>()
-        for (resolvedMethod in resolvedType.methods()) {
-            val httpMethodAnn = resolvedMethod.searchAnnotation(JAXRS_HTTP_METHOD_ANNOTATIONS)
-                ?: continue
-            val annotatedMethod = (httpMethodAnn.owner as? PsiMethod) ?: resolvedMethod.psiMethod
-            endpoints.addAll(exportMethod(psiClass, resolvedMethod.psiMethod, annotatedMethod))
+        try {
+            for (resolvedMethod in resolvedType.methods()) {
+                val httpMethodAnn = resolvedMethod.searchAnnotation(JAXRS_HTTP_METHOD_ANNOTATIONS)
+                    ?: continue
+                val annotatedMethod = (httpMethodAnn.owner as? PsiMethod) ?: resolvedMethod.psiMethod
+                endpoints.addAll(exportMethod(psiClass, resolvedMethod.psiMethod, annotatedMethod))
+            }
+        } finally {
+            engine.evaluate(RuleKeys.API_CLASS_PARSE_AFTER, psiClass)
         }
         LOG.info("after parse class:$className")
         return endpoints
@@ -86,49 +93,63 @@ class JaxRsClassExporter(
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
 
-        val httpMethod = methodResolver.resolve(annotatedMethod)
-        if (httpMethod == null) {
+        engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
+
+        try {
+            val httpMethod = methodResolver.resolve(annotatedMethod)
+            if (httpMethod == null) {
+                LOG.info("after parse method:$methodKey")
+                return emptyList()
+            }
+            val path = pathResolver.resolve(psiClass, annotatedMethod)
+            val types = contentTypeResolver.resolve(psiClass, annotatedMethod)
+
+            val name = metadataResolver.resolveApiName(method)
+            val folder = metadataResolver.resolveFolderName(method, psiClass)
+            val description = metadataResolver.resolveMethodDoc(method)
+            val classDesc = metadataResolver.resolveClassDoc(psiClass)
+
+            val params = buildParameters(method)
+            val paramHeaders = extractParamHeaders(method)
+            val contentType = types.consumes.firstOrNull()
+            val headers = buildHeaders(contentType, paramHeaders)
+            val body = buildRequestBody(method)
+            val responseBody = buildResponseBody(method)
+
             LOG.info("after parse method:$methodKey")
-            return emptyList()
-        }
-        val path = pathResolver.resolve(psiClass, annotatedMethod)
-        val types = contentTypeResolver.resolve(psiClass, annotatedMethod)
 
-        val name = metadataResolver.resolveApiName(method)
-        val folder = metadataResolver.resolveFolderName(method, psiClass)
-        val description = metadataResolver.resolveMethodDoc(method)
-        val classDesc = metadataResolver.resolveClassDoc(psiClass)
-
-        val params = buildParameters(method)
-        val paramHeaders = extractParamHeaders(method)
-        val contentType = types.consumes.firstOrNull()
-        val headers = buildHeaders(contentType, paramHeaders)
-        val body = buildRequestBody(method)
-        val responseBody = buildResponseBody(method)
-
-        LOG.info("after parse method:$methodKey")
-
-        return listOf(
-            ApiEndpoint(
-                name = name,
-                folder = folder,
-                description = description,
-                sourceClass = psiClass,
-                sourceMethod = method,
-                className = psiClass.qualifiedName ?: psiClass.name,
-                classDescription = classDesc,
-                metadata = HttpMetadata(
-                    path = path,
-                    method = httpMethod,
-                    parameters = params,
-                    headers = headers,
-                    contentType = contentType,
-                    body = body,
-                    responseBody = responseBody,
-                    responseType = method.returnType?.canonicalText
+            val endpoints = listOf(
+                ApiEndpoint(
+                    name = name,
+                    folder = folder,
+                    description = description,
+                    sourceClass = psiClass,
+                    sourceMethod = method,
+                    className = psiClass.qualifiedName ?: psiClass.name,
+                    classDescription = classDesc,
+                    metadata = HttpMetadata(
+                        path = path,
+                        method = httpMethod,
+                        parameters = params,
+                        headers = headers,
+                        contentType = contentType,
+                        body = body,
+                        responseBody = responseBody,
+                        responseType = method.returnType?.canonicalText
+                    )
                 )
             )
-        )
+
+            for (endpoint in endpoints) {
+                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                    ctx.setExt("api", endpoint)
+                }
+            }
+
+            return endpoints
+        } finally {
+            engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
+        }
     }
 
     private suspend fun extractParamHeaders(method: PsiMethod): List<ApiHeader> {

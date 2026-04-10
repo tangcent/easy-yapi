@@ -8,6 +8,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
+import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.ActionContextBuilder
@@ -35,6 +36,8 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
     override fun setUp() {
         super.setUp()
         testSettingBinder = ConstantSettingBinder(createSettings())
+        // Register testSettingBinder as a project service so SettingBinder.getInstance(project) returns it
+        project.registerServiceInstance(SettingBinder::class.java, testSettingBinder)
         val builder = ActionContext.builder()
             .bind(Project::class, project)
             .bind(ConfigReader::class, createConfigReader())
@@ -47,24 +50,12 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
 
     @After
     override fun tearDown() {
-        runBlocking {
-            actionContext.stop()
-        }
+        actionContext.stop()
         super.tearDown()
     }
 
     protected fun runTest(block: suspend () -> Unit) {
-        runBlocking {
-            actionContext.runAsync {
-                block()
-            }.join()
-        }
-    }
-
-    protected suspend fun runSuspendTest(block: suspend () -> Unit) {
-        actionContext.runAsync {
-            block()
-        }.join()
+        runBlocking { block() }
     }
 
     protected fun setSettings(settings: Settings) {
@@ -87,6 +78,10 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
     }
 
     protected fun loadFile(path: String): PsiFile {
+        // Skip silently if already loaded (tests share the same project across methods)
+        myFixture.findFileInTempDir(path)?.let { existing ->
+            return myFixture.psiManager.findFile(existing)!!
+        }
         val resourceStream = javaClass.getResourceAsStream("/$path")
             ?: throw AssertionError("Resource not found: $path")
         val reader = InputStreamReader(resourceStream, Charsets.UTF_8)
@@ -98,6 +93,10 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
     }
 
     protected fun loadFile(path: String, content: String): PsiFile {
+        // Skip silently if already loaded (tests share the same project across methods)
+        myFixture.findFileInTempDir(path)?.let { existing ->
+            return myFixture.psiManager.findFile(existing)!!
+        }
         return ApplicationManager.getApplication().runWriteAction<PsiFile> {
             myFixture.addFileToProject(path, content)
         }

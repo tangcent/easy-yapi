@@ -1,5 +1,6 @@
 package com.itangcent.api.feign;
 
+import com.itangcent.api.feign.BaseUserApi;
 import com.itangcent.model.Result;
 import com.itangcent.model.UserInfo;
 import org.springframework.cloud.openfeign.FeignClient;

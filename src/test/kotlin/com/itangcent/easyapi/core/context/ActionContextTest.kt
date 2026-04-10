@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.core.context
 
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -19,37 +18,26 @@ class ActionContextTest {
     }
 
     @Test
-    fun testBuilderCreatesContext(): Unit = runBlocking {
+    fun testBuilderCreatesContext() {
         assertNotNull(actionContext)
         assertFalse(actionContext.isStopped())
     }
 
     @Test
-    fun testRunAsync(): Unit = runBlocking {
-        var executed = false
-        val job = actionContext.runAsync {
-            delay(100)
-            executed = true
-        }
-        job.join()
-        assertTrue(executed)
-    }
-
-    @Test
-    fun testStop(): Unit = runBlocking {
+    fun testStop() {
         assertFalse(actionContext.isStopped())
         actionContext.stop()
         assertTrue(actionContext.isStopped())
     }
 
     @Test
-    fun testInstance(): Unit = runBlocking {
+    fun testInstance() {
         val value: String = actionContext.instance()
         assertEquals("testValue", value)
     }
 
     @Test
-    fun testInstanceOrNull(): Unit = runBlocking {
+    fun testInstanceOrNull() {
         val value = actionContext.instanceOrNull(String::class)
         assertEquals("testValue", value)
 
@@ -58,7 +46,7 @@ class ActionContextTest {
     }
 
     @Test
-    fun testCheckStatus(): Unit = runBlocking {
+    fun testCheckStatus() {
         actionContext.checkStatus()
         actionContext.stop()
         assertThrows(kotlinx.coroutines.CancellationException::class.java) {
@@ -80,7 +68,7 @@ class ActionContextTest {
     }
 
     @Test
-    fun testOnEvent(): Unit = runBlocking {
+    fun testOnEvent() {
         var eventFired = false
         actionContext.on("test.event") {
             eventFired = true

@@ -1,10 +1,13 @@
 package com.itangcent.easyapi.core.event
 
 import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.logging.IdeaLogConsole
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 class CoroutineEventBusTest {
 
@@ -12,7 +15,7 @@ class CoroutineEventBusTest {
 
     @Before
     fun setUp() {
-        eventBus = CoroutineEventBus()
+        eventBus = CoroutineEventBus(IdeaLogConsole)
     }
 
     @Test
@@ -94,7 +97,7 @@ class CoroutineEventBusTest {
     fun testSuspendHandler(): Unit = runBlocking {
         var completed = false
         eventBus.register("SUSPEND_EVENT") { _ ->
-            kotlinx.coroutines.delay(10)
+            delay(10.milliseconds)
             completed = true
         }
 

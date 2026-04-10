@@ -182,27 +182,31 @@ class GrpcArtifactsTest {
 
     @Test
     fun testGrpcRequiredArtifacts_all() {
-        assertEquals(10, GrpcRequiredArtifacts.ALL.size)
+        assertEquals(12, GrpcRequiredArtifacts.ALL.size)
         assertTrue(GrpcRequiredArtifacts.ALL.contains(GrpcRequiredArtifacts.GRPC_CORE))
         assertTrue(GrpcRequiredArtifacts.ALL.contains(GrpcRequiredArtifacts.GRPC_NETTY_SHADED))
+        assertTrue(GrpcRequiredArtifacts.ALL.contains(GrpcRequiredArtifacts.GRPC_API))
+        assertTrue(GrpcRequiredArtifacts.ALL.contains(GrpcRequiredArtifacts.FAILURE_ACCESS))
     }
 
     @Test
     fun testGrpcRequiredArtifacts_artifactIds() {
         assertTrue(GrpcRequiredArtifacts.GRPC_ARTIFACT_IDS.contains("grpc-core"))
         assertTrue(GrpcRequiredArtifacts.GRPC_ARTIFACT_IDS.contains("grpc-netty-shaded"))
-        assertEquals(10, GrpcRequiredArtifacts.GRPC_ARTIFACT_IDS.size)
+        assertTrue(GrpcRequiredArtifacts.GRPC_ARTIFACT_IDS.contains("grpc-api"))
+        assertTrue(GrpcRequiredArtifacts.GRPC_ARTIFACT_IDS.contains("failureaccess"))
+        assertEquals(12, GrpcRequiredArtifacts.GRPC_ARTIFACT_IDS.size)
     }
 
     @Test
     fun testGrpcRequiredArtifacts_required() {
-        assertEquals(4, GrpcRequiredArtifacts.REQUIRED_GRPC_ARTIFACTS.size)
+        assertEquals(5, GrpcRequiredArtifacts.REQUIRED_GRPC_ARTIFACTS.size)
     }
 
     @Test
     fun testGrpcRequiredArtifacts_defaultConfigs() {
         val configs = GrpcRequiredArtifacts.defaultConfigs()
-        assertEquals(10, configs.size)
+        assertEquals(12, configs.size)
         configs.forEach {
             assertEquals(ArtifactVersionMode.LATEST, it.versionMode)
             assertTrue(it.enabled)
@@ -212,13 +216,13 @@ class GrpcArtifactsTest {
     @Test
     fun testGrpcRequiredArtifacts_mergeWithDefaults_null() {
         val merged = GrpcRequiredArtifacts.mergeWithDefaults(null)
-        assertEquals(10, merged.size)
+        assertEquals(12, merged.size)
     }
 
     @Test
     fun testGrpcRequiredArtifacts_mergeWithDefaults_empty() {
         val merged = GrpcRequiredArtifacts.mergeWithDefaults(emptyList())
-        assertEquals(10, merged.size)
+        assertEquals(12, merged.size)
     }
 
     @Test
@@ -239,7 +243,7 @@ class GrpcArtifactsTest {
     fun testGrpcRequiredArtifacts_mergeWithDefaults_additionalArtifacts() {
         val extra = Artifact("com.example", "extra-lib")
         val merged = GrpcRequiredArtifacts.mergeWithDefaults(null, listOf(extra))
-        assertEquals(11, merged.size)
+        assertEquals(13, merged.size)
         assertTrue(merged.any { it.coordinate == "com.example:extra-lib" })
     }
 }

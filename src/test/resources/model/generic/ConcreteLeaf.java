@@ -1,5 +1,7 @@
 package com.itangcent.model.generic;
 
+import com.itangcent.model.generic.MiddleChild;
+
 /**
  * Case 2: Fully concrete - binds X to Long
  * MiddleChild<X> extends TwoTypeBase<X, String>

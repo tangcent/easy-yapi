@@ -4,26 +4,41 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.resource.CachedResourceResolver
-import com.itangcent.easyapi.config.source.BuiltInConfigSource
-import com.itangcent.easyapi.config.source.LocalFileConfigSource
-import com.itangcent.easyapi.config.source.RecommendConfigSource
-import com.itangcent.easyapi.config.source.RemoteConfigSource
-import com.itangcent.easyapi.config.source.RuntimeConfigSource
-import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.config.source.*
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.psi.DefaultContextSwitchListener
+import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.util.storage.LocalStorage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
+/**
+ * Default implementation of [ConfigReader] that reads configuration from multiple sources
+ * in a layered manner, with each source having a specific priority.
+ *
+ * Configuration sources are queried in order (highest priority first):
+ * 1. **RuntimeConfigSource** - Dynamic runtime configuration, typically module-specific
+ * 2. **BuiltInConfigSource** - Built-in configuration defined in plugin settings
+ * 3. **SwaggerOnDemandConfigSource** - Swagger 2.x annotations parsed on demand
+ * 4. **Swagger3OnDemandConfigSource** - OpenAPI 3.x annotations parsed on demand
+ * 5. **RecommendConfigSource** - Recommended configuration presets
+ * 6. **RemoteConfigSource** - Configuration fetched from remote URLs
+ * 7. **LocalFileConfigSource** - Configuration from local `.easy-api.config` files
+ *
+ * The reader automatically reloads configuration when:
+ * - The service is first initialized (async background reload)
+ * - The active module changes in the IDE (via [DefaultContextSwitchListener])
+ *
+ * This is a project-level service scoped to a specific IntelliJ project.
+ *
+ * @see ConfigReader
+ * @see LayeredConfigReader
+ */
 @Service(Service.Level.PROJECT)
 class DefaultConfigReader(
     private val project: Project
 ) : ConfigReader {
+
     private val settingBinder = SettingBinder.getInstance(project)
     private val settings by lazy { settingBinder.read() }
     private val localStorage = LocalStorage.getInstance(project)
@@ -52,6 +67,8 @@ class DefaultConfigReader(
                     configTextParser,
                     settings.builtInConfig
                 ),
+                SwaggerOnDemandConfigSource(project),
+                Swagger3OnDemandConfigSource(project),
                 RecommendConfigSource(settings.recommendConfigs, configTextParser),
                 RemoteConfigSource(
                     parseUrls(settings.remoteConfig.joinToString("\n")),

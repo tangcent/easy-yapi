@@ -29,6 +29,8 @@ interface ConfigSource {
      * Sources are processed in descending order of priority.
      */
     val priority: Int
+
     val sourceId: String
+
     suspend fun collect(): Sequence<ConfigEntry>
 }

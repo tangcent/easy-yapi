@@ -46,7 +46,7 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
         LOG.warn("Uncaught coroutine exception in ApiIndexManager", throwable)
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + IdeDispatchers.Background + exceptionHandler)
+    private var scope = CoroutineScope(SupervisorJob() + IdeDispatchers.Background + exceptionHandler)
 
     private var lastScanTime = 0L
     private val minScanIntervalMs = 10000L
@@ -55,18 +55,38 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
     /**
      * Conflated channel for full scan requests — multiple requests coalesce into one.
      */
-    private val fullScanChannel = Channel<Unit>(CONFLATED)
+    private var fullScanChannel = Channel<Unit>(CONFLATED)
 
     /**
      * Unlimited channel for incremental scan requests — each batch of files is processed.
      */
-    private val incrementalScanChannel = Channel<List<String>>(Channel.UNLIMITED)
+    private var incrementalScanChannel = Channel<List<String>>(Channel.UNLIMITED)
+
+    @Volatile
+    private var started = false
 
     fun start(triggerInitialScan: Boolean = true) {
+        if (started) {
+            if (triggerInitialScan) {
+                scope.launch {
+                    delay(initialScanDelayMs)
+                    fullScanChannel.trySend(Unit)
+                }
+            }
+            return
+        }
         LOG.info("ApiIndexManager starting...")
+
+        // Reinitialize if previously stopped
+        if (!scope.isActive) {
+            scope = CoroutineScope(SupervisorJob() + IdeDispatchers.Background + exceptionHandler)
+            fullScanChannel = Channel(CONFLATED)
+            incrementalScanChannel = Channel(Channel.UNLIMITED)
+        }
 
         scope.launch { processFullScans() }
         scope.launch { processIncrementalScans() }
+        started = true
 
         if (triggerInitialScan) {
             scope.launch {
@@ -81,6 +101,7 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
         fullScanChannel.close()
         incrementalScanChannel.close()
         scope.cancel()
+        started = false
     }
 
     /**

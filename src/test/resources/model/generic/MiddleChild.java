@@ -1,5 +1,7 @@
 package com.itangcent.model.generic;
 
+import com.itangcent.model.generic.TwoTypeBase;
+
 /**
  * Case 2: Partially binds TwoTypeBase - binds R to String, passes X through as T
  * TwoTypeBase<T, R> { T first; R second; }

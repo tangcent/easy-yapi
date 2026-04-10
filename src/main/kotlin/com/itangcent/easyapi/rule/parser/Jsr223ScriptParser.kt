@@ -3,6 +3,7 @@ package com.itangcent.easyapi.rule.parser
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.project
+import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
@@ -282,7 +283,7 @@ class ScriptRuntime(private val context: RuleContext) {
     }
 
     fun async(runnable: Runnable) {
-        actionContext.runAsync { runnable.run() }
+        backgroundAsync { runnable.run() }
     }
 }
 

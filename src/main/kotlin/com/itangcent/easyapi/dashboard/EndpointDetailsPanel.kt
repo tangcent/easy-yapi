@@ -62,7 +62,8 @@ import javax.swing.table.DefaultTableModel
 class EndpointDetailsPanel(
     private val project: Project,
     private val httpClient: HttpClient
-) : JBPanel<EndpointDetailsPanel>(BorderLayout()), IdeaLog {
+) : JBPanel<EndpointDetailsPanel>(BorderLayout()) {
+    companion object : IdeaLog
 
     /** Coroutine scope for managing background HTTP requests */
     private val scope = CoroutineScope(SupervisorJob() + IdeDispatchers.Background)
@@ -934,7 +935,7 @@ class EndpointDetailsPanel(
 
     private fun checkGrpcCallReady(): Boolean {
         val settings = com.itangcent.easyapi.settings.SettingBinder.getInstance(project).read()
-        
+
         if (!settings.grpcCallEnabled) {
             val result = Messages.showOkCancelDialog(
                 project,
@@ -1139,6 +1140,7 @@ class EndpointDetailsPanel(
                         isGrpcStatus -> {
                             if (response.statusCode == GrpcStatus.OK) Color(0x49cc90) else Color(0xf93e3e)
                         }
+
                         response.statusCode in 200..299 -> Color(0x49cc90)
                         response.statusCode in 400..499 -> Color(0xfca130)
                         response.statusCode >= 500 -> Color(0xf93e3e)

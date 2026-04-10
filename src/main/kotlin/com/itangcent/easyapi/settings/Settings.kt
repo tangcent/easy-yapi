@@ -26,6 +26,8 @@ data class Settings(
     override var jaxrsEnable: Boolean = true,
     override var actuatorEnable: Boolean = false,
     override var grpcEnable: Boolean = true,
+    override var swaggerEnable: Boolean = true,
+    override var swagger3Enable: Boolean = true,
     override var postmanToken: String? = null,
     override var postmanWorkspace: String? = null,
     override var postmanExportMode: String? = PostmanExportMode.CREATE_NEW.name,
@@ -80,6 +82,8 @@ data class Settings(
         if (jaxrsEnable != other.jaxrsEnable) return false
         if (actuatorEnable != other.actuatorEnable) return false
         if (grpcEnable != other.grpcEnable) return false
+        if (swaggerEnable != other.swaggerEnable) return false
+        if (swagger3Enable != other.swagger3Enable) return false
         if (postmanBuildExample != other.postmanBuildExample) return false
         if (wrapCollection != other.wrapCollection) return false
         if (autoMergeScript != other.autoMergeScript) return false
@@ -123,6 +127,8 @@ data class Settings(
         result = 31 * result + jaxrsEnable.hashCode()
         result = 31 * result + actuatorEnable.hashCode()
         result = 31 * result + grpcEnable.hashCode()
+        result = 31 * result + swaggerEnable.hashCode()
+        result = 31 * result + swagger3Enable.hashCode()
         result = 31 * result + postmanBuildExample.hashCode()
         result = 31 * result + wrapCollection.hashCode()
         result = 31 * result + autoMergeScript.hashCode()

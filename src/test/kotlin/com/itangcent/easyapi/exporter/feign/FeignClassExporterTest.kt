@@ -83,7 +83,7 @@ class FeignClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = exporter.export(psiClass!!)
         val postEndpoint = endpoints.find { it.httpMetadata?.method == HttpMethod.POST }
         assertNotNull(postEndpoint)
-        assertTrue(postEndpoint!!.httpMetadata!!.parameters.any { it.binding == com.itangcent.easyapi.exporter.model.ParameterBinding.Body })
+        assertNotNull("POST endpoint should have a request body", postEndpoint!!.httpMetadata!!.body)
     }
 
     fun testExportNonFeignClient() = runTest {
