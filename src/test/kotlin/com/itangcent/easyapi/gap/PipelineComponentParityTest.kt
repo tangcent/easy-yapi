@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.gap
 
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.exporter.core.EmptyMethodFilter
 import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsContentTypeResolver
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
@@ -46,10 +45,5 @@ class PipelineComponentParityTest : EasyApiLightCodeInsightFixtureTestCase() {
         val annotationHelper = UnifiedAnnotationHelper()
         val resolver = JaxRsContentTypeResolver(annotationHelper)
         assertNotNull("JaxRsContentTypeResolver should exist", resolver)
-    }
-
-    fun testMethodFilterExists() {
-        val filter = EmptyMethodFilter()
-        assertNotNull("EmptyMethodFilter should exist", filter)
     }
 }

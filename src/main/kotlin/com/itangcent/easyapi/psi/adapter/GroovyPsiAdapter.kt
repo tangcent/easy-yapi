@@ -5,7 +5,6 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
-import com.itangcent.easyapi.core.di.ConditionOnClass
 import com.itangcent.easyapi.psi.doc.DocComment
 
 /**
@@ -15,12 +14,9 @@ import com.itangcent.easyapi.psi.doc.DocComment
  * to [JavaPsiAdapter] for most operations. Groovy PSI classes
  * are compatible with Java PSI APIs for most use cases.
  *
- * This adapter is only loaded when the Groovy plugin is available.
- *
  * @see PsiLanguageAdapter for the interface
  * @see JavaPsiAdapter for the delegate implementation
  */
-@ConditionOnClass("org.jetbrains.plugins.groovy.GroovyLanguage")
 class GroovyPsiAdapter : PsiLanguageAdapter {
     private val delegate = JavaPsiAdapter()
 

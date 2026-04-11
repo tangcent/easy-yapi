@@ -3,8 +3,6 @@ package com.itangcent.easyapi.core.di
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.config.DefaultConfigReader
-import com.itangcent.easyapi.exporter.core.EmptyMethodFilter
-import com.itangcent.easyapi.exporter.core.MethodFilter
 import com.itangcent.easyapi.logging.IdeaConsole
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLogConsole
@@ -12,7 +10,6 @@ import com.itangcent.easyapi.psi.helper.AnnotationHelper
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
-import com.itangcent.easyapi.rule.parser.RuleParser
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 import kotlin.reflect.KClass
@@ -129,7 +126,7 @@ interface OperationScope {
          * Adds standard SPI bindings for common services.
          *
          * This includes SettingBinder, ConfigReader, IdeaConsole,
-         * MethodFilter, AnnotationHelper, DocHelper, and RuleParser.
+         * AnnotationHelper, and DocHelper.
          *
          * @param settings Optional settings for filtering SPI implementations
          * @return This builder for chaining
@@ -155,26 +152,13 @@ interface OperationScope {
                 }
             }
 
-            if (!bindings.containsKey(MethodFilter::class)) {
-                bindings[MethodFilter::class] = lazy {
-                    SpiCompositeLoader.loadFiltered<MethodFilter>(settings).firstOrNull()
-                        ?: EmptyMethodFilter()
-                }
-            }
-
             if (!bindings.containsKey(AnnotationHelper::class)) {
-                bindings[AnnotationHelper::class] = lazy { UnifiedAnnotationHelper() }
+                bindings[AnnotationHelper::class] = UnifiedAnnotationHelper()
             }
 
             if (!bindings.containsKey(DocHelper::class)) {
                 bindings[DocHelper::class] = lazy {
                     project?.let { StandardDocHelper.getInstance(it) } ?: StandardDocHelper()
-                }
-            }
-
-            if (!bindings.containsKey(RuleParser::class)) {
-                SpiCompositeLoader.loadFiltered<RuleParser>(settings).firstOrNull()?.let { parser ->
-                    bindings[RuleParser::class] = parser
                 }
             }
         }

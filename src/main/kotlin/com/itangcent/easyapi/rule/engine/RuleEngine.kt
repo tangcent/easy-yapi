@@ -3,11 +3,11 @@ package com.itangcent.easyapi.rule.engine
 import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.di.SpiCompositeLoader
 import com.itangcent.easyapi.rule.IntRuleMode
 import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.context.RuleContext
 import com.itangcent.easyapi.rule.parser.*
+import java.util.ServiceLoader
 
 /**
  * Engine for evaluating configuration rules.
@@ -198,7 +198,7 @@ class RuleEngine(
     }
 
     private fun defaultParsers(): List<RuleParser> {
-        val loaded = runCatching { SpiCompositeLoader.load<RuleParser>() }.getOrNull().orEmpty()
+        val loaded = runCatching { ServiceLoader.load(RuleParser::class.java).toList() }.getOrNull().orEmpty()
         return (loaded + listOf(
             NegationParser(),
             GroovyScriptParser(),
@@ -207,7 +207,7 @@ class RuleEngine(
             TagExpressionParser(),
             ClassMatchParser(),
             TypeMatchParser(),
-            LiteralParser()  // must be last — catches everything
+            LiteralParser()
         )).distinctBy { it::class.java.name }
     }
 
