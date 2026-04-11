@@ -22,7 +22,7 @@ import com.itangcent.easyapi.settings.state.XmlSettingBinder
  */
 @Service(Service.Level.PROJECT)
 class DefaultSettingBinder(
-    project: Project
+    private val project: Project
 ) : SettingBinder {
     companion object {
         /**
@@ -42,6 +42,7 @@ class DefaultSettingBinder(
 
     override fun save(settings: Settings?) {
         cachedSettingBinder.save(settings)
+        project.messageBus.syncPublisher(SettingsChangeListener.TOPIC).settingsChanged()
     }
 
     override fun tryRead(): Settings? {

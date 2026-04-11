@@ -11,7 +11,6 @@ import com.itangcent.easyapi.core.context.project
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.psi.DefaultContextSwitchListener
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
@@ -66,8 +65,6 @@ class SpringMvcClassExporter(
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!controllerRecognizer.isController(psiClass)) return emptyList()
         if (metadataResolver.isIgnored(psiClass)) return emptyList()
-
-        DefaultContextSwitchListener.getInstance(project).switchTo(psiClass)
 
         val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
         LOG.info("before parse class:$className")

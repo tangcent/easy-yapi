@@ -25,7 +25,7 @@
         <projectService serviceImplementation="com.itangcent.easyapi.core.EasyApiProjectService"/>
         <projectService serviceImplementation="com.itangcent.easyapi.logging.IdeaConsoleProvider"/>
         <projectService serviceImplementation="com.itangcent.easyapi.config.DefaultConfigReader"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.psi.DefaultContextSwitchListener"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.config.ConfigSyncService"/>
         <projectService serviceImplementation="com.itangcent.easyapi.cache.CacheService"/>
         <projectService serviceInterface="com.itangcent.easyapi.settings.SettingBinder"
                         serviceImplementation="com.itangcent.easyapi.settings.DefaultSettingBinder"/>

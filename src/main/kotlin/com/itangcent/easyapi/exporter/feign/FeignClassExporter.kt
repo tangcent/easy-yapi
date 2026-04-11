@@ -16,7 +16,6 @@ import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
 import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.psi.DefaultContextSwitchListener
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
@@ -69,8 +68,6 @@ class FeignClassExporter(
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isFeignClient(psiClass)) return emptyList()
-
-        project?.let { DefaultContextSwitchListener.getInstance(it).switchTo(psiClass) }
 
         val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
         LOG.info("before parse class:$className")
