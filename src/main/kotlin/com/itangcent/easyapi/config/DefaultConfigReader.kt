@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.resource.CachedResourceResolver
 import com.itangcent.easyapi.config.source.*
+import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.SettingBinder
@@ -17,11 +18,9 @@ import com.itangcent.easyapi.util.storage.LocalStorage
  * Configuration sources are queried in order (highest priority first):
  * 1. **RuntimeConfigSource** - Dynamic runtime configuration, typically module-specific
  * 2. **BuiltInConfigSource** - Built-in configuration defined in plugin settings
- * 3. **SwaggerOnDemandConfigSource** - Swagger 2.x annotations parsed on demand
- * 4. **Swagger3OnDemandConfigSource** - OpenAPI 3.x annotations parsed on demand
- * 5. **RecommendConfigSource** - Recommended configuration presets
- * 6. **RemoteConfigSource** - Configuration fetched from remote URLs
- * 7. **LocalFileConfigSource** - Configuration from local `.easy-api.config` files
+ * 3. **ExtensionConfigSource** - Extension configurations (Swagger, Jackson, etc.)
+ * 4. **RemoteConfigSource** - Configuration fetched from remote URLs
+ * 5. **LocalFileConfigSource** - Configuration from local `.easy-api.config` files
  *
  * ## Automatic Reloading
  *
@@ -80,9 +79,10 @@ class DefaultConfigReader(
                     configTextParser,
                     settings.builtInConfig
                 ),
-                SwaggerOnDemandConfigSource(project),
-                Swagger3OnDemandConfigSource(project),
-                RecommendConfigSource(settings.recommendConfigs, configTextParser),
+                ExtensionConfigSource(
+                    ExtensionConfigRegistry.stringToCodes(settings.extensionConfigs),
+                    configTextParser
+                ),
                 RemoteConfigSource(
                     parseUrls(settings.remoteConfig.joinToString("\n")),
                     configTextParser,

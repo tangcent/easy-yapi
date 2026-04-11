@@ -83,7 +83,7 @@ class DirectiveParser(
         return when (key) {
             "builtInConfig" -> s.builtInConfig
             "remoteConfig" -> s.remoteConfig.joinToString("\n")
-            "recommendConfig" -> s.recommendConfigs
+            "extensionConfig" -> s.extensionConfigs
             "logLevel" -> s.logLevel.toString()
             "httpTimeOut" -> s.httpTimeOut.toString()
             "unsafeSsl" -> s.unsafeSsl.toString()

@@ -1,19 +1,24 @@
 package com.itangcent.easyapi.exporter.swagger
 
+import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 
 class Swagger3ConfigTest {
+
+    @Before
+    fun setUp() {
+        ExtensionConfigRegistry.loadExtensions()
+    }
 
     private data class ParsedConfigEntry(val key: String, val value: String)
 
     private fun loadSwagger3Config(): List<ParsedConfigEntry> {
         val entries = mutableListOf<ParsedConfigEntry>()
-        val resourceStream = javaClass.getResourceAsStream("/third/swagger3.config")
-            ?: throw AssertionError("Resource not found: /third/swagger3.config")
-        val content = resourceStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-
-        parseConfigContent(content, entries)
+        val swagger3 = ExtensionConfigRegistry.getExtension("swagger3")
+            ?: throw AssertionError("Swagger3 extension not found")
+        parseConfigContent(swagger3.content, entries)
         return entries
     }
 
@@ -101,11 +106,9 @@ class Swagger3ConfigTest {
 
     private fun loadSwagger3ConfigAsMap(): Map<String, List<String>> {
         val config = mutableMapOf<String, MutableList<String>>()
-        val resourceStream = javaClass.getResourceAsStream("/third/swagger3.config")
-            ?: throw AssertionError("Resource not found: /third/swagger3.config")
-        val content = resourceStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-
-        parseConfigContentToMap(content, config)
+        val swagger3 = ExtensionConfigRegistry.getExtension("swagger3")
+            ?: throw AssertionError("Swagger3 extension not found")
+        parseConfigContentToMap(swagger3.content, config)
         return config
     }
 

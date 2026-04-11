@@ -37,7 +37,7 @@ class IdeDispatchersTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testReadAction() = runBlocking {
-        val result = IdeDispatchers.readAction { "test" }
+        val result = IdeDispatchers.readSync { "test" }
         assertEquals("test", result)
     }
 

@@ -43,7 +43,7 @@ class Swagger3ConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     override fun createConfigReader(): TestConfigReader {
-        val swagger3Config = loadConfigFromResource("third/swagger3.config")
+        val swagger3Config = loadConfigFromResource("extensions/swagger3.config")
         return TestConfigReader.fromConfigText(swagger3Config)
     }
 

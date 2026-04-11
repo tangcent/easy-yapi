@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.project
 import com.itangcent.easyapi.core.threading.backgroundAsync
+import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
@@ -13,7 +14,6 @@ import com.itangcent.easyapi.rule.context.asScriptIt
 import com.itangcent.easyapi.util.RegexUtils
 import com.itangcent.easyapi.util.RuleToolUtils
 import com.itangcent.easyapi.util.ide.ModuleHelper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import javax.script.Bindings
@@ -64,8 +64,8 @@ abstract class Jsr223ScriptParser(
         val script = expression.removePrefix(prefix)
         if (script.isBlank()) return null
         LOG.debug("Jsr223ScriptParser: Starting to parse script (engine=${enginePool.engineName}, script length=${script.length})")
-        return withContext(Dispatchers.IO) {
-            LOG.debug("Jsr223ScriptParser: Running on Dispatchers.IO thread=${Thread.currentThread().name}")
+        return withContext(IdeDispatchers.Background) {
+            LOG.debug("Jsr223ScriptParser: Running on Background thread=${Thread.currentThread().name}")
             enginePool.withEngine { engine ->
                 val bindings = engine.createBindings()
                 bind(bindings, context)

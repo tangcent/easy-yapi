@@ -22,7 +22,7 @@ object IdeDispatchers : IdeaLog {
     private val scope = CoroutineScope(SupervisorJob() + Background + exceptionHandler)
 
     val isReadAccessAllowed: Boolean
-        get() = ApplicationManager.getApplication().isReadAccessAllowed
+        get() = ApplicationManager.getApplication().run { isReadAccessAllowed && holdsReadLock() }
 
     val isWriteAccessAllowed: Boolean
         get() = ApplicationManager.getApplication().isWriteAccessAllowed

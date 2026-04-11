@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.settings
 
-import com.itangcent.easyapi.recommend.RecommendPresetRegistry
+import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.settings.state.ApplicationSettingsSupport
 import com.itangcent.easyapi.settings.state.ProjectSettingsSupport
 
@@ -28,6 +28,7 @@ data class Settings(
     override var grpcEnable: Boolean = true,
     override var swaggerEnable: Boolean = true,
     override var swagger3Enable: Boolean = true,
+    override var extensionConfigs: String = defaultExtensionCodes(),
     override var postmanToken: String? = null,
     override var postmanWorkspace: String? = null,
     override var postmanExportMode: String? = PostmanExportMode.CREATE_NEW.name,
@@ -50,7 +51,6 @@ data class Settings(
     override var httpTimeOut: Int = 30,
     override var unsafeSsl: Boolean = false,
     override var httpClient: String = HttpClientType.APACHE.value,
-    override var recommendConfigs: String = defaultRecommendCodes(),
     override var logLevel: Int = 50,
     override var outputDemo: Boolean = true,
     override var outputCharset: String = "UTF-8",
@@ -65,10 +65,8 @@ data class Settings(
 ) : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     companion object {
-        private fun defaultRecommendCodes(): String {
-            return RecommendPresetRegistry.allPresets()
-                .filter { it.defaultEnabled }
-                .joinToString(",") { it.code }
+        private fun defaultExtensionCodes(): String {
+            return ExtensionConfigRegistry.codesToString(ExtensionConfigRegistry.defaultCodes())
         }
     }
 
@@ -108,7 +106,7 @@ data class Settings(
         if (yapiTokens != other.yapiTokens) return false
         if (yapiExportMode != other.yapiExportMode) return false
         if (httpClient != other.httpClient) return false
-        if (recommendConfigs != other.recommendConfigs) return false
+        if (extensionConfigs != other.extensionConfigs) return false
         if (outputCharset != other.outputCharset) return false
         if (markdownFormatType != other.markdownFormatType) return false
         if (builtInConfig != other.builtInConfig) return false
@@ -153,7 +151,7 @@ data class Settings(
         result = 31 * result + (yapiTokens?.hashCode() ?: 0)
         result = 31 * result + yapiExportMode.hashCode()
         result = 31 * result + httpClient.hashCode()
-        result = 31 * result + recommendConfigs.hashCode()
+        result = 31 * result + extensionConfigs.hashCode()
         result = 31 * result + outputCharset.hashCode()
         result = 31 * result + markdownFormatType.hashCode()
         result = 31 * result + (builtInConfig?.hashCode() ?: 0)

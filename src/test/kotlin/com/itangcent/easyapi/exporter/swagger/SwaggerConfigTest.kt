@@ -1,25 +1,30 @@
 package com.itangcent.easyapi.exporter.swagger
 
+import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import org.junit.Assert.*
+import org.junit.Before
 import org.junit.Test
 
 class SwaggerConfigTest {
 
+    @Before
+    fun setUp() {
+        ExtensionConfigRegistry.loadExtensions()
+    }
+
     private fun loadSwaggerConfig(): Map<String, List<String>> {
         val config = mutableMapOf<String, MutableList<String>>()
-        val resourceStream = javaClass.getResourceAsStream("/third/swagger.config")
-            ?: throw AssertionError("Resource not found: /third/swagger.config")
-        resourceStream.bufferedReader(Charsets.UTF_8).use { reader ->
-            reader.readLines()
-                .filter { it.isNotBlank() && !it.startsWith("#") && it.contains("=") }
-                .forEach { line ->
-                    val idx = line.indexOf('=')
-                    if (idx > 0) {
-                        val key = line.substring(0, idx).trim()
-                        val value = line.substring(idx + 1).trim()
-                        config.getOrPut(key) { mutableListOf() }.add(value)
-                    }
+        val swagger = ExtensionConfigRegistry.getExtension("swagger")
+            ?: throw AssertionError("Swagger extension not found")
+        swagger.content.lines().forEach { line ->
+            if (line.isNotBlank() && !line.startsWith("#") && line.contains("=")) {
+                val idx = line.indexOf('=')
+                if (idx > 0) {
+                    val key = line.substring(0, idx).trim()
+                    val value = line.substring(idx + 1).trim()
+                    config.getOrPut(key) { mutableListOf() }.add(value)
                 }
+            }
         }
         return config
     }

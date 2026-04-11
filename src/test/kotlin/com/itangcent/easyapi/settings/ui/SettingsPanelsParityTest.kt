@@ -8,15 +8,15 @@ import org.junit.Test
 class SettingsPanelsParityTest {
 
     @Test
-    fun testRecommendPanelSerializationFlow() {
+    fun testExtensionPanelSerializationFlow() {
         val settings = Settings().apply {
-            recommendConfigs = "Jackson,Gson"
+            extensionConfigs = "jackson,gson"
         }
-        val panel = RecommendConfigPanel()
+        val panel = ExtensionConfigPanel()
         panel.resetFrom(settings)
         assertFalse(panel.isModified(settings))
         panel.applyTo(settings)
-        assertTrue(!settings.recommendConfigs.isNullOrBlank())
+        assertTrue(!settings.extensionConfigs.isNullOrBlank())
     }
 
     @Test

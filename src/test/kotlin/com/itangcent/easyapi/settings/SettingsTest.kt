@@ -138,8 +138,8 @@ class SettingsTest {
     }
 
     @Test
-    fun testRecommendConfigs_notEmpty() {
+    fun testExtensionConfigs_notEmpty() {
         val settings = Settings()
-        assertNotNull(settings.recommendConfigs)
+        assertNotNull(settings.extensionConfigs)
     }
 }

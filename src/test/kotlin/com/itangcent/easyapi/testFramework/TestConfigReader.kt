@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.testFramework
 
 import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.extension.ExtensionConfigParser
 
 class TestConfigReader(
     private val config: Map<String, List<String>> = emptyMap()
@@ -35,9 +36,9 @@ class TestConfigReader(
 
         fun fromConfigText(configText: String): TestConfigReader {
             val config = mutableMapOf<String, List<String>>()
-            configText.lines()
-                .filter { it.isNotBlank() && !it.startsWith("#") }
-                .forEach { line ->
+            val strippedContent = ExtensionConfigParser.stripYamlFrontMatter(configText)
+            strippedContent.lines().forEach { line ->
+                if (line.isNotBlank() && !line.startsWith("#")) {
                     val idx = line.indexOf('=')
                     if (idx > 0) {
                         val key = line.substring(0, idx).trim()
@@ -45,6 +46,7 @@ class TestConfigReader(
                         config[key] = config.getOrDefault(key, emptyList()) + value
                     }
                 }
+            }
             return TestConfigReader(config)
         }
 

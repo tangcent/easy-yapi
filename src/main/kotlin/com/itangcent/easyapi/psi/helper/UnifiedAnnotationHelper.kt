@@ -12,6 +12,7 @@ import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiReferenceExpression
 import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.psi.adapter.GroovyPsiAdapter
 import com.itangcent.easyapi.psi.adapter.JavaPsiAdapter
 import com.itangcent.easyapi.psi.adapter.KotlinPsiAdapter
@@ -53,29 +54,29 @@ class UnifiedAnnotationHelper(
     }
 
     override suspend fun hasAnn(element: PsiElement, annFqn: String): Boolean {
-        return readAction {
+        return readSync {
             findPsiAnnotations(element, annFqn).isNotEmpty()
         }
     }
 
     override suspend fun findAnnMap(element: PsiElement, annFqn: String): Map<String, Any?>? {
-        return readAction {
+        return readSync {
             findPsiAnnotations(element, annFqn).firstOrNull()?.let { normalizeAttributes(it, element.project) }
         }
     }
 
     override suspend fun findAnnMaps(element: PsiElement, annFqn: String): List<Map<String, Any?>>? {
-        return readAction {
+        return readSync {
             val anns = findPsiAnnotations(element, annFqn)
-            if (anns.isEmpty()) return@readAction null
+            if (anns.isEmpty()) return@readSync null
             anns.map { normalizeAttributes(it, element.project) }
         }
     }
 
     override suspend fun findAttr(element: PsiElement, annFqn: String, attr: String): Any? {
-        return readAction {
-            val ann = findPsiAnnotations(element, annFqn).firstOrNull() ?: return@readAction null
-            val value = ann.findAttributeValue(attr) ?: return@readAction null
+        return readSync {
+            val ann = findPsiAnnotations(element, annFqn).firstOrNull() ?: return@readSync null
+            val value = ann.findAttributeValue(attr) ?: return@readSync null
             normalizeValue(value, element.project)
         }
     }
@@ -116,6 +117,7 @@ class UnifiedAnnotationHelper(
                     else -> evaluateConstantExpression(value, project) ?: value.text
                 }
             }
+
             is PsiExpression -> evaluateConstantExpression(value, project) ?: value.text.trim('"')
             else -> value.text.trim('"')
         }

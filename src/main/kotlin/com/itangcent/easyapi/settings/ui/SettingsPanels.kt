@@ -20,8 +20,8 @@ import com.itangcent.easyapi.repository.DefaultRepositories
 import com.itangcent.easyapi.repository.RepositoryConfig
 import com.itangcent.easyapi.repository.RepositoryType
 import com.itangcent.easyapi.http.ApacheHttpClient
+import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.recommend.RecommendPresetRegistry
 import com.itangcent.easyapi.util.GsonUtils
 import com.itangcent.easyapi.settings.HttpClientType
 import com.itangcent.easyapi.settings.MarkdownFormatType
@@ -752,13 +752,13 @@ class IntelligentSettingsPanel : SettingsPanel {
     }
 }
 
-class RecommendConfigPanel : SettingsPanel {
-    private val presetList = CheckBoxList<String>()
+class ExtensionConfigPanel : SettingsPanel {
+    private val extensionList = CheckBoxList<String>()
     private val preview = JBTextArea()
 
     override val component: JComponent = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
         val left = JPanel(BorderLayout())
-        left.add(JScrollPane(presetList), BorderLayout.CENTER)
+        left.add(JScrollPane(extensionList), BorderLayout.CENTER)
         val right = JPanel(BorderLayout())
         preview.isEditable = false
         right.add(JScrollPane(preview), BorderLayout.CENTER)
@@ -768,40 +768,31 @@ class RecommendConfigPanel : SettingsPanel {
     }
 
     init {
-        val allCodes = RecommendPresetRegistry.allPresets().map { it.code }
-        presetList.setItems(allCodes) { it }
-        presetList.setCheckBoxListListener { _, _ -> refreshPreview() }
+        val allCodes = ExtensionConfigRegistry.allExtensions().map { it.code }
+        extensionList.setItems(allCodes) { it }
+        extensionList.setCheckBoxListListener { _, _ -> refreshPreview() }
+        extensionList.addListSelectionListener { refreshPreview() }
     }
 
     override fun resetFrom(settings: Settings?) {
-        val selected = settings?.recommendConfigs
-            ?.split(',', ';', '\n')
-            ?.map { it.trim() }
-            ?.filter { it.isNotEmpty() }
-            ?.toSet()
-            ?: emptySet()
-        RecommendPresetRegistry.allPresets().forEachIndexed { index, preset ->
+        val selected = ExtensionConfigRegistry.stringToCodes(settings?.extensionConfigs ?: "").toSet()
+        ExtensionConfigRegistry.allExtensions().forEachIndexed { index, extension ->
             val isSelected =
-                selected.contains(preset.code) || (preset.defaultEnabled && !selected.contains("-${preset.code}"))
-            presetList.setItemSelected(preset.code, isSelected)
+                selected.contains(extension.code) || (extension.defaultEnabled && !selected.contains("-${extension.code}"))
+            extensionList.setItemSelected(extension.code, isSelected)
         }
         refreshPreview()
     }
 
     override fun applyTo(settings: Settings) {
-        settings.recommendConfigs = selectedCodes().joinToString(",").takeIf { it.isNotBlank() } ?: ""
+        settings.extensionConfigs = ExtensionConfigRegistry.codesToString(selectedCodes().toTypedArray())
     }
 
     override fun isModified(settings: Settings?): Boolean {
         val s = settings ?: return false
         val currentSelected = selectedCodes().toSet()
-        val savedSelected = s.recommendConfigs
-            ?.split(',', ';', '\n')
-            ?.map { it.trim() }
-            ?.filter { it.isNotEmpty() }
-            ?.toSet()
-            ?: emptySet()
-        val defaultEnabled = RecommendPresetRegistry.allPresets()
+        val savedSelected = ExtensionConfigRegistry.stringToCodes(s.extensionConfigs ?: "").toSet()
+        val defaultEnabled = ExtensionConfigRegistry.allExtensions()
             .filter { it.defaultEnabled }
             .map { it.code }
             .toSet()
@@ -810,18 +801,35 @@ class RecommendConfigPanel : SettingsPanel {
     }
 
     private fun selectedCodes(): List<String> {
-        return RecommendPresetRegistry.allPresets().mapNotNull { preset ->
-            if (presetList.isItemSelected(preset.code)) preset.code else null
+        return ExtensionConfigRegistry.allExtensions().mapNotNull { extension ->
+            if (extensionList.isItemSelected(extension.code)) extension.code else null
         }
     }
 
     private fun refreshPreview() {
-        val lines = selectedCodes().mapNotNull { code ->
-            RecommendPresetRegistry.getPreset(code)?.let { preset ->
-                if (preset.content.isBlank()) "# $code" else "# $code\n" + preset.content
+        val selectedIndex = extensionList.selectedIndex
+        if (selectedIndex >= 0) {
+            val allExtensions = ExtensionConfigRegistry.allExtensions()
+            if (selectedIndex < allExtensions.size) {
+                val extension = allExtensions[selectedIndex]
+                val sb = StringBuilder()
+                sb.appendLine("# Code: ${extension.code}")
+                sb.appendLine("# Description: ${extension.description}")
+                if (extension.onClass != null) {
+                    sb.appendLine("# Condition: on-class ${extension.onClass}")
+                }
+                sb.appendLine("# Default: ${if (extension.defaultEnabled) "enabled" else "disabled"}")
+                sb.appendLine()
+                if (extension.content.isNotBlank()) {
+                    sb.append(extension.content)
+                } else {
+                    sb.append("# (no content)")
+                }
+                preview.text = sb.toString()
+                return
             }
         }
-        preview.text = lines.joinToString("\n\n")
+        preview.text = "# Select an extension to preview"
     }
 }
 
@@ -1050,7 +1058,7 @@ class OtherSettingsPanel : SettingsPanel {
         settings.httpTimeOut = imported.httpTimeOut
         settings.unsafeSsl = imported.unsafeSsl
         settings.httpClient = imported.httpClient
-        settings.recommendConfigs = imported.recommendConfigs
+        settings.extensionConfigs = imported.extensionConfigs
         settings.logLevel = imported.logLevel
         settings.outputDemo = imported.outputDemo
         settings.outputCharset = imported.outputCharset

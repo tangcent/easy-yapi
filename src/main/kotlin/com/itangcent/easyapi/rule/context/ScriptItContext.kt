@@ -5,6 +5,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiNamedElement
+import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.psi.helper.BlockingAnnotationHelper
 import com.itangcent.easyapi.psi.helper.BlockingDocHelper
 
@@ -48,18 +49,9 @@ open class ScriptItContext(protected val context: RuleContext) {
     private val docHelper = context.element?.let { BlockingDocHelper(context.docHelper) }
     private val annotationHelper = context.element?.let { BlockingAnnotationHelper(context.annotationHelper) }
 
-    protected fun <T> readAction(block: () -> T): T {
-        val app = ApplicationManager.getApplication()
-        return if (app.isReadAccessAllowed) {
-            block()
-        } else {
-            app.runReadAction<T>(block)
-        }
-    }
-
     fun psi(): PsiElement? = context.element
 
-    fun getName(): String? = readAction {
+    fun getName(): String? = readSync {
         (context.element as? PsiNamedElement)?.name
     }
 
@@ -91,13 +83,13 @@ open class ScriptItContext(protected val context: RuleContext) {
         return null
     }
 
-    fun hasModifier(modifier: String): Boolean = readAction {
-        val owner = context.element as? PsiModifierListOwner ?: return@readAction false
+    fun hasModifier(modifier: String): Boolean = readSync {
+        val owner = context.element as? PsiModifierListOwner ?: return@readSync false
         owner.hasModifierProperty(modifier)
     }
 
-    fun modifiers(): List<String> = readAction {
-        val owner = context.element as? PsiModifierListOwner ?: return@readAction emptyList()
+    fun modifiers(): List<String> = readSync {
+        val owner = context.element as? PsiModifierListOwner ?: return@readSync emptyList()
         val candidates = listOf(
             PsiModifier.PUBLIC,
             PsiModifier.PROTECTED,
@@ -143,7 +135,7 @@ open class ScriptItContext(protected val context: RuleContext) {
         return annotationHelper?.findAnnMaps(el, name)
     }
 
-    open fun sourceCode(): String? = readAction { context.element?.text }
+    open fun sourceCode(): String? = readSync { context.element?.text }
 
     open fun defineCode(): String? {
         val code = sourceCode()?.trim() ?: return null
