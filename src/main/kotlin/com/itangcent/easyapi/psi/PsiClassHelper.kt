@@ -47,9 +47,11 @@ interface PsiClassHelper {
      * Builds an object model from a PSI type.
      *
      * @param psiType The type to analyze
+     * @param psiType The type to analyze
      * @param actionContext The action context
      * @param maxDepth Maximum recursion depth for nested types
      * @param genericContext The generic context for type substitution
+     * @param contextElement Optional context element for import-aware type resolution
      * @return The object model, or null if the type cannot be analyzed
      */
     suspend fun buildObjectModelFromType(
@@ -57,7 +59,8 @@ interface PsiClassHelper {
         actionContext: ActionContext,
         option: Int = JsonOption.ALL,
         maxDepth: Int = 8,
-        genericContext: GenericContext = GenericContext.EMPTY
+        genericContext: GenericContext = GenericContext.EMPTY,
+        contextElement: com.intellij.psi.PsiElement? = null
     ): ObjectModel?
 
     companion object {

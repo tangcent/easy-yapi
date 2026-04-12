@@ -69,7 +69,6 @@ object RuleKeys {
     val JSON_ADDITIONAL_FIELD   = RuleKey.string("json.additional.field", StringRuleMode.MERGE)
     val JSON_RULE_CONVERT       = RuleKey.string("json.rule.convert")
     val JSON_UNWRAPPED          = RuleKey.boolean("json.unwrapped")
-    val JSON_GROUP              = RuleKey.string("json.group")
 
     // ── API lifecycle events ──────────────────────────────────────
     val API_CLASS_PARSE_BEFORE  = RuleKey.event("api.class.parse.before")

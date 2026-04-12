@@ -86,6 +86,28 @@ class RuleEngine(
         return key.stringMode.aggregate(values)
     }
 
+    /**
+     * Evaluate a string rule for a PsiType with an optional context element.
+     * Used for json.rule.convert rules where the type's canonical text is matched
+     * by regex filters, and scripts can access the type via `it.type()`.
+     */
+    suspend fun evaluate(
+        key: RuleKey.StringKey,
+        psiType: com.intellij.psi.PsiType,
+        contextElement: PsiElement? = null
+    ): String? {
+        val ctx = RuleContext.withPsiType(actionContext, psiType, contextElement)
+        val values = ArrayList<String?>()
+        forEachApplicable(key, ctx) { exp ->
+            val v = runCatching { parse(exp, ctx, key) }
+                .onFailure { e -> ctx.console.warn("Rule evaluation failed for key=${key.name}", e) }
+                .getOrNull()
+                ?.toString()
+            values.add(v)
+        }
+        return key.stringMode.aggregate(values)
+    }
+
     /** Evaluate a boolean rule. Returns false when no rule matches. */
     suspend fun evaluate(key: RuleKey.BooleanKey, element: PsiElement): Boolean {
         val ctx = RuleContext.from(actionContext, element)
@@ -155,6 +177,7 @@ class RuleEngine(
         action: suspend (String) -> Unit
     ) {
         for ((exp, filterExp) in loadExpressionsWithFilters(key)) {
+            ctx.regexGroups = null
             val shouldApply = if (filterExp != null) {
                 runCatching { parse(filterExp, ctx, FILTER_KEY) }
                     .onFailure { e -> ctx.console.warn("Filter evaluation failed for key=${key.name}", e) }
@@ -167,6 +190,7 @@ class RuleEngine(
             if (shouldApply) {
                 action(exp)
             }
+            ctx.regexGroups = null
         }
     }
 

@@ -86,7 +86,11 @@ class JaxRsClassExporter(
         return endpoints
     }
 
-    private suspend fun exportMethod(psiClass: PsiClass, method: PsiMethod, annotatedMethod: PsiMethod): List<ApiEndpoint> {
+    private suspend fun exportMethod(
+        psiClass: PsiClass,
+        method: PsiMethod,
+        annotatedMethod: PsiMethod
+    ): List<ApiEndpoint> {
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
 
@@ -209,7 +213,11 @@ class JaxRsClassExporter(
         if (returnType == com.intellij.psi.PsiTypes.voidType()) return null
         return runCatching {
             val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(returnType, actionContext)
+            helper.buildObjectModelFromType(
+                psiType = returnType,
+                contextElement = method,
+                actionContext = actionContext
+            )
         }.getOrNull()
     }
 

@@ -91,7 +91,11 @@ class FeignClassExporter(
         return endpoints
     }
 
-    private suspend fun exportMethod(basePath: String, psiClass: PsiClass, resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiEndpoint> {
+    private suspend fun exportMethod(
+        basePath: String,
+        psiClass: PsiClass,
+        resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
+    ): List<ApiEndpoint> {
         val method = resolvedMethod.psiMethod
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
@@ -320,7 +324,11 @@ class FeignClassExporter(
         if (returnType == com.intellij.psi.PsiTypes.voidType()) return null
         return runCatching {
             val helper = PsiClassHelper.getInstance(project!!)
-            helper.buildObjectModelFromType(returnType, actionContext)
+            helper.buildObjectModelFromType(
+                psiType = returnType,
+                contextElement = method,
+                actionContext = actionContext
+            )
         }.getOrNull()
     }
 

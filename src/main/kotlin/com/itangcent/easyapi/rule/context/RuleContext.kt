@@ -54,8 +54,16 @@ class RuleContext private constructor(
     val element: PsiElement?,
     val fieldContext: String?,
     private val sessionStorageInstance: SessionStorage,
-    private val extensions: MutableMap<String, Any?> = mutableMapOf()
+    private val extensions: MutableMap<String, Any?> = mutableMapOf(),
+    private val typeTextOverride: String? = null,
+    /** The PsiType being evaluated (for json.rule.convert and type-based rules). */
+    val psiType: com.intellij.psi.PsiType? = null
 ) {
+    val typeText: String? get() = typeTextOverride ?: psiType?.canonicalText ?: element?.text
+
+    /** Captured regex groups from the most recent filter match. */
+    var regexGroups: List<String>? = null
+
     val docHelper: DocHelper by lazy {
         actionContext.instanceOrNull(DocHelper::class) ?: StandardDocHelper()
     }
@@ -87,7 +95,11 @@ class RuleContext private constructor(
     fun exts(): Map<String, Any?> = extensions
 
     fun withElement(element: PsiElement, fieldContext: String? = this.fieldContext): RuleContext {
-        return RuleContext(actionContext, element, fieldContext, sessionStorageInstance, extensions)
+        return RuleContext(actionContext, element, fieldContext, sessionStorageInstance, extensions, typeTextOverride, psiType)
+    }
+
+    fun withTypeText(typeText: String): RuleContext {
+        return RuleContext(actionContext, element, fieldContext, sessionStorageInstance, extensions, typeText, psiType)
     }
 
     companion object : IdeaLog {
@@ -99,12 +111,36 @@ class RuleContext private constructor(
         }
 
         /**
+         * Create a [RuleContext] with a [PsiType] and optional context element.
+         * Used for json.rule.convert rules that match against type canonical text.
+         * The [psiType] provides both the canonical text for regex matching and
+         * the resolved type for script contexts (e.g., `it.type().isCollection()`).
+         */
+        fun withPsiType(
+            actionContext: ActionContext,
+            psiType: com.intellij.psi.PsiType,
+            contextElement: PsiElement? = null
+        ): RuleContext {
+            val sessionStorage = SessionStorage().also { actionContext.registerAutoClear(it) }
+            return RuleContext(actionContext, contextElement, null, sessionStorage, psiType = psiType)
+        }
+
+        /**
          * Create a [RuleContext] without a [PsiElement].
          * Used for event rules that don't operate on PSI (e.g. http.call.before/after).
          */
         fun withoutElement(actionContext: ActionContext): RuleContext {
             val sessionStorage = SessionStorage().also { actionContext.registerAutoClear(it) }
             return RuleContext(actionContext, null, null, sessionStorage)
+        }
+
+        /**
+         * Create a [RuleContext] with a type text for type-based rule matching.
+         * Used for json.rule.convert rules that match against type canonical text.
+         */
+        fun withTypeText(actionContext: ActionContext, typeText: String): RuleContext {
+            val sessionStorage = SessionStorage().also { actionContext.registerAutoClear(it) }
+            return RuleContext(actionContext, null, null, sessionStorage, mutableMapOf(), typeText)
         }
     }
 

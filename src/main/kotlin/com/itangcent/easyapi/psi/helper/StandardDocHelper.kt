@@ -6,9 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.javadoc.PsiDocComment
 import com.intellij.psi.javadoc.PsiDocTag
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
-import kotlinx.coroutines.withContext
 import java.util.*
 
 const val COMMENT_PREFIX = "//"

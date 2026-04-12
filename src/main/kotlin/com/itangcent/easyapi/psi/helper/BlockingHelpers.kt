@@ -3,12 +3,12 @@ package com.itangcent.easyapi.psi.helper
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
 import com.intellij.psi.javadoc.PsiDocComment
-import kotlinx.coroutines.runBlocking
+import com.itangcent.easyapi.core.threading.readBlocking
 
 /**
  * Blocking wrapper for [DocHelper].
  *
- * Provides synchronous versions of DocHelper methods using `runBlocking`.
+ * Provides synchronous versions of DocHelper methods using `readBlocking`.
  * Use only when you must call suspend functions from non-suspend contexts.
  *
  * **Warning**: Using this in UI threads may cause freezes.
@@ -19,15 +19,15 @@ import kotlinx.coroutines.runBlocking
 class BlockingDocHelper(private val delegate: DocHelper) {
 
     fun getTagMapOfDocComment(psiElement: PsiElement?): Map<String, String?> {
-        return runBlocking { delegate.getTagMapOfDocComment(psiElement) }
+        return readBlocking { delegate.getTagMapOfDocComment(psiElement) }
     }
 
     fun getSubTagMapOfDocComment(psiElement: PsiElement?, tag: String): Map<String, String?> {
-        return runBlocking { delegate.getSubTagMapOfDocComment(psiElement, tag) }
+        return readBlocking { delegate.getSubTagMapOfDocComment(psiElement, tag) }
     }
 
     fun getAttrOfDocComment(psiElement: PsiElement?): String? {
-        return runBlocking { delegate.getAttrOfDocComment(psiElement) }
+        return readBlocking { delegate.getAttrOfDocComment(psiElement) }
     }
 
     fun getDocCommentContent(docComment: PsiDocComment): String? {
@@ -35,19 +35,19 @@ class BlockingDocHelper(private val delegate: DocHelper) {
     }
 
     fun findDocsByTagAndName(psiElement: PsiElement?, tag: String, name: String): String? {
-        return runBlocking { delegate.findDocsByTagAndName(psiElement, tag, name) }
+        return readBlocking { delegate.findDocsByTagAndName(psiElement, tag, name) }
     }
 
     fun findDocsByTag(psiElement: PsiElement?, tag: String?): List<String>? {
-        return runBlocking { delegate.findDocsByTag(psiElement, tag) }
+        return readBlocking { delegate.findDocsByTag(psiElement, tag) }
     }
 
     fun findDocByTag(psiElement: PsiElement?, tag: String?): String? {
-        return runBlocking { delegate.findDocByTag(psiElement, tag) }
+        return readBlocking { delegate.findDocByTag(psiElement, tag) }
     }
 
     fun hasTag(psiElement: PsiElement?, tag: String?): Boolean {
-        return runBlocking { delegate.hasTag(psiElement, tag) }
+        return readBlocking { delegate.hasTag(psiElement, tag) }
     }
 
     fun getEolComment(psiElement: PsiElement): String? {
@@ -55,14 +55,14 @@ class BlockingDocHelper(private val delegate: DocHelper) {
     }
 
     fun getAttrOfField(field: PsiField): String? {
-        return runBlocking { delegate.getAttrOfField(field) }
+        return readBlocking { delegate.getAttrOfField(field) }
     }
 }
 
 /**
  * Blocking wrapper for [AnnotationHelper].
  *
- * Provides synchronous versions of AnnotationHelper methods using `runBlocking`.
+ * Provides synchronous versions of AnnotationHelper methods using `readBlocking`.
  * Use only when you must call suspend functions from non-suspend contexts.
  *
  * **Warning**: Using this in UI threads may cause freezes.
@@ -73,22 +73,22 @@ class BlockingDocHelper(private val delegate: DocHelper) {
 class BlockingAnnotationHelper(private val delegate: AnnotationHelper) {
 
     fun hasAnn(element: PsiElement, annFqn: String): Boolean {
-        return runBlocking { delegate.hasAnn(element, annFqn) }
+        return readBlocking { delegate.hasAnn(element, annFqn) }
     }
 
     fun findAnnMap(element: PsiElement, annFqn: String): Map<String, Any?>? {
-        return runBlocking { delegate.findAnnMap(element, annFqn) }
+        return readBlocking { delegate.findAnnMap(element, annFqn) }
     }
 
     fun findAnnMaps(element: PsiElement, annFqn: String): List<Map<String, Any?>>? {
-        return runBlocking { delegate.findAnnMaps(element, annFqn) }
+        return readBlocking { delegate.findAnnMaps(element, annFqn) }
     }
 
     fun findAttr(element: PsiElement, annFqn: String, attr: String): Any? {
-        return runBlocking { delegate.findAttr(element, annFqn, attr) }
+        return readBlocking { delegate.findAttr(element, annFqn, attr) }
     }
 
     fun findAttrAsString(element: PsiElement, annFqn: String, attr: String): String? {
-        return runBlocking { delegate.findAttrAsString(element, annFqn, attr) }
+        return readBlocking { delegate.findAttrAsString(element, annFqn, attr) }
     }
 }

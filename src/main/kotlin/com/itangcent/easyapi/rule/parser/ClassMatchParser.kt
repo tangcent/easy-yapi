@@ -38,26 +38,28 @@ class ClassMatchParser : RuleParser {
     override fun canParse(expression: String): Boolean =
         expression.trim().startsWith("\$class:")
 
-    override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any? {
-        val element = context.element ?: return false
+    override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any {
+        val element = context.element
+        val psiType = context.psiType
+        if (element == null && psiType == null) return false
         val content = expression.trim().removePrefix("\$class:").trim()
         if (content.isEmpty()) return false
 
         return if (content.startsWith("? extend")) {
             val target = content.removePrefix("? extend").trim()
-            checkExtends(element, target)
+            checkExtends(element, psiType, target)
         } else {
-            checkExact(element, content)
+            checkExact(element, psiType, content)
         }
     }
 
-    private fun checkExact(element: PsiElement, className: String): Boolean {
-        val psiClass = resolveClass(element) ?: return false
+    private fun checkExact(element: PsiElement?, psiType: com.intellij.psi.PsiType?, className: String): Boolean {
+        val psiClass = resolveClass(element, psiType) ?: return false
         return psiClass.qualifiedName == className
     }
 
-    private fun checkExtends(element: PsiElement, target: String): Boolean {
-        val psiClass = resolveClass(element) ?: return false
+    private fun checkExtends(element: PsiElement?, psiType: com.intellij.psi.PsiType?, target: String): Boolean {
+        val psiClass = resolveClass(element, psiType) ?: return false
         return extendsOrImplements(psiClass, target)
     }
 
@@ -74,12 +76,18 @@ class ClassMatchParser : RuleParser {
     }
 
     companion object {
-        fun resolveClass(element: PsiElement): PsiClass? = when (element) {
-            is PsiClass -> element
-            is PsiField -> PsiTypesUtil.getPsiClass(element.type)
-            is PsiMethod -> element.returnType?.let { PsiTypesUtil.getPsiClass(it) }
-            is PsiParameter -> PsiTypesUtil.getPsiClass(element.type)
-            else -> null
+        fun resolveClass(element: PsiElement?, psiType: com.intellij.psi.PsiType? = null): PsiClass? {
+            // Prefer psiType if available
+            if (psiType != null) {
+                return PsiTypesUtil.getPsiClass(psiType)
+            }
+            return when (element) {
+                is PsiClass -> element
+                is PsiField -> PsiTypesUtil.getPsiClass(element.type)
+                is PsiMethod -> element.returnType?.let { PsiTypesUtil.getPsiClass(it) }
+                is PsiParameter -> PsiTypesUtil.getPsiClass(element.type)
+                else -> null
+            }
         }
     }
 }

@@ -1,7 +1,9 @@
 package com.itangcent.easyapi.psi.type
 
 import com.intellij.psi.*
+import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.core.threading.read
+import com.itangcent.easyapi.core.threading.readSync
 
 /**
  * Represents a resolved type in the type system.
@@ -343,10 +345,10 @@ object TypeResolver {
     }
 
     private fun resolveNonPrimitive(psiType: PsiType, context: GenericContext): ResolvedType {
-        val arrayType = psiType as? com.intellij.psi.PsiArrayType
+        val arrayType = psiType as? PsiArrayType
         if (arrayType != null) return ResolvedType.ArrayType(resolve(arrayType.componentType, context))
 
-        val wildcard = psiType as? com.intellij.psi.PsiWildcardType
+        val wildcard = psiType as? PsiWildcardType
         if (wildcard != null) {
             return ResolvedType.WildcardType(
                 upper = resolve(wildcard.extendsBound, context),
@@ -386,6 +388,203 @@ object TypeResolver {
         }
 
         return substitute(ResolvedType.UnresolvedType(psiType.canonicalText), context)
+    }
+
+    /**
+     * Resolves a canonical text string to a [ResolvedType].
+     *
+     * This function attempts to resolve a type name (like "java.lang.String", "com.example.User",
+     * "java.util.List<java.lang.String>") to a proper ResolvedType by:
+     * 1. Handling special types (file, primitives)
+     * 2. Creating a PsiType from the text using JavaPsiFacade
+     * 3. Resolving the PsiType to a ResolvedType
+     *
+     * Falls back to [ResolvedType.UnresolvedType] if resolution fails.
+     *
+     * @param canonicalText The canonical text representation of the type
+     * @param project The project for class resolution
+     * @param context The generic context for type parameter substitution
+     * @return The resolved type, or UnresolvedType if resolution fails
+     */
+    fun resolveFromCanonicalText(
+        canonicalText: String,
+        project: com.intellij.openapi.project.Project,
+        context: GenericContext = GenericContext.EMPTY
+    ): ResolvedType {
+        return resolveFromCanonicalText(canonicalText, project, null, context)
+    }
+
+    /**
+     * Resolves a canonical text string to a [ResolvedType] with context element support.
+     *
+     * The context element helps resolve simple class names based on imports in the file.
+     *
+     * @param canonicalText The canonical text representation of the type
+     * @param project The project for class resolution
+     * @param contextElement The context element for import resolution (can be null)
+     * @param context The generic context for type parameter substitution
+     * @return The resolved type, or UnresolvedType if resolution fails
+     */
+    fun resolveFromCanonicalText(
+        canonicalText: String,
+        project: com.intellij.openapi.project.Project,
+        contextElement: PsiElement?,
+        context: GenericContext = GenericContext.EMPTY
+    ): ResolvedType {
+        if (canonicalText.isBlank()) return ResolvedType.UnresolvedType(canonicalText)
+
+        val trimmed = canonicalText.trim()
+
+        if (SpecialTypeHandler.isFileTypeName(trimmed)) {
+            return ResolvedType.UnresolvedType("__file__")
+        }
+
+        val primitiveKind = resolvePrimitiveKind(trimmed)
+        if (primitiveKind != null) {
+            return ResolvedType.PrimitiveType(primitiveKind)
+        }
+
+        if (trimmed.endsWith("[]")) {
+            val componentText = trimmed.removeSuffix("[]")
+            val componentType = resolveFromCanonicalText(componentText, project, contextElement, context)
+            return ResolvedType.ArrayType(componentType)
+        }
+
+        // 1. Try createTypeFromText first — works for fully qualified names and
+        //    simple names when contextElement provides import scope.
+        try {
+            val resolved = readSync {
+                val facade = JavaPsiFacade.getInstance(project)
+                val psiType = facade.elementFactory.createTypeFromText(trimmed, contextElement)
+                resolve(psiType, context)
+            }
+            if (resolved !is ResolvedType.UnresolvedType) return resolved
+        } catch (_: Exception) {
+            // Fall through to manual resolution
+        }
+
+        // 2. Handle generic types like "List<User>" where the base class or
+        //    type arguments may be simple names that need import resolution.
+        if (trimmed.contains('<') && trimmed.endsWith('>')) {
+            val baseText = trimmed.substringBefore('<')
+            val baseClass = readSync { resolveClassByName(baseText, project, contextElement) }
+            if (baseClass != null) {
+                val typeArgsText = trimmed.substringAfter('<').removeSuffix(">")
+                val typeArgs = splitTypeArgs(typeArgsText).map { arg ->
+                    resolveFromCanonicalText(arg.trim(), project, contextElement, context)
+                }
+                return ResolvedType.ClassType(baseClass, typeArgs)
+            }
+        }
+
+        // 3. Try resolving as a plain class name via imports / same-package / default packages.
+        val psiClass = readSync { resolveClassByName(trimmed, project, contextElement) }
+        if (psiClass != null) {
+            val specialType = SpecialTypeHandler.resolveSpecialType(psiClass)
+            if (specialType != null) return specialType
+            val qualifiedName = psiClass.qualifiedName
+            if (qualifiedName != null && SpecialTypeHandler.isDateTimeAsString(qualifiedName)) {
+                return ResolvedType.UnresolvedType(qualifiedName)
+            }
+            return ResolvedType.ClassType(psiClass)
+        }
+
+        // 4. Check generic context — the text might be a type parameter name.
+        context.genericMap[trimmed]?.let { return it }
+
+        return ResolvedType.UnresolvedType(canonicalText)
+    }
+
+    /**
+     * Resolves a class name that may be simple (e.g. "User") or fully qualified.
+     *
+     * Resolution order (mirrors StandardPsiResolver / LinkResolver):
+     * 1. Fully qualified lookup via JavaPsiFacade
+     * 2. Same package as the context element
+     * 3. Import statements in the context file
+     * 4. Default packages (java.lang)
+     *
+     * @return The resolved PsiClass, or null if not found
+     */
+    private fun resolveClassByName(
+        className: String,
+        project: com.intellij.openapi.project.Project,
+        contextElement: PsiElement?
+    ): PsiClass? {
+        if (className.isBlank()) return null
+        val facade = JavaPsiFacade.getInstance(project)
+        val scope = GlobalSearchScope.allScope(project)
+
+        // Fully qualified name
+        facade.findClass(className, scope)?.let { return it }
+
+        if (contextElement == null) return null
+        val javaFile = contextElement.containingFile as? PsiJavaFile ?: return null
+
+        // Same package
+        val packageName = javaFile.packageName
+        if (packageName.isNotBlank()) {
+            facade.findClass("$packageName.$className", scope)?.let { return it }
+        }
+
+        // Import statements
+        val imports = javaFile.importList?.importStatements
+        if (imports != null) {
+            for (importStmt in imports) {
+                val importRef = importStmt.qualifiedName ?: continue
+                val candidate = when {
+                    importRef.endsWith(".$className") -> importRef
+                    importRef.endsWith(".*") -> importRef.removeSuffix("*") + className
+                    else -> continue
+                }
+                facade.findClass(candidate, scope)?.let { return it }
+            }
+        }
+
+        // Default packages
+        facade.findClass("java.lang.$className", scope)?.let { return it }
+
+        return null
+    }
+
+    /**
+     * Splits a comma-separated type argument string, respecting nested angle brackets.
+     * e.g. "String, Map<String, Integer>" → ["String", "Map<String, Integer>"]
+     */
+    private fun splitTypeArgs(typeArgsText: String): List<String> {
+        val result = mutableListOf<String>()
+        var depth = 0
+        val current = StringBuilder()
+        for (ch in typeArgsText) {
+            when {
+                ch == '<' -> { depth++; current.append(ch) }
+                ch == '>' -> { depth--; current.append(ch) }
+                ch == ',' && depth == 0 -> {
+                    val arg = current.toString().trim()
+                    if (arg.isNotEmpty()) result.add(arg)
+                    current.clear()
+                }
+                else -> current.append(ch)
+            }
+        }
+        val last = current.toString().trim()
+        if (last.isNotEmpty()) result.add(last)
+        return result
+    }
+
+    private fun resolvePrimitiveKind(typeName: String): PrimitiveKind? {
+        return when (typeName) {
+            "boolean", "java.lang.Boolean" -> PrimitiveKind.BOOLEAN
+            "byte", "java.lang.Byte" -> PrimitiveKind.BYTE
+            "char", "java.lang.Character" -> PrimitiveKind.CHAR
+            "short", "java.lang.Short" -> PrimitiveKind.SHORT
+            "int", "java.lang.Integer" -> PrimitiveKind.INT
+            "long", "java.lang.Long" -> PrimitiveKind.LONG
+            "float", "java.lang.Float" -> PrimitiveKind.FLOAT
+            "double", "java.lang.Double" -> PrimitiveKind.DOUBLE
+            "void", "java.lang.Void" -> PrimitiveKind.VOID
+            else -> null
+        }
     }
 
     /**
@@ -538,7 +737,6 @@ object TypeResolver {
         }
     }
 }
-
 
 /**
  * Builds a signature key for method deduplication that includes parameter types,

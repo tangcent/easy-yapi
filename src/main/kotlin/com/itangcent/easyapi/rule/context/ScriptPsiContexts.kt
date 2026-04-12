@@ -12,6 +12,7 @@ import com.itangcent.easyapi.psi.type.ResolvedField
 import com.itangcent.easyapi.psi.type.ResolvedMethod
 import com.itangcent.easyapi.psi.type.ResolvedParam
 import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.psi.type.TypeResolver
 
 /**
@@ -25,6 +26,10 @@ import com.itangcent.easyapi.psi.type.TypeResolver
  * - [ScriptItContext] for other or null elements
  */
 fun RuleContext.asScriptIt(): Any {
+    // If a PsiType is set (e.g., for json.rule.convert), expose it as a type context
+    if (psiType != null && element == null) {
+        return ScriptPsiTypeContext(this, psiType)
+    }
     return when (element) {
         is PsiClass -> ScriptPsiClassContext(this)
         is PsiMethod -> ScriptPsiMethodContext(this)
@@ -108,9 +113,9 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
 
     fun isEnum(): Boolean = readSync { psiClass().isEnum }
 
-    fun isPrimitive(): Boolean = PRIMITIVE_NAMES.contains(name())
+    fun isPrimitive(): Boolean = SpecialTypeHandler.isPrimitive(name())
 
-    fun isPrimitiveWrapper(): Boolean = PRIMITIVE_WRAPPER_NAMES.contains(name())
+    fun isPrimitiveWrapper(): Boolean = SpecialTypeHandler.isPrimitiveWrapper(name())
 
     fun isNormalType(): Boolean {
         val n = name()
@@ -137,16 +142,6 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
     }
 
     override fun contextType(): String = "class"
-
-    companion object {
-        private val PRIMITIVE_NAMES = setOf(
-            "int", "long", "short", "byte", "float", "double", "boolean", "char"
-        )
-        private val PRIMITIVE_WRAPPER_NAMES = setOf(
-            "java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.lang.Byte",
-            "java.lang.Float", "java.lang.Double", "java.lang.Boolean", "java.lang.Character"
-        )
-    }
 }
 
 /**
@@ -560,6 +555,36 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
+}
+
+/**
+ * Script context for a [PsiType] without a specific PSI element.
+ *
+ * Used when evaluating json.rule.convert rules where the context is a type
+ * (e.g., `ResponseEntity<UserInfo>`) rather than a field/method/parameter.
+ *
+ * Exposes `it.type()` so Groovy scripts can write:
+ * ```
+ * groovy: it.type().isExtend("org.springframework.http.ResponseEntity")
+ * ```
+ *
+ * Also delegates common operations (name, doc, ann) to the underlying element
+ * if one is available as a context element.
+ */
+class ScriptPsiTypeContext(
+    context: RuleContext,
+    private val psiType: com.intellij.psi.PsiType
+) : ScriptItContext(context) {
+
+    private val resolvedType: ResolvedType by lazy { TypeResolver.resolve(psiType) }
+
+    fun type(): ScriptTypeContext = ScriptTypeContext(context, resolvedType)
+
+    fun returnType(): ScriptTypeContext = type()
+
+    override fun contextType(): String = "type"
+
+    override fun toString(): String = psiType.canonicalText
 }
 
 class ScriptResolvedMethodContext(context: RuleContext, private val resolvedMethod: ResolvedMethod) :

@@ -85,7 +85,10 @@ class SpringMvcClassExporter(
         return endpoints
     }
 
-    private suspend fun exportMethod(psiClass: PsiClass, resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiEndpoint> {
+    private suspend fun exportMethod(
+        psiClass: PsiClass,
+        resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
+    ): List<ApiEndpoint> {
         val method = resolvedMethod.psiMethod
         val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         LOG.info("before parse method:$methodKey")
@@ -549,12 +552,36 @@ class SpringMvcClassExporter(
 
         val returnType = method.returnType ?: return null
 
-        val unwrappedType = ReturnTypeUnwrapper.unwrapPsiType(returnType)
-        if (unwrappedType == null || unwrappedType == PsiTypes.voidType()) return null
-        val responseModel = runCatching {
+        // First try with the original return type — json.rule.convert rules
+        // (e.g., for ResponseEntity, Mono, Flux) may handle unwrapping.
+        var responseModel = runCatching {
             val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(unwrappedType, actionContext, genericContext = genericContext)
-        }.getOrNull() ?: return null
+            helper.buildObjectModelFromType(
+                psiType = returnType,
+                actionContext = actionContext,
+                genericContext = genericContext,
+                contextElement = method
+            )
+        }.getOrNull()
+
+        // If the original type didn't produce a model, try the unwrapped type as fallback
+        if (responseModel == null) {
+            val unwrappedType = ReturnTypeUnwrapper.unwrapPsiType(returnType)
+            if (unwrappedType == null || unwrappedType == PsiTypes.voidType()) return null
+            if (unwrappedType !== returnType) {
+                responseModel = runCatching {
+                    val helper = PsiClassHelper.getInstance(project)
+                    helper.buildObjectModelFromType(
+                        psiType = unwrappedType,
+                        actionContext = actionContext,
+                        genericContext = genericContext,
+                        contextElement = method
+                    )
+                }.getOrNull()
+            }
+        }
+
+        if (responseModel == null) return null
 
         // method.return.main rule — specifies a field name within the response type
         // where the @return doc comment should be placed.
@@ -583,27 +610,16 @@ class SpringMvcClassExporter(
         parameter: PsiParameter,
         genericContext: GenericContext = GenericContext.EMPTY
     ): ObjectModel? {
-        // First try to resolve via generic context (for inherited methods with type params)
-        val resolvedType = TypeResolver.resolve(parameter.type, genericContext)
-        val substituted = TypeResolver.substitute(resolvedType, genericContext)
-
-        // If the resolved type is a simple/wrapper type, don't expand
-        if (substituted is ResolvedType.ClassType) {
-            val qualifiedName = substituted.psiClass.qualifiedName ?: return null
-            if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") return null
-            return runCatching {
-                val helper = PsiClassHelper.getInstance(project)
-                helper.buildObjectModel(substituted.psiClass, actionContext)
-            }.getOrNull()
-        }
-
-        // Fallback for non-class types
-        val psiClass = PsiTypesUtil.getPsiClass(parameter.type) ?: return null
-        val qualifiedName = psiClass.qualifiedName ?: return null
-        if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") return null
+        // Use buildObjectModelFromType which evaluates json.rule.convert rules
+        // (e.g., Mono<T> → T, RequestEntity<T> → T)
         return runCatching {
             val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModel(psiClass, actionContext)
+            helper.buildObjectModelFromType(
+                psiType = parameter.type,
+                actionContext = actionContext,
+                genericContext = genericContext,
+                contextElement = parameter
+            )
         }.getOrNull()
     }
 

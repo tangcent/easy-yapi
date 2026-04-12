@@ -73,7 +73,12 @@ object ExtensionConfigRegistry : IdeaLog {
                     // Fallback: try to load known extension files directly from classpath
                     val knownExtensions = listOf(
                         "swagger", "swagger3", "jackson", "gson", "spring", 
-                        "module", "ignore", "deprecated", "jakarta-validation", "javax-validation", "converts"
+                        "spring-validations", "spring-webflux", "spring-configuration", "spring-properties",
+                        "module", "ignore", "deprecated", "jakarta-validation", "javax-validation", "converts",
+                        "field-utils", "enum-use-by-type", "enum-use-name", "enum-use-ordinal",
+                        "field-order-alphabetically", "field-order-alphabetically-desc",
+                        "field-order-child-first", "field-order-parent-first",
+                        "jakarta-validation-strict", "javax-validation-strict"
                     )
                     for (extName in knownExtensions) {
                         loader.getResourceAsStream("$EXTENSIONS_DIR/$extName.config")?.use { stream ->

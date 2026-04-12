@@ -34,11 +34,24 @@ class LiteralParser : RuleParser {
                 }
             }
         }
+        // Resolve ${n} placeholders from regex groups captured during filter evaluation
+        val groups = context.regexGroups
+        if (groups != null && PLACEHOLDER_PATTERN.containsMatchIn(trimmed)) {
+            return PLACEHOLDER_PATTERN.replace(trimmed) { match ->
+                val groupIndex = match.groupValues[1].toIntOrNull()
+                if (groupIndex != null && groupIndex in 1..groups.size) {
+                    groups[groupIndex - 1]
+                } else {
+                    match.value
+                }
+            }
+        }
         return trimmed
     }
 
     companion object {
         private val TRUE_VALS = arrayOf("true", "1")
         private val FALSE_VALS = arrayOf("false", "0")
+        private val PLACEHOLDER_PATTERN = Regex("\\$\\{(\\d+)}")
     }
 }

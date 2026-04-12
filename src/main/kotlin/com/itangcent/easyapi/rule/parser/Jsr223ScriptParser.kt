@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.rule.parser
 
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.project
 import com.itangcent.easyapi.core.threading.backgroundAsync
@@ -17,7 +18,6 @@ import com.itangcent.easyapi.util.ide.ModuleHelper
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import javax.script.Bindings
-import javax.script.ScriptContext
 
 /**
  * Base class for JSR-223 script-based rule parsers.
@@ -69,9 +69,8 @@ abstract class Jsr223ScriptParser(
             enginePool.withEngine { engine ->
                 val bindings = engine.createBindings()
                 bind(bindings, context)
-                engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE)
                 LOG.debug("Jsr223ScriptParser: Executing script...")
-                engine.eval(script).also { result ->
+                engine.eval(script, bindings).also { result ->
                     LOG.debug("Jsr223ScriptParser: Script execution completed, result type=${result?.javaClass?.simpleName}")
                 }
             }
@@ -130,8 +129,15 @@ abstract class Jsr223ScriptParser(
 
         // extensions from rule context
         context.exts().forEach { (key, value) ->
-            bindings[key] = value
+            bindings[key] = value?.wrapExt(context)
         }
+    }
+
+    private fun Any.wrapExt(context: RuleContext): Any {
+        if (this is PsiElement) {
+            return context.withElement(this).asScriptIt()
+        }
+        return this
     }
 
     companion object : IdeaLog
@@ -183,12 +189,15 @@ class ScriptHelper(private val context: RuleContext) {
             is com.intellij.psi.PsiClass -> com.itangcent.easyapi.rule.context.ScriptPsiClassContext(
                 context.withElement(resolved)
             )
+
             is com.intellij.psi.PsiMethod -> com.itangcent.easyapi.rule.context.ScriptPsiMethodContext(
                 context.withElement(resolved)
             )
+
             is com.intellij.psi.PsiField -> com.itangcent.easyapi.rule.context.ScriptPsiFieldContext(
                 context.withElement(resolved)
             )
+
             else -> null
         }
     }
@@ -202,12 +211,15 @@ class ScriptHelper(private val context: RuleContext) {
                 is com.intellij.psi.PsiClass -> com.itangcent.easyapi.rule.context.ScriptPsiClassContext(
                     context.withElement(target)
                 )
+
                 is com.intellij.psi.PsiMethod -> com.itangcent.easyapi.rule.context.ScriptPsiMethodContext(
                     context.withElement(target)
                 )
+
                 is com.intellij.psi.PsiField -> com.itangcent.easyapi.rule.context.ScriptPsiFieldContext(
                     context.withElement(target)
                 )
+
                 else -> null
             }
         }

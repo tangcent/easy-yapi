@@ -10,8 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
  * to a single build operation and cleared afterward.
  *
  * ## Cache Key Format
- * - Without group: `className@option`
- * - With group: `group:className@option`
+ * - `className@option`
  *
  * ## Thread Safety
  * Uses ConcurrentHashMap for thread-safe access.
@@ -25,22 +24,20 @@ class JsonConstructionCache {
      * Gets a cached object model.
      *
      * @param classKey The class identifier (e.g., "com.example.User@15")
-     * @param group Optional group name for namespacing
      * @return The cached model, or null if not found
      */
-    fun get(classKey: String, group: String?): Any? {
-        return cache[cacheKey(classKey, group)]
+    fun get(classKey: String): Any? {
+        return cache[classKey]
     }
 
     /**
      * Caches an object model.
      *
      * @param classKey The class identifier
-     * @param group Optional group name for namespacing
      * @param value The model to cache
      */
-    fun put(classKey: String, group: String?, value: Any?) {
-        cache[cacheKey(classKey, group)] = value
+    fun put(classKey: String, value: Any?) {
+        cache[classKey] = value
     }
 
     /**
@@ -49,9 +46,4 @@ class JsonConstructionCache {
     fun clear() {
         cache.clear()
     }
-
-    private fun cacheKey(classKey: String, group: String?): String {
-        return if (group.isNullOrBlank()) classKey else "$group:$classKey"
-    }
 }
-

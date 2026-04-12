@@ -51,6 +51,8 @@ class TypeMatchParser : RuleParser {
     }
     
     private fun getElementType(context: RuleContext): String? {
+        // Prefer psiType if available (for json.rule.convert evaluation)
+        context.psiType?.let { return it.canonicalText }
         val element = context.element
         return when (element) {
             is PsiField -> element.type.canonicalText

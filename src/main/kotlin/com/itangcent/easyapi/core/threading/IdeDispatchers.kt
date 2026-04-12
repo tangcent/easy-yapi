@@ -3,13 +3,14 @@ package com.itangcent.easyapi.core.threading
 import com.intellij.openapi.application.ApplicationManager
 import com.itangcent.easyapi.logging.IdeaLog
 import kotlinx.coroutines.*
+import java.util.concurrent.Executors
 
 object IdeDispatchers : IdeaLog {
     val ReadAction: CoroutineDispatcher = ReadActionDispatcher()
     val WriteAction: CoroutineDispatcher = WriteActionDispatcher()
     val Swing: CoroutineDispatcher = SwingDispatcher()
 
-    private val backgroundExecutor = java.util.concurrent.Executors.newCachedThreadPool { runnable ->
+    private val backgroundExecutor = Executors.newCachedThreadPool { runnable ->
         Thread(runnable, "EasyAPI-background").apply { isDaemon = true }
     }
 
@@ -81,6 +82,24 @@ object IdeDispatchers : IdeaLog {
         }
     }
 
+    fun <T> readBlocking(block: suspend () -> T): T {
+        return runBlocking {
+            readAction(block)
+        }
+    }
+
+    fun <T> writeBlocking(block: suspend () -> T): T {
+        return runBlocking {
+            writeAction(block)
+        }
+    }
+
+    fun <T> swingBlocking(block: suspend () -> T): T {
+        return runBlocking {
+            swing(block)
+        }
+    }
+
     fun readAsync(block: suspend () -> Unit) {
         scope.launch(ReadAction) { block() }
     }
@@ -111,6 +130,12 @@ fun <T> readSync(block: () -> T): T = IdeDispatchers.readSync(block)
 fun <T> writeSync(block: () -> T): T = IdeDispatchers.writeSync(block)
 
 fun <T> swingSync(block: () -> T): T = IdeDispatchers.swingSync(block)
+
+fun <T> readBlocking(block: suspend () -> T): T = IdeDispatchers.readBlocking(block)
+
+fun <T> writeBlocking(block: suspend () -> T): T = IdeDispatchers.writeBlocking(block)
+
+fun <T> swingBlocking(block: suspend () -> T): T = IdeDispatchers.swingBlocking(block)
 
 fun readAsync(block: suspend () -> Unit) = IdeDispatchers.readAsync(block)
 

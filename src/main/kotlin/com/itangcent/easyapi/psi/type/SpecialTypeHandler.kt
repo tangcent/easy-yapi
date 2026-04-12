@@ -72,6 +72,10 @@ object SpecialTypeHandler {
         "java.lang.Double" to "double"
     )
 
+    private val PRIMITIVE_TYPES = setOf(
+        "boolean", "byte", "char", "short", "int", "long", "float", "double"
+    )
+
     fun isFileType(qualifiedName: String?): Boolean {
         if (qualifiedName == null) return false
         return FILE_TYPES.contains(qualifiedName)
@@ -112,6 +116,11 @@ object SpecialTypeHandler {
     fun isPrimitiveWrapper(qualifiedName: String?): Boolean {
         if (qualifiedName == null) return false
         return PRIMITIVE_WRAPPER_TYPES.containsKey(qualifiedName)
+    }
+
+    fun isPrimitive(typeName: String?): Boolean {
+        if (typeName == null) return false
+        return PRIMITIVE_TYPES.contains(typeName)
     }
 
     fun isSpecialType(qualifiedName: String?): Boolean {
