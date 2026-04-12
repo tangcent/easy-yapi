@@ -12,6 +12,7 @@ import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiReferenceExpression
 import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.psi.adapter.GroovyPsiAdapter
 import com.itangcent.easyapi.psi.adapter.JavaPsiAdapter
@@ -49,34 +50,30 @@ class UnifiedAnnotationHelper(
     )
 ) : AnnotationHelper {
 
-    private suspend fun <T> readAction(block: () -> T): T {
-        return withContext(IdeDispatchers.ReadAction) { block() }
-    }
-
     override suspend fun hasAnn(element: PsiElement, annFqn: String): Boolean {
-        return readSync {
+        return read {
             findPsiAnnotations(element, annFqn).isNotEmpty()
         }
     }
 
     override suspend fun findAnnMap(element: PsiElement, annFqn: String): Map<String, Any?>? {
-        return readSync {
+        return read {
             findPsiAnnotations(element, annFqn).firstOrNull()?.let { normalizeAttributes(it, element.project) }
         }
     }
 
     override suspend fun findAnnMaps(element: PsiElement, annFqn: String): List<Map<String, Any?>>? {
-        return readSync {
+        return read {
             val anns = findPsiAnnotations(element, annFqn)
-            if (anns.isEmpty()) return@readSync null
+            if (anns.isEmpty()) return@read null
             anns.map { normalizeAttributes(it, element.project) }
         }
     }
 
     override suspend fun findAttr(element: PsiElement, annFqn: String, attr: String): Any? {
-        return readSync {
-            val ann = findPsiAnnotations(element, annFqn).firstOrNull() ?: return@readSync null
-            val value = ann.findAttributeValue(attr) ?: return@readSync null
+        return read {
+            val ann = findPsiAnnotations(element, annFqn).firstOrNull() ?: return@read null
+            val value = ann.findAttributeValue(attr) ?: return@read null
             normalizeValue(value, element.project)
         }
     }

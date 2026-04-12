@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.project
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.GrpcMetadata
@@ -45,14 +46,16 @@ class GrpcClassExporter(
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isGrpcService(psiClass)) return emptyList()
 
-        val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        val className = read {
+            psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        }
         LOG.info("before parse gRPC class:$className")
 
         engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
 
         val classDescription = resolveClassDescription(psiClass)
         val folder = classDescription?.lines()?.firstOrNull { it.isNotBlank() }
-            ?: psiClass.name
+            ?: read { psiClass.name }
             ?: "Unknown"
 
         val rpcMethods = methodResolver.resolveRpcMethods(psiClass)
@@ -62,6 +65,7 @@ class GrpcClassExporter(
                 try {
                     val requestBody = buildRequestBody(methodInfo.requestType)
                     val responseBody = buildResponseBody(methodInfo.responseType)
+                    val responseTypeName = read { methodInfo.responseType?.qualifiedName }
 
                     ApiEndpoint(
                         name = methodInfo.description
@@ -71,7 +75,7 @@ class GrpcClassExporter(
                         tags = listOf("gRPC"),
                         sourceClass = psiClass,
                         sourceMethod = methodInfo.psiMethod,
-                        className = psiClass.qualifiedName ?: psiClass.name,
+                        className = className,
                         classDescription = classDescription,
                         metadata = GrpcMetadata(
                             path = methodInfo.fullPath,
@@ -81,7 +85,7 @@ class GrpcClassExporter(
                             streamingType = methodInfo.streamingType,
                             body = requestBody,
                             responseBody = responseBody,
-                            responseType = methodInfo.responseType?.qualifiedName
+                            responseType = responseTypeName
                         )
                     )
                 } catch (e: Exception) {
@@ -111,19 +115,19 @@ class GrpcClassExporter(
         }
     }
 
-    private fun buildRequestBody(requestType: PsiClass?): ObjectModel? {
+    private suspend fun buildRequestBody(requestType: PsiClass?): ObjectModel? {
         if (requestType == null) return null
         return try {
-            typeParser.parseMessageType(requestType)
+            read { typeParser.parseMessageType(requestType) }
         } catch (_: Exception) {
             null
         }
     }
 
-    private fun buildResponseBody(responseType: PsiClass?): ObjectModel? {
+    private suspend fun buildResponseBody(responseType: PsiClass?): ObjectModel? {
         if (responseType == null) return null
         return try {
-            typeParser.parseMessageType(responseType)
+            read { typeParser.parseMessageType(responseType) }
         } catch (_: Exception) {
             null
         }

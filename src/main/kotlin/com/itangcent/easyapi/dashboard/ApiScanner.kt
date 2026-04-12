@@ -9,8 +9,9 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
 import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
 import com.itangcent.easyapi.exporter.feign.FeignClassExporter
@@ -23,9 +24,6 @@ import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.SettingBinder
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -253,9 +251,7 @@ class ApiScanner(private val project: Project) {
             indicator.isIndeterminate = false
             indicator.fraction = 0.0
 
-            val endpoints = withContext(IdeDispatchers.ReadAction) {
-                scanClassesWithExporters(classes, exporters, context, indicator)
-            }
+            val endpoints = scanClassesWithExporters(classes, exporters, context, indicator)
 
             indicator.fraction = 1.0
             LOG.info("Total endpoints found: ${endpoints.size}")
@@ -283,9 +279,7 @@ class ApiScanner(private val project: Project) {
             indicator.isIndeterminate = false
             indicator.fraction = 0.0
 
-            val endpoints = withContext(IdeDispatchers.ReadAction) {
-                scanClassesWithExporters(classes, exporters, context, indicator)
-            }
+            val endpoints = scanClassesWithExporters(classes, exporters, context, indicator)
 
             indicator.fraction = 1.0
             endpoints
@@ -314,7 +308,9 @@ class ApiScanner(private val project: Project) {
 
         for ((index, psiClass) in psiClasses.withIndex()) {
             indicator?.checkCanceled()
-            val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+            val className = read {
+                psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+            }
             indicator?.text = className
             indicator?.fraction = index.toDouble() / total
             LOG.info("search api from: $className")

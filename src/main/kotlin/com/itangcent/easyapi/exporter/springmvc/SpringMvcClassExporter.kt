@@ -8,6 +8,8 @@ import com.intellij.psi.PsiTypes
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.project
+import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
@@ -26,6 +28,7 @@ import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.util.PathVariablePattern
+import kotlinx.coroutines.withContext
 
 /**
  * Exports API endpoints from Spring MVC controller classes.
@@ -66,15 +69,18 @@ class SpringMvcClassExporter(
         if (!controllerRecognizer.isController(psiClass)) return emptyList()
         if (metadataResolver.isIgnored(psiClass)) return emptyList()
 
-        val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        val className = read {
+            psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        }
         LOG.info("before parse class:$className")
 
         engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
 
         val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethods = read { resolvedType.methods() }
         val endpoints = ArrayList<ApiEndpoint>()
         try {
-            for (resolvedMethod in resolvedType.methods()) {
+            for (resolvedMethod in resolvedMethods) {
                 if (metadataResolver.isIgnored(resolvedMethod.psiMethod)) continue
                 endpoints.addAll(exportMethod(psiClass, resolvedMethod))
             }
@@ -90,104 +96,114 @@ class SpringMvcClassExporter(
         resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
     ): List<ApiEndpoint> {
         val method = resolvedMethod.psiMethod
-        val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
+        val methodKey = read {
+            "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
+        }
         LOG.info("before parse method:$methodKey")
 
-        engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
+        withContext(IdeDispatchers.Background) {
+            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
+        }
 
         try {
-            val mappings = mappingResolver.resolve(resolvedMethod)
+            val mappings = read { mappingResolver.resolve(resolvedMethod) }
             if (mappings.isEmpty()) {
                 LOG.info("after parse method:$methodKey")
                 return emptyList()
             }
 
-            // Build generic context from the class hierarchy.
-            val genericContext = GenericContext(TypeResolver.resolveGenericParams(psiClass, emptyList()))
+            val endpoints: List<ApiEndpoint>
 
-            // Use the concrete method for metadata resolution
-            val apiName = metadataResolver.resolveApiName(method)
-            val folder = metadataResolver.resolveFolderName(method, psiClass)
-            val description = metadataResolver.resolveMethodDoc(method)
-            val classDesc = metadataResolver.resolveClassDoc(psiClass)
-            val tags = metadataResolver.resolveApiTag(method)
-                ?.split("\n")?.map { it.trim() }?.filter { it.isNotBlank() }
-                ?: emptyList()
+            withContext(IdeDispatchers.ReadAction) {
+                val genericContext = GenericContext(TypeResolver.resolveGenericParams(psiClass, emptyList()))
 
-            val resolvedBindings = resolveParameterBindings(resolvedMethod)
-            val params = buildParameters(resolvedBindings)
-            val paramHeaders = extractParamHeaders(resolvedBindings)
-            val body = buildRequestBody(resolvedBindings, genericContext)
-            val response = ReturnTypeUnwrapper.unwrap(method.returnType)
-            val responseBody = buildResponseBody(method, genericContext)
+                val apiName = metadataResolver.resolveApiName(method)
+                val folder = metadataResolver.resolveFolderName(method, psiClass)
+                val description = metadataResolver.resolveMethodDoc(method)
+                val classDesc = metadataResolver.resolveClassDoc(psiClass)
+                val tags = metadataResolver.resolveApiTag(method)
+                    ?.split("\n")?.map { it.trim() }?.filter { it.isNotBlank() }
+                    ?: emptyList()
 
-            val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
-            val additionalParams = metadataResolver.resolveAdditionalParams(method)
-            val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
+                val resolvedBindings = resolveParameterBindings(resolvedMethod)
+                val params = buildParameters(resolvedBindings)
+                val paramHeaders = extractParamHeaders(resolvedBindings)
+                val body = buildRequestBody(resolvedBindings, genericContext)
+                val response = read { ReturnTypeUnwrapper.unwrap(method.returnType) }
+                val responseBody = buildResponseBody(method, genericContext)
 
-            val defaultHttpMethod = metadataResolver.resolveDefaultHttpMethod(method)
-                ?.let { HttpMethod.fromSpring(it) }
+                val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
+                val additionalParams = metadataResolver.resolveAdditionalParams(method)
+                val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
 
-            // Filter mappings by path.multi strategy before building endpoints
-            val pathSelector = metadataResolver.resolvePathMulti(method)
-            val selectedMappings = pathSelector.select(mappings) { it.path }
+                val defaultHttpMethod = metadataResolver.resolveDefaultHttpMethod(method)
+                    ?.let { HttpMethod.fromSpring(it) }
 
-            LOG.info("after parse method:$methodKey")
+                // Filter mappings by path.multi strategy before building endpoints
+                val pathSelector = metadataResolver.resolvePathMulti(method)
+                val selectedMappings = pathSelector.select(mappings) { it.path }
 
-            val endpoints = selectedMappings.map { mapping ->
-                val contentType = resolveContentType(method, mapping, body != null, params)
-                val headers = buildHeaders(contentType, mapping, paramHeaders, additionalHeaders)
-                val inferredMethod = inferHttpMethod(mapping.method, body != null, params, defaultHttpMethod)
+                LOG.info("after parse method:$methodKey")
 
-                val pathVariablePatterns = PathVariablePattern.extractPathVariablesFromPath(mapping.path)
-                val normalizedPath = PathVariablePattern.normalizePath(mapping.path)
+                endpoints = selectedMappings.map { mapping ->
+                    val contentType = resolveContentType(method, mapping, body != null, params)
+                    val headers = buildHeaders(contentType, mapping, paramHeaders, additionalHeaders)
+                    val inferredMethod = inferHttpMethod(mapping.method, body != null, params, defaultHttpMethod)
 
-                val pathParamsFromPath = pathVariablePatterns.map { pattern ->
-                    ApiParameter(
-                        name = pattern.name,
-                        type = ParameterType.TEXT,
-                        required = true,
-                        binding = ParameterBinding.Path,
-                        defaultValue = pattern.defaultValue,
-                        description = "Path variable with possible values: ${pattern.possibleValues.joinToString(", ")}",
-                        enumValues = pattern.possibleValues
+                    val pathVariablePatterns = PathVariablePattern.extractPathVariablesFromPath(mapping.path)
+                    val normalizedPath = PathVariablePattern.normalizePath(mapping.path)
+
+                    val pathParamsFromPath = pathVariablePatterns.map { pattern ->
+                        ApiParameter(
+                            name = pattern.name,
+                            type = ParameterType.TEXT,
+                            required = true,
+                            binding = ParameterBinding.Path,
+                            defaultValue = pattern.defaultValue,
+                            description = "Path variable with possible values: ${pattern.possibleValues.joinToString(", ")}",
+                            enumValues = pattern.possibleValues
+                        )
+                    }
+
+                    val mergedParams = mergePathParameters(params + additionalParams, pathParamsFromPath)
+
+                    ApiEndpoint(
+                        name = apiName,
+                        folder = folder,
+                        description = description,
+                        tags = tags,
+                        sourceClass = psiClass,
+                        sourceMethod = method,
+                        className = psiClass.qualifiedName ?: psiClass.name,
+                        classDescription = classDesc,
+                        metadata = HttpMetadata(
+                            path = normalizedPath,
+                            method = inferredMethod,
+                            parameters = mergedParams,
+                            headers = headers + additionalResponseHeaders,
+                            contentType = contentType,
+                            body = body,
+                            responseBody = responseBody,
+                            responseType = response.toString()
+                        )
                     )
                 }
-
-                val mergedParams = mergePathParameters(params + additionalParams, pathParamsFromPath)
-
-                ApiEndpoint(
-                    name = apiName,
-                    folder = folder,
-                    description = description,
-                    tags = tags,
-                    sourceClass = psiClass,
-                    sourceMethod = method,
-                    className = psiClass.qualifiedName ?: psiClass.name,
-                    classDescription = classDesc,
-                    metadata = HttpMetadata(
-                        path = normalizedPath,
-                        method = inferredMethod,
-                        parameters = mergedParams,
-                        headers = headers + additionalResponseHeaders,
-                        contentType = contentType,
-                        body = body,
-                        responseBody = responseBody,
-                        responseType = response.toString()
-                    )
-                )
             }
 
-            // Fire export.after for each endpoint
-            for (endpoint in endpoints) {
-                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
-                    ctx.setExt("api", endpoint)
+            withContext(IdeDispatchers.Background) {
+                // Fire export.after for each endpoint
+                for (endpoint in endpoints) {
+                    engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                        ctx.setExt("api", endpoint)
+                    }
                 }
             }
 
             return endpoints
         } finally {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
+            withContext(IdeDispatchers.Background) {
+                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
+            }
         }
     }
 
@@ -247,7 +263,8 @@ class SpringMvcClassExporter(
      */
     private suspend fun resolveParameterBindings(resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ResolvedParamBinding> {
         val method = resolvedMethod.psiMethod
-        return method.parameterList.parameters.mapIndexedNotNull { index, p ->
+        val parameters = read { method.parameterList.parameters.toList() }
+        return parameters.mapIndexedNotNull { index, p ->
             val binding = bindingResolver.resolve(p, resolvedMethod, index) ?: ParameterBinding.Query
             if (binding == ParameterBinding.Ignored) return@mapIndexedNotNull null
             ResolvedParamBinding(p, binding)

@@ -6,6 +6,8 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
@@ -25,6 +27,7 @@ import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.util.PathVariablePattern
+import kotlinx.coroutines.withContext
 
 /**
  * Exports API endpoints from Feign client interfaces.
@@ -69,18 +72,23 @@ class FeignClassExporter(
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isFeignClient(psiClass)) return emptyList()
 
-        val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        val className = read {
+            psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        }
         LOG.info("before parse class:$className")
 
-        engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
+        withContext(IdeDispatchers.Background) {
+            engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
+        }
 
         val info = pathResolver.resolve(psiClass)
         val basePath = normalizePath(info.path ?: "")
 
         val classType = ResolvedType.ClassType(psiClass, emptyList())
+        val resolvedMethods = read { classType.methods() }
         val endpoints = ArrayList<ApiEndpoint>()
         try {
-            for (resolvedMethod in classType.methods()) {
+            for (resolvedMethod in resolvedMethods) {
                 if (resolvedMethod.psiMethod.isConstructor) continue
                 endpoints.addAll(exportMethod(basePath, psiClass, resolvedMethod))
             }
@@ -97,7 +105,9 @@ class FeignClassExporter(
         resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
     ): List<ApiEndpoint> {
         val method = resolvedMethod.psiMethod
-        val methodKey = "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
+        val methodKey = read {
+            "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
+        }
         LOG.info("before parse method:$methodKey")
 
         engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
@@ -119,77 +129,85 @@ class FeignClassExporter(
                 return emptyList()
             }
 
-            val name = metadataResolver.resolveApiName(method)
-            val folder = metadataResolver.resolveFolderName(method, psiClass)
-            val description = metadataResolver.resolveMethodDoc(method)
-            val classDesc = metadataResolver.resolveClassDoc(psiClass)
+            val endpoints: List<ApiEndpoint>
 
-            val params = buildSpringParams(method)
-            val body = buildSpringRequestBody(method)
-            val responseBody = buildResponseBody(method)
+            withContext(IdeDispatchers.ReadAction) {
+                val name = metadataResolver.resolveApiName(method)
+                val folder = metadataResolver.resolveFolderName(method, psiClass)
+                val description = metadataResolver.resolveMethodDoc(method)
+                val classDesc = metadataResolver.resolveClassDoc(psiClass)
 
-            LOG.info("after parse method:$methodKey")
+                val params = buildSpringParams(method)
+                val body = buildSpringRequestBody(method)
+                val responseBody = buildResponseBody(method)
 
-            val endpoints = mappings.map { m ->
-                val contentType = m.consumes.firstOrNull()
-                val headers = buildList {
-                    if (!contentType.isNullOrBlank()) {
-                        add(ApiHeader(name = "Content-Type", value = contentType))
-                    }
-                    for ((name, value) in m.headers) {
-                        if (!name.equals("Content-Type", ignoreCase = true)) {
-                            add(ApiHeader(name = name, value = value))
+                LOG.info("after parse method:$methodKey")
+
+                endpoints = mappings.map { m ->
+                    val contentType = m.consumes.firstOrNull()
+                    val headers = buildList {
+                        if (!contentType.isNullOrBlank()) {
+                            add(ApiHeader(name = "Content-Type", value = contentType))
+                        }
+                        for ((name, value) in m.headers) {
+                            if (!name.equals("Content-Type", ignoreCase = true)) {
+                                add(ApiHeader(name = name, value = value))
+                            }
                         }
                     }
-                }
 
-                val rawPath = normalizePath(join(basePath, m.path))
-                val pathVariablePatterns = PathVariablePattern.extractPathVariablesFromPath(rawPath)
-                val normalizedPath = PathVariablePattern.normalizePath(rawPath)
+                    val rawPath = normalizePath(join(basePath, m.path))
+                    val pathVariablePatterns = PathVariablePattern.extractPathVariablesFromPath(rawPath)
+                    val normalizedPath = PathVariablePattern.normalizePath(rawPath)
 
-                val pathParamsFromPath = pathVariablePatterns.map { pattern ->
-                    ApiParameter(
-                        name = pattern.name,
-                        type = ParameterType.TEXT,
-                        required = true,
-                        binding = ParameterBinding.Path,
-                        defaultValue = pattern.defaultValue,
-                        description = "Path variable with possible values: ${pattern.possibleValues.joinToString(", ")}",
-                        enumValues = pattern.possibleValues
+                    val pathParamsFromPath = pathVariablePatterns.map { pattern ->
+                        ApiParameter(
+                            name = pattern.name,
+                            type = ParameterType.TEXT,
+                            required = true,
+                            binding = ParameterBinding.Path,
+                            defaultValue = pattern.defaultValue,
+                            description = "Path variable with possible values: ${pattern.possibleValues.joinToString(", ")}",
+                            enumValues = pattern.possibleValues
+                        )
+                    }
+
+                    val mergedParams = mergePathParameters(params, pathParamsFromPath)
+
+                    ApiEndpoint(
+                        name = name,
+                        folder = folder,
+                        description = description,
+                        sourceClass = psiClass,
+                        sourceMethod = method,
+                        className = read { psiClass.qualifiedName ?: psiClass.name },
+                        classDescription = classDesc,
+                        metadata = HttpMetadata(
+                            path = normalizedPath,
+                            method = m.method,
+                            parameters = mergedParams,
+                            headers = headers,
+                            contentType = contentType,
+                            body = body,
+                            responseBody = responseBody
+                        )
                     )
                 }
-
-                val mergedParams = mergePathParameters(params, pathParamsFromPath)
-
-                ApiEndpoint(
-                    name = name,
-                    folder = folder,
-                    description = description,
-                    sourceClass = psiClass,
-                    sourceMethod = method,
-                    className = psiClass.qualifiedName ?: psiClass.name,
-                    classDescription = classDesc,
-                    metadata = HttpMetadata(
-                        path = normalizedPath,
-                        method = m.method,
-                        parameters = mergedParams,
-                        headers = headers,
-                        contentType = contentType,
-                        body = body,
-                        responseBody = responseBody
-                    )
-                )
             }
 
-            for (endpoint in endpoints) {
-                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
-                    ctx.setExt("api", endpoint)
+            withContext(IdeDispatchers.Background) {
+                for (endpoint in endpoints) {
+                    engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                        ctx.setExt("api", endpoint)
+                    }
                 }
             }
 
             return endpoints
         } finally {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
+            withContext(IdeDispatchers.Background) {
+                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
+            }
         }
     }
 
@@ -241,7 +259,7 @@ class FeignClassExporter(
             folder = null,
             sourceClass = psiClass,
             sourceMethod = method,
-            className = psiClass.qualifiedName ?: psiClass.name,
+            className = read { psiClass.qualifiedName ?: psiClass.name },
             classDescription = classDesc,
             metadata = HttpMetadata(
                 path = normalizedPathTemplate,

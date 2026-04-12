@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.exporter.feign
 
 import com.intellij.psi.PsiClass
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.psi.helper.AnnotationHelper
 
 /**
@@ -40,10 +41,13 @@ class FeignPathResolver(
     private val annotationHelper: AnnotationHelper
 ) {
     suspend fun resolve(psiClass: PsiClass): FeignClientInfo {
-        if (!annotationHelper.hasAnn(psiClass, "org.springframework.cloud.openfeign.FeignClient")) {
+        val ann = read {
+            annotationHelper.findAnnMap(psiClass, "org.springframework.cloud.openfeign.FeignClient")
+        }.orEmpty()
+
+        if (ann.isEmpty()) {
             return FeignClientInfo()
         }
-        val ann = annotationHelper.findAnnMap(psiClass, "org.springframework.cloud.openfeign.FeignClient").orEmpty()
         val path = (ann["path"] ?: ann["value"])?.toString()?.takeIf { it.isNotBlank() }
         val url = ann["url"]?.toString()?.takeIf { it.isNotBlank() }
         val name = (ann["name"] ?: ann["value"])?.toString()?.takeIf { it.isNotBlank() }

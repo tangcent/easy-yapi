@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.exporter.grpc
 
 import com.intellij.psi.PsiClass
+import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.exporter.core.ApiClassRecognizer
 import com.itangcent.easyapi.exporter.core.MetaAnnotationResolver
 import com.itangcent.easyapi.rule.RuleKeys
@@ -57,7 +58,7 @@ class GrpcServiceRecognizer(
          * We walk the full supertype hierarchy to find it.
          */
         fun extendsBindableService(psiClass: PsiClass): Boolean {
-            return walkSupers(psiClass, mutableSetOf())
+            return readSync { walkSupers(psiClass, mutableSetOf()) }
         }
 
         private fun walkSupers(cls: PsiClass, visited: MutableSet<String>): Boolean {

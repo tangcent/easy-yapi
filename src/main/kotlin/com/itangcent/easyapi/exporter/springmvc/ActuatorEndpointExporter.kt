@@ -2,6 +2,7 @@ package com.itangcent.easyapi.exporter.springmvc
 
 import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaLog
@@ -19,14 +20,16 @@ class ActuatorEndpointExporter(
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isApiClass(psiClass)) return emptyList()
 
-        val className = psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        val className = read {
+            psiClass.qualifiedName ?: psiClass.name ?: "Unknown"
+        }
         LOG.info("before parse actuator endpoint:$className")
 
         engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
 
         val endpoints: List<ApiEndpoint>
         try {
-            endpoints = scanner.scan(psiClass)
+            endpoints = read { scanner.scan(psiClass) }
 
             for (endpoint in endpoints) {
                 val method = endpoint.sourceMethod ?: continue

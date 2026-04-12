@@ -10,6 +10,7 @@ import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
@@ -196,7 +197,11 @@ class YapiExporter(private val project: Project) : ApiExporter {
      * @param result The successful export result
      * @return true if notification was shown
      */
-    override suspend fun handleExportResult(project: Project, result: ExportResult.Success): Boolean {
+    override suspend fun handleExportResult(
+        project: Project,
+        result: ExportResult.Success,
+        outputConfig: OutputConfig
+    ): Boolean {
         val metadata = result.metadata as? YapiExportMetadata ?: return false
         swing {
             val notification = com.intellij.notification.Notification(

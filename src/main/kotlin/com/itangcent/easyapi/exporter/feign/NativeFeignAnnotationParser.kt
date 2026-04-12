@@ -40,7 +40,7 @@ class NativeFeignAnnotationParser(
         val http = parts.firstOrNull().orEmpty()
         val path = parts.getOrNull(1).orEmpty()
         val httpMethod = runCatching { HttpMethod.valueOf(http.uppercase()) }.getOrNull() ?: HttpMethod.GET
-        return RequestLine(httpMethod, if (path.isBlank()) "/" else path)
+        return RequestLine(httpMethod, path.ifBlank { "/" })
     }
 
     /**
