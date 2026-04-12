@@ -69,11 +69,19 @@ class ExportApiAction : AnAction(), IdeaLog {
         backgroundAsync {
             runWithProgress(project, "Exporting APIs...") { indicator ->
                 val orchestrator = ExportOrchestrator.getInstance(project)
-                val exportResult = orchestrator.orchestrateExport(
-                    selection, dialogResult.format, dialogResult.outputConfig, indicator
-                )
 
-                handleExportResult(project, exportResult, dialogResult)
+                if (dialogResult.selectedEndpoints.isNotEmpty()) {
+                    val endpoints = dialogResult.selectedEndpoints.map { it.endpoint }
+                    val exportResult = orchestrator.exportEndpoints(
+                        endpoints, dialogResult.format, dialogResult.outputConfig, indicator
+                    )
+                    handleExportResult(project, exportResult, dialogResult)
+                } else {
+                    val exportResult = orchestrator.orchestrateExport(
+                        selection, dialogResult.format, dialogResult.outputConfig, indicator
+                    )
+                    handleExportResult(project, exportResult, dialogResult)
+                }
             }
         }
     }

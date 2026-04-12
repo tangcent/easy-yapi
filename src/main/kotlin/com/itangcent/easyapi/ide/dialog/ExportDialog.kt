@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.table.JBTable
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
@@ -14,15 +15,19 @@ import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.PostmanExportOptions
 import com.itangcent.easyapi.exporter.model.YapiExportOptions
+import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.exporter.postman.CachedPostmanApiClient
 import com.itangcent.easyapi.exporter.postman.PostmanApiClient
 import com.itangcent.easyapi.exporter.postman.asCached
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.settings.SettingBinder
-import java.awt.BorderLayout
-import java.awt.CardLayout
+import java.awt.*
 import java.awt.event.ItemEvent
 import javax.swing.*
+import javax.swing.table.AbstractTableModel
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableCellRenderer
 
 /**
  * Dialog for configuring and initiating API exports.
@@ -113,7 +118,6 @@ class ExportDialog(
         addActionListener { refreshPostmanData() }
     }
 
-    /** The collection the user last picked from the dropdown. null if "(New)" or not yet selected. */
     private var selectedPostmanCollection: PostmanCollectionItem? = null
     private var postmanDataLoaded = false
     private var postmanClient: CachedPostmanApiClient? = null
@@ -125,6 +129,12 @@ class ExportDialog(
     private val yapiOptionsPanel: JPanel
     private val postmanOptionsPanel: JPanel
     private val httpClientOptionsPanel: JPanel
+
+    // --- Endpoint table ---
+    private val endpointTableModel = EndpointTableModel(endpoints)
+    private val endpointTable = JBTable(endpointTableModel)
+    private val selectAllBtn = JButton("Select All")
+    private val deselectAllBtn = JButton("Deselect All")
 
     var selectedFormat: ExportFormat = ExportFormat.MARKDOWN
         private set
@@ -153,8 +163,39 @@ class ExportDialog(
             }
         }
 
+        selectAllBtn.addActionListener { endpointTableModel.selectAll() }
+        deselectAllBtn.addActionListener { endpointTableModel.deselectAll() }
+
         init()
         updateOptionsPanel()
+        setupEndpointTable()
+    }
+
+    private fun setupEndpointTable() {
+        endpointTable.autoResizeMode = JBTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
+
+        val selectCol = endpointTable.columnModel.getColumn(COL_SELECT)
+        selectCol.maxWidth = 50
+        selectCol.minWidth = 40
+        selectCol.preferredWidth = 40
+        selectCol.resizable = false
+        selectCol.cellRenderer = CheckboxRenderer()
+        selectCol.cellEditor = CheckboxEditor()
+
+        val methodCol = endpointTable.columnModel.getColumn(COL_METHOD)
+        methodCol.maxWidth = 80
+        methodCol.minWidth = 60
+        methodCol.preferredWidth = 70
+        methodCol.resizable = false
+        methodCol.cellRenderer = MethodCellRenderer()
+
+        val pathCol = endpointTable.columnModel.getColumn(COL_PATH)
+        pathCol.preferredWidth = 250
+        pathCol.minWidth = 100
+
+        val nameCol = endpointTable.columnModel.getColumn(COL_NAME)
+        nameCol.preferredWidth = 180
+        nameCol.minWidth = 80
     }
 
     private fun loadDefaultValues() {
@@ -226,14 +267,13 @@ class ExportDialog(
                     }
                 }
 
-                // Load collections for the initially selected workspace
                 if (workspaceItems.isNotEmpty()) {
                     val wsIdx = swing { postmanWorkspaceComboBox.selectedIndex }
                     if (wsIdx >= 0 && wsIdx < postmanWorkspaces.size) {
                         loadCollectionsForWorkspace(client, postmanWorkspaces[wsIdx].id)
                     }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 swing {
                     postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("Failed to load"))
                     populateCollectionCombo(emptyList())
@@ -255,19 +295,12 @@ class ExportDialog(
         }
     }
 
-    /**
-     * Populates the editable collection combo with existing collections.
-     * If an existing collection matches the inferred name (project name) — either
-     * exactly or with a timestamp suffix from a previous export — select it by default.
-     * Otherwise prepend a "(New): xxx" option.
-     */
     private fun populateCollectionCombo(collections: List<PostmanCollectionItem>) {
         postmanCollectionItems.clear()
         postmanCollectionItems.addAll(collections)
         selectedPostmanCollection = null
 
         val inferredName = defaultNewCollectionName()
-        // Exact match first, then prefix match (e.g. "my-project-20260328...")
         val matchIdx = collections.indexOfFirst { it.name == inferredName }
             .takeIf { it >= 0 }
             ?: collections.indexOfFirst { it.name.startsWith("$inferredName-") }
@@ -304,6 +337,8 @@ class ExportDialog(
             add(createFormatPanel())
             add(Box.createVerticalStrut(10))
             add(optionsPanel)
+            add(Box.createVerticalStrut(10))
+            add(createEndpointPanel())
         }
     }
 
@@ -311,6 +346,28 @@ class ExportDialog(
         return JPanel(BorderLayout()).apply {
             add(JLabel("Export Format:"), BorderLayout.WEST)
             add(formatComboBox, BorderLayout.CENTER)
+        }
+    }
+
+    private fun createEndpointPanel(): JPanel {
+        val headerPanel = JPanel(BorderLayout()).apply {
+            add(JLabel("API Endpoints:"), BorderLayout.WEST)
+            add(JPanel().apply {
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                add(selectAllBtn)
+                add(Box.createHorizontalStrut(4))
+                add(deselectAllBtn)
+            }, BorderLayout.EAST)
+        }
+
+        val scrollPane = JScrollPane(endpointTable).apply {
+            preferredSize = Dimension(0, 200)
+            minimumSize = Dimension(0, 120)
+        }
+
+        return JPanel(BorderLayout()).apply {
+            add(headerPanel, BorderLayout.NORTH)
+            add(scrollPane, BorderLayout.CENTER)
         }
     }
 
@@ -349,7 +406,6 @@ class ExportDialog(
     }
 
     private fun createPostmanOptionsPanel(): JPanel {
-        // Track which collection the user picks from the dropdown
         postmanCollectionComboBox.addItemListener { e ->
             if (e.stateChange == ItemEvent.SELECTED) {
                 val idx = postmanCollectionComboBox.selectedIndex
@@ -364,7 +420,6 @@ class ExportDialog(
             }
         }
 
-        // Reload collections when workspace changes
         postmanWorkspaceComboBox.addItemListener { e ->
             if (e.stateChange == ItemEvent.SELECTED) {
                 val idx = postmanWorkspaceComboBox.selectedIndex
@@ -473,16 +528,13 @@ class ExportDialog(
                     ?: postmanCollectionComboBox.selectedItem?.toString())?.trim()
                     ?.removePrefix("(New): ")?.trim().orEmpty()
 
-                // If the user picked an existing collection from the dropdown and
-                // hasn't changed the text, update that specific collection.
-                // Otherwise create a new one with whatever name is in the editor.
                 val remembered = selectedPostmanCollection
                 val isUpdate = remembered != null && collectionText == remembered.name
 
                 val postmanOptions = PostmanExportOptions(
                     selectedWorkspaceId = ws?.id,
                     selectedWorkspaceName = ws?.name,
-                    selectedCollectionId = if (isUpdate) (remembered!!.uid ?: remembered.id) else null,
+                    selectedCollectionId = if (isUpdate) (remembered.uid ?: remembered.id) else null,
                     selectedCollectionName = collectionText.ifEmpty { null },
                     useCustomCollection = !isUpdate
                 )
@@ -521,9 +573,11 @@ class ExportDialog(
         ): ExportDialogResult? {
             val dialog = ExportDialog(project, endpointCount, endpoints)
             return if (dialog.showAndGet()) {
+                val selectedEndpoints = dialog.endpointTableModel.getSelectedEndpoints()
                 ExportDialogResult(
                     format = dialog.selectedFormat,
-                    outputConfig = dialog.outputConfig
+                    outputConfig = dialog.outputConfig,
+                    selectedEndpoints = selectedEndpoints
                 )
             } else {
                 null
@@ -532,13 +586,143 @@ class ExportDialog(
     }
 }
 
-/**
- * Result from the [ExportDialog] after user confirmation.
- *
- * @param format The selected export format
- * @param outputConfig The output configuration for the export
- */
 data class ExportDialogResult(
     val format: ExportFormat,
-    val outputConfig: OutputConfig
+    val outputConfig: OutputConfig,
+    val selectedEndpoints: List<EndpointSelection> = emptyList()
 )
+
+data class EndpointSelection(
+    val endpoint: ApiEndpoint
+)
+
+private const val COL_SELECT = 0
+private const val COL_METHOD = 1
+private const val COL_PATH = 2
+private const val COL_NAME = 3
+
+private class EndpointTableModel(
+    endpoints: List<ApiEndpoint>
+) : AbstractTableModel() {
+
+    data class Row(
+        val endpoint: ApiEndpoint,
+        var selected: Boolean = true
+    )
+
+    val rows = endpoints.map { Row(it, true) }
+
+    override fun getRowCount(): Int = rows.size
+
+    override fun getColumnCount(): Int = 4
+
+    override fun getValueAt(rowIndex: Int, columnIndex: Int): Any? = when (columnIndex) {
+        COL_SELECT -> rows[rowIndex].selected
+        COL_METHOD -> rows[rowIndex].endpoint.httpMetadata?.method?.name
+            ?: rows[rowIndex].endpoint.metadata.protocol
+
+        COL_PATH -> rows[rowIndex].endpoint.path
+        COL_NAME -> rows[rowIndex].endpoint.name ?: ""
+        else -> null
+    }
+
+    override fun setValueAt(aValue: Any?, rowIndex: Int, columnIndex: Int) {
+        if (columnIndex == COL_SELECT) {
+            rows[rowIndex].selected = aValue as Boolean
+        }
+    }
+
+    override fun isCellEditable(rowIndex: Int, columnIndex: Int): Boolean =
+        columnIndex == COL_SELECT
+
+    override fun getColumnClass(columnIndex: Int): Class<*> = when (columnIndex) {
+        COL_SELECT -> Boolean::class.java
+        else -> String::class.java
+    }
+
+    override fun getColumnName(column: Int): String = when (column) {
+        COL_SELECT -> ""
+        COL_METHOD -> "Method"
+        COL_PATH -> "Path"
+        COL_NAME -> "Name"
+        else -> ""
+    }
+
+    fun selectAll() {
+        rows.forEach { it.selected = true }
+        fireTableDataChanged()
+    }
+
+    fun deselectAll() {
+        rows.forEach { it.selected = false }
+        fireTableDataChanged()
+    }
+
+    fun getSelectedEndpoints(): List<EndpointSelection> {
+        return rows.filter { it.selected }.map { EndpointSelection(it.endpoint) }
+    }
+}
+
+private class MethodCellRenderer : DefaultTableCellRenderer() {
+
+    override fun getTableCellRendererComponent(
+        table: JTable?,
+        value: Any?,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
+        val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+        if (c is JLabel && value is String) {
+            c.text = value.padEnd(6)
+            if (!isSelected) {
+                c.foreground = getMethodColor(value)
+            }
+        }
+        return c
+    }
+
+    private fun getMethodColor(method: String): Color = when (method) {
+        "GET" -> Color(0x61affe)
+        "POST" -> Color(0x49cc90)
+        "PUT" -> Color(0xfca130)
+        "DELETE" -> Color(0xf93e3e)
+        "PATCH" -> Color(0x50e3c2)
+        "HEAD" -> Color(0x9012fe)
+        "OPTIONS" -> Color(0x0d5aa7)
+        "gRPC" -> Color(0x8B5CF6)
+        else -> Color(0x999999)
+    }
+}
+
+private class CheckboxRenderer : JCheckBox(), TableCellRenderer {
+
+    init {
+        horizontalAlignment = SwingConstants.CENTER
+        isOpaque = true
+    }
+
+    override fun getTableCellRendererComponent(
+        table: JTable?,
+        value: Any?,
+        isSelected: Boolean,
+        hasFocus: Boolean,
+        row: Int,
+        column: Int
+    ): Component {
+        this.isSelected = value as? Boolean ?: false
+        if (isSelected) {
+            foreground = table?.selectionForeground
+            background = table?.selectionBackground
+        } else {
+            foreground = table?.foreground
+            background = table?.background
+        }
+        return this
+    }
+}
+
+private class CheckboxEditor : DefaultCellEditor(JCheckBox().apply {
+    horizontalAlignment = SwingConstants.CENTER
+})

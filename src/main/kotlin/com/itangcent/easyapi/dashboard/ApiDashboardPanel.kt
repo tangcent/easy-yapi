@@ -407,19 +407,29 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
         // Determine export format and config on EDT before launching background work
         val exportFormat: ExportFormat
         val outputConfig: com.itangcent.easyapi.exporter.model.OutputConfig
+        val selectedEndpoints: List<com.itangcent.easyapi.ide.dialog.EndpointSelection>?
         if (format != null) {
             exportFormat = format
             outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig()
+            selectedEndpoints = null
         } else {
             val dialogResult = ExportDialog.show(project, endpoints.size, endpoints) ?: return
             exportFormat = dialogResult.format
             outputConfig = dialogResult.outputConfig
+            selectedEndpoints = dialogResult.selectedEndpoints
         }
 
         backgroundAsync {
             try {
-                val result = runWithProgress(project, "Exporting APIs...") { indicator ->
-                    orchestrator.exportEndpoints(endpoints, exportFormat, outputConfig, indicator)
+                val result = if (selectedEndpoints != null && selectedEndpoints.isNotEmpty()) {
+                    val eps = selectedEndpoints.map { it.endpoint }
+                    runWithProgress(project, "Exporting APIs...") { indicator ->
+                        orchestrator.exportEndpoints(eps, exportFormat, outputConfig, indicator)
+                    }
+                } else {
+                    runWithProgress(project, "Exporting APIs...") { indicator ->
+                        orchestrator.exportEndpoints(endpoints, exportFormat, outputConfig, indicator)
+                    }
                 }
 
                 handleExportResult(result, format)

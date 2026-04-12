@@ -6,6 +6,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.pom.Navigatable
 import com.intellij.psi.*
+import com.itangcent.easyapi.core.threading.readAsync
+import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.util.FileType
 
 /**
@@ -100,8 +102,8 @@ object SelectedHelper {
             is PsiClass -> if (navigatable.isAnnotationType) null else navigatable
             is ClassTreeNode -> navigatable.psiClass
             is PsiDirectoryNode -> navigatable.element?.value
-            is PsiMember -> navigatable.containingClass ?: navigatable
             is PsiMethod -> navigatable
+            is PsiMember -> navigatable.containingClass ?: navigatable
             else -> null
         }
     }
@@ -146,8 +148,8 @@ class SelectionScope(private val elements: List<Any>) {
         for (element in elements) {
             when (element) {
                 is PsiClass -> yield(element)
-                is PsiMethod -> element.containingClass?.let { yield(it) }
-                is PsiFile -> if (element is PsiClassOwner) yieldAll(element.classes.asSequence())
+                is PsiMethod -> readSync { element.containingClass }?.let { yield(it) }
+                is PsiFile -> if (element is PsiClassOwner) yieldAll(readSync { element.classes }.asSequence())
                 is PsiDirectory -> yieldAll(collectClassesFromDirectory(element))
             }
         }
@@ -182,7 +184,7 @@ class SelectionScope(private val elements: List<Any>) {
     private fun collectClassesFromDirectory(directory: PsiDirectory): Sequence<PsiClass> = sequence {
         for (file in collectFilesFromDirectory(directory)) {
             if (file is PsiClassOwner) {
-                yieldAll(file.classes.asSequence())
+                yieldAll(readSync { file.classes }.asSequence())
             }
         }
     }
