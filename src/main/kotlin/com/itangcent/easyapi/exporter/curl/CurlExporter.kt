@@ -13,6 +13,8 @@ import com.itangcent.easyapi.exporter.ApiExporter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.OutputConfig
+import kotlinx.coroutines.CancellationException
 import java.io.File
 
 /**
@@ -73,10 +75,15 @@ class CurlExporter(private val project: Project) : ApiExporter {
      * @param result The successful export result
      * @return true if the file was saved successfully, false otherwise
      */
-    override suspend fun handleExportResult(project: Project, result: ExportResult.Success): Boolean {
+    override suspend fun handleExportResult(
+        project: Project,
+        result: ExportResult.Success,
+        outputConfig: OutputConfig
+    ): Boolean {
         val metadata = result.metadata as? CurlExportMetadata ?: return false
 
-        val targetFile = selectTargetFile(project) ?: return false
+        val targetFile = resolveTargetFile(project, outputConfig, "curl_commands.sh")
+            ?: throw CancellationException("User cancelled file selection")
 
         background {
             targetFile.writeText(metadata.content)
@@ -88,13 +95,25 @@ class CurlExporter(private val project: Project) : ApiExporter {
         return true
     }
 
-    /**
-     * Shows a file save dialog for selecting the output location.
-     * 
-     * @param project The IntelliJ project
-     * @return The selected file, or null if cancelled
-     */
-    private suspend fun selectTargetFile(project: Project): File? {
+    private suspend fun resolveTargetFile(
+        project: Project,
+        outputConfig: OutputConfig,
+        defaultFileName: String
+    ): File? {
+        val outputDir = outputConfig.outputDir
+        val fileName = outputConfig.fileName
+        if (!outputDir.isNullOrBlank()) {
+            val dir = File(outputDir)
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val name = if (!fileName.isNullOrBlank()) "$fileName.sh" else defaultFileName
+            return File(dir, name)
+        }
+        return selectTargetFile(project, defaultFileName)
+    }
+
+    private suspend fun selectTargetFile(project: Project, defaultFileName: String): File? {
         return swing {
             val descriptor = FileSaverDescriptor(
                 "Save cURL Commands",
@@ -102,7 +121,7 @@ class CurlExporter(private val project: Project) : ApiExporter {
             )
             val saver = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
 
-            val wrapper: VirtualFileWrapper? = saver.save(null as VirtualFile?, "curl_commands.sh")
+            val wrapper: VirtualFileWrapper? = saver.save(null as VirtualFile?, defaultFileName)
             wrapper?.file
         }
     }

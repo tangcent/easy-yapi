@@ -172,12 +172,12 @@ class SelectionScope(private val elements: List<Any>) {
         stack.addLast(directory)
         while (stack.isNotEmpty()) {
             val dir = stack.removeFirst()
-            for (file in dir.files) {
+            for (file in readSync { dir.files }) {
                 if (FileType.acceptable(file.name)) {
                     yield(file)
                 }
             }
-            dir.subdirectories.forEach { stack.addLast(it) }
+            readSync { dir.subdirectories }.forEach { stack.addLast(it) }
         }
     }
 

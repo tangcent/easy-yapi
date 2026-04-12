@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.OutputConfig
 
 /**
  * Interface for API exporters that convert API endpoints to various formats.
@@ -47,7 +48,11 @@ interface ApiExporter {
      * @param result The successful export result
      * @return true if the result was handled, false otherwise
      */
-    suspend fun handleExportResult(project: Project, result: ExportResult.Success): Boolean {
+    suspend fun handleExportResult(
+        project: Project,
+        result: ExportResult.Success,
+        outputConfig: OutputConfig = OutputConfig.DEFAULT
+    ): Boolean {
         return false
     }
 }

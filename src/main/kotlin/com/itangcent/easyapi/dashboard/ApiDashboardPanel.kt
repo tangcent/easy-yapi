@@ -432,7 +432,9 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
                     }
                 }
 
-                handleExportResult(result, format)
+                handleExportResult(result, format, outputConfig)
+            } catch (_: kotlin.coroutines.cancellation.CancellationException) {
+                LOG.info("Export cancelled by user")
             } catch (e: Throwable) {
                 LOG.warn("Export failed", e)
                 swing {
@@ -453,14 +455,20 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @param result The export result (success, cancelled, or error)
      * @param format The export format used
      */
-    private suspend fun handleExportResult(result: ExportResult, format: ExportFormat?) {
+    private suspend fun handleExportResult(
+        result: ExportResult,
+        format: ExportFormat?,
+        outputConfig: com.itangcent.easyapi.exporter.model.OutputConfig
+    ) {
         when (result) {
             is ExportResult.Success -> {
                 val exporterRegistry = ApiExporterRegistry.getInstance(project)
                 val exporter = format?.let { exporterRegistry.getExporter(it) }
 
                 val handled = try {
-                    exporter?.handleExportResult(project, result) ?: false
+                    exporter?.handleExportResult(project, result, outputConfig) ?: false
+                } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     LOG.warn("Failed to handle export result", e)
                     false

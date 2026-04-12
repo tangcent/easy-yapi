@@ -14,6 +14,7 @@ import com.itangcent.easyapi.exporter.ApiExporter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.postman.model.PostmanCollection
 import com.itangcent.easyapi.exporter.postman.model.PostmanItem
 import com.itangcent.easyapi.http.HttpClientProvider
@@ -21,6 +22,7 @@ import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.exporter.postman.model.postmanGson
 import com.itangcent.easyapi.util.ide.ModuleHelper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -332,11 +334,15 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         return formatter.format(endpoints, baseName)
     }
 
-    override suspend fun handleExportResult(project: Project, result: ExportResult.Success): Boolean {
+    override suspend fun handleExportResult(
+        project: Project,
+        result: ExportResult.Success,
+        outputConfig: OutputConfig
+    ): Boolean {
         val metadata = result.metadata as? PostmanExportMetadata ?: return false
 
         if (metadata.collectionData != null) {
-            return handleFileExport(project, result, metadata)
+            return handleFileExport(project, result, metadata, outputConfig)
         }
 
         val details = metadata.formatDisplay()
@@ -353,9 +359,11 @@ class PostmanExporter(private val project: Project) : ApiExporter {
     private suspend fun handleFileExport(
         project: Project,
         result: ExportResult.Success,
-        metadata: PostmanExportMetadata
+        metadata: PostmanExportMetadata,
+        outputConfig: OutputConfig
     ): Boolean {
-        val targetFile = selectTargetFile(project) ?: return false
+        val targetFile = resolveTargetFile(project, outputConfig, "postman_collection.json")
+            ?: throw CancellationException("User cancelled file selection")
 
         val gson = postmanGson()
         val content = gson.toJson(metadata.collectionData)
@@ -370,7 +378,25 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         return true
     }
 
-    private suspend fun selectTargetFile(project: Project): File? {
+    private suspend fun resolveTargetFile(
+        project: Project,
+        outputConfig: OutputConfig,
+        defaultFileName: String
+    ): File? {
+        val outputDir = outputConfig.outputDir
+        val fileName = outputConfig.fileName
+        if (!outputDir.isNullOrBlank()) {
+            val dir = File(outputDir)
+            if (!dir.exists()) {
+                dir.mkdirs()
+            }
+            val name = if (!fileName.isNullOrBlank()) "$fileName.json" else defaultFileName
+            return File(dir, name)
+        }
+        return selectTargetFile(project, defaultFileName)
+    }
+
+    private suspend fun selectTargetFile(project: Project, defaultFileName: String): File? {
         return swing {
             val descriptor = FileSaverDescriptor(
                 "Save Postman Collection",
@@ -378,7 +404,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
             )
             val saver = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
 
-            val wrapper: VirtualFileWrapper? = saver.save(null as VirtualFile?, "postman_collection.json")
+            val wrapper: VirtualFileWrapper? = saver.save(null as VirtualFile?, defaultFileName)
             wrapper?.file
         }
     }

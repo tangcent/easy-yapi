@@ -13,6 +13,7 @@ import com.itangcent.easyapi.exporter.formatter.HttpClientFileFormatter
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.OutputConfig
 
 @Service(Service.Level.PROJECT)
 class HttpClientExporter(private val project: Project) : ApiExporter {
@@ -33,7 +34,8 @@ class HttpClientExporter(private val project: Project) : ApiExporter {
             }
         }
 
-        val content = HttpClientFileFormatter.formatAll(context.endpointsToExport, host, context.outputConfig.fileName ?: "api")
+        val content =
+            HttpClientFileFormatter.formatAll(context.endpointsToExport, host, context.outputConfig.fileName ?: "api")
 
         return ExportResult.Success(
             count = context.endpointsToExport.size,
@@ -42,7 +44,11 @@ class HttpClientExporter(private val project: Project) : ApiExporter {
         )
     }
 
-    override suspend fun handleExportResult(project: Project, result: ExportResult.Success): Boolean {
+    override suspend fun handleExportResult(
+        project: Project,
+        result: ExportResult.Success,
+        outputConfig: OutputConfig
+    ): Boolean {
         val metadata = result.metadata as? HttpClientExportMetadata ?: return false
 
         val fileName = generateFileName()

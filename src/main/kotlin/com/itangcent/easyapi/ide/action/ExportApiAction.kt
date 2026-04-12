@@ -17,6 +17,7 @@ import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
 import com.itangcent.easyapi.logging.IdeaLog
+import kotlinx.coroutines.CancellationException
 
 /**
  * Action for exporting APIs with a format selection dialog.
@@ -96,7 +97,9 @@ class ExportApiAction : AnAction(), IdeaLog {
                 val exporter = ApiExporterRegistry.getInstance(project)
                     .getExporter(dialogResult.format)
                 val handled = try {
-                    exporter?.handleExportResult(project, result) ?: false
+                    exporter?.handleExportResult(project, result, dialogResult.outputConfig) ?: false
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     LOG.warn("Failed to handle export result", e)
                     false

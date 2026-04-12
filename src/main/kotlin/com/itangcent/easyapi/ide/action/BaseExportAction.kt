@@ -121,7 +121,9 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
                 val exporter = exporterRegistry.getExporter(exportFormat)
 
                 val handled = try {
-                    exporter?.handleExportResult(project, result) ?: false
+                    exporter?.handleExportResult(project, result, com.itangcent.easyapi.exporter.model.OutputConfig.DEFAULT) ?: false
+                } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     LOG.warn("Failed to handle export result", e)
                     IdeaConsoleProvider.getInstance(project).getConsole()
