@@ -566,6 +566,66 @@ class RuleEngineTest {
         }
     }
 
+    @Test
+    fun testNegationWithNullValue(): Unit = runBlocking {
+        val configReader = TestConfigReader.fromRules(
+            "field.ignore" to "!@com.google.gson.annotations.Expose#serialize"
+        )
+
+        ActionContextTestKit.withSimpleContext {
+            val nullParser = object : RuleParser {
+                override fun canParse(expression: String): Boolean = expression.startsWith("@")
+                override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any? = null
+            }
+            val negationParser = com.itangcent.easyapi.rule.parser.NegationParser()
+            val ruleEngine = RuleEngine(this, configReader, listOf(negationParser, nullParser))
+            val mockElement = mock<PsiElement>()
+
+            val result = ruleEngine.evaluate(RuleKey.boolean("field.ignore"), mockElement)
+            assertFalse("Negation of null should return false (not ignored)", result)
+        }
+    }
+
+    @Test
+    fun testNegationWithTrueValue(): Unit = runBlocking {
+        val configReader = TestConfigReader.fromRules(
+            "field.ignore" to "!@com.google.gson.annotations.Expose#serialize"
+        )
+
+        ActionContextTestKit.withSimpleContext {
+            val trueParser = object : RuleParser {
+                override fun canParse(expression: String): Boolean = expression.startsWith("@")
+                override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any = true
+            }
+            val negationParser = com.itangcent.easyapi.rule.parser.NegationParser()
+            val ruleEngine = RuleEngine(this, configReader, listOf(negationParser, trueParser))
+            val mockElement = mock<PsiElement>()
+
+            val result = ruleEngine.evaluate(RuleKey.boolean("field.ignore"), mockElement)
+            assertFalse("Negation of true should return false (not ignored)", result)
+        }
+    }
+
+    @Test
+    fun testNegationWithFalseValue(): Unit = runBlocking {
+        val configReader = TestConfigReader.fromRules(
+            "field.ignore" to "!@com.google.gson.annotations.Expose#serialize"
+        )
+
+        ActionContextTestKit.withSimpleContext {
+            val falseParser = object : RuleParser {
+                override fun canParse(expression: String): Boolean = expression.startsWith("@")
+                override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any = false
+            }
+            val negationParser = com.itangcent.easyapi.rule.parser.NegationParser()
+            val ruleEngine = RuleEngine(this, configReader, listOf(negationParser, falseParser))
+            val mockElement = mock<PsiElement>()
+
+            val result = ruleEngine.evaluate(RuleKey.boolean("field.ignore"), mockElement)
+            assertTrue("Negation of false should return true (ignored)", result)
+        }
+    }
+
     private class TestLiteralParser : RuleParser {
         override fun canParse(expression: String): Boolean = true
         override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any = expression

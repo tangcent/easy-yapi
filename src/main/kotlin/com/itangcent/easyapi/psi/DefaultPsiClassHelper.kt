@@ -3,12 +3,11 @@ package com.itangcent.easyapi.psi
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
-import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.cache.JsonConstructionCache
 import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.context.project
-import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.model.FieldModel
@@ -68,7 +67,7 @@ object JsonOption {
 @Service(Service.Level.PROJECT)
 class DefaultPsiClassHelper : PsiClassHelper {
 
-    companion object {
+    companion object : IdeaLog {
         fun getInstance(project: Project): DefaultPsiClassHelper =
             project.getService(DefaultPsiClassHelper::class.java)
     }
@@ -174,8 +173,14 @@ class DefaultPsiClassHelper : PsiClassHelper {
             if (collectionElementText != null) {
                 // Try resolving the element type from the source PsiType's type arguments first
                 // (these are already-resolved PsiType objects, not text)
-                val elementResolved = resolveElementTypeFromSource(sourcePsiType, collectionElementText, genericContext, contextElement)
-                    ?: TypeResolver.resolveFromCanonicalText(collectionElementText, project, contextElement, genericContext)
+                val elementResolved =
+                    resolveElementTypeFromSource(sourcePsiType, collectionElementText, genericContext, contextElement)
+                        ?: TypeResolver.resolveFromCanonicalText(
+                            collectionElementText,
+                            project,
+                            contextElement,
+                            genericContext
+                        )
                 val elementModel = buildObjectModelFromConvertedType(
                     elementResolved, actionContext, option, maxDepth, genericContext
                 )
@@ -464,30 +469,38 @@ class DefaultPsiClassHelper : PsiClassHelper {
             }
         }
 
-        if (JsonOption.has(option, JsonOption.READ_GETTER)) {
-            for (method in psiClass.allMethods) {
-                if (isFromObject(method)) continue
-                if (isGetter(method)) {
-                    val propertyName = getPropertyNameFromGetter(method.name)
-                    if (fieldNames.add(propertyName)) {
-                        val returnType = method.returnType ?: continue
-                        fields.add(AccessibleField(name = propertyName, type = returnType, psi = method))
+        try {
+            if (JsonOption.has(option, JsonOption.READ_GETTER)) {
+                for (method in psiClass.allMethods) {
+                    if (isFromObject(method)) continue
+                    if (isGetter(method)) {
+                        val propertyName = getPropertyNameFromGetter(method.name)
+                        if (fieldNames.add(propertyName)) {
+                            val returnType = method.returnType ?: continue
+                            fields.add(AccessibleField(name = propertyName, type = returnType, psi = method))
+                        }
                     }
                 }
             }
+        } catch (e: Exception) {
+            LOG.warn("failed collect fields from getters. class: ${psiClass.name}", e)
         }
 
-        if (JsonOption.has(option, JsonOption.READ_SETTER)) {
-            for (method in psiClass.allMethods) {
-                if (isFromObject(method)) continue
-                if (isSetter(method)) {
-                    val propertyName = getPropertyNameFromSetter(method.name)
-                    if (fieldNames.add(propertyName)) {
-                        val paramType = method.parameterList.parameters.firstOrNull()?.type ?: continue
-                        fields.add(AccessibleField(name = propertyName, type = paramType, psi = method))
+        try {
+            if (JsonOption.has(option, JsonOption.READ_SETTER)) {
+                for (method in psiClass.allMethods) {
+                    if (isFromObject(method)) continue
+                    if (isSetter(method)) {
+                        val propertyName = getPropertyNameFromSetter(method.name)
+                        if (fieldNames.add(propertyName)) {
+                            val paramType = method.parameterList.parameters.firstOrNull()?.type ?: continue
+                            fields.add(AccessibleField(name = propertyName, type = paramType, psi = method))
+                        }
                     }
                 }
             }
+        } catch (e: Exception) {
+            LOG.warn("failed collect fields from setters. class: ${psiClass.name}", e)
         }
 
         return fields

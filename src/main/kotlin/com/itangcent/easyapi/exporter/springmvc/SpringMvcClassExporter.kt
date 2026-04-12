@@ -464,7 +464,8 @@ class SpringMvcClassExporter(
 
     private fun isFileType(model: ObjectModel): Boolean {
         val single = model.asSingle() ?: return false
-        return single.type == "__file__" ||
+        return single.type == "file" ||
+                single.type == "__file__" ||
                 single.type.contains("MultipartFile", ignoreCase = true) ||
                 single.type.contains("Part", ignoreCase = true)
     }

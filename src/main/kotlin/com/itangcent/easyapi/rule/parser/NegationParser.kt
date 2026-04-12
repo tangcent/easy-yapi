@@ -32,7 +32,7 @@ class NegationParser : RuleParser, RuleEngineAware {
             is Boolean -> !result
             is Number -> result.toInt() == 0
             is String -> !(result.equals("true", true) || result == "1")
-            null -> true
+            null -> null
             else -> false
         }
     }

@@ -67,4 +67,21 @@ class GsonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find GET endpoint", getEndpoint)
         assertTrue("GET endpoint path should contain /product/get", getEndpoint?.httpMetadata?.path?.contains("/product/get") == true)
     }
+
+    fun testFieldsWithSerializedNameAreRenamed() = runTest {
+        val psiClass = findClass("com.itangcent.gson.ProductDTO")
+        assertNotNull("Should find ProductDTO", psiClass)
+
+        val helper = com.itangcent.easyapi.psi.PsiClassHelper.getInstance(project)
+        val model = helper.buildObjectModel(psiClass!!, actionContext)
+        assertNotNull("Should build object model", model)
+
+        val objectData = model?.asObject()
+        assertNotNull("Should be an object", objectData)
+
+        val fields = objectData!!.fields
+        assertTrue("Field 'id' should be renamed to 'product_id' via @SerializedName", fields.containsKey("product_id"))
+        assertTrue("Field 'name' should be renamed to 'product_name' via @SerializedName", fields.containsKey("product_name"))
+        assertTrue("Field 'price' (without any annotation) should exist", fields.containsKey("price"))
+    }
 }
