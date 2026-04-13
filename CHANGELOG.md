@@ -5,6 +5,35 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.4] - 2026-04-13
+
+### Added
+-  add API endpoint selection panel to ExportDialog
+-  add PsiType-aware rule evaluation for json.rule.convert
+-  replace recommend config system with extension-based system
+-  add ConfigSyncService with coroutine-based debounce for config reload
+-  add on-demand Swagger config loading and API lifecycle events
+
+### Fixed
+-  resolve generic types in API method params
+-  export multipart and file-like params as FILE type
+-  NegationParser should return null for null input
+-  respect ExportDialog output path and handle user cancellation properly
+-  resolve IDE freeze on startup (issue #1299) and improve script engine management
+-  prevent OOM from circular ObjectModel references in markdown formatter
+-  resolve export silent failure and threading issues
+
+### Changed
+-  refactor event system and remove deprecated ActionContext
+
+### Improved
+- perf: use fine-grained ReadAction scoping in API exporters (#646)
+- chore: remove unused SPI infrastructure and MethodFilter
+- chore: remove redundant documentation
+- chore: update project branding from EasyAPI to EasyYapi
+
+---
+
 ## [3.0.3] - 2026-04-08
 
 ### Fixed
