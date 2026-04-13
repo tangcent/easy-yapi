@@ -35,6 +35,8 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/generic/TwoTypeBaseCtrl.java")
         loadFile("api/generic/MiddleCtrl.java")
         loadFile("api/generic/ConcreteCtrl.java")
+        loadFile("api/generic/GenericParamCtrl.java")
+        loadFile("model/UserInfo.java")
         exporter = SpringMvcClassExporter(actionContext)
     }
 
@@ -167,5 +169,114 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
             "data should be string (R resolved to String), got: ${dataField.model}",
             dataField.model is ObjectModel.Single && (dataField.model as ObjectModel.Single).type == JsonType.STRING
         )
+    }
+
+    // ==================== Issue #1302 Tests ====================
+
+    /**
+     * Issue #1302: Test that generic type parameters are correctly resolved
+     * when using @ModelAttribute with generic types like Result<UserInfo>.
+     */
+    fun testIssue1302_ModelAttribute() = runTest {
+        val psiClass = findClass("com.itangcent.api.generic.GenericParamCtrl")
+        assertNotNull("Should find GenericParamCtrl", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val endpoint = endpoints.find { it.path == "/generic-param/model-attribute" }
+        assertNotNull("Should export GET /generic-param/model-attribute", endpoint)
+
+        val params = endpoint!!.httpMetadata?.parameters
+        assertNotNull("Parameters should be populated", params)
+        assertTrue("Should have expanded parameters", params!!.isNotEmpty())
+
+        val paramNames = params.map { it.name }
+        assertTrue("Should have 'code' parameter", paramNames.contains("code"))
+        assertTrue("Should have 'msg' parameter", paramNames.contains("msg"))
+        assertTrue("Should have 'data.id' parameter (UserInfo.id)", paramNames.contains("data.id"))
+        assertTrue("Should have 'data.name' parameter (UserInfo.name)", paramNames.contains("data.name"))
+        assertTrue("Should have 'data.age' parameter (UserInfo.age)", paramNames.contains("data.age"))
+    }
+
+    /**
+     * Issue #1302: Test that generic type parameters are correctly resolved
+     * when using @RequestBody with generic types like Result<UserInfo>.
+     */
+    fun testIssue1302_RequestBody() = runTest {
+        val psiClass = findClass("com.itangcent.api.generic.GenericParamCtrl")
+        assertNotNull("Should find GenericParamCtrl", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val endpoint = endpoints.find { it.path == "/generic-param/request-body" }
+        assertNotNull("Should export POST /generic-param/request-body", endpoint)
+
+        val body = endpoint!!.httpMetadata?.body
+        assertNotNull("Body should be populated", body)
+        assertTrue("Body should be Object", body is ObjectModel.Object)
+
+        val fields = (body as ObjectModel.Object).fields
+        assertTrue("Should have 'code' field", fields.containsKey("code"))
+        assertTrue("Should have 'msg' field", fields.containsKey("msg"))
+        assertTrue("Should have 'data' field", fields.containsKey("data"))
+
+        // data should be resolved to UserInfo (not unresolved T)
+        val dataField = fields["data"]!!
+        assertTrue(
+            "data should be object (UserInfo), got: ${dataField.model}",
+            dataField.model is ObjectModel.Object
+        )
+
+        // Verify that data contains UserInfo fields
+        val dataFields = (dataField.model as ObjectModel.Object).fields
+        assertTrue("data should have 'id' field (UserInfo.id)", dataFields.containsKey("id"))
+        assertTrue("data should have 'name' field (UserInfo.name)", dataFields.containsKey("name"))
+        assertTrue("data should have 'age' field (UserInfo.age)", dataFields.containsKey("age"))
+    }
+
+    /**
+     * Issue #1302: Test that generic type parameters are correctly resolved
+     * when using @RequestParam with generic types like Result<UserInfo>.
+     */
+    fun testIssue1302_RequestParam() = runTest {
+        val psiClass = findClass("com.itangcent.api.generic.GenericParamCtrl")
+        assertNotNull("Should find GenericParamCtrl", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val endpoint = endpoints.find { it.path == "/generic-param/request-param" }
+        assertNotNull("Should export GET /generic-param/request-param", endpoint)
+
+        val params = endpoint!!.httpMetadata?.parameters
+        assertNotNull("Parameters should be populated", params)
+        assertTrue("Should have expanded parameters", params!!.isNotEmpty())
+
+        val paramNames = params.map { it.name }
+        assertTrue("Should have 'code' parameter", paramNames.contains("code"))
+        assertTrue("Should have 'msg' parameter", paramNames.contains("msg"))
+        assertTrue("Should have 'data.id' parameter (UserInfo.id)", paramNames.contains("data.id"))
+        assertTrue("Should have 'data.name' parameter (UserInfo.name)", paramNames.contains("data.name"))
+        assertTrue("Should have 'data.age' parameter (UserInfo.age)", paramNames.contains("data.age"))
+    }
+
+    /**
+     * Issue #1302: Test that generic type parameters are correctly resolved
+     * when using no annotation (defaults to query param) with generic types like Result<UserInfo>.
+     */
+    fun testIssue1302_NoAnnotation() = runTest {
+        val psiClass = findClass("com.itangcent.api.generic.GenericParamCtrl")
+        assertNotNull("Should find GenericParamCtrl", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val endpoint = endpoints.find { it.path == "/generic-param/no-annotation" }
+        assertNotNull("Should export GET /generic-param/no-annotation", endpoint)
+
+        val params = endpoint!!.httpMetadata?.parameters
+        assertNotNull("Parameters should be populated", params)
+        assertTrue("Should have expanded parameters", params!!.isNotEmpty())
+
+        val paramNames = params.map { it.name }
+        assertTrue("Should have 'code' parameter", paramNames.contains("code"))
+        assertTrue("Should have 'msg' parameter", paramNames.contains("msg"))
+        assertTrue("Should have 'data.id' parameter (UserInfo.id)", paramNames.contains("data.id"))
+        assertTrue("Should have 'data.name' parameter (UserInfo.name)", paramNames.contains("data.name"))
+        assertTrue("Should have 'data.age' parameter (UserInfo.age)", paramNames.contains("data.age"))
     }
 }

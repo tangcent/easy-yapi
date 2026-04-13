@@ -126,7 +126,7 @@ class SpringMvcClassExporter(
                     ?: emptyList()
 
                 val resolvedBindings = resolveParameterBindings(resolvedMethod)
-                val params = buildParameters(resolvedBindings)
+                val params = buildParameters(resolvedBindings, genericContext)
                 val paramHeaders = extractParamHeaders(resolvedBindings)
                 val body = buildRequestBody(resolvedBindings, genericContext)
                 val response = read { ReturnTypeUnwrapper.unwrap(method.returnType) }
@@ -272,7 +272,8 @@ class SpringMvcClassExporter(
     }
 
     private suspend fun buildParameters(
-        bindings: List<ResolvedParamBinding>
+        bindings: List<ResolvedParamBinding>,
+        genericContext: GenericContext = GenericContext.EMPTY
     ): List<ApiParameter> {
         val result = ArrayList<ApiParameter>()
         for ((p, binding) in bindings) {
@@ -290,14 +291,14 @@ class SpringMvcClassExporter(
 
             try {
                 if (binding == ParameterBinding.Form) {
-                    val expandedParams = expandFormParameter(p)
+                    val expandedParams = expandFormParameter(p, genericContext)
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
                         result.add(buildSingleParameter(p, paramName, binding))
                     }
                 } else if (binding == ParameterBinding.Query) {
-                    val expandedParams = expandQueryParameter(p)
+                    val expandedParams = expandQueryParameter(p, genericContext)
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
@@ -378,23 +379,23 @@ class SpringMvcClassExporter(
         return result
     }
 
-    private suspend fun expandFormParameter(parameter: PsiParameter): List<ApiParameter> {
+    private suspend fun expandFormParameter(parameter: PsiParameter, genericContext: GenericContext = GenericContext.EMPTY): List<ApiParameter> {
         val formExpanded = settings.formExpanded
         if (!formExpanded) {
             return emptyList()
         }
-        return expandComplexParameter(parameter, ParameterBinding.Form)
+        return expandComplexParameter(parameter, ParameterBinding.Form, genericContext)
     }
 
-    private suspend fun expandQueryParameter(parameter: PsiParameter): List<ApiParameter> {
+    private suspend fun expandQueryParameter(parameter: PsiParameter, genericContext: GenericContext = GenericContext.EMPTY): List<ApiParameter> {
         val queryExpanded = settings.queryExpanded
         if (!queryExpanded) {
             return emptyList()
         }
-        return expandComplexParameter(parameter, ParameterBinding.Query)
+        return expandComplexParameter(parameter, ParameterBinding.Query, genericContext)
     }
 
-    private suspend fun expandComplexParameter(parameter: PsiParameter, binding: ParameterBinding): List<ApiParameter> {
+    private suspend fun expandComplexParameter(parameter: PsiParameter, binding: ParameterBinding, genericContext: GenericContext = GenericContext.EMPTY): List<ApiParameter> {
         val psiClass = PsiTypesUtil.getPsiClass(parameter.type) ?: return emptyList()
         val qualifiedName = psiClass.qualifiedName ?: return emptyList()
 
@@ -414,8 +415,13 @@ class SpringMvcClassExporter(
         val paramMaxDepth = engine.evaluate(RuleKeys.PARAM_MAX_DEPTH, parameter) ?: 5
 
         val helper = PsiClassHelper.getInstance(project)
-        val objectModel = helper.buildObjectModel(psiClass, actionContext, maxDepth = paramMaxDepth)
-            ?: return emptyList()
+        val objectModel = helper.buildObjectModelFromType(
+            psiType = parameter.type,
+            actionContext = actionContext,
+            genericContext = genericContext,
+            contextElement = parameter,
+            maxDepth = paramMaxDepth
+        ) ?: return emptyList()
 
         val objectData = objectModel.asObject() ?: return emptyList()
         val result = ArrayList<ApiParameter>()

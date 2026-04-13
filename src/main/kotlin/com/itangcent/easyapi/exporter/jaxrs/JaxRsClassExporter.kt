@@ -18,7 +18,9 @@ import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.type.GenericContext
 import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.psi.type.searchAnnotation
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
@@ -132,7 +134,8 @@ class JaxRsClassExporter(
                 val paramHeaders = extractParamHeaders(method)
                 val contentType = types.consumes.firstOrNull()
                 val headers = buildHeaders(contentType, paramHeaders)
-                val body = buildRequestBody(method)
+                val genericContext = GenericContext(TypeResolver.resolveGenericParams(psiClass, emptyList()))
+                val body = buildRequestBody(method, genericContext)
                 val responseBody = buildResponseBody(method)
                 val responseTypeName = read { method.returnType?.canonicalText }
 
@@ -212,23 +215,28 @@ class JaxRsClassExporter(
         return result
     }
 
-    private suspend fun buildRequestBody(method: PsiMethod): ObjectModel? = read {
+    private suspend fun buildRequestBody(method: PsiMethod, genericContext: GenericContext = GenericContext.EMPTY): ObjectModel? = read {
         for (p in method.parameterList.parameters) {
             val resolved = parameterResolver.resolve(p)
             if (resolved.any { it.binding == ParameterBinding.Body }) {
-                return@read expandBodyParam(p)
+                return@read expandBodyParam(p, genericContext)
             }
         }
         return@read null
     }
 
-    private suspend fun expandBodyParam(parameter: PsiParameter): ObjectModel? {
+    private suspend fun expandBodyParam(parameter: PsiParameter, genericContext: GenericContext = GenericContext.EMPTY): ObjectModel? {
         val psiClass = PsiTypesUtil.getPsiClass(parameter.type) ?: return null
         val qualifiedName = psiClass.qualifiedName ?: return null
         if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") return null
         return runCatching {
             val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModel(psiClass, actionContext)
+            helper.buildObjectModelFromType(
+                psiType = parameter.type,
+                actionContext = actionContext,
+                genericContext = genericContext,
+                contextElement = parameter
+            )
         }.getOrNull()
     }
 
