@@ -273,10 +273,9 @@ class DefaultPsiClassHelperUtilityTest : TestCase() {
         val threadValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.lang.Thread"))
         assertTrue(threadValue is Map<*, *>)
         assertTrue((threadValue as Map<*, *>).isEmpty())
-        
+
         val fileValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.io.File"))
-        assertTrue(fileValue is Map<*, *>)
-        assertTrue((fileValue as Map<*, *>).isEmpty())
+        assertEquals("java.io.File should be treated as file type", "(binary)", fileValue)
         
         assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.util.Date")))
         assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDate")))
@@ -436,5 +435,26 @@ class DefaultPsiClassHelperUtilityTest : TestCase() {
 
     private fun callGetDefaultValueForType(typeName: String): ObjectModel? {
         return ObjectModel.single(JsonType.fromJavaType(typeName))
+    }
+
+    fun testFromFileTypeMarkerResolvesToFile() {
+        val model = ObjectModel.single(JsonType.fromJavaType("__file__"))
+        val single = model.asSingle()
+        assertNotNull("ObjectModel.Single should be created from __file__", single)
+        assertEquals("__file__ should resolve to 'file' type", JsonType.FILE, single!!.type)
+    }
+
+    fun testFromFileTypeMarkerNotObject() {
+        val model = ObjectModel.single(JsonType.fromJavaType("__file__"))
+        val single = model.asSingle()
+        assertNotNull(single)
+        assertNotSame("__file__ should NOT resolve to 'object' type", JsonType.OBJECT, single!!.type)
+    }
+
+    fun testFromFileTypeCanonicalResolvesToFile() {
+        val model = ObjectModel.single(JsonType.fromJavaType("org.springframework.web.multipart.MultipartFile"))
+        val single = model.asSingle()
+        assertNotNull(single)
+        assertEquals("MultipartFile canonical name should resolve to 'file' type", JsonType.FILE, single!!.type)
     }
 }

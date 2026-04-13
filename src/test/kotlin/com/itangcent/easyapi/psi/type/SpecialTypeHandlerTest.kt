@@ -179,6 +179,8 @@ class SpecialTypeHandlerTest : TestCase() {
         // json type strings
         assertTrue(SpecialTypeHandler.isFileTypeName("file"))
         assertTrue(SpecialTypeHandler.isFileTypeName("file[]"))
+        // internal file marker (produced by SpecialTypeHandler.resolveSpecialType)
+        assertTrue(SpecialTypeHandler.isFileTypeName("__file__"))
         // simple class names
         assertTrue(SpecialTypeHandler.isFileTypeName("MultipartFile"))
         assertTrue(SpecialTypeHandler.isFileTypeName("MultipartFile[]"))

@@ -85,8 +85,14 @@ object JsonType {
             normalized == "localdatetime" || normalized == "java.time.localdatetime" ||
                     normalized == "timestamp" || normalized == "java.sql.timestamp" -> DATETIME
 
-            normalized == "file" || normalized == "multipartfile" ||
-                    normalized == "org.springframework.web.multipart.multipartfile" -> FILE
+            normalized == "file" || normalized == "__file__" || normalized == "multipartfile" ||
+                    normalized == "org.springframework.web.multipart.multipartfile" ||
+                    normalized == "org.springframework.web.multipart.commons.commonsmultipartfile" ||
+                    normalized == "javax.servlet.http.part" ||
+                    normalized == "jakarta.servlet.http.part" ||
+                    normalized == "java.io.file" ||
+                    normalized == "java.nio.file.path" ||
+                    normalized == "org.springframework.core.io.resource" -> FILE
 
             normalized.contains("multipartfile[]") ||
                     normalized.contains("multipartfile>") && normalized.contains("[]") ||

@@ -314,4 +314,121 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         // Just verify the endpoint was exported with a response body
         assertNotNull("data field should exist in response body", dataField)
     }
+
+    fun testMultipartFileFieldExportedAsFileParam() = runTest {
+        loadFile("api/FileUploadCtrl.java",
+            """
+            package com.itangcent.api;
+            import com.itangcent.model.Result;
+            import com.itangcent.model.UserDto;
+            import org.springframework.web.bind.annotation.PostMapping;
+            import org.springframework.web.bind.annotation.ModelAttribute;
+            import org.springframework.web.bind.annotation.RequestMapping;
+            import org.springframework.web.bind.annotation.RestController;
+
+            @RestController
+            @RequestMapping("/file")
+            public class FileUploadCtrl {
+                /**
+                 * Create new user and upload avatar
+                 * @param userDto user data with avatar
+                 * @return save result
+                 */
+                @PostMapping("/add")
+                public Result<String> add(@ModelAttribute UserDto userDto) {
+                    return Result.success("Save successful");
+                }
+            }
+            """.trimIndent()
+        )
+        loadFile("model/UserDto.java",
+            """
+            package com.itangcent.model;
+            import org.springframework.web.multipart.MultipartFile;
+
+            public class UserDto extends UserInfo {
+                /** User Profile Image File */
+                private MultipartFile profileImg;
+
+                public MultipartFile getProfileImg() {
+                    return profileImg;
+                }
+
+                public void setProfileImg(MultipartFile profileImg) {
+                    this.profileImg = profileImg;
+                }
+            }
+            """.trimIndent()
+        )
+
+        val psiClass = findClass("com.itangcent.api.FileUploadCtrl")
+        assertNotNull(psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val endpoint = endpoints.find { it.httpMetadata?.path == "/file/add" }
+        assertNotNull("Should find /file/add endpoint", endpoint)
+
+        val params = endpoint!!.httpMetadata?.parameters ?: emptyList()
+        val profileImgParam = params.find { it.name == "profileImg" }
+        assertNotNull("profileImg field should be expanded as a form parameter", profileImgParam)
+        assertEquals(
+            "profileImg (MultipartFile) should be FILE type, not TEXT",
+            com.itangcent.easyapi.exporter.model.ParameterType.FILE,
+            profileImgParam!!.type
+        )
+        assertEquals(
+            "profileImg should have Form binding",
+            com.itangcent.easyapi.exporter.model.ParameterBinding.Form,
+            profileImgParam.binding
+        )
+    }
+
+    fun testMultipartFileDirectParamExportedAsFileParam() = runTest {
+        loadFile("api/DirectFileUploadCtrl.java",
+            """
+            package com.itangcent.api;
+            import com.itangcent.model.Result;
+            import org.springframework.web.multipart.MultipartFile;
+            import org.springframework.web.bind.annotation.PostMapping;
+            import org.springframework.web.bind.annotation.RequestParam;
+            import org.springframework.web.bind.annotation.RequestMapping;
+            import org.springframework.web.bind.annotation.RestController;
+
+            @RestController
+            @RequestMapping("/file-direct")
+            public class DirectFileUploadCtrl {
+                /**
+                 * Upload a single file
+                 * @param file the file to upload
+                 * @return upload result
+                 */
+                @PostMapping("/upload")
+                public Result<String> upload(@RequestParam("file") MultipartFile file) {
+                    return Result.success("Upload successful");
+                }
+            }
+            """.trimIndent()
+        )
+
+        val psiClass = findClass("com.itangcent.api.DirectFileUploadCtrl")
+        assertNotNull(psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val endpoint = endpoints.find { it.httpMetadata?.path == "/file-direct/upload" }
+        assertNotNull("Should find /file-direct/upload endpoint", endpoint)
+
+        val params = endpoint!!.httpMetadata?.parameters ?: emptyList()
+        val fileParam = params.find { it.name == "file" }
+        assertNotNull("file parameter should be present", fileParam)
+        assertEquals(
+            "MultipartFile parameter should be FILE type",
+            com.itangcent.easyapi.exporter.model.ParameterType.FILE,
+            fileParam!!.type
+        )
+        assertEquals(
+            "MultipartFile parameter should have Form binding",
+            com.itangcent.easyapi.exporter.model.ParameterBinding.Form,
+            fileParam.binding
+        )
+    }
 }

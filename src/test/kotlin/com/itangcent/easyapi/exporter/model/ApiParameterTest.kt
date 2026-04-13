@@ -128,6 +128,7 @@ class ApiParameterTest {
     fun testFromTypeNameFile() {
         assertEquals(ParameterType.FILE, ParameterType.fromTypeName("file"))
         assertEquals(ParameterType.FILE, ParameterType.fromTypeName("file[]"))
+        assertEquals(ParameterType.FILE, ParameterType.fromTypeName("__file__"))
         assertEquals(ParameterType.FILE, ParameterType.fromTypeName("MultipartFile"))
         assertEquals(ParameterType.FILE, ParameterType.fromTypeName("org.springframework.web.multipart.MultipartFile"))
         assertEquals(ParameterType.FILE, ParameterType.fromTypeName("org.springframework.web.multipart.MultipartFile[]"))

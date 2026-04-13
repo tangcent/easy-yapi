@@ -779,11 +779,15 @@ class DefaultPsiClassHelper : PsiClassHelper {
             "java.lang.Boolean" -> ObjectModel.single(JsonType.BOOLEAN)
             "java.lang.Short" -> ObjectModel.single(JsonType.SHORT)
             else -> {
-                val specialDefault = SpecialTypeHandler.getDefaultValueForSpecialType(qualifiedName)
-                if (specialDefault != null) {
-                    ObjectModel.single(JsonType.STRING)
+                if (SpecialTypeHandler.isFileType(qualifiedName)) {
+                    ObjectModel.single(JsonType.FILE)
                 } else {
-                    ObjectModel.single(JsonType.OBJECT)
+                    val specialDefault = SpecialTypeHandler.getDefaultValueForSpecialType(qualifiedName)
+                    if (specialDefault != null) {
+                        ObjectModel.single(JsonType.STRING)
+                    } else {
+                        ObjectModel.single(JsonType.OBJECT)
+                    }
                 }
             }
         }

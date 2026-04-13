@@ -129,6 +129,13 @@ class JsonTypeTest {
     @Test
     fun testFromJavaType_fileTypes() {
         assertEquals(JsonType.FILE, JsonType.fromJavaType("org.springframework.web.multipart.MultipartFile"))
+        assertEquals(JsonType.FILE, JsonType.fromJavaType("__file__"))
+        assertEquals(JsonType.FILE, JsonType.fromJavaType("MultipartFile"))
+        assertEquals(JsonType.FILE, JsonType.fromJavaType("javax.servlet.http.Part"))
+        assertEquals(JsonType.FILE, JsonType.fromJavaType("jakarta.servlet.http.Part"))
+        assertEquals(JsonType.FILE, JsonType.fromJavaType("java.io.File"))
+        assertEquals(JsonType.FILE, JsonType.fromJavaType("java.nio.file.Path"))
+        assertEquals(JsonType.FILE, JsonType.fromJavaType("org.springframework.core.io.Resource"))
     }
     
     @Test

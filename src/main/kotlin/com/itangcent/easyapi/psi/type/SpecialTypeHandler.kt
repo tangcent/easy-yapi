@@ -105,7 +105,7 @@ object SpecialTypeHandler {
     fun isFileTypeName(typeName: String?): Boolean {
         if (typeName.isNullOrBlank()) return false
         val t = singleTypeName(typeName.trim())
-        return t == "file" || isFileTypeCanonical(t)
+        return t == "file" || t == "__file__" || isFileTypeCanonical(t)
     }
 
     fun isDateTimeAsString(qualifiedName: String?): Boolean {
