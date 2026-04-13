@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.rule.engine
 
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.rule.IntRuleMode
 import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.context.RuleContext
@@ -14,7 +16,7 @@ import java.util.ServiceLoader
  *
  * ## Usage
  * ```kotlin
- * val engine = RuleEngine.getInstance(actionContext)
+ * val engine = RuleEngine.getInstance(project)
  *
  * // Typed evaluation via RuleKey
  * val name: String? = engine.evaluate(RuleKeys.API_NAME, psiMethod)
@@ -22,12 +24,25 @@ import java.util.ServiceLoader
  * engine.evaluate(RuleKeys.JSON_CLASS_PARSE_BEFORE, psiClass)
  * ```
  */
-class RuleEngine(
-    private val actionContext: ActionContext,
+@Service(Service.Level.PROJECT)
+class RuleEngine internal constructor(
+    private val project: Project,
     private val configReader: ConfigReader,
-    parsers: List<RuleParser> = emptyList()
+    initialParsers: List<RuleParser>
 ) {
-    private val parsers: List<RuleParser> = (parsers.ifEmpty { defaultParsers() }).also { list ->
+    constructor(project: Project) : this(
+        project,
+        ConfigReader.getInstance(project),
+        emptyList()
+    )
+
+    constructor(project: Project, configReader: ConfigReader) : this(
+        project,
+        configReader,
+        emptyList()
+    )
+
+    private val parsers: List<RuleParser> = (initialParsers.ifEmpty { defaultParsers() }).also { list ->
         list.filterIsInstance<RuleEngineAware>().forEach { it.setRuleEngine(this) }
     }
 
@@ -45,11 +60,11 @@ class RuleEngine(
 
     /** Evaluate a string rule. Returns null when no rule matches or all values are empty. */
     suspend fun evaluate(key: RuleKey.StringKey, element: PsiElement): String? {
-        val ctx = RuleContext.from(actionContext, element)
+        val ctx = RuleContext.from(project, element)
         val values = ArrayList<String?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
-                .onFailure { e -> ctx.actionContext.console.warn("Rule evaluation failed for key=${key.name}", e) }
+                .onFailure { e -> ctx.console.warn("Rule evaluation failed for key=${key.name}", e) }
                 .getOrNull()
                 ?.toString()
             values.add(v)
@@ -57,14 +72,13 @@ class RuleEngine(
         return key.stringMode.aggregate(values)
     }
 
-    /** Evaluate a string rule with context customization. */
     suspend fun evaluate(key: RuleKey.StringKey, element: PsiElement, contextHandle: (RuleContext) -> Unit): String? {
-        val ctx = RuleContext.from(actionContext, element)
+        val ctx = RuleContext.from(project, element)
         contextHandle(ctx)
         val values = ArrayList<String?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
-                .onFailure { e -> ctx.actionContext.console.warn("Rule evaluation failed for key=${key.name}", e) }
+                .onFailure { e -> ctx.console.warn("Rule evaluation failed for key=${key.name}", e) }
                 .getOrNull()
                 ?.toString()
             values.add(v)
@@ -74,7 +88,7 @@ class RuleEngine(
 
     /** Evaluate a string rule without a PSI element (global/builtin rules). */
     suspend fun evaluate(key: RuleKey.StringKey): String? {
-        val ctx = RuleContext.withoutElement(actionContext)
+        val ctx = RuleContext.withoutElement(project)
         val values = ArrayList<String?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
@@ -96,7 +110,7 @@ class RuleEngine(
         psiType: com.intellij.psi.PsiType,
         contextElement: PsiElement? = null
     ): String? {
-        val ctx = RuleContext.withPsiType(actionContext, psiType, contextElement)
+        val ctx = RuleContext.withPsiType(project, psiType, contextElement)
         val values = ArrayList<String?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
@@ -110,7 +124,7 @@ class RuleEngine(
 
     /** Evaluate a boolean rule. Returns false when no rule matches. */
     suspend fun evaluate(key: RuleKey.BooleanKey, element: PsiElement): Boolean {
-        val ctx = RuleContext.from(actionContext, element)
+        val ctx = RuleContext.from(project, element)
         val values = ArrayList<Boolean?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
@@ -124,7 +138,7 @@ class RuleEngine(
 
     /** Evaluate an int rule. Returns null when no rule matches. */
     suspend fun evaluate(key: RuleKey.IntKey, element: PsiElement): Int? {
-        val ctx = RuleContext.from(actionContext, element)
+        val ctx = RuleContext.from(project, element)
         val values = ArrayList<Int?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
@@ -138,20 +152,20 @@ class RuleEngine(
 
     /** Fire an event rule (side-effect only). */
     suspend fun evaluate(key: RuleKey.EventKey, element: PsiElement) {
-        val ctx = RuleContext.from(actionContext, element)
+        val ctx = RuleContext.from(project, element)
         fireEvent(key, ctx)
     }
 
     /** Fire an event rule with context customization. */
     suspend fun evaluate(key: RuleKey.EventKey, element: PsiElement, contextHandle: (RuleContext) -> Unit) {
-        val ctx = RuleContext.from(actionContext, element)
+        val ctx = RuleContext.from(project, element)
         contextHandle(ctx)
         fireEvent(key, ctx)
     }
 
     /** Fire an event rule without a PSI element (global events). */
     suspend fun evaluate(key: RuleKey.EventKey, contextHandle: (RuleContext) -> Unit = {}) {
-        val ctx = RuleContext.withoutElement(actionContext)
+        val ctx = RuleContext.withoutElement(project)
         contextHandle(ctx)
         fireEvent(key, ctx)
     }
@@ -254,7 +268,6 @@ class RuleEngine(
         /** Synthetic key used for filter expression evaluation. */
         private val FILTER_KEY = RuleKey.boolean("__filter__")
 
-        fun getInstance(actionContext: ActionContext): RuleEngine =
-            actionContext.instance(RuleEngine::class)
+        fun getInstance(project: Project): RuleEngine = project.service()
     }
 }

@@ -53,7 +53,7 @@ class HttpClientExporter(private val project: Project) : ApiExporter {
 
         val fileName = generateFileName()
 
-        val scratchFile = write {
+        val scratchFile = write() {
             ScratchRootType.getInstance().createScratchFile(
                 project,
                 fileName,

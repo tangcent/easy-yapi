@@ -196,8 +196,7 @@ class CurlExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             endpoints = endpoints,
             exportFormat = ExportFormat.CURL,
             settings = com.itangcent.easyapi.settings.Settings(),
-            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(host = "http://localhost:8080"),
-            actionContext = actionContext
+            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(host = "http://localhost:8080")
         )
     }
 }

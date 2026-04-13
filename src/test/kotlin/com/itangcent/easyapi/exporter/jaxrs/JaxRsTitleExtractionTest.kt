@@ -15,7 +15,7 @@ class JaxRsTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = JaxRsClassExporter(actionContext)
+        exporter = JaxRsClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -37,9 +37,6 @@ class JaxRsTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testClassTitleFromDocComment() = runTest {
         val psiClass = findClass("com.itangcent.jaxrs.TitleTestResource")

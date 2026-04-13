@@ -15,7 +15,7 @@ class RequestMappingResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         super.setUp()
         loadTestFiles()
         val annotationHelper = com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper()
-        val engine = com.itangcent.easyapi.rule.engine.RuleEngine(actionContext, actionContext.instance())
+        val engine = com.itangcent.easyapi.rule.engine.RuleEngine(project, createConfigReader())
         resolver = RequestMappingResolver(annotationHelper, engine)
     }
 

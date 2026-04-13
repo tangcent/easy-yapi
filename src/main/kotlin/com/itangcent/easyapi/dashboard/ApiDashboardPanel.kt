@@ -15,7 +15,6 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.cache.ApiIndexManager
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
@@ -85,7 +84,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * Initializes the panel with HTTP client, UI components, tree listeners, and API data.
      */
     init {
-        val httpClient = HttpClientProvider.getInstance(ActionContext.shared).getClient()
+        val httpClient = HttpClientProvider.getInstance(project).getClient()
         endpointDetailsPanel = EndpointDetailsPanel(project, httpClient)
         setupUI()
         setupTreeListeners()

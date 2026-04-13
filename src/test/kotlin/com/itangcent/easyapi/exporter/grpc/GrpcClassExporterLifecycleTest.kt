@@ -15,7 +15,7 @@ class GrpcClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase() 
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = GrpcClassExporter(actionContext)
+        exporter = GrpcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -39,9 +39,6 @@ class GrpcClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase() 
         """.trimIndent()
     )
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testGrpcClassParseBeforeAndAfter() = runTest {
         val psiClass = findClass("com.itangcent.grpc.service.EchoServiceImpl")

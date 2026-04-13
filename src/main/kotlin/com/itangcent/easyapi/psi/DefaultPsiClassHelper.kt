@@ -4,8 +4,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.itangcent.easyapi.cache.JsonConstructionCache
-import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.context.project
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocHelper
@@ -57,7 +55,7 @@ object JsonOption {
  * ## Usage
  * ```kotlin
  * val helper = DefaultPsiClassHelper.getInstance(project)
- * val model = helper.buildObjectModel(psiClass, actionContext)
+ * val model = helper.buildObjectModel(psiClass)
  * ```
  *
  * @see PsiClassHelper for the interface
@@ -65,7 +63,7 @@ object JsonOption {
  * @see TypeResolver for type resolution
  */
 @Service(Service.Level.PROJECT)
-class DefaultPsiClassHelper : PsiClassHelper {
+class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
     companion object : IdeaLog {
         fun getInstance(project: Project): DefaultPsiClassHelper =
@@ -74,20 +72,18 @@ class DefaultPsiClassHelper : PsiClassHelper {
 
     override suspend fun buildObjectModelFromType(
         psiType: PsiType,
-        actionContext: ActionContext,
         option: Int,
         maxDepth: Int,
         genericContext: GenericContext,
         contextElement: PsiElement?
     ): ObjectModel? {
-        val engine = RuleEngine.getInstance(actionContext)
+        val engine = RuleEngine.getInstance(project)
         val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, psiType, contextElement)
         if (!converted.isNullOrBlank()) {
             val result = buildObjectModelFromConvertedType(
                 convertedType = converted,
                 sourcePsiType = psiType,
                 contextElement = contextElement,
-                actionContext = actionContext,
                 option = option,
                 maxDepth = maxDepth,
                 genericContext = genericContext
@@ -96,16 +92,15 @@ class DefaultPsiClassHelper : PsiClassHelper {
         }
 
         val resolvedType = TypeResolver.resolve(psiType, genericContext)
-        return buildObjectModelFromConvertedType(resolvedType, actionContext, option, maxDepth, genericContext)
+        return buildObjectModelFromConvertedType(resolvedType, option, maxDepth, genericContext)
     }
 
     override suspend fun buildObjectModel(
         psiClass: PsiClass,
-        actionContext: ActionContext,
         option: Int,
         maxDepth: Int
     ): ObjectModel? {
-        val engine = RuleEngine.getInstance(actionContext)
+        val engine = RuleEngine.getInstance(project)
 
         val converted = engine.evaluate(
             RuleKeys.JSON_RULE_CONVERT,
@@ -116,25 +111,23 @@ class DefaultPsiClassHelper : PsiClassHelper {
             return buildObjectModelFromConvertedType(
                 convertedType = converted,
                 contextElement = psiClass,
-                actionContext = actionContext,
                 option = option,
                 maxDepth = maxDepth,
                 genericContext = GenericContext.EMPTY
             )
         }
 
-        val docHelper = actionContext.instanceOrNull(DocHelper::class) ?: StandardDocHelper()
+        val docHelper = StandardDocHelper.getInstance(project)
         val cache = JsonConstructionCache()
         val visited = HashSet<String>()
         return buildTypeObject(
-            psiClass, actionContext, engine, docHelper, cache,
+            psiClass, engine, docHelper, cache,
             option, maxDepth, depth = 0, visited = visited
         )
     }
 
     private suspend fun buildObjectModelFromConvertedType(
         resolvedType: ResolvedType,
-        actionContext: ActionContext,
         option: Int,
         maxDepth: Int,
         genericContext: GenericContext
@@ -142,13 +135,13 @@ class DefaultPsiClassHelper : PsiClassHelper {
         val substitutedType = TypeResolver.substitute(resolvedType, genericContext)
         if (substitutedType is ResolvedType.PrimitiveType && substitutedType.kind == PrimitiveKind.VOID) return null
 
-        val engine = RuleEngine.getInstance(actionContext)
-        val docHelper = actionContext.instanceOrNull(DocHelper::class) ?: StandardDocHelper()
+        val engine = RuleEngine.getInstance(project)
+        val docHelper = StandardDocHelper.getInstance(project)
         val cache = JsonConstructionCache()
         val visited = HashSet<String>()
 
         return buildFieldValue(
-            substitutedType, actionContext, engine, docHelper, cache,
+            substitutedType, engine, docHelper, cache,
             option, maxDepth, depth = 0, visited = visited
         )
     }
@@ -157,22 +150,16 @@ class DefaultPsiClassHelper : PsiClassHelper {
         convertedType: String,
         sourcePsiType: PsiType? = null,
         contextElement: PsiElement?,
-        actionContext: ActionContext,
         option: Int,
         maxDepth: Int,
         genericContext: GenericContext
     ): ObjectModel? {
-        val project = actionContext.project()
         val rawResolved = TypeResolver.resolveFromCanonicalText(convertedType, project, contextElement, genericContext)
 
-        // If the type couldn't be fully resolved but looks like a well-known collection,
-        // try to resolve the element type and build an array model.
         if (rawResolved is ResolvedType.UnresolvedType) {
             val trimmed = convertedType.trim()
             val collectionElementText = extractCollectionElementType(trimmed)
             if (collectionElementText != null) {
-                // Try resolving the element type from the source PsiType's type arguments first
-                // (these are already-resolved PsiType objects, not text)
                 val elementResolved =
                     resolveElementTypeFromSource(sourcePsiType, collectionElementText, genericContext, contextElement)
                         ?: TypeResolver.resolveFromCanonicalText(
@@ -182,7 +169,7 @@ class DefaultPsiClassHelper : PsiClassHelper {
                             genericContext
                         )
                 val elementModel = buildObjectModelFromConvertedType(
-                    elementResolved, actionContext, option, maxDepth, genericContext
+                    elementResolved, option, maxDepth, genericContext
                 )
                 return if (elementModel != null) ObjectModel.array(elementModel) else null
             }
@@ -190,7 +177,6 @@ class DefaultPsiClassHelper : PsiClassHelper {
 
         return buildObjectModelFromConvertedType(
             rawResolved,
-            actionContext,
             option,
             maxDepth,
             genericContext
@@ -258,7 +244,6 @@ class DefaultPsiClassHelper : PsiClassHelper {
 
     private suspend fun buildTypeObject(
         psiClass: PsiClass,
-        actionContext: ActionContext,
         engine: RuleEngine,
         docHelper: DocHelper,
         cache: JsonConstructionCache,
@@ -374,10 +359,9 @@ class DefaultPsiClassHelper : PsiClassHelper {
             val rawResolved: ResolvedType
             val fieldType: ResolvedType
             if (!converted.isNullOrBlank()) {
-                val project = actionContext.project()
-                rawResolved = TypeResolver.resolveFromCanonicalText(
-                    canonicalText = converted,
-                    project = project,
+                  rawResolved = TypeResolver.resolveFromCanonicalText(
+                      canonicalText = converted,
+                      project = project,
                     contextElement = accessibleField.psi,
                     context = effectiveContext
                 )
@@ -392,7 +376,7 @@ class DefaultPsiClassHelper : PsiClassHelper {
                     && effectiveContext.genericMap.containsKey(rawResolved.canonicalText)
 
             val fieldModel = buildFieldModel(
-                fieldType, actionContext, engine, docHelper, cache,
+                fieldType, engine, docHelper, cache,
                 option, effectiveMaxDepth, depth + 1, visited,
                 fieldComment, fieldRequired, fieldDefaultValue, fieldMock, fieldDemo, fieldAdvanced,
                 psiElement = accessibleField.psi,
@@ -551,7 +535,6 @@ class DefaultPsiClassHelper : PsiClassHelper {
 
     private suspend fun buildFieldModel(
         resolvedType: ResolvedType,
-        actionContext: ActionContext,
         engine: RuleEngine,
         docHelper: DocHelper,
         cache: JsonConstructionCache,
@@ -569,18 +552,12 @@ class DefaultPsiClassHelper : PsiClassHelper {
         generic: Boolean = false
     ): FieldModel {
         val model = buildFieldValue(
-            resolvedType, actionContext, engine, docHelper, cache,
+            resolvedType, engine, docHelper, cache,
             option, maxDepth, depth, visited
         )
-        // First try: resolve options from the field's own type (e.g., field is an enum type)
         var options = resolveFieldOptions(resolvedType, docHelper)
-        // Second try: resolve options from @see tags in the field's doc comment
-        // This handles the pattern: @see com.example.UserType (where field type is Integer)
         if (options == null && psiElement != null) {
-            val project = actionContext.instanceOrNull(com.intellij.openapi.project.Project::class)
-            if (project != null) {
-                options = SeeTagResolver(project).resolveOptions(psiElement, docHelper)
-            }
+            options = SeeTagResolver(project).resolveOptions(psiElement, docHelper)
         }
         return FieldModel(
             model = model,
@@ -628,7 +605,6 @@ class DefaultPsiClassHelper : PsiClassHelper {
 
     private suspend fun buildFieldValue(
         resolvedType: ResolvedType,
-        actionContext: ActionContext,
         engine: RuleEngine,
         docHelper: DocHelper,
         cache: JsonConstructionCache,
@@ -642,7 +618,7 @@ class DefaultPsiClassHelper : PsiClassHelper {
             is ResolvedType.ArrayType -> {
                 val componentModel = buildFieldValue(
                     resolvedType.componentType,
-                    actionContext, engine, docHelper, cache, option, maxDepth, depth, visited
+                    engine, docHelper, cache, option, maxDepth, depth, visited
                 )
                 ObjectModel.array(componentModel)
             }
@@ -661,7 +637,7 @@ class DefaultPsiClassHelper : PsiClassHelper {
                     val elementType = resolvedType.typeArgs.firstOrNull()
                     val elementModel = if (elementType != null) {
                         buildFieldValue(
-                            elementType, actionContext, engine, docHelper, cache,
+                            elementType, engine, docHelper, cache,
                             option, maxDepth, depth, visited
                         )
                     } else ObjectModel.single(JsonType.OBJECT)
@@ -671,22 +647,20 @@ class DefaultPsiClassHelper : PsiClassHelper {
                     val valueType = resolvedType.typeArgs.getOrNull(1)
                     val keyModel = if (keyType != null) {
                         buildFieldValue(
-                            keyType, actionContext, engine, docHelper, cache,
+                            keyType, engine, docHelper, cache,
                             option, maxDepth, depth, visited
                         )
                     } else ObjectModel.single(JsonType.STRING)
                     val valueModel = if (valueType != null) {
                         buildFieldValue(
-                            valueType, actionContext, engine, docHelper, cache,
+                            valueType, engine, docHelper, cache,
                             option, maxDepth, depth, visited
                         )
                     } else ObjectModel.single(JsonType.OBJECT)
                     ObjectModel.map(keyModel, valueModel)
                 } else if (isEnum(psiClass)) {
-                    // Check enum.use.custom rule for custom enum serialization
                     val customEnumField = engine.evaluate(RuleKeys.ENUM_USE_CUSTOM, psiClass)
                     if (!customEnumField.isNullOrBlank()) {
-                        // Use the specified field of the enum constant as the value
                         ObjectModel.single(JsonType.STRING)
                     } else {
                         ObjectModel.single(JsonType.STRING)
@@ -698,7 +672,7 @@ class DefaultPsiClassHelper : PsiClassHelper {
                         GenericContext.EMPTY
                     }
                     buildTypeObject(
-                        psiClass, actionContext, engine, docHelper, cache,
+                        psiClass, engine, docHelper, cache,
                         option, maxDepth, depth, visited, nestedContext
                     ) ?: ObjectModel.emptyObject()
                 }
@@ -708,7 +682,7 @@ class DefaultPsiClassHelper : PsiClassHelper {
             is ResolvedType.WildcardType -> {
                 resolvedType.upper?.let {
                     buildFieldValue(
-                        it, actionContext, engine, docHelper, cache,
+                        it, engine, docHelper, cache,
                         option, maxDepth, depth, visited
                     )
                 } ?: ObjectModel.nullValue()

@@ -15,7 +15,7 @@ class ContentTypeResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         super.setUp()
         loadTestFiles()
         val annotationHelper = UnifiedAnnotationHelper()
-        val ruleEngine = RuleEngine(actionContext, actionContext.instance(ConfigReader::class))
+        val ruleEngine = RuleEngine(project, createConfigReader())
         resolver = ContentTypeResolver(annotationHelper, ruleEngine)
     }
 

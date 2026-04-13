@@ -5,22 +5,16 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.util.PsiTypesUtil
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiHeader
-import com.itangcent.easyapi.exporter.model.ApiParameter
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.ParameterBinding
-import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
 import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.ResolvedType
@@ -55,19 +49,18 @@ import kotlinx.coroutines.withContext
  * @see NativeFeignAnnotationParser for native Feign annotation parsing
  */
 class FeignClassExporter(
-    private val actionContext: ActionContext,
+    private val project: Project,
     feignEnable: Boolean = true
 ) : ClassExporter {
     private val annotationHelper = UnifiedAnnotationHelper()
-    private val engine = RuleEngine.getInstance(actionContext)
+    private val engine = RuleEngine.getInstance(project)
     private val recognizer = FeignClientRecognizer(engine, feignEnable)
     private val pathResolver = FeignPathResolver(annotationHelper)
     private val nativeParser = NativeFeignAnnotationParser(annotationHelper)
     private val springMappingResolver = RequestMappingResolver(annotationHelper, engine)
     private val springParamResolver = SpringParameterBindingResolver(annotationHelper, engine)
-    private val docHelper = actionContext.instance(DocHelper::class)
+    private val docHelper = StandardDocHelper.getInstance(project)
     private val metadataResolver = ApiMetadataResolver(engine, docHelper)
-    private val project: Project? = actionContext.instanceOrNull(Project::class)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isFeignClient(psiClass)) return emptyList()
@@ -333,7 +326,7 @@ class FeignClassExporter(
         if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") return null
         return runCatching {
             val helper = PsiClassHelper.getInstance(project!!)
-            helper.buildObjectModel(psiClass, actionContext)
+            helper.buildObjectModel(psiClass)
         }.getOrNull()
     }
 
@@ -344,8 +337,7 @@ class FeignClassExporter(
             val helper = PsiClassHelper.getInstance(project!!)
             helper.buildObjectModelFromType(
                 psiType = returnType,
-                contextElement = method,
-                actionContext = actionContext
+                contextElement = method
             )
         }.getOrNull()
     }

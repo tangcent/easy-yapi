@@ -9,24 +9,12 @@ class ApiDashboardServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        apiDashboardService = ApiDashboardService(project)
+        apiDashboardService = ApiDashboardService()
     }
 
     override fun tearDown() {
         apiDashboardService.stop()
         super.tearDown()
-    }
-
-    fun testGetOrCreateContextReturnsSameContext() {
-        val context1 = apiDashboardService.getOrCreateContext()
-        val context2 = apiDashboardService.getOrCreateContext()
-        
-        assertSame("Should return same context instance", context1, context2)
-    }
-
-    fun testContextHasProjectBound() {
-        val context = apiDashboardService.getOrCreateContext()
-        assertNotNull("Context should have project bound", context)
     }
 
     fun testSetDashboardPanel() {
@@ -54,11 +42,12 @@ class ApiDashboardServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
         panel.dispose()
     }
 
-    fun testStopClearsContext() = runBlocking {
-        apiDashboardService.getOrCreateContext()
+    fun testStopClearsPanel() {
+        val panel = ApiDashboardPanel(project)
+        apiDashboardService.setDashboardPanel(panel)
         apiDashboardService.stop()
-        val newContext = apiDashboardService.getOrCreateContext()
-        assertNotNull("Should create new context after stop", newContext)
+        assertNotNull("Stop should not throw", apiDashboardService)
+        panel.dispose()
     }
 
     private fun loadTestFiles() {

@@ -4,7 +4,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.http.HttpClientProvider
@@ -57,7 +56,7 @@ class PostmanCollectionHelper(private val project: Project) {
             return null
         }
 
-        val httpClient = HttpClientProvider.getInstance(ActionContext.forProject(project)).getClient()
+        val httpClient = HttpClientProvider.getInstance(project).getClient()
         val postmanClient = PostmanApiClient(token, workspaceId = workspaceId, httpClient = httpClient).asCached()
 
         return swing {

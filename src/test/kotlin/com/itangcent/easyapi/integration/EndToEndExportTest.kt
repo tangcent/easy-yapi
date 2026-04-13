@@ -19,7 +19,7 @@ class EndToEndExportTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        springMvcExporter = SpringMvcClassExporter(actionContext)
+        springMvcExporter = SpringMvcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -40,9 +40,6 @@ class EndToEndExportTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testExportSpringMvcToPostman() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")
@@ -52,7 +49,7 @@ class EndToEndExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("Should export at least one endpoint", endpoints.isNotEmpty())
 
         val formatter = PostmanFormatter(
-            actionContext = actionContext,
+            project = project,
             options = PostmanFormatOptions(buildExample = true, autoMergeScript = false)
         )
         val collection = formatter.format(endpoints, "User API")
@@ -112,7 +109,7 @@ class EndToEndExportTest : EasyApiLightCodeInsightFixtureTestCase() {
             }
         }
 
-        val postmanCollection = PostmanFormatter(actionContext = actionContext).format(endpoints, "Test API")
+        val postmanCollection = PostmanFormatter(project = project).format(endpoints, "Test API")
         assertNotNull("Step: Format conversion - Postman collection should not be null", postmanCollection)
 
         val markdown = DefaultMarkdownFormatter().format(endpoints, "Test API")

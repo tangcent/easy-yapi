@@ -2,18 +2,12 @@ package com.itangcent.easyapi.exporter.yapi
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporter
-import com.itangcent.easyapi.exporter.model.ExportContext
-import com.itangcent.easyapi.exporter.model.ExportFormat
-import com.itangcent.easyapi.exporter.model.ExportMetadata
-import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.model.OutputConfig
-import com.itangcent.easyapi.exporter.model.path
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
@@ -61,8 +55,7 @@ class YapiExporter(private val project: Project) : ApiExporter {
      * @return Success with count and cart links, or error result
      */
     override suspend fun export(context: ExportContext): ExportResult {
-        val actionContext = context.actionContext ?: ActionContext.forProject(project)
-        val clientProvider = DefaultYapiApiClientProvider(project, actionContext)
+        val clientProvider = DefaultYapiApiClientProvider(project)
         runCatching { clientProvider.init() }
             .onFailure { return ExportResult.Error(it.message ?: "Export failed: $it") }
 
@@ -72,7 +65,7 @@ class YapiExporter(private val project: Project) : ApiExporter {
             reqBodyJson5 = settings.yapiReqBodyJson5,
             resBodyJson5 = settings.yapiResBodyJson5
         )
-        val engine = RuleEngine.getInstance(actionContext)
+        val engine = RuleEngine.getInstance(project)
 
         var successCount = 0
         var failCount = 0
@@ -86,8 +79,8 @@ class YapiExporter(private val project: Project) : ApiExporter {
         // Fire yapi.export.before once before the export loop
         engine.evaluate(RuleKeys.YAPI_EXPORT_BEFORE)
 
-        val docHelper = actionContext.instanceOrNull(DocHelper::class)
-        val metadataResolver = if (docHelper != null) ApiMetadataResolver(engine, docHelper) else null
+        val docHelper = StandardDocHelper.getInstance(project)
+        val metadataResolver = ApiMetadataResolver(engine, docHelper)
 
         for (endpoint in context.endpointsToExport) {
             indicator?.checkCanceled()
@@ -99,8 +92,8 @@ class YapiExporter(private val project: Project) : ApiExporter {
                     val psiMethod = endpoint.sourceMethod
                     val psiClass = endpoint.sourceClass
                     val ruleModule = when {
-                        psiMethod != null && metadataResolver != null -> metadataResolver.resolveModule(psiMethod)
-                        psiClass != null && metadataResolver != null -> metadataResolver.resolveModule(psiClass)
+                        psiMethod != null -> metadataResolver.resolveModule(psiMethod)
+                        psiClass != null -> metadataResolver.resolveModule(psiClass)
                         else -> null
                     }
                     ruleModule?.takeIf { it.isNotBlank() }

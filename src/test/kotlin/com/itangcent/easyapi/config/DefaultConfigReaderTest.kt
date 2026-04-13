@@ -5,16 +5,16 @@ import org.junit.Assert.*
 
 class DefaultConfigReaderTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    private lateinit var configReader: DefaultConfigReader
+    private lateinit var configReader: ConfigReader
 
     override fun setUp() {
         super.setUp()
-        configReader = DefaultConfigReader.getInstance(project)
+        configReader = ConfigReader.getInstance(project)
     }
 
     fun testGetInstance() {
         assertNotNull(configReader)
-        assertSame(configReader, DefaultConfigReader.getInstance(project))
+        assertSame(configReader, ConfigReader.getInstance(project))
     }
 
     fun testGetFirstNonExistent() {

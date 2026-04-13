@@ -14,7 +14,7 @@ class GsonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = SpringMvcClassExporter(actionContext)
+        exporter = SpringMvcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -41,9 +41,6 @@ class GsonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         return TestConfigReader.fromConfigText(extension?.content ?: "")
     }
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(com.itangcent.easyapi.psi.helper.DocHelper::class, com.itangcent.easyapi.psi.helper.StandardDocHelper())
-    }
 
     fun testGsonConfigLoadsCorrectly() = runTest {
         val extension = ExtensionConfigRegistry.getExtension("gson")
@@ -73,7 +70,7 @@ class GsonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find ProductDTO", psiClass)
 
         val helper = com.itangcent.easyapi.psi.PsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass!!, actionContext)
+        val model = helper.buildObjectModel(psiClass!!)
         assertNotNull("Should build object model", model)
 
         val objectData = model?.asObject()

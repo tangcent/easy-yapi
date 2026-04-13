@@ -12,7 +12,7 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        val engine = RuleEngine(actionContext, actionContext.instance(ConfigReader::class))
+        val engine = RuleEngine(project, createConfigReader())
         val docHelper = StandardDocHelper()
         metadataResolver = ApiMetadataResolver(engine, docHelper)
     }
@@ -29,9 +29,6 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testResolveApiNameFromDocComment() = runTest {
         val psiClass = findClass("com.itangcent.api.TitleTestCtrl")

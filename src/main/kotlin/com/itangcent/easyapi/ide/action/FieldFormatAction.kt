@@ -10,7 +10,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.psi.PsiClass
 import com.intellij.psi.util.PsiTreeUtil
-import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.event.ActionCompletedTopic
+import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.logging.IdeaLog
 import java.awt.datatransfer.StringSelection
 
@@ -32,11 +33,9 @@ abstract class FieldFormatAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val psiClass = findPsiClass(e) ?: return
-        val ctx = ActionContext.forProject(project)
         try {
-            val text = kotlinx.coroutines.runBlocking { format(project, ctx, psiClass) }
+            val text = kotlinx.coroutines.runBlocking { format(project, psiClass) }
             CopyPasteManager.getInstance().setContents(StringSelection(text))
-            ctx.console?.println("\n$text\n")
             Notifications.Bus.notify(
                 Notification(
                     "EasyAPI Notifications",
@@ -46,7 +45,7 @@ abstract class FieldFormatAction(
                 ), project
             )
         } finally {
-            ctx.stop()
+            project.syncPublish(ActionCompletedTopic.TOPIC)
         }
     }
 
@@ -54,11 +53,10 @@ abstract class FieldFormatAction(
      * Format the given class fields to a string representation.
      *
      * @param project The IntelliJ project
-     * @param actionContext The action context for DI
      * @param psiClass The class to format
      * @return The formatted string representation
      */
-    protected abstract suspend fun format(project: Project, actionContext: ActionContext, psiClass: PsiClass): String
+    protected abstract suspend fun format(project: Project, psiClass: PsiClass): String
 
     private fun findPsiClass(e: AnActionEvent): PsiClass? {
         val element = e.getData(CommonDataKeys.PSI_ELEMENT)

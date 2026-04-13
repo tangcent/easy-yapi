@@ -4,6 +4,8 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
@@ -14,8 +16,8 @@ class SpringParameterBindingResolverTest : EasyApiLightCodeInsightFixtureTestCas
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        val annotationHelper = com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper()
-        val engine = com.itangcent.easyapi.rule.engine.RuleEngine(actionContext, actionContext.instance())
+        val annotationHelper = UnifiedAnnotationHelper()
+        val engine = RuleEngine(project, createConfigReader())
         resolver = SpringParameterBindingResolver(annotationHelper, engine)
     }
 

@@ -17,7 +17,7 @@ class SwaggerConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = SpringMvcClassExporter(actionContext)
+        exporter = SpringMvcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -47,9 +47,6 @@ class SwaggerConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         return TestConfigReader.fromConfigText(swaggerConfig + "\n" + swaggerAdvancedConfig)
     }
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     // ── @Api: class.doc ──────────────────────────────────────────
 

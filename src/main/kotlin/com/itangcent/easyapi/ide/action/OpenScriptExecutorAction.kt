@@ -2,7 +2,6 @@ package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.ide.script.ScriptExecutorDialog
 
 /**
@@ -13,7 +12,6 @@ import com.itangcent.easyapi.ide.script.ScriptExecutorDialog
 class OpenScriptExecutorAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val actionContext = ActionContext.forProject(project)
-        ScriptExecutorDialog(project, actionContext).show()
+        ScriptExecutorDialog(project).show()
     }
 }

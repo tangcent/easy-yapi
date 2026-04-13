@@ -6,8 +6,6 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.util.PsiTypesUtil
-import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.context.project
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
@@ -16,6 +14,7 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -47,23 +46,22 @@ import kotlinx.coroutines.withContext
  * - Rule-based customization via [RuleEngine]
  * - Support for custom meta-annotations
  *
- * @param actionContext The action context for dependency injection
+ * @param project The IntelliJ project
  * @see ClassExporter for the interface
  * @see SpringControllerRecognizer for controller detection
  * @see RequestMappingResolver for mapping resolution
  */
 class SpringMvcClassExporter(
-    private val actionContext: ActionContext
+    private val project: Project
 ) : ClassExporter {
     private val annotationHelper = UnifiedAnnotationHelper()
-    private val engine = RuleEngine.getInstance(actionContext)
+    private val engine = RuleEngine.getInstance(project)
     private val controllerRecognizer = SpringControllerRecognizer(engine)
     private val mappingResolver = RequestMappingResolver(annotationHelper, engine)
     private val bindingResolver = SpringParameterBindingResolver(annotationHelper, engine)
-    private val docHelper = actionContext.instance(DocHelper::class)
-    private val settings by lazy { actionContext.instance(SettingBinder::class).read() }
+    private val docHelper = StandardDocHelper.getInstance(project)
+    private val settings by lazy { SettingBinder.getInstance(project).read() }
     private val metadataResolver by lazy { ApiMetadataResolver(engine, docHelper, settings) }
-    private val project: Project = actionContext.project()
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!controllerRecognizer.isController(psiClass)) return emptyList()
@@ -417,7 +415,6 @@ class SpringMvcClassExporter(
         val helper = PsiClassHelper.getInstance(project)
         val objectModel = helper.buildObjectModelFromType(
             psiType = parameter.type,
-            actionContext = actionContext,
             genericContext = genericContext,
             contextElement = parameter,
             maxDepth = paramMaxDepth
@@ -569,7 +566,7 @@ class SpringMvcClassExporter(
             if (psiClass != null) {
                 return runCatching {
                     val helper = PsiClassHelper.getInstance(project)
-                    helper.buildObjectModel(psiClass, actionContext)
+                    helper.buildObjectModel(psiClass)
                 }.getOrNull()
             }
         }
@@ -582,7 +579,6 @@ class SpringMvcClassExporter(
             val helper = PsiClassHelper.getInstance(project)
             helper.buildObjectModelFromType(
                 psiType = returnType,
-                actionContext = actionContext,
                 genericContext = genericContext,
                 contextElement = method
             )
@@ -597,7 +593,6 @@ class SpringMvcClassExporter(
                     val helper = PsiClassHelper.getInstance(project)
                     helper.buildObjectModelFromType(
                         psiType = unwrappedType,
-                        actionContext = actionContext,
                         genericContext = genericContext,
                         contextElement = method
                     )
@@ -640,7 +635,6 @@ class SpringMvcClassExporter(
             val helper = PsiClassHelper.getInstance(project)
             helper.buildObjectModelFromType(
                 psiType = parameter.type,
-                actionContext = actionContext,
                 genericContext = genericContext,
                 contextElement = parameter
             )

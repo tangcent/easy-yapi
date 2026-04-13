@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.exporter.springmvc
 
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
@@ -10,12 +10,12 @@ import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 
 class ActuatorEndpointExporter(
-    private val actionContext: ActionContext
+    private val project: Project
 ) : ClassExporter {
 
     private val scanner = ActuatorEndpointScanner()
     private val recognizer = ActuatorEndpointRecognizer()
-    private val engine = RuleEngine.getInstance(actionContext)
+    private val engine = RuleEngine.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isApiClass(psiClass)) return emptyList()

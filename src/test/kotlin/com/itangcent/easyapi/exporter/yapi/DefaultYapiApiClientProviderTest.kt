@@ -36,7 +36,7 @@ class DefaultYapiApiClientProviderTest : EasyApiLightCodeInsightFixtureTestCase(
         val wrappedProject = wrap(project) {
             replaceService(YapiSettingsHelper::class, settingsHelper)
         }
-        return DefaultYapiApiClientProvider(wrappedProject, actionContext)
+        return DefaultYapiApiClientProvider(wrappedProject)
     }
 
     fun testInitThrowsWhenServerUrlNotConfigured() {

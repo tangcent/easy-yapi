@@ -7,7 +7,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporter
@@ -66,7 +65,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         val hasExplicitName = postmanOptions?.selectedCollectionName != null
 
         val formatter = PostmanFormatter(
-            actionContext = context.actionContext ?: ActionContext.forProject(project),
+            project = project,
             options = PostmanFormatOptions(
                 buildExample = settings.postmanBuildExample,
                 autoMergeScript = settings.autoMergeScript,
@@ -116,9 +115,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         val workspaceId = postmanOptions.selectedWorkspaceId ?: settings.postmanWorkspace
         val collectionId = postmanOptions.selectedCollectionId
 
-        val httpClient = HttpClientProvider.getInstance(
-            context.actionContext ?: ActionContext.forProject(project)
-        ).getClient()
+        val httpClient = HttpClientProvider.getInstance(project).getClient()
         val postmanClient = PostmanApiClient(token, workspaceId = workspaceId, httpClient = httpClient)
             .asCached()
 
@@ -157,9 +154,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
     ): ExportResult {
         val workspaceId = settings.postmanWorkspace
 
-        val httpClient = HttpClientProvider.getInstance(
-            context.actionContext ?: ActionContext.forProject(project)
-        ).getClient()
+        val httpClient = HttpClientProvider.getInstance(project).getClient()
         val postmanClient = PostmanApiClient(token, workspaceId = workspaceId, httpClient = httpClient)
             .asCached()
 
@@ -320,7 +315,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         settings: com.itangcent.easyapi.settings.Settings
     ): PostmanCollection {
         val formatter = PostmanFormatter(
-            actionContext = context.actionContext ?: ActionContext.forProject(project),
+            project = project,
             options = PostmanFormatOptions(
                 buildExample = settings.postmanBuildExample,
                 autoMergeScript = settings.autoMergeScript,

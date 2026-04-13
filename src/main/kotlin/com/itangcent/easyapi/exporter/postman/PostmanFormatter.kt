@@ -1,9 +1,9 @@
 package com.itangcent.easyapi.exporter.postman
 
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ParameterBinding
@@ -101,11 +101,11 @@ data class PostmanFormatOptions(
  * @see PostmanScriptMerger for script merging logic
  */
 class PostmanFormatter(
-    private val actionContext: ActionContext,
+    private val project: Project,
     private val options: PostmanFormatOptions = PostmanFormatOptions(),
     private val systemTimeProvider: () -> Long = { System.currentTimeMillis() }
 ) {
-    private val ruleEngine: RuleEngine by lazy { RuleEngine.getInstance(actionContext) }
+    private val ruleEngine: RuleEngine by lazy { RuleEngine.getInstance(project) }
 
     suspend fun format(endpoints: List<ApiEndpoint>, moduleName: String): PostmanCollection {
         // Postman doesn't support gRPC exports, filter to HTTP only

@@ -1,34 +1,28 @@
 package com.itangcent.easyapi.psi
 
-import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
+import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.event.ActionCompletedTopic
+import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelValueConverter
 import com.itangcent.easyapi.psi.type.JsonType
+import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 
-class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase() {
+class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var helper: DefaultPsiClassHelper
 
     override fun setUp() {
         super.setUp()
-        helper = DefaultPsiClassHelper()
+        helper = DefaultPsiClassHelper.getInstance(project)
     }
-
-    private fun actionContext(config: ConfigReader = emptyConfig()): ActionContext {
-        return ActionContext.builder()
-            .bind(Project::class, project)
-            .bind(ConfigReader::class, config)
-            .withSpiBindings().build()
-    }
-
-    private fun emptyConfig(): ConfigReader = listConfig(emptyMap())
 
     private fun listConfig(map: Map<String, List<String>>): ConfigReader {
         return object : ConfigReader {
@@ -40,9 +34,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
                 map.forEach { (key, values) ->
                     println("DEBUG listConfig.foreach: key='$key', keyFilter(key)=${keyFilter(key)}")
                     if (keyFilter(key)) {
-                        values.forEach { value -> 
+                        values.forEach { value ->
                             println("DEBUG listConfig.foreach: action('$key', '$value')")
-                            action(key, value) 
+                            action(key, value)
                         }
                     }
                 }
@@ -63,10 +57,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.SimpleModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals("", map["name"])
@@ -96,10 +89,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.Person")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals("", map["name"])
@@ -122,10 +114,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.ItemList")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["items"] is List<*>)
@@ -146,10 +137,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.Config")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["properties"] is Map<*, *>)
@@ -175,10 +165,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.PrimitiveTypes")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals(false, map["boolVal"])
@@ -203,10 +192,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.ArrayModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["strings"] is List<*>)
@@ -234,10 +222,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.EnumModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals("", map["status"])
@@ -265,10 +252,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.UserModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals("", map["id"])
@@ -289,10 +275,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.StaticModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertFalse(map.containsKey("CONSTANT"))
@@ -311,10 +296,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.RecursiveNode")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 3)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 3)
+
         assertNotNull(result)
         var current = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>?
         var depth = 0
@@ -335,10 +319,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.EmptyModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map.isEmpty())
@@ -361,10 +344,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.BooleanModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals(false, map["active"])
@@ -409,21 +391,20 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.Order")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals("", map["orderId"])
         assertEquals(0.0, map["totalAmount"])
-        
+
         assertTrue(map["customer"] is Map<*, *>)
         val customer = map["customer"] as Map<*, *>
         assertEquals("", customer["customerId"])
         assertEquals("", customer["name"])
         assertEquals("", customer["email"])
-        
+
         assertTrue(map["items"] is List<*>)
     }
 
@@ -442,10 +423,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.GenericModel")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["stringList"] is List<*>)
@@ -467,10 +447,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.WrapperTypes")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals(0, map["integerVal"])
@@ -491,10 +470,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.Xxx")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["data"] is Map<*, *>)
@@ -523,10 +501,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.XxxString")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         // T is resolved to String via inheritance
@@ -566,10 +543,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.Yyy")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         // T is resolved to InnerData via inheritance
@@ -608,10 +584,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.YyyImpl")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals("", map["data"])
@@ -640,10 +615,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.YyyGeneric")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["value"] is Map<*, *>)
@@ -678,10 +652,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.YyyGenericImpl")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["value"] is Map<*, *>)
@@ -720,10 +693,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.Zzz")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         // B→Integer, T→B→Integer via multi-level inheritance
@@ -770,10 +742,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.ZzzImpl")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals(0L, map["value"])
@@ -812,10 +783,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.UserEntity")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         // N→Long, T→N→Long via multi-level inheritance
@@ -848,10 +818,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.ListContainer")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["items"] is List<*>)
@@ -879,10 +848,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.MapContainer")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["dataMap"] is Map<*, *>)
@@ -934,10 +902,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.UserPageResult")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals(0, map["code"])
@@ -1004,10 +971,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.Document")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertEquals("", map["id"])
@@ -1039,10 +1005,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.GenericArrayHolder")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         assertTrue(map["stringItems"] is List<*>)
@@ -1087,10 +1052,9 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.ConcreteDeepWrapper")!!
-        val ctx = actionContext()
-        
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
-        
+
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
         // C→String resolved through DeepWrapper→Wrapper→Container
@@ -1100,10 +1064,6 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
         assertEquals("", container["value"])
         assertEquals("", map["extra"])
         assertEquals("", map["concreteField"])
-    }
-
-    private fun findClass(fqn: String): PsiClass? {
-        return JavaPsiFacade.getInstance(project).findClass(fqn, GlobalSearchScope.allScope(project))
     }
 
     fun testBuildObjectModelWithFieldDocRule() = runBlocking {
@@ -1124,23 +1084,28 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.CommentModel")!!
-        val config = listConfig(mapOf(
-            "field.doc" to listOf("groovy:it.doc()")
-        ))
-        val ctx = actionContext(config)
-        
-        val result = helper.buildObjectModel(psiClass, ctx, JsonOption.ALL, 10)
-        
+        val config = listConfig(
+            mapOf(
+                "field.doc" to listOf("groovy:it.doc()")
+            )
+        )
+        project.registerServiceInstance(
+            serviceInterface = RuleEngine::class.java,
+            instance = RuleEngine(project, config)
+        )
+
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
+
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
         val obj = result as ObjectModel.Object
-        
+
         val nameField = obj.fields["name"]
         assertNotNull(nameField)
         assertTrue(nameField!!.model is ObjectModel.Single)
         assertEquals(JsonType.STRING, (nameField.model as ObjectModel.Single).type)
         assertTrue(nameField.comment?.contains("The user name") == true)
-        
+
         val ageField = obj.fields["age"]
         assertNotNull(ageField)
         assertTrue(ageField!!.model is ObjectModel.Single)
@@ -1172,23 +1137,28 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.AnnotatedModel")!!
-        val config = listConfig(mapOf(
-            "field.doc" to listOf("@model.ApiModelProperty#value")
-        ))
-        val ctx = actionContext(config)
-        
-        val result = helper.buildObjectModel(psiClass, ctx, JsonOption.ALL, 10)
-        
+        val config = listConfig(
+            mapOf(
+                "field.doc" to listOf("@model.ApiModelProperty#value")
+            )
+        )
+        project.registerServiceInstance(
+            serviceInterface = RuleEngine::class.java,
+            instance = RuleEngine(project, config)
+        )
+
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
+
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
         val obj = result as ObjectModel.Object
-        
+
         val nameField = obj.fields["name"]
         assertNotNull(nameField)
         assertTrue(nameField!!.model is ObjectModel.Single)
         assertEquals(JsonType.STRING, (nameField.model as ObjectModel.Single).type)
         assertTrue(nameField.comment?.contains("The user name") == true)
-        
+
         val ageField = obj.fields["age"]
         assertNotNull(ageField)
         assertTrue(ageField!!.model is ObjectModel.Single)
@@ -1214,23 +1184,28 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.UserModel")!!
-        val config = listConfig(mapOf(
-            "field.doc" to listOf("groovy:it.doc()")
-        ))
-        val ctx = actionContext(config)
-        
-        val result = helper.buildObjectModel(psiClass, ctx, JsonOption.ALL, 10)
-        
+        val config = listConfig(
+            mapOf(
+                "field.doc" to listOf("groovy:it.doc()")
+            )
+        )
+        project.registerServiceInstance(
+            serviceInterface = RuleEngine::class.java,
+            instance = RuleEngine(project, config)
+        )
+
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
+
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
         val obj = result as ObjectModel.Object
-        
+
         val idField = obj.fields["id"]
         assertNotNull(idField)
         assertTrue(idField!!.model is ObjectModel.Single)
         assertEquals(JsonType.STRING, (idField.model as ObjectModel.Single).type)
         assertTrue(idField.comment?.contains("The unique identifier") == true)
-        
+
         val nameField = obj.fields["name"]
         assertNotNull(nameField)
         assertTrue(nameField!!.model is ObjectModel.Single)
@@ -1257,9 +1232,8 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.GenericResult")!!
-        val ctx = actionContext()
 
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
@@ -1304,9 +1278,8 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.StringResult")!!
-        val ctx = actionContext()
 
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
@@ -1334,9 +1307,8 @@ class DefaultPsiClassHelperIntegrationTest : LightJavaCodeInsightFixtureTestCase
             """.trimIndent()
         )
         val psiClass = findClass("model.PlainDto")!!
-        val ctx = actionContext()
 
-        val result = helper.buildObjectModel(psiClass, ctx, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)

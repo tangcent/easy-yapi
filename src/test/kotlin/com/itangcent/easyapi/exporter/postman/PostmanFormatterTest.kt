@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.exporter.postman
 
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
@@ -19,7 +18,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 
-class PostmanFormatterTest {
+class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase() {
+
+    override fun createConfigReader() = TestConfigReader.EMPTY
 
     @Test
     fun testParsePath() {
@@ -196,10 +197,7 @@ class PostmanFormatterTest {
 
     @Test
     fun testToItemWithFormFileType(): Unit = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings().build()
-        val formatter = PostmanFormatter(actionContext = context)
+        val formatter = PostmanFormatter(project = project)
         val endpoint = ApiEndpoint(
             name = "Upload File",
             metadata = HttpMetadata(
@@ -227,10 +225,7 @@ class PostmanFormatterTest {
 
     @Test
     fun testToItemWithUrlencodedFileType(): Unit = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings().build()
-        val formatter = PostmanFormatter(actionContext = context)
+        val formatter = PostmanFormatter(project = project)
         val endpoint = ApiEndpoint(
             name = "Submit Form",
             metadata = HttpMetadata(
@@ -257,13 +252,7 @@ class PostmanFormatterTest {
 
     @Test
     fun testFormatWithJsonBody(): Unit = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings().build()
-        val formatter = PostmanFormatter(
-            actionContext = context,
-            options = PostmanFormatOptions(appendTimestamp = false)
-        )
+        val formatter = PostmanFormatter(project = project, options = PostmanFormatOptions(appendTimestamp = false))
         val endpoint = ApiEndpoint(
             name = "Create User",
             metadata = HttpMetadata(
@@ -289,11 +278,8 @@ class PostmanFormatterTest {
 
     @Test
     fun testFormatMultipleEndpoints(): Unit = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings().build()
         val formatter = PostmanFormatter(
-            actionContext = context,
+            project = project,
             options = PostmanFormatOptions(appendTimestamp = false)
         )
         val endpoints = listOf(
@@ -328,11 +314,8 @@ class PostmanFormatterTest {
 
     @Test
     fun testFormatFiltersOutGrpcEndpoints(): Unit = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings().build()
         val formatter = PostmanFormatter(
-            actionContext = context,
+            project = project,
             options = PostmanFormatOptions(appendTimestamp = false)
         )
         val endpoints = listOf(

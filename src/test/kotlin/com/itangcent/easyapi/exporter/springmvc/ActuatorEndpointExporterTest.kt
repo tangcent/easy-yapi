@@ -21,7 +21,7 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = ActuatorEndpointExporter(actionContext)
+        exporter = ActuatorEndpointExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -46,9 +46,6 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     // --- Standard @Endpoint ---
 

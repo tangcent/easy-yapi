@@ -23,8 +23,13 @@
         <applicationService serviceImplementation="com.itangcent.easyapi.settings.state.ApplicationSettingsState"/>
         <applicationService serviceImplementation="com.itangcent.easyapi.cache.AppCacheRepository"/>
         <projectService serviceImplementation="com.itangcent.easyapi.core.EasyApiProjectService"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.core.event.EventBus"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.util.storage.SessionStorage"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.rule.engine.RuleEngine"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.http.HttpClientProvider"/>
         <projectService serviceImplementation="com.itangcent.easyapi.logging.IdeaConsoleProvider"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.config.DefaultConfigReader"/>
+        <projectService serviceInterface="com.itangcent.easyapi.config.ConfigReader"
+                        serviceImplementation="com.itangcent.easyapi.config.DefaultConfigReader"/>
         <projectService serviceImplementation="com.itangcent.easyapi.config.ConfigSyncService"/>
         <projectService serviceImplementation="com.itangcent.easyapi.cache.CacheService"/>
         <projectService serviceInterface="com.itangcent.easyapi.settings.SettingBinder"

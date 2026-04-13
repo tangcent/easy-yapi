@@ -7,7 +7,6 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
@@ -54,9 +53,6 @@ class ExportDialog(
     private val endpoints: List<ApiEndpoint> = emptyList()
 ) : DialogWrapper(project) {
 
-    private val actionContext by lazy {
-        ActionContext.forProject(project)
-    }
     private val availableFormats: Array<ExportFormat> = ExportFormat.entries
         .filter { it.isAvailableFor(endpoints) }
         .toTypedArray()
@@ -241,7 +237,7 @@ class ExportDialog(
         postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("Loading..."))
         postmanCollectionComboBox.model = DefaultComboBoxModel(arrayOf("Loading..."))
 
-        val httpClient = HttpClientProvider.getInstance(actionContext).getClient()
+        val httpClient = HttpClientProvider.getInstance(project).getClient()
         val client = PostmanApiClient(token, httpClient = httpClient).asCached()
         postmanClient = client
 

@@ -1,51 +1,43 @@
 package com.itangcent.easyapi.util.storage
 
-import kotlinx.coroutines.runBlocking
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import org.junit.Assert.*
-import org.junit.Before
-import org.junit.Test
 
-class SessionStorageTest {
+class SessionStorageTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var storage: SessionStorage
 
-    @Before
-    fun setUp() {
-        storage = SessionStorage()
+    override fun setUp() {
+        super.setUp()
+        storage = SessionStorage.getInstance(project)
     }
 
-    @Test
     fun testSetAndGet() {
         storage.set("key", "value")
         assertEquals("value", storage.get("key"))
     }
 
-    @Test
     fun testGet_nonExistent() {
         assertNull(storage.get("nonexistent"))
     }
 
-    @Test
     fun testSet_overwrite() {
         storage.set("key", "value1")
         storage.set("key", "value2")
         assertEquals("value2", storage.get("key"))
     }
 
-    @Test
     fun testSet_null() {
         storage.set("key", null)
         assertNull(storage.get("key"))
     }
 
-    @Test
     fun testRemove() {
         storage.set("key", "value")
         storage.remove("key")
         assertNull(storage.get("key"))
     }
 
-    @Test
     fun testKeys() {
         storage.set("key1", "value1")
         storage.set("key2", "value2")
@@ -55,7 +47,6 @@ class SessionStorageTest {
         assertTrue(keys.contains("key2"))
     }
 
-    @Test
     fun testClear() {
         storage.set("key1", "value1")
         storage.set("key2", "value2")
@@ -65,7 +56,6 @@ class SessionStorageTest {
         assertEquals(0, storage.keys().size)
     }
 
-    @Test
     fun testGroupedSetAndGet() {
         storage.set("group1", "key", "value1")
         storage.set("group2", "key", "value2")
@@ -73,7 +63,6 @@ class SessionStorageTest {
         assertEquals("value2", storage.get("group2", "key"))
     }
 
-    @Test
     fun testGroupedKeys() {
         storage.set("group1", "key1", "value1")
         storage.set("group1", "key2", "value2")
@@ -81,7 +70,6 @@ class SessionStorageTest {
         assertEquals(2, keys.size)
     }
 
-    @Test
     fun testGroupedClear() {
         storage.set("group1", "key", "value")
         storage.set("group2", "key", "value")
@@ -90,7 +78,6 @@ class SessionStorageTest {
         assertEquals("value", storage.get("group2", "key"))
     }
 
-    @Test
     fun testPushAndPop() {
         storage.push("queue", "item1")
         storage.push("queue", "item2")
@@ -101,7 +88,6 @@ class SessionStorageTest {
         assertNull(storage.pop("queue"))
     }
 
-    @Test
     fun testPeek_doesNotRemove() {
         storage.push("queue", "item1")
         storage.push("queue", "item2")
@@ -109,16 +95,14 @@ class SessionStorageTest {
         assertEquals("item2", storage.peek("queue"))
     }
 
-    @Test
-    fun testCleanup() = runBlocking {
+    fun testClearAll() {
         storage.set("key1", "value1")
         storage.set("key2", "value2")
-        storage.cleanup()
+        storage.clear()
         assertNull(storage.get("key1"))
         assertNull(storage.get("key2"))
     }
 
-    @Test
     fun testSetAndGet_differentTypes() {
         storage.set("int", 42)
         storage.set("list", listOf(1, 2, 3))

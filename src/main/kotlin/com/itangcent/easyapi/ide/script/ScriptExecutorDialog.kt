@@ -2,8 +2,6 @@ package com.itangcent.easyapi.ide.script
 
 import com.intellij.ide.util.ClassFilter
 import com.intellij.ide.util.TreeClassChooserFactory
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEx
@@ -15,7 +13,6 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.LightVirtualFile
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.logging.IdeaLog
@@ -56,8 +53,7 @@ import javax.swing.*
  * @see RuleParser for script parsing
  */
 class ScriptExecutorDialog(
-    private val project: Project,
-    private val actionContext: ActionContext
+    private val project: Project
 ) : DialogWrapper(project), IdeaLog {
 
     private val contentPane = JPanel(BorderLayout())
@@ -189,14 +185,8 @@ class ScriptExecutorDialog(
             try {
                 var psiFile: PsiFile? = null
 
-                val dataContext = actionContext.instanceOrNull(DataContext::class)
-                psiFile = dataContext?.getData(CommonDataKeys.PSI_FILE)
-
-                if (psiFile == null) {
-                    val editor = FileEditorManager.getInstance(project).selectedTextEditor
-                    if (editor != null) {
-                        psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.document)
-                    }
+                psiFile = FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
+                    PsiDocumentManager.getInstance(project).getPsiFile(editor.document)
                 }
 
                 if (psiFile != null && psiFile is PsiClassOwner) {
@@ -362,8 +352,8 @@ class ScriptExecutorDialog(
 
     private suspend fun doEval(scriptInfo: ScriptInfo): String? {
         val element = scriptInfo.context as? PsiElement ?: return "no context selected"
-        val ruleEngine = RuleEngine.getInstance(actionContext)
-        val ruleContext = RuleContext.from(actionContext, element)
+        val ruleEngine = RuleEngine.getInstance(project)
+        val ruleContext = RuleContext.from(project, element)
         val expression = scriptInfo.scriptType?.buildScript(scriptInfo.script) ?: return "no script type selected"
 
         return try {

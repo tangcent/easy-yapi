@@ -3,7 +3,6 @@ package com.itangcent.easyapi.exporter.model
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.settings.Settings
 
 /**
@@ -22,7 +21,6 @@ import com.itangcent.easyapi.settings.Settings
  * @param settings Plugin settings
  * @param exportFormat The target export format
  * @param outputConfig Output configuration options
- * @param actionContext The action context for the export operation
  * @param indicator Optional progress indicator for reporting progress
  */
 data class ExportContext(
@@ -33,7 +31,6 @@ data class ExportContext(
     val settings: Settings = Settings(),
     val exportFormat: ExportFormat = ExportFormat.MARKDOWN,
     val outputConfig: OutputConfig = OutputConfig(),
-    val actionContext: ActionContext? = null,
     val indicator: ProgressIndicator? = null
 ) {
     /**

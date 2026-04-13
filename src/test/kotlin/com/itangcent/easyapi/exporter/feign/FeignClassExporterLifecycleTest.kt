@@ -14,7 +14,7 @@ class FeignClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase()
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = FeignClassExporter(actionContext, feignEnable = true)
+        exporter = FeignClassExporter(project, feignEnable = true)
     }
 
     private fun loadTestFiles() {
@@ -43,9 +43,6 @@ class FeignClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase()
         """.trimIndent()
     )
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testExportFeignClientWithLifecycleEvents() = runTest {
         val psiClass = findClass("com.itangcent.springboot.demo.client.UserClient")

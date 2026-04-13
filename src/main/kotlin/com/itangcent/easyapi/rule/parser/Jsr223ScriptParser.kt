@@ -1,16 +1,16 @@
 package com.itangcent.easyapi.rule.parser
 
-import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.context.project
-import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.context.RuleContext
+import com.itangcent.easyapi.rule.context.ScriptPsiClassContext
+import com.itangcent.easyapi.rule.context.ScriptPsiFieldContext
+import com.itangcent.easyapi.rule.context.ScriptPsiMethodContext
 import com.itangcent.easyapi.rule.context.asScriptIt
 import com.itangcent.easyapi.util.RegexUtils
 import com.itangcent.easyapi.util.RuleToolUtils
@@ -115,7 +115,7 @@ abstract class Jsr223ScriptParser(
 
         // httpClient
         val httpClient = runCatching {
-            HttpClientProvider.getInstance(context.actionContext).getClient()
+            HttpClientProvider.getInstance(context.project).getClient()
         }.getOrNull()
         bindings["httpClient"] = httpClient
 
@@ -163,9 +163,7 @@ abstract class Jsr223ScriptParser(
 class ScriptHelper(private val context: RuleContext) {
 
     private val linkResolver: com.itangcent.easyapi.psi.LinkResolver? by lazy {
-        context.actionContext.project().let {
-            com.itangcent.easyapi.psi.LinkResolver.getInstance(it)
-        }
+        com.itangcent.easyapi.psi.LinkResolver.getInstance(context.project)
     }
 
     /**
@@ -173,12 +171,12 @@ class ScriptHelper(private val context: RuleContext) {
      * Returns a script-friendly class context, or null if not found.
      */
     fun findClass(canonicalText: String): Any? {
-        val project = context.actionContext.instanceOrNull(Project::class) ?: return null
+        val project = context.project
         val psiClass = readSync {
             com.intellij.psi.JavaPsiFacade.getInstance(project)
                 .findClass(canonicalText, com.intellij.psi.search.GlobalSearchScope.allScope(project))
         } ?: return null
-        return com.itangcent.easyapi.rule.context.ScriptPsiClassContext(context.withElement(psiClass))
+        return ScriptPsiClassContext(context.withElement(psiClass))
     }
 
     fun resolveLink(canonicalText: String): Any? = readSync {
@@ -186,15 +184,15 @@ class ScriptHelper(private val context: RuleContext) {
         val resolver = linkResolver ?: return@readSync null
         val resolved = resolver.resolveLink(canonicalText, element) ?: return@readSync null
         when (resolved) {
-            is com.intellij.psi.PsiClass -> com.itangcent.easyapi.rule.context.ScriptPsiClassContext(
+            is com.intellij.psi.PsiClass -> ScriptPsiClassContext(
                 context.withElement(resolved)
             )
 
-            is com.intellij.psi.PsiMethod -> com.itangcent.easyapi.rule.context.ScriptPsiMethodContext(
+            is com.intellij.psi.PsiMethod -> ScriptPsiMethodContext(
                 context.withElement(resolved)
             )
 
-            is com.intellij.psi.PsiField -> com.itangcent.easyapi.rule.context.ScriptPsiFieldContext(
+            is com.intellij.psi.PsiField -> ScriptPsiFieldContext(
                 context.withElement(resolved)
             )
 
@@ -208,15 +206,15 @@ class ScriptHelper(private val context: RuleContext) {
         val resolved = resolver.resolveAllLinks(canonicalText, element)
         resolved.mapNotNull { target ->
             when (target) {
-                is com.intellij.psi.PsiClass -> com.itangcent.easyapi.rule.context.ScriptPsiClassContext(
+                is com.intellij.psi.PsiClass -> ScriptPsiClassContext(
                     context.withElement(target)
                 )
 
-                is com.intellij.psi.PsiMethod -> com.itangcent.easyapi.rule.context.ScriptPsiMethodContext(
+                is com.intellij.psi.PsiMethod -> ScriptPsiMethodContext(
                     context.withElement(target)
                 )
 
-                is com.intellij.psi.PsiField -> com.itangcent.easyapi.rule.context.ScriptPsiFieldContext(
+                is com.intellij.psi.PsiField -> ScriptPsiFieldContext(
                     context.withElement(target)
                 )
 
@@ -252,14 +250,12 @@ class ScriptHelper(private val context: RuleContext) {
  */
 class ScriptRuntime(private val context: RuleContext) {
 
-    private val actionContext: ActionContext get() = context.actionContext
-
     fun projectName(): String? {
-        return actionContext.instanceOrNull(Project::class)?.name
+        return context.project.name
     }
 
     fun projectPath(): String? {
-        return actionContext.instanceOrNull(Project::class)?.basePath
+        return context.project.basePath
     }
 
     fun module(): String? {
@@ -278,20 +274,6 @@ class ScriptRuntime(private val context: RuleContext) {
 
     fun filePath(): String? = readSync {
         context.element?.containingFile?.virtualFile?.path
-    }
-
-    fun getBean(className: String): Any? {
-        if (!className.startsWith("com.itangcent")) {
-            throw IllegalArgumentException(
-                "permission denied! runtime.getBean only support com.itangcent.*"
-            )
-        }
-        val cls = try {
-            Class.forName(className)
-        } catch (e: ClassNotFoundException) {
-            throw IllegalArgumentException("class $className not be found")
-        }
-        return actionContext.instanceOrNull(cls.kotlin)
     }
 
     fun async(runnable: Runnable) {

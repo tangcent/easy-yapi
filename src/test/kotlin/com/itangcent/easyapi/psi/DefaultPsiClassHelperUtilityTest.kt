@@ -3,58 +3,9 @@ package com.itangcent.easyapi.psi
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelValueConverter
 import com.itangcent.easyapi.psi.type.JsonType
-import com.itangcent.easyapi.psi.type.PrimitiveKind
 import junit.framework.TestCase
 
-@OptIn(kotlin.ExperimentalStdlibApi::class)
 class DefaultPsiClassHelperUtilityTest : TestCase() {
-
-    private val helper = DefaultPsiClassHelper()
-
-    fun testGetDefaultValueForPrimitiveBoolean() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.BOOLEAN)
-        assertEquals(false, ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveByte() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.BYTE)
-        assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveChar() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.CHAR)
-        assertEquals("", ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveShort() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.SHORT)
-        assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveInt() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.INT)
-        assertEquals(0, ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveLong() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.LONG)
-        assertEquals(0L, ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveFloat() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.FLOAT)
-        assertEquals(0.0f, ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveDouble() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.DOUBLE)
-        assertEquals(0.0, ObjectModelValueConverter.toSimpleValue(model))
-    }
-
-    fun testGetDefaultValueForPrimitiveVoid() {
-        val model = callGetDefaultValueForPrimitive(PrimitiveKind.VOID)
-        assertNull(ObjectModelValueConverter.toSimpleValue(model))
-    }
 
     fun testGetDefaultValueForTypeBoolean() {
         val model = callGetDefaultValueForType("boolean")
@@ -282,105 +233,6 @@ class DefaultPsiClassHelperUtilityTest : TestCase() {
         assertEquals("", ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("java.time.LocalDateTime")))
     }
 
-    fun testPrimitiveAndWrapperConsistencyForBoolean() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.BOOLEAN)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Boolean")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForByte() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.BYTE)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Byte")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForChar() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.CHAR)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Character")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForShort() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.SHORT)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Short")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForInt() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.INT)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Integer")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForLong() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.LONG)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Long")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForFloat() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.FLOAT)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Float")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForDouble() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.DOUBLE)
-        val wrapperModel = callGetDefaultValueForType("java.lang.Double")
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(primitiveModel),
-            ObjectModelValueConverter.toSimpleValue(wrapperModel)
-        )
-    }
-
-    fun testPrimitiveAndWrapperConsistencyForVoid() {
-        val primitiveModel = callGetDefaultValueForPrimitive(PrimitiveKind.VOID)
-        assertNull(ObjectModelValueConverter.toSimpleValue(primitiveModel))
-    }
-
-    fun testAllPrimitiveKindsHaveDefaults() {
-        val allKinds = PrimitiveKind.entries
-        for (kind in allKinds) {
-            val model = callGetDefaultValueForPrimitive(kind)
-            val default = ObjectModelValueConverter.toSimpleValue(model)
-            if (kind == PrimitiveKind.VOID) {
-                assertNull("VOID should have null default", default)
-            } else {
-                assertNotNull("${kind.name} should have a non-null default", default)
-            }
-        }
-    }
-
-    fun testPrimitiveDefaultsAreImmutable() {
-        val model1 = callGetDefaultValueForPrimitive(PrimitiveKind.INT)
-        val model2 = callGetDefaultValueForPrimitive(PrimitiveKind.INT)
-        assertEquals(
-            ObjectModelValueConverter.toSimpleValue(model1),
-            ObjectModelValueConverter.toSimpleValue(model2)
-        )
-    }
-
     fun testGetDefaultValueForTypeWithSpaces() {
         val model = callGetDefaultValueForType("  java.lang.String  ")
         val value = ObjectModelValueConverter.toSimpleValue(model)
@@ -425,12 +277,6 @@ class DefaultPsiClassHelperUtilityTest : TestCase() {
         val longArrayValue = ObjectModelValueConverter.toSimpleValue(callGetDefaultValueForType("long[]"))
         assertTrue(longArrayValue is List<*>)
         assertTrue((longArrayValue as List<*>).isEmpty())
-    }
-
-    private fun callGetDefaultValueForPrimitive(kind: PrimitiveKind): ObjectModel {
-        val method = DefaultPsiClassHelper::class.java.getDeclaredMethod("getDefaultValueForPrimitive", PrimitiveKind::class.java)
-        method.isAccessible = true
-        return method.invoke(helper, kind) as ObjectModel
     }
 
     private fun callGetDefaultValueForType(typeName: String): ObjectModel? {

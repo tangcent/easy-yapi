@@ -14,7 +14,7 @@ class SpringConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = SpringMvcClassExporter(actionContext)
+        exporter = SpringMvcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -47,9 +47,6 @@ class SpringConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         return TestConfigReader.fromConfigText(content)
     }
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(com.itangcent.easyapi.psi.helper.DocHelper::class, com.itangcent.easyapi.psi.helper.StandardDocHelper())
-    }
 
     fun testSpringConfigLoadsCorrectly() = runTest {
         val extension = ExtensionConfigRegistry.getExtension("spring")

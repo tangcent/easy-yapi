@@ -9,10 +9,6 @@ class IdeDispatchersTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(IdeDispatchers.ReadAction)
     }
 
-    fun testWriteActionDispatcher() {
-        assertNotNull(IdeDispatchers.WriteAction)
-    }
-
     fun testSwingDispatcher() {
         assertNotNull(IdeDispatchers.Swing)
     }
@@ -42,7 +38,7 @@ class IdeDispatchersTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testWriteAction() = runBlocking {
-        val result = IdeDispatchers.writeAction { "test" }
+        val result = IdeDispatchers.writeAction() { "test" }
         assertEquals("test", result)
     }
 
@@ -57,7 +53,7 @@ class IdeDispatchersTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testWriteSync() {
-        val result = IdeDispatchers.writeSync { "test" }
+        val result = IdeDispatchers.writeSync() { "test" }
         assertEquals("test", result)
     }
 

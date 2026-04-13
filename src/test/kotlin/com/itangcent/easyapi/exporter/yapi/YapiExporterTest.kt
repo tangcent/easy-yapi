@@ -188,8 +188,7 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             endpoints = endpoints,
             exportFormat = ExportFormat.YAPI,
             settings = com.itangcent.easyapi.settings.Settings(),
-            outputConfig = outputConfig,
-            actionContext = actionContext
+            outputConfig = outputConfig
         )
     }
 

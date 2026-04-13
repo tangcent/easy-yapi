@@ -2,7 +2,6 @@ package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.psi.JsonOption
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
@@ -17,9 +16,9 @@ import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
  * @see ObjectModelJsonConverter for JSON5 conversion
  */
 class FieldsToJson5Action : FieldFormatAction("Fields To JSON5") {
-    override suspend fun format(project: Project, actionContext: ActionContext, psiClass: PsiClass): String {
+    override suspend fun format(project: Project, psiClass: PsiClass): String {
         val helper = PsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass, actionContext, option = JsonOption.ALL, maxDepth = 10)
+        val model = helper.buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
         return model?.let { ObjectModelJsonConverter.toJson5(it) } ?: ""
     }
 }

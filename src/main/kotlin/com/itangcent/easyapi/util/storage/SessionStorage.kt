@@ -1,28 +1,38 @@
 package com.itangcent.easyapi.util.storage
 
-import com.itangcent.easyapi.core.context.AutoClear
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.core.event.EventBus
+import com.itangcent.easyapi.core.event.EventKeys
 import com.itangcent.easyapi.util.storage.Storage.Companion.DEFAULT_GROUP
 
 /**
  * In-memory [Storage] scoped to the current action.
  *
  * Data is stored in memory and cleared when the action completes.
- * Implements [AutoClear] to integrate with ActionContext lifecycle.
  *
  * ## Usage
  * ```kotlin
  * val sessionStorage = SessionStorage()
  * sessionStorage.set("temp", "data")
  * val data = sessionStorage.get("temp")
- * // Data is automatically cleared when action context ends
+ * // Data is automatically cleared when action ends
  * ```
  *
  * @see Storage for the interface
  * @see LocalStorage for persistent storage
  */
-class SessionStorage : AbstractStorage(), AutoClear {
+@Service(Service.Level.PROJECT)
+class SessionStorage(private val project: Project) : AbstractStorage() {
 
     private val data: MutableMap<String, Any?> = linkedMapOf()
+
+    init {
+        EventBus.getInstance(project).register(EventKeys.ON_COMPLETED) {
+            data.clear()
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
     override fun getCache(group: String): MutableMap<String, Any?> {
@@ -38,7 +48,7 @@ class SessionStorage : AbstractStorage(), AutoClear {
         }
     }
 
-    override suspend fun cleanup() {
-        data.clear()
+    companion object {
+        fun getInstance(project: Project): SessionStorage = project.service()
     }
 }

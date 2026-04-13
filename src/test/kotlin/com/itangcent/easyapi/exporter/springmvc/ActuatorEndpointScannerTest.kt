@@ -46,9 +46,6 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testExportStandard() = runTest {
         val endpoints = actuatorEndpointScanner.scan(standardEndpointPsiClass)

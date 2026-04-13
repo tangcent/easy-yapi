@@ -4,7 +4,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.itangcent.easyapi.core.context.ActionContext
 
 /**
  * Service for managing the API dashboard state and navigation.
@@ -17,10 +16,7 @@ import com.itangcent.easyapi.core.context.ActionContext
  * @see ApiScanner for endpoint scanning
  */
 @Service(Service.Level.PROJECT)
-class ApiDashboardService(
-    private val project: Project
-) {
-    private var actionContext: ActionContext? = null
+class ApiDashboardService {
     private var dashboardPanel: ApiDashboardPanel? = null
 
     companion object {
@@ -28,19 +24,6 @@ class ApiDashboardService(
          * Gets the dashboard service instance for the given project.
          */
         fun getInstance(project: Project): ApiDashboardService = project.getService(ApiDashboardService::class.java)
-    }
-
-    /**
-     * Gets or creates the action context for dashboard operations.
-     *
-     * @return The action context
-     */
-    fun getOrCreateContext(): ActionContext {
-        val existing = actionContext
-        if (existing != null) return existing
-        val created = ActionContext.forProject(project)
-        actionContext = created
-        return created
     }
 
     /**
@@ -77,8 +60,6 @@ class ApiDashboardService(
      * Stops the service and cleans up resources.
      */
     fun stop() {
-        actionContext?.stop()
-        actionContext = null
         dashboardPanel = null
     }
 }

@@ -8,7 +8,6 @@ import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.read
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -23,6 +22,7 @@ import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.settings.SettingBinder
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -237,55 +237,43 @@ class ApiScanner(private val project: Project) {
      * @return List of discovered endpoints
      */
     private suspend fun exportClasses(classes: List<PsiClass>, indicator: ProgressIndicator): List<ApiEndpoint> {
-        LOG.debug("Building ActionContext for scan...")
-        val context = ActionContext.forProject(project)
-
-        return try {
-            val exporters = getEnabledExporters(context)
-            if (exporters.isEmpty()) {
-                LOG.warn("No exporters enabled")
-                return emptyList()
-            }
-            LOG.debug("Enabled exporters: ${exporters.map { it::class.simpleName }}")
-
-            indicator.isIndeterminate = false
-            indicator.fraction = 0.0
-
-            val endpoints = scanClassesWithExporters(classes, exporters, context, indicator)
-
-            indicator.fraction = 1.0
-            LOG.info("Total endpoints found: ${endpoints.size}")
-            endpoints
-        } finally {
-            context.stop()
+        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        val exporters = getEnabledExporters()
+        if (exporters.isEmpty()) {
+            LOG.warn("No exporters enabled")
+            return emptyList()
         }
+        LOG.debug("Enabled exporters: ${exporters.map { it::class.simpleName }}")
+
+        indicator.isIndeterminate = false
+        indicator.fraction = 0.0
+
+        val endpoints = scanClassesWithExporters(classes, exporters, console, indicator)
+
+        indicator.fraction = 1.0
+        LOG.info("Total endpoints found: ${endpoints.size}")
+        return endpoints
     }
 
     private suspend fun exportClassesSequence(
         classes: List<PsiClass>,
         indicator: ProgressIndicator
     ): List<ApiEndpoint> {
-        LOG.info("Building ActionContext for sequence scan...")
-        val context = ActionContext.forProject(project)
-
-        return try {
-            val exporters = getEnabledExporters(context)
-            if (exporters.isEmpty()) {
-                LOG.warn("No exporters enabled")
-                return emptyList()
-            }
-            LOG.info("Enabled exporters: ${exporters.map { it::class.simpleName }}")
-
-            indicator.isIndeterminate = false
-            indicator.fraction = 0.0
-
-            val endpoints = scanClassesWithExporters(classes, exporters, context, indicator)
-
-            indicator.fraction = 1.0
-            endpoints
-        } finally {
-            context.stop()
+        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        val exporters = getEnabledExporters()
+        if (exporters.isEmpty()) {
+            LOG.warn("No exporters enabled")
+            return emptyList()
         }
+        LOG.info("Enabled exporters: ${exporters.map { it::class.simpleName }}")
+
+        indicator.isIndeterminate = false
+        indicator.fraction = 0.0
+
+        val endpoints = scanClassesWithExporters(classes, exporters, console, indicator)
+
+        indicator.fraction = 1.0
+        return endpoints
     }
 
     /**
@@ -300,7 +288,7 @@ class ApiScanner(private val project: Project) {
     private suspend fun scanClassesWithExporters(
         psiClasses: List<PsiClass>,
         exporters: List<ClassExporter>,
-        context: ActionContext,
+        console: com.itangcent.easyapi.logging.IdeaConsole,
         indicator: ProgressIndicator?
     ): List<ApiEndpoint> {
         val endpoints = mutableListOf<ApiEndpoint>()
@@ -325,9 +313,9 @@ class ApiScanner(private val project: Project) {
                         endpoints.addAll(exported)
                     }
                 } catch (e: TimeoutCancellationException) {
-                    context.console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS})")
+                    console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS})")
                 } catch (e: Exception) {
-                    context.console.warn("Error exporting class: $className", e)
+                    console.warn("Error exporting class: $className", e)
                 }
             }
         }
@@ -335,26 +323,26 @@ class ApiScanner(private val project: Project) {
         return endpoints
     }
 
-    private fun getEnabledExporters(context: ActionContext): List<ClassExporter> {
+    private fun getEnabledExporters(): List<ClassExporter> {
         val settings = SettingBinder.getInstance(project).read()
 
         return buildList {
-            add(SpringMvcClassExporter(context))
+            add(SpringMvcClassExporter(project))
 
             if (settings.feignEnable) {
-                add(FeignClassExporter(context))
+                add(FeignClassExporter(project))
             }
 
             if (settings.jaxrsEnable) {
-                add(JaxRsClassExporter(context))
+                add(JaxRsClassExporter(project))
             }
 
             if (settings.actuatorEnable) {
-                add(ActuatorEndpointExporter(context))
+                add(ActuatorEndpointExporter(project))
             }
 
             if (settings.grpcEnable) {
-                add(GrpcClassExporter(context))
+                add(GrpcClassExporter(project))
             }
         }
     }

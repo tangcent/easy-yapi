@@ -29,7 +29,7 @@ class GrpcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = GrpcClassExporter(actionContext)
+        exporter = GrpcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -45,9 +45,6 @@ class GrpcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     /**
      * Tests that a gRPC service implementation class is exported successfully.

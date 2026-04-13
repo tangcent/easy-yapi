@@ -15,7 +15,7 @@ class SpringMvcTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = SpringMvcClassExporter(actionContext)
+        exporter = SpringMvcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -33,9 +33,6 @@ class SpringMvcTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testClassTitleFromDocComment() = runTest {
         val psiClass = findClass("com.itangcent.api.TitleTestCtrl")

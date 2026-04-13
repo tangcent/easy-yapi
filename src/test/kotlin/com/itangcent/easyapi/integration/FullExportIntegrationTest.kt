@@ -16,7 +16,7 @@ class FullExportIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = SpringMvcClassExporter(actionContext)
+        exporter = SpringMvcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -38,9 +38,6 @@ class FullExportIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testFullExportPipeline() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")

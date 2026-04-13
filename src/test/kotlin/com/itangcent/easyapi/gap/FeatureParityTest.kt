@@ -12,17 +12,17 @@ class FeatureParityTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun createConfigReader() = TestConfigReader.EMPTY
 
     fun testSpringMvcExporterExists() = runTest {
-        val exporter = SpringMvcClassExporter(actionContext)
+        val exporter = SpringMvcClassExporter(project)
         assertNotNull("SpringMvcClassExporter should exist", exporter)
     }
 
     fun testFeignExporterExists() = runTest {
-        val exporter = FeignClassExporter(actionContext)
+        val exporter = FeignClassExporter(project)
         assertNotNull("FeignClassExporter should exist", exporter)
     }
 
     fun testJaxRsExporterExists() = runTest {
-        val exporter = JaxRsClassExporter(actionContext)
+        val exporter = JaxRsClassExporter(project)
         assertNotNull("JaxRsClassExporter should exist", exporter)
     }
 }

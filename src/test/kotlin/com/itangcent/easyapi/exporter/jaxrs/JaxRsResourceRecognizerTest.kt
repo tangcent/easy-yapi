@@ -12,7 +12,7 @@ class JaxRsResourceRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        val ruleEngine = RuleEngine(actionContext, actionContext.instance(ConfigReader::class))
+        val ruleEngine = RuleEngine(project, createConfigReader())
         recognizer = JaxRsResourceRecognizer(ruleEngine, enabled = true)
     }
 

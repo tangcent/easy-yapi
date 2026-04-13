@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.config
 
+import com.intellij.openapi.components.service
+
 /**
  * Interface for reading configuration values.
  *
@@ -14,7 +16,7 @@ package com.itangcent.easyapi.config
  *
  * ## Usage
  * ```kotlin
- * val configReader = LayeredConfigReader.getInstance(project)
+ * val configReader = ConfigReader.getInstance(project)
  * 
  * // Get first value for a key
  * val server = configReader.getFirst("server")
@@ -71,5 +73,10 @@ interface ConfigReader {
      * @param action The action to perform for each matching entry
      */
     fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit)
+
+    companion object {
+        fun getInstance(project: com.intellij.openapi.project.Project): ConfigReader =
+            project.service<ConfigReader>()
+    }
 }
 

@@ -27,9 +27,6 @@ class FeignAnnotationInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() 
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testOverrideMethodInheritsGetMappingFromSuperInterface() = runTest {
         val psiClass = findClass("com.itangcent.api.feign.UserFeignClient")!!

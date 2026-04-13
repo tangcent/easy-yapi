@@ -29,9 +29,6 @@ class ActuatorEndpointRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() 
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testRecognizesStandardEndpoint() = runTest {
         loadFile("api/actuator/StandardEndpoint.java")

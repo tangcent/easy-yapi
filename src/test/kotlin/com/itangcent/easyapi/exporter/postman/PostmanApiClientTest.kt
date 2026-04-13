@@ -1,22 +1,19 @@
 package com.itangcent.easyapi.exporter.postman
 
-import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
-import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
-import org.junit.Test
 
-class PostmanApiClientTest {
+class PostmanApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    @Test
+    override fun createConfigReader() = TestConfigReader.EMPTY
+
     fun testFormat(): Unit = runBlocking {
         val result = testFormatInternal()
         assertNotNull(result)
@@ -24,12 +21,8 @@ class PostmanApiClientTest {
     }
 
     private suspend fun testFormatInternal(): com.itangcent.easyapi.exporter.postman.model.PostmanCollection {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings()
-            .build()
         val formatter = PostmanFormatter(
-            actionContext = context,
+            project = project,
             options = PostmanFormatOptions(appendTimestamp = false)
         )
         val endpoints = listOf(createTestEndpoint())

@@ -14,7 +14,7 @@ class JaxRsClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase()
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = JaxRsClassExporter(actionContext, jaxrsEnable = true)
+        exporter = JaxRsClassExporter(project, jaxrsEnable = true)
     }
 
     private fun loadTestFiles() {
@@ -53,9 +53,6 @@ class JaxRsClassExporterLifecycleTest : EasyApiLightCodeInsightFixtureTestCase()
         """.trimIndent()
     )
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testJaxRsClassParseBeforeAndAfter() = runTest {
         val psiClass = findClass("com.itangcent.jaxrs.UserResource")

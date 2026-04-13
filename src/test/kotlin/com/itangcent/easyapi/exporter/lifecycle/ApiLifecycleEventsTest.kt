@@ -23,11 +23,11 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadCommonTestFiles()
-        springExporter = SpringMvcClassExporter(actionContext)
-        jaxRsExporter = JaxRsClassExporter(actionContext)
-        feignExporter = FeignClassExporter(actionContext)
-        grpcExporter = GrpcClassExporter(actionContext)
-        actuatorExporter = ActuatorEndpointExporter(actionContext)
+        springExporter = SpringMvcClassExporter(project)
+        jaxRsExporter = JaxRsClassExporter(project)
+        feignExporter = FeignClassExporter(project)
+        grpcExporter = GrpcClassExporter(project)
+        actuatorExporter = ActuatorEndpointExporter(project)
     }
 
     private fun loadCommonTestFiles() {
@@ -108,9 +108,6 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
         """.trimIndent()
     )
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     // ── Spring MVC lifecycle events ──────────────────────────────
 

@@ -15,7 +15,7 @@ class SpringWebFluxConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCas
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = SpringMvcClassExporter(actionContext)
+        exporter = SpringMvcClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -55,9 +55,6 @@ class SpringWebFluxConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCas
         return TestConfigReader.fromConfigText(combinedContent)
     }
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(com.itangcent.easyapi.psi.helper.DocHelper::class, com.itangcent.easyapi.psi.helper.StandardDocHelper())
-    }
 
     fun testSpringWebFluxConfigLoadsCorrectly() = runTest {
         val extension = ExtensionConfigRegistry.getExtension("spring-webflux")

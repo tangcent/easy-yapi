@@ -17,26 +17,26 @@ class PipelineComponentParityTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun createConfigReader() = TestConfigReader.EMPTY
 
     fun testSpringControllerRecognizerExists() = runTest {
-        val ruleEngine = RuleEngine(actionContext, actionContext.instance(ConfigReader::class))
+        val ruleEngine = RuleEngine(project, createConfigReader())
         val recognizer = SpringControllerRecognizer(ruleEngine)
         assertNotNull("SpringControllerRecognizer should exist", recognizer)
     }
 
     fun testJaxRsResourceRecognizerExists() = runTest {
-        val ruleEngine = RuleEngine(actionContext, actionContext.instance(ConfigReader::class))
+        val ruleEngine = RuleEngine(project, createConfigReader())
         val recognizer = JaxRsResourceRecognizer(ruleEngine)
         assertNotNull("JaxRsResourceRecognizer should exist", recognizer)
     }
 
     fun testFeignClientRecognizerExists() = runTest {
-        val ruleEngine = RuleEngine(actionContext, actionContext.instance(ConfigReader::class))
+        val ruleEngine = RuleEngine(project, createConfigReader())
         val recognizer = FeignClientRecognizer(ruleEngine)
         assertNotNull("FeignClientRecognizer should exist", recognizer)
     }
 
     fun testContentTypeResolverExists() = runTest {
         val annotationHelper = UnifiedAnnotationHelper()
-        val ruleEngine = RuleEngine(actionContext, actionContext.instance(ConfigReader::class))
+        val ruleEngine = RuleEngine(project, createConfigReader())
         val resolver = ContentTypeResolver(annotationHelper, ruleEngine)
         assertNotNull("ContentTypeResolver should exist", resolver)
     }

@@ -32,14 +32,11 @@ class FeignInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("model/UserInfo.java")
         loadFile("api/feign/BaseUserApi.java")
         loadFile("api/feign/UserFeignClient.java")
-        exporter = FeignClassExporter(actionContext, feignEnable = true)
+        exporter = FeignClassExporter(project, feignEnable = true)
     }
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testInheritedMethodIsExported() = runTest {
         val psiClass = findClass("com.itangcent.api.feign.UserFeignClient")!!

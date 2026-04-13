@@ -1,22 +1,21 @@
 package com.itangcent.easyapi.integration
 
-import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
-import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.postman.PostmanFormatOptions
 import com.itangcent.easyapi.exporter.postman.PostmanFormatter
 import com.itangcent.easyapi.exporter.curl.CurlFormatter
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
-import org.junit.Test
 
-class FormatConversionTest {
+class FormatConversionTest : EasyApiLightCodeInsightFixtureTestCase() {
+
+    override fun createConfigReader() = TestConfigReader.EMPTY
 
     private val testEndpoint = ApiEndpoint(
         name = "Get User",
@@ -44,13 +43,9 @@ class FormatConversionTest {
         )
     )
 
-    @Test
     fun testPostmanFormatConversion(): Unit = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings().build()
         val postmanFormatter = PostmanFormatter(
-            actionContext = context,
+            project = project,
             options = PostmanFormatOptions(buildExample = true, autoMergeScript = true)
         )
         val endpoints = listOf(testEndpoint, testPostEndpoint)
@@ -61,7 +56,6 @@ class FormatConversionTest {
         assertTrue("Should have items", collection.item?.isNotEmpty() == true)
     }
 
-    @Test
     fun testCurlFormatConversion() {
         val curl = CurlFormatter.format(testPostEndpoint, "https://api.example.com")
 
@@ -71,18 +65,13 @@ class FormatConversionTest {
         assertTrue("Should contain Content-Type", curl.contains("application/json"))
     }
 
-    @Test
     fun testJson5FormatConversion() {
         // Json5Formatter removed — JSON5 formatting now handled by YapiFormatter.formatAsJson5 on ObjectModel
     }
 
-    @Test
     fun testMultipleEndpointsFormat(): Unit = runBlocking {
-        val context = ActionContext.builder()
-            .bind(ConfigReader::class, TestConfigReader.EMPTY)
-            .withSpiBindings().build()
         val postmanFormatter = PostmanFormatter(
-            actionContext = context,
+            project = project,
             options = PostmanFormatOptions(buildExample = true, autoMergeScript = true)
         )
         val endpoints = listOf(

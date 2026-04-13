@@ -1,13 +1,12 @@
 package com.itangcent.easyapi.exporter.yapi
 
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.http.HttpClientProvider
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Creates and caches [YapiApiClient] instances per module for a single export operation.
- * Constructed per-operation with a [Project] and [ActionContext].
+ * Constructed per-operation with a [Project].
  */
 interface YapiApiClientProvider {
 
@@ -33,12 +32,11 @@ interface YapiApiClientProvider {
 }
 
 class DefaultYapiApiClientProvider(
-    private val project: Project,
-    private val actionContext: ActionContext
+    private val project: Project
 ) : YapiApiClientProvider {
 
     private val settingsHelper = YapiSettingsHelper.getInstance(project)
-    private val httpClient by lazy { HttpClientProvider.getInstance(actionContext).getClient() }
+    private val httpClient by lazy { HttpClientProvider.getInstance(project).getClient() }
     private val clientCache = ConcurrentHashMap<String, YapiApiClient>()
 
     private var _serverUrl: String = ""

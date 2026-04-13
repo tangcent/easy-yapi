@@ -10,9 +10,10 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.context.ActionContext
-import com.itangcent.easyapi.core.context.ActionContextBuilder
+import com.itangcent.easyapi.core.event.ActionCompletedTopic
+import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.core.threading.readSync
+import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 import kotlinx.coroutines.runBlocking
@@ -22,48 +23,55 @@ import java.io.InputStreamReader
 
 abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixtureTestCase() {
 
-    protected lateinit var actionContext: ActionContext
-    protected lateinit var testSettingBinder: ConstantSettingBinder
+    private val _testSettingBinder = ConstantSettingBinder(Settings())
 
-    protected open fun createConfigReader(): ConfigReader = TestConfigReader()
+    protected val testSettingBinder: ConstantSettingBinder
+        get() = _testSettingBinder
 
-    protected open fun createSettings(): Settings = Settings()
-
-    protected open fun customizeContext(builder: ActionContextBuilder) {
+    protected fun updateSettings(updater: Settings.() -> Unit) {
+        _testSettingBinder.updateSettings(updater)
     }
+
+    protected fun setSettings(settings: Settings) {
+        _testSettingBinder.save(settings)
+    }
+
+    protected open fun createConfigReader(): ConfigReader? = null
+
+    protected open fun createSettings(): Settings? = null
 
     @Before
     override fun setUp() {
         super.setUp()
-        testSettingBinder = ConstantSettingBinder(createSettings())
-        // Register testSettingBinder as a project service so SettingBinder.getInstance(project) returns it
-        project.registerServiceInstance(SettingBinder::class.java, testSettingBinder)
-        val builder = ActionContext.builder()
-            .bind(Project::class, project)
-            .bind(ConfigReader::class, createConfigReader())
-            .bind(SettingBinder::class, testSettingBinder)
-            .withSpiBindings()
-
-        customizeContext(builder)
-        actionContext = builder.build()
+        val settings = createSettings()
+        if (settings != null) {
+            project.registerServiceInstance(
+                serviceInterface = SettingBinder::class.java,
+                instance = ConstantSettingBinder(settings)
+            )
+        } else {
+            project.registerServiceInstance(
+                serviceInterface = SettingBinder::class.java,
+                instance = _testSettingBinder
+            )
+        }
+        val configReader = createConfigReader()
+        if (configReader != null) {
+            project.registerServiceInstance(
+                serviceInterface = RuleEngine::class.java,
+                instance = RuleEngine(project, configReader)
+            )
+        }
     }
 
     @After
     override fun tearDown() {
-        actionContext.stop()
+        project.syncPublish(ActionCompletedTopic.TOPIC)
         super.tearDown()
     }
 
     protected fun runTest(block: suspend () -> Unit) {
         runBlocking { block() }
-    }
-
-    protected fun setSettings(settings: Settings) {
-        testSettingBinder.save(settings)
-    }
-
-    protected fun updateSettings(updater: Settings.() -> Unit) {
-        testSettingBinder.updateSettings(updater)
     }
 
     protected fun findClass(qualifiedName: String): PsiClass? {
@@ -78,7 +86,6 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
     }
 
     protected fun loadFile(path: String): PsiFile {
-        // Skip silently if already loaded (tests share the same project across methods)
         myFixture.findFileInTempDir(path)?.let { existing ->
             return myFixture.psiManager.findFile(existing)!!
         }
@@ -93,7 +100,6 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
     }
 
     protected fun loadFile(path: String, content: String): PsiFile {
-        // Skip silently if already loaded (tests share the same project across methods)
         myFixture.findFileInTempDir(path)?.let { existing ->
             return myFixture.psiManager.findFile(existing)!!
         }
@@ -131,8 +137,4 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
             else -> "package $packageName; public class $className {}"
         }
     }
-
-    protected inline fun <reified T : Any> instance(): T = actionContext.instance()
-
-    protected fun <T : Any> instance(kClass: kotlin.reflect.KClass<T>): T = actionContext.instance(kClass)
 }

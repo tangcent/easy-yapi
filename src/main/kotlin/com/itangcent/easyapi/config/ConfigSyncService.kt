@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * Service that synchronizes configuration changes by automatically reloading
- * the [DefaultConfigReader] when relevant changes are detected.
+ * the [ConfigReader] when relevant changes are detected.
  *
  * This service monitors two types of changes:
  * 1. **File changes**: Changes to `.easy.api.config*` files in the project
@@ -36,7 +36,7 @@ import kotlin.time.Duration.Companion.seconds
  * The service lifecycle is managed by the IntelliJ platform and it implements
  * [Disposable] to clean up resources when the project is closed.
  *
- * @see DefaultConfigReader
+ * @see ConfigReader
  * @see SettingsChangeListener
  */
 @Service(Service.Level.PROJECT)
@@ -44,7 +44,7 @@ class ConfigSyncService(
     private val project: Project
 ) : Disposable {
 
-    private val configReader: DefaultConfigReader by lazy { DefaultConfigReader.getInstance(project) }
+    private val configReader: ConfigReader by lazy { ConfigReader.getInstance(project) }
 
     private val connection = project.messageBus.connect(this)
 

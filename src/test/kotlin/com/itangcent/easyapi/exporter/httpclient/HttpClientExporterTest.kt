@@ -231,8 +231,7 @@ class HttpClientExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             endpoints = listOf(endpoint),
             exportFormat = ExportFormat.HTTP_CLIENT,
             settings = com.itangcent.easyapi.settings.Settings(),
-            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(host = customHost),
-            actionContext = actionContext
+            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(host = customHost)
         )
         
         val result = runBlocking { exporter.export(context) }
@@ -326,8 +325,7 @@ class HttpClientExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             endpoints = endpoints,
             exportFormat = ExportFormat.HTTP_CLIENT,
             settings = com.itangcent.easyapi.settings.Settings(),
-            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(host = "http://localhost:8080"),
-            actionContext = actionContext
+            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(host = "http://localhost:8080")
         )
     }
 }

@@ -23,9 +23,6 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     /**
      * Case 1: class GenericBase<T> { T data; }
@@ -39,8 +36,8 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.model.generic.StringChild")
         assertNotNull("Should find StringChild", psiClass)
 
-        val helper = DefaultPsiClassHelper()
-        val model = helper.buildObjectModel(psiClass!!, actionContext, maxDepth = 5)
+        val helper = DefaultPsiClassHelper.getInstance(project)
+        val model = helper.buildObjectModel(psiClass!!, maxDepth = 5)
         assertNotNull("Should build model for StringChild", model)
 
         val obj = model as? ObjectModel.Object
@@ -78,8 +75,8 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.model.generic.ConcreteLeaf")
         assertNotNull("Should find ConcreteLeaf", psiClass)
 
-        val helper = DefaultPsiClassHelper()
-        val model = helper.buildObjectModel(psiClass!!, actionContext, maxDepth = 5)
+        val helper = DefaultPsiClassHelper.getInstance(project)
+        val model = helper.buildObjectModel(psiClass!!, maxDepth = 5)
         assertNotNull("Should build model for ConcreteLeaf", model)
 
         val obj = model as? ObjectModel.Object
@@ -125,8 +122,8 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.model.generic.StringChild")
         assertNotNull(psiClass)
 
-        val helper = DefaultPsiClassHelper()
-        val model = helper.buildObjectModel(psiClass!!, actionContext, maxDepth = 5) as? ObjectModel.Object
+        val helper = DefaultPsiClassHelper.getInstance(project)
+        val model = helper.buildObjectModel(psiClass!!, maxDepth = 5) as? ObjectModel.Object
         assertNotNull(model)
 
         val dataField = model!!.fields["data"]

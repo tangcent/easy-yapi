@@ -189,8 +189,7 @@ class PostmanExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             endpoints = endpoints,
             exportFormat = ExportFormat.POSTMAN,
             settings = com.itangcent.easyapi.settings.Settings(),
-            outputConfig = outputConfig,
-            actionContext = actionContext
+            outputConfig = outputConfig
         )
     }
 }

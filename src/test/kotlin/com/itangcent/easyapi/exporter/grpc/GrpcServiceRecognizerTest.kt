@@ -46,9 +46,6 @@ class GrpcServiceRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     /**
      * Tests that a class extending XxxImplBase is recognized as a gRPC service.

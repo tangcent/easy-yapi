@@ -3,7 +3,6 @@ package com.itangcent.easyapi.exporter
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.dashboard.ApiScanner
@@ -141,14 +140,12 @@ class ExportOrchestrator(private val project: Project) {
         indicator: ProgressIndicator? = null
     ): ExportContext {
         val settings = SettingBinder.getInstance(project).read()
-        val actionContext = ActionContext.forProject(project)
         return ExportContext(
             project = project,
             endpoints = endpoints,
             exportFormat = format,
             settings = settings,
             outputConfig = outputConfig,
-            actionContext = actionContext,
             indicator = indicator
         )
     }

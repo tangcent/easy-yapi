@@ -15,7 +15,7 @@ class FeignTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = FeignClassExporter(actionContext, feignEnable = true)
+        exporter = FeignClassExporter(project, feignEnable = true)
     }
 
     private fun loadTestFiles() {
@@ -33,9 +33,6 @@ class FeignTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testClassTitleFromDocComment() = runTest {
         val psiClass = findClass("com.itangcent.client.TitleTestClient")

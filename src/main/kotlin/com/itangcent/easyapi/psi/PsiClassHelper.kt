@@ -3,7 +3,6 @@ package com.itangcent.easyapi.psi
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiType
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.GenericContext
 
@@ -31,14 +30,12 @@ interface PsiClassHelper {
      * Builds an object model from a PSI class.
      *
      * @param psiClass The class to analyze
-     * @param actionContext The action context
      * @param option Options for what to include (see JsonOption constants)
      * @param maxDepth Maximum recursion depth for nested types
      * @return The object model, or null if the class cannot be analyzed
      */
     suspend fun buildObjectModel(
         psiClass: PsiClass,
-        actionContext: ActionContext,
         option: Int = JsonOption.ALL,
         maxDepth: Int = 8
     ): ObjectModel?
@@ -48,7 +45,6 @@ interface PsiClassHelper {
      *
      * @param psiType The type to analyze
      * @param psiType The type to analyze
-     * @param actionContext The action context
      * @param maxDepth Maximum recursion depth for nested types
      * @param genericContext The generic context for type substitution
      * @param contextElement Optional context element for import-aware type resolution
@@ -56,7 +52,6 @@ interface PsiClassHelper {
      */
     suspend fun buildObjectModelFromType(
         psiType: PsiType,
-        actionContext: ActionContext,
         option: Int = JsonOption.ALL,
         maxDepth: Int = 8,
         genericContext: GenericContext = GenericContext.EMPTY,

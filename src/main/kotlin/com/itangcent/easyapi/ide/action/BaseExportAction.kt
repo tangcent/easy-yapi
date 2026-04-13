@@ -3,7 +3,8 @@ package com.itangcent.easyapi.ide.action
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.core.context.ActionContext
+import com.itangcent.easyapi.core.event.ActionCompletedTopic
+import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporterRegistry
@@ -11,6 +12,7 @@ import com.itangcent.easyapi.exporter.ExportOrchestrator
 import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.ide.support.runWithProgress
@@ -93,8 +95,6 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
         selection: SelectionScope?,
         indicator: ProgressIndicator
     ) {
-        val context = ActionContext.forProject(project)
-
         try {
             val orchestrator = ExportOrchestrator.getInstance(project)
             val result = orchestrator.orchestrateExport(selection, exportFormat, indicator = indicator)
@@ -110,7 +110,7 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
                 showExportError(project, ex.message ?: "Unknown error")
             }
         } finally {
-            context.stop()
+            project.syncPublish(ActionCompletedTopic.TOPIC)
         }
     }
 
@@ -121,8 +121,8 @@ abstract class BaseExportAction : EasyApiAction(), IdeaLog {
                 val exporter = exporterRegistry.getExporter(exportFormat)
 
                 val handled = try {
-                    exporter?.handleExportResult(project, result, com.itangcent.easyapi.exporter.model.OutputConfig.DEFAULT) ?: false
-                } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                    exporter?.handleExportResult(project, result, OutputConfig.DEFAULT) ?: false
+                } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     LOG.warn("Failed to handle export result", e)

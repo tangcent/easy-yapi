@@ -211,8 +211,7 @@ class MarkdownExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             endpoints = endpoints,
             exportFormat = ExportFormat.MARKDOWN,
             settings = com.itangcent.easyapi.settings.Settings(),
-            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig(),
-            actionContext = actionContext
+            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig()
         )
     }
 }

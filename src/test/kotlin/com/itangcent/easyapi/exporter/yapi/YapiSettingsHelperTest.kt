@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.exporter.yapi
 
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
 import kotlinx.coroutines.runBlocking
@@ -26,7 +27,7 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     @org.junit.Test
     fun `test resolveServerUrl in dumb mode returns null when server is missing`() {
-        setSettings(createSettings())
+        setSettings(Settings())
         val serverUrl = runBlocking { helper.resolveServerUrl(dumb = true) }
         assertNull(serverUrl)
     }

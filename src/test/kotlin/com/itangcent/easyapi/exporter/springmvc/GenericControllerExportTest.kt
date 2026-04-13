@@ -37,14 +37,11 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/generic/ConcreteCtrl.java")
         loadFile("api/generic/GenericParamCtrl.java")
         loadFile("model/UserInfo.java")
-        exporter = SpringMvcClassExporter(actionContext)
+        exporter = SpringMvcClassExporter(project)
     }
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     /**
      * Case 1: class GenericBaseCtrl<T> { Result<T> getItem(); Result<T> createItem(T item); }

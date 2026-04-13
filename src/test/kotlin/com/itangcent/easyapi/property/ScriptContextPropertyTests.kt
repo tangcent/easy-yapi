@@ -1,12 +1,10 @@
 package com.itangcent.easyapi.property
 
-import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.rule.context.*
 
 class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
@@ -30,7 +28,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.Ctrl")!!
         val method = psiClass.methods.first { it.name == "greet" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         assertEquals("greet", wrapper.name())
         assertEquals("update-apis", wrapper.doc("folder"))
         assertTrue(wrapper.hasDoc("undone"))
@@ -54,7 +52,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val psiClass = findClass("demo.Box")!!
-        val wrapper = RuleContext.from(actionContext(), psiClass).asScriptIt() as ScriptPsiClassContext
+        val wrapper = RuleContext.from(project, psiClass).asScriptIt() as ScriptPsiClassContext
         assertTrue(wrapper.methods().any { it.name() == "getValue" })
         assertTrue(wrapper.fields().any { it.name() == "value" })
         assertTrue(wrapper.methodCnt() >= 1)
@@ -73,7 +71,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.ArgDemo")!!.methods.first { it.name == "run" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         assertEquals(2, wrapper.args().size)
         assertEquals(2, wrapper.params().size)
         assertEquals(2, wrapper.parameters().size)
@@ -98,8 +96,8 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         val field = psiClass.fields.first { it.name == "names" }
         val method = psiClass.methods.first { it.name == "add" }
         val param = method.parameterList.parameters.first()
-        val fieldWrapper = RuleContext.from(actionContext(), field).asScriptIt() as ScriptPsiFieldContext
-        val paramWrapper = RuleContext.from(actionContext(), param).asScriptIt() as ScriptPsiParameterContext
+        val fieldWrapper = RuleContext.from(project, field).asScriptIt() as ScriptPsiFieldContext
+        val paramWrapper = RuleContext.from(project, param).asScriptIt() as ScriptPsiParameterContext
         assertTrue(fieldWrapper.type().name().contains("java.util.List"))
         assertTrue(fieldWrapper.type().name().contains("String"))
         assertTrue(paramWrapper.type().name().contains("String"))
@@ -122,7 +120,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.GenericDemo")!!.methods.first { it.name == "base" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
         val getMethod = returnType.methods().first { it.name() == "get" }
         val getReturnName = getMethod.returnType()!!.name()
@@ -145,7 +143,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.BoxDemo")!!.methods.first { it.name == "box" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
         val valueField = returnType.fields().first { it.name() == "value" }
         assertTrue(valueField.type().name() == "java.lang.String" || valueField.type().name() == "String")
@@ -174,7 +172,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.PairDemo")!!.methods.first { it.name == "pair" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
         val left = returnType.fields().first { it.name() == "left" }
         val right = returnType.fields().first { it.name() == "right" }
@@ -198,7 +196,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.ServiceDemo")!!.methods.first { it.name == "service" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
         val save = returnType.methods().first { it.name() == "save" }
         val argTypeName = save.argTypes().first().name()
@@ -216,7 +214,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val field = findClass("demo.WildcardDemo")!!.fields.first { it.name == "nums" }
-        val wrapper = RuleContext.from(actionContext(), field).asScriptIt() as ScriptPsiFieldContext
+        val wrapper = RuleContext.from(project, field).asScriptIt() as ScriptPsiFieldContext
         val typeName = wrapper.type().name()
         assertTrue(typeName.contains("[]"))
         assertTrue(typeName.contains("? extends"))
@@ -243,7 +241,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val childClass = findClass("demo.Child")!!
-        val childClassWrapper = RuleContext.from(actionContext(), childClass).asScriptIt() as ScriptPsiClassContext
+        val childClassWrapper = RuleContext.from(project, childClass).asScriptIt() as ScriptPsiClassContext
         
         val childField = childClassWrapper.fields().first { it.name() == "childField" }
         assertEquals("Child", childField.containingClass()?.name())
@@ -274,7 +272,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val childClass = findClass("demo.ChildClass")!!
-        val childClassWrapper = RuleContext.from(actionContext(), childClass).asScriptIt() as ScriptPsiClassContext
+        val childClassWrapper = RuleContext.from(project, childClass).asScriptIt() as ScriptPsiClassContext
         
         val childMethod = childClassWrapper.methods().first { it.name() == "getChildName" }
         assertEquals("ChildClass", childMethod.containingClass()?.name())
@@ -314,7 +312,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.DerivedService")!!.methods.first { it.name == "getDerived" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
         
         val derivedField = returnType.fields().first { it.name() == "derivedField" }
@@ -355,7 +353,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.DogFactory")!!.methods.first { it.name == "create" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
         
         val barkMethod = returnType.methods().first { it.name() == "bark" }
@@ -378,7 +376,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.ToStringDemo")!!.methods.first { it.name == "greet" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         assertEquals("ToStringDemo#greet", wrapper.toString())
     }
 
@@ -393,7 +391,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val method = findClass("demo.EnumFieldDemo")!!.methods.first { it.name == "value" }
-        val wrapper = RuleContext.from(actionContext(), method).asScriptIt() as ScriptPsiMethodContext
+        val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         assertFalse(wrapper.isEnumField())
     }
 
@@ -408,7 +406,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val field = findClass("demo.FieldToStringDemo")!!.fields.first { it.name == "name" }
-        val wrapper = RuleContext.from(actionContext(), field).asScriptIt() as ScriptPsiFieldContext
+        val wrapper = RuleContext.from(project, field).asScriptIt() as ScriptPsiFieldContext
         assertEquals("FieldToStringDemo#name", wrapper.toString())
     }
 
@@ -424,7 +422,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val method = findClass("demo.ParamToStringDemo")!!.methods.first { it.name == "process" }
         val param = method.parameterList.parameters.first()
-        val wrapper = RuleContext.from(actionContext(), param).asScriptIt() as ScriptPsiParameterContext
+        val wrapper = RuleContext.from(project, param).asScriptIt() as ScriptPsiParameterContext
         assertEquals("inputName", wrapper.toString())
     }
 
@@ -440,7 +438,7 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val enumClass = findClass("demo.Status")!!
         val activeField = enumClass.fields.first { it.name == "ACTIVE" } as com.intellij.psi.PsiEnumConstant
-        val wrapper = ScriptPsiEnumConstantContext(RuleContext.from(actionContext(), activeField), activeField)
+        val wrapper = ScriptPsiEnumConstantContext(RuleContext.from(project, activeField), activeField)
         assertEquals("ACTIVE", wrapper.toString())
     }
 
@@ -458,10 +456,6 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
 
     private fun findClass(fqn: String): PsiClass? {
         return JavaPsiFacade.getInstance(project).findClass(fqn, GlobalSearchScope.allScope(project))
-    }
-
-    private fun actionContext(config: ConfigReader = emptyConfig()): ActionContext {
-        return ActionContext.builder().bind(Project::class, project).bind(ConfigReader::class, config).withSpiBindings().build()
     }
 
     private fun emptyConfig(): ConfigReader = listConfig(emptyMap())

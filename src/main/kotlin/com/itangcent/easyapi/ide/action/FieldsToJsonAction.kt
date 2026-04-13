@@ -2,7 +2,6 @@ package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.easyapi.core.context.ActionContext
 import com.itangcent.easyapi.psi.DefaultPsiClassHelper
 import com.itangcent.easyapi.psi.JsonOption
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -17,9 +16,9 @@ import com.itangcent.easyapi.psi.type.JsonType
  * @see FieldFormatAction for the base class
  */
 class FieldsToJsonAction : FieldFormatAction("Fields To JSON") {
-    override suspend fun format(project: Project, actionContext: ActionContext, psiClass: PsiClass): String {
-        val helper = DefaultPsiClassHelper()
-        val model = helper.buildObjectModel(psiClass, actionContext, JsonOption.READ_GETTER_OR_SETTER, 10)
+    override suspend fun format(project: Project, psiClass: PsiClass): String {
+        val helper = DefaultPsiClassHelper.getInstance(project)
+        val model = helper.buildObjectModel(psiClass, JsonOption.READ_GETTER_OR_SETTER, 10)
         return model?.let { formatJson(it) } ?: ""
     }
 }

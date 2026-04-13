@@ -18,9 +18,9 @@ class MultiFrameworkExportTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        springExporter = SpringMvcClassExporter(actionContext)
-        feignExporter = FeignClassExporter(actionContext)
-        jaxrsExporter = JaxRsClassExporter(actionContext)
+        springExporter = SpringMvcClassExporter(project)
+        feignExporter = FeignClassExporter(project)
+        jaxrsExporter = JaxRsClassExporter(project)
     }
 
     private fun loadTestFiles() {
@@ -48,9 +48,6 @@ class MultiFrameworkExportTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.EMPTY
 
-    override fun customizeContext(builder: com.itangcent.easyapi.core.context.ActionContextBuilder) {
-        builder.bind(DocHelper::class, StandardDocHelper())
-    }
 
     fun testExportSpringMvcController() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")
