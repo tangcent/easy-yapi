@@ -44,7 +44,7 @@ class RuleKeysTest2 {
     @Test
     fun testFieldDocKey_merge() {
         assertEquals("field.doc", RuleKeys.FIELD_DOC.name)
-        assertEquals(StringRuleMode.MERGE, (RuleKeys.FIELD_DOC as RuleKey.StringKey).stringMode)
+        assertEquals(StringRuleMode.MERGE_DISTINCT, (RuleKeys.FIELD_DOC as RuleKey.StringKey).stringMode)
         assertTrue(RuleKeys.FIELD_DOC.aliases.contains("doc.field"))
     }
 

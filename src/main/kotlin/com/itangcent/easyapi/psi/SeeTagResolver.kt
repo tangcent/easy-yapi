@@ -82,7 +82,7 @@ class SeeTagResolver(
      * Resolve options from a single `@see` tag text.
      *
      * @param seeText the raw text after `@see`, e.g. `{@link com.example.UserType#type}`
-     * @param context the PSI element where the tag appears (used for import resolution)
+     * @param context the PSI element where the tag appears (used for import resolution and type matching)
      */
     suspend fun resolveFromSeeText(
         seeText: String,
@@ -93,7 +93,7 @@ class SeeTagResolver(
 
         return withContext(IdeDispatchers.ReadAction) {
             if (psiClass.isEnum) {
-                resolveEnumOptions(psiClass, parsed.memberName)
+                resolveEnumOptions(psiClass, parsed.memberName, context)
             } else {
                 resolveStaticOptions(psiClass)
             }
@@ -102,19 +102,38 @@ class SeeTagResolver(
 
     /**
      * Resolve enum constants as options.
-     * If [propertyName] is specified, uses that field's constructor argument as the value.
-     * Otherwise uses the enum constant name.
+     *
+     * When [propertyName] is specified (e.g. `@see UserType#type`), uses that field's
+     * constructor argument as the value.
+     *
+     * When [propertyName] is null (e.g. `@see UserType`), auto-matches by comparing
+     * the referencing field's type against the enum's instance fields. For example,
+     * if `private int type` references `UserType` which has `Integer code`, the `code`
+     * field is selected automatically.
+     *
+     * Falls back to enum constant names if no match is found.
      *
      * Supports both field names and getter method names:
      * - `type` → matches field `type` directly
      * - `getType` / `getType()` → converted to field `type`
      * - `isActive` / `isActive()` → converted to field `active`
      */
-    private fun resolveEnumOptions(psiClass: PsiClass, propertyName: String?): List<FieldOption>? {
+    private fun resolveEnumOptions(
+        psiClass: PsiClass,
+        propertyName: String?,
+        context: PsiElement
+    ): List<FieldOption>? {
         val constants = psiClass.fields.filterIsInstance<PsiEnumConstant>()
         if (constants.isEmpty()) return null
 
-        val resolvedFieldName = resolveFieldName(psiClass, propertyName)
+        val resolvedFieldName = if (propertyName != null) {
+            // Explicit member: @see UserType#type or @see UserType#getType()
+            resolveFieldName(psiClass, propertyName)
+        } else {
+            // No member: @see UserType → auto-match by type
+            findEnumFieldByType(psiClass, context)
+        }
+
         val instanceFields = psiClass.allFields
             .filter { it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC) }
         val valueFieldIndex = if (resolvedFieldName != null) {
@@ -132,8 +151,96 @@ class SeeTagResolver(
                 } else name
             } else name
 
-            FieldOption(value = value, desc = desc)
+            // When using a custom field, build description from other fields if no doc comment
+            val effectiveDesc = if (valueFieldIndex >= 0 && desc == null) {
+                buildDescFromOtherFields(constant, instanceFields, valueFieldIndex) ?: name
+            } else {
+                desc
+            }
+
+            FieldOption(value = value, desc = effectiveDesc)
         }.ifEmpty { null }
+    }
+
+    /**
+     * Finds an enum instance field whose type matches the referencing element's declared type.
+     *
+     * For example, if `private int type` references `UserType` which has
+     * `private final Integer code`, this returns `"code"`.
+     *
+     * When multiple fields match, prefers the one whose name matches the referencing field name.
+     */
+    private fun findEnumFieldByType(psiClass: PsiClass, contextElement: PsiElement): String? {
+        val targetCanonical = when (contextElement) {
+            is PsiField -> contextElement.type.canonicalText
+            is PsiMethod -> contextElement.returnType?.canonicalText
+            is PsiParameter -> contextElement.type.canonicalText
+            else -> null
+        } ?: return null
+
+        val instanceFields = psiClass.allFields.filter {
+            it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC)
+        }
+
+        val candidates = instanceFields.filter { field ->
+            isTypeCompatible(field.type.canonicalText, targetCanonical)
+        }
+
+        if (candidates.isEmpty()) return null
+        if (candidates.size == 1) return candidates.first().name
+
+        // Multiple candidates: prefer the one whose name matches the referencing field
+        val contextName = when (contextElement) {
+            is PsiField -> contextElement.name
+            is PsiMethod -> LinkResolver.getterToPropertyName(contextElement.name) ?: contextElement.name
+            is PsiParameter -> contextElement.name
+            else -> null
+        }
+        if (contextName != null) {
+            candidates.firstOrNull { it.name == contextName }?.let { return it.name }
+        }
+        return candidates.first().name
+    }
+
+    /**
+     * Builds a description string from enum constructor arguments other than the value field.
+     */
+    private fun buildDescFromOtherFields(
+        constant: PsiEnumConstant,
+        instanceFields: List<PsiField>,
+        excludeIndex: Int
+    ): String? {
+        val args = constant.argumentList?.expressions ?: return null
+        val parts = mutableListOf<String>()
+        for ((i, _) in instanceFields.withIndex()) {
+            if (i == excludeIndex) continue
+            if (i < args.size) {
+                val value = extractConstantValue(args[i])
+                if (value != null) {
+                    parts.add(value.toString())
+                }
+            }
+        }
+        return parts.joinToString(" ").takeIf { it.isNotBlank() }
+    }
+
+    private fun isTypeCompatible(fieldType: String, targetType: String): Boolean {
+        if (fieldType == targetType) return true
+        return normalizeBoxedType(fieldType) == normalizeBoxedType(targetType)
+    }
+
+    private fun normalizeBoxedType(type: String): String {
+        return when (type) {
+            "int", "Integer", "java.lang.Integer" -> "java.lang.Integer"
+            "long", "Long", "java.lang.Long" -> "java.lang.Long"
+            "short", "Short", "java.lang.Short" -> "java.lang.Short"
+            "byte", "Byte", "java.lang.Byte" -> "java.lang.Byte"
+            "float", "Float", "java.lang.Float" -> "java.lang.Float"
+            "double", "Double", "java.lang.Double" -> "java.lang.Double"
+            "boolean", "Boolean", "java.lang.Boolean" -> "java.lang.Boolean"
+            "char", "Character", "java.lang.Character" -> "java.lang.Character"
+            else -> type
+        }
     }
 
     /**

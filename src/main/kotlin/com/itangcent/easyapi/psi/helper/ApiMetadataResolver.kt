@@ -150,7 +150,7 @@ class ApiMetadataResolver(
     suspend fun resolveApiStatus(method: PsiMethod): String? {
         return engine.evaluate(RuleKeys.API_STATUS, method)
     }
-
+    
     suspend fun resolveModule(method: PsiMethod): String? {
         return engine.evaluate(RuleKeys.MODULE, method)
     }

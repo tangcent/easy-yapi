@@ -580,31 +580,192 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
      * Resolves enum constants (with doc descriptions) for enum types.
      * Unwraps arrays/collections to find the element type.
      */
-    private suspend fun resolveFieldOptions(resolvedType: ResolvedType, docHelper: DocHelper): List<FieldOption>? {
+    private suspend fun resolveFieldOptions(
+        resolvedType: ResolvedType,
+        docHelper: DocHelper
+    ): List<FieldOption>? {
         return when (resolvedType) {
             is ResolvedType.ClassType -> {
                 val psiClass = resolvedType.psiClass
                 if (isEnum(psiClass)) {
                     resolveEnumOptions(psiClass, docHelper)
                 } else if (isCollection(psiClass)) {
-                    resolvedType.typeArgs.firstOrNull()?.let { resolveFieldOptions(it, docHelper) }
+                    resolvedType.typeArgs.firstOrNull()?.let {
+                        resolveFieldOptions(it, docHelper)
+                    }
                 } else null
             }
 
             is ResolvedType.ArrayType -> resolveFieldOptions(resolvedType.componentType, docHelper)
-            is ResolvedType.WildcardType -> resolvedType.upper?.let { resolveFieldOptions(it, docHelper) }
+            is ResolvedType.WildcardType -> resolvedType.upper?.let {
+                resolveFieldOptions(it, docHelper)
+            }
+
             else -> null
         }
     }
 
-    private suspend fun resolveEnumOptions(psiClass: PsiClass, docHelper: DocHelper): List<FieldOption>? {
+    /**
+     * Resolves the effective enum field name for a given enum class.
+     *
+     * This is used for **Case 1: field declared as enum type** (`XxxEnum field`).
+     * Frameworks like Spring serialize enums by name by default, so the fallback is `"name()"`.
+     *
+     * Resolution order:
+     * 1. Explicit `enum.use.custom` rule → use that field name directly
+     *    - `"name"` / `"name()"` → enum constant name
+     *    - `"ordinal"` / `"ordinal()"` → enum ordinal
+     *    - any other string → that instance field name (e.g. `"code"`)
+     * 2. Fallback → `"name()"` (enum constant name as String)
+     *
+     * Note: auto-match by type is NOT applied here. It only makes sense for
+     * Case 2 (normal-typed field with `@see EnumClass`), which is handled by [SeeTagResolver].
+     */
+    private suspend fun resolveEnumFieldName(
+        psiClass: PsiClass,
+        engine: RuleEngine
+    ): String {
+        val custom = engine.evaluate(RuleKeys.ENUM_USE_CUSTOM, psiClass)
+        if (!custom.isNullOrBlank()) return custom
+        return "name()"
+    }
+
+    private suspend fun resolveEnumOptions(
+        psiClass: PsiClass,
+        docHelper: DocHelper
+    ): List<FieldOption>? {
         val constants = psiClass.fields.filterIsInstance<PsiEnumConstant>()
         if (constants.isEmpty()) return null
+
+        val engine = RuleEngine.getInstance(project)
+        val fieldName = resolveEnumFieldName(psiClass, engine)
+
+        return resolveEnumOptionsByField(psiClass, constants, fieldName, docHelper)
+    }
+
+    /**
+     * Resolves enum options using a specific field's constructor argument values.
+     *
+     * Handles special pseudo-fields:
+     * - `"name"` / `"name()"` → enum constant name (String)
+     * - `"ordinal"` / `"ordinal()"` → enum ordinal index (Integer)
+     * - any other string → looks up that instance field's constructor argument
+     *
+     * For example, given:
+     * ```java
+     * enum UserType {
+     *     GUEST(30, "unspecified"),
+     *     ADMIN(1100, "administrator");
+     *     private final Integer code;
+     *     private final String desc;
+     * }
+     * ```
+     * With `fieldName = "code"`, produces options: `[{value=30, desc="unspecified"}, ...]`
+     */
+    private suspend fun resolveEnumOptionsByField(
+        psiClass: PsiClass,
+        constants: List<PsiEnumConstant>,
+        fieldName: String,
+        docHelper: DocHelper
+    ): List<FieldOption>? {
+        val normalizedName = fieldName.removeSuffix("()")
+
+        // Handle pseudo-fields: name and ordinal
+        if (normalizedName == "name") {
+            return constants.mapNotNull { constant ->
+                val name = constant.name ?: return@mapNotNull null
+                val desc = docHelper.getAttrOfDocComment(constant)
+                FieldOption(value = name, desc = desc)
+            }.ifEmpty { null }
+        }
+
+        if (normalizedName == "ordinal") {
+            return constants.mapIndexedNotNull { index, constant ->
+                constant.name ?: return@mapIndexedNotNull null
+                val desc = docHelper.getAttrOfDocComment(constant)
+                    ?: constant.name
+                FieldOption(value = index, desc = desc)
+            }.ifEmpty { null }
+        }
+
+        // Instance field lookup
+        val instanceFields = readSync {
+            psiClass.allFields
+                .filter { it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC) }
+        }
+        val fieldIndex = instanceFields.indexOfFirst { it.name == normalizedName }
+        if (fieldIndex < 0) {
+            // Field not found — fall back to name
+            return constants.mapNotNull { constant ->
+                val name = constant.name ?: return@mapNotNull null
+                val desc = docHelper.getAttrOfDocComment(constant)
+                FieldOption(value = name, desc = desc)
+            }.ifEmpty { null }
+        }
+
         return constants.mapNotNull { constant ->
             val name = constant.name ?: return@mapNotNull null
             val desc = docHelper.getAttrOfDocComment(constant)
-            FieldOption(value = name, desc = desc)
+
+            val value: Any? = readSync {
+                val args = constant.argumentList?.expressions
+                if (args != null && fieldIndex < args.size) {
+                    SeeTagResolver.extractConstantValue(args[fieldIndex])
+                } else name
+            }
+
+            // Build description: prefer doc comment, then fall back to other field values
+            val effectiveDesc = desc ?: buildDescFromOtherFields(constant, instanceFields, fieldIndex)
+
+            FieldOption(value = value ?: name, desc = effectiveDesc)
         }.ifEmpty { null }
+    }
+
+    /**
+     * Builds a description string from enum constructor arguments other than the value field.
+     */
+    private fun buildDescFromOtherFields(
+        constant: PsiEnumConstant,
+        instanceFields: List<PsiField>,
+        excludeIndex: Int
+    ): String? {
+        val args = constant.argumentList?.expressions ?: return null
+        val parts = mutableListOf<String>()
+        for ((i, field) in instanceFields.withIndex()) {
+            if (i == excludeIndex) continue
+            if (i < args.size) {
+                val value = SeeTagResolver.extractConstantValue(args[i])
+                if (value != null) {
+                    parts.add(value.toString())
+                }
+            }
+        }
+        return parts.joinToString(" ").takeIf { it.isNotBlank() }
+    }
+
+    /**
+     * Determines the JSON type for an enum based on the resolved field.
+     *
+     * - `"name"` / `"name()"` → STRING
+     * - `"ordinal"` / `"ordinal()"` → INT
+     * - instance field name → type of that field (e.g. `Integer code` → INT)
+     */
+    private fun resolveEnumJsonType(psiClass: PsiClass, fieldName: String): ObjectModel.Single {
+        val normalizedName = fieldName.removeSuffix("()")
+
+        if (normalizedName == "name") return ObjectModel.single(JsonType.STRING)
+        if (normalizedName == "ordinal") return ObjectModel.single(JsonType.INT)
+
+        val field = readSync {
+            psiClass.allFields.firstOrNull {
+                it !is PsiEnumConstant && it.name == normalizedName
+            }
+        }
+        if (field != null) {
+            val typeName = readSync { field.type.canonicalText }
+            return ObjectModel.single(JsonType.fromJavaType(typeName))
+        }
+        return ObjectModel.single(JsonType.STRING)
     }
 
     private suspend fun buildFieldValue(
@@ -663,12 +824,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                     } else ObjectModel.single(JsonType.OBJECT)
                     ObjectModel.map(keyModel, valueModel)
                 } else if (isEnum(psiClass)) {
-                    val customEnumField = engine.evaluate(RuleKeys.ENUM_USE_CUSTOM, psiClass)
-                    if (!customEnumField.isNullOrBlank()) {
-                        ObjectModel.single(JsonType.STRING)
-                    } else {
-                        ObjectModel.single(JsonType.STRING)
-                    }
+                    val fieldName = resolveEnumFieldName(psiClass, engine)
+                    resolveEnumJsonType(psiClass, fieldName)
                 } else {
                     val nestedContext = if (resolvedType.typeArgs.isNotEmpty()) {
                         GenericContext(TypeResolver.resolveGenericParams(psiClass, resolvedType.typeArgs))
