@@ -19,6 +19,7 @@ object RuleKeys {
     val API_NAME = RuleKey.string("api.name")
     val API_TAG             = RuleKey.string("api.tag")
     val API_STATUS          = RuleKey.string("api.status")
+    val API_OPEN            = RuleKey.boolean("api.open")
     val FOLDER_NAME = RuleKey.string("folder.name")
     val MODULE = RuleKey.string("module")
     val IGNORE = RuleKey.boolean("ignore")

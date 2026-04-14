@@ -314,6 +314,7 @@ class DefaultYapiApiClient(
         )
         doc.reqBodyType?.let { map["req_body_type"] = it }
         doc.resBodyType?.let { map["res_body_type"] = it }
+        doc.open?.let { map["api_opened"] = it }
         existingId?.let { map["id"] = it }
         return GsonUtils.toJson(map)
     }

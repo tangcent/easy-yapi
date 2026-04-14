@@ -44,6 +44,42 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         return TestConfigReader.fromConfigText(yapiConfig)
     }
 
+    // ── api.open[#open]=true ─────────────────────────────────────
+
+    fun testApiOpenWithOpenTag() = runTest {
+        val psiClass = findClass("com.itangcent.yapi.YapiController")
+        assertNotNull("Should find YapiController", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+
+        val publicEndpoint = endpoints.find {
+            it.httpMetadata?.method == HttpMethod.GET &&
+            it.httpMetadata?.path?.contains("public") == true
+        }
+        assertNotNull("Should find GET /yapi/public endpoint", publicEndpoint)
+        assertTrue(
+            "Endpoint with @open tag should have open=true",
+            publicEndpoint?.open == true
+        )
+    }
+
+    fun testApiOpenWithoutOpenTag() = runTest {
+        val psiClass = findClass("com.itangcent.yapi.YapiController")
+        assertNotNull("Should find YapiController", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+
+        val privateEndpoint = endpoints.find {
+            it.httpMetadata?.method == HttpMethod.GET &&
+            it.httpMetadata?.path?.contains("private") == true
+        }
+        assertNotNull("Should find GET /yapi/private endpoint", privateEndpoint)
+        assertFalse(
+            "Endpoint without @open tag should have open=false",
+            privateEndpoint?.open == true
+        )
+    }
+
     // ── field.mock=#mock ─────────────────────────────────────────
 
     fun testFieldMockWithMockTag() = runTest {

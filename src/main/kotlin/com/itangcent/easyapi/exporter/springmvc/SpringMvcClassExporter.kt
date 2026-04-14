@@ -133,6 +133,7 @@ class SpringMvcClassExporter(
                 val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
                 val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
+                val apiOpen = metadataResolver.isApiOpen(method)
 
                 val defaultHttpMethod = metadataResolver.resolveDefaultHttpMethod(method)
                     ?.let { HttpMethod.fromSpring(it) }
@@ -170,6 +171,7 @@ class SpringMvcClassExporter(
                         folder = folder,
                         description = description,
                         tags = tags,
+                        open = apiOpen,
                         sourceClass = psiClass,
                         sourceMethod = method,
                         className = psiClass.qualifiedName ?: psiClass.name,

@@ -160,7 +160,8 @@ class YapiFormatter(
             resBody = resBody,
             resBodyType = if (httpMeta?.responseBody != null) "json" else null,
             resBodyIsJsonSchema = resBodyIsJsonSchema,
-            tags = endpoint.tags.ifEmpty { null }
+            tags = endpoint.tags.ifEmpty { null },
+            open = if (endpoint.open) true else null
         )
     }
 
