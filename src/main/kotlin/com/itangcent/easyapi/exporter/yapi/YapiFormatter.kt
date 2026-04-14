@@ -148,7 +148,7 @@ class YapiFormatter(
             path = formatPath(endpoint.path),
             method = httpMeta?.method?.name?.lowercase() ?: "get",
             desc = endpoint.description,
-            status = "done",
+            status = endpoint.status ?: "done",
             tag = endpoint.tags,
             reqHeaders = headers.ifEmpty { null },
             reqQuery = query.ifEmpty { null },

@@ -80,6 +80,44 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    // ── api.status[#undone]=undone / api.status[#todo]=undone ────
+
+    fun testApiStatusWithUndoneTag() = runTest {
+        val psiClass = findClass("com.itangcent.yapi.YapiController")
+        assertNotNull("Should find YapiController", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+
+        val createEndpoint = endpoints.find {
+            it.httpMetadata?.method == HttpMethod.POST &&
+            it.httpMetadata?.path?.contains("create") == true
+        }
+        assertNotNull("Should find POST /yapi/create endpoint", createEndpoint)
+        assertEquals(
+            "Endpoint with @undone tag should have status=undone",
+            "undone",
+            createEndpoint?.status
+        )
+    }
+
+    fun testApiStatusWithTodoTag() = runTest {
+        val psiClass = findClass("com.itangcent.yapi.YapiController")
+        assertNotNull("Should find YapiController", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+
+        val updateEndpoint = endpoints.find {
+            it.httpMetadata?.method == HttpMethod.POST &&
+            it.httpMetadata?.path?.contains("update") == true
+        }
+        assertNotNull("Should find POST /yapi/update endpoint", updateEndpoint)
+        assertEquals(
+            "Endpoint with @todo tag should have status=undone",
+            "undone",
+            updateEndpoint?.status
+        )
+    }
+
     // ── field.mock=#mock ─────────────────────────────────────────
 
     fun testFieldMockWithMockTag() = runTest {
