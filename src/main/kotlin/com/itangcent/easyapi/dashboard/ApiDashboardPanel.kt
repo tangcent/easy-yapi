@@ -358,9 +358,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     private fun navigateToSource(endpoint: ApiEndpoint) {
         val method = endpoint.sourceMethod ?: return
         if (method.canNavigate()) {
-            IdeDispatchers.readSync {
-                method.navigate(true)
-            }
+            method.navigate(true)
         }
     }
 

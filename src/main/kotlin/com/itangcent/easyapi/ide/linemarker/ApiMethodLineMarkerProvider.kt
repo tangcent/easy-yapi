@@ -123,9 +123,11 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
                 val service = ApiDashboardService.getInstance(project)
                 val found = service.navigateToMethod(method)
 
-                com.intellij.openapi.wm.ToolWindowManager.getInstance(project)
-                    .getToolWindow("API Dashboard")
-                    ?.activate(null)
+                swing {
+                    com.intellij.openapi.wm.ToolWindowManager.getInstance(project)
+                        .getToolWindow("API Dashboard")
+                        ?.activate(null)
+                }
 
                 if (!found) {
                     // Endpoint not in index — trigger re-scan of the containing file,
