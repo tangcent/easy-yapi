@@ -46,7 +46,7 @@ object RuleKeys {
     val PARAM_MOCK          = RuleKey.string("param.mock")
 
     // ── Field rules ───────────────────────────────────────────────
-    val FIELD_NAME          = RuleKey.string("field.name")
+    val FIELD_NAME          = RuleKey.string("field.name", aliases = listOf("json.rule.field.name"))
     val FIELD_NAME_PREFIX   = RuleKey.string("field.name.prefix")
     val FIELD_NAME_SUFFIX   = RuleKey.string("field.name.suffix")
     val FIELD_REQUIRED      = RuleKey.boolean("field.required")
@@ -62,8 +62,8 @@ object RuleKeys {
     val PARAM_MAX_DEPTH     = RuleKey.int("param.max.depth")
 
     // ── JSON rules ────────────────────────────────────────────────
-    val JSON_FIELD_PARSE_BEFORE = RuleKey.event("json.field.parse.before")
-    val JSON_FIELD_PARSE_AFTER  = RuleKey.event("json.field.parse.after")
+    val JSON_FIELD_PARSE_BEFORE = RuleKey.event("json.field.parse.before", aliases = listOf("field.parse.before"))
+    val JSON_FIELD_PARSE_AFTER  = RuleKey.event("json.field.parse.after", aliases = listOf("field.parse.after"))
     val JSON_CLASS_PARSE_BEFORE = RuleKey.event("json.class.parse.before")
     val JSON_CLASS_PARSE_AFTER  = RuleKey.event("json.class.parse.after")
     val JSON_ADDITIONAL_FIELD   = RuleKey.string("json.additional.field", StringRuleMode.MERGE)
@@ -75,8 +75,8 @@ object RuleKeys {
     val API_CLASS_PARSE_AFTER   = RuleKey.event("api.class.parse.after")
     val API_METHOD_PARSE_BEFORE = RuleKey.event("api.method.parse.before")
     val API_METHOD_PARSE_AFTER  = RuleKey.event("api.method.parse.after")
-    val API_PARAM_PARSE_BEFORE  = RuleKey.event("api.param.parse.before")
-    val API_PARAM_PARSE_AFTER   = RuleKey.event("api.param.parse.after")
+    val API_PARAM_PARSE_BEFORE  = RuleKey.event("api.param.parse.before", aliases = listOf("param.before"))
+    val API_PARAM_PARSE_AFTER   = RuleKey.event("api.param.parse.after", aliases = listOf("param.after"))
     val EXPORT_AFTER            = RuleKey.event("export.after")
 
     // ── Additional headers/params ─────────────────────────────────

@@ -316,7 +316,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             // Build the field path for fieldContext injection into rule scripts
             val fieldPath = if (parentPath != null) "$parentPath.$fieldName" else fieldName
 
-            if (engine.evaluate(RuleKeys.FIELD_IGNORE, accessibleField.psi) { it.setExt("fieldContext", fieldPath) }) {
+            if (engine.evaluate(RuleKeys.FIELD_IGNORE, accessibleField.psi, fieldContext = fieldPath)) {
                 continue
             }
 
@@ -330,22 +330,22 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 }
             }
 
-            engine.evaluate(RuleKeys.JSON_FIELD_PARSE_BEFORE, accessibleField.psi) { it.setExt("fieldContext", fieldPath) }
+            engine.evaluate(RuleKeys.JSON_FIELD_PARSE_BEFORE, accessibleField.psi, fieldContext = fieldPath)
 
-            val customName = engine.evaluate(RuleKeys.FIELD_NAME, accessibleField.psi) { it.setExt("fieldContext", fieldPath) }
-            val prefix = engine.evaluate(RuleKeys.FIELD_NAME_PREFIX, accessibleField.psi) { it.setExt("fieldContext", fieldPath) } ?: ""
-            val suffix = engine.evaluate(RuleKeys.FIELD_NAME_SUFFIX, accessibleField.psi) { it.setExt("fieldContext", fieldPath) } ?: ""
+            val customName = engine.evaluate(RuleKeys.FIELD_NAME, accessibleField.psi, fieldContext = fieldPath)
+            val prefix = engine.evaluate(RuleKeys.FIELD_NAME_PREFIX, accessibleField.psi, fieldContext = fieldPath) ?: ""
+            val suffix = engine.evaluate(RuleKeys.FIELD_NAME_SUFFIX, accessibleField.psi, fieldContext = fieldPath) ?: ""
             val baseName = customName?.takeIf { it.isNotBlank() } ?: fieldName
             val jsonFieldName = prefix + baseName + suffix
 
             if (fields.containsKey(jsonFieldName)) continue
 
             val fieldDefaultValue =
-                engine.evaluate(RuleKeys.FIELD_DEFAULT_VALUE, accessibleField.psi)
-            val fieldRequired = engine.evaluate(RuleKeys.FIELD_REQUIRED, accessibleField.psi)
-            val fieldMock = engine.evaluate(RuleKeys.FIELD_MOCK, accessibleField.psi)
-            val fieldDemo = engine.evaluate(RuleKeys.FIELD_DEMO, accessibleField.psi)
-            val fieldAdvancedStr = engine.evaluate(RuleKeys.FIELD_ADVANCED, accessibleField.psi)
+                engine.evaluate(RuleKeys.FIELD_DEFAULT_VALUE, accessibleField.psi, fieldContext = fieldPath)
+            val fieldRequired = engine.evaluate(RuleKeys.FIELD_REQUIRED, accessibleField.psi, fieldContext = fieldPath)
+            val fieldMock = engine.evaluate(RuleKeys.FIELD_MOCK, accessibleField.psi, fieldContext = fieldPath)
+            val fieldDemo = engine.evaluate(RuleKeys.FIELD_DEMO, accessibleField.psi, fieldContext = fieldPath)
+            val fieldAdvancedStr = engine.evaluate(RuleKeys.FIELD_ADVANCED, accessibleField.psi, fieldContext = fieldPath)
             val fieldAdvanced = if (!fieldAdvancedStr.isNullOrBlank()) {
                 runCatching { GsonUtils.fromJson<Map<String, Any?>>(fieldAdvancedStr) }.getOrNull()
             } else null
@@ -355,7 +355,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                     is PsiField -> docHelper.getAttrOfField(psi)
                     else -> docHelper.getAttrOfDocComment(psi)
                 }
-                val ruleComment = engine.evaluate(RuleKeys.FIELD_DOC, accessibleField.psi)
+                val ruleComment = engine.evaluate(RuleKeys.FIELD_DOC, accessibleField.psi, fieldContext = fieldPath)
                 mergeComments(directComment, ruleComment)
             } else null
 
@@ -388,7 +388,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             )
 
             // Check json.unwrapped — if true, merge the field's object fields into the parent
-            val unwrapped = engine.evaluate(RuleKeys.JSON_UNWRAPPED, accessibleField.psi)
+            val unwrapped = engine.evaluate(RuleKeys.JSON_UNWRAPPED, accessibleField.psi, fieldContext = fieldPath)
             if (unwrapped && fieldModel.model is ObjectModel.Object) {
                 for ((nestedName, nestedField) in (fieldModel.model as ObjectModel.Object).fields) {
                     if (!fields.containsKey(nestedName)) {
@@ -399,7 +399,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 fields[jsonFieldName] = fieldModel
             }
 
-            engine.evaluate(RuleKeys.JSON_FIELD_PARSE_AFTER, accessibleField.psi)
+            engine.evaluate(RuleKeys.JSON_FIELD_PARSE_AFTER, accessibleField.psi, fieldContext = fieldPath)
         }
 
         val additional = engine.evaluate(RuleKeys.JSON_ADDITIONAL_FIELD, psiClass)

@@ -110,13 +110,14 @@ abstract class Jsr223ScriptParser(
         // localStorage (wrapped to match legacy Storage API)
         bindings["localStorage"] = ScriptStorageWrapper(context.localStorage)
 
-        // fieldContext default — may be overridden by exts() below if set via contextHandle
-        bindings["fieldContext"] = context.wrapExt("fieldContext", context.fieldContext)
-
-        // extensions from rule context — overrides defaults; fieldContext strings are
-        // auto-wrapped as ScriptFieldContext via context.wrapExt()
+        // extensions from rule context — fieldContext strings are auto-wrapped as ScriptFieldContext
         context.exts().forEach { (key, value) ->
             bindings[key] = context.wrapExt(key, value)
+        }
+
+        // fieldContext fallback — use context.fieldContext if not set via extensions
+        if (!bindings.containsKey("fieldContext")) {
+            bindings["fieldContext"] = context.wrapExt("fieldContext", context.fieldContext)
         }
 
         // httpClient

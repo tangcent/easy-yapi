@@ -60,8 +60,8 @@ class RuleEngine internal constructor(
     // ════════════════════════════════════════════════════════════════
 
     /** Evaluate a string rule. Returns null when no rule matches or all values are empty. */
-    suspend fun evaluate(key: RuleKey.StringKey, element: PsiElement): String? {
-        val ctx = RuleContext.from(project, element)
+    suspend fun evaluate(key: RuleKey.StringKey, element: PsiElement, fieldContext: String? = null): String? {
+        val ctx = RuleContext.from(project, element, fieldContext)
         val values = ArrayList<String?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
@@ -124,8 +124,8 @@ class RuleEngine internal constructor(
     }
 
     /** Evaluate a boolean rule. Returns false when no rule matches. */
-    suspend fun evaluate(key: RuleKey.BooleanKey, element: PsiElement): Boolean {
-        val ctx = RuleContext.from(project, element)
+    suspend fun evaluate(key: RuleKey.BooleanKey, element: PsiElement, fieldContext: String? = null): Boolean {
+        val ctx = RuleContext.from(project, element, fieldContext)
         val values = ArrayList<Boolean?>()
         forEachApplicable(key, ctx) { exp ->
             val v = runCatching { parse(exp, ctx, key) }
@@ -167,8 +167,8 @@ class RuleEngine internal constructor(
     }
 
     /** Fire an event rule (side-effect only). */
-    suspend fun evaluate(key: RuleKey.EventKey, element: PsiElement) {
-        val ctx = RuleContext.from(project, element)
+    suspend fun evaluate(key: RuleKey.EventKey, element: PsiElement, fieldContext: String? = null) {
+        val ctx = RuleContext.from(project, element, fieldContext)
         fireEvent(key, ctx)
     }
 
