@@ -90,6 +90,20 @@ class RuleContext private constructor(
 
     fun exts(): Map<String, Any?> = extensions
 
+    /**
+     * Wraps an extension value for script binding.
+     *
+     * - `"fieldContext"` strings are wrapped as [ScriptFieldContext] so scripts can call `.path()` / `.property(name)`.
+     * - [PsiElement] values are wrapped as their corresponding script context.
+     * - All other values are returned as-is.
+     */
+    fun wrapExt(key: String, value: Any?): Any? {
+        if (value == null) return null
+        if (key == "fieldContext" && value is String) return ScriptFieldContext(value)
+        if (value is PsiElement) return withElement(value).asScriptIt()
+        return value
+    }
+
     fun withElement(element: PsiElement, fieldContext: String? = this.fieldContext): RuleContext {
         return RuleContext(
             project,

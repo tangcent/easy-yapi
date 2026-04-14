@@ -110,8 +110,14 @@ abstract class Jsr223ScriptParser(
         // localStorage (wrapped to match legacy Storage API)
         bindings["localStorage"] = ScriptStorageWrapper(context.localStorage)
 
-        // fieldContext
-        bindings["fieldContext"] = context.fieldContext
+        // fieldContext default — may be overridden by exts() below if set via contextHandle
+        bindings["fieldContext"] = context.wrapExt("fieldContext", context.fieldContext)
+
+        // extensions from rule context — overrides defaults; fieldContext strings are
+        // auto-wrapped as ScriptFieldContext via context.wrapExt()
+        context.exts().forEach { (key, value) ->
+            bindings[key] = context.wrapExt(key, value)
+        }
 
         // httpClient
         val httpClient = runCatching {
@@ -126,18 +132,6 @@ abstract class Jsr223ScriptParser(
         // runtime + alias
         bindings["runtime"] = ScriptRuntime(context)
         bindings["R"] = bindings["runtime"]
-
-        // extensions from rule context
-        context.exts().forEach { (key, value) ->
-            bindings[key] = value?.wrapExt(context)
-        }
-    }
-
-    private fun Any.wrapExt(context: RuleContext): Any {
-        if (this is PsiElement) {
-            return context.withElement(this).asScriptIt()
-        }
-        return this
     }
 
     companion object : IdeaLog

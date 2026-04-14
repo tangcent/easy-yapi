@@ -251,7 +251,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         maxDepth: Int,
         depth: Int,
         visited: MutableSet<String>,
-        genericContext: GenericContext = GenericContext.EMPTY
+        genericContext: GenericContext = GenericContext.EMPTY,
+        parentPath: String? = null
     ): ObjectModel.Object? {
         val qualifiedName = psiClass.qualifiedName ?: psiClass.name ?: return null
 
@@ -312,7 +313,10 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             val fieldName = accessibleField.name
             if (fields.containsKey(fieldName)) continue
 
-            if (engine.evaluate(RuleKeys.FIELD_IGNORE, accessibleField.psi)) {
+            // Build the field path for fieldContext injection into rule scripts
+            val fieldPath = if (parentPath != null) "$parentPath.$fieldName" else fieldName
+
+            if (engine.evaluate(RuleKeys.FIELD_IGNORE, accessibleField.psi) { it.setExt("fieldContext", fieldPath) }) {
                 continue
             }
 
@@ -326,11 +330,11 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 }
             }
 
-            engine.evaluate(RuleKeys.JSON_FIELD_PARSE_BEFORE, accessibleField.psi)
+            engine.evaluate(RuleKeys.JSON_FIELD_PARSE_BEFORE, accessibleField.psi) { it.setExt("fieldContext", fieldPath) }
 
-            val customName = engine.evaluate(RuleKeys.FIELD_NAME, accessibleField.psi)
-            val prefix = engine.evaluate(RuleKeys.FIELD_NAME_PREFIX, accessibleField.psi) ?: ""
-            val suffix = engine.evaluate(RuleKeys.FIELD_NAME_SUFFIX, accessibleField.psi) ?: ""
+            val customName = engine.evaluate(RuleKeys.FIELD_NAME, accessibleField.psi) { it.setExt("fieldContext", fieldPath) }
+            val prefix = engine.evaluate(RuleKeys.FIELD_NAME_PREFIX, accessibleField.psi) { it.setExt("fieldContext", fieldPath) } ?: ""
+            val suffix = engine.evaluate(RuleKeys.FIELD_NAME_SUFFIX, accessibleField.psi) { it.setExt("fieldContext", fieldPath) } ?: ""
             val baseName = customName?.takeIf { it.isNotBlank() } ?: fieldName
             val jsonFieldName = prefix + baseName + suffix
 

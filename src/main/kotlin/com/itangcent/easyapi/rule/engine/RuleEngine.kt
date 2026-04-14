@@ -136,6 +136,21 @@ class RuleEngine internal constructor(
         return key.booleanMode.aggregate(values)
     }
 
+    /** Evaluate a boolean rule with context customization. */
+    suspend fun evaluate(key: RuleKey.BooleanKey, element: PsiElement, contextHandle: (RuleContext) -> Unit): Boolean {
+        val ctx = RuleContext.from(project, element)
+        contextHandle(ctx)
+        val values = ArrayList<Boolean?>()
+        forEachApplicable(key, ctx) { exp ->
+            val v = runCatching { parse(exp, ctx, key) }
+                .onFailure { e -> ctx.console.warn("Rule evaluation failed for key=${key.name}", e) }
+                .getOrNull()
+                ?.let { toBoolean(it) }
+            values.add(v)
+        }
+        return key.booleanMode.aggregate(values)
+    }
+
     /** Evaluate an int rule. Returns null when no rule matches. */
     suspend fun evaluate(key: RuleKey.IntKey, element: PsiElement): Int? {
         val ctx = RuleContext.from(project, element)

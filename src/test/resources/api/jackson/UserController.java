@@ -1,5 +1,6 @@
 package com.itangcent.jackson;
 
+import com.itangcent.jackson.UserDTO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
