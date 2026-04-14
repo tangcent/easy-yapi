@@ -9,7 +9,6 @@ import com.itangcent.easyapi.rule.IntRuleMode
 import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.context.RuleContext
 import com.itangcent.easyapi.rule.parser.*
-import java.util.ServiceLoader
 
 /**
  * Engine for evaluating configuration rules.
@@ -26,24 +25,26 @@ import java.util.ServiceLoader
  */
 @Service(Service.Level.PROJECT)
 class RuleEngine internal constructor(
-    private val project: Project,
-    private val configReader: ConfigReader,
-    initialParsers: List<RuleParser>
+    private val project: Project
 ) {
-    constructor(project: Project) : this(
-        project,
-        ConfigReader.getInstance(project),
-        emptyList()
-    )
+    private val configReader: ConfigReader
+        get() = ConfigReader.getInstance(project)
 
-    constructor(project: Project, configReader: ConfigReader) : this(
-        project,
-        configReader,
-        emptyList()
-    )
-
-    private val parsers: List<RuleParser> = (initialParsers.ifEmpty { defaultParsers() }).also { list ->
+    private val parsers: List<RuleParser> = defaultParsers().also { list ->
         list.filterIsInstance<RuleEngineAware>().forEach { it.setRuleEngine(this) }
+    }
+
+    private fun defaultParsers(): List<RuleParser> {
+        return listOf(
+            NegationParser(),
+            GroovyScriptParser(),
+            RegexParser(),
+            AnnotationExpressionParser(),
+            TagExpressionParser(),
+            ClassMatchParser(),
+            TypeMatchParser(),
+            LiteralParser()
+        )
     }
 
     /**
@@ -248,20 +249,6 @@ class RuleEngine internal constructor(
         }
 
         return result
-    }
-
-    private fun defaultParsers(): List<RuleParser> {
-        val loaded = runCatching { ServiceLoader.load(RuleParser::class.java).toList() }.getOrNull().orEmpty()
-        return (loaded + listOf(
-            NegationParser(),
-            GroovyScriptParser(),
-            RegexParser(),
-            AnnotationExpressionParser(),
-            TagExpressionParser(),
-            ClassMatchParser(),
-            TypeMatchParser(),
-            LiteralParser()
-        )).distinctBy { it::class.java.name }
     }
 
     private fun toBoolean(value: Any): Boolean = when (value) {

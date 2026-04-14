@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.psi.helper
 
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
@@ -12,7 +11,7 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        val engine = RuleEngine(project, createConfigReader())
+        val engine = RuleEngine.getInstance(project)
         val docHelper = StandardDocHelper()
         metadataResolver = ApiMetadataResolver(engine, docHelper)
     }

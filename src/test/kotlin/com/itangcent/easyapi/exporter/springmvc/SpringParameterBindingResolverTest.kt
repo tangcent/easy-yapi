@@ -17,7 +17,7 @@ class SpringParameterBindingResolverTest : EasyApiLightCodeInsightFixtureTestCas
         super.setUp()
         loadTestFiles()
         val annotationHelper = UnifiedAnnotationHelper()
-        val engine = RuleEngine(project, createConfigReader())
+        val engine = RuleEngine.getInstance(project)
         resolver = SpringParameterBindingResolver(annotationHelper, engine)
     }
 

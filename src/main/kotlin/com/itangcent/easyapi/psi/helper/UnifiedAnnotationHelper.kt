@@ -41,14 +41,14 @@ import kotlinx.coroutines.withContext
  * @see AnnotationHelper for the interface
  * @see PsiLanguageAdapter for language-specific handling
  */
-class UnifiedAnnotationHelper(
+class UnifiedAnnotationHelper : AnnotationHelper {
+
     private val adapters: List<PsiLanguageAdapter> = listOf(
         JavaPsiAdapter(),
         KotlinPsiAdapter(),
         ScalaPsiAdapter(),
         GroovyPsiAdapter()
     )
-) : AnnotationHelper {
 
     override suspend fun hasAnn(element: PsiElement, annFqn: String): Boolean {
         return read {

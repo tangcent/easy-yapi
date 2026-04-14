@@ -11,13 +11,7 @@ class ConstantSettingBinder(
 
     override fun tryRead(): Settings = settings
 
-    override fun save(settings: Settings?) {
-        if (settings != null) {
-            this.settings = settings
-        }
-    }
-
-    fun updateSettings(updater: Settings.() -> Unit) {
-        settings.updater()
+    override fun save(settings: Settings) {
+        this.settings = settings
     }
 }

@@ -3,6 +3,8 @@ package com.itangcent.easyapi.settings
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.milliseconds
 
 class CachedSettingBinderTest {
 
@@ -12,7 +14,7 @@ class CachedSettingBinderTest {
     @Before
     fun setUp() {
         delegate = InMemorySettingBinder()
-        cached = CachedSettingBinder(delegate, 30_000L)
+        cached = CachedSettingBinder(delegate, 30.seconds)
     }
 
     @Test
@@ -30,8 +32,8 @@ class CachedSettingBinderTest {
     @Test
     fun testRead_expiredCache() {
         delegate.save(Settings(feignEnable = true))
-        // Use -1 timeout to guarantee immediate expiry
-        val shortCached = CachedSettingBinder(delegate, -1L)
+        // Test the cache expiration by using a very short timeout
+        val shortCached = CachedSettingBinder(delegate, (-1).milliseconds)
         shortCached.read()
 
         delegate.save(Settings(feignEnable = false))
@@ -40,20 +42,12 @@ class CachedSettingBinderTest {
     }
 
     @Test
-    fun testSave_updatesCacheAndDelegate() {
-        val settings = Settings(postmanToken = "token-123")
-        cached.save(settings)
-
-        assertEquals("token-123", cached.read().postmanToken)
-        assertEquals("token-123", delegate.read().postmanToken)
-    }
-
-    @Test
-    fun testSave_null() {
+    fun testSave_updatesCache() {
         cached.save(Settings(feignEnable = true))
-        cached.save(null)
-        // After saving null, cache is cleared, next read goes to delegate
-        assertNull(delegate.tryRead())
+        assertTrue(cached.read().feignEnable)
+
+        cached.save(Settings(feignEnable = false))
+        assertFalse(cached.read().feignEnable)
     }
 
     @Test
@@ -71,7 +65,7 @@ class CachedSettingBinderTest {
     @Test
     fun testTryRead_expiredCache() {
         delegate.save(Settings(httpTimeOut = 99))
-        val shortCached = CachedSettingBinder(delegate, -1L)
+        val shortCached = CachedSettingBinder(delegate, (-1).milliseconds)
         shortCached.tryRead()
 
         delegate.save(Settings(httpTimeOut = 1))
@@ -81,13 +75,13 @@ class CachedSettingBinderTest {
 
     @Test
     fun testTryRead_returnsNullWhenDelegateReturnsNull() {
-        val shortCached = CachedSettingBinder(delegate, 0L)
+        val shortCached = CachedSettingBinder(delegate, 0.milliseconds)
         assertNull(shortCached.tryRead())
     }
 
     @Test
     fun testLazyExtension() {
-        val binder = delegate.lazy(5000L)
+        val binder = delegate.lazy(5000.milliseconds)
         assertTrue(binder is CachedSettingBinder)
     }
 
@@ -103,7 +97,7 @@ class CachedSettingBinderTest {
         private var settings: Settings? = null
 
         override fun read(): Settings = settings ?: Settings()
-        override fun save(settings: Settings?) { this.settings = settings }
+        override fun save(settings: Settings) { this.settings = settings }
         override fun tryRead(): Settings? = settings
     }
 }

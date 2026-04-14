@@ -2,19 +2,15 @@ package com.itangcent.easyapi.property
 
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
+import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.config.model.ConfigEntry
-import com.itangcent.easyapi.config.model.ConfigSource
 import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
 import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
 import com.itangcent.easyapi.exporter.springmvc.ReturnTypeUnwrapper
 import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
 import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
-import com.itangcent.easyapi.psi.DefaultPsiClassHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.type.GenericContext
 import com.itangcent.easyapi.psi.type.ResolvedType
@@ -23,9 +19,11 @@ import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.StringRuleMode
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
+import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
 
-class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
+class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testFeignControllerRecognition() = runBlocking {
         addFeignStubs()
@@ -41,7 +39,7 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val psiClass = findClass("demo.FeignApi")!!
-        val engine = RuleEngine(project, emptyConfig())
+        val engine = RuleEngine.getInstance(project)
         val recognizer = FeignClientRecognizer(engine, true)
         assertTrue(recognizer.isFeignClient(psiClass))
     }
@@ -60,7 +58,7 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val psiClass = findClass("demo.Jax")!!
-        val engine = RuleEngine(project, emptyConfig())
+        val engine = RuleEngine.getInstance(project)
         val recognizer = JaxRsResourceRecognizer(engine, true)
         assertTrue(recognizer.isResource(psiClass))
     }
@@ -83,7 +81,7 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         val psiClass = findClass("demo.Ctrl")!!
         val classType = ResolvedType.ClassType(psiClass, emptyList())
         val resolvedMethod = classType.methods().first { it.name == "x" }
-        val engine = RuleEngine(project, emptyConfig())
+        val engine = RuleEngine.getInstance(project)
         val resolver = RequestMappingResolver(UnifiedAnnotationHelper(), engine)
         val mappings = resolver.resolve(resolvedMethod)
         assertEquals(1, mappings.size)
@@ -109,7 +107,7 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         val psiClass = findClass("demo.Ctrl2")!!
         val classType = ResolvedType.ClassType(psiClass, emptyList())
         val resolvedMethod = classType.methods().first { it.name == "x" }
-        val engine = RuleEngine(project, emptyConfig())
+        val engine = RuleEngine.getInstance(project)
         val resolver = RequestMappingResolver(UnifiedAnnotationHelper(), engine)
         val mappings = resolver.resolve(resolvedMethod)
         assertEquals(4, mappings.size)
@@ -143,7 +141,7 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.Ctrl3")!!
         val method = psiClass.methods.first { it.name == "x" }
-        val engine = RuleEngine(project, emptyConfig())
+        val engine = RuleEngine.getInstance(project)
         val resolver = SpringParameterBindingResolver(UnifiedAnnotationHelper(), engine)
         val bindings = method.parameterList.parameters.mapNotNull { p ->
             val b = resolver.resolve(p)
@@ -154,7 +152,10 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Path, bindings["p"])
         assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Header, bindings["h"])
         assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Cookie, bindings["c"])
-        assertEquals(com.itangcent.easyapi.exporter.model.ParameterBinding.Ignored, resolver.resolve(method.parameterList.parameters.last()))
+        assertEquals(
+            com.itangcent.easyapi.exporter.model.ParameterBinding.Ignored,
+            resolver.resolve(method.parameterList.parameters.last())
+        )
     }
 
     fun testSpringMvcControllerRecognition() = runBlocking {
@@ -169,7 +170,7 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             """.trimIndent()
         )
         val psiClass = findClass("demo.Ctrl4")!!
-        val engine = RuleEngine(project, emptyConfig())
+        val engine = RuleEngine.getInstance(project)
         val recognizer = SpringControllerRecognizer(engine)
         assertTrue(recognizer.isController(psiClass))
     }
@@ -227,8 +228,11 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.Dto")!!
         val field = psiClass.allFields.first { it.name == "name" }
-        val config = listConfig(mapOf("field.name" to listOf("@com.fasterxml.jackson.annotation.JsonProperty#value")))
-        val engine = RuleEngine(project, config)
+        project.registerServiceInstance(
+            serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(mapOf("field.name" to listOf("@com.fasterxml.jackson.annotation.JsonProperty#value")))
+        )
+        val engine = RuleEngine.getInstance(project)
         val v = engine.evaluate(RuleKey.string("field.name", StringRuleMode.SINGLE), field)
         assertEquals("x_name", v)
     }
@@ -248,8 +252,11 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.V")!!
         val field = psiClass.allFields.first { it.name == "a" }
-        val config = listConfig(mapOf("field.required" to listOf("@javax.validation.constraints.NotNull")))
-        val engine = RuleEngine(project, config)
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(mapOf("field.required" to listOf("@javax.validation.constraints.NotNull")))
+        )
+        val engine = RuleEngine.getInstance(project)
         val required = engine.evaluate(RuleKey.boolean("field.required"), field)
         assertTrue(required)
     }
@@ -323,8 +330,11 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         val psiClass = findClass("demo.Ctrl5")!!
         val method = psiClass.methods.first { it.name == "x" }
         val param = method.parameterList.parameters.first()
-        val config = listConfig(mapOf("doc.param" to listOf("param-doc")))
-        val engine = RuleEngine(project, config)
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(mapOf("doc.param" to listOf("param-doc")))
+        )
+        val engine = RuleEngine.getInstance(project)
         val v = engine.evaluate(RuleKeys.PARAM_DOC, param)
         assertEquals("param-doc", v)
     }
@@ -339,8 +349,11 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.Ctrl6")!!
         val method = psiClass.methods.first { it.name == "x" }
-        val config = listConfig(mapOf("method.doc" to listOf("a", "b")))
-        val engine = RuleEngine(project, config)
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(mapOf("method.doc" to listOf("a", "b")))
+        )
+        val engine = RuleEngine.getInstance(project)
         val merged = engine.evaluate(RuleKey.string("method.doc", StringRuleMode.MERGE), method)
         assertEquals("a\nb", merged)
     }
@@ -355,31 +368,13 @@ class PsiAndExporterPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.Ctrl7")!!
         val method = psiClass.methods.first { it.name == "x" }
-        val config = listConfig(mapOf("api.name" to listOf("groovy:1/0")))
-        val engine = RuleEngine(project, config)
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(mapOf("api.name" to listOf("groovy:1/0")))
+        )
+        val engine = RuleEngine.getInstance(project)
         val v = engine.evaluate(RuleKey.string("api.name", StringRuleMode.SINGLE), method)
         assertNull(v)
-    }
-
-    private fun findClass(fqn: String): PsiClass? {
-        return JavaPsiFacade.getInstance(project).findClass(fqn, GlobalSearchScope.allScope(project))
-    }
-
-    private fun emptyConfig(): ConfigReader = listConfig(emptyMap())
-
-    private fun listConfig(map: Map<String, List<String>>): ConfigReader {
-        return object : ConfigReader {
-            override fun getFirst(key: String): String? = map[key]?.lastOrNull()
-            override fun getAll(key: String): List<String> = map[key].orEmpty()
-            override suspend fun reload() {}
-            override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {
-                map.forEach { (key, values) ->
-                    if (keyFilter(key)) {
-                        values.forEach { value -> action(key, value) }
-                    }
-                }
-            }
-        }
     }
 
     private fun addFeignStubs() {

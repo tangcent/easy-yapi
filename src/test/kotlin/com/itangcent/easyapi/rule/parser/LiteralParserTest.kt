@@ -43,6 +43,10 @@ class LiteralParserTest {
         assertEquals(true, parser.parse("1", context, key))
         assertEquals(true, parser.parse("  true  ", context, key))
         assertEquals(true, parser.parse("TRUE", context, key))
+        assertEquals(true, parser.parse("yes", context, key))
+        assertEquals(true, parser.parse("YES", context, key))
+        assertEquals(true, parser.parse("y", context, key))
+        assertEquals(true, parser.parse("Y", context, key))
     }
 
     @Test
@@ -52,14 +56,17 @@ class LiteralParserTest {
         assertEquals(false, parser.parse("0", context, key))
         assertEquals(false, parser.parse("  false  ", context, key))
         assertEquals(false, parser.parse("FALSE", context, key))
+        assertEquals(false, parser.parse("no", context, key))
+        assertEquals(false, parser.parse("NO", context, key))
+        assertEquals(false, parser.parse("n", context, key))
+        assertEquals(false, parser.parse("N", context, key))
     }
 
     @Test
     fun testParse_booleanKey_unknownValue() = runBlocking {
         val key = RuleKey.boolean("test.key")
         assertNull(parser.parse("maybe", context, key))
-        assertNull(parser.parse("yes", context, key))
-        assertNull(parser.parse("no", context, key))
+        assertNull(parser.parse("unknown", context, key))
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.exporter.feign
 
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
@@ -12,7 +11,7 @@ class FeignClientRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        val ruleEngine = RuleEngine(project, createConfigReader())
+        val ruleEngine = RuleEngine.getInstance(project)
         recognizer = FeignClientRecognizer(ruleEngine, enabled = true)
     }
 

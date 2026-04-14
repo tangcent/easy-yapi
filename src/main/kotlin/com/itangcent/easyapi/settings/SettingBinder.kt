@@ -2,6 +2,8 @@ package com.itangcent.easyapi.settings
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Interface for reading and saving plugin settings.
@@ -33,14 +35,14 @@ interface SettingBinder {
      * @return The current settings
      */
     fun read(): Settings
-    
+
     /**
      * Saves the settings.
      *
      * @param settings The settings to save, or null to reset
      */
-    fun save(settings: Settings?)
-    
+    fun save(settings: Settings)
+
     /**
      * Tries to read settings without creating defaults.
      *
@@ -68,7 +70,7 @@ fun SettingBinder.update(updater: Settings.() -> Unit) {
  * @param cacheTimeoutMillis Cache timeout in milliseconds, defaults to 30000 (30 seconds)
  * @return A cached SettingBinder
  */
-fun SettingBinder.lazy(cacheTimeoutMillis: Long = 30_000L): SettingBinder {
+fun SettingBinder.lazy(cacheTimeoutMillis: Duration): SettingBinder {
     return CachedSettingBinder(this, cacheTimeoutMillis)
 }
 
@@ -86,24 +88,25 @@ fun SettingBinder.lazy(cacheTimeoutMillis: Long = 30_000L): SettingBinder {
  * 2. [save] creates a defensive copy before caching
  *
  * @param delegate The underlying SettingBinder
- * @param cacheTimeoutMillis Cache timeout in milliseconds, defaults to 30000 (30 seconds)
+ * @param cacheTimeoutMillis Cache timeout
  */
 class CachedSettingBinder(
     private val delegate: SettingBinder,
-    private val cacheTimeoutMillis: Long = 30_000L
+    private val cacheTimeoutMillis: Duration
 ) : SettingBinder {
     @Volatile
     private var cached: Settings? = null
 
     @Volatile
-    private var cacheTimestamp: Long = 0L
+    private var expireAt: Long = 0L
 
     private fun isCacheExpired(): Boolean {
-        return System.currentTimeMillis() - cacheTimestamp > cacheTimeoutMillis
+        return System.currentTimeMillis() > expireAt
     }
 
-    private fun refreshCache() {
-        cacheTimestamp = System.currentTimeMillis()
+    private fun updateCache(settings: Settings) {
+        cached = settings
+        expireAt = System.currentTimeMillis() + cacheTimeoutMillis.inWholeMilliseconds
     }
 
     override fun read(): Settings {
@@ -117,17 +120,15 @@ class CachedSettingBinder(
                 recheckCache
             } else {
                 delegate.read().also {
-                    cached = it
-                    refreshCache()
+                    updateCache(it)
                 }
             }
         }
     }
 
-    override fun save(settings: Settings?) {
+    override fun save(settings: Settings) {
         delegate.save(settings)
-        cached = settings?.copy()
-        refreshCache()
+        updateCache(settings.copy())
     }
 
     override fun tryRead(): Settings? {
@@ -141,8 +142,7 @@ class CachedSettingBinder(
                 recheckCache
             } else {
                 delegate.tryRead()?.also {
-                    cached = it
-                    refreshCache()
+                    updateCache(it)
                 }
             }
         }

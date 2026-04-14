@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.rule.parser
 
-import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.testFramework.TestConfigReader
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -11,21 +11,14 @@ class ScriptConfigWrapperTest {
 
     @Before
     fun setUp() {
-        val configReader = object : ConfigReader {
-            private val data = mapOf(
+        val configReader = TestConfigReader.fromMap(
+            mapOf(
                 "api.name" to listOf("getUser", "listUsers"),
                 "api.tag" to listOf("user"),
                 "base.url" to listOf("http://localhost:8080"),
                 "app.name" to listOf("MyApp")
             )
-
-            override fun getFirst(key: String): String? = data[key]?.firstOrNull()
-            override fun getAll(key: String): List<String> = data[key] ?: emptyList()
-            override suspend fun reload() {}
-            override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {
-                data.forEach { (k, v) -> if (keyFilter(k)) v.forEach { action(k, it) } }
-            }
-        }
+        )
         wrapper = ScriptConfigWrapper(configReader)
     }
 

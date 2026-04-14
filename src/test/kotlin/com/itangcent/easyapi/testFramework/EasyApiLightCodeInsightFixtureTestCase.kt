@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.testFramework
 
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
@@ -13,58 +12,106 @@ import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.core.threading.readSync
-import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.Settings
 import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
 import java.io.InputStreamReader
 
+/**
+ * Base test case class for EasyAPI plugin tests using LightJavaCodeInsightFixtureTestCase.
+ *
+ * ## Customizing Configuration
+ *
+ * For test cases that need customized config, implement [createConfigReader] with [TestConfigReader]:
+ * ```kotlin
+ * override fun createConfigReader(): ConfigReader? {
+ *     return TestConfigReader().apply {
+ *         load("custom_rule.easyapi")
+ *     }
+ * }
+ * ```
+ *
+ * ## Testing with Different Configurations
+ *
+ * If a test case needs to test with different configs, add multiple inner test classes
+ * to load different configs via [createConfigReader]:
+ * ```kotlin
+ * class MyFeatureTest {
+ *     class WithDefaultConfig : EasyApiLightCodeInsightFixtureTestCase() {
+ *         // tests with default config
+ *     }
+ *
+ *     class WithCustomConfig : EasyApiLightCodeInsightFixtureTestCase() {
+ *         override fun createConfigReader(): ConfigReader? {
+ *             return TestConfigReader().apply { load("custom.easyapi") }
+ *         }
+ *         // tests with custom config
+ *     }
+ * }
+ * ```
+ *
+ * ## Customizing Settings
+ *
+ * For test cases that need customized settings, call [settingBinder.update].
+ * There are two common scenarios:
+ *
+ * **1. Update settings in `setUp()` (applies to all tests in the class):**
+ * ```kotlin
+ * override fun setUp() {
+ *     super.setUp()
+ *     settingBinder.update {
+ *         enableUrlTemplating = false
+ *     }
+ * }
+ * ```
+ *
+ * **2. Update settings in test method (applies only to that specific test):**
+ * ```kotlin
+ * fun testSomething() {
+ *     settingBinder.update {
+ *         enableUrlTemplating = false
+ *     }
+ *     // test code
+ * }
+ * ```
+ *
+ * ## Replacing Project Services
+ *
+ * If you need to replace other project services, override [setUp] and call `registerServiceInstance`:
+ * ```kotlin
+ * override fun setUp() {
+ *     super.setUp()
+ *     project.registerServiceInstance(
+ *         serviceInterface = MyService::class.java,
+ *         instance = MockMyService()
+ *     )
+ * }
+ * ```
+ */
 abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixtureTestCase() {
 
-    private val _testSettingBinder = ConstantSettingBinder(Settings())
-
-    protected val testSettingBinder: ConstantSettingBinder
-        get() = _testSettingBinder
-
-    protected fun updateSettings(updater: Settings.() -> Unit) {
-        _testSettingBinder.updateSettings(updater)
-    }
-
-    protected fun setSettings(settings: Settings) {
-        _testSettingBinder.save(settings)
-    }
-
+    /**
+     * Creates a custom ConfigReader for the test.
+     * Override this method to provide custom configuration via [TestConfigReader].
+     *
+     * @return a ConfigReader instance, or null to use the default configuration
+     * @see TestConfigReader
+     */
     protected open fun createConfigReader(): ConfigReader? = null
 
-    protected open fun createSettings(): Settings? = null
+    protected val settingBinder
+        get() = SettingBinder.getInstance(project)
 
-    @Before
     override fun setUp() {
         super.setUp()
-        val settings = createSettings()
-        if (settings != null) {
-            project.registerServiceInstance(
-                serviceInterface = SettingBinder::class.java,
-                instance = ConstantSettingBinder(settings)
-            )
-        } else {
-            project.registerServiceInstance(
-                serviceInterface = SettingBinder::class.java,
-                instance = _testSettingBinder
-            )
-        }
         val configReader = createConfigReader()
         if (configReader != null) {
             project.registerServiceInstance(
-                serviceInterface = RuleEngine::class.java,
-                instance = RuleEngine(project, configReader)
+                serviceInterface = ConfigReader::class.java,
+                instance = configReader
             )
         }
     }
 
-    @After
     override fun tearDown() {
         project.syncPublish(ActionCompletedTopic.TOPIC)
         super.tearDown()

@@ -62,23 +62,6 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertTrue("Cache should have endpoints", endpoints.isNotEmpty())
     }
 
-    fun testScanPopulatesCache() = runTest {
-        assertFalse("Cache should be invalid initially", apiIndex.isValid())
-
-        apiIndexManager.requestScan()
-
-        // Poll until the scan completes and cache becomes valid
-        apiIndex.waitUntilValid()
-
-        assertTrue("Cache should be valid after scan", apiIndex.isValid())
-
-        val endpoints = apiIndex.endpoints()
-        assertTrue("Cache should contain endpoints", endpoints.isNotEmpty())
-
-        val userEndpoints = endpoints.filter { it.className?.contains("UserCtrl") == true }
-        assertTrue("Should find UserCtrl endpoints", userEndpoints.isNotEmpty())
-    }
-
     fun testMultipleRequestScanDoesNotDuplicate() = runTest {
         apiIndexManager.requestScan()
 

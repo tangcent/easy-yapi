@@ -7,7 +7,7 @@ import com.itangcent.easyapi.rule.context.RuleContext
  * Fallback parser that returns expressions as literal values.
  *
  * Handles:
- * - `true` / `false` — returns [Boolean] (useful in boolean rule context)
+ * - `true` / `false` / `yes` / `no` / `y` / `n` / `1` / `0` — returns [Boolean] (useful in boolean rule context)
  * - Any other text — returns the string as-is
  *
  * This parser always returns `true` from [canParse], so it must be
@@ -50,8 +50,8 @@ class LiteralParser : RuleParser {
     }
 
     companion object {
-        private val TRUE_VALS = arrayOf("true", "1")
-        private val FALSE_VALS = arrayOf("false", "0")
+        private val TRUE_VALS = arrayOf("true", "1", "yes", "y")
+        private val FALSE_VALS = arrayOf("false", "0", "no", "n")
         private val PLACEHOLDER_PATTERN = Regex("\\$\\{(\\d+)}")
     }
 }

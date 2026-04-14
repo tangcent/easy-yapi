@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.exporter.springmvc
 
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.rule.engine.RuleEngine
@@ -15,7 +14,7 @@ class ContentTypeResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         super.setUp()
         loadTestFiles()
         val annotationHelper = UnifiedAnnotationHelper()
-        val ruleEngine = RuleEngine(project, createConfigReader())
+        val ruleEngine = RuleEngine.getInstance(project)
         resolver = ContentTypeResolver(annotationHelper, ruleEngine)
     }
 

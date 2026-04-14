@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.gap
 
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsContentTypeResolver
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
@@ -17,26 +16,26 @@ class PipelineComponentParityTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun createConfigReader() = TestConfigReader.EMPTY
 
     fun testSpringControllerRecognizerExists() = runTest {
-        val ruleEngine = RuleEngine(project, createConfigReader())
+        val ruleEngine = RuleEngine.getInstance(project)
         val recognizer = SpringControllerRecognizer(ruleEngine)
         assertNotNull("SpringControllerRecognizer should exist", recognizer)
     }
 
     fun testJaxRsResourceRecognizerExists() = runTest {
-        val ruleEngine = RuleEngine(project, createConfigReader())
+        val ruleEngine = RuleEngine.getInstance(project)
         val recognizer = JaxRsResourceRecognizer(ruleEngine)
         assertNotNull("JaxRsResourceRecognizer should exist", recognizer)
     }
 
     fun testFeignClientRecognizerExists() = runTest {
-        val ruleEngine = RuleEngine(project, createConfigReader())
+        val ruleEngine = RuleEngine.getInstance(project)
         val recognizer = FeignClientRecognizer(ruleEngine)
         assertNotNull("FeignClientRecognizer should exist", recognizer)
     }
 
     fun testContentTypeResolverExists() = runTest {
         val annotationHelper = UnifiedAnnotationHelper()
-        val ruleEngine = RuleEngine(project, createConfigReader())
+        val ruleEngine = RuleEngine.getInstance(project)
         val resolver = ContentTypeResolver(annotationHelper, ruleEngine)
         assertNotNull("ContentTypeResolver should exist", resolver)
     }

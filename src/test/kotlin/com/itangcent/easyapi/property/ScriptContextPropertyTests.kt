@@ -3,11 +3,10 @@ package com.itangcent.easyapi.property
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.rule.context.*
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
-class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
+class ScriptContextPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testBaseMethodsDocAnnotationModifierAndSource() {
         addAnnotationStubs()
@@ -77,7 +76,9 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         assertEquals(2, wrapper.parameters().size)
         assertEquals(2, wrapper.argCnt())
         assertEquals(2, wrapper.paramCnt())
-        assertTrue(wrapper.argTypes()[0].name().contains("java.lang.String") || wrapper.argTypes()[0].name() == "String")
+        assertTrue(
+            wrapper.argTypes()[0].name().contains("java.lang.String") || wrapper.argTypes()[0].name() == "String"
+        )
         assertEquals("method", wrapper.contextType())
     }
 
@@ -242,11 +243,11 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val childClass = findClass("demo.Child")!!
         val childClassWrapper = RuleContext.from(project, childClass).asScriptIt() as ScriptPsiClassContext
-        
+
         val childField = childClassWrapper.fields().first { it.name() == "childField" }
         assertEquals("Child", childField.containingClass()?.name())
         assertEquals("Child", childField.defineClass()?.name())
-        
+
         val parentFieldInChild = childClassWrapper.fields().first { it.name() == "parentField" }
         assertEquals("Child", parentFieldInChild.containingClass()?.name())
         assertEquals("Parent", parentFieldInChild.defineClass()?.name())
@@ -273,11 +274,11 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         )
         val childClass = findClass("demo.ChildClass")!!
         val childClassWrapper = RuleContext.from(project, childClass).asScriptIt() as ScriptPsiClassContext
-        
+
         val childMethod = childClassWrapper.methods().first { it.name() == "getChildName" }
         assertEquals("ChildClass", childMethod.containingClass()?.name())
         assertEquals("ChildClass", childMethod.defineClass()?.name())
-        
+
         val parentMethodInChild = childClassWrapper.methods().first { it.name() == "getParentName" }
         assertEquals("ChildClass", parentMethodInChild.containingClass()?.name())
         assertEquals("ParentClass", parentMethodInChild.defineClass()?.name())
@@ -314,11 +315,11 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         val method = findClass("demo.DerivedService")!!.methods.first { it.name == "getDerived" }
         val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
-        
+
         val derivedField = returnType.fields().first { it.name() == "derivedField" }
         assertEquals("Derived", derivedField.containingClass()?.name())
         assertEquals("Derived", derivedField.defineClass()?.name())
-        
+
         val baseField = returnType.fields().first { it.name() == "baseField" }
         assertEquals("Derived", baseField.containingClass()?.name())
         assertEquals("Base", baseField.defineClass()?.name())
@@ -355,11 +356,11 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
         val method = findClass("demo.DogFactory")!!.methods.first { it.name == "create" }
         val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
         val returnType = wrapper.returnType()!!
-        
+
         val barkMethod = returnType.methods().first { it.name() == "bark" }
         assertEquals("Dog", barkMethod.containingClass()?.name())
         assertEquals("Dog", barkMethod.defineClass()?.name())
-        
+
         val getNameMethod = returnType.methods().first { it.name() == "getName" }
         assertEquals("Dog", getNameMethod.containingClass()?.name())
         assertEquals("Animal", getNameMethod.defineClass()?.name())
@@ -452,26 +453,5 @@ class ScriptContextPropertyTests : LightJavaCodeInsightFixtureTestCase() {
             }
             """.trimIndent()
         )
-    }
-
-    private fun findClass(fqn: String): PsiClass? {
-        return JavaPsiFacade.getInstance(project).findClass(fqn, GlobalSearchScope.allScope(project))
-    }
-
-    private fun emptyConfig(): ConfigReader = listConfig(emptyMap())
-
-    private fun listConfig(map: Map<String, List<String>>): ConfigReader {
-        return object : ConfigReader {
-            override fun getFirst(key: String): String? = map[key]?.lastOrNull()
-            override fun getAll(key: String): List<String> = map[key].orEmpty()
-            override suspend fun reload() {}
-            override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {
-                map.forEach { (key, values) ->
-                    if (keyFilter(key)) {
-                        values.forEach { value -> action(key, value) }
-                    }
-                }
-            }
-        }
     }
 }

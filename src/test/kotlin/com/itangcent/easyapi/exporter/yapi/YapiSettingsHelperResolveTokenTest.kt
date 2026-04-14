@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.exporter.yapi
 
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.update
+import com.itangcent.easyapi.testFramework.ConstantSettingBinder
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
 import kotlinx.coroutines.runBlocking
@@ -9,9 +11,11 @@ import org.junit.Assert.*
 class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var helper: DefaultYapiSettingsHelper
+    private lateinit var testSettingBinder: ConstantSettingBinder
 
     override fun setUp() {
         super.setUp()
+        testSettingBinder = ConstantSettingBinder()
         val wrappedProject = wrap(project) {
             replaceService(SettingBinder::class, testSettingBinder)
         }
@@ -20,7 +24,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
 
     @org.junit.Test
     fun `test resolveToken returns module token from settings when validator accepts it`() {
-        updateSettings {
+        testSettingBinder.update {
             yapiTokens = """
                 module-b=token-b
                 module-a=token-a
@@ -32,7 +36,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
 
     @org.junit.Test
     fun `test resolveToken ignores comments and blank token entries`() {
-        updateSettings {
+        testSettingBinder.update {
             yapiTokens = """
                 # comment
                 module-a=token-a
@@ -46,7 +50,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
 
     @org.junit.Test
     fun `test resolveToken prefers module-specific token over raw token`() {
-        updateSettings {
+        testSettingBinder.update {
             yapiTokens = """
                 raw-global-token
                 module-x=specific-token-for-x
@@ -58,7 +62,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
 
     @org.junit.Test
     fun `test resolveToken handles multiple modules correctly`() {
-        updateSettings {
+        testSettingBinder.update {
             yapiTokens = """
                 service-user=user-token-abc
                 service-order=order-token-xyz
@@ -72,14 +76,14 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
 
     @org.junit.Test
     fun `test resolveToken trims whitespace from tokens`() {
-        updateSettings { yapiTokens = "  my-module  =  trimmed-token  " }
+        testSettingBinder.update { yapiTokens = "  my-module  =  trimmed-token  " }
         val token = runBlocking { helper.resolveToken("my-module") { it == "trimmed-token" } }
         assertEquals("trimmed-token", token)
     }
 
     @org.junit.Test
     fun `test resolveToken skips lines without equals sign`() {
-        updateSettings {
+        testSettingBinder.update {
             yapiTokens = """
                 module-a=token-a
                 some-random-text
@@ -92,7 +96,7 @@ class YapiSettingsHelperResolveTokenTest : EasyApiLightCodeInsightFixtureTestCas
 
     @org.junit.Test
     fun `test resolveToken is case-sensitive for module names`() {
-        updateSettings { yapiTokens = "MyModule=my-token" }
+        testSettingBinder.update { yapiTokens = "MyModule=my-token" }
         val token = runBlocking { helper.resolveToken("MyModule") { it == "my-token" } }
         assertEquals("my-token", token)
     }

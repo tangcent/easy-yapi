@@ -3,16 +3,13 @@ package com.itangcent.easyapi.psi
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import com.intellij.testFramework.registerServiceInstance
-import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.event.ActionCompletedTopic
-import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelValueConverter
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
+import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
 
 class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -22,26 +19,6 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
     override fun setUp() {
         super.setUp()
         helper = DefaultPsiClassHelper.getInstance(project)
-    }
-
-    private fun listConfig(map: Map<String, List<String>>): ConfigReader {
-        return object : ConfigReader {
-            override fun getFirst(key: String): String? = map[key]?.lastOrNull()
-            override fun getAll(key: String): List<String> = map[key].orEmpty()
-            override suspend fun reload() {}
-            override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {
-                println("DEBUG listConfig.foreach: map=$map")
-                map.forEach { (key, values) ->
-                    println("DEBUG listConfig.foreach: key='$key', keyFilter(key)=${keyFilter(key)}")
-                    if (keyFilter(key)) {
-                        values.forEach { value ->
-                            println("DEBUG listConfig.foreach: action('$key', '$value')")
-                            action(key, value)
-                        }
-                    }
-                }
-            }
-        }
     }
 
     fun testBuildObjectModelForSimpleClass() = runBlocking {
@@ -1084,14 +1061,17 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
             """.trimIndent()
         )
         val psiClass = findClass("model.CommentModel")!!
-        val config = listConfig(
-            mapOf(
-                "field.doc" to listOf("groovy:it.doc()")
+        project.registerServiceInstance(
+            serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(
+                mapOf(
+                    "field.doc" to listOf("groovy:it.doc()")
+                )
             )
         )
         project.registerServiceInstance(
             serviceInterface = RuleEngine::class.java,
-            instance = RuleEngine(project, config)
+            instance = RuleEngine.getInstance(project)
         )
 
         val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
@@ -1137,14 +1117,17 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
             """.trimIndent()
         )
         val psiClass = findClass("model.AnnotatedModel")!!
-        val config = listConfig(
-            mapOf(
-                "field.doc" to listOf("@model.ApiModelProperty#value")
+        project.registerServiceInstance(
+            serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(
+                mapOf(
+                    "field.doc" to listOf("@model.ApiModelProperty#value")
+                )
             )
         )
         project.registerServiceInstance(
             serviceInterface = RuleEngine::class.java,
-            instance = RuleEngine(project, config)
+            instance = RuleEngine.getInstance(project)
         )
 
         val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
@@ -1184,14 +1167,17 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
             """.trimIndent()
         )
         val psiClass = findClass("model.UserModel")!!
-        val config = listConfig(
-            mapOf(
-                "field.doc" to listOf("groovy:it.doc()")
+        project.registerServiceInstance(
+            serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
+            instance = TestConfigReader.fromMap(
+                mapOf(
+                    "field.doc" to listOf("groovy:it.doc()")
+                )
             )
         )
         project.registerServiceInstance(
             serviceInterface = RuleEngine::class.java,
-            instance = RuleEngine(project, config)
+            instance = RuleEngine.getInstance(project)
         )
 
         val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)

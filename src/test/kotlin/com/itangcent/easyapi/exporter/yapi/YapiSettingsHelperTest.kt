@@ -2,6 +2,8 @@ package com.itangcent.easyapi.exporter.yapi
 
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.update
+import com.itangcent.easyapi.testFramework.ConstantSettingBinder
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
 import kotlinx.coroutines.runBlocking
@@ -9,9 +11,11 @@ import kotlinx.coroutines.runBlocking
 class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var helper: DefaultYapiSettingsHelper
+    private lateinit var testSettingBinder: ConstantSettingBinder
 
     override fun setUp() {
         super.setUp()
+        testSettingBinder = ConstantSettingBinder()
         val wrappedProject = wrap(project) {
             replaceService(SettingBinder::class, testSettingBinder)
         }
@@ -20,21 +24,21 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     @org.junit.Test
     fun `test resolveServerUrl returns normalized configured server`() {
-        updateSettings { yapiServer = " http://localhost:3000/ " }
+        testSettingBinder.update { yapiServer = " http://localhost:3000/ " }
         val serverUrl = runBlocking { helper.resolveServerUrl() }
         assertEquals("http://localhost:3000", serverUrl)
     }
 
     @org.junit.Test
     fun `test resolveServerUrl in dumb mode returns null when server is missing`() {
-        setSettings(Settings())
+        testSettingBinder.save(Settings())
         val serverUrl = runBlocking { helper.resolveServerUrl(dumb = true) }
         assertNull(serverUrl)
     }
 
     @org.junit.Test
     fun `test resolveToken returns module token from settings when validator accepts it`() {
-        updateSettings {
+        testSettingBinder.update {
             yapiTokens = """
                 module-a=token-a
                 module-b=token-b
@@ -48,7 +52,7 @@ class YapiSettingsHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     @org.junit.Test
     fun `test resolveToken ignores comments and blank token entries`() {
-        updateSettings {
+        testSettingBinder.update {
             yapiTokens = """
                 # comment
                 module-a=token-a

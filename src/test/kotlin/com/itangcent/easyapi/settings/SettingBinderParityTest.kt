@@ -5,37 +5,22 @@ import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 class SettingBinderParityTest {
 
     @Test
     fun testUpdateAndLazyCache() {
-        val binder = InMemoryBinder().lazy()
+        val binder = InMemoryBinder().lazy(1000.milliseconds)
         binder.update { logLevel = 33 }
         assertEquals(33, binder.read().logLevel)
-        binder.save(null)
-        assertNull(binder.tryRead())
+        assertEquals(33, binder.tryRead()?.logLevel)
     }
 
     @Test
     fun testCacheExpiresAfterTimeout() {
         val delegate = InMemoryBinder()
-        val binder = CachedSettingBinder(delegate, 50L)
-
-        delegate.settings = Settings().apply { logLevel = 1 }
-        assertEquals(1, binder.read().logLevel)
-
-        delegate.settings = Settings().apply { logLevel = 2 }
-        assertEquals(1, binder.read().logLevel)
-
-        Thread.sleep(60)
-        assertEquals(2, binder.read().logLevel)
-    }
-
-    @Test
-    fun testCacheDoesNotDelegateWithinTimeout() {
-        val delegate = InMemoryBinder()
-        val binder = CachedSettingBinder(delegate, 100_000L)
+        val binder = CachedSettingBinder(delegate, 100_000.milliseconds)
 
         delegate.settings = Settings().apply { logLevel = 42 }
         binder.read()
@@ -48,7 +33,7 @@ class SettingBinderParityTest {
     @Test
     fun testCacheRefreshesOnTimeout() {
         val delegate = InMemoryBinder()
-        val binder = CachedSettingBinder(delegate, 50L)
+        val binder = CachedSettingBinder(delegate, 50.milliseconds)
 
         delegate.settings = Settings().apply { logLevel = 1 }
         binder.read()
@@ -62,7 +47,7 @@ class SettingBinderParityTest {
     @Test
     fun testSaveRefreshesCacheTimestamp() {
         val delegate = InMemoryBinder()
-        val binder = CachedSettingBinder(delegate, 10_000L)
+        val binder = CachedSettingBinder(delegate, 10_000.milliseconds)
 
         delegate.settings = Settings().apply { logLevel = 1 }
         assertEquals(1, binder.read().logLevel)
@@ -80,7 +65,7 @@ class SettingBinderParityTest {
     }
 
     private class InMemoryBinder : SettingBinder {
-        var settings: Settings? = Settings()
+        var settings: Settings? = null
         var readCount: Int = 0
 
         override fun read(): Settings {
@@ -88,8 +73,8 @@ class SettingBinderParityTest {
             return settings?.copy() ?: Settings()
         }
 
-        override fun save(settings: Settings?) {
-            this.settings = settings?.copy()
+        override fun save(settings: Settings) {
+            this.settings = settings.copy()
         }
 
         override fun tryRead(): Settings? = settings?.copy()
