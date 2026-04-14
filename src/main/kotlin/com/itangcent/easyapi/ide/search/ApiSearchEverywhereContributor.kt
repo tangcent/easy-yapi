@@ -104,11 +104,28 @@ class ApiSearchEverywhereContributor(
             else -> ""
         }
 
+        if (query.isPathQuery && searchLower.startsWith("/")) {
+            if (matchesPathWithVariables(searchLower, path.lowercase())) {
+                return true
+            }
+        }
+
         return path.lowercase().contains(searchLower) ||
                 endpoint.name?.lowercase()?.contains(searchLower) == true ||
                 endpoint.className?.lowercase()?.contains(searchLower) == true ||
                 endpoint.description?.lowercase()?.contains(searchLower) == true ||
                 endpoint.folder?.lowercase()?.contains(searchLower) == true
+    }
+
+    private fun matchesPathWithVariables(concretePath: String, patternPath: String): Boolean {
+        val regex = pathPatternToRegex(patternPath)
+        return regex.matches(concretePath)
+    }
+
+    private fun pathPatternToRegex(pattern: String): Regex {
+        val parts = pattern.split(Regex("\\{[^}]*\\}"))
+        val regexStr = parts.joinToString("[^/]+") { Regex.escape(it) }
+        return Regex("^$regexStr$")
     }
 
     override fun getDataForItem(element: ApiEndpoint, dataId: String): Any? {
