@@ -51,10 +51,6 @@
                              id="easyapi.settings.EasyApiConfigurable"
                              instance="com.itangcent.easyapi.settings.ui.EasyApiSettingsConfigurable"/>
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
-                             displayName="Recommend"
-                             id="easyapi.settings.EasyApiConfigurable.Recommend"
-                             instance="com.itangcent.easyapi.settings.ui.EasyApiRecommendConfigurable"/>
-        <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
                              displayName="Remote"
                              id="easyapi.settings.EasyApiConfigurable.Remote"
                              instance="com.itangcent.easyapi.settings.ui.EasyApiRemoteConfigurable"/>
