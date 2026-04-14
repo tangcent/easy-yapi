@@ -150,6 +150,10 @@ class ApiMetadataResolver(
     suspend fun resolveApiStatus(method: PsiMethod): String? {
         return engine.evaluate(RuleKeys.API_STATUS, method)
     }
+
+    suspend fun isApiOpen(method: PsiMethod): Boolean {
+        return engine.evaluate(RuleKeys.API_OPEN, method)
+    }
     
     suspend fun resolveModule(method: PsiMethod): String? {
         return engine.evaluate(RuleKeys.MODULE, method)

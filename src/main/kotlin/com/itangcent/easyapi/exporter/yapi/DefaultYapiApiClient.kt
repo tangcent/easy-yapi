@@ -305,6 +305,7 @@ class DefaultYapiApiClient(
             "req_body_other" to (doc.reqBodyOther ?: ""),
             "res_body" to (doc.resBody ?: ""),
             "tags" to (doc.tags ?: emptyList<String>()),
+            "tag" to (doc.tag ?: emptyList<String>()),
             "req_body_form" to (doc.reqBodyForm?.map {
                 linkedMapOf(
                     "name" to it.name, "example" to (it.example ?: ""), "type" to it.type,
@@ -314,6 +315,7 @@ class DefaultYapiApiClient(
         )
         doc.reqBodyType?.let { map["req_body_type"] = it }
         doc.resBodyType?.let { map["res_body_type"] = it }
+        doc.open?.let { map["api_opened"] = it }
         existingId?.let { map["id"] = it }
         return GsonUtils.toJson(map)
     }

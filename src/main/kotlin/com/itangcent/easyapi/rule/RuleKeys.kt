@@ -17,8 +17,9 @@ object RuleKeys {
 
     // ── API metadata ──────────────────────────────────────────────
     val API_NAME = RuleKey.string("api.name")
-    val API_TAG             = RuleKey.string("api.tag")
+    val API_TAG             = RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT)
     val API_STATUS          = RuleKey.string("api.status")
+    val API_OPEN            = RuleKey.boolean("api.open")
     val FOLDER_NAME = RuleKey.string("folder.name")
     val MODULE = RuleKey.string("module")
     val IGNORE = RuleKey.boolean("ignore")

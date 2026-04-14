@@ -148,7 +148,7 @@ class YapiFormatter(
             path = formatPath(endpoint.path),
             method = httpMeta?.method?.name?.lowercase() ?: "get",
             desc = endpoint.description,
-            status = "done",
+            status = endpoint.status ?: "done",
             tag = endpoint.tags,
             reqHeaders = headers.ifEmpty { null },
             reqQuery = query.ifEmpty { null },
@@ -160,7 +160,8 @@ class YapiFormatter(
             resBody = resBody,
             resBodyType = if (httpMeta?.responseBody != null) "json" else null,
             resBodyIsJsonSchema = resBodyIsJsonSchema,
-            tags = endpoint.tags.ifEmpty { null }
+            tags = endpoint.tags.ifEmpty { null },
+            open = if (endpoint.open) true else null
         )
     }
 

@@ -23,6 +23,8 @@ data class ApiEndpoint(
     val folder: String? = null,
     val description: String? = null,
     val tags: List<String> = emptyList(),
+    val status: String? = null,
+    val open: Boolean = false,
     val sourceClass: com.intellij.psi.PsiClass? = null,
     val sourceMethod: com.intellij.psi.PsiMethod? = null,
     val className: String? = null,

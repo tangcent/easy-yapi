@@ -120,7 +120,7 @@ class SpringMvcClassExporter(
                 val description = metadataResolver.resolveMethodDoc(method)
                 val classDesc = metadataResolver.resolveClassDoc(psiClass)
                 val tags = metadataResolver.resolveApiTag(method)
-                    ?.split("\n")?.map { it.trim() }?.filter { it.isNotBlank() }
+                    ?.split(",", "\n")?.map { it.trim() }?.distinct()?.filter { it.isNotBlank() }
                     ?: emptyList()
 
                 val resolvedBindings = resolveParameterBindings(resolvedMethod)
@@ -133,6 +133,8 @@ class SpringMvcClassExporter(
                 val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
                 val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
+                val apiOpen = metadataResolver.isApiOpen(method)
+                val apiStatus = metadataResolver.resolveApiStatus(method)
 
                 val defaultHttpMethod = metadataResolver.resolveDefaultHttpMethod(method)
                     ?.let { HttpMethod.fromSpring(it) }
@@ -170,6 +172,8 @@ class SpringMvcClassExporter(
                         folder = folder,
                         description = description,
                         tags = tags,
+                        status = apiStatus,
+                        open = apiOpen,
                         sourceClass = psiClass,
                         sourceMethod = method,
                         className = psiClass.qualifiedName ?: psiClass.name,
