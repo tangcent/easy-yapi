@@ -1,7 +1,0 @@
-package java.sql;
-
-public class Timestamp extends java.util.Date {
-    public Timestamp(long time) {
-        super(time);
-    }
-}
