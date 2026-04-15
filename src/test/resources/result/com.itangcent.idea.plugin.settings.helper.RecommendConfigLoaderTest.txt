@@ -45,9 +45,6 @@ properties.prefix=@org.springframework.boot.context.properties.ConfigurationProp
 properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix
 #Support for Fastjson annotations
 field.name=@com.alibaba.fastjson.annotation.JSONField#value
-#Auto map enum to a type matched field in it
-enum.use.by.type=true
-json.rule.enum.convert=~#name()
 #ignore some common classes
 ignored.classes_or_packages=```
     java.lang.Class,java.lang.ClassLoader,java.lang.Module,java.lang.module,java.lang.annotation,

@@ -29,8 +29,6 @@ constant.field.ignore=groovy:it.name()=="serialVersionUID"
 properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties
 properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix
 field.name=@com.alibaba.fastjson.annotation.JSONField#value
-enum.use.by.type=true
-json.rule.enum.convert=~#name()
 ignored.classes_or_packages=java.lang.Class,java.lang.ClassLoader,java.lang.Module,java.lang.module,java.lang.annotation,
 java.lang.security,java.lang.invoke,java.lang.reflect,jdk.internal,java.util.jar,java.util.function,
 java.util.stream,java.util.logging,java.util.regex,java.util.zip,java.util.concurrent.locks,
