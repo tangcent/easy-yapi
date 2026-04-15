@@ -19,7 +19,7 @@ class ApiSearchEverywhereContributorTest {
         description: String? = null
     ): ApiEndpoint {
         return ApiEndpoint(
-            metadata = HttpMetadata(path = path, method = method),
+            metadata = httpMetadata(path = path, method = method),
             name = name,
             className = className,
             description = description

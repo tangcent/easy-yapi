@@ -146,7 +146,7 @@ class JaxRsClassExporter(
                         sourceMethod = method,
                         className = classQualifiedName,
                         classDescription = classDesc,
-                        metadata = HttpMetadata(
+                        metadata = httpMetadata(
                             path = path,
                             method = httpMethod,
                             parameters = params,

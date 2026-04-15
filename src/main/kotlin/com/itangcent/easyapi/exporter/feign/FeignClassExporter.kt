@@ -110,10 +110,11 @@ class FeignClassExporter(
             if (requestLine != null) {
                 val endpoint = buildFromNativeFeign(basePath, psiClass, method, requestLine)
                 LOG.info("after parse method:$methodKey")
-                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
-                    ctx.setExt("api", endpoint)
+                return listOf(endpoint).also {
+                    engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                        ctx.setExt("api", endpoint)
+                    }
                 }
-                return listOf(endpoint)
             }
 
             val mappings = springMappingResolver.resolve(resolvedMethod)
@@ -175,7 +176,7 @@ class FeignClassExporter(
                         sourceMethod = method,
                         className = read { psiClass.qualifiedName ?: psiClass.name },
                         classDescription = classDesc,
-                        metadata = HttpMetadata(
+                        metadata = httpMetadata(
                             path = normalizedPath,
                             method = m.method,
                             parameters = mergedParams,
@@ -254,7 +255,7 @@ class FeignClassExporter(
             sourceMethod = method,
             className = read { psiClass.qualifiedName ?: psiClass.name },
             classDescription = classDesc,
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = normalizedPathTemplate,
                 method = requestLine.method,
                 parameters = mergedPathParams + queryParams + bodyParams,

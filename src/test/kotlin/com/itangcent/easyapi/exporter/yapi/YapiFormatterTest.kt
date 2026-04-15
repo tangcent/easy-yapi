@@ -1,11 +1,6 @@
 package com.itangcent.easyapi.exporter.yapi
 
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiHeader
-import com.itangcent.easyapi.exporter.model.ApiParameter
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
@@ -22,7 +17,7 @@ class YapiFormatterTest {
     fun testFormatSimpleEndpoint() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -42,7 +37,7 @@ class YapiFormatterTest {
     fun testFormatEndpointWithQuery() {
         val endpoint = ApiEndpoint(
             name = "List Users",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -63,7 +58,7 @@ class YapiFormatterTest {
     fun testFormatEndpointWithBody() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 contentType = "application/json",
@@ -85,7 +80,7 @@ class YapiFormatterTest {
     fun testFormatEndpointWithHeaders() {
         val endpoint = ApiEndpoint(
             name = "Protected API",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/protected",
                 method = HttpMethod.GET,
                 headers = listOf(
@@ -106,7 +101,7 @@ class YapiFormatterTest {
     fun testFormatEndpointWithFormParams() {
         val endpoint = ApiEndpoint(
             name = "Login",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/auth/login",
                 method = HttpMethod.POST,
                 contentType = "application/x-www-form-urlencoded",
@@ -129,7 +124,7 @@ class YapiFormatterTest {
         val endpoint = ApiEndpoint(
             name = "Get User",
             description = "Retrieve user information by ID",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET
             )
@@ -148,7 +143,7 @@ class YapiFormatterTest {
     fun testFormatPathPrefixesSlash() {
         val endpoint = ApiEndpoint(
             name = "No Leading Slash",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "api/users",
                 method = HttpMethod.GET
             )
@@ -163,7 +158,7 @@ class YapiFormatterTest {
     fun testFormatPathEmptyBecomesSlash() {
         val endpoint = ApiEndpoint(
             name = "Empty Path",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "",
                 method = HttpMethod.GET
             )
@@ -178,7 +173,7 @@ class YapiFormatterTest {
     fun testFormatPathStripsInvalidCharacters() {
         val endpoint = ApiEndpoint(
             name = "Invalid Chars",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/用户/list",
                 method = HttpMethod.GET
             )
@@ -193,7 +188,7 @@ class YapiFormatterTest {
     fun testFormatPathCollapsesRedundantSlashes() {
         val endpoint = ApiEndpoint(
             name = "Double Slashes",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api//users///list",
                 method = HttpMethod.GET
             )
@@ -208,7 +203,7 @@ class YapiFormatterTest {
     fun testFormatPathPreservesPathVariables() {
         val endpoint = ApiEndpoint(
             name = "Path Variables",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}/orders/{orderId}",
                 method = HttpMethod.GET
             )
@@ -223,7 +218,7 @@ class YapiFormatterTest {
     fun testFormatPathPreservesAllowedSpecialChars() {
         val endpoint = ApiEndpoint(
             name = "Special Chars",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/v1.0/users:search",
                 method = HttpMethod.GET
             )
@@ -238,7 +233,7 @@ class YapiFormatterTest {
     fun testFormatPathWithSpaces() {
         val endpoint = ApiEndpoint(
             name = "Spaces In Path",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/user list/all",
                 method = HttpMethod.GET
             )
@@ -254,7 +249,7 @@ class YapiFormatterTest {
         val noFormatFormatter = YapiFormatter(autoFormatUrl = false)
         val endpoint = ApiEndpoint(
             name = "No Format",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "api/users list",
                 method = HttpMethod.GET
             )
@@ -273,7 +268,7 @@ class YapiFormatterTest {
     fun testFormatWithMultipleUrls() {
         val endpoint = ApiEndpoint(
             name = "Multi-Environment API",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 alternativePaths = listOf(
@@ -296,7 +291,7 @@ class YapiFormatterTest {
     fun testFormatWithUrlsAlsoFormatsAlternativePaths() {
         val endpoint = ApiEndpoint(
             name = "Alt Paths",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 alternativePaths = listOf(
@@ -323,7 +318,7 @@ class YapiFormatterTest {
     fun testFormatWithJsonSchema() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 body = ObjectModel.Object(
@@ -350,7 +345,7 @@ class YapiFormatterTest {
         val json5Formatter = YapiFormatter(useJson5 = true)
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 body = ObjectModel.Object(
@@ -372,7 +367,7 @@ class YapiFormatterTest {
     fun testFormatWithRequiredParameters() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 parameters = listOf(
@@ -402,7 +397,7 @@ class YapiFormatterTest {
     fun testFormatWithResponseSchema() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET,
                 body = null,
@@ -434,7 +429,7 @@ class YapiFormatterTest {
     fun testFormatWithEnumValues() {
         val endpoint = ApiEndpoint(
             name = "Update User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.PUT,
                 parameters = listOf(
@@ -462,7 +457,7 @@ class YapiFormatterTest {
     fun testFormatWithMockData() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -485,7 +480,7 @@ class YapiFormatterTest {
         val endpoint = ApiEndpoint(
             name = "Get User",
             tags = listOf("user", "admin"),
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET
             )
@@ -502,7 +497,7 @@ class YapiFormatterTest {
     fun testFormatWithDefaultValues() {
         val endpoint = ApiEndpoint(
             name = "List Users",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 parameters = listOf(

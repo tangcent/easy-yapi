@@ -92,7 +92,8 @@ class GrpcClassExporter(
             }
 
             for (endpoint in endpoints) {
-                engine.evaluate(RuleKeys.EXPORT_AFTER, endpoint.sourceMethod!!) { ctx ->
+                val method = endpoint.sourceMethod ?: continue
+                engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
                     ctx.setExt("api", endpoint)
                 }
             }

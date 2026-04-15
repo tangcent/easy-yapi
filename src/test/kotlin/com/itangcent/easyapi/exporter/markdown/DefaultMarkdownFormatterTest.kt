@@ -7,6 +7,7 @@ import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
@@ -22,7 +23,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatSimpleEndpoint() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -46,7 +47,7 @@ class DefaultMarkdownFormatterTest {
         val endpoint = ApiEndpoint(
             name = "Get User",
             description = "Retrieve user information by ID",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET
             )
@@ -61,7 +62,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithQueryParameters() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "List Users",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -84,7 +85,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithHeaders() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 headers = listOf(
@@ -108,7 +109,7 @@ class DefaultMarkdownFormatterTest {
             ApiEndpoint(
                 name = "Get User",
                 folder = "Users",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/{id}",
                     method = HttpMethod.GET
                 )
@@ -116,7 +117,7 @@ class DefaultMarkdownFormatterTest {
             ApiEndpoint(
                 name = "Create User",
                 folder = "Users",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST
                 )
@@ -124,7 +125,7 @@ class DefaultMarkdownFormatterTest {
             ApiEndpoint(
                 name = "Get Order",
                 folder = "Orders",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/orders/{id}",
                     method = HttpMethod.GET
                 )
@@ -148,7 +149,7 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 body = bodyModel,
@@ -185,7 +186,7 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET,
                 responseBody = responseModel
@@ -222,7 +223,7 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "List Users",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 responseBody = responseModel
@@ -239,7 +240,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithNoResponseBody() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Delete User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.DELETE
             )
@@ -254,10 +255,10 @@ class DefaultMarkdownFormatterTest {
     @Test
     fun testFormatMultipleEndpoints() = runBlocking {
         val endpoints = listOf(
-            ApiEndpoint(name = "Get User", metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)),
-            ApiEndpoint(name = "Create User", metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)),
-            ApiEndpoint(name = "Update User", metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.PUT)),
-            ApiEndpoint(name = "Delete User", metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.DELETE))
+            ApiEndpoint(name = "Get User", metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)),
+            ApiEndpoint(name = "Create User", metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST)),
+            ApiEndpoint(name = "Update User", metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.PUT)),
+            ApiEndpoint(name = "Delete User", metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.DELETE))
         )
 
         val markdown = formatter.format(endpoints, "User API")
@@ -272,7 +273,7 @@ class DefaultMarkdownFormatterTest {
     fun testFormatEndpointWithFormParams() = runBlocking {
         val endpoint = ApiEndpoint(
             name = "Upload File",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/upload",
                 method = HttpMethod.POST,
                 parameters = listOf(
@@ -299,7 +300,7 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Get Tree",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/tree",
                 method = HttpMethod.GET,
                 responseBody = treeNode
@@ -325,7 +326,7 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Get Node",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/node",
                 method = HttpMethod.GET,
                 responseBody = selfRef
@@ -354,7 +355,7 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Get Mutual",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/mutual",
                 method = HttpMethod.GET,
                 responseBody = objectA
@@ -384,7 +385,7 @@ class DefaultMarkdownFormatterTest {
 
         val endpoint = ApiEndpoint(
             name = "Get Nested",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/nested",
                 method = HttpMethod.GET,
                 responseBody = outer

@@ -3,12 +3,7 @@ package com.itangcent.easyapi.exporter.springmvc
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiParameter
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.ParameterBinding
-import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
@@ -130,7 +125,7 @@ class ActuatorEndpointScanner {
             sourceClass = psiClass,
             sourceMethod = method,
             className = psiClass.qualifiedName ?: psiClass.name ?: "",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = path.toString(),
                 method = httpMethod,
                 parameters = pathParams,

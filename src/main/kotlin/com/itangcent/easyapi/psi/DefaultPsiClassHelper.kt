@@ -391,8 +391,9 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             val unwrapped = engine.evaluate(RuleKeys.JSON_UNWRAPPED, accessibleField.psi, fieldContext = fieldPath)
             if (unwrapped && fieldModel.model is ObjectModel.Object) {
                 for ((nestedName, nestedField) in (fieldModel.model as ObjectModel.Object).fields) {
-                    if (!fields.containsKey(nestedName)) {
-                        fields[nestedName] = nestedField
+                    val unwrappedName = prefix + nestedName + suffix
+                    if (!fields.containsKey(unwrappedName)) {
+                        fields[unwrappedName] = nestedField
                     }
                 }
             } else {

@@ -1,10 +1,6 @@
 package com.itangcent.easyapi.dashboard
 
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.GrpcMetadata
-import com.itangcent.easyapi.exporter.model.GrpcStreamingType
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import javax.swing.JTree
 import javax.swing.tree.DefaultMutableTreeNode
@@ -23,7 +19,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testGetTreeCellRendererComponentWithApiEndpoint() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET
             )
@@ -39,7 +35,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testGetTreeCellRendererComponentWithDefaultMutableTreeNode() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST
             )
@@ -62,7 +58,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetMethodColorForGet() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.GET))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.GET))
         val component = renderer.getTreeCellRendererComponent(
             tree, endpoint, false, false, true, 0, false
         )
@@ -70,7 +66,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetMethodColorForPost() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.POST))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.POST))
         val component = renderer.getTreeCellRendererComponent(
             tree, endpoint, false, false, true, 0, false
         )
@@ -78,7 +74,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetMethodColorForPut() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.PUT))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.PUT))
         val component = renderer.getTreeCellRendererComponent(
             tree, endpoint, false, false, true, 0, false
         )
@@ -86,7 +82,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetMethodColorForDelete() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.DELETE))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.DELETE))
         val component = renderer.getTreeCellRendererComponent(
             tree, endpoint, false, false, true, 0, false
         )
@@ -94,7 +90,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetMethodColorForPatch() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.PATCH))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.PATCH))
         val component = renderer.getTreeCellRendererComponent(
             tree, endpoint, false, false, true, 0, false
         )
@@ -102,7 +98,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetMethodColorForHead() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.HEAD))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.HEAD))
         val component = renderer.getTreeCellRendererComponent(
             tree, endpoint, false, false, true, 0, false
         )
@@ -110,7 +106,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetMethodColorForOptions() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.OPTIONS))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.OPTIONS))
         val component = renderer.getTreeCellRendererComponent(
             tree, endpoint, false, false, true, 0, false
         )
@@ -120,7 +116,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testBuildApiTextWithName() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET
             )
@@ -134,7 +130,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testBuildApiTextWithoutName() {
         val endpoint = ApiEndpoint(
             name = null,
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET
             )
@@ -237,7 +233,7 @@ class ApiTreeCellRendererTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testHttpEndpointStillShowsMethodName() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET
             )

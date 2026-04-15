@@ -1,10 +1,6 @@
 package com.itangcent.easyapi.ide.dialog
 
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ExportFormat
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.OutputConfig
+import com.itangcent.easyapi.exporter.model.*
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -49,7 +45,7 @@ class ExportDialogResultTest {
         val config = OutputConfig()
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(path = "/api/users", method = HttpMethod.GET)
+            metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
         )
         val selection = EndpointSelection(endpoint)
         val result = ExportDialogResult(ExportFormat.MARKDOWN, config, listOf(selection))
@@ -62,7 +58,7 @@ class ExportDialogResultTest {
     fun testEndpointSelectionProperties() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)
+            metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST)
         )
         val selection = EndpointSelection(endpoint)
         assertSame(endpoint, selection.endpoint)
@@ -72,7 +68,7 @@ class ExportDialogResultTest {
     fun testEndpointSelectionEquality() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(path = "/api/users", method = HttpMethod.GET)
+            metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
         )
         val s1 = EndpointSelection(endpoint)
         val s2 = EndpointSelection(endpoint)

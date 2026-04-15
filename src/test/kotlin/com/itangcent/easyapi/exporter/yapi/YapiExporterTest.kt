@@ -6,6 +6,7 @@ import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.YapiExportOptions
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
 import org.junit.Assert.*
@@ -172,7 +173,7 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         return com.itangcent.easyapi.exporter.model.ApiEndpoint(
             name = name,
             description = description,
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = path,
                 method = method
             )

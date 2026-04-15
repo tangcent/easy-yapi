@@ -13,7 +13,7 @@ class PostmanEndpointContextTest {
     fun testConstruction() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
+            metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
         )
         val response = PostmanResponseData(name = "Success", statusCode = 200)
         val context = PostmanEndpointContext(
@@ -31,7 +31,7 @@ class PostmanEndpointContextTest {
 
     @Test
     fun testConstructionWithDefaults() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.GET))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.GET))
         val context = PostmanEndpointContext(endpoint = endpoint)
         
         assertEquals("/test", context.endpoint.httpMetadata?.path)
@@ -44,7 +44,7 @@ class PostmanEndpointContextTest {
 
     @Test
     fun testCopy() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.POST))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.POST))
         val context = PostmanEndpointContext(endpoint = endpoint)
         
         val copy = context.copy(preRequestScript = "new script")
@@ -53,7 +53,7 @@ class PostmanEndpointContextTest {
 
     @Test
     fun testEquality() {
-        val endpoint = ApiEndpoint(metadata = HttpMetadata(path = "/test", method = HttpMethod.GET))
+        val endpoint = ApiEndpoint(metadata = httpMetadata(path = "/test", method = HttpMethod.GET))
         val context1 = PostmanEndpointContext(endpoint = endpoint)
         val context2 = PostmanEndpointContext(endpoint = endpoint)
         

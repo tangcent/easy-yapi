@@ -39,7 +39,7 @@ class ApiTreeNodeTest {
     fun testEndpointNode() {
         val endpoint = ApiEndpoint(
             name = "getUsers",
-            metadata = HttpMetadata(path = "/users", method = HttpMethod.GET)
+            metadata = httpMetadata(path = "/users", method = HttpMethod.GET)
         )
         val node = ApiTreeNode.EndpointNode(endpoint)
         assertEquals("getUsers", node.endpoint.name)
@@ -49,7 +49,7 @@ class ApiTreeNodeTest {
     fun testNestedTree() {
         val endpoint = ApiEndpoint(
             name = "getUser",
-            metadata = HttpMetadata(path = "/users/{id}", method = HttpMethod.GET)
+            metadata = httpMetadata(path = "/users/{id}", method = HttpMethod.GET)
         )
         val tree = ApiTreeNode.ModuleNode(
             "api",

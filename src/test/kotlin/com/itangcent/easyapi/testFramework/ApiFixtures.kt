@@ -7,6 +7,7 @@ import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.settings.Settings
 
 object ApiFixtures {
@@ -22,7 +23,7 @@ object ApiFixtures {
             name = name,
             description = description,
             folder = folder,
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = path,
                 method = method,
                 parameters = emptyList(),
@@ -39,7 +40,7 @@ object ApiFixtures {
             name = name,
             description = "Get user by ID",
             folder = "User API",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = path,
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -65,7 +66,7 @@ object ApiFixtures {
             name = name,
             description = "Create a new user",
             folder = "User API",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = path,
                 method = HttpMethod.POST,
                 parameters = listOf(
@@ -120,7 +121,7 @@ object ApiFixtures {
             name = name,
             description = "Upload a file",
             folder = "File API",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = path,
                 method = HttpMethod.POST,
                 parameters = listOf(

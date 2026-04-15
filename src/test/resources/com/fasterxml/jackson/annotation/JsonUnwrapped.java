@@ -4,7 +4,8 @@ import java.lang.annotation.*;
 
 @Target({ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JsonProperty {
-    String value() default "";
-    int index() default -1;
+public @interface JsonUnwrapped {
+    String prefix() default "";
+    String suffix() default "";
+    boolean enabled() default true;
 }

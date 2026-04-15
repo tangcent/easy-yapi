@@ -21,7 +21,7 @@ import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 data class ApiEndpoint(
     val name: String? = null,
     val folder: String? = null,
-    val description: String? = null,
+    var description: String? = null,
     val tags: List<String> = emptyList(),
     val status: String? = null,
     val open: Boolean = false,
@@ -30,7 +30,88 @@ data class ApiEndpoint(
     val className: String? = null,
     val classDescription: String? = null,
     val metadata: ApiMetadata
-)
+) {
+    fun setParam(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+        val meta = metadata as? HttpMetadata ?: return
+        meta.parameters.add(
+            ApiParameter(
+                name = name ?: "",
+                defaultValue = defaultValue,
+                required = required,
+                description = desc,
+                binding = ParameterBinding.Query
+            )
+        )
+    }
+
+    fun setFormParam(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+        val meta = metadata as? HttpMetadata ?: return
+        meta.parameters.add(
+            ApiParameter(
+                name = name ?: "",
+                defaultValue = defaultValue,
+                required = required,
+                description = desc,
+                binding = ParameterBinding.Form
+            )
+        )
+    }
+
+    fun setPathParam(name: String?, defaultValue: String?, desc: String?) {
+        val meta = metadata as? HttpMetadata ?: return
+        meta.parameters.add(
+            ApiParameter(
+                name = name ?: "",
+                defaultValue = defaultValue,
+                required = true,
+                description = desc,
+                binding = ParameterBinding.Path
+            )
+        )
+    }
+
+    fun setHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+        val meta = metadata as? HttpMetadata ?: return
+        meta.headers.add(
+            ApiHeader(
+                name = name ?: "",
+                value = defaultValue,
+                description = desc,
+                required = required
+            )
+        )
+    }
+
+    fun setResponseCode(code: Int) {
+        // HttpMetadata doesn't have a responseCode field; kept for script compatibility
+    }
+
+    fun appendResponseBodyDesc(desc: String?) {
+        // kept for script compatibility
+    }
+
+    fun setResponseHeader(name: String?, defaultValue: String?, required: Boolean, desc: String?) {
+        val meta = metadata as? HttpMetadata ?: return
+        meta.headers.add(
+            ApiHeader(
+                name = name ?: "",
+                value = defaultValue,
+                description = desc,
+                required = required
+            )
+        )
+    }
+
+    fun setResponseBodyClass(className: String?) {
+        val meta = metadata as? HttpMetadata ?: return
+        meta.responseType = className
+    }
+
+    fun appendDesc(desc: String?) {
+        if (desc == null) return
+        this.description = (this.description ?: "") + desc
+    }
+}
 
 /** Convenience: true if this is an HTTP endpoint */
 val ApiEndpoint.isHttp: Boolean get() = metadata is HttpMetadata
@@ -45,10 +126,11 @@ val ApiEndpoint.httpMetadata: HttpMetadata? get() = metadata as? HttpMetadata
 val ApiEndpoint.grpcMetadata: GrpcMetadata? get() = metadata as? GrpcMetadata
 
 /** Convenience accessor for path, works for both HTTP and gRPC endpoints */
-val ApiEndpoint.path: String get() = when (val meta = metadata) {
-    is HttpMetadata -> meta.path
-    is GrpcMetadata -> meta.path
-}
+val ApiEndpoint.path: String
+    get() = when (val meta = metadata) {
+        is HttpMetadata -> meta.path
+        is GrpcMetadata -> meta.path
+    }
 
 /**
  * The wire-level type of an HTTP parameter.
@@ -204,19 +286,43 @@ sealed interface ApiMetadata {
  * @param responseType The response type name
  */
 data class HttpMetadata(
-    val path: String,
-    val method: HttpMethod,
-    val parameters: List<ApiParameter> = emptyList(),
-    val headers: List<ApiHeader> = emptyList(),
-    val contentType: String? = null,
+    var path: String,
+    var method: HttpMethod,
+    val parameters: MutableList<ApiParameter> = mutableListOf(),
+    val headers: MutableList<ApiHeader> = mutableListOf(),
+    var contentType: String? = null,
     val bodyAttr: String? = null,
-    val alternativePaths: List<String>? = null,
-    val body: ObjectModel? = null,
-    val responseBody: ObjectModel? = null,
-    val responseType: String? = null
+    var alternativePaths: MutableList<String>? = null,
+    var body: ObjectModel? = null,
+    var responseBody: ObjectModel? = null,
+    var responseType: String? = null
 ) : ApiMetadata {
     override val protocol: String = "HTTP"
 }
+
+fun httpMetadata(
+    path: String,
+    method: HttpMethod,
+    parameters: List<ApiParameter> = emptyList(),
+    headers: List<ApiHeader> = emptyList(),
+    contentType: String? = null,
+    bodyAttr: String? = null,
+    alternativePaths: List<String>? = null,
+    body: ObjectModel? = null,
+    responseBody: ObjectModel? = null,
+    responseType: String? = null
+): HttpMetadata = HttpMetadata(
+    path,
+    method,
+    parameters.toMutableList(),
+    headers.toMutableList(),
+    contentType,
+    bodyAttr,
+    alternativePaths = alternativePaths?.toMutableList(),
+    body,
+    responseBody,
+    responseType
+)
 
 /**
  * gRPC-specific metadata for gRPC service endpoints.

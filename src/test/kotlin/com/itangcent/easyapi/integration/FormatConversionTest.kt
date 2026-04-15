@@ -1,17 +1,12 @@
 package com.itangcent.easyapi.integration
 
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiParameter
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.curl.CurlFormatter
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.exporter.postman.PostmanFormatOptions
 import com.itangcent.easyapi.exporter.postman.PostmanFormatter
-import com.itangcent.easyapi.exporter.curl.CurlFormatter
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
 
 class FormatConversionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -20,7 +15,7 @@ class FormatConversionTest : EasyApiLightCodeInsightFixtureTestCase() {
     private val testEndpoint = ApiEndpoint(
         name = "Get User",
         description = "Retrieve user by ID",
-        metadata = HttpMetadata(
+        metadata = httpMetadata(
             path = "/api/users/{id}",
             method = HttpMethod.GET,
             parameters = listOf(
@@ -32,7 +27,7 @@ class FormatConversionTest : EasyApiLightCodeInsightFixtureTestCase() {
     private val testPostEndpoint = ApiEndpoint(
         name = "Create User",
         description = "Create a new user",
-        metadata = HttpMetadata(
+        metadata = httpMetadata(
             path = "/api/users",
             method = HttpMethod.POST,
             contentType = "application/json",
@@ -79,7 +74,7 @@ class FormatConversionTest : EasyApiLightCodeInsightFixtureTestCase() {
             testPostEndpoint,
             ApiEndpoint(
                 name = "Update User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/{id}",
                     method = HttpMethod.PUT,
                     contentType = "application/json",
@@ -91,7 +86,7 @@ class FormatConversionTest : EasyApiLightCodeInsightFixtureTestCase() {
             ),
             ApiEndpoint(
                 name = "Delete User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/{id}",
                     method = HttpMethod.DELETE,
                     parameters = listOf(

@@ -80,7 +80,7 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCacheUpdateEndpoints() = runTest {
         val testEndpoints = listOf(
             ApiEndpoint(
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/test",
                     method = HttpMethod.GET
                 ),
@@ -99,7 +99,7 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCacheInvalidate() = runTest {
         val testEndpoints = listOf(
             ApiEndpoint(
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/test",
                     method = HttpMethod.GET
                 ),
@@ -120,7 +120,7 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCacheAwait() = runTest {
         val testEndpoints = listOf(
             ApiEndpoint(
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/test",
                     method = HttpMethod.POST
                 ),

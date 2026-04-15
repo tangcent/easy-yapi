@@ -9,6 +9,9 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.config.LayeredConfigReader
+import com.itangcent.easyapi.config.parser.ConfigTextParser
+import com.itangcent.easyapi.config.source.ExtensionConfigSource
 import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.core.threading.readSync
@@ -98,6 +101,17 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
      */
     protected open fun createConfigReader(): ConfigReader? = null
 
+    protected fun extensionConfigReader(vararg selectedCodes: String): ConfigReader {
+        return LayeredConfigReader(
+            listOf(
+                ExtensionConfigSource(
+                    selectedCodes.map { it }.toTypedArray(),
+                    ConfigTextParser(settingBinder.read())
+                )
+            )
+        )
+    }
+
     protected val settingBinder
         get() = SettingBinder.getInstance(project)
 
@@ -105,6 +119,7 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
         super.setUp()
         val configReader = createConfigReader()
         if (configReader != null) {
+            runBlocking { configReader.reload() }
             project.registerServiceInstance(
                 serviceInterface = ConfigReader::class.java,
                 instance = configReader
@@ -132,6 +147,24 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
         return psiClass.findMethodsByName(name, false).firstOrNull() as? PsiMethod
     }
 
+    /**
+     * Loads a resource file into the test fixture's virtual file system.
+     *
+     * **Important:** In the IntelliJ PSI test fixture environment, all classes referenced
+     * by a Java file must be explicitly imported, even if they are in the same package.
+     * In normal Java compilation, same-package classes don't require imports, but the
+     * lightweight test fixture's PSI resolver cannot resolve unimported same-package types
+     * unless they are explicitly imported. Without proper imports, the PSI will treat
+     * unresolved type references as `UnresolvedType`, which causes `buildObjectModelFromType`
+     * to return `ObjectModel.Single` instead of `ObjectModel.Object`.
+     *
+     * For example, if `UserController.java` uses `OrderedDTO` from the same package,
+     * it must include `import com.itangcent.jackson.OrderedDTO;` even though they share
+     * the same package declaration.
+     *
+     * @param path the resource path relative to the test resources directory
+     * @return the loaded PsiFile
+     */
     protected fun loadFile(path: String): PsiFile {
         myFixture.findFileInTempDir(path)?.let { existing ->
             return myFixture.psiManager.findFile(existing)!!

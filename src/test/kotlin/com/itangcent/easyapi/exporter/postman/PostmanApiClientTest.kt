@@ -1,10 +1,6 @@
 package com.itangcent.easyapi.exporter.postman
 
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ApiParameter
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
@@ -33,7 +29,7 @@ class PostmanApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
         return ApiEndpoint(
             name = "Test API",
             description = "Test API description",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/test",
                 method = HttpMethod.GET,
                 parameters = listOf(

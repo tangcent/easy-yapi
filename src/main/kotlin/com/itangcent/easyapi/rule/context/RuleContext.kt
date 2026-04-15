@@ -3,6 +3,7 @@ package com.itangcent.easyapi.rule.context
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaConsole
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
@@ -101,6 +102,7 @@ class RuleContext private constructor(
         if (value == null) return null
         if (key == "fieldContext" && value is String) return ScriptFieldContext(value)
         if (value is PsiElement) return withElement(value).asScriptIt()
+        if (value is ApiEndpoint) return ScriptApiEndpoint(value)
         return value
     }
 

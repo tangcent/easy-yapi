@@ -37,15 +37,33 @@ class TestConfigReader(
         fun fromConfigText(configText: String): TestConfigReader {
             val config = mutableMapOf<String, List<String>>()
             val strippedContent = ExtensionConfigParser.stripYamlFrontMatter(configText)
-            strippedContent.lines().forEach { line ->
-                if (line.isNotBlank() && !line.startsWith("#")) {
-                    val idx = line.indexOf('=')
-                    if (idx > 0) {
-                        val key = line.substring(0, idx).trim()
-                        val value = line.substring(idx + 1).trim()
-                        config[key] = config.getOrDefault(key, emptyList()) + value
+            val lines = strippedContent.lines()
+            var i = 0
+            while (i < lines.size) {
+                val line = lines[i].trim()
+                i++
+                if (line.isBlank() || line.startsWith("#")) continue
+                val idx = line.indexOf('=')
+                if (idx <= 0) continue
+                val key = line.substring(0, idx).trim()
+                var value = line.substring(idx + 1).trim()
+                if (value == "```" || value.endsWith("```")) {
+                    val prefix = if (value.endsWith("```") && value != "```") {
+                        value.dropLast(3)
+                    } else {
+                        ""
                     }
+                    val sb = StringBuilder()
+                    while (i < lines.size) {
+                        val next = lines[i]
+                        i++
+                        if (next.trim() == "```") break
+                        if (sb.isNotEmpty()) sb.append('\n')
+                        sb.append(next)
+                    }
+                    value = prefix + sb.toString()
                 }
+                config[key] = config.getOrDefault(key, emptyList()) + value
             }
             return TestConfigReader(config)
         }

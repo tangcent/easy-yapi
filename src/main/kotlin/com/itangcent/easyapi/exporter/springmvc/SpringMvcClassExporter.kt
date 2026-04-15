@@ -13,7 +13,6 @@ import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.FieldModel
@@ -178,7 +177,7 @@ class SpringMvcClassExporter(
                         sourceMethod = method,
                         className = psiClass.qualifiedName ?: psiClass.name,
                         classDescription = classDesc,
-                        metadata = HttpMetadata(
+                        metadata = httpMetadata(
                             path = normalizedPath,
                             method = inferredMethod,
                             parameters = mergedParams,
@@ -193,7 +192,6 @@ class SpringMvcClassExporter(
             }
 
             withContext(IdeDispatchers.Background) {
-                // Fire export.after for each endpoint
                 for (endpoint in endpoints) {
                     engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
                         ctx.setExt("api", endpoint)

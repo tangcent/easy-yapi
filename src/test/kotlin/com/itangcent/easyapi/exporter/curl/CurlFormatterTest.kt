@@ -8,6 +8,7 @@ import com.itangcent.easyapi.exporter.model.GrpcStreamingType
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import org.junit.Assert.*
@@ -19,7 +20,7 @@ class CurlFormatterTest {
     fun testFormatSimpleGet() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/1",
                 method = HttpMethod.GET
             )
@@ -36,7 +37,7 @@ class CurlFormatterTest {
     fun testFormatPostWithJsonBody() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 contentType = "application/json",
@@ -68,7 +69,7 @@ class CurlFormatterTest {
     fun testFormatWithQueryParams() {
         val endpoint = ApiEndpoint(
             name = "List Users",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -96,7 +97,7 @@ class CurlFormatterTest {
     fun testFormatWithHeaders() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/1",
                 method = HttpMethod.GET,
                 headers = listOf(
@@ -116,7 +117,7 @@ class CurlFormatterTest {
     fun testFormatWithFormUrlencoded() {
         val endpoint = ApiEndpoint(
             name = "Login",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/login",
                 method = HttpMethod.POST,
                 contentType = "application/x-www-form-urlencoded",
@@ -147,7 +148,7 @@ class CurlFormatterTest {
     fun testFormatWithMultipartFormData() {
         val endpoint = ApiEndpoint(
             name = "Upload File",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/upload",
                 method = HttpMethod.POST,
                 contentType = "multipart/form-data",
@@ -184,7 +185,7 @@ class CurlFormatterTest {
     fun testFormatWithSpecialCharsInPath() {
         val endpoint = ApiEndpoint(
             name = "Search",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/search/test's query",
                 method = HttpMethod.GET
             )
@@ -199,7 +200,7 @@ class CurlFormatterTest {
     fun testFormatWithPathVariable() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -221,7 +222,7 @@ class CurlFormatterTest {
     fun testFormatPutRequest() {
         val endpoint = ApiEndpoint(
             name = "Update User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/1",
                 method = HttpMethod.PUT,
                 contentType = "application/json",
@@ -245,7 +246,7 @@ class CurlFormatterTest {
     fun testFormatDeleteRequest() {
         val endpoint = ApiEndpoint(
             name = "Delete User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/1",
                 method = HttpMethod.DELETE
             )
@@ -365,7 +366,7 @@ class CurlFormatterTest {
     fun testFormatAllWithMixedEndpoints() {
         val httpEndpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/1",
                 method = HttpMethod.GET
             )

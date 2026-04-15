@@ -33,7 +33,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
     fun testBuildUrlSimple() {
         val endpoint = ApiEndpoint(
             name = "Get Users",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET
             )
@@ -50,7 +50,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
     fun testBuildUrlWithQuery() {
         val endpoint = ApiEndpoint(
             name = "List Users",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -72,7 +72,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
     fun testBuildUrlWithPathVariable() {
         val endpoint = ApiEndpoint(
             name = "Get User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/{id}",
                 method = HttpMethod.GET,
                 parameters = listOf(
@@ -93,7 +93,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
     fun testBuildBodyJson() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 contentType = "application/json",
@@ -117,7 +117,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
     fun testBuildBodyFormUrlencoded() {
         val endpoint = ApiEndpoint(
             name = "Login",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/login",
                 method = HttpMethod.POST,
                 contentType = "application/x-www-form-urlencoded",
@@ -142,7 +142,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
     fun testBuildBodyMultipart() {
         val endpoint = ApiEndpoint(
             name = "Upload",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/upload",
                 method = HttpMethod.POST,
                 contentType = "multipart/form-data",
@@ -165,7 +165,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
     fun testBuildBodyWithEndpointBody() {
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 contentType = "application/json",
@@ -200,7 +200,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
         val formatter = PostmanFormatter(project = project)
         val endpoint = ApiEndpoint(
             name = "Upload File",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/upload",
                 method = HttpMethod.POST,
                 contentType = "multipart/form-data",
@@ -228,7 +228,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
         val formatter = PostmanFormatter(project = project)
         val endpoint = ApiEndpoint(
             name = "Submit Form",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/submit",
                 method = HttpMethod.POST,
                 contentType = "application/x-www-form-urlencoded",
@@ -255,7 +255,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
         val formatter = PostmanFormatter(project = project, options = PostmanFormatOptions(appendTimestamp = false))
         val endpoint = ApiEndpoint(
             name = "Create User",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users",
                 method = HttpMethod.POST,
                 contentType = "application/json",
@@ -285,7 +285,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/{id}",
                     method = HttpMethod.GET,
                     parameters = listOf(
@@ -295,7 +295,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
             ),
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST,
                     contentType = "application/json",
@@ -321,7 +321,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/{id}",
                     method = HttpMethod.GET
                 )
@@ -338,7 +338,7 @@ class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCod
             ),
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST
                 )

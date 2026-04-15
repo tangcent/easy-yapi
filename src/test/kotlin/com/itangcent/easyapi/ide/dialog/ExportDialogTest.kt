@@ -1,12 +1,6 @@
 package com.itangcent.easyapi.ide.dialog
 
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ExportFormat
-import com.itangcent.easyapi.exporter.model.GrpcMetadata
-import com.itangcent.easyapi.exporter.model.GrpcStreamingType
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.OutputConfig
+import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -45,11 +39,11 @@ class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(path = "/api/users", method = HttpMethod.GET)
+                metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
             ),
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)
+                metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST)
             )
         )
         
@@ -79,7 +73,7 @@ class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(path = "/api/users", method = HttpMethod.GET)
+                metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
             ),
             ApiEndpoint(
                 name = "SayHello",

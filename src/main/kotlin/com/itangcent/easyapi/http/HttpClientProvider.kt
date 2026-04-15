@@ -3,7 +3,6 @@ package com.itangcent.easyapi.http
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.event.EventBus
 import com.itangcent.easyapi.core.event.EventKeys
 import com.itangcent.easyapi.http.HttpClientProvider.Companion.getInstance

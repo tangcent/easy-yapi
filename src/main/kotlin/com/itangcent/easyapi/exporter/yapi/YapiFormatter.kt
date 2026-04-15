@@ -45,7 +45,14 @@ class YapiFormatter(
         jsonSchemaBuilder: JsonSchemaBuilder = JsonSchemaBuilder(),
         useJson5: Boolean,
         mockGenerator: MockDataGenerator? = MockDataGenerator()
-    ) : this(jsonSchemaBuilder, reqBodyJson5 = useJson5, resBodyJson5 = useJson5, mockGenerator = mockGenerator, autoFormatUrl = true)
+    ) : this(
+        jsonSchemaBuilder,
+        reqBodyJson5 = useJson5,
+        resBodyJson5 = useJson5,
+        mockGenerator = mockGenerator,
+        autoFormatUrl = true
+    )
+
     /**
      * Formats an API endpoint as a YAPI document.
      * Converts all parameters, headers, and body definitions to YAPI format.
@@ -55,59 +62,60 @@ class YapiFormatter(
      */
     fun format(endpoint: ApiEndpoint): YapiApiDoc {
         val httpMeta = endpoint.httpMetadata
-        val headers = (httpMeta?.headers ?: emptyList()).map { 
+        val headers = (httpMeta?.headers ?: emptyList()).map {
             YapiHeader(
-                name = it.name, 
+                name = it.name,
                 value = it.value,
                 desc = it.description,
                 example = it.example ?: it.value,
                 required = if (it.required) 1 else 0
-            ) 
+            )
         }
-        
+
         val parameters = httpMeta?.parameters ?: emptyList()
         val query = parameters
             .filter { it.binding == ParameterBinding.Query }
-            .map { 
+            .map {
                 YapiQuery(
-                    name = it.name, 
+                    name = it.name,
                     value = it.defaultValue,
                     desc = it.description,
                     example = it.example ?: it.defaultValue,
                     required = if (it.required) 1 else 0
-                ) 
+                )
             }
-        
+
         val pathParams = parameters
             .filter { it.binding == ParameterBinding.Path }
-            .map { 
+            .map {
                 YapiPathParam(
-                    name = it.name, 
+                    name = it.name,
                     example = it.example ?: it.defaultValue,
                     desc = it.description
-                ) 
+                )
             }
-        
+
         val formParams = parameters
             .filter { it.binding == ParameterBinding.Form }
-            .map { 
+            .map {
                 YapiFormParam(
-                    name = it.name, 
+                    name = it.name,
                     example = it.example ?: it.defaultValue,
                     type = it.type.rawType(),
                     required = if (it.required) 1 else 0,
                     desc = it.description
-                ) 
+                )
             }
 
-        val hasJsonBody = httpMeta?.body != null || parameters.any { it.binding == ParameterBinding.Body }
+        val requestBody = httpMeta?.body
+        val hasJsonBody = requestBody != null || parameters.any { it.binding == ParameterBinding.Body }
         val hasFormBody = formParams.isNotEmpty()
 
-        val reqBodyOther = if (httpMeta?.body != null) {
+        val reqBodyOther = if (requestBody != null) {
             if (reqBodyJson5) {
-                formatAsJson5(httpMeta.body)
+                formatAsJson5(requestBody)
             } else {
-                jsonSchemaBuilder.build(httpMeta.body)
+                jsonSchemaBuilder.build(requestBody)
             }
         } else if (parameters.any { it.binding == ParameterBinding.Body }) {
             val bodyParams = parameters.filter { it.binding == ParameterBinding.Body }
@@ -130,18 +138,19 @@ class YapiFormatter(
         // req_body_is_json_schema: true when we use JSON schema (not JSON5) for request body
         val reqBodyIsJsonSchema = hasJsonBody && !reqBodyJson5
 
-        val resBody = if (httpMeta?.responseBody != null) {
+        val responseBody = httpMeta?.responseBody
+        val resBody = if (responseBody != null) {
             if (resBodyJson5) {
-                formatAsJson5(httpMeta.responseBody)
+                formatAsJson5(responseBody)
             } else {
-                jsonSchemaBuilder.build(httpMeta.responseBody)
+                jsonSchemaBuilder.build(responseBody)
             }
         } else {
             null
         }
 
         // res_body_is_json_schema: true when we use JSON schema (not JSON5) for response body
-        val resBodyIsJsonSchema = httpMeta?.responseBody != null && !resBodyJson5
+        val resBodyIsJsonSchema = responseBody != null && !resBodyJson5
 
         return YapiApiDoc(
             title = endpoint.name ?: "${httpMeta?.method?.name ?: "UNKNOWN"} ${endpoint.path}",
@@ -158,7 +167,7 @@ class YapiFormatter(
             reqBodyType = reqBodyType,
             reqBodyIsJsonSchema = reqBodyIsJsonSchema,
             resBody = resBody,
-            resBodyType = if (httpMeta?.responseBody != null) "json" else null,
+            resBodyType = if (responseBody != null) "json" else null,
             resBodyIsJsonSchema = resBodyIsJsonSchema,
             tags = endpoint.tags.ifEmpty { null },
             open = if (endpoint.open) true else null
@@ -174,7 +183,7 @@ class YapiFormatter(
      */
     fun formatWithUrls(endpoint: ApiEndpoint): List<YapiApiDoc> {
         val baseDoc = format(endpoint)
-        
+
         val alternativePaths = endpoint.httpMetadata?.alternativePaths
         if (alternativePaths.isNullOrEmpty()) {
             return listOf(baseDoc)
@@ -195,36 +204,38 @@ class YapiFormatter(
     fun formatWithMock(endpoint: ApiEndpoint): YapiApiDoc {
         val doc = format(endpoint)
         val parameters = endpoint.httpMetadata?.parameters ?: emptyList()
-        
+
         mockGenerator?.let { generator ->
             val pathParamMap = parameters
                 .filter { it.binding == ParameterBinding.Path }
                 .associateBy { it.name }
-            
+
             val updatedPathParams = doc.reqParams?.map { param ->
                 val apiParam = pathParamMap[param.name]
-                param.copy(example = param.example 
-                    ?: apiParam?.let { generator.mockFor(it) }
-                    ?: generator.mockForParam(param.name))
+                param.copy(
+                    example = param.example
+                        ?: apiParam?.let { generator.mockFor(it) }
+                        ?: generator.mockForParam(param.name))
             }
-            
+
             val queryParamMap = parameters
                 .filter { it.binding == ParameterBinding.Query }
                 .associateBy { it.name }
-            
+
             val updatedQuery = doc.reqQuery?.map { query ->
                 val apiParam = queryParamMap[query.name]
-                query.copy(example = query.example 
-                    ?: apiParam?.let { generator.mockFor(it) }
-                    ?: generator.mockForQuery(query.name))
+                query.copy(
+                    example = query.example
+                        ?: apiParam?.let { generator.mockFor(it) }
+                        ?: generator.mockForQuery(query.name))
             }
-            
+
             return doc.copy(
                 reqParams = updatedPathParams,
                 reqQuery = updatedQuery
             )
         }
-        
+
         return doc
     }
 
@@ -269,6 +280,7 @@ class YapiFormatter(
     companion object {
         /** Matches any character not allowed in YAPI paths */
         val REGEX_URL_CONSIST = Regex("[^a-zA-Z0-9-/_:.{}?=!]")
+
         /** Matches consecutive slashes */
         val REGEX_URL_REDUNDANT_SLASH = Regex("//+")
     }

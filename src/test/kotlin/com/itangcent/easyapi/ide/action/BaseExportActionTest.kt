@@ -3,16 +3,12 @@ package com.itangcent.easyapi.ide.action
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ExportContext
-import com.itangcent.easyapi.exporter.model.ExportFormat
-import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.model.HttpMetadata
-import com.itangcent.easyapi.exporter.model.HttpMethod
-import org.junit.Assert.*
+import com.itangcent.easyapi.exporter.model.*
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 
 class BaseExportActionTest {
 
@@ -47,7 +43,7 @@ class BaseExportActionTest {
     fun testExportContextHasCorrectFormat() {
         val endpoint = ApiEndpoint(
             name = "test",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/test",
                 method = HttpMethod.GET
             )

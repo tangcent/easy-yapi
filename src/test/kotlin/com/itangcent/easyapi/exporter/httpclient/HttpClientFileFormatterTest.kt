@@ -9,6 +9,7 @@ import com.itangcent.easyapi.exporter.model.GrpcStreamingType
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
+import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import org.junit.Assert.*
@@ -21,7 +22,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/1",
                     method = HttpMethod.GET
                 )
@@ -38,7 +39,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST,
                     contentType = "application/json",
@@ -63,7 +64,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "List Users",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.GET,
                     parameters = listOf(
@@ -85,9 +86,10 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/1",
                     method = HttpMethod.GET,
+                    parameters = emptyList(),
                     headers = listOf(
                         ApiHeader("Authorization", "Bearer token123"),
                         ApiHeader("X-Request-Id", "abc123")
@@ -105,9 +107,12 @@ class HttpClientFileFormatterTest {
     @Test
     fun testFormatMultipleEndpoints() {
         val endpoints = listOf(
-            ApiEndpoint(name = "Get User", metadata = HttpMetadata(path = "/api/users/1", method = HttpMethod.GET)),
-            ApiEndpoint(name = "Create User", metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)),
-            ApiEndpoint(name = "Delete User", metadata = HttpMetadata(path = "/api/users/1", method = HttpMethod.DELETE))
+            ApiEndpoint(name = "Get User", metadata = httpMetadata(path = "/api/users/1", method = HttpMethod.GET)),
+            ApiEndpoint(name = "Create User", metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST)),
+            ApiEndpoint(
+                name = "Delete User",
+                metadata = httpMetadata(path = "/api/users/1", method = HttpMethod.DELETE)
+            )
         )
 
         val result = HttpClientFileFormatter.format(endpoints, "http://localhost:8080")
@@ -125,7 +130,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Login",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/login",
                     method = HttpMethod.POST,
                     contentType = "application/x-www-form-urlencoded",
@@ -149,7 +154,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Update User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/1",
                     method = HttpMethod.PUT,
                     contentType = "application/json",
@@ -171,7 +176,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Delete User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/1",
                     method = HttpMethod.DELETE
                 )
@@ -188,7 +193,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST,
                     contentType = "application/json;charset=UTF-8"
@@ -206,7 +211,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/1",
                     method = HttpMethod.GET
                 )
@@ -291,7 +296,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users/1",
                     method = HttpMethod.GET
                 )
@@ -340,10 +345,11 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST,
                     contentType = "application/json",
+                    parameters = emptyList(),
                     headers = listOf(
                         ApiHeader("Content-Type", "application/json"),
                         ApiHeader("Authorization", "Bearer token123")
@@ -365,10 +371,11 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST,
                     contentType = null,
+                    parameters = emptyList(),
                     headers = listOf(
                         ApiHeader("Content-Type", "application/xml"),
                         ApiHeader("Authorization", "Bearer token123")
@@ -388,10 +395,11 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.GET,
                     contentType = null,
+                    parameters = emptyList(),
                     headers = listOf(
                         ApiHeader("Authorization", "Bearer token123")
                     )
@@ -410,7 +418,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.POST,
                     contentType = "application/json",
@@ -434,11 +442,11 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(path = "/api/users", method = HttpMethod.GET)
+                metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
             ),
             ApiEndpoint(
                 name = "Create User",
-                metadata = HttpMetadata(path = "/api/users", method = HttpMethod.POST)
+                metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST)
             )
         )
 
@@ -456,7 +464,7 @@ class HttpClientFileFormatterTest {
         val endpoint = ApiEndpoint(
             name = "Get User",
             description = "Retrieve user by ID",
-            metadata = HttpMetadata(
+            metadata = httpMetadata(
                 path = "/api/users/1",
                 method = HttpMethod.GET
             )
@@ -474,7 +482,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
-                metadata = HttpMetadata(path = "/api/users", method = HttpMethod.GET)
+                metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
             )
         )
 
@@ -488,7 +496,7 @@ class HttpClientFileFormatterTest {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "List Users",
-                metadata = HttpMetadata(
+                metadata = httpMetadata(
                     path = "/api/users",
                     method = HttpMethod.GET,
                     parameters = listOf(
