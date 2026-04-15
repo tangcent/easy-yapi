@@ -643,7 +643,7 @@ class YapiSettingsPanel : SettingsPanel {
     private val yapiTokens = JBTextArea(5, 40)
     private val enableUrlTemplating = JBCheckBox("Enable URL templating", true)
     private val switchNotice = JBCheckBox("Switch notice", true)
-    private val yapiExportModeCombo = ComboBox(YapiExportMode.values())
+    private val yapiExportModeCombo = ComboBox(YapiExportMode.entries.toTypedArray())
     private val yapiReqBodyJson5 = JBCheckBox("Request body JSON5")
     private val yapiResBodyJson5 = JBCheckBox("Response body JSON5")
 

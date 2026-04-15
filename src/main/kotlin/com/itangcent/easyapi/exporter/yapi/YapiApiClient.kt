@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.exporter.yapi
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonObject
 import com.itangcent.easyapi.exporter.yapi.model.YapiApiDoc
 import com.itangcent.easyapi.exporter.yapi.model.YapiCart
 import com.itangcent.easyapi.exporter.yapi.model.YapiResponse
@@ -45,6 +46,19 @@ interface YapiApiClient {
      */
     suspend fun findExistingApi(catId: String, path: String, method: String): String?
 
+    /**
+     * Finds an existing API in a category by path and method.
+     * Returns the existing API's info (id and title) if found, null otherwise.
+     */
+    suspend fun findExistingApiInfo(catId: String, path: String, method: String): ExistingApiInfo?
+
+    /**
+     * Finds an existing API in a category by path and method.
+     * Returns the full API data as JsonObject if found, null otherwise.
+     * Used for comparing API content in UPDATE_IF_CHANGED mode.
+     */
+    suspend fun findExistingApiData(catId: String, path: String, method: String): JsonObject?
+
     // endregion
 
     // region API upload
@@ -55,5 +69,36 @@ interface YapiApiClient {
      */
     suspend fun uploadApi(doc: YapiApiDoc, catId: String): YapiResponse<Unit>
 
+    /**
+     * Uploads an API document to YAPI with update confirmation support.
+     *
+     * Before uploading, calls [updateConfirmation.confirm] to determine whether to proceed.
+     * If confirmation returns false, the upload is skipped.
+     *
+     * @param doc The API document to upload
+     * @param catId The category ID to upload to
+     * @param updateConfirmation Determines whether to proceed with upload when API exists
+     * @return Success with Unit, or failure with error message
+     */
+    suspend fun uploadApi(
+        doc: YapiApiDoc,
+        catId: String,
+        updateConfirmation: UpdateConfirmation
+    ): YapiResponse<Unit>
+
     // endregion
 }
+
+/**
+ * Contains basic information about an existing API found in YAPI.
+ *
+ * Used by [YapiApiClient.findExistingApiInfo] to return minimal information
+ * needed for update confirmation dialogs and decisions.
+ *
+ * @property id The unique identifier of the existing API in YAPI
+ * @property title The title/name of the existing API, may be null
+ */
+data class ExistingApiInfo(
+    val id: String,
+    val title: String?
+)
