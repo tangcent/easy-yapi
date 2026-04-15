@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.ide.dialog
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -246,7 +247,7 @@ class ExportDialog(
                 val workspaces = client.listWorkspaces(useCache = true)
                 val workspaceItems = workspaces.map { PostmanWorkspaceItem(it.name, it.id) }
 
-                swing {
+                swing(ModalityState.any()) {
                     postmanWorkspaces.clear()
                     postmanWorkspaces.addAll(workspaceItems)
 
@@ -264,13 +265,14 @@ class ExportDialog(
                 }
 
                 if (workspaceItems.isNotEmpty()) {
-                    val wsIdx = swing { postmanWorkspaceComboBox.selectedIndex }
+                    var wsIdx = -1
+                    swing(ModalityState.any()) { wsIdx = postmanWorkspaceComboBox.selectedIndex }
                     if (wsIdx >= 0 && wsIdx < postmanWorkspaces.size) {
                         loadCollectionsForWorkspace(client, postmanWorkspaces[wsIdx].id)
                     }
                 }
             } catch (_: Exception) {
-                swing {
+                swing(ModalityState.any()) {
                     postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("Failed to load"))
                     populateCollectionCombo(emptyList())
                 }
@@ -281,11 +283,11 @@ class ExportDialog(
     private suspend fun loadCollectionsForWorkspace(client: CachedPostmanApiClient, workspaceId: String) {
         try {
             val collections = client.listCollections(workspaceId, useCache = true)
-            swing {
+            swing(ModalityState.any()) {
                 populateCollectionCombo(collections.map { PostmanCollectionItem(it.name, it.id, it.uid) })
             }
         } catch (_: Exception) {
-            swing {
+            swing(ModalityState.any()) {
                 populateCollectionCombo(emptyList())
             }
         }
