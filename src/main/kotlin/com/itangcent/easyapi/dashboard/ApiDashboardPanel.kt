@@ -358,7 +358,9 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     private fun navigateToSource(endpoint: ApiEndpoint) {
         val method = endpoint.sourceMethod ?: return
         if (method.canNavigate()) {
-            method.navigate(true)
+            com.intellij.openapi.application.WriteIntentReadAction.run {
+                method.navigate(true)
+            }
         }
     }
 

@@ -1,5 +1,7 @@
 package com.itangcent.grpc;
 
+import com.itangcent.grpc.EchoRequest;
+import com.itangcent.grpc.EchoResponse;
 import io.grpc.BindableService;
 import io.grpc.stub.StreamObserver;
 

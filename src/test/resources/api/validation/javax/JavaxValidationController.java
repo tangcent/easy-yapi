@@ -1,5 +1,6 @@
 package com.itangcent.validation.javax;
 
+import com.itangcent.validation.javax.JavaxValidatedUserDTO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

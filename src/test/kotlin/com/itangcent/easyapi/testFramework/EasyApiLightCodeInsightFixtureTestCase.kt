@@ -89,6 +89,20 @@ import java.io.InputStreamReader
  *     )
  * }
  * ```
+ *
+ * ## Same-Package Import Requirement for Resource Files
+ *
+ * **Important:** In the IntelliJ PSI test fixture environment, all classes referenced
+ * by a Java file must be explicitly imported, even if they are in the same package.
+ * In normal Java compilation, same-package classes don't require imports, but the
+ * lightweight test fixture's PSI resolver cannot resolve unimported same-package types
+ * unless they are explicitly imported. Without proper imports, the PSI will treat
+ * unresolved type references as `UnresolvedType`, which causes `buildObjectModelFromType`
+ * to return `ObjectModel.Single` instead of `ObjectModel.Object`.
+ *
+ * For example, if `UserController.java` uses `OrderedDTO` from the same package,
+ * it must include `import com.itangcent.jackson.OrderedDTO;` even though they share
+ * the same package declaration.
  */
 abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixtureTestCase() {
 

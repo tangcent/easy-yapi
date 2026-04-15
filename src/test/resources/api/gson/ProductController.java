@@ -1,5 +1,6 @@
 package com.itangcent.gson;
 
+import com.itangcent.gson.ProductDTO;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
