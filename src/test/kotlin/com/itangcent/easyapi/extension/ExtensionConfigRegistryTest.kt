@@ -16,6 +16,15 @@ class ExtensionConfigRegistryTest {
         val extensions = ExtensionConfigRegistry.allExtensions()
         assertNotNull(extensions)
         assertTrue("Expected at least one extension", extensions.isNotEmpty())
+        println("Loaded extensions: ${extensions.map { it.code }}")
+    }
+
+    @Test
+    fun testYapiExtensionExists() {
+        val extensions = ExtensionConfigRegistry.allExtensions()
+        val codes = extensions.map { it.code }
+        println("All extension codes: $codes")
+        assertTrue("yapi extension should exist. Available: $codes", codes.contains("yapi"))
     }
 
     @Test
