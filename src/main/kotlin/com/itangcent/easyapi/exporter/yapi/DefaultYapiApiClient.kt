@@ -178,12 +178,38 @@ class DefaultYapiApiClient(
      * Used by [uploadApi] to decide whether to create or update.
      */
     override suspend fun findExistingApi(catId: String, path: String, method: String): String? {
+        return findExistingApiInfo(catId, path, method)?.id
+    }
+
+    /**
+     * Searches [catId] for an existing API matching [path] and [method] (case-insensitive).
+     * Returns the YAPI API info (id and title) of the match, or null if not found.
+     */
+    override suspend fun findExistingApiInfo(catId: String, path: String, method: String): ExistingApiInfo? {
         val apis = listApis(catId).getOrNull() ?: return null
         return apis.firstOrNull { element ->
             val obj = element.asJsonObject
             obj.get("path")?.asString == path &&
                     obj.get("method")?.asString?.equals(method, ignoreCase = true) == true
-        }?.asJsonObject?.get("_id")?.asString
+        }?.asJsonObject?.let { obj ->
+            ExistingApiInfo(
+                id = obj.get("_id")?.asString ?: return null,
+                title = obj.get("title")?.asString
+            )
+        }
+    }
+
+    /**
+     * Searches [catId] for an existing API matching [path] and [method] (case-insensitive).
+     * Returns the full API data as JsonObject if found, null otherwise.
+     */
+    override suspend fun findExistingApiData(catId: String, path: String, method: String): JsonObject? {
+        val apis = listApis(catId).getOrNull() ?: return null
+        return apis.firstOrNull { element ->
+            val obj = element.asJsonObject
+            obj.get("path")?.asString == path &&
+                    obj.get("method")?.asString?.equals(method, ignoreCase = true) == true
+        }?.asJsonObject
     }
 
     // endregion
@@ -198,6 +224,45 @@ class DefaultYapiApiClient(
      */
     override suspend fun uploadApi(doc: YapiApiDoc, catId: String): YapiResponse<Unit> {
         if (serverUrl.isBlank() || token.isBlank()) return YapiResponse.success(Unit)
+
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val existingId = findExistingApi(catId, doc.path, doc.method)
+                val resp = httpClient.execute(
+                    HttpRequest(
+                        url = "$serverUrl$SAVE_API",
+                        method = "POST",
+                        headers = listOf("Content-Type" to "application/json"),
+                        body = buildApiDocBody(doc, catId, existingId)
+                    )
+                )
+                parseResponse(resp) { Unit }
+            }.getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
+        }
+    }
+
+    /**
+     * Uploads an API document to YAPI with update confirmation support.
+     *
+     * Before uploading, calls [updateConfirmation.confirm] to determine whether to proceed.
+     * If confirmation returns false, the upload is skipped.
+     *
+     * @param doc The API document to upload
+     * @param catId The category ID to upload to
+     * @param updateConfirmation Determines whether to proceed with upload when API exists
+     * @return Success with Unit, or failure with error message
+     */
+    override suspend fun uploadApi(
+        doc: YapiApiDoc,
+        catId: String,
+        updateConfirmation: UpdateConfirmation
+    ): YapiResponse<Unit> {
+        if (serverUrl.isBlank() || token.isBlank()) return YapiResponse.success(Unit)
+
+        if (!updateConfirmation.confirm(doc, catId)) {
+            return YapiResponse.success(Unit)
+        }
+
         return withContext(Dispatchers.IO) {
             runCatching {
                 val existingId = findExistingApi(catId, doc.path, doc.method)

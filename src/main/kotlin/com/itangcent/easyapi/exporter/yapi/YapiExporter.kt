@@ -6,11 +6,13 @@ import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporter
 import com.itangcent.easyapi.exporter.model.*
+import com.itangcent.easyapi.ide.dialog.YapiUpdateConfirmationDialog
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.YapiExportMode
 import com.itangcent.easyapi.util.ide.ModuleHelper
 
 /**
@@ -28,32 +30,16 @@ import com.itangcent.easyapi.util.ide.ModuleHelper
 @Service(Service.Level.PROJECT)
 class YapiExporter(private val project: Project) : ApiExporter {
 
-    /** The export format this exporter handles */
     override val format: ExportFormat = ExportFormat.YAPI
 
     private val settingBinder by lazy { SettingBinder.getInstance(project) }
 
-    /**
-     * Returns the singleton instance for the given project.
-     */
     companion object {
         fun getInstance(project: Project): YapiExporter {
             return project.getService(YapiExporter::class.java)
         }
     }
 
-    /**
-     * Exports API endpoints to YAPI server.
-     * 
-     * Process:
-     * 1. Groups endpoints by module and folder
-     * 2. Resolves valid tokens for each module
-     * 3. Creates categories (carts) as needed
-     * 4. Uploads each endpoint with rule hooks
-     * 
-     * @param context The export context containing endpoints and configuration
-     * @return Success with count and cart links, or error result
-     */
     override suspend fun export(context: ExportContext): ExportResult {
         val clientProvider = DefaultYapiApiClientProvider(project)
         runCatching { clientProvider.init() }
@@ -70,17 +56,21 @@ class YapiExporter(private val project: Project) : ApiExporter {
         var successCount = 0
         var failCount = 0
         val errors = mutableListOf<String>()
-        val exportedCarts = mutableMapOf<String, String>() // cartName -> cartUrl
+        val exportedCarts = mutableMapOf<String, String>()
 
         val indicator = context.indicator
         val totalEndpoints = context.endpointsToExport.size
         var processedCount = 0
 
-        // Fire yapi.export.before once before the export loop
         engine.evaluate(RuleKeys.YAPI_EXPORT_BEFORE)
 
         val docHelper = StandardDocHelper.getInstance(project)
         val metadataResolver = ApiMetadataResolver(engine, docHelper)
+
+        val exportMode = runCatching { YapiExportMode.valueOf(settings.yapiExportMode) }
+            .getOrDefault(YapiExportMode.ALWAYS_UPDATE)
+
+        val updateConfirmationCache = mutableMapOf<YapiApiClient, UpdateConfirmation>()
 
         for (endpoint in context.endpointsToExport) {
             indicator?.checkCanceled()
@@ -131,7 +121,10 @@ class YapiExporter(private val project: Project) : ApiExporter {
                     }
                 }
 
-                val result = client.uploadApi(yapiDoc, catId)
+                val updateConfirmation = updateConfirmationCache.getOrPut(client) {
+                    DefaultUpdateConfirmation(project, exportMode, client)
+                }
+                val result = client.uploadApi(yapiDoc, catId, updateConfirmation)
 
                 psiElement?.let {
                     engine.evaluate(RuleKeys.YAPI_SAVE_AFTER, it) { ctx ->
@@ -182,14 +175,6 @@ class YapiExporter(private val project: Project) : ApiExporter {
         }
     }
 
-    /**
-     * Handles the export result by showing a notification with cart links.
-     * Each cart link opens in the browser when clicked.
-     * 
-     * @param project The IntelliJ project
-     * @param result The successful export result
-     * @return true if notification was shown
-     */
     override suspend fun handleExportResult(
         project: Project,
         result: ExportResult.Success,
@@ -219,11 +204,6 @@ class YapiExporter(private val project: Project) : ApiExporter {
     }
 }
 
-/**
- * Metadata for YAPI export results containing cart links.
- * 
- * @property cartLinks Map of cart name to YAPI URL
- */
 class YapiExportMetadata(
     val cartLinks: Map<String, String>
 ) : ExportMetadata {
