@@ -5,6 +5,21 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.7] - 2026-04-15
+
+### Added
+-  add YAPI API update confirmation with multiple export modes (#1311)
+
+### Fixed
+- fix(extension): add fastjson and yapi to known extensions
+-  Postman workspace and collections stuck on loading in modal dialog
+-  add missing same-package imports in test resources
+
+### Changed
+-  remove enum mapping extensions and related configs (#1312)
+
+---
+
 ## [3.0.6] - 2026-04-15
 
 ### Added
