@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.testFramework
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.vcs.BranchChangeListener
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiFile
@@ -127,6 +128,11 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
         // This is necessary because RuleProvider is a project-level singleton that survives
         // across light fixture test classes.
         runBlocking { configReader.reload() }
+        // Publish branch change to clear caches that depend on project state.
+        // This simulates a branch switch to ensure services like ProjectClassAvailabilityService
+        // clear their caches between test runs.
+        project.messageBus.syncPublisher(BranchChangeListener.VCS_BRANCH_CHANGED)
+            .branchHasChanged("test-setup")
     }
 
     override fun tearDown() {

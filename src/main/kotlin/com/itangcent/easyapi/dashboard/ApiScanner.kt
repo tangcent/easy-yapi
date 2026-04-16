@@ -23,16 +23,22 @@ import kotlinx.coroutines.withTimeout
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
 import com.itangcent.easyapi.exporter.feign.FeignClassExporter
+import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
 import com.itangcent.easyapi.exporter.grpc.GrpcClassExporter
+import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter
+import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointExporter
+import com.itangcent.easyapi.exporter.springmvc.SpringActuatorConstants
+import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -78,7 +84,7 @@ class ApiScanner(private val project: Project) {
         fun getInstance(project: Project): ApiScanner = project.service()
 
         private val PER_CLASS_TIMEOUT_MS = 30_000L.milliseconds
-        
+
         /**
          * Maximum number of concurrent class scans when parallel scanning is enabled.
          */
@@ -309,7 +315,7 @@ class ApiScanner(private val project: Project) {
         indicator: ProgressIndicator?
     ): List<ApiEndpoint> {
         val settings = SettingBinder.getInstance(project).read()
-        
+
         return if (settings.concurrentScanEnabled) {
             scanClassesConcurrently(psiClasses, exporters, console, indicator)
         } else {
@@ -319,6 +325,9 @@ class ApiScanner(private val project: Project) {
 
     /**
      * Scans classes sequentially (default behavior).
+     *
+     * Pre-classifies each class to determine which frameworks it belongs to,
+     * then routes it only to matching exporters for better performance.
      *
      * @param psiClasses The classes to scan
      * @param exporters The enabled class exporters
@@ -334,6 +343,7 @@ class ApiScanner(private val project: Project) {
     ): List<ApiEndpoint> {
         val endpoints = mutableListOf<ApiEndpoint>()
         val total = psiClasses.size
+        val recognizer = CompositeApiClassRecognizer.getInstance(project)
 
         for ((index, psiClass) in psiClasses.withIndex()) {
             indicator?.checkCanceled()
@@ -344,7 +354,16 @@ class ApiScanner(private val project: Project) {
             indicator?.fraction = index.toDouble() / total
             LOG.info("search api from: $className")
 
-            for (exporter in exporters) {
+            val matchingFrameworks = recognizer.matchingFrameworks(psiClass)
+            if (matchingFrameworks.isEmpty()) {
+                continue
+            }
+
+            val matchingExporters = exporters.filter { exporter ->
+                matchingFrameworks.contains(exporter.frameworkName)
+            }
+
+            for (exporter in matchingExporters) {
                 try {
                     val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
                         exporter.export(psiClass)
@@ -367,6 +386,9 @@ class ApiScanner(private val project: Project) {
     /**
      * Scans classes concurrently for better performance on large projects.
      *
+     * Pre-classifies each class to determine which frameworks it belongs to,
+     * then routes it only to matching exporters for better performance.
+     *
      * Uses a semaphore to limit concurrency to [MAX_CONCURRENT_SCANS] parallel operations.
      * PSI read operations are safe for concurrent access.
      *
@@ -384,6 +406,7 @@ class ApiScanner(private val project: Project) {
     ): List<ApiEndpoint> = coroutineScope {
         val semaphore = Semaphore(MAX_CONCURRENT_SCANS)
         val total = psiClasses.size
+        val recognizer = CompositeApiClassRecognizer.getInstance(project)
 
         psiClasses.mapIndexed { index, psiClass ->
             async(IdeDispatchers.Background) {
@@ -394,8 +417,17 @@ class ApiScanner(private val project: Project) {
                     indicator?.fraction = index.toDouble() / total
                     LOG.info("search api from: $className")
 
+                    val matchingFrameworks = recognizer.matchingFrameworks(psiClass)
+                    if (matchingFrameworks.isEmpty()) {
+                        return@withPermit emptyList()
+                    }
+
+                    val matchingExporters = exporters.filter { exporter ->
+                        exporter.frameworkName in matchingFrameworks
+                    }
+
                     val endpoints = mutableListOf<ApiEndpoint>()
-                    for (exporter in exporters) {
+                    for (exporter in matchingExporters) {
                         try {
                             val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
                                 exporter.export(psiClass)
@@ -416,25 +448,37 @@ class ApiScanner(private val project: Project) {
         }.awaitAll().flatten()
     }
 
-    private fun getEnabledExporters(): List<ClassExporter> {
+    private suspend fun getEnabledExporters(): List<ClassExporter> {
         val settings = SettingBinder.getInstance(project).read()
+        val availabilityService = ProjectClassAvailabilityService.getInstance(project)
 
         return buildList {
-            add(SpringMvcClassExporter(project))
+            if (availabilityService.hasAnyClassInProject(SpringControllerRecognizer.CONTROLLER_ANNOTATIONS)) {
+                add(SpringMvcClassExporter(project))
+            }
 
-            if (settings.feignEnable) {
+            if (settings.feignEnable &&
+                availabilityService.hasAnyClassInProject(FeignClientRecognizer.FEIGN_ANNOTATIONS)
+            ) {
                 add(FeignClassExporter(project))
             }
 
-            if (settings.jaxrsEnable) {
+            if (settings.jaxrsEnable &&
+                availabilityService.hasAnyClassInProject(JaxRsResourceRecognizer.PATH_ANNOTATIONS)
+            ) {
                 add(JaxRsClassExporter(project))
             }
 
-            if (settings.actuatorEnable) {
+            if (settings.actuatorEnable &&
+                availabilityService.hasAnyClassInProject(SpringActuatorConstants.ENDPOINT_ANNOTATIONS)
+            ) {
                 add(ActuatorEndpointExporter(project))
             }
 
-            if (settings.grpcEnable) {
+            if (settings.grpcEnable &&
+                (availabilityService.hasAnyClassInProject(GrpcServiceRecognizer.GRPC_SERVICE_ANNOTATIONS) ||
+                        availabilityService.hasClassInProject(GrpcServiceRecognizer.BINDABLE_SERVICE_FQN))
+            ) {
                 add(GrpcClassExporter(project))
             }
         }

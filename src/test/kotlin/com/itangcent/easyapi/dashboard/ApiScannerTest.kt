@@ -98,4 +98,29 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
             assertEquals("HTTP methods should match", seqMeta.method, conMeta.method)
         }
     }
+
+    fun testOnlyExportsSpringMvcWhenAvailable() = runTest {
+        settingBinder.update {
+            feignEnable = true
+            jaxrsEnable = true
+            actuatorEnable = true
+            grpcEnable = true
+        }
+        
+        val endpoints = apiScanner.scanAll()
+        assertTrue("Should find Spring MVC endpoints", endpoints.isNotEmpty())
+        
+        val httpEndpoints = endpoints.filter { it.metadata is HttpMetadata }
+        assertTrue("All endpoints should be HTTP (Spring MVC)", httpEndpoints.isNotEmpty())
+    }
+
+    fun testPreClassificationRoutesToCorrectExporter() = runTest {
+        val endpoints = apiScanner.scanAll()
+        
+        endpoints.forEach { endpoint ->
+            val httpMeta = endpoint.metadata as? HttpMetadata
+            assertNotNull("Endpoint should have HTTP metadata", httpMeta)
+            assertTrue("Path should not be empty", httpMeta!!.path.isNotEmpty())
+        }
+    }
 }

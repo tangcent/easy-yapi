@@ -16,6 +16,13 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
  * @see ApiEndpoint for the extracted endpoint model
  */
 interface ClassExporter {
+
+    /**
+     * The framework name this exporter handles (for routing and debugging).
+     * Must match the frameworkName in the corresponding [ApiClassRecognizer].
+     */
+    val frameworkName: String
+
     /**
      * Exports API endpoints from the given PSI class.
      *

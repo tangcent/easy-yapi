@@ -13,6 +13,8 @@ class ActuatorEndpointExporter(
     private val project: Project
 ) : ClassExporter {
 
+    override val frameworkName: String = "SpringActuator"
+
     private val scanner = ActuatorEndpointScanner()
     private val recognizer = ActuatorEndpointRecognizer()
     private val engine = RuleEngine.getInstance(project)

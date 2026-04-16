@@ -53,6 +53,9 @@ import kotlinx.coroutines.withContext
 class SpringMvcClassExporter(
     private val project: Project
 ) : ClassExporter {
+
+    override val frameworkName: String = "SpringMVC"
+
     private val annotationHelper = UnifiedAnnotationHelper()
     private val engine = RuleEngine.getInstance(project)
     private val controllerRecognizer = SpringControllerRecognizer(engine)

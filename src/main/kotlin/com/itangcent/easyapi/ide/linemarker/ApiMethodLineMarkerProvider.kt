@@ -21,6 +21,7 @@ import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -71,26 +72,33 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
     }
 
     private fun isApiMethod(method: PsiMethod): Boolean {
-        val apiAnnotations = listOf(
-            "org.springframework.web.bind.annotation.RequestMapping",
-            "org.springframework.web.bind.annotation.GetMapping",
-            "org.springframework.web.bind.annotation.PostMapping",
-            "org.springframework.web.bind.annotation.PutMapping",
-            "org.springframework.web.bind.annotation.DeleteMapping",
-            "org.springframework.web.bind.annotation.PatchMapping",
-            "javax.ws.rs.GET",
-            "javax.ws.rs.POST",
-            "javax.ws.rs.PUT",
-            "javax.ws.rs.DELETE",
-            "javax.ws.rs.PATCH",
-            "javax.ws.rs.Path"
-        )
-
+        val availabilityService = ProjectClassAvailabilityService.getInstance(method.project)
+        
         return runBlocking {
-            apiAnnotations.any { annotationHelper.hasAnn(method, it) }
-                    || isGrpcRpcMethod(method)
+            allApiAnnotations.any { annotationFqn ->
+                availabilityService.hasClassInProject(annotationFqn) && 
+                    annotationHelper.hasAnn(method, annotationFqn)
+            } || isGrpcRpcMethod(method)
         }
     }
+
+    /**
+     * All possible API method annotations across supported frameworks.
+     */
+    private val allApiAnnotations: List<String> = listOf(
+        "org.springframework.web.bind.annotation.RequestMapping",
+        "org.springframework.web.bind.annotation.GetMapping",
+        "org.springframework.web.bind.annotation.PostMapping",
+        "org.springframework.web.bind.annotation.PutMapping",
+        "org.springframework.web.bind.annotation.DeleteMapping",
+        "org.springframework.web.bind.annotation.PatchMapping",
+        "javax.ws.rs.GET",
+        "javax.ws.rs.POST",
+        "javax.ws.rs.PUT",
+        "javax.ws.rs.DELETE",
+        "javax.ws.rs.PATCH",
+        "javax.ws.rs.Path"
+    )
 
     /**
      * Detects gRPC RPC methods by signature pattern:
@@ -100,6 +108,13 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
      * Also checks that the containing class is a gRPC service (extends ImplBase or has @GrpcService).
      */
     private suspend fun isGrpcRpcMethod(method: PsiMethod): Boolean {
+        val availabilityService = ProjectClassAvailabilityService.getInstance(method.project)
+        
+        val hasGrpcFramework = availabilityService.hasAnyClassInProject(GrpcServiceRecognizer.GRPC_SERVICE_ANNOTATIONS) ||
+            availabilityService.hasClassInProject(GrpcServiceRecognizer.BINDABLE_SERVICE_FQN)
+        
+        if (!hasGrpcFramework) return false
+        
         val containingClass = method.containingClass ?: return false
         if (!looksLikeGrpcService(containingClass)) return false
         val resolver = GrpcMethodResolver.getInstance(method.project)
@@ -107,9 +122,7 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
     }
 
     private suspend fun looksLikeGrpcService(cls: PsiClass): Boolean {
-        // Check for @GrpcService or any meta-annotation thereof (via MetaAnnotationResolver)
         if (MetaAnnotationResolver.hasMetaAnnotation(cls, GrpcServiceRecognizer.GRPC_SERVICE_ANNOTATIONS)) return true
-        // Check for ImplBase superclass anywhere in hierarchy
         return GrpcServiceRecognizer.extendsBindableService(cls)
     }
 
@@ -130,14 +143,11 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
                 }
 
                 if (!found) {
-                    // Endpoint not in index — trigger re-scan of the containing file,
-                    // then retry navigation after the scan completes.
                     val filePath = method.containingFile?.virtualFile?.path ?: return@backgroundAsync
                     LOG.info("Endpoint not found in index, re-scanning file: $filePath")
 
                     ApiIndexManager.getInstance(project).reIndex(listOf(filePath))
 
-                    // After re-index, retry navigation on EDT
                     swing {
                         service.navigateToMethod(method)
                     }

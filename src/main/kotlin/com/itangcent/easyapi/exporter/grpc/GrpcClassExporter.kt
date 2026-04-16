@@ -34,6 +34,8 @@ class GrpcClassExporter(
     private val project: Project
 ) : ClassExporter {
 
+    override val frameworkName: String = "gRPC"
+
     private val engine = RuleEngine.getInstance(project)
     private val docHelper: DocHelper = StandardDocHelper.getInstance(project)
     private val recognizer = GrpcServiceRecognizer(engine)

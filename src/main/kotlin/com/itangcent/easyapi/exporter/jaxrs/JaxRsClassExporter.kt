@@ -52,6 +52,9 @@ class JaxRsClassExporter(
     private val project: Project,
     jaxrsEnable: Boolean = true
 ) : ClassExporter {
+
+    override val frameworkName: String = "JAX-RS"
+
     private val annotationHelper = UnifiedAnnotationHelper()
     private val engine = RuleEngine.getInstance(project)
     private val recognizer = JaxRsResourceRecognizer(engine, jaxrsEnable)

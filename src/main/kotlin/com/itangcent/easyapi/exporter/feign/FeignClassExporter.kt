@@ -52,6 +52,9 @@ class FeignClassExporter(
     private val project: Project,
     feignEnable: Boolean = true
 ) : ClassExporter {
+
+    override val frameworkName: String = "Feign"
+
     private val annotationHelper = UnifiedAnnotationHelper()
     private val engine = RuleEngine.getInstance(project)
     private val recognizer = FeignClientRecognizer(engine, feignEnable)
