@@ -76,6 +76,8 @@ interface ApplicationSettingsSupport {
     var grpcCallEnabled: Boolean
     /** Repository paths for gRPC runtime resolution in format: type:enabled:path */
     var grpcRepositories: Array<String>
+    /** Enable concurrent API scanning for better performance */
+    var concurrentScanEnabled: Boolean
 
     /**
      * Copies settings to another instance.
@@ -119,6 +121,7 @@ interface ApplicationSettingsSupport {
         newSetting.grpcAdditionalJars = this.grpcAdditionalJars
         newSetting.grpcCallEnabled = this.grpcCallEnabled
         newSetting.grpcRepositories = this.grpcRepositories
+        newSetting.concurrentScanEnabled = this.concurrentScanEnabled
     }
 }
 

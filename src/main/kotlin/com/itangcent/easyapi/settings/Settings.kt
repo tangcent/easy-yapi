@@ -61,7 +61,8 @@ data class Settings(
     override var grpcArtifactConfigs: Array<String> = emptyArray(),
     override var grpcAdditionalJars: Array<String> = emptyArray(),
     override var grpcCallEnabled: Boolean = false,
-    override var grpcRepositories: Array<String> = emptyArray()
+    override var grpcRepositories: Array<String> = emptyArray(),
+    override var concurrentScanEnabled: Boolean = false
 ) : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     companion object {
@@ -116,6 +117,7 @@ data class Settings(
         if (!grpcAdditionalJars.contentEquals(other.grpcAdditionalJars)) return false
         if (grpcCallEnabled != other.grpcCallEnabled) return false
         if (!grpcRepositories.contentEquals(other.grpcRepositories)) return false
+        if (concurrentScanEnabled != other.concurrentScanEnabled) return false
 
         return true
     }
@@ -161,6 +163,7 @@ data class Settings(
         result = 31 * result + grpcAdditionalJars.contentHashCode()
         result = 31 * result + grpcCallEnabled.hashCode()
         result = 31 * result + grpcRepositories.contentHashCode()
+        result = 31 * result + concurrentScanEnabled.hashCode()
         return result
     }
 }

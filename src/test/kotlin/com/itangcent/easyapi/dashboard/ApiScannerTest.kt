@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.dashboard
 
 import com.itangcent.easyapi.cache.ApiIndex
+import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import com.itangcent.easyapi.settings.update
 
 class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -58,5 +60,42 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
         apiIndex.invalidate()
         assertFalse("Cache should be invalid after invalidate", apiIndex.isValid())
         assertTrue("Cached endpoints should be empty after invalidate", apiIndex.endpoints().isEmpty())
+    }
+
+    fun testConcurrentScanReturnsEndpoints() = runTest {
+        settingBinder.update {
+            concurrentScanEnabled = true
+        }
+        val endpoints = apiScanner.scanAll()
+        assertTrue("Should find endpoints with concurrent scanning", endpoints.isNotEmpty())
+    }
+
+    fun testConcurrentScanProducesSameResultsAsSequential() = runTest {
+        settingBinder.update {
+            concurrentScanEnabled = false
+        }
+        val sequentialEndpoints = apiScanner.scanAll()
+            .filter { it.metadata is HttpMetadata }
+            .sortedBy { (it.metadata as HttpMetadata).path }
+
+        settingBinder.update {
+            concurrentScanEnabled = true
+        }
+        val concurrentEndpoints = apiScanner.scanAll()
+            .filter { it.metadata is HttpMetadata }
+            .sortedBy { (it.metadata as HttpMetadata).path }
+
+        assertEquals(
+            "Sequential and concurrent scanning should produce same number of endpoints",
+            sequentialEndpoints.size,
+            concurrentEndpoints.size
+        )
+
+        sequentialEndpoints.zip(concurrentEndpoints).forEach { (seq, con) ->
+            val seqMeta = seq.metadata as HttpMetadata
+            val conMeta = con.metadata as HttpMetadata
+            assertEquals("Paths should match", seqMeta.path, conMeta.path)
+            assertEquals("HTTP methods should match", seqMeta.method, conMeta.method)
+        }
     }
 }

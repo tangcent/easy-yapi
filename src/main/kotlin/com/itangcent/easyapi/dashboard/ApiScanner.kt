@@ -8,8 +8,17 @@ import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
+import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
@@ -69,6 +78,11 @@ class ApiScanner(private val project: Project) {
         fun getInstance(project: Project): ApiScanner = project.service()
 
         private val PER_CLASS_TIMEOUT_MS = 30_000L.milliseconds
+        
+        /**
+         * Maximum number of concurrent class scans when parallel scanning is enabled.
+         */
+        private const val MAX_CONCURRENT_SCANS = 4
     }
 
     private val apiClassRecognizer = CompositeApiClassRecognizer.getInstance(project)
@@ -279,13 +293,40 @@ class ApiScanner(private val project: Project) {
     /**
      * Scans classes with the provided exporters and returns all discovered endpoints.
      *
+     * When concurrent scanning is enabled, classes are processed in parallel with
+     * limited concurrency for better performance on large projects.
+     *
      * @param psiClasses The classes to scan
      * @param exporters The enabled class exporters
-     * @param context The action context
+     * @param console The console for logging
      * @param indicator Progress indicator for cancellation and progress updates
      * @return List of all discovered endpoints
      */
     private suspend fun scanClassesWithExporters(
+        psiClasses: List<PsiClass>,
+        exporters: List<ClassExporter>,
+        console: com.itangcent.easyapi.logging.IdeaConsole,
+        indicator: ProgressIndicator?
+    ): List<ApiEndpoint> {
+        val settings = SettingBinder.getInstance(project).read()
+        
+        return if (settings.concurrentScanEnabled) {
+            scanClassesConcurrently(psiClasses, exporters, console, indicator)
+        } else {
+            scanClassesSequentially(psiClasses, exporters, console, indicator)
+        }
+    }
+
+    /**
+     * Scans classes sequentially (default behavior).
+     *
+     * @param psiClasses The classes to scan
+     * @param exporters The enabled class exporters
+     * @param console The console for logging
+     * @param indicator Progress indicator for cancellation and progress updates
+     * @return List of all discovered endpoints
+     */
+    private suspend fun scanClassesSequentially(
         psiClasses: List<PsiClass>,
         exporters: List<ClassExporter>,
         console: com.itangcent.easyapi.logging.IdeaConsole,
@@ -321,6 +362,58 @@ class ApiScanner(private val project: Project) {
         }
 
         return endpoints
+    }
+
+    /**
+     * Scans classes concurrently for better performance on large projects.
+     *
+     * Uses a semaphore to limit concurrency to [MAX_CONCURRENT_SCANS] parallel operations.
+     * PSI read operations are safe for concurrent access.
+     *
+     * @param psiClasses The classes to scan
+     * @param exporters The enabled class exporters
+     * @param console The console for logging
+     * @param indicator Progress indicator for cancellation and progress updates
+     * @return List of all discovered endpoints
+     */
+    private suspend fun scanClassesConcurrently(
+        psiClasses: List<PsiClass>,
+        exporters: List<ClassExporter>,
+        console: com.itangcent.easyapi.logging.IdeaConsole,
+        indicator: ProgressIndicator?
+    ): List<ApiEndpoint> = coroutineScope {
+        val semaphore = Semaphore(MAX_CONCURRENT_SCANS)
+        val total = psiClasses.size
+
+        psiClasses.mapIndexed { index, psiClass ->
+            async(IdeDispatchers.Background) {
+                semaphore.withPermit {
+                    indicator?.checkCanceled()
+                    val className = read { psiClass.qualifiedName ?: psiClass.name ?: "Unknown" }
+                    indicator?.text = className
+                    indicator?.fraction = index.toDouble() / total
+                    LOG.info("search api from: $className")
+
+                    val endpoints = mutableListOf<ApiEndpoint>()
+                    for (exporter in exporters) {
+                        try {
+                            val exported = withTimeout(PER_CLASS_TIMEOUT_MS) {
+                                exporter.export(psiClass)
+                            }
+                            if (exported.isNotEmpty()) {
+                                LOG.debug("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
+                                endpoints.addAll(exported)
+                            }
+                        } catch (e: TimeoutCancellationException) {
+                            console.warn("Export timed out for class: $className (>${PER_CLASS_TIMEOUT_MS})")
+                        } catch (e: Exception) {
+                            console.warn("Error exporting class: $className", e)
+                        }
+                    }
+                    endpoints
+                }
+            }
+        }.awaitAll().flatten()
     }
 
     private fun getEnabledExporters(): List<ClassExporter> {

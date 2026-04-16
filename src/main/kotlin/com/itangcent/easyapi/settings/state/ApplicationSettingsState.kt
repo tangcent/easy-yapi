@@ -63,7 +63,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var grpcArtifactConfigs: Array<String> = emptyArray(),
         override var grpcAdditionalJars: Array<String> = emptyArray(),
         override var grpcCallEnabled: Boolean = false,
-        override var grpcRepositories: Array<String> = emptyArray()
+        override var grpcRepositories: Array<String> = emptyArray(),
+        override var concurrentScanEnabled: Boolean = false
     ) : ApplicationSettingsSupport {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -107,6 +108,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (!grpcAdditionalJars.contentEquals(other.grpcAdditionalJars)) return false
             if (grpcCallEnabled != other.grpcCallEnabled) return false
             if (!grpcRepositories.contentEquals(other.grpcRepositories)) return false
+            if (concurrentScanEnabled != other.concurrentScanEnabled) return false
 
             return true
         }
@@ -148,6 +150,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + grpcAdditionalJars.contentHashCode()
             result = 31 * result + grpcCallEnabled.hashCode()
             result = 31 * result + grpcRepositories.contentHashCode()
+            result = 31 * result + concurrentScanEnabled.hashCode()
             return result
         }
     }
