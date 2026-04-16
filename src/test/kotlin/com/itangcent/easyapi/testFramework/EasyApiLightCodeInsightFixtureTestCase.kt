@@ -9,9 +9,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.LightJavaCodeInsightFixtureTestCase
 import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.config.LayeredConfigReader
-import com.itangcent.easyapi.config.parser.ConfigTextParser
-import com.itangcent.easyapi.config.source.ExtensionConfigSource
+import com.itangcent.easyapi.config.DefaultConfigReader
 import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.core.threading.readSync
@@ -115,30 +113,20 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
      */
     protected open fun createConfigReader(): ConfigReader? = null
 
-    protected fun extensionConfigReader(vararg selectedCodes: String): ConfigReader {
-        return LayeredConfigReader(
-            listOf(
-                ExtensionConfigSource(
-                    selectedCodes.map { it }.toTypedArray(),
-                    ConfigTextParser(settingBinder.read())
-                )
-            )
-        )
-    }
-
     protected val settingBinder
         get() = SettingBinder.getInstance(project)
 
     override fun setUp() {
         super.setUp()
-        val configReader = createConfigReader()
-        if (configReader != null) {
-            runBlocking { configReader.reload() }
-            project.registerServiceInstance(
-                serviceInterface = ConfigReader::class.java,
-                instance = configReader
-            )
-        }
+        val configReader = createConfigReader() ?: TestConfigReader.empty(project)
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = configReader
+        )
+        // Trigger reload to notify listeners (e.g. RuleProvider) to clear stale caches.
+        // This is necessary because RuleProvider is a project-level singleton that survives
+        // across light fixture test classes.
+        runBlocking { configReader.reload() }
     }
 
     override fun tearDown() {

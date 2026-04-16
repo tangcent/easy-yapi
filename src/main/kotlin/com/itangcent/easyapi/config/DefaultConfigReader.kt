@@ -57,6 +57,7 @@ class DefaultConfigReader(
 
     override suspend fun reload() {
         delegate = buildDelegate().also { it.reload() }
+        project.messageBus.syncPublisher(ConfigReloadListener.TOPIC).onConfigReloaded()
     }
 
     override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {

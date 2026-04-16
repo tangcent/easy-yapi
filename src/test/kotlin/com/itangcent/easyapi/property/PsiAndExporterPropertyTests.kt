@@ -230,7 +230,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val field = psiClass.allFields.first { it.name == "name" }
         project.registerServiceInstance(
             serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(mapOf("field.name" to listOf("@com.fasterxml.jackson.annotation.JsonProperty#value")))
+            instance = TestConfigReader.fromRules(project, "field.name" to "@com.fasterxml.jackson.annotation.JsonProperty#value")
         )
         val engine = RuleEngine.getInstance(project)
         val v = engine.evaluate(RuleKey.string("field.name", StringRuleMode.SINGLE), field)
@@ -254,7 +254,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val field = psiClass.allFields.first { it.name == "a" }
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(mapOf("field.required" to listOf("@javax.validation.constraints.NotNull")))
+            instance = TestConfigReader.fromRules(project, "field.required" to "@javax.validation.constraints.NotNull")
         )
         val engine = RuleEngine.getInstance(project)
         val required = engine.evaluate(RuleKey.boolean("field.required"), field)
@@ -332,7 +332,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val param = method.parameterList.parameters.first()
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(mapOf("doc.param" to listOf("param-doc")))
+            instance = TestConfigReader.fromRules(project, "doc.param" to "param-doc")
         )
         val engine = RuleEngine.getInstance(project)
         val v = engine.evaluate(RuleKeys.PARAM_DOC, param)
@@ -351,7 +351,11 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val method = psiClass.methods.first { it.name == "x" }
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(mapOf("method.doc" to listOf("a", "b")))
+            instance = TestConfigReader.fromRules(
+                project,
+                "method.doc" to "a",
+                "method.doc" to "b"
+            )
         )
         val engine = RuleEngine.getInstance(project)
         val merged = engine.evaluate(RuleKey.string("method.doc", StringRuleMode.MERGE), method)
@@ -370,7 +374,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val method = psiClass.methods.first { it.name == "x" }
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(mapOf("api.name" to listOf("groovy:1/0")))
+            instance = TestConfigReader.fromRules(project, "api.name" to "groovy:1/0")
         )
         val engine = RuleEngine.getInstance(project)
         val v = engine.evaluate(RuleKey.string("api.name", StringRuleMode.SINGLE), method)

@@ -52,7 +52,7 @@ class SpringWebFluxConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCas
         
         val combinedContent = "$springContent\n\n$webFluxContent"
         assertTrue("Combined extension content should not be blank", combinedContent.isNotBlank())
-        return TestConfigReader.fromConfigText(combinedContent)
+        return TestConfigReader.fromConfigText(project, combinedContent)
     }
 
 

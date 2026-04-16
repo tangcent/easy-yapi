@@ -71,9 +71,7 @@ class RuleContext private constructor(
 
     val session: SessionStorage get() = sessionStorageInstance
 
-    val config: ConfigReader by lazy {
-        ConfigReader.getInstance(project)
-    }
+    val config: ConfigReader get() = ConfigReader.getInstance(project)
 
     val localStorage: LocalStorage by lazy {
         LocalStorage.getInstance(project)

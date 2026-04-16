@@ -26,7 +26,7 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/TitleTestCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testResolveApiNameFromDocComment() = runTest {
@@ -68,7 +68,7 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(method)
         val desc = metadataResolver.resolveMethodDoc(method!!)
         // resolveMethodDoc returns the doc comment even without a method.doc rule
-        // With TestConfigReader.EMPTY, no rule fires but the doc comment is still returned
+        // With TestConfigReader.empty(project), no rule fires but the doc comment is still returned
         assertTrue("method.doc should be blank when no rule configured and no doc comment on method",
             desc.isBlank() || desc.isNotBlank()) // just verify it doesn't throw
     }
@@ -80,7 +80,7 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(method)
         val folder = metadataResolver.resolveFolderName(method!!)
         // resolveFolderName falls back to class doc / class name when no folder.name rule configured
-        // With TestConfigReader.EMPTY, it returns the class doc or class name
+        // With TestConfigReader.empty(project), it returns the class doc or class name
         assertNotNull("folder.name should fall back to class name when no rule configured", folder)
     }
 

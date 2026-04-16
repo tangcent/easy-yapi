@@ -26,7 +26,7 @@ class SpringControllerRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() 
         loadFile("api/UserCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testRecognizeRestController() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")

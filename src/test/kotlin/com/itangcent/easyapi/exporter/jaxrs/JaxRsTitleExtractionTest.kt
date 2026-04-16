@@ -35,7 +35,7 @@ class JaxRsTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/jaxrs/TitleTestResource.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testClassTitleFromDocComment() = runTest {

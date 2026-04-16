@@ -40,7 +40,7 @@ class GenericControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         exporter = SpringMvcClassExporter(project)
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     /**

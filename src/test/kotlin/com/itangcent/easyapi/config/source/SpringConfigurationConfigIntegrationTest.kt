@@ -21,7 +21,7 @@ class SpringConfigurationConfigIntegrationTest : EasyApiLightCodeInsightFixtureT
         assertNotNull("spring-configuration extension should exist", extension)
         val content = extension?.content ?: ""
         assertTrue("Extension content should not be blank", content.isNotBlank())
-        return TestConfigReader.fromConfigText(content)
+        return TestConfigReader.fromConfigText(project, content)
     }
 
     fun testSpringConfigurationConfigLoadsCorrectly() = runTest {

@@ -38,7 +38,7 @@ class GsonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun createConfigReader(): TestConfigReader {
         val extension = ExtensionConfigRegistry.getExtension("gson")
         assertNotNull("gson extension should exist", extension)
-        return TestConfigReader.fromConfigText(extension?.content ?: "")
+        return TestConfigReader.fromConfigText(project, extension?.content ?: "")
     }
 
 

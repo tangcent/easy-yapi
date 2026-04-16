@@ -1,41 +1,44 @@
 package com.itangcent.easyapi.testFramework
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.config.ConfigReloadListener
 import com.itangcent.easyapi.extension.ExtensionConfigParser
 
 class TestConfigReader(
-    private val config: Map<String, List<String>> = emptyMap()
+    private var entries: List<Pair<String, String>> = emptyList(),
+    private val project: Project
 ) : ConfigReader {
 
-    override fun getFirst(key: String): String? = config[key]?.firstOrNull()
+    private fun valuesByKey(): Map<String, List<String>> {
+        return entries.groupBy({ it.first }, { it.second })
+    }
 
-    override fun getAll(key: String): List<String> = config[key].orEmpty()
+    override fun getFirst(key: String): String? = valuesByKey()[key]?.firstOrNull()
 
-    override suspend fun reload() {}
+    override fun getAll(key: String): List<String> = valuesByKey()[key].orEmpty()
+
+    override suspend fun reload() {
+        project.messageBus.syncPublisher(ConfigReloadListener.TOPIC).onConfigReloaded()
+    }
 
     override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {
-        config.forEach { (key, values) ->
+        entries.forEach { (key, value) ->
             if (keyFilter(key)) {
-                values.forEach { value ->
-                    action(key, value)
-                }
+                action(key, value)
             }
         }
     }
 
     companion object {
-        val EMPTY = TestConfigReader()
+        fun empty(project: Project) = TestConfigReader(emptyList(), project)
 
-        fun fromRules(vararg rules: Pair<String, String>): TestConfigReader {
-            val config = mutableMapOf<String, List<String>>()
-            rules.forEach { (key, value) ->
-                config[key] = config.getOrDefault(key, emptyList()) + value
-            }
-            return TestConfigReader(config)
+        fun fromRules(project: Project, vararg rules: Pair<String, String>): TestConfigReader {
+            return TestConfigReader(rules.toList(), project)
         }
 
-        fun fromConfigText(configText: String): TestConfigReader {
-            val config = mutableMapOf<String, List<String>>()
+        fun fromConfigText(project: Project, configText: String): TestConfigReader {
+            val entries = mutableListOf<Pair<String, String>>()
             val strippedContent = ExtensionConfigParser.stripYamlFrontMatter(configText)
             val lines = strippedContent.lines()
             var i = 0
@@ -63,21 +66,20 @@ class TestConfigReader(
                     }
                     value = prefix + sb.toString()
                 }
-                config[key] = config.getOrDefault(key, emptyList()) + value
+                entries.add(key to value)
             }
-            return TestConfigReader(config)
+            return TestConfigReader(entries, project)
         }
 
-        fun fromMap(map: Map<String, Any?>): TestConfigReader {
-            val config = mutableMapOf<String, List<String>>()
+        fun fromMap(project: Project, map: Map<String, Any?>): TestConfigReader {
+            val entries = mutableListOf<Pair<String, String>>()
             map.forEach { (key, value) ->
                 when (value) {
-                    is List<*> -> config[key] = value.map { it.toString() }
-                    is String -> config[key] = listOf(value)
-                    else -> config[key] = listOf(value.toString())
+                    is List<*> -> value.forEach { entries.add(key to it.toString()) }
+                    else -> entries.add(key to value.toString())
                 }
             }
-            return TestConfigReader(config)
+            return TestConfigReader(entries, project)
         }
     }
 }

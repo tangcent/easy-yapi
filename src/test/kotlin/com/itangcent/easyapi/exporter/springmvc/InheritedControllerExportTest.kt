@@ -40,7 +40,7 @@ class InheritedControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         exporter = SpringMvcClassExporter(project)
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     // ========== Case 2: Annotations on super abstract class ==========

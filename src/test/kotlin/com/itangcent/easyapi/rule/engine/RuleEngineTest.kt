@@ -14,13 +14,14 @@ import org.mockito.kotlin.mock
 
 class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader(): ConfigReader = TestConfigReader.EMPTY
+    override fun createConfigReader(): ConfigReader = TestConfigReader.empty(project)
 
     @Test
     fun testEvaluateStringWithSingleMode() = runTest {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "api.name" to "Test API",
                 "api.tag" to "tag1"
             )
@@ -38,6 +39,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "api.tag" to "tag1",
                 "api.tag" to "tag2",
                 "api.tag" to "tag3"
@@ -56,6 +58,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "api.tag" to "tag1",
                 "api.tag" to "tag2",
                 "api.tag" to "tag1"
@@ -73,7 +76,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testEvaluateStringWithEmptyConfig() = runTest {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader.EMPTY
+            instance = TestConfigReader.empty(project)
         )
 
         val ruleEngine = RuleEngine.getInstance(project)
@@ -88,6 +91,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "ignore" to "true"
             )
         )
@@ -104,6 +108,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "ignore" to "false"
             )
         )
@@ -120,6 +125,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "ignore" to "false",
                 "ignore" to "false",
                 "ignore" to "true"
@@ -138,6 +144,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "ignore" to "1"
             )
         )
@@ -154,6 +161,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "ignore" to "yes"
             )
         )
@@ -169,7 +177,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testEvaluateBooleanWithEmptyConfig() = runTest {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader.EMPTY
+            instance = TestConfigReader.empty(project)
         )
 
         val ruleEngine = RuleEngine.getInstance(project)
@@ -184,6 +192,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "field.max.depth" to "5"
             )
         )
@@ -200,6 +209,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "field.max.depth" to "10",
                 "field.max.depth" to "20"
             )
@@ -216,7 +226,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testEvaluateIntWithEmptyConfig() = runTest {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader.EMPTY
+            instance = TestConfigReader.empty(project)
         )
 
         val ruleEngine = RuleEngine.getInstance(project)
@@ -231,6 +241,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "http.call.before" to "groovy:logger.info('event executed')"
             )
         )
@@ -246,6 +257,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "http.call.after" to "groovy:logger.info('event executed')"
             )
         )
@@ -260,6 +272,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "http.call.before" to "groovy:logger.info('event executed')"
             )
         )
@@ -278,6 +291,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "http.call.before" to "groovy:throw new RuntimeException('test error')"
             )
         )
@@ -296,12 +310,13 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     @Test
     fun testFilterExpressionPasses() = runTest {
-        val config = mutableMapOf<String, List<String>>()
-        config["api.name"] = listOf("Test API")
-        config["api.name[true]"] = listOf("Filtered API")
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader(config)
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.name" to "Test API",
+                "api.name[true]" to "Filtered API"
+            )
         )
 
         val ruleEngine = RuleEngine.getInstance(project)
@@ -314,12 +329,13 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     @Test
     fun testFilterExpressionFails() = runTest {
-        val config = mutableMapOf<String, List<String>>()
-        config["api.name"] = listOf("Test API")
-        config["api.name[false]"] = listOf("Filtered API")
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader(config)
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.name" to "Test API",
+                "api.name[false]" to "Filtered API"
+            )
         )
 
         val ruleEngine = RuleEngine.getInstance(project)
@@ -334,6 +350,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "api.name" to "groovy:throw new RuntimeException('Parser error')"
             )
         )
@@ -350,6 +367,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "ignore" to "groovy:throw new RuntimeException('Parser error')"
             )
         )
@@ -363,14 +381,15 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     @Test
     fun testMultipleIndexedKeys() = runTest {
-        val config = mutableMapOf<String, List<String>>()
-        config["api.name"] = listOf("Base API")
-        config["api.name[true]"] = listOf("First Filtered")
-        config["api.name[false]"] = listOf("Second Filtered")
-        config["api.name[true]"] = config["api.name[true]"]!! + "Third Filtered"
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
-            instance = TestConfigReader(config)
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.name" to "Base API",
+                "api.name[true]" to "First Filtered",
+                "api.name[false]" to "Second Filtered",
+                "api.name[true]" to "Third Filtered"
+            )
         )
 
         val ruleEngine = RuleEngine.getInstance(project)
@@ -388,6 +407,7 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
             instance = TestConfigReader.fromRules(
+                project,
                 "test.bool.true" to "true",
                 "test.bool.True" to "True",
                 "test.bool.TRUE" to "TRUE",

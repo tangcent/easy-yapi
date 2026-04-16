@@ -31,7 +31,7 @@ class SpringMvcTitleExtractionTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/TitleTestCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testClassTitleFromDocComment() = runTest {

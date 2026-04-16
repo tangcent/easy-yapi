@@ -1,8 +1,5 @@
 package com.itangcent.easyapi.psi
 
-import com.intellij.psi.JavaPsiFacade
-import com.intellij.psi.PsiClass
-import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelValueConverter
@@ -1063,11 +1060,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         val psiClass = findClass("model.CommentModel")!!
         project.registerServiceInstance(
             serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(
-                mapOf(
-                    "field.doc" to listOf("groovy:it.doc()")
-                )
-            )
+            instance = TestConfigReader.fromRules(project, "field.doc" to "groovy:it.doc()")
         )
         project.registerServiceInstance(
             serviceInterface = RuleEngine::class.java,
@@ -1119,11 +1112,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         val psiClass = findClass("model.AnnotatedModel")!!
         project.registerServiceInstance(
             serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(
-                mapOf(
-                    "field.doc" to listOf("@model.ApiModelProperty#value")
-                )
-            )
+            instance = TestConfigReader.fromRules(project, "field.doc" to "@model.ApiModelProperty#value")
         )
         project.registerServiceInstance(
             serviceInterface = RuleEngine::class.java,
@@ -1169,11 +1158,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         val psiClass = findClass("model.UserModel")!!
         project.registerServiceInstance(
             serviceInterface = com.itangcent.easyapi.config.ConfigReader::class.java,
-            instance = TestConfigReader.fromMap(
-                mapOf(
-                    "field.doc" to listOf("groovy:it.doc()")
-                )
-            )
+            instance = TestConfigReader.fromRules(project, "field.doc" to "groovy:it.doc()")
         )
         project.registerServiceInstance(
             serviceInterface = RuleEngine::class.java,

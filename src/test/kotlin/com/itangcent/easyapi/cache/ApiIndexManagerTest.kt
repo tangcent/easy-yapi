@@ -44,7 +44,7 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/UserCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testGetInstance() {
         assertNotNull("ApiIndexManager should be retrievable", apiIndexManager)

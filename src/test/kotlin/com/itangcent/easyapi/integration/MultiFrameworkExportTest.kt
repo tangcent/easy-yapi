@@ -46,7 +46,7 @@ class MultiFrameworkExportTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/jaxrs/UserResource.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testExportSpringMvcController() = runTest {

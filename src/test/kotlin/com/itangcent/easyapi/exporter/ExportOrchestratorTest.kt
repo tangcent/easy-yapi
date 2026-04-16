@@ -35,7 +35,7 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/UserCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testGetInstanceReturnsSameInstance() {
         val instance1 = ExportOrchestrator.getInstance(project)

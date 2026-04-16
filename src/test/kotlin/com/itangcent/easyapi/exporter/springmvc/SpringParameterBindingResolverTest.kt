@@ -35,7 +35,7 @@ class SpringParameterBindingResolverTest : EasyApiLightCodeInsightFixtureTestCas
         loadFile("api/TestCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testResolvePathVariable() = runTest {
         val psiClass = findClass("com.itangcent.api.UserCtrl")!!

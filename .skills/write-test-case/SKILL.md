@@ -116,7 +116,7 @@ class MyExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     // Override to supply config rules for this test class
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     // Override to inject extra services into ActionContext
     override fun customizeContext(builder: ActionContextBuilder) {
@@ -260,7 +260,7 @@ class MyContextAwareServiceTest {
 ```kotlin
 class ExporterParityTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testAllExportersExist() = runTest {
         assertNotNull(SpringMvcClassExporter(actionContext))
@@ -292,7 +292,7 @@ Use to inject `.easy.api.config`-style rules without touching the filesystem.
 
 ```kotlin
 // No config
-TestConfigReader.EMPTY
+TestConfigReader.empty(project)
 
 // From key=value pairs
 TestConfigReader.fromRules(

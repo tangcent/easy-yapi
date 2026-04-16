@@ -44,7 +44,7 @@ class ActuatorEndpointExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         restControllerAnnEndpointPsiClass = findClass("com.itangcent.springboot.demo.controller.RestControllerAnnEndpoint")!!
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     // --- Standard @Endpoint ---

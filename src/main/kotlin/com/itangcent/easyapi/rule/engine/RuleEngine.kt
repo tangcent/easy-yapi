@@ -4,9 +4,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.rule.IntRuleMode
 import com.itangcent.easyapi.rule.RuleKey
+import com.itangcent.easyapi.rule.RuleProvider
 import com.itangcent.easyapi.rule.context.RuleContext
 import com.itangcent.easyapi.rule.parser.*
 
@@ -27,8 +27,8 @@ import com.itangcent.easyapi.rule.parser.*
 class RuleEngine internal constructor(
     private val project: Project
 ) {
-    private val configReader: ConfigReader
-        get() = ConfigReader.getInstance(project)
+    private val ruleProvider: RuleProvider
+        get() = RuleProvider.getInstance(project)
 
     private val parsers: List<RuleParser> = defaultParsers().also { list ->
         list.filterIsInstance<RuleEngineAware>().forEach { it.setRuleEngine(this) }
@@ -206,10 +206,10 @@ class RuleEngine internal constructor(
         ctx: RuleContext,
         action: suspend (String) -> Unit
     ) {
-        for ((exp, filterExp) in loadExpressionsWithFilters(key)) {
+        for ((expression, filter) in ruleProvider.getRules(key)) {
             ctx.regexGroups = null
-            val shouldApply = if (filterExp != null) {
-                runCatching { parse(filterExp, ctx, FILTER_KEY) }
+            val shouldApply = if (filter != null) {
+                runCatching { parse(filter, ctx, FILTER_KEY) }
                     .onFailure { e -> ctx.console.warn("Filter evaluation failed for key=${key.name}", e) }
                     .getOrNull()
                     ?.let { toBoolean(it) }
@@ -218,7 +218,7 @@ class RuleEngine internal constructor(
                 true
             }
             if (shouldApply) {
-                action(exp)
+                action(expression)
             }
             ctx.regexGroups = null
         }
@@ -227,28 +227,6 @@ class RuleEngine internal constructor(
     private suspend fun parse(expression: String, ctx: RuleContext, ruleKey: RuleKey<*>? = null): Any? {
         val parser = parsers.firstOrNull { it.canParse(expression) }
         return parser?.parse(expression, ctx, ruleKey)
-    }
-
-    private fun loadExpressionsWithFilters(key: RuleKey<*>): List<Pair<String, String?>> {
-        val result = ArrayList<Pair<String, String?>>()
-
-        for (k in key.allNames) {
-            val rules = configReader.getAll(k)
-            rules.forEach { exp ->
-                result.add(exp to null)
-            }
-
-            val indexedKeyPrefix = "$k["
-            configReader.foreach(
-                { cfgKey -> cfgKey.startsWith(indexedKeyPrefix) },
-                { indexedKey, value ->
-                    val filterExp = indexedKey.removePrefix(k).removeSurrounding("[", "]")
-                    result.add(value to filterExp)
-                }
-            )
-        }
-
-        return result
     }
 
     private fun toBoolean(value: Any): Boolean = when (value) {

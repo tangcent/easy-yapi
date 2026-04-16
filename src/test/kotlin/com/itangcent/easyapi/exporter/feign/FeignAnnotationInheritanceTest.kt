@@ -25,7 +25,7 @@ class FeignAnnotationInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() 
         loadFile("api/feign/UserFeignClient.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testOverrideMethodInheritsGetMappingFromSuperInterface() = runTest {

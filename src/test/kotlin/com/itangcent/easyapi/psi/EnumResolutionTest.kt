@@ -72,7 +72,7 @@ class EnumResolutionTest {
 
     class Case1_Default : EasyApiLightCodeInsightFixtureTestCase() {
 
-        override fun createConfigReader() = TestConfigReader.EMPTY
+        override fun createConfigReader() = TestConfigReader.empty(project)
 
         fun testEnumFieldDefaultJsonType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
@@ -163,7 +163,7 @@ class EnumResolutionTest {
     class Case1_CustomCode : EasyApiLightCodeInsightFixtureTestCase() {
 
         override fun createConfigReader() = TestConfigReader.fromRules(
-            "enum.use.custom" to "code"
+            project, "enum.use.custom" to "code"
         )
 
         fun testEnumFieldCustomCodeJsonType() = runBlocking {
@@ -221,7 +221,7 @@ class EnumResolutionTest {
     class Case1_CustomDesc : EasyApiLightCodeInsightFixtureTestCase() {
 
         override fun createConfigReader() = TestConfigReader.fromRules(
-            "enum.use.custom" to "desc"
+            project, "enum.use.custom" to "desc"
         )
 
         fun testEnumFieldCustomDescJsonType() = runBlocking {
@@ -279,7 +279,7 @@ class EnumResolutionTest {
     class Case1_CustomName : EasyApiLightCodeInsightFixtureTestCase() {
 
         override fun createConfigReader() = TestConfigReader.fromRules(
-            "enum.use.custom" to "name"
+            project, "enum.use.custom" to "name"
         )
 
         fun testEnumFieldCustomNameJsonType() = runBlocking {
@@ -336,7 +336,7 @@ class EnumResolutionTest {
     class Case1_CustomOrdinal : EasyApiLightCodeInsightFixtureTestCase() {
 
         override fun createConfigReader() = TestConfigReader.fromRules(
-            "enum.use.custom" to "ordinal"
+            project, "enum.use.custom" to "ordinal"
         )
 
         fun testEnumFieldCustomOrdinalJsonType() = runBlocking {
@@ -393,7 +393,7 @@ class EnumResolutionTest {
 
     class Case2_SeeWithExplicitField : EasyApiLightCodeInsightFixtureTestCase() {
 
-        override fun createConfigReader() = TestConfigReader.EMPTY
+        override fun createConfigReader() = TestConfigReader.empty(project)
 
         fun testSeeEnumWithHashField() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
@@ -489,7 +489,7 @@ class EnumResolutionTest {
 
     class Case2_SeeWithAutoMatch : EasyApiLightCodeInsightFixtureTestCase() {
 
-        override fun createConfigReader() = TestConfigReader.EMPTY
+        override fun createConfigReader() = TestConfigReader.empty(project)
 
         fun testSeeEnumAutoMatchByIntType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
@@ -614,7 +614,7 @@ class EnumResolutionTest {
 
     class Case2_OptionDescriptions : EasyApiLightCodeInsightFixtureTestCase() {
 
-        override fun createConfigReader() = TestConfigReader.EMPTY
+        override fun createConfigReader() = TestConfigReader.empty(project)
 
         fun testSeeEnumOptionsHaveDescriptions() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())

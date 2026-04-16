@@ -30,7 +30,7 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/UserCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testScanAllReturnsEndpoints() = runTest {
         val endpoints = apiScanner.scanAll()

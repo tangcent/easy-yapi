@@ -29,7 +29,7 @@ class FeignPathResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/feign/UserClient.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testResolveFeignClientWithName() = runTest {
         val psiClass = findClass("com.itangcent.springboot.demo.client.UserClient")

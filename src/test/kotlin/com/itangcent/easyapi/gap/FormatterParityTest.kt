@@ -8,7 +8,7 @@ import org.junit.Assert.*
 
 class FormatterParityTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testPostmanFormatterExists() {
         val formatter = PostmanFormatter(project = project)

@@ -51,8 +51,10 @@ class JacksonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/jackson/ViewDTO.java")
     }
 
-    override fun createConfigReader(): ConfigReader {
-        return extensionConfigReader("jackson")
+    override fun createConfigReader(): TestConfigReader {
+        val extension = ExtensionConfigRegistry.getExtension("jackson")
+        assertNotNull("jackson extension should exist", extension)
+        return TestConfigReader.fromConfigText(project, extension?.content ?: "")
     }
 
     fun testJacksonConfigLoadsCorrectly() = runTest {

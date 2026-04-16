@@ -1,23 +1,32 @@
 package com.itangcent.easyapi.rule.parser
 
+import com.intellij.openapi.project.Project
+import com.intellij.util.messages.MessageBus
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito.*
 
 class ScriptConfigWrapperTest {
 
     private lateinit var wrapper: ScriptConfigWrapper
+    private lateinit var mockProject: Project
+    private lateinit var mockMessageBus: MessageBus
 
     @Before
     fun setUp() {
-        val configReader = TestConfigReader.fromMap(
-            mapOf(
-                "api.name" to listOf("getUser", "listUsers"),
-                "api.tag" to listOf("user"),
-                "base.url" to listOf("http://localhost:8080"),
-                "app.name" to listOf("MyApp")
-            )
+        mockProject = mock(Project::class.java)
+        mockMessageBus = mock(MessageBus::class.java)
+        `when`(mockProject.messageBus).thenReturn(mockMessageBus)
+
+        val configReader = TestConfigReader.fromRules(
+            mockProject,
+            "api.name" to "getUser",
+            "api.name" to "listUsers",
+            "api.tag" to "user",
+            "base.url" to "http://localhost:8080",
+            "app.name" to "MyApp"
         )
         wrapper = ScriptConfigWrapper(configReader)
     }

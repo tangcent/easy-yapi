@@ -43,7 +43,7 @@ class GrpcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("grpc/UserInfo.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     /**

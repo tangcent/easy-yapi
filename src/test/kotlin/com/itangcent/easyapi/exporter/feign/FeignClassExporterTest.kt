@@ -34,7 +34,7 @@ class FeignClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/feign/UserClient.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testExportFeignClient() = runTest {

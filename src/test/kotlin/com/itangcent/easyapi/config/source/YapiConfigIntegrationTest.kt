@@ -30,8 +30,10 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("model/Result.java")
         loadFile("model/IResult.java")
         loadFile("model/UserInfo.java")
-        loadFile("java/lang/Deprecated.java",
-            "package java.lang;\npublic @interface Deprecated {}")
+        loadFile(
+            "java/lang/Deprecated.java",
+            "package java.lang;\npublic @interface Deprecated {}"
+        )
         loadFile("api/yapi/YapiController.java")
         loadFile("api/yapi/ItemDTO.java")
         loadFile("api/yapi/DeprecatedController.java")
@@ -41,7 +43,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun createConfigReader(): TestConfigReader {
         val yapiConfig = javaClass.getResourceAsStream("/extensions/yapi.config")
             ?.bufferedReader()?.readText() ?: ""
-        return TestConfigReader.fromConfigText(yapiConfig)
+        return TestConfigReader.fromConfigText(project, yapiConfig)
     }
 
     // ── api.open[#open]=true ─────────────────────────────────────
@@ -54,7 +56,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val publicEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
-            it.httpMetadata?.path?.contains("public") == true
+                    it.httpMetadata?.path?.contains("public") == true
         }
         assertNotNull("Should find GET /yapi/public endpoint", publicEndpoint)
         assertTrue(
@@ -71,7 +73,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val privateEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
-            it.httpMetadata?.path?.contains("private") == true
+                    it.httpMetadata?.path?.contains("private") == true
         }
         assertNotNull("Should find GET /yapi/private endpoint", privateEndpoint)
         assertFalse(
@@ -90,7 +92,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val createEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
-            it.httpMetadata?.path?.contains("create") == true
+                    it.httpMetadata?.path?.contains("create") == true
         }
         assertNotNull("Should find POST /yapi/create endpoint", createEndpoint)
         assertEquals(
@@ -108,7 +110,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val updateEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
-            it.httpMetadata?.path?.contains("update") == true
+                    it.httpMetadata?.path?.contains("update") == true
         }
         assertNotNull("Should find POST /yapi/update endpoint", updateEndpoint)
         assertEquals(
@@ -128,7 +130,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val createEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
-            it.httpMetadata?.path?.contains("create") == true
+                    it.httpMetadata?.path?.contains("create") == true
         }
         assertNotNull("Should find POST /yapi/create endpoint", createEndpoint)
 
@@ -161,7 +163,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val createEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
-            it.httpMetadata?.path?.contains("create") == true
+                    it.httpMetadata?.path?.contains("create") == true
         }
         assertNotNull("Should find POST /yapi/create endpoint", createEndpoint)
 
@@ -186,7 +188,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val oldEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
-            it.httpMetadata?.path?.contains("deprecated/old") == true
+                    it.httpMetadata?.path?.contains("deprecated/old") == true
         }
         assertNotNull("Should find GET /deprecated/old endpoint", oldEndpoint)
         assertTrue(
@@ -205,7 +207,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val oldEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
-            it.httpMetadata?.path?.contains("doc/old") == true
+                    it.httpMetadata?.path?.contains("doc/old") == true
         }
         assertNotNull("Should find GET /doc/old endpoint", oldEndpoint)
         assertTrue(
@@ -222,7 +224,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val newEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
-            it.httpMetadata?.path?.contains("doc/new") == true
+                    it.httpMetadata?.path?.contains("doc/new") == true
         }
         assertNotNull("Should find GET /doc/new endpoint", newEndpoint)
         assertFalse(

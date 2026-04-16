@@ -99,6 +99,7 @@ class ApiLifecycleEventsTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     override fun createConfigReader() = TestConfigReader.fromConfigText(
+        project,
         """
         api.class.parse.before=groovy:logger.info("lifecycle:api.class.parse.before:" + it.name())
         api.class.parse.after=groovy:logger.info("lifecycle:api.class.parse.after:" + it.name())

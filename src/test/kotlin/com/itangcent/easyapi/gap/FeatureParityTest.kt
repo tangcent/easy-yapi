@@ -9,7 +9,7 @@ import org.junit.Assert.*
 
 class FeatureParityTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testSpringMvcExporterExists() = runTest {
         val exporter = SpringMvcClassExporter(project)

@@ -39,7 +39,7 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/UserCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testExportSimpleController() = runTest {

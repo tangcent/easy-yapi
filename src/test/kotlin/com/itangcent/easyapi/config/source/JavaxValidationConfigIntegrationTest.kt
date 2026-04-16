@@ -41,7 +41,7 @@ class JavaxValidationConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         assertNotNull("javax-validation extension should exist", extension)
         val content = extension?.content ?: ""
         assertTrue("Extension content should not be blank", content.isNotBlank())
-        return TestConfigReader.fromConfigText(content)
+        return TestConfigReader.fromConfigText(project, content)
     }
 
 

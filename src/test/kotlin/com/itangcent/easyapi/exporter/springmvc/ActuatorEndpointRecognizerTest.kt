@@ -27,7 +27,7 @@ class ActuatorEndpointRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() 
         loadFile("spring/PostMapping.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testRecognizesStandardEndpoint() = runTest {

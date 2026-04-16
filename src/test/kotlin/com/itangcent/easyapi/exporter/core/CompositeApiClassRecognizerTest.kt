@@ -30,7 +30,7 @@ class CompositeApiClassRecognizerTest : EasyApiLightCodeInsightFixtureTestCase()
         loadFile("api/UserCtrl.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testGetInstance() {
         val instance = CompositeApiClassRecognizer.getInstance(project)

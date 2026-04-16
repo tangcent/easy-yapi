@@ -21,7 +21,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("model/generic/ConcreteLeaf.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     /**

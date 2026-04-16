@@ -30,6 +30,21 @@ import com.intellij.openapi.components.service
  * }
  * ```
  *
+ * ## Important: Do NOT cache the instance
+ *
+ * Tests that share a light project fixture rely on `registerServiceInstance` to swap
+ * in different `ConfigReader` implementations per test class. Caching the instance
+ * in a `by lazy` property or a long-lived field causes later tests to see a stale
+ * reference from an earlier test. Use a computed property (`get()`) instead:
+ *
+ * ```kotlin
+ * // WRONG – captures a stale reference across test runs
+ * private val configReader: ConfigReader by lazy { ConfigReader.getInstance(project) }
+ *
+ * // CORRECT – always resolves the current instance
+ * private val configReader: ConfigReader get() = ConfigReader.getInstance(project)
+ * ```
+ *
  * @see LayeredConfigReader for layered configuration
  * @see ConfigProvider for configuration management
  */

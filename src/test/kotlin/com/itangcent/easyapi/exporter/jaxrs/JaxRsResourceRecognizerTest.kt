@@ -27,7 +27,7 @@ class JaxRsResourceRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/jaxrs/UserResource.java")
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testRecognizeJaxRsResource() = runTest {
         val psiClass = findClass("com.itangcent.jaxrs.UserResource")

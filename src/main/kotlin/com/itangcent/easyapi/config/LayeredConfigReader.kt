@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference
  * - Higher priority sources are processed first
  * - [getFirst] returns the value from the highest priority source
  * - [getAll] returns values ordered by source priority (highest first)
+ * - [foreach] iterates over entries in their original order from config files
  * 
  * This allows configuration to be layered, with higher priority sources overriding
  * or supplementing values from lower priority sources.
@@ -22,9 +23,16 @@ class LayeredConfigReader(
 ) : ConfigReader {
     companion object : IdeaLog
 
-    private val snapshotRef: AtomicReference<Map<String, List<String>>> = AtomicReference(emptyMap())
+    private data class Snapshot(
+        val orderedEntries: List<Pair<String, String>>,
+        val valuesByKey: Map<String, List<String>>
+    )
 
-    private fun values(key: String): List<String>? = snapshotRef.get()[key]
+    private val snapshotRef: AtomicReference<Snapshot> = AtomicReference(
+        Snapshot(emptyList(), emptyMap())
+    )
+
+    private fun values(key: String): List<String>? = snapshotRef.get().valuesByKey[key]
 
     override fun getFirst(key: String): String? {
         return values(key)?.firstOrNull()
@@ -45,25 +53,29 @@ class LayeredConfigReader(
             LOG.info("Loaded $count config entries from [${source.sourceId}] (priority=${source.priority})")
         }
 
-        val allResolved = LinkedHashMap<String, List<String>>()
-        val resolver = PropertyResolver(lookup = { k -> allResolved[k].orEmpty() })
+        val orderedEntries = ArrayList<Pair<String, String>>()
+        val valuesByKey = LinkedHashMap<String, List<String>>()
+        val resolver = PropertyResolver(lookup = { k -> valuesByKey[k].orEmpty() })
 
         for ((key, entryList) in allEntries) {
-            val resolvedValues = entryList.map { entry -> resolveEntry(entry, resolver) }
-            allResolved[key] = resolvedValues
+            val resolvedValues = ArrayList<String>()
+            for (entry in entryList) {
+                val resolvedValue = resolveEntry(entry, resolver)
+                resolvedValues.add(resolvedValue)
+                orderedEntries.add(key to resolvedValue)
+            }
+            valuesByKey[key] = resolvedValues
         }
 
-        snapshotRef.set(allResolved)
-        LOG.info("Config reload complete: ${allResolved.size} keys from ${sources.size} sources")
+        snapshotRef.set(Snapshot(orderedEntries, valuesByKey))
+        LOG.info("Config reload complete: ${valuesByKey.size} keys from ${sources.size} sources")
     }
 
     override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {
         val snapshot = snapshotRef.get()
-        for ((key, values) in snapshot) {
+        for ((key, value) in snapshot.orderedEntries) {
             if (keyFilter(key)) {
-                for (value in values) {
-                    action(key, value)
-                }
+                action(key, value)
             }
         }
     }

@@ -8,7 +8,7 @@ import org.junit.Assert.*
 
 class PostmanApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     fun testFormat(): Unit = runBlocking {
         val result = testFormatInternal()

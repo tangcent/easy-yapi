@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 
 class FormatConversionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     private val testEndpoint = ApiEndpoint(
         name = "Get User",

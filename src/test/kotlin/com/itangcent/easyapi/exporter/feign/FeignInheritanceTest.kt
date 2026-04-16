@@ -35,7 +35,7 @@ class FeignInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         exporter = FeignClassExporter(project, feignEnable = true)
     }
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
 
     fun testInheritedMethodIsExported() = runTest {

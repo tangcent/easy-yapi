@@ -20,7 +20,7 @@ import org.junit.Test
 
 class PostmanFormatterTest : com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase() {
 
-    override fun createConfigReader() = TestConfigReader.EMPTY
+    override fun createConfigReader() = TestConfigReader.empty(project)
 
     @Test
     fun testParsePath() {

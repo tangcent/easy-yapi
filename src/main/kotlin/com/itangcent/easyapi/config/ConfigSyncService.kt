@@ -44,7 +44,7 @@ class ConfigSyncService(
     private val project: Project
 ) : Disposable {
 
-    private val configReader: ConfigReader by lazy { ConfigReader.getInstance(project) }
+    private val configReader: ConfigReader get() = ConfigReader.getInstance(project)
 
     private val connection = project.messageBus.connect(this)
 
