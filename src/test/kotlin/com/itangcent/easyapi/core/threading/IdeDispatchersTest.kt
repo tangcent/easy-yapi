@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.core.threading
 
+import com.intellij.openapi.application.ModalityState
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 
@@ -11,6 +12,47 @@ class IdeDispatchersTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testSwingDispatcher() {
         assertNotNull(IdeDispatchers.Swing)
+    }
+
+    fun testSwingAnyDispatcher() {
+        assertNotNull(IdeDispatchers.SwingAny)
+    }
+
+    fun testSwingDispatcherUsesNonModal() {
+        val swingDispatcher = IdeDispatchers.Swing
+        assertTrue("Swing dispatcher should be SwingDispatcher", swingDispatcher is SwingDispatcher)
+    }
+
+    fun testSwingAnyDispatcherUsesAnyModality() {
+        val swingAnyDispatcher = IdeDispatchers.SwingAny
+        assertTrue("SwingAny dispatcher should be SwingDispatcher", swingAnyDispatcher is SwingDispatcher)
+    }
+
+    fun testGetSwingDispatcherWithNonModal() {
+        val dispatcher = IdeDispatchers.getSwingDispatcher(ModalityState.nonModal())
+        assertSame(
+            "getSwingDispatcher(nonModal()) should return Swing dispatcher",
+            IdeDispatchers.Swing,
+            dispatcher
+        )
+    }
+
+    fun testGetSwingDispatcherWithAny() {
+        val dispatcher = IdeDispatchers.getSwingDispatcher(ModalityState.any())
+        assertSame(
+            "getSwingDispatcher(any()) should return SwingAny dispatcher",
+            IdeDispatchers.SwingAny,
+            dispatcher
+        )
+    }
+
+    fun testGetSwingDispatcherWithCustomModality() {
+        val customModality = ModalityState.defaultModalityState()
+        val dispatcher = IdeDispatchers.getSwingDispatcher(customModality)
+        assertTrue(
+            "getSwingDispatcher with custom modality should return SwingDispatcher",
+            dispatcher is SwingDispatcher
+        )
     }
 
     fun testBackgroundDispatcher() {

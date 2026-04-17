@@ -122,6 +122,31 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
         return isPrimitive() || isPrimitiveWrapper() || n == "java.lang.String" || n == "java.lang.Object"
     }
 
+    fun qualifiedName(): String? = readSync { psiClass().qualifiedName }
+
+    fun packageName(): String? = readSync { psiClass().qualifiedName?.substringBeforeLast('.', "") }
+
+    fun isPublic(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PUBLIC) }
+
+    fun isProtected(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PROTECTED) }
+
+    fun isPrivate(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PRIVATE) }
+
+    fun isPackagePrivate(): Boolean = readSync {
+        val cls = psiClass()
+        !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PUBLIC) &&
+        !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PROTECTED) &&
+        !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PRIVATE)
+    }
+
+    fun isInnerClass(): Boolean = readSync { psiClass().containingClass != null }
+
+    fun isStatic(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) }
+
+    open fun outerClass(): ScriptPsiClassContext? = readSync {
+        psiClass().containingClass?.let { ScriptPsiClassContext(context.withElement(it)) }
+    }
+
     open fun superClass(): ScriptPsiClassContext? = readSync {
         val cls = psiClass()
         if (cls.isInterface || cls.isAnnotationType || cls.isEnum) return@readSync null
@@ -208,6 +233,26 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
     /* for backward compatibility only */
     fun isEnumField(): Boolean = false
 
+    fun isConstructor(): Boolean = readSync { psiMethod().isConstructor }
+
+    fun isOverride(): Boolean = readSync {
+        val method = psiMethod()
+        method.modifierList.findAnnotation("java.lang.Override") != null ||
+        method.findSuperMethods().isNotEmpty()
+    }
+
+    fun throwsExceptions(): Array<String> = readSync {
+        psiMethod().throwsList.referencedTypes.map { it.canonicalText }.toTypedArray()
+    }
+
+    fun isDefault(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.DEFAULT) }
+
+    fun isAbstract(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.ABSTRACT) }
+
+    fun isSynchronized(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.SYNCHRONIZED) }
+
+    fun isNative(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.NATIVE) }
+
     override fun contextType(): String = "method"
 
     override fun toString(): String {
@@ -261,6 +306,8 @@ open class ScriptPsiFieldContext(context: RuleContext) : ScriptItContext(context
         ScriptTypeContext(context, TypeResolver.resolve(psiField().type))
     }
 
+    open fun jsonType(): ScriptTypeContext = type()
+
     open fun containingClass(): ScriptPsiClassContext? = readSync {
         val cls = psiField().containingClass ?: return@readSync null
         ScriptPsiClassContext(context.withElement(cls))
@@ -272,6 +319,24 @@ open class ScriptPsiFieldContext(context: RuleContext) : ScriptItContext(context
 
     fun asEnumField(): ScriptPsiEnumConstantContext? = readSync {
         (psiField() as? PsiEnumConstant)?.let { ScriptPsiEnumConstantContext(context, it) }
+    }
+
+    fun isStatic(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) }
+
+    fun isFinal(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.FINAL) }
+
+    fun isTransient(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.TRANSIENT) }
+
+    fun isVolatile(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.VOLATILE) }
+
+    fun constantValue(): Any? = readSync {
+        val field = psiField()
+        if (field.hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) &&
+            field.hasModifierProperty(com.intellij.psi.PsiModifier.FINAL)) {
+            field.computeConstantValue()
+        } else {
+            null
+        }
     }
 
     override fun contextType(): String = "field"
@@ -327,7 +392,11 @@ open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(con
         ScriptTypeContext(context, TypeResolver.resolve(psiParameter().type))
     }
 
+    open fun jsonType(): ScriptTypeContext = type()
+
     fun isVarArgs(): Boolean = readSync { psiParameter().isVarArgs }
+
+    fun isFinal(): Boolean = readSync { psiParameter().hasModifierProperty(com.intellij.psi.PsiModifier.FINAL) }
 
     /**
      * Returns the method which declares this parameter. May be null.

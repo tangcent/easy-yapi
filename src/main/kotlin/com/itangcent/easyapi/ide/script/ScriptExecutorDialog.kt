@@ -2,6 +2,7 @@ package com.itangcent.easyapi.ide.script
 
 import com.intellij.ide.util.ClassFilter
 import com.intellij.ide.util.TreeClassChooserFactory
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEx
@@ -345,18 +346,18 @@ class ScriptExecutorDialog(
 
     private suspend fun doEvalToConsole(scriptInfo: ScriptInfo) {
         val ret = doEval(scriptInfo)
-        swing {
+        swing(ModalityState.any()) {
             consoleTextArea.text = ret ?: ""
         }
     }
 
     private suspend fun doEval(scriptInfo: ScriptInfo): String? {
-        val element = scriptInfo.context as? PsiElement ?: return "no context selected"
-        val ruleEngine = RuleEngine.getInstance(project)
-        val ruleContext = RuleContext.from(project, element)
-        val expression = scriptInfo.scriptType?.buildScript(scriptInfo.script) ?: return "no script type selected"
-
         return try {
+            val element = scriptInfo.context as? PsiElement ?: return "no context selected"
+            val ruleEngine = RuleEngine.getInstance(project)
+            val ruleContext = RuleContext.from(project, element)
+            val expression = scriptInfo.scriptType?.buildScript(scriptInfo.script) ?: return "no script type selected"
+
             val result = ruleEngine.parseExpression(expression, ruleContext, RuleKey.string("__script__"))
             result?.toString() ?: "null"
         } catch (e: Exception) {

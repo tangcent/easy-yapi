@@ -95,7 +95,7 @@ object IdeDispatchers : IdeaLog {
      * @see SwingAny for modal-dialog-compatible dispatcher
      * @see swing for the suspend function wrapper
      */
-    val Swing: CoroutineDispatcher = SwingDispatcher()
+    val Swing: CoroutineDispatcher = SwingDispatcher(ModalityState.nonModal())
 
     /**
      * Dispatcher for UI operations that must execute even during modal dialogs.
@@ -170,6 +170,7 @@ object IdeDispatchers : IdeaLog {
      */
     fun getSwingDispatcher(modalityState: ModalityState): CoroutineDispatcher {
         return when (modalityState) {
+            ModalityState.nonModal() -> Swing
             ModalityState.any() -> SwingAny
             else -> SwingDispatcher(modalityState)
         }
@@ -421,7 +422,7 @@ suspend fun <T> swing(block: suspend () -> T): T = IdeDispatchers.swing(block)
 /**
  * Shorthand for [IdeDispatchers.swing] with custom [ModalityState].
  */
-suspend fun <T> swing(modalityState: ModalityState, block: suspend () -> T): T = 
+suspend fun <T> swing(modalityState: ModalityState, block: suspend () -> T): T =
     IdeDispatchers.swing(modalityState, block)
 
 /**
@@ -472,7 +473,7 @@ fun swingAsync(block: suspend () -> Unit) = IdeDispatchers.swingAsync(block)
 /**
  * Shorthand for [IdeDispatchers.swingAsync] with custom [ModalityState].
  */
-fun swingAsync(modalityState: ModalityState, block: suspend () -> Unit) = 
+fun swingAsync(modalityState: ModalityState, block: suspend () -> Unit) =
     IdeDispatchers.swingAsync(modalityState, block)
 
 /**
