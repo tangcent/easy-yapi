@@ -16,7 +16,7 @@ package com.itangcent.easyapi.rule
  */
 sealed class RuleKey<T>(
     val name: String,
-    val mode: RuleMode,
+    val mode: RuleMode<T>,
     val aliases: List<String> = emptyList()
 ) {
     /** All config key names (primary + aliases) that should be looked up. */
@@ -26,7 +26,7 @@ sealed class RuleKey<T>(
         name: String,
         mode: StringRuleMode = StringRuleMode.SINGLE,
         aliases: List<String> = emptyList()
-    ) : RuleKey<String?>(name, mode, aliases) {
+    ) : RuleKey<String>(name, mode, aliases) {
         val stringMode: StringRuleMode get() = mode as StringRuleMode
     }
 
@@ -41,7 +41,7 @@ sealed class RuleKey<T>(
     class IntKey(
         name: String,
         aliases: List<String> = emptyList()
-    ) : RuleKey<Int?>(name, IntRuleMode, aliases)
+    ) : RuleKey<Int>(name, IntRuleMode, aliases)
 
     class EventKey(
         name: String,
@@ -56,9 +56,12 @@ sealed class RuleKey<T>(
     companion object {
         fun string(name: String, mode: StringRuleMode = StringRuleMode.SINGLE, aliases: List<String> = emptyList()) =
             StringKey(name, mode, aliases)
+
         fun boolean(name: String, mode: BooleanRuleMode = BooleanRuleMode.ANY, aliases: List<String> = emptyList()) =
             BooleanKey(name, mode, aliases)
+
         fun int(name: String, aliases: List<String> = emptyList()) = IntKey(name, aliases)
+
         fun event(name: String, mode: EventRuleMode = EventRuleMode.IGNORE_ERROR, aliases: List<String> = emptyList()) =
             EventKey(name, mode, aliases)
     }

@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.rule.context
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner

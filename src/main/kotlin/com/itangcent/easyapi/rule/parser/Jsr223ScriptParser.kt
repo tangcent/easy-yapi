@@ -1,17 +1,12 @@
 package com.itangcent.easyapi.rule.parser
 
-import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.rule.RuleKey
-import com.itangcent.easyapi.rule.context.RuleContext
-import com.itangcent.easyapi.rule.context.ScriptPsiClassContext
-import com.itangcent.easyapi.rule.context.ScriptPsiFieldContext
-import com.itangcent.easyapi.rule.context.ScriptPsiMethodContext
-import com.itangcent.easyapi.rule.context.asScriptIt
+import com.itangcent.easyapi.rule.context.*
 import com.itangcent.easyapi.util.RegexUtils
 import com.itangcent.easyapi.util.RuleToolUtils
 import com.itangcent.easyapi.util.ide.ModuleHelper

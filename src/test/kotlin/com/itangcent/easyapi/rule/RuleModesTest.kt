@@ -1,53 +1,74 @@
 package com.itangcent.easyapi.rule
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 
 class RuleModesTest {
 
+    private fun <T> resultFlowOf(vararg values: T?): Flow<RuleResult<T>> = flow {
+        for (value in values) {
+            emit(if (value == null) RuleResult.NULL() else RuleResult.success(value))
+        }
+    }
+
     @Test
-    fun testStringRuleModeSingle() {
+    fun testStringRuleModeSingle() = runBlocking {
         val mode = StringRuleMode.SINGLE
 
-        assertNull(mode.aggregate(emptyList()))
-        assertNull(mode.aggregate(listOf(null, null)))
-        assertEquals("first", mode.aggregate(listOf("first", "second")))
-        assertEquals("value", mode.aggregate(listOf(null, "value")))
+        assertNull(mode.aggregate(resultFlowOf<String>()))
+        assertNull(mode.aggregate(resultFlowOf<String>(null, null)))
+        assertEquals("first", mode.aggregate(resultFlowOf("first", "second")))
+        assertEquals("value", mode.aggregate(resultFlowOf<String>(null, "value")))
     }
 
     @Test
-    fun testStringRuleModeMerge() {
+    fun testStringRuleModeMerge() = runBlocking {
         val mode = StringRuleMode.MERGE
 
-        assertNull(mode.aggregate(emptyList()))
-        assertNull(mode.aggregate(listOf(null, null)))
-        assertNull(mode.aggregate(listOf("", "")))
-        assertEquals("first\nsecond", mode.aggregate(listOf("first", "second")))
-        assertEquals("value", mode.aggregate(listOf(null, "value")))
-        assertEquals("a\nb\nc", mode.aggregate(listOf("a", "b", "c")))
+        assertNull(mode.aggregate(resultFlowOf<String>()))
+        assertNull(mode.aggregate(resultFlowOf<String>(null, null)))
+        assertNull(mode.aggregate(resultFlowOf("", "")))
+        assertEquals("first\nsecond", mode.aggregate(resultFlowOf("first", "second")))
+        assertEquals("value", mode.aggregate(resultFlowOf<String>(null, "value")))
+        assertEquals("a\nb\nc", mode.aggregate(resultFlowOf("a", "b", "c")))
     }
 
     @Test
-    fun testStringRuleModeMergeDistinct() {
+    fun testStringRuleModeMergeDistinct() = runBlocking {
         val mode = StringRuleMode.MERGE_DISTINCT
 
-        assertNull(mode.aggregate(emptyList()))
-        assertNull(mode.aggregate(listOf(null, null)))
-        assertEquals("first\nsecond", mode.aggregate(listOf("first", "second")))
-        assertEquals("value", mode.aggregate(listOf("value", "value")))
-        assertEquals("a\nb", mode.aggregate(listOf("a", "b", "a", "b")))
+        assertNull(mode.aggregate(resultFlowOf<String>()))
+        assertNull(mode.aggregate(resultFlowOf<String>(null, null)))
+        assertEquals("first\nsecond", mode.aggregate(resultFlowOf("first", "second")))
+        assertEquals("value", mode.aggregate(resultFlowOf("value", "value")))
+        assertEquals("a\nb", mode.aggregate(resultFlowOf("a", "b", "a", "b")))
     }
 
     @Test
-    fun testBooleanRuleModeAny() {
+    fun testBooleanRuleModeAny() = runBlocking {
         val mode = BooleanRuleMode.ANY
 
-        assertFalse(mode.aggregate(emptyList()))
-        assertFalse(mode.aggregate(listOf(null, null)))
-        assertFalse(mode.aggregate(listOf(false, false)))
-        assertTrue(mode.aggregate(listOf(true, false)))
-        assertTrue(mode.aggregate(listOf(false, true)))
-        assertTrue(mode.aggregate(listOf(true, true)))
+        assertFalse(mode.aggregate(resultFlowOf<Boolean>()))
+        assertFalse(mode.aggregate(resultFlowOf<Boolean>(null, null)))
+        assertFalse(mode.aggregate(resultFlowOf(false, false)))
+        assertTrue(mode.aggregate(resultFlowOf(true, false)))
+        assertTrue(mode.aggregate(resultFlowOf(false, true)))
+        assertTrue(mode.aggregate(resultFlowOf(true, true)))
+    }
+
+    @Test
+    fun testBooleanRuleModeAll() = runBlocking {
+        val mode = BooleanRuleMode.ALL
+
+        assertFalse(mode.aggregate(resultFlowOf<Boolean>()))
+        assertFalse(mode.aggregate(resultFlowOf<Boolean>(null, null)))
+        assertTrue(mode.aggregate(resultFlowOf(true, true)))
+        assertFalse(mode.aggregate(resultFlowOf(true, false)))
+        assertFalse(mode.aggregate(resultFlowOf(false, true)))
+        assertFalse(mode.aggregate(resultFlowOf(false, false)))
     }
 
     @Test
@@ -63,10 +84,10 @@ class RuleModesTest {
     }
 
     @Test
-    fun testIntRuleModeAggregate() {
-        assertNull(IntRuleMode.aggregate(emptyList()))
-        assertNull(IntRuleMode.aggregate(listOf(null, null)))
-        assertEquals(1, IntRuleMode.aggregate(listOf(1, 2, 3)))
-        assertEquals(5, IntRuleMode.aggregate(listOf(null, 5, 10)))
+    fun testIntRuleModeAggregate() = runBlocking {
+        assertNull(IntRuleMode.aggregate(resultFlowOf<Int>()))
+        assertNull(IntRuleMode.aggregate(resultFlowOf<Int>(null, null)))
+        assertEquals(1, IntRuleMode.aggregate(resultFlowOf(1, 2, 3)))
+        assertEquals(5, IntRuleMode.aggregate(resultFlowOf<Int>(null, 5, 10)))
     }
 }
