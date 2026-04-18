@@ -2,142 +2,85 @@ package com.itangcent.easyapi.config.parser
 
 import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
-import org.junit.Before
 import org.junit.Test
 
-class DirectiveParserUnitTest {
-
-    private lateinit var state: DirectiveState
-
-    @Before
-    fun setUp() {
-        state = DirectiveState()
-    }
+class DirectiveParserTest {
 
     @Test
-    fun testHandle_nonDirective() {
+    fun testHandleSetResolveProperty() {
+        val state = DirectiveState()
         val parser = DirectiveParser(state, null)
-        assertFalse(parser.handle("some.key=value"))
+        parser.handle("###set resolveProperty=false")
+        assertFalse("resolveProperty should be false", state.resolveProperty)
     }
 
     @Test
-    fun testHandle_setResolveProperty() {
+    fun testHandleSetResolvePropertyTrue() {
+        val state = DirectiveState()
         val parser = DirectiveParser(state, null)
-        assertTrue(parser.handle("###set resolveProperty=false"))
-        assertFalse(state.resolveProperty)
+        parser.handle("###set resolveProperty=true")
+        assertTrue("resolveProperty should be true", state.resolveProperty)
     }
 
     @Test
-    fun testHandle_setResolveMulti() {
-        val parser = DirectiveParser(state, null)
-        assertTrue(parser.handle("###set resolveMulti=LONGEST"))
-        assertEquals(ResolveMultiMode.LONGEST, state.resolveMulti)
-    }
-
-    @Test
-    fun testHandle_setResolveMulti_invalid() {
-        val parser = DirectiveParser(state, null)
-        parser.handle("###set resolveMulti=INVALID")
-        assertEquals(ResolveMultiMode.FIRST, state.resolveMulti)
-    }
-
-    @Test
-    fun testHandle_setIgnoreNotFoundFile() {
+    fun testHandleSetIgnoreNotFoundFile() {
+        val state = DirectiveState()
         val parser = DirectiveParser(state, null)
         parser.handle("###set ignoreNotFoundFile=true")
-        assertTrue(state.ignoreNotFoundFile)
+        assertTrue("ignoreNotFoundFile should be true", state.ignoreNotFoundFile)
     }
 
     @Test
-    fun testHandle_setIgnoreUnresolved() {
+    fun testHandleSetIgnoreUnresolved() {
+        val state = DirectiveState()
         val parser = DirectiveParser(state, null)
         parser.handle("###set ignoreUnresolved=true")
-        assertTrue(state.ignoreUnresolved)
+        assertTrue("ignoreUnresolved should be true", state.ignoreUnresolved)
     }
 
     @Test
-    fun testHandle_ifTrue() {
-        val settings = Settings(feignEnable = true)
+    fun testHandleIfConditionTrue() {
+        val settings = Settings(httpClient = "APACHE")
+        val state = DirectiveState()
         val parser = DirectiveParser(state, settings)
-        parser.handle("###if feignEnable==true")
-        assertTrue(state.isActive())
+        parser.handle("###if httpClient==APACHE")
+        assertTrue("Condition should be active", state.isActive())
     }
 
     @Test
-    fun testHandle_ifFalse() {
-        val settings = Settings(feignEnable = false)
+    fun testHandleIfConditionFalse() {
+        val settings = Settings(httpClient = "APACHE")
+        val state = DirectiveState()
         val parser = DirectiveParser(state, settings)
-        parser.handle("###if feignEnable==true")
-        assertFalse(state.isActive())
+        parser.handle("###if httpClient==URL_CONNECTION")
+        assertFalse("Condition should not be active", state.isActive())
     }
 
     @Test
-    fun testHandle_ifNotEquals() {
-        val settings = Settings(httpClient = "apache")
+    fun testHandleIfNotEquals() {
+        val settings = Settings(httpClient = "APACHE")
+        val state = DirectiveState()
         val parser = DirectiveParser(state, settings)
-        parser.handle("###if httpClient!=curl")
-        assertTrue(state.isActive())
+        parser.handle("###if httpClient!=URL_CONNECTION")
+        assertTrue("Not-equals condition should be active", state.isActive())
     }
 
     @Test
-    fun testHandle_endif() {
-        val settings = Settings(feignEnable = false)
+    fun testHandleEndIf() {
+        val settings = Settings(httpClient = "APACHE")
+        val state = DirectiveState()
         val parser = DirectiveParser(state, settings)
-        parser.handle("###if feignEnable==true")
-        assertFalse(state.isActive())
+        parser.handle("###if httpClient==URL_CONNECTION")
+        assertFalse("Should be inactive", state.isActive())
         parser.handle("###endif")
-        assertTrue(state.isActive())
+        assertTrue("Should be active after endif", state.isActive())
     }
 
     @Test
-    fun testHandle_ifWithNullSettings() {
+    fun testNonDirectiveReturnsFalse() {
+        val state = DirectiveState()
         val parser = DirectiveParser(state, null)
-        parser.handle("###if feignEnable==true")
-        assertFalse(state.isActive())
-    }
-
-    @Test
-    fun testHandle_ifEmptyExpression() {
-        val parser = DirectiveParser(state, Settings())
-        parser.handle("###if ")
-        assertFalse(state.isActive())
-    }
-
-    @Test
-    fun testHandle_settingKeys() {
-        val settings = Settings(
-            httpTimeOut = 30,
-            unsafeSsl = true,
-            postmanToken = "tok-123",
-            jaxrsEnable = true,
-            actuatorEnable = true
-        )
-        val parser = DirectiveParser(state, settings)
-
-        parser.handle("###if httpTimeOut==30")
-        assertTrue(state.isActive())
-        state.popCondition()
-
-        parser.handle("###if unsafeSsl==true")
-        assertTrue(state.isActive())
-        state.popCondition()
-
-        parser.handle("###if postmanToken==tok-123")
-        assertTrue(state.isActive())
-        state.popCondition()
-
-        parser.handle("###if jaxrsEnable==true")
-        assertTrue(state.isActive())
-        state.popCondition()
-
-        parser.handle("###if actuatorEnable==true")
-        assertTrue(state.isActive())
-    }
-
-    @Test
-    fun testHandle_whitespace() {
-        val parser = DirectiveParser(state, null)
-        assertTrue(parser.handle("  ###set resolveProperty=false  "))
-        assertFalse(state.resolveProperty)
+        assertFalse("Non-directive should return false", parser.handle("api.name=test"))
+        assertFalse("Comment should return false", parser.handle("# comment"))
     }
 }

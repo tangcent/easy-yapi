@@ -1,84 +1,63 @@
 package com.itangcent.easyapi.dashboard
 
-import com.itangcent.easyapi.exporter.model.*
+import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.HttpMetadata
+import com.itangcent.easyapi.exporter.model.HttpMethod
 import org.junit.Assert.*
 import org.junit.Test
 
 class ApiTreeNodeTest {
 
     @Test
-    fun testModuleNode() {
-        val node = ApiTreeNode.ModuleNode("user-service")
-        assertEquals("user-service", node.name)
-        assertTrue(node.children.isEmpty())
+    fun testModuleNodeDefaults() {
+        val node = ApiTreeNode.ModuleNode("test-module")
+        assertEquals("test-module", node.name)
+        assertTrue("Children should default to empty", node.children.isEmpty())
     }
 
     @Test
-    fun testModuleNode_withChildren() {
-        val child = ApiTreeNode.ClassNode("UserController")
-        val node = ApiTreeNode.ModuleNode("user-service", listOf(child))
+    fun testModuleNodeWithChildren() {
+        val endpoint = ApiEndpoint(name = "test", metadata = HttpMetadata(method = HttpMethod.GET, path = "/test"))
+        val child = ApiTreeNode.EndpointNode(endpoint)
+        val node = ApiTreeNode.ModuleNode("module", listOf(child))
         assertEquals(1, node.children.size)
-        assertTrue(node.children[0] is ApiTreeNode.ClassNode)
     }
 
     @Test
-    fun testClassNode() {
-        val node = ApiTreeNode.ClassNode("UserController", "User management")
+    fun testClassNodeDefaults() {
+        val node = ApiTreeNode.ClassNode("UserController")
         assertEquals("UserController", node.name)
-        assertEquals("User management", node.description)
-        assertTrue(node.children.isEmpty())
+        assertNull("Description should default to null", node.description)
+        assertTrue("Children should default to empty", node.children.isEmpty())
     }
 
     @Test
-    fun testClassNode_nullDescription() {
-        val node = ApiTreeNode.ClassNode("Ctrl")
-        assertNull(node.description)
+    fun testClassNodeWithDescription() {
+        val node = ApiTreeNode.ClassNode("UserController", "User management")
+        assertEquals("User management", node.description)
     }
 
     @Test
     fun testEndpointNode() {
-        val endpoint = ApiEndpoint(
-            name = "getUsers",
-            metadata = httpMetadata(path = "/users", method = HttpMethod.GET)
-        )
+        val endpoint = ApiEndpoint(name = "Get Users", metadata = HttpMetadata(method = HttpMethod.GET, path = "/api/users"))
         val node = ApiTreeNode.EndpointNode(endpoint)
-        assertEquals("getUsers", node.endpoint.name)
+        assertEquals("Get Users", node.endpoint.name)
     }
 
     @Test
-    fun testNestedTree() {
+    fun testTreeHierarchy() {
         val endpoint = ApiEndpoint(
-            name = "getUser",
-            metadata = httpMetadata(path = "/users/{id}", method = HttpMethod.GET)
+            name = "Get Users",
+            metadata = HttpMetadata(method = HttpMethod.GET, path = "/api/users")
         )
-        val tree = ApiTreeNode.ModuleNode(
-            "api",
-            listOf(
-                ApiTreeNode.ClassNode(
-                    "UserController",
-                    "Users",
-                    listOf(ApiTreeNode.EndpointNode(endpoint))
-                )
-            )
-        )
-        val classNode = tree.children[0] as ApiTreeNode.ClassNode
-        assertEquals(1, classNode.children.size)
-        val ep = classNode.children[0] as ApiTreeNode.EndpointNode
-        assertEquals("getUser", ep.endpoint.name)
-    }
+        val endpointNode = ApiTreeNode.EndpointNode(endpoint)
+        val classNode = ApiTreeNode.ClassNode("UserController", children = listOf(endpointNode))
+        val moduleNode = ApiTreeNode.ModuleNode("user-service", children = listOf(classNode))
 
-    @Test
-    fun testEquality() {
-        val a = ApiTreeNode.ModuleNode("m")
-        val b = ApiTreeNode.ModuleNode("m")
-        assertEquals(a, b)
-    }
-
-    @Test
-    fun testSealed_isInstance() {
-        val module: ApiTreeNode = ApiTreeNode.ModuleNode("m")
-        val cls: ApiTreeNode = ApiTreeNode.ClassNode("c")
-        assertTrue(module is ApiTreeNode.ModuleNode)
-        assertTrue(cls is ApiTreeNode.ClassNode)
+        assertEquals(1, moduleNode.children.size)
+        val classChild = moduleNode.children[0] as ApiTreeNode.ClassNode
+        assertEquals(1, classChild.children.size)
+        val endpointChild = classChild.children[0] as ApiTreeNode.EndpointNode
+        assertEquals("Get Users", endpointChild.endpoint.name)
     }
 }

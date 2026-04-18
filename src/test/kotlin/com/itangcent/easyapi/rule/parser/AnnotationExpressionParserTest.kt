@@ -3,7 +3,7 @@ package com.itangcent.easyapi.rule.parser
 import org.junit.Assert.*
 import org.junit.Test
 
-class AnnotationExpressionParserTest {
+class AnnotationExpressionParserPureTest {
 
     private val parser = AnnotationExpressionParser()
 
@@ -25,7 +25,7 @@ class AnnotationExpressionParserTest {
     }
 }
 
-class NegationParserTest {
+class NegationParserPureTest {
 
     private val parser = NegationParser()
 

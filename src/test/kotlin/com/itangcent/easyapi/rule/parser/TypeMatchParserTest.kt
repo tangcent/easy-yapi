@@ -3,7 +3,7 @@ package com.itangcent.easyapi.rule.parser
 import org.junit.Assert.*
 import org.junit.Test
 
-class TypeMatchParserTest {
+class TypeMatchParserPureTest {
 
     private val parser = TypeMatchParser()
 
@@ -37,7 +37,7 @@ class TypeMatchParserTest {
     }
 }
 
-class ClassMatchParserTest {
+class ClassMatchParserPureTest {
 
     private val parser = ClassMatchParser()
 

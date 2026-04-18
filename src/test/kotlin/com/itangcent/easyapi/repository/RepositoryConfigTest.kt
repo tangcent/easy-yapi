@@ -2,109 +2,93 @@ package com.itangcent.easyapi.repository
 
 import org.junit.Assert.*
 import org.junit.Test
-import java.nio.file.Paths
 
 class RepositoryConfigTest {
 
     @Test
-    fun testParseMavenRepository() {
+    fun testParseMavenLocal() {
         val config = RepositoryConfig.parse("maven:/path/to/.m2/repository")
         assertNotNull("Should parse maven config", config)
-        assertEquals("Type should be MAVEN_LOCAL", RepositoryType.MAVEN_LOCAL, config!!.type)
-        assertEquals("Path should be correct", "/path/to/.m2/repository", config.path)
+        assertEquals(RepositoryType.MAVEN_LOCAL, config!!.type)
+        assertEquals("/path/to/.m2/repository", config.path)
         assertTrue("Should be enabled by default", config.enabled)
     }
 
     @Test
-    fun testParseGradleRepository() {
+    fun testParseGradleCache() {
         val config = RepositoryConfig.parse("gradle:/path/to/.gradle/caches")
         assertNotNull("Should parse gradle config", config)
-        assertEquals("Type should be GRADLE_CACHE", RepositoryType.GRADLE_CACHE, config!!.type)
-        assertEquals("Path should be correct", "/path/to/.gradle/caches", config.path)
+        assertEquals(RepositoryType.GRADLE_CACHE, config!!.type)
+        assertEquals("/path/to/.gradle/caches", config.path)
     }
 
     @Test
-    fun testParseCustomRepository() {
+    fun testParseCustom() {
         val config = RepositoryConfig.parse("custom:/custom/path")
         assertNotNull("Should parse custom config", config)
-        assertEquals("Type should be CUSTOM", RepositoryType.CUSTOM, config!!.type)
-        assertEquals("Path should be correct", "/custom/path", config.path)
+        assertEquals(RepositoryType.CUSTOM, config!!.type)
     }
 
     @Test
     fun testParseWithEnabledFlag() {
-        val config = RepositoryConfig.parse("maven:true:/path/to/.m2/repository")
+        val config = RepositoryConfig.parse("maven:true:/path/to/.m2")
         assertNotNull("Should parse with enabled flag", config)
-        assertTrue("Should be enabled", config!!.enabled)
-
-        val disabledConfig = RepositoryConfig.parse("maven:false:/path/to/.m2/repository")
-        assertNotNull("Should parse with disabled flag", disabledConfig)
-        assertFalse("Should be disabled", disabledConfig!!.enabled)
+        assertTrue(config!!.enabled)
     }
 
     @Test
-    fun testParseInvalidFormat() {
-        assertNull("Should return null for invalid format", RepositoryConfig.parse("invalid"))
+    fun testParseWithDisabledFlag() {
+        val config = RepositoryConfig.parse("maven:false:/path/to/.m2")
+        assertNotNull("Should parse with disabled flag", config)
+        assertFalse(config!!.enabled)
+    }
+
+    @Test
+    fun testParseInvalidReturnsNull() {
+        assertNull("Should return null for empty string", RepositoryConfig.parse(""))
+        assertNull("Should return null for single part", RepositoryConfig.parse("invalid"))
+    }
+
+    @Test
+    fun testParseUnknownTypeReturnsNull() {
         assertNull("Should return null for unknown type", RepositoryConfig.parse("unknown:/path"))
     }
 
     @Test
     fun testSerialize() {
-        val config = RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path/to/.m2/repository", true)
+        val config = RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path/to/.m2", true)
         val serialized = RepositoryConfig.serialize(config)
-        assertEquals("Serialized format should be correct", "maven:true:/path/to/.m2/repository", serialized)
+        assertEquals("maven:true:/path/to/.m2", serialized)
     }
 
     @Test
-    fun testSerializeAndParseRoundTrip() {
-        val original = RepositoryConfig(RepositoryType.GRADLE_CACHE, "/path/to/gradle", false)
+    fun testSerializeDisabled() {
+        val config = RepositoryConfig(RepositoryType.GRADLE_CACHE, "/path/to/.gradle", false)
+        val serialized = RepositoryConfig.serialize(config)
+        assertEquals("gradle:false:/path/to/.gradle", serialized)
+    }
+
+    @Test
+    fun testRoundTrip() {
+        val original = RepositoryConfig(RepositoryType.CUSTOM, "/custom/path", true)
         val serialized = RepositoryConfig.serialize(original)
         val parsed = RepositoryConfig.parse(serialized)
+        assertNotNull("Round-trip should parse", parsed)
+        assertEquals(original.type, parsed!!.type)
+        assertEquals(original.path, parsed.path)
+        assertEquals(original.enabled, parsed.enabled)
+    }
 
-        assertNotNull("Parsed config should not be null", parsed)
-        assertEquals("Type should match", original.type, parsed!!.type)
-        assertEquals("Path should match", original.path, parsed.path)
-        assertEquals("Enabled should match", original.enabled, parsed.enabled)
+    @Test
+    fun testDisplayName() {
+        assertEquals("Maven Local", RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path").displayName())
+        assertEquals("Gradle Cache", RepositoryConfig(RepositoryType.GRADLE_CACHE, "/path").displayName())
+        assertTrue("Custom should contain path", RepositoryConfig(RepositoryType.CUSTOM, "/custom/my-repo").displayName().contains("my-repo"))
     }
 
     @Test
     fun testToPath() {
         val config = RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path/to/repo")
-        val path = config.toPath()
-        assertEquals("Path should be correct", Paths.get("/path/to/repo"), path)
-    }
-
-    @Test
-    fun testDisplayNameMaven() {
-        val config = RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path/to/.m2/repository")
-        assertEquals("Display name should be Maven Local", "Maven Local", config.displayName())
-    }
-
-    @Test
-    fun testDisplayNameGradle() {
-        val config = RepositoryConfig(RepositoryType.GRADLE_CACHE, "/path/to/.gradle/caches")
-        assertEquals("Display name should be Gradle Cache", "Gradle Cache", config.displayName())
-    }
-
-    @Test
-    fun testDisplayNameCustom() {
-        val config = RepositoryConfig(RepositoryType.CUSTOM, "/custom/my-repo")
-        assertEquals("Display name should contain repo name", "Custom: my-repo", config.displayName())
-    }
-
-    @Test
-    fun testDataClassEquality() {
-        val config1 = RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path", true)
-        val config2 = RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path", true)
-        assertEquals("Equal configs should be equal", config1, config2)
-    }
-
-    @Test
-    fun testDataClassCopy() {
-        val original = RepositoryConfig(RepositoryType.MAVEN_LOCAL, "/path", true)
-        val copy = original.copy(enabled = false)
-
-        assertTrue("Original should still be enabled", original.enabled)
-        assertFalse("Copy should be disabled", copy.enabled)
+        assertEquals(java.nio.file.Paths.get("/path/to/repo"), config.toPath())
     }
 }

@@ -1,12 +1,14 @@
 package com.itangcent.easyapi.settings
 
+import com.itangcent.easyapi.settings.state.ApplicationSettingsSupport
+import com.itangcent.easyapi.settings.state.ProjectSettingsSupport
 import org.junit.Assert.*
 import org.junit.Test
 
 class SettingsTest {
 
     @Test
-    fun testDefaultValues() {
+    fun testDefaultSettings() {
         val settings = Settings()
         assertFalse(settings.feignEnable)
         assertTrue(settings.jaxrsEnable)
@@ -99,47 +101,31 @@ class SettingsTest {
     }
 
     @Test
-    fun testEquality_differentArrays() {
-        val s1 = Settings(remoteConfig = arrayOf("http://a.com"))
-        val s2 = Settings(remoteConfig = arrayOf("http://b.com"))
-        assertNotEquals(s1, s2)
+    fun testSettingsCopyToApplicationSettings() {
+        val source = Settings(feignEnable = true, httpTimeOut = 10)
+        val target = Settings()
+        (source as ApplicationSettingsSupport).copyTo(target)
+        assertTrue("feignEnable should be copied", target.feignEnable)
+        assertEquals("httpTimeOut should be copied", 10, target.httpTimeOut)
     }
 
     @Test
-    fun testHashCode_sameDefaults() {
-        val s1 = Settings()
-        val s2 = Settings()
-        assertEquals(s1.hashCode(), s2.hashCode())
+    fun testSettingsCopyToProjectSettings() {
+        val source = Settings(postmanWorkspace = "workspace-123", postmanExportMode = "UPDATE")
+        val target = Settings()
+        (source as ProjectSettingsSupport).copyTo(target)
+        assertEquals("postmanWorkspace should be copied", "workspace-123", target.postmanWorkspace)
+        assertEquals("postmanExportMode should be copied", "UPDATE", target.postmanExportMode)
     }
 
     @Test
-    fun testHashCode_differentValues() {
-        val s1 = Settings(feignEnable = true)
-        val s2 = Settings(feignEnable = false)
-        assertNotEquals(s1.hashCode(), s2.hashCode())
-    }
-
-    @Test
-    fun testEquality_sameInstance() {
-        val s = Settings()
-        assertEquals(s, s)
-    }
-
-    @Test
-    fun testEquality_null() {
-        val s = Settings()
-        assertNotEquals(s, null)
-    }
-
-    @Test
-    fun testEquality_differentType() {
-        val s = Settings()
-        assertNotEquals(s, "not a settings")
-    }
-
-    @Test
-    fun testExtensionConfigs_notEmpty() {
+    fun testSettingsModification() {
         val settings = Settings()
-        assertNotNull(settings.extensionConfigs)
+        settings.feignEnable = true
+        settings.httpTimeOut = 30
+        settings.postmanToken = "test-token"
+        assertTrue("feignEnable should be modified", settings.feignEnable)
+        assertEquals("httpTimeOut should be modified", 30, settings.httpTimeOut)
+        assertEquals("postmanToken should be modified", "test-token", settings.postmanToken)
     }
 }

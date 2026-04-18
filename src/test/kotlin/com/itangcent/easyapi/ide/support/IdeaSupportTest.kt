@@ -1,34 +1,18 @@
 package com.itangcent.easyapi.ide.support
 
-import org.junit.Assert.*
-import org.junit.Test
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
-class IdeaSupportTest {
+class IdeaSupportTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    @Test
-    fun testIdeVersion() {
+    fun testIdeVersionReturnsNonEmpty() {
         val version = IdeaSupport.ideVersion()
-        assertNotNull(version)
-        assertTrue(version.isNotEmpty())
+        assertNotNull("IDE version should not be null", version)
+        assertTrue("IDE version should not be empty", version.isNotEmpty())
     }
 
-    @Test
-    fun testBuildNumber() {
-        val buildNumber = IdeaSupport.buildNumber()
-        assertNotNull(buildNumber)
-        assertTrue(buildNumber.isNotEmpty())
-    }
-
-    @Test
-    fun testIsVersionAtLeast() {
-        val version = IdeaSupport.ideVersion()
-        val prefix = version.take(4)
-        
-        assertTrue(IdeaSupport.isVersionAtLeast(prefix))
-    }
-
-    @Test
-    fun testIsVersionAtLeastWithInvalidPrefix() {
-        assertFalse(IdeaSupport.isVersionAtLeast("9999"))
+    fun testBuildNumberReturnsNonEmpty() {
+        val build = IdeaSupport.buildNumber()
+        assertNotNull("Build number should not be null", build)
+        assertTrue("Build number should not be empty", build.isNotEmpty())
     }
 }

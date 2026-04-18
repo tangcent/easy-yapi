@@ -1,40 +1,43 @@
 package com.itangcent.easyapi.exporter.markdown
 
-import org.junit.Assert.assertEquals
+import org.junit.Assert.*
 import org.junit.Test
 
 class MarkdownEscapeUtilsTest {
 
     @Test
-    fun testEscapeNull() {
+    fun testEscapeNullReturnsEmpty() {
         assertEquals("", MarkdownEscapeUtils.escape(null))
     }
 
     @Test
-    fun testEscapeBlank() {
+    fun testEscapeBlankReturnsEmpty() {
         assertEquals("", MarkdownEscapeUtils.escape(""))
         assertEquals("", MarkdownEscapeUtils.escape("   "))
     }
 
     @Test
-    fun testEscapeNewline() {
-        assertEquals("Hello<br>World", MarkdownEscapeUtils.escape("Hello\nWorld"))
-        assertEquals("Line1<br>Line2<br>Line3", MarkdownEscapeUtils.escape("Line1\nLine2\nLine3"))
+    fun testEscapePlainStringUnchanged() {
+        assertEquals("hello world", MarkdownEscapeUtils.escape("hello world"))
     }
 
     @Test
-    fun testEscapePipe() {
-        assertEquals("Column1 \\| Column2", MarkdownEscapeUtils.escape("Column1 | Column2"))
+    fun testEscapeNewlineToBr() {
+        assertEquals("line1<br>line2", MarkdownEscapeUtils.escape("line1\nline2"))
     }
 
     @Test
-    fun testEscapeCombined() {
-        assertEquals("Header \\| Description<br>Content \\| Details",
-            MarkdownEscapeUtils.escape("Header | Description\nContent | Details"))
+    fun testEscapePipeToBackslashPipe() {
+        assertEquals("a\\|b", MarkdownEscapeUtils.escape("a|b"))
     }
 
     @Test
-    fun testEscapeNoSpecialChars() {
-        assertEquals("Plain text", MarkdownEscapeUtils.escape("Plain text"))
+    fun testEscapeMultipleNewlines() {
+        assertEquals("a<br><br>b", MarkdownEscapeUtils.escape("a\n\nb"))
+    }
+
+    @Test
+    fun testEscapeMixedNewlinesAndPipes() {
+        assertEquals("a<br>\\|b", MarkdownEscapeUtils.escape("a\n|b"))
     }
 }
