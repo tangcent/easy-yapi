@@ -349,6 +349,7 @@ class DefaultYapiApiClient(
             "path" to doc.path,
             "method" to doc.method,
             "desc" to doc.desc,
+            "markdown" to doc.markdown,
             "status" to (doc.status ?: "done"),
             "req_body_is_json_schema" to doc.reqBodyIsJsonSchema,
             "res_body_is_json_schema" to doc.resBodyIsJsonSchema,
