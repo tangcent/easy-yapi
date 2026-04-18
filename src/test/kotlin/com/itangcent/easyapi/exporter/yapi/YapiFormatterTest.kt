@@ -4,12 +4,13 @@ import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
+import com.itangcent.easyapi.util.markdown.BundledMarkdownRender
 import org.junit.Assert.*
 import org.junit.Test
 
 class YapiFormatterTest {
 
-    private val formatter = YapiFormatter()
+    private val formatter = YapiFormatter(markdownRender = BundledMarkdownRender())
 
     // region Basic formatting
 
@@ -132,7 +133,91 @@ class YapiFormatterTest {
 
         val doc = formatter.format(endpoint)
 
-        assertEquals("Retrieve user information by ID", doc.desc)
+        assertNotNull("desc should be rendered HTML", doc.desc)
+        assertTrue("desc should contain rendered text", doc.desc!!.contains("Retrieve user information"))
+        assertEquals("markdown should preserve raw description", "Retrieve user information by ID", doc.markdown)
+    }
+
+    @Test
+    fun testFormatEndpointWithMarkdownDescription() {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            description = "**Bold** and *italic* description",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET
+            )
+        )
+
+        val doc = formatter.format(endpoint)
+
+        assertNotNull("desc should be rendered HTML", doc.desc)
+        assertTrue("desc should contain bold tag", doc.desc!!.contains("<strong>") || doc.desc!!.contains("<b>"))
+        assertTrue("desc should contain italic tag", doc.desc!!.contains("<em>") || doc.desc!!.contains("<i>"))
+        assertEquals("markdown should preserve raw description", "**Bold** and *italic* description", doc.markdown)
+    }
+
+    @Test
+    fun testFormatEndpointWithNullDescription() {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            description = null,
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET
+            )
+        )
+
+        val doc = formatter.format(endpoint)
+
+        assertNull("desc should be null when no description", doc.desc)
+        assertNull("markdown should be null when no description", doc.markdown)
+    }
+
+    @Test
+    fun testFormatEndpointWithBlankDescription() {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            description = "   ",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET
+            )
+        )
+
+        val doc = formatter.format(endpoint)
+
+        assertNull("desc should be null for blank description", doc.desc)
+        assertNull("markdown should be null for blank description", doc.markdown)
+    }
+
+    @Test
+    fun testFormatEndpointWithComplexMarkdownDescription() {
+        val endpoint = ApiEndpoint(
+            name = "Create User",
+            description = """
+                Creates a new user in the system.
+                
+                **Request body:**
+                - `name`: User name
+                - `email`: User email
+                
+                ```json
+                {"name": "John"}
+                ```
+            """.trimIndent(),
+            metadata = httpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST
+            )
+        )
+
+        val doc = formatter.format(endpoint)
+
+        assertNotNull("desc should be rendered HTML", doc.desc)
+        assertTrue("desc should contain bold", doc.desc!!.contains("<strong>") || doc.desc!!.contains("<b>"))
+        assertTrue("desc should contain code", doc.desc!!.contains("<code>"))
+        assertTrue("markdown should preserve raw description", doc.markdown!!.contains("Creates a new user"))
     }
 
     // endregion
@@ -246,7 +331,7 @@ class YapiFormatterTest {
 
     @Test
     fun testFormatPathDisabledAutoFormat() {
-        val noFormatFormatter = YapiFormatter(autoFormatUrl = false)
+        val noFormatFormatter = YapiFormatter(autoFormatUrl = false, markdownRender = BundledMarkdownRender())
         val endpoint = ApiEndpoint(
             name = "No Format",
             metadata = httpMetadata(
@@ -342,7 +427,7 @@ class YapiFormatterTest {
 
     @Test
     fun testFormatWithJson5Body() {
-        val json5Formatter = YapiFormatter(useJson5 = true)
+        val json5Formatter = YapiFormatter(useJson5 = true, markdownRender = BundledMarkdownRender())
         val endpoint = ApiEndpoint(
             name = "Create User",
             metadata = httpMetadata(
@@ -360,7 +445,10 @@ class YapiFormatterTest {
         val doc = json5Formatter.format(endpoint)
 
         assertNotNull(doc.reqBodyOther)
-        assertTrue("Should contain comment", doc.reqBodyOther!!.contains("//") || doc.reqBodyOther!!.contains("User name"))
+        assertTrue(
+            "Should contain comment",
+            doc.reqBodyOther!!.contains("//") || doc.reqBodyOther!!.contains("User name")
+        )
     }
 
     @Test

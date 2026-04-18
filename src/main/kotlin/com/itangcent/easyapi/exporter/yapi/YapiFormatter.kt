@@ -11,6 +11,7 @@ import com.itangcent.easyapi.exporter.yapi.model.YapiPathParam
 import com.itangcent.easyapi.exporter.yapi.model.YapiQuery
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
+import com.itangcent.easyapi.util.markdown.MarkdownRender
 
 /**
  * Formatter for converting API endpoints to YAPI documentation format.
@@ -20,18 +21,25 @@ import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
  * - Headers, query params, path params, and form data
  * - JSON Schema or JSON5 format for request/response bodies
  * - Mock data generation for examples
+ * - Markdown-to-HTML rendering for API descriptions
+ * 
+ * YAPI stores descriptions in two fields:
+ * - `markdown`: the raw Markdown source
+ * - `desc`: the rendered HTML
  * 
  * @param jsonSchemaBuilder Builder for creating JSON Schema from object models
  * @param reqBodyJson5 Whether to use JSON5 format for request body (false = JSON Schema)
  * @param resBodyJson5 Whether to use JSON5 format for response body (false = JSON Schema)
  * @param mockGenerator Optional generator for mock data examples
+ * @param markdownRender Renderer for converting Markdown descriptions to HTML
  */
 class YapiFormatter(
     private val jsonSchemaBuilder: JsonSchemaBuilder = JsonSchemaBuilder(),
     private val reqBodyJson5: Boolean = false,
     private val resBodyJson5: Boolean = false,
     private val mockGenerator: MockDataGenerator? = MockDataGenerator(),
-    private val autoFormatUrl: Boolean = true
+    private val autoFormatUrl: Boolean = true,
+    private val markdownRender: MarkdownRender
 ) {
     /**
      * Legacy constructor for backward compatibility.
@@ -40,17 +48,20 @@ class YapiFormatter(
      * @param jsonSchemaBuilder Builder for creating JSON Schema
      * @param useJson5 Whether to use JSON5 format for both request and response bodies
      * @param mockGenerator Optional generator for mock data
+     * @param markdownRender Renderer for converting Markdown descriptions to HTML
      */
     constructor(
         jsonSchemaBuilder: JsonSchemaBuilder = JsonSchemaBuilder(),
         useJson5: Boolean,
-        mockGenerator: MockDataGenerator? = MockDataGenerator()
+        mockGenerator: MockDataGenerator? = MockDataGenerator(),
+        markdownRender: MarkdownRender
     ) : this(
         jsonSchemaBuilder,
         reqBodyJson5 = useJson5,
         resBodyJson5 = useJson5,
         mockGenerator = mockGenerator,
-        autoFormatUrl = true
+        autoFormatUrl = true,
+        markdownRender = markdownRender
     )
 
     /**
@@ -156,7 +167,8 @@ class YapiFormatter(
             title = endpoint.name ?: "${httpMeta?.method?.name ?: "UNKNOWN"} ${endpoint.path}",
             path = formatPath(endpoint.path),
             method = httpMeta?.method?.name?.lowercase() ?: "get",
-            desc = endpoint.description,
+            desc = renderDesc(endpoint.description),
+            markdown = endpoint.description?.takeIf { it.isNotBlank() },
             status = endpoint.status ?: "done",
             tag = endpoint.tags,
             reqHeaders = headers.ifEmpty { null },
@@ -275,6 +287,23 @@ class YapiFormatter(
      */
     private fun formatAsJson5(model: ObjectModel): String {
         return ObjectModelJsonConverter.toJson5(model)
+    }
+
+    /**
+     * Renders a Markdown description to HTML for YAPI consumption.
+     *
+     * YAPI expects the `desc` field to contain rendered HTML while the
+     * `markdown` field preserves the original Markdown source. If the
+     * description is blank or null, returns null. If rendering fails,
+     * falls back to wrapping the raw text in a `<p>` tag.
+     *
+     * @param desc The raw Markdown description, may be null
+     * @return The rendered HTML string, or null if the input is null/blank
+     */
+    private fun renderDesc(desc: String?): String? {
+        if (desc.isNullOrBlank()) return null
+        val html = markdownRender.render(desc)
+        return html.ifBlank { "<p>$desc</p>" }
     }
 
     companion object {

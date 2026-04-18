@@ -14,6 +14,7 @@ import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.YapiExportMode
 import com.itangcent.easyapi.util.ide.ModuleHelper
+import com.itangcent.easyapi.util.markdown.MarkdownRender
 
 /**
  * Exporter for uploading API endpoints to YAPI platform.
@@ -49,7 +50,8 @@ class YapiExporter(private val project: Project) : ApiExporter {
         val settings = settingBinder.read()
         val formatter = YapiFormatter(
             reqBodyJson5 = settings.yapiReqBodyJson5,
-            resBodyJson5 = settings.yapiResBodyJson5
+            resBodyJson5 = settings.yapiResBodyJson5,
+            markdownRender = MarkdownRender.getInstance(project)
         )
         val engine = RuleEngine.getInstance(project)
 

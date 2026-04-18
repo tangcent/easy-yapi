@@ -7,7 +7,8 @@ package com.itangcent.easyapi.exporter.yapi.model
  * @property title The API title/name
  * @property path The API path (e.g., "/api/users")
  * @property method The HTTP method (e.g., "get", "post")
- * @property desc API description
+ * @property desc API description (rendered HTML)
+ * @property markdown Raw Markdown description (preserved for YApi's markdown field)
  * @property status API status (e.g., "done", "undone")
  * @property tag Tags for categorization
  * @property reqHeaders Request headers
@@ -28,6 +29,7 @@ data class YapiApiDoc(
     val path: String,
     val method: String,
     val desc: String? = null,
+    val markdown: String? = null,
     val status: String? = null,
     val tag: List<String>? = null,
     val reqHeaders: List<YapiHeader>? = null,
