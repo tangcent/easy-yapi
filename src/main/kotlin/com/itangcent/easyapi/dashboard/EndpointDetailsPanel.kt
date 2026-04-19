@@ -12,6 +12,8 @@ import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
 import com.itangcent.easyapi.cache.DefaultHttpContextCacheHelper
 import com.itangcent.easyapi.cache.HttpContextCacheHelper
+import com.itangcent.easyapi.config.ConfigReader
+import com.itangcent.easyapi.config.resolveVariables
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.core.threading.swing
@@ -76,6 +78,9 @@ class EndpointDetailsPanel(
 
     /** Helper for managing host history cache */
     private val hostCacheHelper: HttpContextCacheHelper = DefaultHttpContextCacheHelper.getInstance(project)
+
+    /** Config reader for variable resolution in request fields */
+    private val configReader: ConfigReader get() = ConfigReader.getInstance(project)
 
     /** Service for persisting user edits */
     private val editCacheService: RequestEditCacheService = RequestEditCacheService.getInstance(project)
@@ -1013,28 +1018,49 @@ class EndpointDetailsPanel(
 
     private suspend fun sendHttpRequestInternal(endpoint: ApiEndpoint, host: String): RequestResult {
         return try {
+            val resolvedHost = configReader.resolveVariables(host)
+
             val pathParams = (0 until pathParamsTableModel.rowCount).map { row ->
-                pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty() to
-                        pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                val name = pathParamsTableModel.getValueAt(row, 0)?.toString()?.trim().orEmpty()
+                val value = configReader.resolveVariables(
+                    pathParamsTableModel.getValueAt(row, 1)?.toString()?.trim().orEmpty()
+                )
+                name to value
             }
             val resolvedPath = EndpointDetailsPanelLogic.resolvePath(pathField.text, pathParams)
-            val fullUrl = host + (if (resolvedPath.startsWith("/")) resolvedPath else "/$resolvedPath")
+            val fullUrl = resolvedHost + (if (resolvedPath.startsWith("/")) resolvedPath else "/$resolvedPath")
 
             LOG.info("HTTP request to $fullUrl")
 
-            val headers = extractKeyValuesFromTable(headersTableModel)
-            val query = extractKeyValuesFromTable(paramsTableModel)
+            val headers = extractKeyValuesFromTable(headersTableModel).map {
+                KeyValue(configReader.resolveVariables(it.name),
+                    configReader.resolveVariables(it.value))
+            }
+            val query = extractKeyValuesFromTable(paramsTableModel).map {
+                KeyValue(configReader.resolveVariables(it.name),
+                    configReader.resolveVariables(it.value))
+            }
 
             val formParams: List<FormParam>
             val body: String?
             val finalHeaders: List<KeyValue>
             if (hasFormData) {
-                formParams = buildFormParams()
+                formParams = buildFormParams().map { param ->
+                    when (param) {
+                        is FormParam.Text -> FormParam.Text(
+                            configReader.resolveVariables(param.name),
+                            configReader.resolveVariables(param.value)
+                        )
+                        is FormParam.File -> param
+                    }
+                }
                 body = null
                 finalHeaders = headers
             } else {
                 formParams = emptyList()
-                body = bodyArea.text.takeIf { it.isNotBlank() }
+                body = bodyArea.text.takeIf { it.isNotBlank() }?.let {
+                    configReader.resolveVariables(it)
+                }
                 finalHeaders = headers
             }
 
@@ -1070,6 +1096,8 @@ class EndpointDetailsPanel(
         val meta = endpoint.grpcMetadata ?: return RequestResult(body = "Error: Not a gRPC endpoint", isError = true)
         LOG.info("gRPC request initiated from UI: endpoint=${endpoint.name}, path=${meta.path}")
 
+        val resolvedHost = configReader.resolveVariables(host)
+
         val grpcClient = DynamicJarClient.getInstance(project)
 
         if (!grpcClient.isAvailable()) {
@@ -1085,15 +1113,17 @@ class EndpointDetailsPanel(
             return RequestResult(body = "Error: gRPC client not available", isError = true)
         }
 
-        val body = bodyArea.text.takeIf { it.isNotBlank() }
-        LOG.info("gRPC request details: host=$host, bodyLength=${body?.length ?: 0}")
+        val body = bodyArea.text.takeIf { it.isNotBlank() }?.let {
+            configReader.resolveVariables(it)
+        }
+        LOG.info("gRPC request details: host=$resolvedHost, bodyLength=${body?.length ?: 0}")
 
         return try {
             val sm = readSync { endpoint.sourceMethod }
             val grpcResult = if (sm != null) {
-                grpcClient.invoke(host, meta.path, body, sm)
+                grpcClient.invoke(resolvedHost, meta.path, body, sm)
             } else {
-                grpcClient.invoke(host, meta.path, body)
+                grpcClient.invoke(resolvedHost, meta.path, body)
             }
 
             LOG.info("gRPC response received: endpoint=${meta.path}, isError=${grpcResult.isError}, statusCode=${grpcResult.statusCode}, length=${grpcResult.body.length}")
@@ -1435,7 +1465,6 @@ class EndpointDetailsPanel(
  * No UI dependencies — all methods are stateless or take plain data as arguments.
  */
 internal object EndpointDetailsPanelLogic {
-
 
     /**
      * Pretty-prints a JSON string. Returns the original string if it is blank or not valid JSON.
