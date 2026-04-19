@@ -74,7 +74,7 @@ object ExtensionConfigRegistry : IdeaLog {
                     val knownExtensions = listOf(
                         "swagger", "swagger3", "jackson", "gson", "fastjson", "yapi", "spring",
                         "spring-validations", "spring-webflux", "spring-configuration", "spring-properties",
-                        "module", "ignore", "deprecated", "jakarta-validation", "javax-validation", "converts",
+                        "yapi.project", "ignore", "deprecated", "jakarta-validation", "javax-validation", "converts",
                         "field-utils",
                         "field-order-alphabetically", "field-order-alphabetically-desc",
                         "field-order-child-first", "field-order-parent-first",

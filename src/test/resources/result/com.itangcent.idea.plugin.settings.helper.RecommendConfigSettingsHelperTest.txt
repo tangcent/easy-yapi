@@ -1,5 +1,6 @@
-#Get the module from the comment,group the apis
-module=#module
+#Get the YAPI project from the comment,group the apis
+yapi.project=#project
+yapi.project=#module
 #Ignore class/api
 ignore=#ignore
 #ignore fields from java.lang system classes

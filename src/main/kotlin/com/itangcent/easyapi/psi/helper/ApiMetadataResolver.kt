@@ -155,12 +155,12 @@ class ApiMetadataResolver(
         return engine.evaluate(RuleKeys.API_OPEN, method)
     }
     
-    suspend fun resolveModule(method: PsiMethod): String? {
-        return engine.evaluate(RuleKeys.MODULE, method)
+    suspend fun resolveYapiProject(method: PsiMethod): String? {
+        return engine.evaluate(RuleKeys.YAPI_PROJECT, method)
     }
 
-    suspend fun resolveModule(psiClass: PsiClass): String? {
-        return engine.evaluate(RuleKeys.MODULE, psiClass)
+    suspend fun resolveYapiProject(psiClass: PsiClass): String? {
+        return engine.evaluate(RuleKeys.YAPI_PROJECT, psiClass)
     }
 
     suspend fun isIgnored(element: PsiElement): Boolean {

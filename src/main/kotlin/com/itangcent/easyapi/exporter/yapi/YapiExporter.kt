@@ -80,26 +80,26 @@ class YapiExporter(private val project: Project) : ApiExporter {
             indicator?.fraction = processedCount.toDouble() / totalEndpoints
 
             try {
-                val module = read {
+                val yapiProject = read {
                     val psiMethod = endpoint.sourceMethod
                     val psiClass = endpoint.sourceClass
-                    val ruleModule = when {
-                        psiMethod != null -> metadataResolver.resolveModule(psiMethod)
-                        psiClass != null -> metadataResolver.resolveModule(psiClass)
+                    val ruleProject = when {
+                        psiMethod != null -> metadataResolver.resolveYapiProject(psiMethod)
+                        psiClass != null -> metadataResolver.resolveYapiProject(psiClass)
                         else -> null
                     }
-                    ruleModule?.takeIf { it.isNotBlank() }
+                    ruleProject?.takeIf { it.isNotBlank() }
                         ?: psiClass?.let { ModuleHelper.resolveModule(it)?.name }
                         ?: project.name
                 }
 
                 val client = clientProvider.getYapiApiClient(
-                    module = module,
+                    module = yapiProject,
                     selectedToken = context.outputConfig.yapiOptions?.selectedToken
                 )
                 if (client == null) {
                     failCount++
-                    errors.add("${endpoint.name}: No valid token for module '$module'")
+                    errors.add("${endpoint.name}: No valid token for module '$yapiProject'")
                     processedCount++
                     continue
                 }

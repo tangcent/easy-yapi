@@ -21,7 +21,6 @@ object RuleKeys {
     val API_STATUS          = RuleKey.string("api.status")
     val API_OPEN            = RuleKey.boolean("api.open")
     val FOLDER_NAME = RuleKey.string("folder.name")
-    val MODULE = RuleKey.string("module")
     val IGNORE = RuleKey.boolean("ignore")
 
     // ── Method rules ──────────────────────────────────────────────
@@ -110,6 +109,7 @@ object RuleKeys {
     val POSTMAN_FORMAT_AFTER = RuleKey.event("postman.format.after", EventRuleMode.THROW_IN_ERROR)
 
     // ── YAPI rules ────────────────────────────────────────────────
+    val YAPI_PROJECT = RuleKey.string("yapi.project", aliases = listOf("project", "module"))
     val YAPI_EXPORT_BEFORE = RuleKey.event("yapi.export.before", EventRuleMode.THROW_IN_ERROR)
     val YAPI_SAVE_BEFORE   = RuleKey.event("yapi.save.before", EventRuleMode.THROW_IN_ERROR)
     val YAPI_SAVE_AFTER    = RuleKey.event("yapi.save.after", EventRuleMode.THROW_IN_ERROR)
