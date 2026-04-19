@@ -1,5 +1,6 @@
 ignore=@Ignore
-module=#module
+yapi.project=#project
+yapi.project=#module
 ignore=#ignore
 field.ignore=groovy:!it.containingClass().name().startsWith("java.lang")&&it.defineClass().name().startsWith("java.lang")
 field.name=@com.fasterxml.jackson.annotation.JsonProperty#value

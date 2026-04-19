@@ -95,4 +95,13 @@ class RuleKeysTest2 {
     fun testPostmanPrerequest_merge() {
         assertEquals(StringRuleMode.MERGE, (RuleKeys.POSTMAN_PREREQUEST as RuleKey.StringKey).stringMode)
     }
+
+    @Test
+    fun testYapiProjectKey() {
+        assertEquals("yapi.project", RuleKeys.YAPI_PROJECT.name)
+        assertTrue(RuleKeys.YAPI_PROJECT is RuleKey.StringKey)
+        assertTrue(RuleKeys.YAPI_PROJECT.aliases.contains("project"))
+        assertTrue(RuleKeys.YAPI_PROJECT.aliases.contains("module"))
+        assertEquals(listOf("yapi.project", "project", "module"), RuleKeys.YAPI_PROJECT.allNames)
+    }
 }
