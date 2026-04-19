@@ -180,7 +180,8 @@ data class ApiParameter(
     val defaultValue: String? = null,
     val description: String? = null,
     val example: String? = null,
-    val enumValues: List<String>? = null
+    val enumValues: List<String>? = null,
+    val jsonType: String? = null
 )
 
 /**

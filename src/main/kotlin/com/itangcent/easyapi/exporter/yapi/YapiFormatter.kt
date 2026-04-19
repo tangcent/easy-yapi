@@ -41,25 +41,32 @@ class YapiFormatter(
     private val autoFormatUrl: Boolean = true,
     private val markdownRender: MarkdownRender
 ) {
-    /**
-     * Legacy constructor for backward compatibility.
-     * When a single useJson5 flag is provided, it applies to both request and response body.
-     * 
-     * @param jsonSchemaBuilder Builder for creating JSON Schema
-     * @param useJson5 Whether to use JSON5 format for both request and response bodies
-     * @param mockGenerator Optional generator for mock data
-     * @param markdownRender Renderer for converting Markdown descriptions to HTML
-     */
+    constructor(
+        jsonSchemaBuilder: JsonSchemaBuilder = JsonSchemaBuilder(),
+        reqBodyJson5: Boolean = false,
+        resBodyJson5: Boolean = false,
+        mockRules: Map<String, String>,
+        autoFormatUrl: Boolean = true,
+        markdownRender: MarkdownRender
+    ) : this(
+        jsonSchemaBuilder,
+        reqBodyJson5,
+        resBodyJson5,
+        MockDataGenerator(mockRules),
+        autoFormatUrl,
+        markdownRender
+    )
+
     constructor(
         jsonSchemaBuilder: JsonSchemaBuilder = JsonSchemaBuilder(),
         useJson5: Boolean,
-        mockGenerator: MockDataGenerator? = MockDataGenerator(),
+        mockRules: Map<String, String> = emptyMap(),
         markdownRender: MarkdownRender
     ) : this(
         jsonSchemaBuilder,
         reqBodyJson5 = useJson5,
         resBodyJson5 = useJson5,
-        mockGenerator = mockGenerator,
+        mockGenerator = MockDataGenerator(mockRules),
         autoFormatUrl = true,
         markdownRender = markdownRender
     )

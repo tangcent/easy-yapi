@@ -338,7 +338,8 @@ class SpringMvcClassExporter(
             binding = binding,
             defaultValue = defaultValue,
             description = doc,
-            example = demo ?: mock
+            example = demo ?: mock,
+            jsonType = rawType
         )
     }
 
