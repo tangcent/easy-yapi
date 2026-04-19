@@ -28,13 +28,10 @@ class MockDataGenerator(
      * @return A mock expression string, or null if unable to determine
      */
     fun mockFor(param: ApiParameter): String? {
-        val type = param.type.rawType()
+        val type = param.jsonType ?: param.type.rawType()
         val name = param.name.lowercase()
         
-        return when {
-            mockRules.isNotEmpty() -> mockByRules(param)
-            else -> mockByTypeName(type, name)
-        }
+        return mockByRules(param) ?: mockByTypeName(type, name)
     }
 
     /**
@@ -72,7 +69,7 @@ class MockDataGenerator(
      */
     private fun mockByRules(param: ApiParameter): String? {
         val name = param.name
-        val type = param.type.rawType()
+        val type = param.jsonType ?: param.type.rawType()
         
         val keyPatterns = listOf(
             "${name}|$type",
@@ -86,7 +83,7 @@ class MockDataGenerator(
             mockRules[pattern]?.let { return it }
         }
 
-        return mockByTypeName(type, name)
+        return null
     }
 
     /**
@@ -152,7 +149,7 @@ class MockDataGenerator(
         return when (type) {
             JsonType.STRING -> "@string"
             JsonType.SHORT -> "@integer(0, 32767)"
-            JsonType.INT -> "@integer"
+            JsonType.INT, "integer" -> "@integer"
             JsonType.LONG -> "@integer"
             JsonType.FLOAT -> "@float"
             JsonType.DOUBLE -> "@float"

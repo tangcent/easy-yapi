@@ -613,4 +613,118 @@ class YapiFormatterTest {
     }
 
     // endregion
+
+    // region Mock rules
+
+    @Test
+    fun testFormatWithMockWithRules() {
+        val mockRules = mapOf(
+            "*.id|integer" to "@integer",
+            "*.email|string" to "@email"
+        )
+        val mockFormatter = YapiFormatter(mockRules = mockRules, markdownRender = BundledMarkdownRender())
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(
+                        name = "id",
+                        binding = ParameterBinding.Path,
+                        description = "User ID",
+                        jsonType = "integer"
+                    )
+                )
+            )
+        )
+
+        val doc = mockFormatter.formatWithMock(endpoint)
+
+        assertNotNull(doc.reqParams)
+        assertEquals("@integer", doc.reqParams!![0].example)
+    }
+
+    @Test
+    fun testFormatWithMockRulesForQueryParams() {
+        val mockRules = mapOf(
+            "*.page|integer" to "@integer(1, 100)",
+            "*.size|integer" to "@integer(1, 100)"
+        )
+        val mockFormatter = YapiFormatter(mockRules = mockRules, markdownRender = BundledMarkdownRender())
+        val endpoint = ApiEndpoint(
+            name = "List Users",
+            metadata = httpMetadata(
+                path = "/api/users",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(name = "page", binding = ParameterBinding.Query, jsonType = "integer"),
+                    ApiParameter(name = "size", binding = ParameterBinding.Query, jsonType = "integer")
+                )
+            )
+        )
+
+        val doc = mockFormatter.formatWithMock(endpoint)
+
+        assertNotNull(doc.reqQuery)
+        assertEquals("@integer(1, 100)", doc.reqQuery!![0].example)
+        assertEquals("@integer(1, 100)", doc.reqQuery!![1].example)
+    }
+
+    @Test
+    fun testFormatWithMockRulesFallbackToNameHeuristic() {
+        val mockRules = mapOf(
+            "*.email|string" to "@email"
+        )
+        val mockFormatter = YapiFormatter(mockRules = mockRules, markdownRender = BundledMarkdownRender())
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(
+                        name = "id",
+                        binding = ParameterBinding.Path,
+                        description = "User ID",
+                        jsonType = "integer"
+                    )
+                )
+            )
+        )
+
+        val doc = mockFormatter.formatWithMock(endpoint)
+
+        assertNotNull(doc.reqParams)
+        assertEquals("@id", doc.reqParams!![0].example)
+    }
+
+    @Test
+    fun testFormatWithMockNoRulesUsesNameHeuristic() {
+        val noRulesFormatter = YapiFormatter(
+            mockGenerator = MockDataGenerator(emptyMap()),
+            markdownRender = BundledMarkdownRender()
+        )
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                parameters = listOf(
+                    ApiParameter(
+                        name = "email",
+                        binding = ParameterBinding.Query,
+                        jsonType = "string"
+                    )
+                )
+            )
+        )
+
+        val doc = noRulesFormatter.formatWithMock(endpoint)
+
+        assertNotNull(doc.reqQuery)
+        assertEquals("@email", doc.reqQuery!![0].example)
+    }
+
+    // endregion
 }

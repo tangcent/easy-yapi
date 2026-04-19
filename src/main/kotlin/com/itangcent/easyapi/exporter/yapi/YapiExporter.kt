@@ -48,9 +48,11 @@ class YapiExporter(private val project: Project) : ApiExporter {
 
         val serverUrl = clientProvider.serverUrl
         val settings = settingBinder.read()
+        val mockRules = MockRuleLoader.getInstance(project).getMockRules()
         val formatter = YapiFormatter(
             reqBodyJson5 = settings.yapiReqBodyJson5,
             resBodyJson5 = settings.yapiResBodyJson5,
+            mockRules = mockRules,
             markdownRender = MarkdownRender.getInstance(project)
         )
         val engine = RuleEngine.getInstance(project)
@@ -113,7 +115,7 @@ class YapiExporter(private val project: Project) : ApiExporter {
                     continue
                 }
 
-                val yapiDoc = formatter.format(endpoint)
+                val yapiDoc = formatter.formatWithMock(endpoint)
                 val psiElement = endpoint.sourceMethod ?: endpoint.sourceClass
 
                 psiElement?.let {

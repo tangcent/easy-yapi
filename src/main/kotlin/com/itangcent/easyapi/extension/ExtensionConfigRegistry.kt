@@ -72,7 +72,7 @@ object ExtensionConfigRegistry : IdeaLog {
                 } else {
                     // Fallback: try to load known extension files directly from classpath
                     val knownExtensions = listOf(
-                        "swagger", "swagger3", "jackson", "gson", "fastjson", "yapi", "spring",
+                        "swagger", "swagger3", "jackson", "gson", "fastjson", "yapi", "yapi-mock", "spring",
                         "spring-validations", "spring-webflux", "spring-configuration", "spring-properties",
                         "yapi.project", "ignore", "deprecated", "jakarta-validation", "javax-validation", "converts",
                         "field-utils",

@@ -28,6 +28,38 @@ class ExtensionConfigRegistryTest {
     }
 
     @Test
+    fun testYapiMockExtensionExists() {
+        val extensions = ExtensionConfigRegistry.allExtensions()
+        val codes = extensions.map { it.code }
+        println("All extension codes: $codes")
+        assertTrue("yapi-mock extension should exist. Available: $codes", codes.contains("yapi-mock"))
+    }
+
+    @Test
+    fun testYapiMockExtensionContainsMockRules() {
+        val extension = ExtensionConfigRegistry.getExtension("yapi-mock")
+        assertNotNull("yapi-mock extension should be loaded", extension)
+        val content = extension!!.content
+        assertTrue("yapi-mock should contain mock.rule entries", content.contains("mock.rule="))
+        assertTrue("yapi-mock should contain email rule", content.contains("@email"))
+        assertTrue("yapi-mock should contain phone rule", content.contains("@phone"))
+    }
+
+    @Test
+    fun testYapiMockExtensionDefaultEnabled() {
+        val extension = ExtensionConfigRegistry.getExtension("yapi-mock")
+        assertNotNull("yapi-mock extension should be loaded", extension)
+        assertTrue("yapi-mock should be default-enabled", extension!!.defaultEnabled)
+    }
+
+    @Test
+    fun testYapiExtensionDoesNotContainMockRules() {
+        val extension = ExtensionConfigRegistry.getExtension("yapi")
+        assertNotNull("yapi extension should be loaded", extension)
+        assertFalse("yapi extension should not contain mock.rule entries", extension!!.content.contains("mock.rule="))
+    }
+
+    @Test
     fun testGetExtension_existing() {
         val extensions = ExtensionConfigRegistry.allExtensions()
         if (extensions.isNotEmpty()) {
