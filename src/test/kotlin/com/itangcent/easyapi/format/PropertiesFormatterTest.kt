@@ -145,4 +145,40 @@ class PropertiesFormatterTest {
         assertTrue(result.contains("count=0"))
         assertTrue(result.contains("enabled=false"))
     }
+
+    @Test
+    fun testFormatWithPrefix() {
+        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val nameField = FieldModel(model = stringModel)
+        val obj = ObjectModel.Object(fields = mapOf("name" to nameField))
+        val formatter = PropertiesFormatter()
+
+        val result = formatter.format(obj, prefix = "my.app")
+        assertTrue(result.contains("my.app.name="))
+    }
+
+    @Test
+    fun testFormatWithPrefixNestedObject() {
+        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val nameField = FieldModel(model = stringModel)
+        val userObj = ObjectModel.Object(fields = mapOf("name" to nameField))
+        val userField = FieldModel(model = userObj)
+        val rootObj = ObjectModel.Object(fields = mapOf("user" to userField))
+        val formatter = PropertiesFormatter()
+
+        val result = formatter.format(rootObj, prefix = "spring")
+        assertTrue(result.contains("spring.user.name="))
+    }
+
+    @Test
+    fun testFormatWithEmptyPrefix() {
+        val stringModel = ObjectModel.Single(JsonType.STRING)
+        val nameField = FieldModel(model = stringModel)
+        val obj = ObjectModel.Object(fields = mapOf("name" to nameField))
+        val formatter = PropertiesFormatter()
+
+        val resultWithoutPrefix = formatter.format(obj)
+        val resultWithEmptyPrefix = formatter.format(obj, prefix = "")
+        assertEquals(resultWithoutPrefix, resultWithEmptyPrefix)
+    }
 }

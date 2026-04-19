@@ -117,4 +117,7 @@ object RuleKeys {
     // ── Enum rules ────────────────────────────────────────────────
     val ENUM_USE_CUSTOM = RuleKey.string("enum.use.custom")
     val CONSTANT_FIELD_IGNORE = RuleKey.boolean("constant.field.ignore")
+
+    // ── Properties rules ──────────────────────────────────────────
+    val PROPERTIES_PREFIX = RuleKey.string("properties.prefix")
 }

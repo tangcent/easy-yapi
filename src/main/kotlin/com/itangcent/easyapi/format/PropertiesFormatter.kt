@@ -40,10 +40,10 @@ import java.util.IdentityHashMap
  */
 class PropertiesFormatter(private val maxVisits: Int = 2) {
 
-    fun format(model: ObjectModel): String {
+    fun format(model: ObjectModel, prefix: String = ""): String {
         val sb = StringBuilder()
         val visitCounts = IdentityHashMap<ObjectModel.Object, Int>()
-        flatten("", model, null, sb, visitCounts)
+        flatten(prefix, model, null, sb, visitCounts)
         return sb.toString()
     }
 

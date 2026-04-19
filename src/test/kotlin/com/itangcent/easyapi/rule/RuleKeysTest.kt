@@ -69,4 +69,12 @@ class RuleKeysTest {
         assertTrue(RuleKeys.FIELD_MOCK is RuleKey.StringKey)
         assertEquals("field.mock", RuleKeys.FIELD_MOCK.name)
     }
+
+    @Test
+    fun testPropertiesPrefixKey() {
+        val key = RuleKeys.PROPERTIES_PREFIX
+        assertEquals("properties.prefix", key.name)
+        assertTrue(key.mode is StringRuleMode.SINGLE)
+        assertTrue(key.aliases.isEmpty())
+    }
 }
