@@ -5,6 +5,27 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.8] - 2026-04-19
+
+### Added
+-  add YAPI mock rules support with separate extension config (#1320)
+-  add variable resolution support in ApiDashboard
+-  handle properties.prefix rule in FieldsToPropertiesAction
+-  render markdown to HTML when exporting APIs to YAPI (#1318)
+-  enhance script PSI context with class introspection methods and fix Swing dispatcher modality
+-  remember export dialog options for better UX
+-  add concurrent API scanning option for better performance
+-  add rule-based configuration support with cache invalidation
+
+### Improved
+- amend: rename rule key 'module' to 'yapi.project' with backward-compatible aliases (#1319)
+- test: add missing unit tests and fix test failures
+- test: improve test coverage across multiple packages
+- perf: optimize rule engine with Flow-based lazy evaluation
+- perf: optimize exporter selection with framework availability caching
+
+---
+
 ## [3.0.7] - 2026-04-15
 
 ### Added

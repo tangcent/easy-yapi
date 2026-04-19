@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.itangcent"
-version = "3.0.7.252.0"
+version = "3.0.8.252.0"
 
 repositories {
     mavenCentral()
