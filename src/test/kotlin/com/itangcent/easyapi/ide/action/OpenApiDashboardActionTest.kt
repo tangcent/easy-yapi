@@ -6,8 +6,21 @@ import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCas
 
 class OpenApiDashboardActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
+    private lateinit var action: OpenApiDashboardAction
+
+    override fun setUp() {
+        super.setUp()
+        action = OpenApiDashboardAction()
+    }
+
+    fun testActionIsAnAction() {
+        assertTrue(
+            "OpenApiDashboardAction should be an AnAction",
+            action is com.intellij.openapi.actionSystem.AnAction
+        )
+    }
+
     fun testActionPerformedWithProject() {
-        val action = OpenApiDashboardAction()
         val presentation = Presentation()
         val event = AnActionEvent.createFromDataContext(
             "test",
@@ -18,7 +31,6 @@ class OpenApiDashboardActionTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testActionPerformedWithoutProject() {
-        val action = OpenApiDashboardAction()
         val presentation = Presentation()
         val event = AnActionEvent.createFromDataContext(
             "test",
@@ -26,5 +38,19 @@ class OpenApiDashboardActionTest : EasyApiLightCodeInsightFixtureTestCase() {
         ) { null }
 
         action.actionPerformed(event)
+    }
+
+    fun testActionPerformedDoesNotThrowWithProject() {
+        val presentation = Presentation()
+        val event = AnActionEvent.createFromDataContext(
+            "test",
+            presentation
+        ) { project }
+
+        try {
+            action.actionPerformed(event)
+        } catch (e: Exception) {
+            fail("actionPerformed should not throw with project: ${e.message}")
+        }
     }
 }

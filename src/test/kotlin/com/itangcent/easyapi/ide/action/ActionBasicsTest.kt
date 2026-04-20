@@ -3,7 +3,7 @@ package com.itangcent.easyapi.ide.action
 import org.junit.Assert.*
 import org.junit.Test
 
-class EasyApiActionTest {
+class ActionExistenceTest {
 
     @Test
     fun testEasyApiActionClassExists() {

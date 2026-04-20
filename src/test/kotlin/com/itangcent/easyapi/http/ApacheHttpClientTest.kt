@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 class ApacheHttpClientTest {
@@ -20,6 +21,7 @@ class ApacheHttpClientTest {
         client.close()
     }
 
+    @Ignore("Network test - unreliable in CI")
     @Test
     fun testGetRequest() = runBlocking {
         val request = HttpRequest(
@@ -33,6 +35,7 @@ class ApacheHttpClientTest {
         assertTrue("Response should contain url", response.body!!.contains("httpbin.org"))
     }
 
+    @Ignore("Network test - unreliable in CI")
     @Test
     fun testPostRequestWithBody() = runBlocking {
         val request = HttpRequest(
@@ -47,6 +50,7 @@ class ApacheHttpClientTest {
         assertTrue("Response should echo the body", response.body!!.contains("test"))
     }
 
+    @Ignore("Network test - unreliable in CI")
     @Test
     fun testPostFormParams() = runBlocking {
         val request = HttpRequest(
@@ -104,6 +108,7 @@ class ApacheHttpClientTest {
         safeClient.close()
     }
 
+    @Ignore("Network test - unreliable in CI")
     @Test
     fun testHeadersAreSent() = runBlocking {
         val request = HttpRequest(
@@ -116,6 +121,7 @@ class ApacheHttpClientTest {
         assertTrue("Response should contain custom header", response.body!!.contains("test-value"))
     }
 
+    @Ignore("Network test - unreliable in CI")
     @Test
     fun testQueryParameters() = runBlocking {
         val request = HttpRequest(
