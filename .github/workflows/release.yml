@@ -18,21 +18,24 @@ jobs:
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
+          FULL_VERSION=""
           VERSION=$(echo "$COMMIT_MSG" | head -1 | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
 
           if [ -z "$VERSION" ]; then
             if [ -f "build.gradle.kts" ]; then
-              VERSION=$(grep '^version\s*=' build.gradle.kts | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r' | xargs)
-              if [ -z "$VERSION" ]; then
+              FULL_VERSION=$(grep '^version\s*=' build.gradle.kts | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r' | xargs)
+              if [ -z "$FULL_VERSION" ]; then
                 echo "Error: No version found in build.gradle.kts"
                 exit 1
               fi
               # Convert version format (e.g. 3.0.0.212.0 -> 3.0.0)
-              VERSION=$(echo "$VERSION" | sed -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
+              VERSION=$(echo "$FULL_VERSION" | sed -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
             else
               echo "Error: build.gradle.kts file not found"
               exit 1
             fi
+          else
+            FULL_VERSION="$VERSION"
           fi
 
           if [[ ! "$VERSION" =~ ^v ]]; then
@@ -40,7 +43,9 @@ jobs:
           fi
 
           echo "Extracted version: $VERSION"
+          echo "Full version: $FULL_VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "full_version=$FULL_VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if tag exists
         id: check_tag
@@ -92,9 +97,9 @@ jobs:
           NOTES="${NOTES}### Downloads\n\n"
           NOTES="${NOTES}| Plugin | IDE Support |\n"
           NOTES="${NOTES}| ------ | ----------- |\n"
-          # Remove 'v' prefix for the download link
-          DOWNLOAD_VERSION=$(echo "$CURRENT_TAG" | sed 's/^v//')
-          NOTES="${NOTES}| [easy-yapi-${DOWNLOAD_VERSION}.zip](https://github.com/${{ github.repository }}/releases/download/${CURRENT_TAG}/easy-yapi-${DOWNLOAD_VERSION}.zip) | IntelliJ IDEA 2023.1+ |\n"
+          # Use full version for the download link (e.g., easy-yapi-3.0.8.252.0.zip)
+          FULL_VERSION=${{ steps.extract_version.outputs.full_version }}
+          NOTES="${NOTES}| [easy-yapi-${FULL_VERSION}.zip](https://github.com/${{ github.repository }}/releases/download/${CURRENT_TAG}/easy-yapi-${FULL_VERSION}.zip) | IntelliJ IDEA 2023.1+ |\n"
           
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo -e "$NOTES" >> $GITHUB_OUTPUT
