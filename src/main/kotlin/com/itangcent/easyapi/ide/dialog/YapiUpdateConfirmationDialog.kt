@@ -2,52 +2,28 @@ package com.itangcent.easyapi.ide.dialog
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.components.JBLabel
+import com.intellij.util.ui.JBUI
+import com.intellij.util.ui.UIUtil
 import com.itangcent.easyapi.exporter.yapi.UpdateDecision
 import com.itangcent.easyapi.exporter.yapi.model.YapiApiDoc
-import java.awt.BorderLayout
-import java.awt.Dimension
+import java.awt.Color
+import java.awt.Component
 import javax.swing.*
 
-/**
- * Dialog for confirming whether to update an existing API in YAPI.
- *
- * This dialog is shown when [com.itangcent.easyapi.exporter.yapi.YapiExportMode.ALWAYS_ASK]
- * mode is enabled and an existing API with the same path and method is found.
- *
- * The dialog displays:
- * - The API title, method, and path
- * - "Yes" and "No" buttons for the user's decision
- * - An "Apply for all" checkbox to apply the same decision to all remaining APIs
- *
- * @property doc The API document being exported
- * @property existingApiTitle The title of the existing API found in YAPI, may be null
- */
 class YapiUpdateConfirmationDialog(
     project: Project?,
     private val doc: YapiApiDoc,
     private val existingApiTitle: String?
 ) : DialogWrapper(project) {
 
-    /**
-     * Checkbox allowing the user to apply the same decision to all remaining APIs.
-     * When checked, the decision (Yes/No) will be remembered and applied automatically
-     * to subsequent API exports in the same batch.
-     */
     private val applyForAllCheckBox = JCheckBox("Apply for all").apply {
         toolTipText = "Apply this decision to all remaining APIs"
     }
 
-    /**
-     * Indicates whether the user selected "Apply for all".
-     * This is set after the dialog is closed.
-     */
     var shouldApplyForAll: Boolean = false
         private set
 
-    /**
-     * The user's decision after closing the dialog.
-     * Can be [UpdateDecision.Update], [UpdateDecision.Skip], or [UpdateDecision.ApplyAll].
-     */
     var userDecision: UpdateDecision = UpdateDecision.Skip
         private set
 
@@ -58,44 +34,56 @@ class YapiUpdateConfirmationDialog(
         init()
     }
 
-    override fun createCenterPanel(): JComponent? {
-        val panel = JPanel(BorderLayout(10, 10))
-        panel.preferredSize = Dimension(450, 120)
+    override fun createCenterPanel(): JComponent {
+        val panel = JPanel()
+        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+        panel.border = JBUI.Borders.empty(JBUI.scale(12))
 
-        val messagePanel = JPanel(BorderLayout())
-        val messageLabel = JLabel(buildMessage())
-        messageLabel.border = BorderFactory.createEmptyBorder(10, 0, 10, 0)
-        messagePanel.add(messageLabel, BorderLayout.CENTER)
+        val questionLabel = JBLabel("Do you want to update the existing API?").apply {
+            font = font.deriveFont(font.size2D + 2)
+            setCopyable(true)
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+        panel.add(questionLabel)
+        panel.add(Box.createVerticalStrut(JBUI.scale(12)))
 
-        panel.add(messagePanel, BorderLayout.CENTER)
-        panel.add(applyForAllCheckBox, BorderLayout.SOUTH)
+        val method = doc.method.uppercase()
+        val methodPathLabel = createMethodPathLabel(method, doc.path)
+        methodPathLabel.alignmentX = Component.LEFT_ALIGNMENT
+        panel.add(methodPathLabel)
+        panel.add(Box.createVerticalStrut(JBUI.scale(8)))
+
+        val apiTitle = existingApiTitle ?: doc.title ?: "Unknown API"
+        val apiNameLabel = JBLabel(apiTitle).apply {
+            font = font.deriveFont(font.size2D + 1)
+            setCopyable(true)
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+        panel.add(apiNameLabel)
+        panel.add(Box.createVerticalStrut(JBUI.scale(16)))
+
+        applyForAllCheckBox.alignmentX = Component.LEFT_ALIGNMENT
+        panel.add(applyForAllCheckBox)
 
         return panel
     }
 
-    /**
-     * Builds the HTML message displayed in the dialog.
-     * Shows the API title, method, and path for identification.
-     */
-    private fun buildMessage(): String {
-        val apiTitle = existingApiTitle ?: doc.title ?: "Unknown API"
-        val path = doc.path
-        val method = doc.method.uppercase()
-        return """<html>
-            <div style='width: 400px;'>
-                <b>Do you want to update the existing API?</b><br><br>
-                <b>API:</b> $apiTitle<br>
-                <b>Method:</b> $method<br>
-                <b>Path:</b> $path
-            </div>
-        </html>""".trimIndent()
+    private fun createMethodPathLabel(method: String, path: String): JBLabel {
+        val color = when (method) {
+            "GET" -> Color(0x61affe)
+            "POST" -> Color(0x49cc90)
+            "PUT" -> Color(0xfca130)
+            "DELETE" -> Color(0xf93e3e)
+            "PATCH" -> Color(0x50e3c2)
+            else -> UIUtil.getContextHelpForeground()
+        }
+        return JBLabel("[$method] $path").apply {
+            foreground = color
+            font = font.deriveFont(java.awt.Font.BOLD, font.size2D + 1)
+            setCopyable(true)
+        }
     }
 
-    /**
-     * Creates the "Yes" action button.
-     * When clicked, sets the decision to [UpdateDecision.Update] or [UpdateDecision.ApplyAll]
-     * depending on whether "Apply for all" is checked.
-     */
     override fun getOKAction(): Action {
         return object : AbstractAction("Yes") {
             override fun actionPerformed(e: java.awt.event.ActionEvent?) {
@@ -110,11 +98,6 @@ class YapiUpdateConfirmationDialog(
         }
     }
 
-    /**
-     * Creates the "No" action button.
-     * When clicked, sets the decision to [UpdateDecision.Skip] or [UpdateDecision.ApplyAll]
-     * depending on whether "Apply for all" is checked.
-     */
     override fun getCancelAction(): Action {
         return object : AbstractAction("No") {
             override fun actionPerformed(e: java.awt.event.ActionEvent?) {
@@ -129,10 +112,6 @@ class YapiUpdateConfirmationDialog(
         }
     }
 
-    /**
-     * Handles the cancel action (e.g., pressing Escape or clicking the X button).
-     * Treats it the same as clicking "No".
-     */
     override fun doCancelAction() {
         shouldApplyForAll = applyForAllCheckBox.isSelected
         userDecision = if (shouldApplyForAll) {
@@ -144,14 +123,6 @@ class YapiUpdateConfirmationDialog(
     }
 
     companion object {
-        /**
-         * Shows the update confirmation dialog and returns the user's decision.
-         *
-         * @param project The IntelliJ project context, may be null
-         * @param doc The API document being exported
-         * @param existingApiTitle The title of the existing API found in YAPI
-         * @return The user's decision: [UpdateDecision.Update], [UpdateDecision.Skip], or [UpdateDecision.ApplyAll]
-         */
         fun show(
             project: Project?,
             doc: YapiApiDoc,
