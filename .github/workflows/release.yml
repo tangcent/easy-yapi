@@ -21,21 +21,16 @@ jobs:
           FULL_VERSION=""
           VERSION=$(echo "$COMMIT_MSG" | head -1 | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
 
+          if [ -f "build.gradle.kts" ]; then
+            FULL_VERSION=$(grep '^version\s*=' build.gradle.kts | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r' | xargs)
+          fi
+
           if [ -z "$VERSION" ]; then
-            if [ -f "build.gradle.kts" ]; then
-              FULL_VERSION=$(grep '^version\s*=' build.gradle.kts | head -n1 | sed -E 's/.*"([^"]+)".*/\1/' | tr -d '\r' | xargs)
-              if [ -z "$FULL_VERSION" ]; then
-                echo "Error: No version found in build.gradle.kts"
-                exit 1
-              fi
-              # Convert version format (e.g. 3.0.0.212.0 -> 3.0.0)
-              VERSION=$(echo "$FULL_VERSION" | sed -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
-            else
-              echo "Error: build.gradle.kts file not found"
+            if [ -z "$FULL_VERSION" ]; then
+              echo "Error: No version found in build.gradle.kts"
               exit 1
             fi
-          else
-            FULL_VERSION="$VERSION"
+            VERSION=$(echo "$FULL_VERSION" | sed -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
           fi
 
           if [[ ! "$VERSION" =~ ^v ]]; then
