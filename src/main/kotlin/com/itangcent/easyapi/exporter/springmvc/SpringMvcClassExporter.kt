@@ -19,6 +19,7 @@ import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelUtils
 import com.itangcent.easyapi.psi.type.GenericContext
+import com.itangcent.easyapi.psi.type.InheritanceHelper
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.psi.type.TypeResolver
@@ -462,16 +463,7 @@ class SpringMvcClassExporter(
         return result
     }
 
-    private fun isCollectionType(psiClass: PsiClass): Boolean {
-        val qualifiedName = psiClass.qualifiedName ?: return false
-        return qualifiedName == "java.util.Collection" ||
-                qualifiedName == "java.util.List" ||
-                qualifiedName == "java.util.Set" ||
-                qualifiedName == "java.util.ArrayList" ||
-                qualifiedName == "java.util.HashSet" ||
-                qualifiedName == "java.util.LinkedList" ||
-                qualifiedName.startsWith("kotlin.collections.")
-    }
+    private fun isCollectionType(psiClass: PsiClass): Boolean = InheritanceHelper.isCollection(psiClass)
 
     private fun resolveFieldType(fieldModel: FieldModel): ParameterType {
         val model = fieldModel.model

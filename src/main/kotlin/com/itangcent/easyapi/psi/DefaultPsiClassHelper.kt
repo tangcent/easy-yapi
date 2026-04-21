@@ -866,26 +866,12 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         }
     }
 
-    private fun isCollection(psiClass: PsiClass): Boolean {
-        val qualifiedName = psiClass.qualifiedName ?: return false
-        return qualifiedName == "java.util.Collection" ||
-                qualifiedName == "java.util.List" ||
-                qualifiedName == "java.util.Set" ||
-                qualifiedName == "java.util.ArrayList" ||
-                qualifiedName == "java.util.HashSet" ||
-                qualifiedName == "java.util.LinkedList"
-    }
+    private fun isCollection(psiClass: PsiClass): Boolean = InheritanceHelper.isCollection(psiClass)
 
-    private fun isMap(psiClass: PsiClass): Boolean {
-        val qualifiedName = psiClass.qualifiedName ?: return false
-        return qualifiedName == "java.util.Map" ||
-                qualifiedName == "java.util.HashMap" ||
-                qualifiedName == "java.util.LinkedHashMap" ||
-                qualifiedName == "java.util.TreeMap"
-    }
+    private fun isMap(psiClass: PsiClass): Boolean = InheritanceHelper.isMap(psiClass)
 
     private fun isEnum(psiClass: PsiClass): Boolean {
-        return psiClass.isEnum || psiClass.supers.any { it.qualifiedName == "java.lang.Enum" }
+        return psiClass.isEnum || psiClass.supers.any { it.qualifiedName == ClassNameConstants.JAVA_LANG_ENUM }
     }
 
     private fun isSimpleType(psiClass: PsiClass): Boolean {

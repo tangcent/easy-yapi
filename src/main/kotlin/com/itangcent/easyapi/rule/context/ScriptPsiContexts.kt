@@ -6,8 +6,8 @@ import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
-import com.intellij.psi.util.InheritanceUtil
 import com.itangcent.easyapi.core.threading.readSync
+import com.itangcent.easyapi.psi.type.InheritanceHelper
 import com.itangcent.easyapi.psi.type.ResolvedField
 import com.itangcent.easyapi.psi.type.ResolvedMethod
 import com.itangcent.easyapi.psi.type.ResolvedParam
@@ -91,19 +91,14 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
         return ScriptTypeContext(context, ResolvedType.ClassType(psiClass()))
     }
 
-    fun isExtend(superClass: String): Boolean = readSync {
-        InheritanceUtil.isInheritor(psiClass(), superClass)
-    }
+    fun isExtend(superClass: String): Boolean =
+        InheritanceHelper.isInheritor(psiClass(), superClass)
 
-    fun isMap(): Boolean = readSync {
-        val fqn = psiClass().qualifiedName ?: return@readSync false
-        fqn == "java.util.Map" || InheritanceUtil.isInheritor(psiClass(), "java.util.Map")
-    }
+    fun isMap(): Boolean =
+        InheritanceHelper.isMap(psiClass())
 
-    fun isCollection(): Boolean = readSync {
-        val fqn = psiClass().qualifiedName ?: return@readSync false
-        fqn == "java.util.Collection" || InheritanceUtil.isInheritor(psiClass(), "java.util.Collection")
-    }
+    fun isCollection(): Boolean =
+        InheritanceHelper.isCollection(psiClass())
 
     fun isArray(): Boolean = name().endsWith("[]")
 
@@ -511,37 +506,20 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
 
     override fun toString(): String = name()
 
-    fun isExtend(superClass: String): Boolean = readSync {
-        when (resolvedType) {
-            is ResolvedType.ClassType -> InheritanceUtil.isInheritor(resolvedType.psiClass, superClass)
-            else -> false
-        }
+    fun isExtend(superClass: String): Boolean = when (resolvedType) {
+        is ResolvedType.ClassType -> InheritanceHelper.isInheritor(resolvedType.psiClass, superClass)
+        else -> false
     }
 
-    fun isMap(): Boolean = readSync {
-        when (resolvedType) {
-            is ResolvedType.ClassType -> {
-                val fqn = resolvedType.psiClass.qualifiedName ?: return@readSync false
-                fqn == "java.util.Map" || InheritanceUtil.isInheritor(resolvedType.psiClass, "java.util.Map")
-            }
-
-            else -> false
-        }
+    fun isMap(): Boolean = when (resolvedType) {
+        is ResolvedType.ClassType -> InheritanceHelper.isMap(resolvedType.psiClass)
+        else -> false
     }
 
-    fun isCollection(): Boolean = readSync {
-        when (resolvedType) {
-            is ResolvedType.ClassType -> {
-                val fqn = resolvedType.psiClass.qualifiedName ?: return@readSync false
-                fqn == "java.util.Collection" || InheritanceUtil.isInheritor(
-                    resolvedType.psiClass,
-                    "java.util.Collection"
-                )
-            }
-
-            is ResolvedType.ArrayType -> true
-            else -> false
-        }
+    fun isCollection(): Boolean = when (resolvedType) {
+        is ResolvedType.ClassType -> InheritanceHelper.isCollection(resolvedType.psiClass)
+        is ResolvedType.ArrayType -> true
+        else -> false
     }
 
     fun isArray(): Boolean {
