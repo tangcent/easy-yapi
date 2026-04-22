@@ -38,8 +38,6 @@ interface ApplicationSettingsSupport {
     var jaxrsEnable: Boolean
     var actuatorEnable: Boolean
     var grpcEnable: Boolean
-    var swaggerEnable: Boolean
-    var swagger3Enable: Boolean
     var extensionConfigs: String
     var postmanToken: String?
     var wrapCollection: Boolean
@@ -93,8 +91,6 @@ interface ApplicationSettingsSupport {
         newSetting.jaxrsEnable = this.jaxrsEnable
         newSetting.actuatorEnable = this.actuatorEnable
         newSetting.grpcEnable = this.grpcEnable
-        newSetting.swaggerEnable = this.swaggerEnable
-        newSetting.swagger3Enable = this.swagger3Enable
         newSetting.extensionConfigs = this.extensionConfigs
         newSetting.queryExpanded = this.queryExpanded
         newSetting.formExpanded = this.formExpanded

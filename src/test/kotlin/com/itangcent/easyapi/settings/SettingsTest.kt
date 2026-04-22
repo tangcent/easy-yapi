@@ -14,8 +14,6 @@ class SettingsTest {
         assertTrue(settings.jaxrsEnable)
         assertFalse(settings.actuatorEnable)
         assertTrue(settings.grpcEnable)
-        assertTrue(settings.swaggerEnable)
-        assertTrue(settings.swagger3Enable)
         assertNull(settings.postmanToken)
         assertNull(settings.postmanWorkspace)
         assertEquals(PostmanExportMode.CREATE_NEW.name, settings.postmanExportMode)
@@ -50,16 +48,12 @@ class SettingsTest {
         val settings = Settings(
             feignEnable = true,
             jaxrsEnable = false,
-            swaggerEnable = false,
-            swagger3Enable = false,
             postmanToken = "my-token",
             httpTimeOut = 30,
             logLevel = 100
         )
         assertTrue(settings.feignEnable)
         assertFalse(settings.jaxrsEnable)
-        assertFalse(settings.swaggerEnable)
-        assertFalse(settings.swagger3Enable)
         assertEquals("my-token", settings.postmanToken)
         assertEquals(30, settings.httpTimeOut)
         assertEquals(100, settings.logLevel)
@@ -76,20 +70,6 @@ class SettingsTest {
     fun testEquality_differentValues() {
         val s1 = Settings(feignEnable = true)
         val s2 = Settings(feignEnable = false)
-        assertNotEquals(s1, s2)
-    }
-
-    @Test
-    fun testEquality_differentSwaggerEnable() {
-        val s1 = Settings(swaggerEnable = true)
-        val s2 = Settings(swaggerEnable = false)
-        assertNotEquals(s1, s2)
-    }
-
-    @Test
-    fun testEquality_differentSwagger3Enable() {
-        val s1 = Settings(swagger3Enable = true)
-        val s2 = Settings(swagger3Enable = false)
         assertNotEquals(s1, s2)
     }
 

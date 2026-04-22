@@ -19,8 +19,12 @@ import javax.swing.border.TitledBorder
 
 class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel {
 
-    private val grpcEnableCheckbox = JCheckBox("Enable gRPC support", true)
-    private val grpcCallEnabledCheckbox = JCheckBox("Enable gRPC call", false)
+    private val grpcEnableCheckbox = JCheckBox("Enable gRPC support", true).apply {
+        toolTipText = "Enable parsing of gRPC/protobuf service definitions as API endpoints"
+    }
+    private val grpcCallEnabledCheckbox = JCheckBox("Enable gRPC call", false).apply {
+        toolTipText = "Enable the ability to make actual gRPC calls from the plugin (requires runtime dependencies)"
+    }
     private val autoDetectButton = JButton("Auto Detect")
 
     private val runtimeResolver: GrpcRuntimeResolver by lazy {

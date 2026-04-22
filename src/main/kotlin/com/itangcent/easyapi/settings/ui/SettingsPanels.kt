@@ -19,6 +19,7 @@ import com.itangcent.easyapi.exporter.postman.asCached
 import com.itangcent.easyapi.repository.DefaultRepositories
 import com.itangcent.easyapi.repository.RepositoryConfig
 import com.itangcent.easyapi.repository.RepositoryType
+import com.itangcent.easyapi.exporter.model.PathSelector
 import com.itangcent.easyapi.http.ApacheHttpClient
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.logging.IdeaLog
@@ -79,15 +80,30 @@ interface SettingsPanel {
  * - Cache management
  */
 class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel {
-    private val feignEnable = JBCheckBox("Enable Feign client support")
-    private val jaxrsEnable = JBCheckBox("Enable JAX-RS support", true)
-    private val actuatorEnable = JBCheckBox("Enable Spring Actuator support")
-    private val autoScanEnabled = JBCheckBox("Enable automatic API scanning on file changes", true)
-    private val concurrentScanEnabled = JBCheckBox("Enable concurrent API scanning (experimental)", false)
+    private val feignEnable = JBCheckBox("Enable Feign client support").apply {
+        toolTipText = "Enable parsing of Feign client interfaces as API endpoints"
+    }
+    private val jaxrsEnable = JBCheckBox("Enable JAX-RS support", true).apply {
+        toolTipText = "Enable parsing of JAX-RS annotations (@Path, @GET, etc.) as API endpoints"
+    }
+    private val actuatorEnable = JBCheckBox("Enable Spring Actuator support").apply {
+        toolTipText = "Enable export of Spring Boot Actuator endpoints (e.g., /health, /metrics)"
+    }
+    private val autoScanEnabled = JBCheckBox("Enable automatic API scanning on file changes", true).apply {
+        toolTipText = "Automatically re-scan APIs when source files are modified"
+    }
+    private val concurrentScanEnabled = JBCheckBox("Enable concurrent API scanning (experimental)", false).apply {
+        toolTipText = "Use multiple threads for API scanning (may improve performance but is experimental)"
+    }
+    private val switchNotice = JBCheckBox("Show notification on settings switch", true).apply {
+        toolTipText = "Show a notification when switching between different setting profiles"
+    }
 
     private val logLevelCombo = ComboBox(CommonSettingsHelper.VerbosityLevel.values())
     private val outputCharsetCombo = ComboBox(arrayOf("UTF-8", "GBK", "ISO-8859-1"))
-    private val outputDemoCheckBox = JBCheckBox("Output demo in markdown", true)
+    private val outputDemoCheckBox = JBCheckBox("Output demo in markdown", true).apply {
+        toolTipText = "Include example/demo values in generated markdown documentation"
+    }
     private val markdownFormatTypeCombo = ComboBox(MarkdownFormatType.values())
 
     private val projectCacheSizeLabel = JBLabel("0 B")
@@ -366,6 +382,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         )
         .addComponent(autoScanEnabled)
         .addComponent(concurrentScanEnabled)
+        .addComponent(switchNotice)
         .addLabeledComponent("Log Level:", logLevelCombo)
         .addLabeledComponent("Output Charset:", outputCharsetCombo)
         .addComponent(outputDemoCheckBox)
@@ -381,6 +398,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         actuatorEnable.isSelected = settings?.actuatorEnable ?: false
         autoScanEnabled.isSelected = settings?.autoScanEnabled ?: true
         concurrentScanEnabled.isSelected = settings?.concurrentScanEnabled ?: false
+        switchNotice.isSelected = settings?.switchNotice ?: true
         logLevelCombo.selectedItem = CommonSettingsHelper.VerbosityLevel.toLevel(settings?.logLevel ?: 50)
         outputCharsetCombo.selectedItem = settings?.outputCharset ?: "UTF-8"
         outputDemoCheckBox.isSelected = settings?.outputDemo ?: true
@@ -403,6 +421,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         settings.actuatorEnable = actuatorEnable.isSelected
         settings.autoScanEnabled = autoScanEnabled.isSelected
         settings.concurrentScanEnabled = concurrentScanEnabled.isSelected
+        settings.switchNotice = switchNotice.isSelected
         settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 50
         settings.outputCharset = outputCharsetCombo.selectedItem?.toString() ?: "UTF-8"
         settings.outputDemo = outputDemoCheckBox.isSelected
@@ -421,6 +440,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
                 actuatorEnable.isSelected != s.actuatorEnable ||
                 autoScanEnabled.isSelected != s.autoScanEnabled ||
                 concurrentScanEnabled.isSelected != s.concurrentScanEnabled ||
+                switchNotice.isSelected != s.switchNotice ||
                 (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level != s.logLevel ||
                 outputCharsetCombo.selectedItem?.toString() != s.outputCharset ||
                 outputDemoCheckBox.isSelected != s.outputDemo ||
@@ -455,9 +475,15 @@ class PostmanSettingsPanel : SettingsPanel {
     private val postmanWorkspace = ComboBox<String>().apply { isEditable = true }
     private val fetchWorkspacesButton = JButton("Fetch")
     private val postmanExportModeCombo = ComboBox(PostmanExportMode.values())
-    private val postmanBuildExample = JBCheckBox("Build example", true)
-    private val wrapCollection = JBCheckBox("Wrap collection")
-    private val autoMergeScript = JBCheckBox("Auto merge script")
+    private val postmanBuildExample = JBCheckBox("Build example", true).apply {
+        toolTipText = "Generate example request/response bodies in Postman collections"
+    }
+    private val wrapCollection = JBCheckBox("Wrap collection").apply {
+        toolTipText = "Wrap exported endpoints in a Postman collection folder instead of exporting directly"
+    }
+    private val autoMergeScript = JBCheckBox("Auto merge script").apply {
+        toolTipText = "Automatically merge pre-request and test scripts when updating existing Postman collections"
+    }
     private val postmanJson5FormatTypeCombo = ComboBox(PostmanJson5FormatType.values())
     private val postmanCollectionsField = JBTextArea(5, 40)
 
@@ -701,7 +727,9 @@ class YapiSettingsPanel : SettingsPanel {
 class HttpSettingsPanel : SettingsPanel {
     private val httpClientCombo = ComboBox(HttpClientType.values().map { it.value }.toTypedArray())
     private val httpTimeout = JBTextField("30")
-    private val unsafeSsl = JBCheckBox("Allow unsafe SSL")
+    private val unsafeSsl = JBCheckBox("Allow unsafe SSL").apply {
+        toolTipText = "Allow HTTPS connections to servers with untrusted or self-signed SSL certificates"
+    }
 
     override val component: JComponent = FormBuilder.createFormBuilder()
         .addLabeledComponent("HTTP Client:", httpClientCombo)
@@ -731,29 +759,52 @@ class HttpSettingsPanel : SettingsPanel {
 }
 
 class IntelligentSettingsPanel : SettingsPanel {
-    private val queryExpanded = JBCheckBox("Query expanded", true)
-    private val formExpanded = JBCheckBox("Form expanded", true)
+    private val queryExpanded = JBCheckBox("Query expanded", true).apply {
+        toolTipText = "Expand query parameters into individual fields in the exported API documentation"
+    }
+    private val formExpanded = JBCheckBox("Form expanded", true).apply {
+        toolTipText = "Expand form parameters into individual fields in the exported API documentation"
+    }
+    private val inferReturnMain = JBCheckBox("Infer return main type from wrapper", true).apply {
+        toolTipText = "Automatically detect the actual data type inside generic response wrappers (e.g., Result<T>)"
+    }
+    private val enableUrlTemplating = JBCheckBox("Enable URL templating (RFC 6570)", true).apply {
+        toolTipText = "Use RFC 6570 URI template syntax for path variables in exported URLs (e.g., /users/{id})"
+    }
+    private val pathMultiCombo = ComboBox(PathSelector.values().map { it.name }.toTypedArray())
 
     override val component: JComponent = FormBuilder.createFormBuilder()
         .addComponent(queryExpanded)
         .addComponent(formExpanded)
+        .addComponent(inferReturnMain)
+        .addComponent(enableUrlTemplating)
+        .addLabeledComponent("Path multi-select strategy:", pathMultiCombo)
         .addComponentFillVertically(JPanel(), 0)
         .panel
 
     override fun resetFrom(settings: Settings?) {
         queryExpanded.isSelected = settings?.queryExpanded ?: true
         formExpanded.isSelected = settings?.formExpanded ?: true
+        inferReturnMain.isSelected = settings?.inferReturnMain ?: true
+        enableUrlTemplating.isSelected = settings?.enableUrlTemplating ?: true
+        pathMultiCombo.selectedItem = settings?.pathMulti ?: "ALL"
     }
 
     override fun applyTo(settings: Settings) {
         settings.queryExpanded = queryExpanded.isSelected
         settings.formExpanded = formExpanded.isSelected
+        settings.inferReturnMain = inferReturnMain.isSelected
+        settings.enableUrlTemplating = enableUrlTemplating.isSelected
+        settings.pathMulti = pathMultiCombo.selectedItem?.toString() ?: "ALL"
     }
 
     override fun isModified(settings: Settings?): Boolean {
         val s = settings ?: return false
         return queryExpanded.isSelected != s.queryExpanded ||
-                formExpanded.isSelected != s.formExpanded
+                formExpanded.isSelected != s.formExpanded ||
+                inferReturnMain.isSelected != s.inferReturnMain ||
+                enableUrlTemplating.isSelected != s.enableUrlTemplating ||
+                pathMultiCombo.selectedItem?.toString() != s.pathMulti
     }
 }
 
