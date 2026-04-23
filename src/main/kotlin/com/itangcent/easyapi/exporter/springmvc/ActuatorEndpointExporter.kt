@@ -3,9 +3,12 @@ package com.itangcent.easyapi.exporter.springmvc
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.core.threading.read
+import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
+import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 
@@ -15,9 +18,11 @@ class ActuatorEndpointExporter(
 
     override val frameworkName: String = "SpringActuator"
 
-    private val scanner = ActuatorEndpointScanner()
-    private val recognizer = ActuatorEndpointRecognizer()
     private val engine = RuleEngine.getInstance(project)
+    private val docHelper = StandardDocHelper.getInstance(project)
+    private val metadataResolver = ApiMetadataResolver(engine, docHelper)
+    private val scanner = ActuatorEndpointScanner(metadataResolver, EndpointBuilder.getInstance(project))
+    private val recognizer = ActuatorEndpointRecognizer()
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isApiClass(psiClass)) return emptyList()

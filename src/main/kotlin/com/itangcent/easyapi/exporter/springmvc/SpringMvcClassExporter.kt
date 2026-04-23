@@ -9,6 +9,7 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
+import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.PsiClassHelper
@@ -17,7 +18,6 @@ import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
-import com.itangcent.easyapi.psi.model.ObjectModelUtils
 import com.itangcent.easyapi.psi.type.GenericContext
 import com.itangcent.easyapi.psi.type.InheritanceHelper
 import com.itangcent.easyapi.psi.type.ResolvedType
@@ -63,8 +63,8 @@ class SpringMvcClassExporter(
     private val mappingResolver = RequestMappingResolver(annotationHelper, engine)
     private val bindingResolver = SpringParameterBindingResolver(annotationHelper, engine)
     private val docHelper = StandardDocHelper.getInstance(project)
-    private val settings by lazy { SettingBinder.getInstance(project).read() }
-    private val metadataResolver by lazy { ApiMetadataResolver(engine, docHelper, settings) }
+    private val metadataResolver by lazy { ApiMetadataResolver(engine, docHelper, SettingBinder.getInstance(project).read()) }
+    private val endpointBuilder = EndpointBuilder.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!controllerRecognizer.isController(psiClass)) return emptyList()
@@ -168,7 +168,7 @@ class SpringMvcClassExporter(
                         )
                     }
 
-                    val mergedParams = mergePathParameters(params + additionalParams, pathParamsFromPath)
+                    val mergedParams = endpointBuilder.mergePathParameters(params + additionalParams, pathParamsFromPath)
 
                     ApiEndpoint(
                         name = apiName,
@@ -344,51 +344,11 @@ class SpringMvcClassExporter(
         )
     }
 
-
-    private fun mergePathParameters(
-        methodParams: List<ApiParameter>,
-        pathParams: List<ApiParameter>
-    ): List<ApiParameter> {
-        if (pathParams.isEmpty()) return methodParams
-        val pathParamMap = pathParams.associateBy { it.name }
-        val result = mutableListOf<ApiParameter>()
-
-        for (param in methodParams) {
-            if (param.binding == ParameterBinding.Path) {
-                val pathParam = pathParamMap[param.name]
-                if (pathParam != null) {
-                    result.add(
-                        param.copy(
-                            enumValues = pathParam.enumValues ?: param.enumValues,
-                            defaultValue = param.defaultValue?.takeIf { it.isNotBlank() }
-                                ?: pathParam.defaultValue,
-                            description = param.description?.takeIf { it.isNotBlank() }
-                                ?: pathParam.description
-                        )
-                    )
-                } else {
-                    result.add(param)
-                }
-            } else {
-                result.add(param)
-            }
-        }
-
-        val existingNames = result.map { it.name }.toSet()
-        for (pathParam in pathParams) {
-            if (pathParam.name !in existingNames) {
-                result.add(pathParam)
-            }
-        }
-
-        return result
-    }
-
     private suspend fun expandFormParameter(
         parameter: PsiParameter,
         genericContext: GenericContext = GenericContext.EMPTY
     ): List<ApiParameter> {
-        val formExpanded = settings.formExpanded
+        val formExpanded = SettingBinder.getInstance(project).read().formExpanded
         if (!formExpanded) {
             return emptyList()
         }
@@ -399,7 +359,7 @@ class SpringMvcClassExporter(
         parameter: PsiParameter,
         genericContext: GenericContext = GenericContext.EMPTY
     ): List<ApiParameter> {
-        val queryExpanded = settings.queryExpanded
+        val queryExpanded = SettingBinder.getInstance(project).read().queryExpanded
         if (!queryExpanded) {
             return emptyList()
         }
@@ -511,45 +471,12 @@ class SpringMvcClassExporter(
         mapping: ResolvedMapping,
         paramHeaders: List<ApiHeader>,
         additionalHeaders: List<ApiHeader> = emptyList()
-    ): List<ApiHeader> {
-        val seen = mutableSetOf<String>()
-        val result = ArrayList<ApiHeader>()
-
-        // Content-Type header
-        if (!contentType.isNullOrBlank()) {
-            result.add(ApiHeader(name = "Content-Type", value = contentType))
-            seen.add("content-type")
-        }
-
-        // Headers from @RequestMapping(headers = {...})
-        for ((name, value) in mapping.headers) {
-            val key = name.lowercase()
-            if (key !in seen) {
-                result.add(ApiHeader(name = name, value = value))
-                seen.add(key)
-            }
-        }
-
-        // Headers from @RequestHeader parameters
-        for (h in paramHeaders) {
-            val key = h.name.lowercase()
-            if (key !in seen) {
-                result.add(h)
-                seen.add(key)
-            }
-        }
-
-        // Additional headers from method.additional.header rule
-        for (h in additionalHeaders) {
-            val key = h.name.lowercase()
-            if (key !in seen) {
-                result.add(h)
-                seen.add(key)
-            }
-        }
-
-        return result
-    }
+    ): List<ApiHeader> = endpointBuilder.buildHeaders(
+        contentType = contentType,
+        paramHeaders = paramHeaders,
+        additionalHeaders = additionalHeaders,
+        mappingHeaders = mapping.headers.toList()
+    )
 
     private suspend fun buildRequestBody(
         bindings: List<ResolvedParamBinding>,
@@ -557,7 +484,7 @@ class SpringMvcClassExporter(
     ): ObjectModel? {
         for ((p, binding) in bindings) {
             if (binding != ParameterBinding.Body) continue
-            return expandBodyParam(p, genericContext)
+            return endpointBuilder.expandBodyParam(p, genericContext)
         }
         return null
     }
@@ -565,89 +492,18 @@ class SpringMvcClassExporter(
     private suspend fun buildResponseBody(
         method: PsiMethod,
         genericContext: GenericContext = GenericContext.EMPTY
-    ): ObjectModel? {
-        // Check method.return rule for custom return type override
-        val returnTypeByRule = metadataResolver.resolveMethodReturn(method)
-        if (!returnTypeByRule.isNullOrBlank()) {
-            val psiClass = com.intellij.psi.JavaPsiFacade.getInstance(method.project)
-                .findClass(returnTypeByRule.trim(), com.intellij.psi.search.GlobalSearchScope.allScope(method.project))
-            if (psiClass != null) {
-                return runCatching {
-                    val helper = PsiClassHelper.getInstance(project)
-                    helper.buildObjectModel(psiClass)
-                }.getOrNull()
-            }
-        }
-
-        val returnType = method.returnType ?: return null
-
-        // First try with the original return type — json.rule.convert rules
-        // (e.g., for ResponseEntity, Mono, Flux) may handle unwrapping.
-        var responseModel = runCatching {
-            val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(
-                psiType = returnType,
-                genericContext = genericContext,
-                contextElement = method
-            )
-        }.getOrNull()
-
-        // If the original type didn't produce a model, try the unwrapped type as fallback
-        if (responseModel == null) {
+    ): ObjectModel? = endpointBuilder.buildResponseBody(
+        method = method,
+        genericContext = genericContext,
+        returnTypeOverride = { returnType ->
             val unwrappedType = ReturnTypeUnwrapper.unwrapPsiType(returnType)
-            if (unwrappedType == null || unwrappedType == PsiTypes.voidType()) return null
-            if (unwrappedType !== returnType) {
-                responseModel = runCatching {
-                    val helper = PsiClassHelper.getInstance(project)
-                    helper.buildObjectModelFromType(
-                        psiType = unwrappedType,
-                        genericContext = genericContext,
-                        contextElement = method
-                    )
-                }.getOrNull()
+            if (unwrappedType != null && unwrappedType != PsiTypes.voidType() && unwrappedType !== returnType) {
+                unwrappedType
+            } else {
+                null
             }
         }
-
-        if (responseModel == null) return null
-
-        // method.return.main rule — specifies a field name within the response type
-        // where the @return doc comment should be placed.
-        // e.g., rule: method.return.main[groovy:it.returnType().isExtend("Result")]=data
-        // For Result<Void> with @return "processed result", this attaches "processed result" to the "data" field.
-        val returnMain = metadataResolver.resolveMethodReturnMain(method)
-        val mainField = if (!returnMain.isNullOrBlank()) {
-            returnMain
-        } else if (settings.inferReturnMain) {
-            // Auto-detect: find the generic type parameter field (e.g., data: T in Result<T>)
-            ObjectModelUtils.findGenericFieldName(responseModel)
-        } else null
-
-        if (!mainField.isNullOrBlank()) {
-            val descOfReturn = docHelper.findDocByTag(method, "return")
-            if (!descOfReturn.isNullOrBlank()) {
-                val updated = ObjectModelUtils.addFieldComment(responseModel, mainField, descOfReturn)
-                if (updated != null) return updated
-            }
-        }
-
-        return responseModel
-    }
-
-    private suspend fun expandBodyParam(
-        parameter: PsiParameter,
-        genericContext: GenericContext = GenericContext.EMPTY
-    ): ObjectModel? {
-        // Use buildObjectModelFromType which evaluates json.rule.convert rules
-        // (e.g., Mono<T> → T, RequestEntity<T> → T)
-        return runCatching {
-            val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(
-                psiType = parameter.type,
-                genericContext = genericContext,
-                contextElement = parameter
-            )
-        }.getOrNull()
-    }
+    )
 
     companion object : IdeaLog
 }

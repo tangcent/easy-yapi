@@ -2,10 +2,13 @@ package com.itangcent.easyapi.exporter.springmvc
 
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
+import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.rule.engine.RuleEngine
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 
@@ -21,7 +24,7 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        actuatorEndpointScanner = ActuatorEndpointScanner()
+        actuatorEndpointScanner = ActuatorEndpointScanner(ApiMetadataResolver(RuleEngine.getInstance(project), StandardDocHelper()), EndpointBuilder.getInstance(project))
     }
 
     private fun loadTestFiles() {

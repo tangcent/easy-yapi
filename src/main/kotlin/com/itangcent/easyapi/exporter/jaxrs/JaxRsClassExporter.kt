@@ -3,14 +3,12 @@ package com.itangcent.easyapi.exporter.jaxrs
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiParameter
-import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
+import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
@@ -64,6 +62,7 @@ class JaxRsClassExporter(
     private val contentTypeResolver = JaxRsContentTypeResolver(annotationHelper)
     private val docHelper = StandardDocHelper.getInstance(project)
     private val metadataResolver = ApiMetadataResolver(engine, docHelper)
+    private val endpointBuilder = EndpointBuilder.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {
         if (!recognizer.isResource(psiClass)) return emptyList()
@@ -113,7 +112,14 @@ class JaxRsClassExporter(
         val classQualifiedName = read { psiClass.qualifiedName ?: psiClass.name }
 
         try {
-            val httpMethod = methodResolver.resolve(annotatedMethod)
+            var httpMethod = methodResolver.resolve(annotatedMethod)
+            if (httpMethod == null) {
+                // Try default HTTP method from rule
+                val defaultHttpMethod = metadataResolver.resolveDefaultHttpMethod(method)
+                if (!defaultHttpMethod.isNullOrBlank()) {
+                    httpMethod = HttpMethod.fromSpring(defaultHttpMethod)
+                }
+            }
             if (httpMethod == null) {
                 LOG.info("after parse method:$methodKey")
                 return emptyList()
@@ -130,12 +136,20 @@ class JaxRsClassExporter(
                 val classDesc = metadataResolver.resolveClassDoc(psiClass)
 
                 val params = buildParameters(method)
+                val additionalParams = metadataResolver.resolveAdditionalParams(method)
                 val paramHeaders = extractParamHeaders(method)
-                val contentType = types.consumes.firstOrNull()
-                val headers = buildHeaders(contentType, paramHeaders)
+                val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
+                val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
+                val contentTypeOverride = engine.evaluate(RuleKeys.METHOD_CONTENT_TYPE, method)
+                val contentType = if (!contentTypeOverride.isNullOrBlank()) {
+                    contentTypeOverride
+                } else {
+                    types.consumes.firstOrNull()
+                }
+                val headers = endpointBuilder.buildHeaders(contentType, paramHeaders, additionalHeaders, additionalResponseHeaders)
                 val genericContext = GenericContext(TypeResolver.resolveGenericParams(psiClass, emptyList()))
                 val body = buildRequestBody(method, genericContext)
-                val responseBody = buildResponseBody(method)
+                val responseBody = endpointBuilder.buildResponseBody(method, genericContext)
                 val responseTypeName = read { method.returnType?.canonicalText }
 
                 LOG.info("after parse method:$methodKey")
@@ -152,7 +166,7 @@ class JaxRsClassExporter(
                         metadata = httpMetadata(
                             path = path,
                             method = httpMethod,
-                            parameters = params,
+                            parameters = params + additionalParams,
                             headers = headers,
                             contentType = contentType,
                             body = body,
@@ -194,60 +208,16 @@ class JaxRsClassExporter(
         return headers
     }
 
-    private fun buildHeaders(contentType: String?, paramHeaders: List<ApiHeader>): List<ApiHeader> {
-        val seen = mutableSetOf<String>()
-        val result = ArrayList<ApiHeader>()
 
-        if (!contentType.isNullOrBlank()) {
-            result.add(ApiHeader(name = "Content-Type", value = contentType))
-            seen.add("content-type")
-        }
-
-        for (h in paramHeaders) {
-            val key = h.name.lowercase()
-            if (key !in seen) {
-                result.add(h)
-                seen.add(key)
-            }
-        }
-
-        return result
-    }
 
     private suspend fun buildRequestBody(method: PsiMethod, genericContext: GenericContext = GenericContext.EMPTY): ObjectModel? = read {
         for (p in method.parameterList.parameters) {
             val resolved = parameterResolver.resolve(p)
             if (resolved.any { it.binding == ParameterBinding.Body }) {
-                return@read expandBodyParam(p, genericContext)
+                return@read endpointBuilder.expandBodyParam(p, genericContext)
             }
         }
         return@read null
-    }
-
-    private suspend fun expandBodyParam(parameter: PsiParameter, genericContext: GenericContext = GenericContext.EMPTY): ObjectModel? {
-        val psiClass = PsiTypesUtil.getPsiClass(parameter.type) ?: return null
-        val qualifiedName = psiClass.qualifiedName ?: return null
-        if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") return null
-        return runCatching {
-            val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(
-                psiType = parameter.type,
-                genericContext = genericContext,
-                contextElement = parameter
-            )
-        }.getOrNull()
-    }
-
-    private suspend fun buildResponseBody(method: PsiMethod): ObjectModel? {
-        val returnType = read { method.returnType } ?: return null
-        if (returnType == com.intellij.psi.PsiTypes.voidType()) return null
-        return runCatching {
-            val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(
-                psiType = returnType,
-                contextElement = method
-            )
-        }.getOrNull()
     }
 
     private suspend fun buildParameters(method: PsiMethod): List<ApiParameter> {

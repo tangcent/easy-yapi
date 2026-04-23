@@ -2,11 +2,14 @@ package com.itangcent.easyapi.exporter.grpc
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.ClassExporter
+import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.GrpcMetadata
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.StandardDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -38,6 +41,8 @@ class GrpcClassExporter(
 
     private val engine = RuleEngine.getInstance(project)
     private val docHelper: DocHelper = StandardDocHelper.getInstance(project)
+    private val metadataResolver = ApiMetadataResolver(engine, docHelper)
+    private val endpointBuilder = EndpointBuilder.getInstance(project)
     private val recognizer = GrpcServiceRecognizer(engine)
     private val methodResolver = GrpcMethodResolver.getInstance(project)
     private val typeParser = GrpcTypeParser()
@@ -52,8 +57,9 @@ class GrpcClassExporter(
 
         engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
 
-        val classDescription = resolveClassDescription(psiClass)
-        val folder = classDescription?.lines()?.firstOrNull { it.isNotBlank() }
+        val classDescription = metadataResolver.resolveClassDoc(psiClass)
+        val folder = metadataResolver.resolveFolderName(null, psiClass)
+            ?: classDescription?.lines()?.firstOrNull { it.isNotBlank() }
             ?: read { psiClass.name }
             ?: "Unknown"
 
@@ -63,14 +69,19 @@ class GrpcClassExporter(
             endpoints = rpcMethods.mapNotNull { methodInfo ->
                 try {
                     val requestBody = buildRequestBody(methodInfo.requestType)
-                    val responseBody = buildResponseBody(methodInfo.responseType)
+                    val responseBody = buildResponseBody(methodInfo.responseType, methodInfo.psiMethod)
                     val responseTypeName = read { methodInfo.responseType?.qualifiedName }
 
+                    val apiName = metadataResolver.resolveApiName(methodInfo.psiMethod)
+                    val methodDescription = metadataResolver.resolveMethodDoc(methodInfo.psiMethod)
+
                     ApiEndpoint(
-                        name = methodInfo.description
+                        name = apiName
+                            ?: methodInfo.description
                             ?: methodInfo.methodName,
                         folder = folder,
-                        description = methodInfo.description,
+                        description = methodDescription
+                            ?: methodInfo.description,
                         tags = listOf("gRPC"),
                         sourceClass = psiClass,
                         sourceMethod = methodInfo.psiMethod,
@@ -107,14 +118,6 @@ class GrpcClassExporter(
         return endpoints
     }
 
-    private suspend fun resolveClassDescription(psiClass: PsiClass): String? {
-        return try {
-            docHelper.getAttrOfDocComment(psiClass)
-        } catch (_: Exception) {
-            null
-        }
-    }
-
     private suspend fun buildRequestBody(requestType: PsiClass?): ObjectModel? {
         if (requestType == null) return null
         return try {
@@ -124,7 +127,21 @@ class GrpcClassExporter(
         }
     }
 
-    private suspend fun buildResponseBody(responseType: PsiClass?): ObjectModel? {
+    private suspend fun buildResponseBody(responseType: PsiClass?, psiMethod: PsiMethod? = null): ObjectModel? {
+        if (psiMethod != null) {
+            val grpcModelBuilder = EndpointBuilder.ResponseModelBuilder { psiClass ->
+                try {
+                    read { typeParser.parseMessageType(psiClass) }
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            return endpointBuilder.buildResponseBody(
+                method = psiMethod,
+                modelBuilder = grpcModelBuilder
+            )
+        }
+
         if (responseType == null) return null
         return try {
             read { typeParser.parseMessageType(responseType) }

@@ -44,6 +44,7 @@
         <projectService serviceImplementation="com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver"/>
         <projectService serviceImplementation="com.itangcent.easyapi.grpc.CompositeDescriptorResolver"/>
 
+        <projectService serviceImplementation="com.itangcent.easyapi.exporter.EndpointBuilder"/>
         <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
 
         <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>

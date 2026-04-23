@@ -3,7 +3,11 @@ package com.itangcent.easyapi.exporter.springmvc
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.PsiTypes
+import com.intellij.psi.util.PsiTypesUtil
+import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.*
+import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
@@ -49,7 +53,10 @@ object SpringActuatorConstants {
  *
  * All endpoints are mapped under `/actuator/{endpointId}`.
  */
-class ActuatorEndpointScanner {
+class ActuatorEndpointScanner(
+    private val metadataResolver: ApiMetadataResolver,
+    private val endpointBuilder: com.itangcent.easyapi.exporter.EndpointBuilder
+) {
 
     suspend fun scan(psiClass: PsiClass): List<ApiEndpoint> {
         val endpointId = findEndpointId(psiClass) ?: return emptyList()
@@ -76,7 +83,7 @@ class ActuatorEndpointScanner {
         return null
     }
 
-    private fun processMethod(psiClass: PsiClass, method: PsiMethod, basePath: String): ApiEndpoint? {
+    private suspend fun processMethod(psiClass: PsiClass, method: PsiMethod, basePath: String): ApiEndpoint? {
         val operation = findOperation(method) ?: return null
 
         val (httpMethod, hasBody) = when (operation) {
@@ -86,7 +93,11 @@ class ActuatorEndpointScanner {
             else -> return null
         }
 
-        val apiName = method.name
+        val apiName = metadataResolver.resolveApiName(method)
+        val folder = metadataResolver.resolveFolderName(method, psiClass)
+        val description = metadataResolver.resolveMethodDoc(method)
+        val classDesc = metadataResolver.resolveClassDoc(psiClass)
+
         val path = StringBuilder(basePath)
         val pathParams = ArrayList<ApiParameter>()
         val bodyFields = HashMap<String, FieldModel>()
@@ -120,16 +131,23 @@ class ActuatorEndpointScanner {
             null
         }
 
+        // Build response body using method.return and method.return.main rules
+        val responseBody = buildResponseBody(method)
+
         return ApiEndpoint(
             name = apiName,
+            folder = folder,
+            description = description,
             sourceClass = psiClass,
             sourceMethod = method,
             className = psiClass.qualifiedName ?: psiClass.name ?: "",
+            classDescription = classDesc,
             metadata = httpMetadata(
                 path = path.toString(),
                 method = httpMethod,
                 parameters = pathParams,
-                body = body
+                body = body,
+                responseBody = responseBody
             )
         )
     }
@@ -159,5 +177,21 @@ class ActuatorEndpointScanner {
             }
         }
         return null
+    }
+
+    private suspend fun buildResponseBody(method: PsiMethod): ObjectModel? {
+        val actuatorModelBuilder = EndpointBuilder.ResponseModelBuilder { psiClass ->
+            try {
+                val jsonType = JsonType.fromPsiType(PsiTypesUtil.getClassType(psiClass))
+                ObjectModel.Single(jsonType)
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        return endpointBuilder.buildResponseBody(
+            method = method,
+            modelBuilder = actuatorModelBuilder
+        )
     }
 }
