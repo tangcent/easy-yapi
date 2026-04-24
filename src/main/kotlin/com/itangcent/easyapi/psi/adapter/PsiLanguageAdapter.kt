@@ -29,6 +29,7 @@ import com.itangcent.easyapi.psi.doc.DocComment
  * @see JavaPsiAdapter for the base implementation
  */
 interface PsiLanguageAdapter {
+
     fun supportsElement(element: PsiElement): Boolean
 
     fun resolveClass(element: PsiElement): PsiClass?

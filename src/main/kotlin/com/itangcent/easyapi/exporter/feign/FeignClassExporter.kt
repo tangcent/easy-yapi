@@ -15,7 +15,7 @@ import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.ResolvedType
@@ -63,7 +63,7 @@ class FeignClassExporter(
     private val nativeParser = NativeFeignAnnotationParser(annotationHelper)
     private val springMappingResolver = RequestMappingResolver(annotationHelper, engine)
     private val springParamResolver = SpringParameterBindingResolver(annotationHelper, engine)
-    private val docHelper = StandardDocHelper.getInstance(project)
+    private val docHelper = UnifiedDocHelper.getInstance(project)
     private val metadataResolver = ApiMetadataResolver(engine, docHelper)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
 

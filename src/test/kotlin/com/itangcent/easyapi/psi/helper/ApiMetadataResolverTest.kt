@@ -12,7 +12,7 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         super.setUp()
         loadTestFiles()
         val engine = RuleEngine.getInstance(project)
-        val docHelper = StandardDocHelper()
+        val docHelper = UnifiedDocHelper.getInstance(project)
         metadataResolver = ApiMetadataResolver(engine, docHelper)
     }
 

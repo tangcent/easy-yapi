@@ -11,7 +11,7 @@ import com.itangcent.easyapi.exporter.model.GrpcMetadata
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
@@ -40,7 +40,7 @@ class GrpcClassExporter(
     override val frameworkName: String = "gRPC"
 
     private val engine = RuleEngine.getInstance(project)
-    private val docHelper: DocHelper = StandardDocHelper.getInstance(project)
+    private val docHelper: DocHelper = UnifiedDocHelper.getInstance(project)
     private val metadataResolver = ApiMetadataResolver(engine, docHelper)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
     private val recognizer = GrpcServiceRecognizer(engine)

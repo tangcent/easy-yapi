@@ -7,7 +7,7 @@ import com.itangcent.easyapi.cache.JsonConstructionCache
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -117,7 +117,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             )
         }
 
-        val docHelper = StandardDocHelper.getInstance(project)
+        val docHelper = UnifiedDocHelper.getInstance(project)
         val cache = JsonConstructionCache()
         val visited = HashSet<String>()
         return buildTypeObject(
@@ -136,7 +136,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         if (substitutedType is ResolvedType.PrimitiveType && substitutedType.kind == PrimitiveKind.VOID) return null
 
         val engine = RuleEngine.getInstance(project)
-        val docHelper = StandardDocHelper.getInstance(project)
+        val docHelper = UnifiedDocHelper.getInstance(project)
         val cache = JsonConstructionCache()
         val visited = HashSet<String>()
 

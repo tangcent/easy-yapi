@@ -11,7 +11,7 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.exporter.model.GrpcStreamingType
 import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.core.threading.read
@@ -57,7 +57,7 @@ data class GrpcMethodInfo(
 @Service(Service.Level.PROJECT)
 class GrpcMethodResolver(private val project: Project) {
 
-    private val docHelper: DocHelper get() = StandardDocHelper.getInstance(project)
+    private val docHelper: DocHelper get() = UnifiedDocHelper.getInstance(project)
     private val annotationHelper = UnifiedAnnotationHelper()
 
     companion object : IdeaLog {

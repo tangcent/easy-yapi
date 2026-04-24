@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.psi
 
 import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase

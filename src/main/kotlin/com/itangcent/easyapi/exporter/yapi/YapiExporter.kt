@@ -6,9 +6,8 @@ import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporter
 import com.itangcent.easyapi.exporter.model.*
-import com.itangcent.easyapi.ide.dialog.YapiUpdateConfirmationDialog
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
@@ -68,7 +67,7 @@ class YapiExporter(private val project: Project) : ApiExporter {
 
         engine.evaluate(RuleKeys.YAPI_EXPORT_BEFORE)
 
-        val docHelper = StandardDocHelper.getInstance(project)
+        val docHelper = UnifiedDocHelper.getInstance(project)
         val metadataResolver = ApiMetadataResolver(engine, docHelper)
 
         val exportMode = runCatching { YapiExportMode.valueOf(settings.yapiExportMode) }

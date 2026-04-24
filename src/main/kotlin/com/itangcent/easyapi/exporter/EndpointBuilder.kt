@@ -15,7 +15,7 @@ import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelUtils
 import com.itangcent.easyapi.psi.type.GenericContext
@@ -46,11 +46,11 @@ import com.itangcent.easyapi.settings.Settings
 class EndpointBuilder(private val project: Project) {
 
     private val settings: Settings by lazy { SettingBinder.getInstance(project).read() }
-    private val docHelper: DocHelper by lazy { StandardDocHelper.getInstance(project) }
+    private val docHelper: DocHelper by lazy { UnifiedDocHelper.getInstance(project) }
     private val metadataResolver: ApiMetadataResolver by lazy {
         ApiMetadataResolver(
             RuleEngine.getInstance(project),
-            StandardDocHelper.getInstance(project),
+            UnifiedDocHelper.getInstance(project),
             settings
         )
     }

@@ -9,7 +9,7 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.psi.helper.AnnotationHelper
 import com.itangcent.easyapi.psi.helper.DocHelper
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.util.file.FileSaveHelper
 import com.itangcent.easyapi.util.file.FileSelectHelper
@@ -62,7 +62,7 @@ class RuleContext private constructor(
     var regexGroups: List<String>? = null
 
     val docHelper: DocHelper by lazy {
-        StandardDocHelper.getInstance(project)
+        UnifiedDocHelper.getInstance(project)
     }
 
     val annotationHelper: AnnotationHelper by lazy {

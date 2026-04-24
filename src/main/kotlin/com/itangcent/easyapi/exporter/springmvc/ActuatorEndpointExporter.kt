@@ -8,7 +8,7 @@ import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 
@@ -19,7 +19,7 @@ class ActuatorEndpointExporter(
     override val frameworkName: String = "SpringActuator"
 
     private val engine = RuleEngine.getInstance(project)
-    private val docHelper = StandardDocHelper.getInstance(project)
+    private val docHelper = UnifiedDocHelper.getInstance(project)
     private val metadataResolver = ApiMetadataResolver(engine, docHelper)
     private val scanner = ActuatorEndpointScanner(metadataResolver, EndpointBuilder.getInstance(project))
     private val recognizer = ActuatorEndpointRecognizer()

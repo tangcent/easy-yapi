@@ -38,7 +38,6 @@
         <projectService serviceInterface="com.itangcent.easyapi.exporter.yapi.YapiSettingsHelper"
                         serviceImplementation="com.itangcent.easyapi.exporter.yapi.DefaultYapiSettingsHelper"/>
 
-        <projectService serviceImplementation="com.itangcent.easyapi.psi.helper.StandardDocHelper"/>
         <projectService serviceInterface="com.itangcent.easyapi.util.markdown.MarkdownRender"
                         serviceImplementation="com.itangcent.easyapi.util.markdown.BundledMarkdownRender"/>
         <projectService serviceImplementation="com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver"/>

@@ -14,7 +14,7 @@ import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.StandardDocHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
@@ -62,8 +62,9 @@ class SpringMvcClassExporter(
     private val controllerRecognizer = SpringControllerRecognizer(engine)
     private val mappingResolver = RequestMappingResolver(annotationHelper, engine)
     private val bindingResolver = SpringParameterBindingResolver(annotationHelper, engine)
-    private val docHelper = StandardDocHelper.getInstance(project)
-    private val metadataResolver by lazy { ApiMetadataResolver(engine, docHelper, SettingBinder.getInstance(project).read()) }
+    private val docHelper = UnifiedDocHelper.getInstance(project)
+    private val settings by lazy { SettingBinder.getInstance(project).read() }
+    private val metadataResolver by lazy { ApiMetadataResolver(engine, docHelper, settings) }
     private val endpointBuilder = EndpointBuilder.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {

@@ -8,7 +8,7 @@ class BlockingHelpersTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun setUp() {
         super.setUp()
-        val docHelper = StandardDocHelper.getInstance(project)
+        val docHelper = UnifiedDocHelper.getInstance(project)
         blockingDocHelper = BlockingDocHelper(docHelper)
     }
 
@@ -59,7 +59,7 @@ class BlockingHelpersTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testBlockingDocHelperCreation() {
-        val docHelper = StandardDocHelper.getInstance(project)
+        val docHelper = UnifiedDocHelper.getInstance(project)
         val blockingDocHelper = BlockingDocHelper(docHelper)
         assertNotNull("BlockingDocHelper should be created", blockingDocHelper)
     }

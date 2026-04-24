@@ -11,15 +11,9 @@ import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiReferenceExpression
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
-import com.itangcent.easyapi.core.threading.readSync
-import com.itangcent.easyapi.psi.adapter.GroovyPsiAdapter
-import com.itangcent.easyapi.psi.adapter.JavaPsiAdapter
-import com.itangcent.easyapi.psi.adapter.KotlinPsiAdapter
 import com.itangcent.easyapi.psi.adapter.PsiLanguageAdapter
-import com.itangcent.easyapi.psi.adapter.ScalaPsiAdapter
-import kotlinx.coroutines.withContext
+import com.itangcent.easyapi.psi.adapter.PsiLanguageAdapterLoader
 
 /**
  * Unified implementation of [AnnotationHelper] that supports multiple languages.
@@ -43,12 +37,9 @@ import kotlinx.coroutines.withContext
  */
 class UnifiedAnnotationHelper : AnnotationHelper {
 
-    private val adapters: List<PsiLanguageAdapter> = listOf(
-        JavaPsiAdapter(),
-        KotlinPsiAdapter(),
-        ScalaPsiAdapter(),
-        GroovyPsiAdapter()
-    )
+    private val adapters: List<PsiLanguageAdapter> by lazy {
+        PsiLanguageAdapterLoader.loadAdapters()
+    }
 
     override suspend fun hasAnn(element: PsiElement, annFqn: String): Boolean {
         return read {

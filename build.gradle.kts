@@ -18,7 +18,8 @@ repositories {
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2025.2.1")
-        bundledPlugins("com.intellij.java", "org.jetbrains.idea.maven", "org.jetbrains.plugins.gradle")
+        bundledPlugins("com.intellij.java", "org.jetbrains.idea.maven", "org.jetbrains.plugins.gradle", "org.jetbrains.kotlin", "org.intellij.groovy", "org.intellij.intelliLang")
+        plugin("org.intellij.scala:2025.2.51")
         pluginVerifier()
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Plugin.Java)
