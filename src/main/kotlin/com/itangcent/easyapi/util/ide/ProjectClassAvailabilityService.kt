@@ -4,9 +4,11 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vcs.BranchChangeListener
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.util.messages.MessageBusConnection
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.logging.IdeaLog
 import java.util.concurrent.ConcurrentHashMap
@@ -57,6 +59,9 @@ class ProjectClassAvailabilityService(
      */
     private val cacheTtlMs = 10.seconds.inWholeMilliseconds
 
+    @Volatile
+    private var messageBusConnection: MessageBusConnection? = null
+
     private val branchChangeListener = object : BranchChangeListener {
         override fun branchWillChange(branchName: String) {
             // no-op
@@ -68,17 +73,17 @@ class ProjectClassAvailabilityService(
         }
     }
 
-    /**
-     * Starts listening for VCS branch changes.
-     *
-     * Should be called during plugin startup to enable automatic cache clearing
-     * when the branch changes.
-     */
-    init {
-        project.messageBus
-            .connect(this)
-            .subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, branchChangeListener)
-        LOG.info("ProjectClassAvailabilityService started")
+    private fun ensureConnected() {
+        if (messageBusConnection != null) return
+        if (project.isDisposed) return
+        synchronized(this) {
+            if (messageBusConnection != null) return
+            if (project.isDisposed) return
+            val connection = project.messageBus.connect(this)
+            connection.subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, branchChangeListener)
+            messageBusConnection = connection
+            LOG.info("ProjectClassAvailabilityService connected to message bus")
+        }
     }
 
     /**
@@ -94,6 +99,8 @@ class ProjectClassAvailabilityService(
      * @return true if the class exists in the project's dependencies, false otherwise
      */
     suspend fun hasClassInProject(qName: String): Boolean {
+        ensureConnected()
+
         val now = System.currentTimeMillis()
 
         val cached = cache[qName]
@@ -129,7 +136,9 @@ class ProjectClassAvailabilityService(
     }
 
     override fun dispose() {
-        // connection auto-disposed via connect(this)
+        messageBusConnection?.let { Disposer.dispose(it) }
+        messageBusConnection = null
+        clearCache()
     }
 
     companion object {

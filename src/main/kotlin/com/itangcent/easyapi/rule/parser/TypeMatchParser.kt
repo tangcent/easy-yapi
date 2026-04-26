@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.rule.parser
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
@@ -51,14 +52,15 @@ class TypeMatchParser : RuleParser {
     }
     
     private fun getElementType(context: RuleContext): String? {
-        // Prefer psiType if available (for json.rule.convert evaluation)
-        context.psiType?.let { return it.canonicalText }
-        val element = context.element
-        return when (element) {
-            is PsiField -> element.type.canonicalText
-            is PsiMethod -> element.returnType?.canonicalText
-            is PsiParameter -> element.type.canonicalText
-            else -> null
+        return ApplicationManager.getApplication().runReadAction<String?> {
+            context.psiType?.let { return@runReadAction it.canonicalText }
+            val element = context.element
+            when (element) {
+                is PsiField -> element.type.canonicalText
+                is PsiMethod -> element.returnType?.canonicalText
+                is PsiParameter -> element.type.canonicalText
+                else -> null
+            }
         }
     }
     

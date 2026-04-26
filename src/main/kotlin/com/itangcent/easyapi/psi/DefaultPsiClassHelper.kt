@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.itangcent.easyapi.cache.JsonConstructionCache
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocHelper
@@ -76,7 +77,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         maxDepth: Int,
         genericContext: GenericContext,
         contextElement: PsiElement?
-    ): ObjectModel? {
+    ): ObjectModel? = read {
         val engine = RuleEngine.getInstance(project)
         val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, psiType, contextElement)
         if (!converted.isNullOrBlank()) {
@@ -88,11 +89,11 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 maxDepth = maxDepth,
                 genericContext = genericContext
             )
-            if (result != null) return result
+            if (result != null) return@read result
         }
 
         val resolvedType = TypeResolver.resolve(psiType, genericContext)
-        return buildObjectModelFromConvertedType(resolvedType, option, maxDepth, genericContext)
+        return@read buildObjectModelFromConvertedType(resolvedType, option, maxDepth, genericContext)
     }
 
     override suspend fun buildObjectModel(
@@ -333,8 +334,10 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             engine.evaluate(RuleKeys.JSON_FIELD_PARSE_BEFORE, accessibleField.psi, fieldContext = fieldPath)
 
             val customName = engine.evaluate(RuleKeys.FIELD_NAME, accessibleField.psi, fieldContext = fieldPath)
-            val prefix = engine.evaluate(RuleKeys.FIELD_NAME_PREFIX, accessibleField.psi, fieldContext = fieldPath) ?: ""
-            val suffix = engine.evaluate(RuleKeys.FIELD_NAME_SUFFIX, accessibleField.psi, fieldContext = fieldPath) ?: ""
+            val prefix =
+                engine.evaluate(RuleKeys.FIELD_NAME_PREFIX, accessibleField.psi, fieldContext = fieldPath) ?: ""
+            val suffix =
+                engine.evaluate(RuleKeys.FIELD_NAME_SUFFIX, accessibleField.psi, fieldContext = fieldPath) ?: ""
             val baseName = customName?.takeIf { it.isNotBlank() } ?: fieldName
             val jsonFieldName = prefix + baseName + suffix
 
@@ -345,7 +348,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             val fieldRequired = engine.evaluate(RuleKeys.FIELD_REQUIRED, accessibleField.psi, fieldContext = fieldPath)
             val fieldMock = engine.evaluate(RuleKeys.FIELD_MOCK, accessibleField.psi, fieldContext = fieldPath)
             val fieldDemo = engine.evaluate(RuleKeys.FIELD_DEMO, accessibleField.psi, fieldContext = fieldPath)
-            val fieldAdvancedStr = engine.evaluate(RuleKeys.FIELD_ADVANCED, accessibleField.psi, fieldContext = fieldPath)
+            val fieldAdvancedStr =
+                engine.evaluate(RuleKeys.FIELD_ADVANCED, accessibleField.psi, fieldContext = fieldPath)
             val fieldAdvanced = if (!fieldAdvancedStr.isNullOrBlank()) {
                 runCatching { GsonUtils.fromJson<Map<String, Any?>>(fieldAdvancedStr) }.getOrNull()
             } else null
@@ -363,9 +367,9 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             val rawResolved: ResolvedType
             val fieldType: ResolvedType
             if (!converted.isNullOrBlank()) {
-                  rawResolved = TypeResolver.resolveFromCanonicalText(
-                      canonicalText = converted,
-                      project = project,
+                rawResolved = TypeResolver.resolveFromCanonicalText(
+                    canonicalText = converted,
+                    project = project,
                     contextElement = accessibleField.psi,
                     context = effectiveContext
                 )

@@ -13,18 +13,15 @@ interface ProjectSettingsSupport {
     var postmanExportMode: String?
     var postmanCollections: String?
     var postmanBuildExample: Boolean
+    var projectEnvironments: String
     var yapiTokens: String?
 
-    /**
-     * Copies settings to another instance.
-     * 
-     * @param newSetting The target instance to copy to
-     */
     fun copyTo(newSetting: ProjectSettingsSupport) {
         newSetting.postmanWorkspace = this.postmanWorkspace
         newSetting.postmanExportMode = this.postmanExportMode
         newSetting.postmanCollections = this.postmanCollections
         newSetting.postmanBuildExample = this.postmanBuildExample
+        newSetting.projectEnvironments = this.projectEnvironments
         this.yapiTokens?.let { newSetting.yapiTokens = it }
     }
 }
@@ -76,12 +73,8 @@ interface ApplicationSettingsSupport {
     var grpcRepositories: Array<String>
     /** Enable concurrent API scanning for better performance */
     var concurrentScanEnabled: Boolean
+    var globalEnvironments: String
 
-    /**
-     * Copies settings to another instance.
-     * 
-     * @param newSetting The target instance to copy to
-     */
     fun copyTo(newSetting: ApplicationSettingsSupport) {
         newSetting.postmanToken = this.postmanToken
         newSetting.wrapCollection = this.wrapCollection
@@ -118,6 +111,7 @@ interface ApplicationSettingsSupport {
         newSetting.grpcCallEnabled = this.grpcCallEnabled
         newSetting.grpcRepositories = this.grpcRepositories
         newSetting.concurrentScanEnabled = this.concurrentScanEnabled
+        newSetting.globalEnvironments = this.globalEnvironments
     }
 }
 

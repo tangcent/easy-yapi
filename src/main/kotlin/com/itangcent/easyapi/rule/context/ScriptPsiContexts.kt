@@ -631,7 +631,7 @@ class ScriptPsiTypeContext(
 
     override fun contextType(): String = "type"
 
-    override fun toString(): String = psiType.canonicalText
+    override fun toString(): String = readSync { psiType.canonicalText }
 }
 
 class ScriptResolvedMethodContext(context: RuleContext, private val resolvedMethod: ResolvedMethod) :

@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.rule.context
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.itangcent.easyapi.config.ConfigReader
@@ -56,7 +57,9 @@ class RuleContext private constructor(
     /** The PsiType being evaluated (for json.rule.convert and type-based rules). */
     val psiType: com.intellij.psi.PsiType? = null
 ) {
-    val typeText: String? get() = typeTextOverride ?: psiType?.canonicalText ?: element?.text
+    val typeText: String? get() = typeTextOverride ?: ApplicationManager.getApplication().runReadAction<String?> {
+        psiType?.canonicalText ?: element?.text
+    }
 
     /** Captured regex groups from the most recent filter match. */
     var regexGroups: List<String>? = null

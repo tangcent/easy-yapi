@@ -15,7 +15,6 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.cache.ApiIndexManager
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ApiExporterRegistry
@@ -23,14 +22,17 @@ import com.itangcent.easyapi.exporter.ExportOrchestrator
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.http.HttpClientProvider
+import com.itangcent.easyapi.ide.dialog.EndpointSelection
 import com.itangcent.easyapi.ide.dialog.ExportDialog
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.type.areMethodsRelated
 import java.awt.BorderLayout
+import java.awt.CardLayout
 import java.awt.Dimension
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
@@ -74,6 +76,21 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     /** Panel for displaying details of the selected endpoint */
     private val endpointDetailsPanel: EndpointDetailsPanel
 
+    /** Inline panel for quick environment editing */
+    private val inlineEnvPanel: InlineEnvironmentPanel
+
+    /** Wrapper for the inline environment panel that can be shown/hidden */
+    private val inlineEnvWrapper: JPanel
+
+    /** Script editor panel for module/class-level scripts */
+    private lateinit var scriptEditorPanel: ScriptEditorPanel
+
+    /** Card layout for switching between endpoint details and script editor */
+    private val rightCardLayout = CardLayout()
+    
+    /** Panel containing endpoint details and script editor cards */
+    private val rightCardPanel = JPanel(rightCardLayout)
+
     /** Cached list of all endpoints for filtering operations */
     private var cachedEndpoints: List<ApiEndpoint> = emptyList()
 
@@ -86,9 +103,44 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     init {
         val httpClient = HttpClientProvider.getInstance(project).getClient()
         endpointDetailsPanel = EndpointDetailsPanel(project, httpClient)
+        
+        inlineEnvPanel = InlineEnvironmentPanel(project).apply {
+            onEnvironmentSaved = {
+                endpointDetailsPanel.loadEnvironments()
+            }
+        }
+        inlineEnvWrapper = JPanel(BorderLayout()).apply {
+            add(inlineEnvPanel, BorderLayout.CENTER)
+            isVisible = false
+        }
+        
+        scriptEditorPanel = ScriptEditorPanel(project)
+        
         setupUI()
         setupTreeListeners()
         setupApis()
+        setupEnvToggle()
+    }
+
+    private fun setupEnvToggle() {
+        endpointDetailsPanel.envToggleBtn.addActionListener {
+            inlineEnvWrapper.isVisible = !inlineEnvWrapper.isVisible
+            if (inlineEnvWrapper.isVisible) {
+                inlineEnvPanel.loadActiveEnvironment()
+            }
+            revalidate()
+            repaint()
+        }
+        
+        endpointDetailsPanel.onEnvironmentChangedCallback = {
+            if (inlineEnvWrapper.isVisible) {
+                inlineEnvPanel.loadActiveEnvironment()
+            }
+        }
+        
+        endpointDetailsPanel.scriptScopesProvider = { endpoint ->
+            resolveScriptScopesForEndpoint(endpoint)
+        }
     }
 
     /**
@@ -108,7 +160,13 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
             dividerWidth = 3
         }
 
-        add(toolbar, BorderLayout.NORTH)
+        val topPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(toolbar)
+            add(inlineEnvWrapper)
+        }
+
+        add(topPanel, BorderLayout.NORTH)
         add(mainSplitter, BorderLayout.CENTER)
 
         preferredSize = JBUI.size(900, 650)
@@ -138,6 +196,13 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
         val actionToolbar = ActionManager.getInstance().createActionToolbar("ApiDashboardToolbar", actionGroup, true)
         actionToolbar.targetComponent = this
         toolBar.add(actionToolbar.component)
+
+        toolBar.addSeparator()
+        toolBar.add(Box.createRigidArea(Dimension(5, 0)))
+        toolBar.add(JLabel("Env:"))
+        toolBar.add(Box.createRigidArea(Dimension(2, 0)))
+        toolBar.add(endpointDetailsPanel.envComboBox)
+        toolBar.add(endpointDetailsPanel.envToggleBtn)
 
         toolBar.addSeparator()
         toolBar.add(Box.createRigidArea(Dimension(5, 0)))
@@ -187,7 +252,10 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @return The endpoint details panel
      */
     private fun createRightPanel(): JComponent {
-        return endpointDetailsPanel
+        rightCardPanel.add(endpointDetailsPanel, CARD_ENDPOINT)
+        rightCardPanel.add(scriptEditorPanel, CARD_SCRIPT)
+        rightCardLayout.show(rightCardPanel, CARD_ENDPOINT)
+        return rightCardPanel
     }
 
     /**
@@ -200,9 +268,20 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
             val node = event.path?.lastPathComponent as? DefaultMutableTreeNode
             val endpoint = node?.userObject as? ApiEndpoint
             if (endpoint != null) {
+                scriptEditorPanel.saveIfDirty()
                 endpointDetailsPanel.showEndpoint(endpoint)
+                rightCardLayout.show(rightCardPanel, CARD_ENDPOINT)
             } else {
-                endpointDetailsPanel.clear()
+                val nodeInfo = node?.userObject as? NodeInfo
+                if (nodeInfo != null && node != null) {
+                    val scope = resolveScopeForNode(node, nodeInfo)
+                    val endpointCount = countChildEndpoints(node)
+                    scriptEditorPanel.loadForScope(scope, endpointCount)
+                    rightCardLayout.show(rightCardPanel, CARD_SCRIPT)
+                } else {
+                    endpointDetailsPanel.clear()
+                    rightCardLayout.show(rightCardPanel, CARD_ENDPOINT)
+                }
             }
         }
 
@@ -405,11 +484,11 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
 
         // Determine export format and config on EDT before launching background work
         val exportFormat: ExportFormat
-        val outputConfig: com.itangcent.easyapi.exporter.model.OutputConfig
-        val selectedEndpoints: List<com.itangcent.easyapi.ide.dialog.EndpointSelection>?
+        val outputConfig: OutputConfig
+        val selectedEndpoints: List<EndpointSelection>?
         if (format != null) {
             exportFormat = format
-            outputConfig = com.itangcent.easyapi.exporter.model.OutputConfig()
+            outputConfig = OutputConfig()
             selectedEndpoints = null
         } else {
             val dialogResult = ExportDialog.show(project, endpoints.size, endpoints) ?: return
@@ -420,7 +499,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
 
         backgroundAsync {
             try {
-                val result = if (selectedEndpoints != null && selectedEndpoints.isNotEmpty()) {
+                val result = if (!selectedEndpoints.isNullOrEmpty()) {
                     val eps = selectedEndpoints.map { it.endpoint }
                     runWithProgress(project, "Exporting APIs...") { indicator ->
                         orchestrator.exportEndpoints(eps, exportFormat, outputConfig, indicator)
@@ -457,7 +536,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     private suspend fun handleExportResult(
         result: ExportResult,
         format: ExportFormat?,
-        outputConfig: com.itangcent.easyapi.exporter.model.OutputConfig
+        outputConfig: OutputConfig
     ) {
         when (result) {
             is ExportResult.Success -> {
@@ -617,6 +696,47 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
         override fun toString(): String = text
     }
 
+    private fun resolveScopeForNode(node: DefaultMutableTreeNode, nodeInfo: NodeInfo): ScriptScope {
+        val psiClass = nodeInfo.psiClass
+        return if (psiClass != null) {
+            val qualifiedName = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction<String?> {
+                psiClass.qualifiedName ?: psiClass.name
+            } ?: nodeInfo.text
+            ScriptScope.Class(qualifiedName)
+        } else {
+            val moduleName = nodeInfo.text.substringBefore(" (").trim()
+            ScriptScope.Module(moduleName)
+        }
+    }
+
+    private fun countChildEndpoints(node: DefaultMutableTreeNode): Int {
+        var count = 0
+        for (i in 0 until node.childCount) {
+            val child = node.getChildAt(i) as? DefaultMutableTreeNode ?: continue
+            if (child.userObject is ApiEndpoint) {
+                count++
+            } else {
+                count += countChildEndpoints(child)
+            }
+        }
+        return count
+    }
+
+    fun resolveScriptScopesForEndpoint(endpoint: ApiEndpoint): List<ScriptScope> {
+        val scopes = mutableListOf<ScriptScope>()
+        val folder = endpoint.folder?.takeIf { it.isNotBlank() }
+        if (folder != null) {
+            scopes.add(ScriptScope.Module(folder))
+        }
+        val qualifiedName = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction<String?> {
+            endpoint.sourceClass?.qualifiedName
+        } ?: endpoint.className
+        if (qualifiedName != null) {
+            scopes.add(ScriptScope.Class(qualifiedName))
+        }
+        return scopes
+    }
+
     /**
      * Filters the tree based on the current search field text.
      * Searches across endpoint name, path, folder, description, and class name.
@@ -773,6 +893,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      */
     fun dispose() {
         searchDebounceTimer?.stop()
+        scriptEditorPanel.saveIfDirty()
         endpointDetailsPanel.dispose()
     }
 
@@ -842,5 +963,10 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
         override fun actionPerformed(e: com.intellij.openapi.actionSystem.AnActionEvent) {
             expandAll()
         }
+    }
+
+    companion object {
+        private const val CARD_ENDPOINT = "endpoint"
+        private const val CARD_SCRIPT = "script"
     }
 }

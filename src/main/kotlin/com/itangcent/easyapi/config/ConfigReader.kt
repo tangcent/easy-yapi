@@ -95,8 +95,8 @@ interface ConfigReader {
     }
 }
 
-private val DOLLAR_BRACE_PATTERN = Regex("\\$\\{([^}]+)}")
-private val DOUBLE_BRACE_PATTERN = Regex("\\{\\{([^}]+)}}")
+internal val DOLLAR_BRACE_PATTERN = Regex("\\$\\{([^}]+)}")
+internal val DOUBLE_BRACE_PATTERN = Regex("\\{\\{([^}]+)}}")
 
 fun ConfigReader.resolveVariables(input: String): String {
     var result = DOLLAR_BRACE_PATTERN.replace(input) { match ->

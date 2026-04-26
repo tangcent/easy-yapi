@@ -3,11 +3,10 @@ package com.itangcent.easyapi.settings.ui
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.ProjectManager
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.Settings
+import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
-import java.awt.BorderLayout
 
 class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.project.Project) : Configurable {
     private var panel: JPanel? = null
@@ -27,6 +26,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     private val builtInPanel = BuiltInConfigPanel()
     private val otherPanel = OtherSettingsPanel()
     private val grpcPanel = GrpcSettingsPanel(project)
+    private val environmentPanel = EnvironmentSettingsPanel(project)
 
     companion object {
         private var initialTab: String? = null
@@ -44,6 +44,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         const val TAB_BUILT_IN = "Built-in"
         const val TAB_OTHER = "Other"
         const val TAB_GRPC = "gRPC"
+        const val TAB_ENVIRONMENT = "Environments"
     }
 
     /**
@@ -68,6 +69,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
                 t.addTab(TAB_BUILT_IN, builtInPanel.component)
                 t.addTab(TAB_OTHER, otherPanel.component)
                 t.addTab(TAB_GRPC, wrapNorth(grpcPanel.component))
+                t.addTab(TAB_ENVIRONMENT, environmentPanel.component)
             }
             panel!!.add(tabs, BorderLayout.CENTER)
         }
@@ -111,7 +113,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         val settings = settingBinder.read()
         return listOf(
             generalPanel, postmanPanel, yapiPanel, httpPanel,
-            intelligentPanel, extensionPanel, remotePanel, builtInPanel, otherPanel, grpcPanel
+            intelligentPanel, extensionPanel, remotePanel, builtInPanel, otherPanel, grpcPanel, environmentPanel
         ).any { it.isModified(settings) }
     }
 
@@ -130,6 +132,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         builtInPanel.applyTo(settings)
         otherPanel.applyTo(settings)
         grpcPanel.applyTo(settings)
+        environmentPanel.applyTo(settings)
         settingBinder.save(settings)
     }
 
@@ -148,6 +151,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         builtInPanel.resetFrom(settings)
         otherPanel.resetFrom(settings)
         grpcPanel.resetFrom(settings)
+        environmentPanel.resetFrom(settings)
     }
 
     override fun disposeUIResources() {

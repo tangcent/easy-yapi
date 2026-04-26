@@ -345,6 +345,12 @@ object TypeResolver {
     }
 
     private fun resolveNonPrimitive(psiType: PsiType, context: GenericContext): ResolvedType {
+        return readSync {
+            resolveNonPrimitiveUnderReadAction(psiType, context)
+        }
+    }
+
+    private fun resolveNonPrimitiveUnderReadAction(psiType: PsiType, context: GenericContext): ResolvedType {
         val arrayType = psiType as? PsiArrayType
         if (arrayType != null) return ResolvedType.ArrayType(resolve(arrayType.componentType, context))
 

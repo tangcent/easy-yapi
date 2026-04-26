@@ -26,6 +26,7 @@ class ProjectSettingsState : PersistentStateComponent<ProjectSettingsState.State
         override var postmanExportMode: String? = defaultPostmanExportMode(),
         override var postmanCollections: String? = null,
         override var postmanBuildExample: Boolean = true,
+        override var projectEnvironments: String = "",
         override var yapiTokens: String? = null,
         var builtInConfig: Boolean = true,
         var remoteConfig: String? = null,

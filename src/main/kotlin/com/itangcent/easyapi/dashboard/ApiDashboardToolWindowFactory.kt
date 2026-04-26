@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.dashboard
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -23,8 +24,9 @@ class ApiDashboardToolWindowFactory : ToolWindowFactory {
         val panel = ApiDashboardPanel(project)
         val service = ApiDashboardService.getInstance(project)
         service.setDashboardPanel(panel)
-        
+
         val content = toolWindow.contentManager.factory.createContent(panel, "", false)
+        content.setDisposer(Disposable { panel.dispose() })
         toolWindow.contentManager.addContent(content)
     }
 }
