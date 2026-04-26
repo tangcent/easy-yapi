@@ -5,6 +5,23 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-04-26
+
+### Added
+-  add Postman-compatible script execution with PmScriptExecutor as project service
+-  support Scala/Kotlin/Groovy language adapters for PSI integration
+-  improve settings panel usability
+-  extract ClassNameConstants and InheritanceHelper with cached inheritance checks
+
+### Changed
+-  extract shared EndpointBuilder from ClassExporters
+
+### Improved
+- test: add unit tests for ScriptSupport, EventBus, RequestPersistence, RepositoryService, MavenHelper, ModuleHelper
+- docs: update README files with comprehensive feature documentation
+
+---
+
 ## [3.0.9] - 2026-04-20
 
 ### Fixed
