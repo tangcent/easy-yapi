@@ -62,12 +62,6 @@ class RuleKeysTest2 {
     }
 
     @Test
-    fun testIntKeys() {
-        assertTrue(RuleKeys.FIELD_MAX_DEPTH is RuleKey.IntKey)
-        assertTrue(RuleKeys.PARAM_MAX_DEPTH is RuleKey.IntKey)
-    }
-
-    @Test
     fun testPostmanFormatAfter_throwInError() {
         val key = RuleKeys.POSTMAN_FORMAT_AFTER as RuleKey.EventKey
         assertEquals(EventRuleMode.THROW_IN_ERROR, key.eventMode)

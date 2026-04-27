@@ -88,7 +88,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, maxDepth = 10)
+                .buildObjectModel(psiClass)
 
             assertNotNull(result)
             assertTrue("Should be Object", result is ObjectModel.Object)
@@ -119,7 +119,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options", typeField.options)
@@ -144,7 +144,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.TaskDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val statusField = (result as ObjectModel.Object).fields["status"]!!
             assertEquals(JsonType.STRING, (statusField.model as ObjectModel.Single).type)
@@ -179,7 +179,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, maxDepth = 10)
+                .buildObjectModel(psiClass)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             // code is Integer → JSON type should be INT
@@ -202,7 +202,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options", typeField.options)
@@ -237,7 +237,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, maxDepth = 10)
+                .buildObjectModel(psiClass)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             // desc is String → JSON type should be STRING
@@ -260,7 +260,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options", typeField.options)
@@ -295,7 +295,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, maxDepth = 10)
+                .buildObjectModel(psiClass)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertEquals(
@@ -317,7 +317,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull(typeField.options)
@@ -352,7 +352,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, maxDepth = 10)
+                .buildObjectModel(psiClass)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertEquals(
@@ -374,7 +374,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull(typeField.options)
@@ -412,7 +412,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             // JSON type is int (from the field declaration), not from enum
@@ -443,7 +443,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options from @see with getter", typeField.options)
@@ -471,7 +471,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options from {@link} @see", typeField.options)
@@ -508,7 +508,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options from @see auto-match", typeField.options)
@@ -537,7 +537,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options from @see auto-match", typeField.options)
@@ -566,7 +566,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull("Should have options even without type match", typeField.options)
@@ -595,7 +595,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.TaskDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val statusField = (result as ObjectModel.Object).fields["status"]!!
             assertNotNull("Should have options", statusField.options)
@@ -632,7 +632,7 @@ class EnumResolutionTest {
             )
             val psiClass = findClass("model.UserDto")!!
             val result = DefaultPsiClassHelper.getInstance(project)
-                .buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
 
             val typeField = (result as ObjectModel.Object).fields["type"]!!
             assertNotNull(typeField.options)

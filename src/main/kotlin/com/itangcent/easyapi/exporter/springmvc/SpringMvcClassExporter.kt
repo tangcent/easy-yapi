@@ -387,15 +387,11 @@ class SpringMvcClassExporter(
             return emptyList()
         }
 
-        // Use param.max.depth rule if configured
-        val paramMaxDepth = engine.evaluate(RuleKeys.PARAM_MAX_DEPTH, parameter) ?: 5
-
         val helper = PsiClassHelper.getInstance(project)
         val objectModel = helper.buildObjectModelFromType(
             psiType = parameter.type,
             genericContext = genericContext,
-            contextElement = parameter,
-            maxDepth = paramMaxDepth
+            contextElement = parameter
         ) ?: return emptyList()
 
         val objectData = objectModel.asObject() ?: return emptyList()

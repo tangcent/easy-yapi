@@ -22,7 +22,7 @@ import com.itangcent.easyapi.rule.engine.RuleEngine
 class FieldsToPropertiesAction : FieldFormatAction("Fields To Properties") {
     override suspend fun format(project: Project, psiClass: PsiClass): String {
         val helper = PsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val model = helper.buildObjectModel(psiClass)
             ?: return ""
         val ruleEngine = RuleEngine.getInstance(project)
         val prefix = ruleEngine.evaluate(RuleKeys.PROPERTIES_PREFIX, psiClass).orEmpty()

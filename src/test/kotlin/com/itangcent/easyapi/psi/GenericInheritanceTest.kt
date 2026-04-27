@@ -37,7 +37,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find StringChild", psiClass)
 
         val helper = DefaultPsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass!!, maxDepth = 5)
+        val model = helper.buildObjectModel(psiClass!!)
         assertNotNull("Should build model for StringChild", model)
 
         val obj = model as? ObjectModel.Object
@@ -76,7 +76,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find ConcreteLeaf", psiClass)
 
         val helper = DefaultPsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass!!, maxDepth = 5)
+        val model = helper.buildObjectModel(psiClass!!)
         assertNotNull("Should build model for ConcreteLeaf", model)
 
         val obj = model as? ObjectModel.Object
@@ -123,7 +123,7 @@ class GenericInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(psiClass)
 
         val helper = DefaultPsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass!!, maxDepth = 5) as? ObjectModel.Object
+        val model = helper.buildObjectModel(psiClass!!) as? ObjectModel.Object
         assertNotNull(model)
 
         val dataField = model!!.fields["data"]

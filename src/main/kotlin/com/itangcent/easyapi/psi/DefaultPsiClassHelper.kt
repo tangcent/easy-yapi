@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.itangcent.easyapi.cache.JsonConstructionCache
+import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.logging.IdeaLog
@@ -16,24 +17,31 @@ import com.itangcent.easyapi.psi.type.*
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.util.GsonUtils
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Options for JSON model building.
+ * Tracks the total number of elements processed during a single
+ * [DefaultPsiClassHelper.buildObjectModel] invocation.
  *
- * Controls which elements are included in the object model:
- * - READ_COMMENT - Include field comments
- * - READ_GETTER - Include properties from getter methods
- * - READ_SETTER - Include properties from setter methods
+ * Prevents OOM for deeply nested or circular class hierarchies
+ * by enforcing a hard cap on the total number of fields expanded.
+ * Mirrors the legacy `maxElements` guard from the old plugin.
+ *
+ * @param maxElements Maximum number of elements allowed (default 512)
  */
-object JsonOption {
-    const val NONE = 0b0000
-    const val READ_COMMENT = 0b0001
-    const val READ_GETTER = 0b0010
-    const val READ_SETTER = 0b0100
-    const val READ_GETTER_OR_SETTER = READ_GETTER or READ_SETTER
-    const val ALL = READ_GETTER_OR_SETTER or READ_COMMENT
+class ElementCounter(private val maxElements: Int = DefaultPsiClassHelper.DEFAULT_MAX_ELEMENTS) {
+    private val count = AtomicInteger(0)
 
-    fun has(option: Int, flag: Int): Boolean = (option and flag) != 0
+    /** Increments the counter and returns true if the limit has been exceeded. */
+    fun incrementAndCheckExceeded(): Boolean {
+        return count.incrementAndGet() > maxElements
+    }
+
+    /** Returns the current element count. */
+    fun count(): Int = count.get()
+
+    /** Returns true if the limit has been exceeded. */
+    fun isExceeded(): Boolean = count.get() > maxElements
 }
 
 /**
@@ -67,18 +75,35 @@ object JsonOption {
 class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
     companion object : IdeaLog {
+        /** Default max depth for nested type resolution. */
+        const val DEFAULT_MAX_DEEP = 8
+
+        /** Default max elements (total fields) per build operation. */
+        const val DEFAULT_MAX_ELEMENTS = 512
+
         fun getInstance(project: Project): DefaultPsiClassHelper =
             project.getService(DefaultPsiClassHelper::class.java)
     }
 
+    private val configReader: ConfigReader get() = ConfigReader.getInstance(project)
+
+    /** Reads `max.deep` from config, falling back to [DEFAULT_MAX_DEEP]. */
+    private fun maxDeep(): Int =
+        configReader.getFirst("max.deep")?.toIntOrNull() ?: DEFAULT_MAX_DEEP
+
+    /** Reads `max.elements` from config, falling back to [DEFAULT_MAX_ELEMENTS]. */
+    private fun maxElements(): Int =
+        configReader.getFirst("max.elements")?.toIntOrNull() ?: DEFAULT_MAX_ELEMENTS
+
     override suspend fun buildObjectModelFromType(
         psiType: PsiType,
         option: Int,
-        maxDepth: Int,
         genericContext: GenericContext,
         contextElement: PsiElement?
     ): ObjectModel? = read {
         val engine = RuleEngine.getInstance(project)
+        val elementCounter = ElementCounter(maxElements())
+        val maxDepth = maxDeep()
         val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, psiType, contextElement)
         if (!converted.isNullOrBlank()) {
             val result = buildObjectModelFromConvertedType(
@@ -87,21 +112,23 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 contextElement = contextElement,
                 option = option,
                 maxDepth = maxDepth,
-                genericContext = genericContext
+                genericContext = genericContext,
+                elementCounter = elementCounter
             )
             if (result != null) return@read result
         }
 
         val resolvedType = TypeResolver.resolve(psiType, genericContext)
-        return@read buildObjectModelFromConvertedType(resolvedType, option, maxDepth, genericContext)
+        return@read buildObjectModelFromConvertedType(resolvedType, option, maxDepth, genericContext, elementCounter)
     }
 
     override suspend fun buildObjectModel(
         psiClass: PsiClass,
-        option: Int,
-        maxDepth: Int
+        option: Int
     ): ObjectModel? {
         val engine = RuleEngine.getInstance(project)
+        val elementCounter = ElementCounter(maxElements())
+        val maxDepth = maxDeep()
 
         val converted = engine.evaluate(
             RuleKeys.JSON_RULE_CONVERT,
@@ -114,7 +141,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 contextElement = psiClass,
                 option = option,
                 maxDepth = maxDepth,
-                genericContext = GenericContext.EMPTY
+                genericContext = GenericContext.EMPTY,
+                elementCounter = elementCounter
             )
         }
 
@@ -123,7 +151,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         val visited = HashSet<String>()
         return buildTypeObject(
             psiClass, engine, docHelper, cache,
-            option, maxDepth, depth = 0, visited = visited
+            option, maxDepth, depth = 0, visited = visited,
+            elementCounter = elementCounter
         )
     }
 
@@ -131,7 +160,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         resolvedType: ResolvedType,
         option: Int,
         maxDepth: Int,
-        genericContext: GenericContext
+        genericContext: GenericContext,
+        elementCounter: ElementCounter
     ): ObjectModel? {
         val substitutedType = TypeResolver.substitute(resolvedType, genericContext)
         if (substitutedType is ResolvedType.PrimitiveType && substitutedType.kind == PrimitiveKind.VOID) return null
@@ -143,7 +173,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
         return buildFieldValue(
             substitutedType, engine, docHelper, cache,
-            option, maxDepth, depth = 0, visited = visited
+            option, maxDepth, depth = 0, visited = visited,
+            elementCounter = elementCounter
         )
     }
 
@@ -153,7 +184,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         contextElement: PsiElement?,
         option: Int,
         maxDepth: Int,
-        genericContext: GenericContext
+        genericContext: GenericContext,
+        elementCounter: ElementCounter
     ): ObjectModel? {
         val rawResolved = TypeResolver.resolveFromCanonicalText(convertedType, project, contextElement, genericContext)
 
@@ -170,7 +202,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                             genericContext
                         )
                 val elementModel = buildObjectModelFromConvertedType(
-                    elementResolved, option, maxDepth, genericContext
+                    elementResolved, option, maxDepth, genericContext, elementCounter
                 )
                 return if (elementModel != null) ObjectModel.array(elementModel) else null
             }
@@ -180,7 +212,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             rawResolved,
             option,
             maxDepth,
-            genericContext
+            genericContext,
+            elementCounter
         )
     }
 
@@ -253,7 +286,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         depth: Int,
         visited: MutableSet<String>,
         genericContext: GenericContext = GenericContext.EMPTY,
-        parentPath: String? = null
+        parentPath: String? = null,
+        elementCounter: ElementCounter
     ): ObjectModel.Object? {
         val qualifiedName = psiClass.qualifiedName ?: psiClass.name ?: return null
 
@@ -269,6 +303,10 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
         if (depth >= maxDepth) return null
         if (!visited.add(qualifiedName)) return null
+        if (elementCounter.isExceeded()) {
+            visited.remove(qualifiedName)
+            return null
+        }
 
         // Build the effective generic context by resolving the class's own type parameters
         // and its super type bindings via TypeResolver.resolveGenericParams (which recurses
@@ -291,10 +329,6 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         }
 
         engine.evaluate(RuleKeys.JSON_CLASS_PARSE_BEFORE, psiClass)
-
-        // Check field.max.depth rule for this class
-        val fieldMaxDepth = engine.evaluate(RuleKeys.FIELD_MAX_DEPTH, psiClass)
-        val effectiveMaxDepth = fieldMaxDepth ?: maxDepth
 
         val fields = linkedMapOf<String, FieldModel>()
 
@@ -343,6 +377,13 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
             if (fields.containsKey(jsonFieldName)) continue
 
+            // Increment element counter and check if we've exceeded the limit
+            if (elementCounter.incrementAndCheckExceeded()) {
+                LOG.info("Element limit exceeded while parsing ${qualifiedName}. " +
+                        "Processed ${elementCounter.count()} elements. Stopping field expansion.")
+                break
+            }
+
             val fieldDefaultValue =
                 engine.evaluate(RuleKeys.FIELD_DEFAULT_VALUE, accessibleField.psi, fieldContext = fieldPath)
             val fieldRequired = engine.evaluate(RuleKeys.FIELD_REQUIRED, accessibleField.psi, fieldContext = fieldPath)
@@ -385,10 +426,11 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
             val fieldModel = buildFieldModel(
                 fieldType, engine, docHelper, cache,
-                option, effectiveMaxDepth, depth + 1, visited,
+                option, maxDepth, depth + 1, visited,
                 fieldComment, fieldRequired, fieldDefaultValue, fieldMock, fieldDemo, fieldAdvanced,
                 psiElement = accessibleField.psi,
-                generic = isGenericField
+                generic = isGenericField,
+                elementCounter = elementCounter
             )
 
             // Check json.unwrapped — if true, merge the field's object fields into the parent
@@ -558,11 +600,13 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         demo: String? = null,
         advanced: Map<String, Any?>? = null,
         psiElement: PsiElement? = null,
-        generic: Boolean = false
+        generic: Boolean = false,
+        elementCounter: ElementCounter
     ): FieldModel {
         val model = buildFieldValue(
             resolvedType, engine, docHelper, cache,
-            option, maxDepth, depth, visited
+            option, maxDepth, depth, visited,
+            elementCounter = elementCounter
         )
         var options = resolveFieldOptions(resolvedType, docHelper)
         if (options == null && psiElement != null) {
@@ -781,14 +825,19 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         option: Int,
         maxDepth: Int,
         depth: Int,
-        visited: MutableSet<String>
+        visited: MutableSet<String>,
+        elementCounter: ElementCounter
     ): ObjectModel {
+        if (elementCounter.isExceeded()) {
+            return ObjectModel.emptyObject()
+        }
         return when (resolvedType) {
             is ResolvedType.PrimitiveType -> getDefaultValueForPrimitive(resolvedType.kind)
             is ResolvedType.ArrayType -> {
                 val componentModel = buildFieldValue(
                     resolvedType.componentType,
-                    engine, docHelper, cache, option, maxDepth, depth, visited
+                    engine, docHelper, cache, option, maxDepth, depth, visited,
+                    elementCounter = elementCounter
                 )
                 ObjectModel.array(componentModel)
             }
@@ -808,7 +857,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                     val elementModel = if (elementType != null) {
                         buildFieldValue(
                             elementType, engine, docHelper, cache,
-                            option, maxDepth, depth, visited
+                            option, maxDepth, depth, visited,
+                            elementCounter = elementCounter
                         )
                     } else ObjectModel.single(JsonType.OBJECT)
                     ObjectModel.array(elementModel)
@@ -818,13 +868,15 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                     val keyModel = if (keyType != null) {
                         buildFieldValue(
                             keyType, engine, docHelper, cache,
-                            option, maxDepth, depth, visited
+                            option, maxDepth, depth, visited,
+                            elementCounter = elementCounter
                         )
                     } else ObjectModel.single(JsonType.STRING)
                     val valueModel = if (valueType != null) {
                         buildFieldValue(
                             valueType, engine, docHelper, cache,
-                            option, maxDepth, depth, visited
+                            option, maxDepth, depth, visited,
+                            elementCounter = elementCounter
                         )
                     } else ObjectModel.single(JsonType.OBJECT)
                     ObjectModel.map(keyModel, valueModel)
@@ -839,7 +891,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                     }
                     buildTypeObject(
                         psiClass, engine, docHelper, cache,
-                        option, maxDepth, depth, visited, nestedContext
+                        option, maxDepth, depth, visited, nestedContext,
+                        elementCounter = elementCounter
                     ) ?: ObjectModel.emptyObject()
                 }
             }
@@ -849,7 +902,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                 resolvedType.upper?.let {
                     buildFieldValue(
                         it, engine, docHelper, cache,
-                        option, maxDepth, depth, visited
+                        option, maxDepth, depth, visited,
+                        elementCounter = elementCounter
                     )
                 } ?: ObjectModel.nullValue()
             }

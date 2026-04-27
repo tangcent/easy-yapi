@@ -111,31 +111,48 @@ sealed class ObjectModel {
         fun flattenFields(
             prefix: String = "",
             maxDepth: Int = 5,
-            currentDepth: Int = 0
+            currentDepth: Int = 0,
+            maxElements: Int = 512
         ): Map<String, FieldModel> {
             if (currentDepth >= maxDepth) return emptyMap()
             
             val result = linkedMapOf<String, FieldModel>()
-            
+            val visited = HashSet<Int>()
+            flattenFieldsInternal(prefix, maxDepth, currentDepth, maxElements, result, visited)
+            return result
+        }
+
+        private fun flattenFieldsInternal(
+            prefix: String,
+            maxDepth: Int,
+            currentDepth: Int,
+            maxElements: Int,
+            result: MutableMap<String, FieldModel>,
+            visited: MutableSet<Int>
+        ) {
+            if (currentDepth >= maxDepth) return
+            if (result.size >= maxElements) return
+            if (!visited.add(id)) return
+
             for ((fieldName, fieldModel) in fields) {
+                if (result.size >= maxElements) break
                 val fieldPath = if (prefix.isEmpty()) fieldName else "$prefix.$fieldName"
                 
                 when (val model = fieldModel.model) {
                     is ObjectModel.Object -> {
-                        val nestedFields = model.flattenFields(fieldPath, maxDepth, currentDepth + 1)
-                        result.putAll(nestedFields)
+                        model.flattenFieldsInternal(fieldPath, maxDepth, currentDepth + 1, maxElements, result, visited)
                     }
                     is ObjectModel.Array -> {
                         val itemPath = "$fieldPath[0]"
-                        flattenArrayField(itemPath, model.item, fieldModel, result, maxDepth, currentDepth + 1)
+                        flattenArrayField(itemPath, model.item, fieldModel, result, maxDepth, currentDepth + 1, maxElements, visited)
                     }
                     else -> {
                         result[fieldPath] = fieldModel
                     }
                 }
             }
-            
-            return result
+
+            visited.remove(id)
         }
         
         private fun flattenArrayField(
@@ -144,18 +161,20 @@ sealed class ObjectModel {
             fieldModel: FieldModel,
             result: MutableMap<String, FieldModel>,
             maxDepth: Int,
-            currentDepth: Int
+            currentDepth: Int,
+            maxElements: Int = 512,
+            visited: MutableSet<Int> = HashSet()
         ) {
             if (currentDepth >= maxDepth) return
+            if (result.size >= maxElements) return
             
             when (itemModel) {
                 is Object -> {
-                    val nestedFields = itemModel.flattenFields(itemPath, maxDepth, currentDepth + 1)
-                    result.putAll(nestedFields)
+                    itemModel.flattenFieldsInternal(itemPath, maxDepth, currentDepth + 1, maxElements, result, visited)
                 }
                 is Array -> {
                     val nestedItemPath = "$itemPath[0]"
-                    flattenArrayField(nestedItemPath, itemModel.item, fieldModel, result, maxDepth, currentDepth + 1)
+                    flattenArrayField(nestedItemPath, itemModel.item, fieldModel, result, maxDepth, currentDepth + 1, maxElements, visited)
                 }
                 else -> {
                     result[itemPath] = fieldModel

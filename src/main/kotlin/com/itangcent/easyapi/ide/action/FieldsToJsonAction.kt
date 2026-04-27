@@ -18,7 +18,7 @@ import com.itangcent.easyapi.psi.type.JsonType
 class FieldsToJsonAction : FieldFormatAction("Fields To JSON") {
     override suspend fun format(project: Project, psiClass: PsiClass): String {
         val helper = DefaultPsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass, JsonOption.READ_GETTER_OR_SETTER, 10)
+        val model = helper.buildObjectModel(psiClass, JsonOption.READ_GETTER_OR_SETTER)
         return model?.let { formatJson(it) } ?: ""
     }
 }

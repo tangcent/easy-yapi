@@ -32,7 +32,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.SimpleModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -64,7 +64,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.Person")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -89,7 +89,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.ItemList")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -112,7 +112,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.Config")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -140,7 +140,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.PrimitiveTypes")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -167,7 +167,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.ArrayModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -197,7 +197,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.EnumModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -227,7 +227,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.UserModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -250,7 +250,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.StaticModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -271,7 +271,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.RecursiveNode")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 3)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         var current = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>?
@@ -294,7 +294,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.EmptyModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -319,7 +319,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.BooleanModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -366,7 +366,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.Order")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -398,7 +398,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.GenericModel")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -422,7 +422,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.WrapperTypes")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -445,7 +445,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.Xxx")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -476,7 +476,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.XxxString")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -518,7 +518,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.Yyy")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -559,7 +559,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.YyyImpl")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -590,7 +590,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.YyyGeneric")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -627,7 +627,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.YyyGenericImpl")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -668,7 +668,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.Zzz")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -717,7 +717,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.ZzzImpl")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -758,7 +758,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.UserEntity")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -793,7 +793,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.ListContainer")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -823,7 +823,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.MapContainer")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -877,7 +877,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.UserPageResult")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -946,7 +946,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.Document")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -980,7 +980,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.GenericArrayHolder")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -1027,7 +1027,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.ConcreteDeepWrapper")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         val map = ObjectModelValueConverter.toSimpleValue(result) as Map<*, *>
@@ -1067,7 +1067,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
             instance = RuleEngine.getInstance(project)
         )
 
-        val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
@@ -1119,7 +1119,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
             instance = RuleEngine.getInstance(project)
         )
 
-        val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
@@ -1165,7 +1165,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
             instance = RuleEngine.getInstance(project)
         )
 
-        val result = helper.buildObjectModel(psiClass, JsonOption.ALL, 10)
+        val result = helper.buildObjectModel(psiClass, JsonOption.ALL)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
@@ -1204,7 +1204,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.GenericResult")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
@@ -1250,7 +1250,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.StringResult")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)
@@ -1279,7 +1279,7 @@ class DefaultPsiClassHelperIntegrationTest : EasyApiLightCodeInsightFixtureTestC
         )
         val psiClass = findClass("model.PlainDto")!!
 
-        val result = helper.buildObjectModel(psiClass, maxDepth = 10)
+        val result = helper.buildObjectModel(psiClass)
 
         assertNotNull(result)
         assertTrue(result is ObjectModel.Object)

@@ -164,6 +164,165 @@ class ObjectModelTest {
         // Should not go beyond maxDepth
         assertNotNull(flat)
     }
+
+    /**
+     * Tests that flattenFields handles circular object references without
+     * producing an excessively large result.
+     *
+     * This simulates the scenario from https://github.com/tangcent/easy-yapi/issues/1325
+     * where a DTO has a field referencing itself (e.g., parentChannel: ChannelDTO).
+     * The cache in DefaultPsiClassHelper can produce ObjectModel instances with
+     * actual circular references (same Object instance in the tree).
+     *
+     * Without circular reference detection, flattenFields would expand
+     * N^maxDepth entries (e.g., 10 fields × depth 5 = 100,000 entries).
+     */
+    @Test
+    fun testObject_flattenFields_circularReference() {
+        // Create a circular ObjectModel: obj.fields["self"].model === obj
+        val fields = linkedMapOf<String, FieldModel>()
+        val obj = ObjectModel.Object(fields)
+        fields["name"] = FieldModel(ObjectModel.single("string"))
+        fields["self"] = FieldModel(obj) // circular reference!
+
+        val flat = obj.flattenFields(maxDepth = 5)
+        assertNotNull(flat)
+        // Should contain "name" at various depths but not explode
+        assertTrue("Should contain top-level 'name'", flat.containsKey("name"))
+        // The total number of entries should be bounded, not exponential
+        assertTrue(
+            "flattenFields with circular reference should not produce excessive entries (got ${flat.size})",
+            flat.size < 100
+        )
+    }
+
+    /**
+     * Tests flattenFields with a mutual circular reference (A → B → A).
+     * This is the more realistic scenario: ChannelDTO has SubChannelDTO,
+     * and SubChannelDTO has ChannelDTO.
+     */
+    @Test
+    fun testObject_flattenFields_mutualCircularReference() {
+        val fieldsA = linkedMapOf<String, FieldModel>()
+        val fieldsB = linkedMapOf<String, FieldModel>()
+        val objA = ObjectModel.Object(fieldsA)
+        val objB = ObjectModel.Object(fieldsB)
+
+        fieldsA["id"] = FieldModel(ObjectModel.single("long"))
+        fieldsA["name"] = FieldModel(ObjectModel.single("string"))
+        fieldsA["child"] = FieldModel(objB)
+
+        fieldsB["childId"] = FieldModel(ObjectModel.single("long"))
+        fieldsB["parent"] = FieldModel(objA) // circular back to A
+
+        val flat = objA.flattenFields(maxDepth = 5)
+        assertNotNull(flat)
+        assertTrue("Should contain 'id'", flat.containsKey("id"))
+        assertTrue("Should contain 'name'", flat.containsKey("name"))
+        assertTrue(
+            "flattenFields with mutual circular reference should not produce excessive entries (got ${flat.size})",
+            flat.size < 200
+        )
+    }
+
+    /**
+     * Tests flattenFields with a wide class (many fields) and circular reference.
+     * This is the worst case for the OOM bug: N fields × maxDepth levels = N^maxDepth entries.
+     */
+    @Test
+    fun testObject_flattenFields_wideCircularReference() {
+        val fields = linkedMapOf<String, FieldModel>()
+        val obj = ObjectModel.Object(fields)
+
+        // Add 10 simple fields
+        for (i in 1..10) {
+            fields["field$i"] = FieldModel(ObjectModel.single("string"))
+        }
+        // Add circular reference
+        fields["self"] = FieldModel(obj)
+
+        val flat = obj.flattenFields(maxDepth = 5)
+        assertNotNull(flat)
+        // With single self-reference, this is linear: 10 fields × 5 levels = 50
+        println("Wide circular reference flattenFields produced ${flat.size} entries")
+        assertTrue(
+            "Wide class with circular reference should not produce excessive entries (got ${flat.size})",
+            flat.size < 500
+        )
+    }
+
+    /**
+     * Tests flattenFields with multiple fields referencing the same complex type
+     * that references back. This creates exponential growth: at each level,
+     * N complex fields each expand back to the parent, creating N^depth entries.
+     *
+     * Example: ChannelDTO has 5 SubChannelDTO fields, each SubChannelDTO has
+     * a ChannelDTO backRef. This creates 5^depth growth.
+     */
+    @Test
+    fun testObject_flattenFields_multipleBackReferences() {
+        val fieldsA = linkedMapOf<String, FieldModel>()
+        val fieldsB = linkedMapOf<String, FieldModel>()
+        val objA = ObjectModel.Object(fieldsA)
+        val objB = ObjectModel.Object(fieldsB)
+
+        // A has 5 fields of type B
+        fieldsA["name"] = FieldModel(ObjectModel.single("string"))
+        for (i in 1..5) {
+            fieldsA["ref$i"] = FieldModel(objB)
+        }
+
+        // B has a back-reference to A
+        fieldsB["value"] = FieldModel(ObjectModel.single("string"))
+        fieldsB["parent"] = FieldModel(objA)
+
+        val flat = objA.flattenFields(maxDepth = 5)
+        assertNotNull(flat)
+        println("Multiple back-references flattenFields produced ${flat.size} entries")
+        // With 5 refs to B, each B refs back to A: growth is 5^(depth/2)
+        // At maxDepth=5: roughly 5^2 * some_factor ≈ hundreds of entries
+        // This should still be manageable, but with more fields it could explode
+        assertTrue(
+            "Multiple back-references should not produce excessive entries (got ${flat.size})",
+            flat.size < 5000
+        )
+    }
+
+    /**
+     * Stress test: simulates a real-world DTO with many fields and multiple
+     * circular reference paths. This is the scenario from issue #1325 where
+     * ChannelDTO with ~20 fields and circular references caused OOM.
+     */
+    @Test
+    fun testObject_flattenFields_stressTest() {
+        val fieldsChannel = linkedMapOf<String, FieldModel>()
+        val fieldsSub = linkedMapOf<String, FieldModel>()
+        val channelObj = ObjectModel.Object(fieldsChannel)
+        val subObj = ObjectModel.Object(fieldsSub)
+
+        // ChannelDTO-like: 15 simple fields + self-ref + list of subs
+        for (i in 1..15) {
+            fieldsChannel["field$i"] = FieldModel(ObjectModel.single("string"))
+        }
+        fieldsChannel["parentChannel"] = FieldModel(channelObj) // self-reference
+        fieldsChannel["subChannel1"] = FieldModel(subObj)
+        fieldsChannel["subChannel2"] = FieldModel(subObj)
+        fieldsChannel["subChannel3"] = FieldModel(subObj)
+
+        // SubChannelDTO: 5 simple fields + back-ref to channel
+        for (i in 1..5) {
+            fieldsSub["subField$i"] = FieldModel(ObjectModel.single("string"))
+        }
+        fieldsSub["ownerChannel"] = FieldModel(channelObj) // back-reference
+
+        val flat = channelObj.flattenFields(maxDepth = 5)
+        assertNotNull(flat)
+        println("Stress test flattenFields produced ${flat.size} entries")
+        assertTrue(
+            "Stress test should not produce excessive entries (got ${flat.size})",
+            flat.size < 100000
+        )
+    }
 }
 
 class FieldModelTest {

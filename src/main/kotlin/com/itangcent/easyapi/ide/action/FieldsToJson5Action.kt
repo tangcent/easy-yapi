@@ -18,7 +18,7 @@ import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 class FieldsToJson5Action : FieldFormatAction("Fields To JSON5") {
     override suspend fun format(project: Project, psiClass: PsiClass): String {
         val helper = PsiClassHelper.getInstance(project)
-        val model = helper.buildObjectModel(psiClass, option = JsonOption.ALL, maxDepth = 10)
+        val model = helper.buildObjectModel(psiClass, option = JsonOption.ALL)
         return model?.let { ObjectModelJsonConverter.toJson5(it) } ?: ""
     }
 }

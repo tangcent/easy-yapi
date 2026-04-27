@@ -29,13 +29,6 @@ class RuleKeysTest {
     }
 
     @Test
-    fun testIntKeyProperties() {
-        val key = RuleKeys.FIELD_MAX_DEPTH
-        assertEquals("field.max.depth", key.name)
-        assertEquals(IntRuleMode, key.mode)
-    }
-
-    @Test
     fun testAliases() {
         val key = RuleKeys.PARAM_DOC
         assertEquals("param.doc", key.name)
