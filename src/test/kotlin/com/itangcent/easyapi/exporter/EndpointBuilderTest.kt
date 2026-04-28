@@ -4,6 +4,7 @@ import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import org.junit.Assert.*
@@ -324,7 +325,8 @@ class EndpointBuilderTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val psiClass = findClass("com.itangcent.springboot.demo.controller.VoidMethodCtrl")!!
         val method = findMethod(psiClass, "voidMethod")!!
-        val result = endpointBuilder.buildResponseBody(method)
+        val resolvedReturnType = TypeResolver.resolve(method.returnType!!)
+        val result = endpointBuilder.buildResponseBody(method, resolvedReturnType)
         assertNull(result)
     }
 
@@ -337,7 +339,8 @@ class EndpointBuilderTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val psiClass = findClass("com.itangcent.springboot.demo.controller.SimpleReturnCtrl")!!
         val method = findMethod(psiClass, "getUser")!!
-        val result = endpointBuilder.buildResponseBody(method)
+        val resolvedReturnType = TypeResolver.resolve(method.returnType!!)
+        val result = endpointBuilder.buildResponseBody(method, resolvedReturnType)
         assertNotNull(result)
     }
 
@@ -353,7 +356,8 @@ class EndpointBuilderTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.springboot.demo.controller.BodyParamCtrl")!!
         val method = findMethod(psiClass, "simpleBody")!!
         val param = method.parameterList.parameters.firstOrNull()!!
-        val result = endpointBuilder.expandBodyParam(param)
+        val resolvedParamType = TypeResolver.resolve(param.type)
+        val result = endpointBuilder.expandBodyParam(resolvedParamType)
         assertNull(result)
     }
 
@@ -365,7 +369,8 @@ class EndpointBuilderTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.springboot.demo.controller.BodyParamCtrl")!!
         val method = findMethod(psiClass, "complexBody")!!
         val param = method.parameterList.parameters.firstOrNull()!!
-        val result = endpointBuilder.expandBodyParam(param)
+        val resolvedParamType = TypeResolver.resolve(param.type)
+        val result = endpointBuilder.expandBodyParam(resolvedParamType)
         assertNotNull(result)
     }
 

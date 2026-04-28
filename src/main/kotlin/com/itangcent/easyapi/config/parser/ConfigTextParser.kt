@@ -103,12 +103,17 @@ class ConfigTextParser(
     }
 
     private fun splitKeyValue(line: String): Pair<String, String>? {
-        val eq = line.indexOf('=')
-        val colon = line.indexOf(':')
-        val idx = when {
-            eq > 0 && (colon < 0 || eq < colon) -> eq
-            colon > 0 -> colon
-            else -> -1
+        var bracketDepth = 0
+        var idx = -1
+        for (i in line.indices) {
+            when (line[i]) {
+                '[' -> bracketDepth++
+                ']' -> if (bracketDepth > 0) bracketDepth--
+                '=', ':' -> if (bracketDepth == 0 && i > 0) {
+                    idx = i
+                    break
+                }
+            }
         }
         if (idx <= 0) return null
         val key = line.substring(0, idx).trim()

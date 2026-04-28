@@ -18,8 +18,8 @@ import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
-import com.itangcent.easyapi.psi.type.GenericContext
 import com.itangcent.easyapi.psi.type.InheritanceHelper
+import com.itangcent.easyapi.psi.type.ResolvedMethod
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.psi.type.TypeResolver
@@ -95,7 +95,7 @@ class SpringMvcClassExporter(
 
     private suspend fun exportMethod(
         psiClass: PsiClass,
-        resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
+        resolvedMethod: ResolvedMethod
     ): List<ApiEndpoint> {
         val method = resolvedMethod.psiMethod
         val methodKey = read {
@@ -104,7 +104,7 @@ class SpringMvcClassExporter(
         LOG.info("before parse method:$methodKey")
 
         withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
+            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, resolvedMethod)
         }
 
         try {
@@ -117,8 +117,6 @@ class SpringMvcClassExporter(
             val endpoints: List<ApiEndpoint>
 
             withContext(IdeDispatchers.ReadAction) {
-                val genericContext = GenericContext(TypeResolver.resolveGenericParams(psiClass, emptyList()))
-
                 val apiName = metadataResolver.resolveApiName(method)
                 val folder = metadataResolver.resolveFolderName(method, psiClass)
                 val description = metadataResolver.resolveMethodDoc(method)
@@ -128,11 +126,11 @@ class SpringMvcClassExporter(
                     ?: emptyList()
 
                 val resolvedBindings = resolveParameterBindings(resolvedMethod)
-                val params = buildParameters(resolvedBindings, genericContext)
+                val params = buildParameters(resolvedBindings, resolvedMethod)
                 val paramHeaders = extractParamHeaders(resolvedBindings)
-                val body = buildRequestBody(resolvedBindings, genericContext)
+                val body = buildRequestBody(resolvedBindings, resolvedMethod)
                 val response = read { ReturnTypeUnwrapper.unwrap(method.returnType) }
-                val responseBody = buildResponseBody(method, genericContext)
+                val responseBody = buildResponseBody(resolvedMethod)
 
                 val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
@@ -198,7 +196,7 @@ class SpringMvcClassExporter(
 
             withContext(IdeDispatchers.Background) {
                 for (endpoint in endpoints) {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                    engine.evaluate(RuleKeys.EXPORT_AFTER, resolvedMethod) { ctx ->
                         ctx.setExt("api", endpoint)
                     }
                 }
@@ -207,7 +205,7 @@ class SpringMvcClassExporter(
             return endpoints
         } finally {
             withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
+                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, resolvedMethod)
             }
         }
     }
@@ -266,7 +264,7 @@ class SpringMvcClassExporter(
      * Uses [ResolvedMethod] to support annotation inheritance from super methods
      * (interfaces, base classes).
      */
-    private suspend fun resolveParameterBindings(resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ResolvedParamBinding> {
+    private suspend fun resolveParameterBindings(resolvedMethod: ResolvedMethod): List<ResolvedParamBinding> {
         val method = resolvedMethod.psiMethod
         val parameters = read { method.parameterList.parameters.toList() }
         return parameters.mapIndexedNotNull { index, p ->
@@ -278,7 +276,7 @@ class SpringMvcClassExporter(
 
     private suspend fun buildParameters(
         bindings: List<ResolvedParamBinding>,
-        genericContext: GenericContext = GenericContext.EMPTY
+        resolvedMethod: ResolvedMethod
     ): List<ApiParameter> {
         val result = ArrayList<ApiParameter>()
         for ((p, binding) in bindings) {
@@ -295,15 +293,23 @@ class SpringMvcClassExporter(
             engine.evaluate(RuleKeys.API_PARAM_PARSE_BEFORE, p)
 
             try {
+                // Find the resolved type for this parameter from the ResolvedMethod
+                val resolvedParamType = resolvedMethod.params
+                    .firstOrNull { it.psiParameter == p }?.type
+
                 if (binding == ParameterBinding.Form) {
-                    val expandedParams = expandFormParameter(p, genericContext)
+                    val expandedParams = if (resolvedParamType != null) {
+                        expandFormParameter(resolvedParamType)
+                    } else emptyList()
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
                         result.add(buildSingleParameter(p, paramName, binding))
                     }
                 } else if (binding == ParameterBinding.Query) {
-                    val expandedParams = expandQueryParameter(p, genericContext)
+                    val expandedParams = if (resolvedParamType != null) {
+                        expandQueryParameter(resolvedParamType)
+                    } else emptyList()
                     if (expandedParams.isNotEmpty()) {
                         result.addAll(expandedParams)
                     } else {
@@ -346,53 +352,38 @@ class SpringMvcClassExporter(
     }
 
     private suspend fun expandFormParameter(
-        parameter: PsiParameter,
-        genericContext: GenericContext = GenericContext.EMPTY
+        resolvedParamType: ResolvedType
     ): List<ApiParameter> {
         val formExpanded = SettingBinder.getInstance(project).read().formExpanded
         if (!formExpanded) {
             return emptyList()
         }
-        return expandComplexParameter(parameter, ParameterBinding.Form, genericContext)
+        return expandComplexParameter(resolvedParamType, ParameterBinding.Form)
     }
 
     private suspend fun expandQueryParameter(
-        parameter: PsiParameter,
-        genericContext: GenericContext = GenericContext.EMPTY
+        resolvedParamType: ResolvedType
     ): List<ApiParameter> {
         val queryExpanded = SettingBinder.getInstance(project).read().queryExpanded
         if (!queryExpanded) {
             return emptyList()
         }
-        return expandComplexParameter(parameter, ParameterBinding.Query, genericContext)
+        return expandComplexParameter(resolvedParamType, ParameterBinding.Query)
     }
 
     private suspend fun expandComplexParameter(
-        parameter: PsiParameter,
-        binding: ParameterBinding,
-        genericContext: GenericContext = GenericContext.EMPTY
+        resolvedParamType: ResolvedType,
+        binding: ParameterBinding
     ): List<ApiParameter> {
-        val psiClass = PsiTypesUtil.getPsiClass(parameter.type) ?: return emptyList()
-        val qualifiedName = psiClass.qualifiedName ?: return emptyList()
+        val classType = resolvedParamType as? ResolvedType.ClassType ?: return emptyList()
+        val qualifiedName = classType.psiClass.qualifiedName ?: return emptyList()
 
-        if (SpecialTypeHandler.isFileType(qualifiedName)) {
-            return emptyList()
-        }
-
-        if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") {
-            return emptyList()
-        }
-
-        if (isCollectionType(psiClass)) {
-            return emptyList()
-        }
+        if (SpecialTypeHandler.isFileType(qualifiedName)) return emptyList()
+        if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") return emptyList()
+        if (isCollectionType(classType.psiClass)) return emptyList()
 
         val helper = PsiClassHelper.getInstance(project)
-        val objectModel = helper.buildObjectModelFromType(
-            psiType = parameter.type,
-            genericContext = genericContext,
-            contextElement = parameter
-        ) ?: return emptyList()
+        val objectModel = helper.buildObjectModel(resolvedParamType) ?: return emptyList()
 
         val objectData = objectModel.asObject() ?: return emptyList()
         val result = ArrayList<ApiParameter>()
@@ -477,30 +468,27 @@ class SpringMvcClassExporter(
 
     private suspend fun buildRequestBody(
         bindings: List<ResolvedParamBinding>,
-        genericContext: GenericContext = GenericContext.EMPTY
+        resolvedMethod: ResolvedMethod
     ): ObjectModel? {
         for ((p, binding) in bindings) {
             if (binding != ParameterBinding.Body) continue
-            return endpointBuilder.expandBodyParam(p, genericContext)
+            val resolvedParamType = resolvedMethod.params
+                .firstOrNull { it.psiParameter == p }?.type
+                ?: TypeResolver.resolve(p.type)
+            return endpointBuilder.expandBodyParam(resolvedParamType)
         }
         return null
     }
 
     private suspend fun buildResponseBody(
-        method: PsiMethod,
-        genericContext: GenericContext = GenericContext.EMPTY
-    ): ObjectModel? = endpointBuilder.buildResponseBody(
-        method = method,
-        genericContext = genericContext,
-        returnTypeOverride = { returnType ->
-            val unwrappedType = ReturnTypeUnwrapper.unwrapPsiType(returnType)
-            if (unwrappedType != null && unwrappedType != PsiTypes.voidType() && unwrappedType !== returnType) {
-                unwrappedType
-            } else {
-                null
-            }
-        }
-    )
+        resolvedMethod: ResolvedMethod
+    ): ObjectModel? {
+        LOG.info("buildResponseBody: method=${resolvedMethod.psiMethod.name}, returnType=${resolvedMethod.returnType.qualifiedName()}")
+        return endpointBuilder.buildResponseBody(
+            method = resolvedMethod.psiMethod,
+            resolvedReturnType = resolvedMethod.returnType
+        )
+    }
 
     companion object : IdeaLog
 }

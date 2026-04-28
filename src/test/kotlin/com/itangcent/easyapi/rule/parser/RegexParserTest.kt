@@ -45,7 +45,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_matchesPattern() {
-        whenever(context.typeText).thenReturn("reactor.core.publisher.Mono<User>")
+        whenever(context.matchText).thenReturn("reactor.core.publisher.Mono<User>")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:.*Mono.*", context, key)
@@ -55,7 +55,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_noMatch() {
-        whenever(context.typeText).thenReturn("java.lang.String")
+        whenever(context.matchText).thenReturn("java.lang.String")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:.*Mono.*", context, key)
@@ -65,17 +65,17 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_nullTypeText() {
-        whenever(context.typeText).thenReturn(null)
+        whenever(context.matchText).thenReturn(null)
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:.*", context, key)
-            assertEquals("Should return false when typeText is null", false, result)
+            assertEquals("Should return false when matchText is null", false, result)
         }
     }
 
     @Test
     fun testParse_booleanKey_emptyPattern() {
-        whenever(context.typeText).thenReturn("some text")
+        whenever(context.matchText).thenReturn("some text")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:", context, key)
@@ -85,7 +85,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_invalidRegex() {
-        whenever(context.typeText).thenReturn("some text")
+        whenever(context.matchText).thenReturn("some text")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:[invalid", context, key)
@@ -95,7 +95,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_exactMatch() {
-        whenever(context.typeText).thenReturn("java.lang.String")
+        whenever(context.matchText).thenReturn("java.lang.String")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:^java\\.lang\\.String$", context, key)
@@ -105,7 +105,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_partialMatch() {
-        whenever(context.typeText).thenReturn("public java.lang.String getName()")
+        whenever(context.matchText).thenReturn("public java.lang.String getName()")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:java\\.lang\\.String", context, key)
@@ -115,7 +115,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_multilineText() {
-        whenever(context.typeText).thenReturn("line1\nline2\nline3")
+        whenever(context.matchText).thenReturn("line1\nline2\nline3")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:line2", context, key)
@@ -127,7 +127,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_stringKey_withCaptureGroups() {
-        whenever(context.typeText).thenReturn("reactor.core.publisher.Mono<User>")
+        whenever(context.matchText).thenReturn("reactor.core.publisher.Mono<User>")
         runBlocking {
             val key = RuleKey.string("test.key")
             val result = parser.parse("#regex:reactor.core.publisher.Mono<(.*?)>", context, key)
@@ -138,7 +138,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_stringKey_noMatch() {
-        whenever(context.typeText).thenReturn("java.lang.String")
+        whenever(context.matchText).thenReturn("java.lang.String")
         runBlocking {
             val key = RuleKey.string("test.key")
             val result = parser.parse("#regex:reactor.core.publisher.Mono<(.*?)>", context, key)
@@ -148,17 +148,17 @@ class RegexParserTest {
 
     @Test
     fun testParse_stringKey_nullTypeText() {
-        whenever(context.typeText).thenReturn(null)
+        whenever(context.matchText).thenReturn(null)
         runBlocking {
             val key = RuleKey.string("test.key")
             val result = parser.parse("#regex:.*", context, key)
-            assertEquals("Should return empty string when typeText is null", "", result)
+            assertEquals("Should return empty string when matchText is null", "", result)
         }
     }
 
     @Test
     fun testParse_stringKey_emptyPattern() {
-        whenever(context.typeText).thenReturn("some text")
+        whenever(context.matchText).thenReturn("some text")
         runBlocking {
             val key = RuleKey.string("test.key")
             val result = parser.parse("#regex:", context, key)
@@ -168,7 +168,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_stringKey_invalidRegex() {
-        whenever(context.typeText).thenReturn("some text")
+        whenever(context.matchText).thenReturn("some text")
         runBlocking {
             val key = RuleKey.string("test.key")
             val result = parser.parse("#regex:[invalid", context, key)
@@ -180,7 +180,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_nullKey_returnsExpression() {
-        whenever(context.typeText).thenReturn("some text")
+        whenever(context.matchText).thenReturn("some text")
         runBlocking {
             val result = parser.parse("#regex:.*", context, null)
             assertEquals("Should return expression when key is null", "#regex:.*", result)
@@ -189,7 +189,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_intKey_returnsExpression() {
-        whenever(context.typeText).thenReturn("some text")
+        whenever(context.matchText).thenReturn("some text")
         runBlocking {
             val key = RuleKey.int("test.key")
             val result = parser.parse("#regex:.*", context, key)
@@ -199,7 +199,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_eventKey_returnsExpression() {
-        whenever(context.typeText).thenReturn("some text")
+        whenever(context.matchText).thenReturn("some text")
         runBlocking {
             val key = RuleKey.event("test.key")
             val result = parser.parse("#regex:.*", context, key)
@@ -227,7 +227,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_whitespaceInPattern() {
-        whenever(context.typeText).thenReturn("hello world")
+        whenever(context.matchText).thenReturn("hello world")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:hello\\sworld", context, key)
@@ -237,7 +237,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_digitPattern() {
-        whenever(context.typeText).thenReturn("api/v1/users")
+        whenever(context.matchText).thenReturn("api/v1/users")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:/v\\d+/", context, key)
@@ -247,7 +247,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_caseSensitive() {
-        whenever(context.typeText).thenReturn("API")
+        whenever(context.matchText).thenReturn("API")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:api", context, key)
@@ -257,7 +257,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_specialCharacters() {
-        whenever(context.typeText).thenReturn("com.example.UserService\$Impl")
+        whenever(context.matchText).thenReturn("com.example.UserService\$Impl")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:UserService\\\$Impl", context, key)
@@ -267,7 +267,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_emptyTypeText() {
-        whenever(context.typeText).thenReturn("")
+        whenever(context.matchText).thenReturn("")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:^$", context, key)
@@ -277,7 +277,7 @@ class RegexParserTest {
 
     @Test
     fun testParse_booleanKey_emptyTypeText_noMatch() {
-        whenever(context.typeText).thenReturn("")
+        whenever(context.matchText).thenReturn("")
         runBlocking {
             val key = RuleKey.boolean("test.key")
             val result = parser.parse("#regex:.+", context, key)

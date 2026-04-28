@@ -18,7 +18,7 @@ import com.itangcent.easyapi.core.threading.readSync
  *
  * ## Usage
  * ```kotlin
- * val resolved = TypeResolver.resolve(psiType, GenericContext.EMPTY)
+ * val resolved = TypeResolver.resolve(psiType)
  * when (resolved) {
  *     is ResolvedType.ClassType -> println("Class: ${resolved.psiClass.name}")
  *     is ResolvedType.ArrayType -> println("Array of: ${resolved.componentType}")
@@ -29,6 +29,35 @@ import com.itangcent.easyapi.core.threading.readSync
  * ```
  */
 sealed class ResolvedType {
+
+    /**
+     * Returns the canonical text representation of this resolved type.
+     *
+     * For class types, includes fully-qualified name with resolved type arguments
+     * (e.g., `java.util.List<java.lang.String>`).
+     * For primitives, returns the lowercase kind name (e.g., `int`, `boolean`).
+     */
+    abstract fun qualifiedName(): String
+
+    /**
+     * Returns the simple (unqualified) name of this resolved type.
+     *
+     * For class types, returns just the class name without package (e.g., `List`, `String`).
+     * For array types, appends `[]` to the component's simple name.
+     * For primitives, returns the lowercase kind name.
+     * For wildcards, returns `?`.
+     */
+    abstract fun simpleName(): String
+
+    /**
+     * Returns the PSI element that provides context for rule evaluation.
+     *
+     * For class types, returns the PsiClass.
+     * For array types, returns the component type's context element.
+     * For primitives, unresolved types, and wildcards, returns null.
+     */
+    abstract fun contextElement(): PsiElement?
+
     /**
      * Represents a class or interface type with optional type arguments.
      *
@@ -39,14 +68,57 @@ sealed class ResolvedType {
         val psiClass: PsiClass,
         val typeArgs: List<ResolvedType> = emptyList()
     ) : ResolvedType() {
+        /**
+         * Generic context for this class level only.
+         *
+         * Maps this class's own type parameter names to their resolved types.
+         * For `List<String>`, this would be `{E → String}`.
+         * For `HashMap<String, Integer>`, this would be `{K → String, V → Integer}`.
+         *
+         * This is a **local** context — it does NOT flatten the entire hierarchy.
+         * To resolve a member from a superclass, use [contextForDeclaringClass] which
+         * walks the hierarchy per-level, building a fresh context at each level.
+         * This avoids the name-collision problem where different levels reuse `T`.
+         */
         internal val genericContext: GenericContext by lazy {
-            GenericContext(TypeResolver.resolveGenericParams(psiClass, typeArgs))
+            val map = LinkedHashMap<String, ResolvedType>()
+            val params = psiClass.typeParameters
+            for (i in params.indices) {
+                val name = params[i].name ?: continue
+                map[name] = typeArgs.getOrNull(i) ?: ResolvedType.UnresolvedType(name)
+            }
+            if (map.isEmpty()) GenericContext.EMPTY else GenericContext(map)
+        }
+
+        /**
+         * Finds the per-level generic context for a given declaring class by walking
+         * the supertype hierarchy from this ClassType.
+         *
+         * For example, given:
+         *   ConcreteLayer3 extends Layer3<Integer>
+         *   Layer3<T> extends Layer2<Pair<String, T>>
+         *   Layer2<T> extends Layer1<Wrapper<T>>
+         *   Layer1<T> { T value; }
+         *
+         * Calling `contextForDeclaringClass(Layer1)` from `ConcreteLayer3` returns
+         * `{T → Wrapper<Pair<String, Integer>>}` — the correct binding for Layer1's T.
+         *
+         * Returns [genericContext] if the declaring class is this class itself,
+         * or walks the hierarchy via [superClasses] to find the right context.
+         */
+        internal fun contextForDeclaringClass(declaringClass: PsiClass): GenericContext {
+            val targetQN = declaringClass.qualifiedName
+            if (targetQN == psiClass.qualifiedName) return genericContext
+            return findContextForClass(targetQN, this) ?: genericContext
         }
 
         /**
          * Returns deduplicated, generics-resolved methods.
          * Deduplicates by name#paramCount, preferring the override from [psiClass].
          * Each [ResolvedMethod] gets [ResolvedMethod.ownerClassType] = this.
+         *
+         * Uses per-level generic context propagation: each method's types are resolved
+         * using the context of its declaring class, not a flat merged context.
          */
         fun methods(): List<ResolvedMethod> {
             // Collect all non-constructor, non-Object methods
@@ -101,18 +173,6 @@ sealed class ResolvedType {
                 ResolvedMethod(
                     name = method.name,
                     psiMethod = method,
-                    returnType = TypeResolver.substitute(
-                        TypeResolver.resolve(method.returnType, genericContext), genericContext
-                    ),
-                    params = method.parameterList.parameters.map { p ->
-                        ResolvedParam(
-                            p.name ?: "",
-                            p,
-                            TypeResolver.substitute(
-                                TypeResolver.resolve(p.type, genericContext), genericContext
-                            )
-                        )
-                    },
                     containClass = psiClass,
                     ownerClassType = this
                 )
@@ -122,29 +182,47 @@ sealed class ResolvedType {
         /**
          * Returns immediate supertypes as [ClassType] instances with resolved type args.
          * Excludes java.lang.Object.
+         *
+         * Each returned ClassType has its own per-level generic context built by resolving
+         * the super type's type arguments using this class's context.
          */
         fun superClasses(): Sequence<ClassType> = sequence {
             for (superType in psiClass.superTypes) {
                 val superClass = superType.resolve() ?: continue
                 if (superClass.qualifiedName == "java.lang.Object") continue
-                val args = superType.parameters.map { TypeResolver.resolve(it, genericContext) }
+                val args = superType.parameters.map {
+                    TypeResolver.resolveAndSubstitute(it, genericContext)
+                }
                 yield(ClassType(superClass, args))
             }
         }
 
+        /**
+         * Returns all fields from this class and its superclasses, with types resolved
+         * using per-level generic context propagation.
+         *
+         * Each field's type is resolved using the context of its declaring class,
+         * ensuring that type parameter `T` in `Layer1<T>` gets the correct binding
+         * even when multiple levels reuse the same name.
+         */
         fun fields(): List<ResolvedField> {
-            return psiClass.allFields.map { field ->
-                ResolvedField(
-                    name = field.name,
-                    psiField = field,
-                    type = TypeResolver.substitute(TypeResolver.resolve(field.type, genericContext), genericContext),
-                    annotations = field.annotations.toList(),
-                    containClass = psiClass
-                )
-            }
+            val result = mutableListOf<ResolvedField>()
+            val fieldNames = mutableSetOf<String>()
+            collectFieldsPerLevel(this, result, fieldNames)
+            return result
         }
 
         fun annotations(): List<PsiAnnotation> = psiClass.annotations.toList()
+
+        override fun qualifiedName(): String {
+            val base = psiClass.qualifiedName ?: psiClass.name ?: "Anonymous"
+            return if (typeArgs.isEmpty()) base
+            else base + typeArgs.joinToString(prefix = "<", postfix = ">") { it.qualifiedName() }
+        }
+
+        override fun simpleName(): String = psiClass.name ?: psiClass.qualifiedName ?: "Anonymous"
+
+        override fun contextElement(): PsiElement = psiClass
     }
 
     /**
@@ -152,21 +230,33 @@ sealed class ResolvedType {
      *
      * @param componentType The type of elements in the array
      */
-    data class ArrayType(val componentType: ResolvedType) : ResolvedType()
+    data class ArrayType(val componentType: ResolvedType) : ResolvedType() {
+        override fun qualifiedName(): String = componentType.qualifiedName() + "[]"
+        override fun simpleName(): String = componentType.simpleName() + "[]"
+        override fun contextElement(): PsiElement? = componentType.contextElement()
+    }
 
     /**
      * Represents a type that could not be resolved.
      *
      * @param canonicalText The canonical text representation of the unresolved type
      */
-    data class UnresolvedType(val canonicalText: String) : ResolvedType()
+    data class UnresolvedType(val canonicalText: String) : ResolvedType() {
+        override fun qualifiedName(): String = canonicalText
+        override fun simpleName(): String = canonicalText.substringAfterLast('.')
+        override fun contextElement(): PsiElement? = null
+    }
 
     /**
      * Represents a primitive type (boolean, int, etc.).
      *
      * @param kind The specific primitive kind
      */
-    data class PrimitiveType(val kind: PrimitiveKind) : ResolvedType()
+    data class PrimitiveType(val kind: PrimitiveKind) : ResolvedType() {
+        override fun qualifiedName(): String = kind.name.lowercase()
+        override fun simpleName(): String = kind.name.lowercase()
+        override fun contextElement(): PsiElement? = null
+    }
 
     /**
      * Represents a wildcard type with optional upper and lower bounds.
@@ -174,7 +264,15 @@ sealed class ResolvedType {
      * @param upper The upper bound (? extends T), or null if none
      * @param lower The lower bound (? super T), or null if none
      */
-    data class WildcardType(val upper: ResolvedType?, val lower: ResolvedType?) : ResolvedType()
+    data class WildcardType(val upper: ResolvedType?, val lower: ResolvedType?) : ResolvedType() {
+        override fun qualifiedName(): String = when {
+            upper != null -> "? extends " + upper.qualifiedName()
+            lower != null -> "? super " + lower.qualifiedName()
+            else -> "?"
+        }
+        override fun simpleName(): String = "?"
+        override fun contextElement(): PsiElement? = upper?.contextElement() ?: lower?.contextElement()
+    }
 }
 
 /**
@@ -196,24 +294,51 @@ enum class PrimitiveKind {
  * Represents a resolved method with its signature and metadata.
  *
  * Each method holds a reference to its [ownerClassType] for hierarchy navigation.
+ * Types (return type, parameter types) are resolved lazily from the PSI method
+ * using the owner's generic context, eliminating the need for callers to perform
+ * explicit resolve+substitute steps.
+ *
  * Use [superMethod] to find the super declaration, and the extension functions
  * [superMethods], [searchAnnotation] for composable hierarchy traversal.
  *
  * @param name The method name
  * @param psiMethod The PsiMethod (for overrides, this is the override from the concrete class)
- * @param returnType The resolved return type (with generics substituted)
- * @param params The resolved parameters (with generics substituted)
  * @param containClass The concrete class this method is resolved from
  * @param ownerClassType The ClassType that produced this ResolvedMethod, for hierarchy navigation
  */
-data class ResolvedMethod(
+class ResolvedMethod(
     val name: String,
     val psiMethod: PsiMethod,
-    val returnType: ResolvedType,
-    val params: List<ResolvedParam>,
     val containClass: PsiClass? = null,
     val ownerClassType: ResolvedType.ClassType? = null
 ) {
+    /**
+     * The generic context used for resolving this method's types.
+     * Derived from the owner's context for the method's declaring class.
+     */
+    private val genericContext: GenericContext by lazy {
+        val owner = ownerClassType ?: return@lazy GenericContext.EMPTY
+        val declaring = psiMethod.containingClass ?: return@lazy owner.genericContext
+        owner.contextForDeclaringClass(declaring)
+    }
+
+    /** The resolved return type (with generics substituted). Lazily computed. */
+    val returnType: ResolvedType by lazy {
+        TypeResolver.resolveAndSubstitute(psiMethod.returnType, genericContext)
+    }
+
+    /** The resolved parameters (with generics substituted). Lazily computed. */
+    val params: List<ResolvedParam> by lazy {
+        psiMethod.parameterList.parameters.map { p ->
+            ResolvedParam(
+                name = p.name ?: "",
+                psiParameter = p,
+                ownerClassType = ownerClassType,
+                genericContext = genericContext
+            )
+        }
+    }
+
     /**
      * Finds the super declaration of this method in the immediate supertypes.
      * Returns a [ResolvedMethod] resolved in the super [ResolvedType.ClassType]'s generic context,
@@ -235,68 +360,155 @@ data class ResolvedMethod(
             if (containingClass.qualifiedName == "java.lang.Object") continue
 
             val superClassType = superTypesByClass[containingClass.qualifiedName] ?: continue
-            val superGenericContext = superClassType.genericContext
             return ResolvedMethod(
                 name = superPsiMethod.name,
                 psiMethod = superPsiMethod,
-                returnType = TypeResolver.substitute(
-                    TypeResolver.resolve(superPsiMethod.returnType, superGenericContext), superGenericContext
-                ),
-                params = superPsiMethod.parameterList.parameters.map { p ->
-                    ResolvedParam(
-                        p.name ?: "",
-                        p,
-                        TypeResolver.substitute(
-                            TypeResolver.resolve(p.type, superGenericContext), superGenericContext
-                        )
-                    )
-                },
                 containClass = superClassType.psiClass,
                 ownerClassType = superClassType
             )
         }
         return null
     }
+
+    override fun toString(): String =
+        "ResolvedMethod(name=$name, containClass=${containClass?.qualifiedName})"
 }
 
 /**
  * Represents a resolved field with its type and metadata.
  *
+ * The field type is resolved lazily from the PSI field using the owner's generic context,
+ * eliminating the need for callers to perform explicit resolve+substitute steps.
+ *
  * @param name The field name
  * @param psiField The underlying PSI field
- * @param type The resolved field type
  * @param annotations The field annotations
  * @param containClass The containing class, if available
+ * @param ownerClassType The ClassType that owns this field, for lazy type resolution
  */
-data class ResolvedField(
+class ResolvedField(
     val name: String,
     val psiField: PsiField,
-    val type: ResolvedType,
     val annotations: List<PsiAnnotation>,
-    val containClass: PsiClass? = null
-)
+    val containClass: PsiClass? = null,
+    val ownerClassType: ResolvedType.ClassType? = null
+) {
+    /** The resolved field type (with generics substituted). Lazily computed. */
+    val type: ResolvedType by lazy {
+        val ctx = ownerClassType?.genericContext ?: GenericContext.EMPTY
+        TypeResolver.resolveAndSubstitute(psiField.type, ctx)
+    }
+
+    override fun toString(): String =
+        "ResolvedField(name=$name, containClass=${containClass?.qualifiedName})"
+}
 
 /**
  * Represents a resolved method parameter.
  *
+ * The parameter type is resolved lazily from the PSI parameter using the provided
+ * generic context (inherited from the parent method's resolution context).
+ *
  * @param name The parameter name
  * @param psiParameter The underlying PSI parameter
- * @param type The resolved parameter type
+ * @param ownerClassType The ClassType that owns the method containing this parameter
+ * @param genericContext The generic context for type resolution (from the parent method)
  */
-data class ResolvedParam(
+class ResolvedParam internal constructor(
     val name: String,
     val psiParameter: PsiParameter,
-    val type: ResolvedType
-)
+    val ownerClassType: ResolvedType.ClassType? = null,
+    private val genericContext: GenericContext = GenericContext.EMPTY
+) {
+    /** The resolved parameter type (with generics substituted). Lazily computed. */
+    val type: ResolvedType by lazy {
+        TypeResolver.resolveAndSubstitute(psiParameter.type, genericContext)
+    }
+
+    override fun toString(): String = "ResolvedParam(name=$name)"
+}
+
+/**
+ * Collects fields per-level by walking the hierarchy via [ResolvedType.ClassType.superClasses].
+ * Each level's fields are resolved using that level's own generic context.
+ * Super fields come first (depth-first), then this class's own declared fields.
+ *
+ * @param rootClass The root class being queried (used as containClass for all fields)
+ */
+private fun collectFieldsPerLevel(
+    classType: ResolvedType.ClassType,
+    result: MutableList<ResolvedField>,
+    fieldNames: MutableSet<String>,
+    rootClass: PsiClass = classType.psiClass
+) {
+    // Recurse into supertypes first (depth-first so base fields come first)
+    for (superClassType in classType.superClasses()) {
+        collectFieldsPerLevel(superClassType, result, fieldNames, rootClass)
+    }
+    // Then this class's own declared fields (not allFields — just this level)
+    for (field in classType.psiClass.fields) {
+        if (fieldNames.add(field.name)) {
+            result.add(
+                ResolvedField(
+                    name = field.name,
+                    psiField = field,
+                    annotations = field.annotations.toList(),
+                    containClass = rootClass,
+                    ownerClassType = classType
+                )
+            )
+        }
+    }
+}
+
+/**
+ * Walks the supertype hierarchy from [root] to find the per-level generic context
+ * for a class with the given qualified name.
+ *
+ * Uses BFS through [ResolvedType.ClassType.superClasses] which already does per-level
+ * context propagation — each returned ClassType has its own correctly-scoped context.
+ */
+private fun findContextForClass(
+    targetQN: String?,
+    root: ResolvedType.ClassType
+): GenericContext? {
+    if (targetQN == null) return null
+    val visited = HashSet<String>()
+    val queue = ArrayDeque<ResolvedType.ClassType>()
+    for (s in root.superClasses()) {
+        val qn = s.psiClass.qualifiedName ?: continue
+        if (qn == targetQN) return s.genericContext
+        if (visited.add(qn)) queue.add(s)
+    }
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst()
+        for (s in current.superClasses()) {
+            val qn = s.psiClass.qualifiedName ?: continue
+            if (qn == targetQN) return s.genericContext
+            if (visited.add(qn)) queue.add(s)
+        }
+    }
+    return null
+}
 
 /**
  * Holds the mapping of generic type parameters to their resolved types.
  *
- * Used during type resolution to substitute type parameters with actual types.
+ * Used internally during type resolution to substitute type parameters with actual types.
+ *
+ * **This class is internal to the type resolution system.** External callers should never
+ * create, pass, or depend on [GenericContext]. Instead:
+ * - Use [TypeResolver.resolve] to convert a [PsiType] to a [ResolvedType]
+ * - Use [ResolvedType.ClassType.fields], [ResolvedType.ClassType.methods], and
+ *   [ResolvedType.ClassType.superClasses] to access members with generics resolved automatically
+ * - Use [PsiClassHelper.buildObjectModel] with a [ResolvedType] to build object models
+ *
+ * Generic context propagation is handled per-level internally by [ResolvedType.ClassType],
+ * which builds a fresh context at each level of the class hierarchy.
  *
  * @param genericMap Map from type parameter names to resolved types
  */
-data class GenericContext(val genericMap: Map<String, ResolvedType>) {
+internal data class GenericContext(val genericMap: Map<String, ResolvedType>) {
     companion object {
         /**
          * An empty generic context with no type parameter bindings.
@@ -319,11 +531,32 @@ object TypeResolver {
     /**
      * Resolves a PSI type to a [ResolvedType].
      *
-     * @param psiType The PSI type to resolve, or null
-     * @param context The generic context for type parameter substitution
+     * This is the primary public API. Callers should resolve a PsiType once,
+     * then use the returned [ResolvedType] to access fields, methods, and supertypes
+     * — generic type parameters are resolved internally via per-level context propagation.
+     *
+     * Type parameters (e.g., `T` in `Result<T>`) that cannot be resolved without
+     * a class hierarchy context will become [ResolvedType.UnresolvedType].
+     * To get fully resolved types, use [ResolvedType.ClassType.methods] or
+     * [ResolvedType.ClassType.fields] which handle generic propagation automatically.
+     *
+     * @param psiType The PSI type to resolve
      * @return The resolved type
      */
-    fun resolve(psiType: PsiType?, context: GenericContext = GenericContext.EMPTY): ResolvedType {
+    fun resolve(psiType: PsiType): ResolvedType {
+        if (psiType is PsiPrimitiveType) return resolvePrimitive(psiType)
+        return resolveNonPrimitive(psiType, GenericContext.EMPTY)
+    }
+
+    /**
+     * Resolves a PSI type with a generic context for type parameter substitution.
+     *
+     * This is an internal API used by [ResolvedType.ClassType] for per-level
+     * generic context propagation. External callers should use [resolve] without
+     * context and rely on [ResolvedType.ClassType.fields] / [ResolvedType.ClassType.methods]
+     * for generic resolution.
+     */
+    internal fun resolve(psiType: PsiType?, context: GenericContext): ResolvedType {
         if (psiType == null) return ResolvedType.UnresolvedType("null")
         if (psiType is PsiPrimitiveType) return resolvePrimitive(psiType)
         return resolveNonPrimitive(psiType, context)
@@ -412,7 +645,7 @@ object TypeResolver {
      * @param context The generic context for type parameter substitution
      * @return The resolved type, or UnresolvedType if resolution fails
      */
-    fun resolveFromCanonicalText(
+    internal fun resolveFromCanonicalText(
         canonicalText: String,
         project: com.intellij.openapi.project.Project,
         context: GenericContext = GenericContext.EMPTY
@@ -431,7 +664,7 @@ object TypeResolver {
      * @param context The generic context for type parameter substitution
      * @return The resolved type, or UnresolvedType if resolution fails
      */
-    fun resolveFromCanonicalText(
+    internal fun resolveFromCanonicalText(
         canonicalText: String,
         project: com.intellij.openapi.project.Project,
         contextElement: PsiElement?,
@@ -600,7 +833,7 @@ object TypeResolver {
      * @param typeArgs The resolved type arguments
      * @return Map from type parameter names to resolved types
      */
-    fun resolveGenericParams(psiClass: PsiClass, typeArgs: List<ResolvedType>): Map<String, ResolvedType> {
+    internal fun resolveGenericParams(psiClass: PsiClass, typeArgs: List<ResolvedType>): Map<String, ResolvedType> {
         val map = LinkedHashMap<String, ResolvedType>()
 
         val params = psiClass.typeParameters
@@ -636,8 +869,7 @@ object TypeResolver {
             for (i in superParams.indices) {
                 val name = superParams[i].name ?: continue
                 val arg = superArgs.getOrNull(i)
-                val resolved = resolve(arg, context)
-                superBindings[name] = substitute(resolved, context)
+                superBindings[name] = resolveAndSubstitute(arg, context)
             }
 
             // Merge into the shared map, but only for names not already bound at a lower level
@@ -648,9 +880,19 @@ object TypeResolver {
             }
 
             // Recurse into super class to handle multi-level inheritance,
-            // using a merged context so deeper levels can resolve through the full chain
+            // using a merged context so deeper levels can resolve through the full chain.
+            // superBindings take precedence over the shared map because they represent
+            // the correct type parameter bindings at this level of the hierarchy.
+            // For example, if AtaPageResult<T> extends AtaBaseResult<AtaPage<T>>,
+            // superBindings has {T → AtaPage<VotePageQueryVO>} which is the correct
+            // binding for AtaBaseResult's T, while the shared map has {T → VotePageQueryVO}
+            // which is AtaPageResult's T.
             val mergedMap = LinkedHashMap(superBindings)
-            mergedMap.putAll(map)
+            for ((k, v) in map) {
+                if (!mergedMap.containsKey(k)) {
+                    mergedMap[k] = v
+                }
+            }
             collectSuperTypeBindingsScoped(superClass, map, GenericContext(mergedMap))
         }
     }
@@ -676,8 +918,7 @@ object TypeResolver {
             for (i in superParams.indices) {
                 val name = superParams[i].name ?: continue
                 val arg = superArgs.getOrNull(i)
-                val resolved = resolve(arg, context)
-                superBindings[name] = substitute(resolved, context)
+                superBindings[name] = resolveAndSubstitute(arg, context)
             }
 
             for ((name, resolved) in superBindings) {
@@ -687,9 +928,28 @@ object TypeResolver {
             }
 
             val mergedMap = LinkedHashMap(superBindings)
-            mergedMap.putAll(map)
+            for ((k, v) in map) {
+                if (!mergedMap.containsKey(k)) {
+                    mergedMap[k] = v
+                }
+            }
             collectSuperTypeBindingsScoped(superClass, map, GenericContext(mergedMap))
         }
+    }
+
+    /**
+     * Resolves a PSI type and substitutes type parameters in a single step.
+     *
+     * This is the preferred API for resolving member types (fields, method return types,
+     * parameters) where the two-step resolve+substitute pattern was previously needed.
+     *
+     * @param psiType The PSI type to resolve
+     * @param context The generic context containing type parameter bindings
+     * @return The fully resolved and substituted type
+     */
+    internal fun resolveAndSubstitute(psiType: PsiType?, context: GenericContext): ResolvedType {
+        val resolved = resolve(psiType, context)
+        return substitute(resolved, context)
     }
 
     /**
@@ -699,7 +959,7 @@ object TypeResolver {
      * @param context The generic context containing type parameter bindings
      * @return The type with parameters substituted
      */
-    fun substitute(type: ResolvedType, context: GenericContext): ResolvedType {
+    internal fun substitute(type: ResolvedType, context: GenericContext): ResolvedType {
         return when (type) {
             is ResolvedType.UnresolvedType -> {
                 context.genericMap[type.canonicalText]?.let { return it }
@@ -725,23 +985,7 @@ object TypeResolver {
         }
     }
 
-    private fun canonicalNameOf(type: ResolvedType): String {
-        return when (type) {
-            is ResolvedType.ClassType -> (type.psiClass.qualifiedName ?: type.psiClass.name ?: "Anonymous") +
-                    type.typeArgs.takeIf { it.isNotEmpty() }
-                        ?.joinToString(prefix = "<", postfix = ">") { canonicalNameOf(it) }
-                        .orEmpty()
-
-            is ResolvedType.ArrayType -> canonicalNameOf(type.componentType) + "[]"
-            is ResolvedType.UnresolvedType -> type.canonicalText
-            is ResolvedType.PrimitiveType -> type.kind.name.lowercase()
-            is ResolvedType.WildcardType -> when {
-                type.upper != null -> "? extends " + canonicalNameOf(type.upper)
-                type.lower != null -> "? super " + canonicalNameOf(type.lower)
-                else -> "?"
-            }
-        }
-    }
+    private fun canonicalNameOf(type: ResolvedType): String = type.qualifiedName()
 }
 
 /**

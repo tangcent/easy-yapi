@@ -3,14 +3,15 @@ package com.itangcent.easyapi.exporter.springmvc
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
-import com.intellij.psi.PsiTypes
 import com.intellij.psi.util.PsiTypesUtil
+import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
+import com.itangcent.easyapi.psi.type.TypeResolver
 
 /**
  * Constants for Spring Boot Actuator annotations.
@@ -189,8 +190,11 @@ class ActuatorEndpointScanner(
             }
         }
 
+        val resolvedReturnType = read { TypeResolver.resolve(method.returnType ?: return@read null) }
+            ?: return null
         return endpointBuilder.buildResponseBody(
             method = method,
+            resolvedReturnType = resolvedReturnType,
             modelBuilder = actuatorModelBuilder
         )
     }

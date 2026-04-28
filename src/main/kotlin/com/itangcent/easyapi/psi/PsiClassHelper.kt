@@ -2,9 +2,8 @@ package com.itangcent.easyapi.psi
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiType
 import com.itangcent.easyapi.psi.model.ObjectModel
-import com.itangcent.easyapi.psi.type.GenericContext
+import com.itangcent.easyapi.psi.type.ResolvedType
 
 /**
  * Options for JSON model building.
@@ -28,16 +27,16 @@ object JsonOption {
 /**
  * Helper for building object models from PSI classes.
  *
- * Used to analyze class structures and extract field information
- * for request/response body modeling.
- *
- * Max depth and max elements are read from project configuration
- * (`max.deep` and `max.elements`) by the implementation.
- *
  * ## Usage
  * ```kotlin
- * val helper = DefaultPsiClassHelper.getInstance(project)
+ * val helper = PsiClassHelper.getInstance(project)
+ *
+ * // From a PsiClass:
  * val model = helper.buildObjectModel(psiClass)
+ *
+ * // From an already-resolved type (preferred — generics are already resolved):
+ * val resolved = TypeResolver.resolve(psiType)
+ * val model = helper.buildObjectModel(resolved)
  * ```
  *
  * @see DefaultPsiClassHelper for default implementation
@@ -57,19 +56,15 @@ interface PsiClassHelper {
     ): ObjectModel?
 
     /**
-     * Builds an object model from a PSI type.
+     * Builds an object model from an already-resolved type.
      *
-     * @param psiType The type to analyze
-     * @param option Options for what to include (see JsonOption constants)
-     * @param genericContext The generic context for type substitution
-     * @param contextElement Optional context element for import-aware type resolution
-     * @return The object model, or null if the type cannot be analyzed
+     * This is the preferred entry point when you have a [ResolvedType]
+     * (e.g., from [ResolvedType.ClassType.fields] or [ResolvedType.ClassType.methods]).
+     * No generic context is needed because the type is already fully resolved.
      */
-    suspend fun buildObjectModelFromType(
-        psiType: PsiType,
-        option: Int = JsonOption.ALL,
-        genericContext: GenericContext = GenericContext.EMPTY,
-        contextElement: com.intellij.psi.PsiElement? = null
+    suspend fun buildObjectModel(
+        resolvedType: ResolvedType,
+        option: Int = JsonOption.ALL
     ): ObjectModel?
 
     companion object {

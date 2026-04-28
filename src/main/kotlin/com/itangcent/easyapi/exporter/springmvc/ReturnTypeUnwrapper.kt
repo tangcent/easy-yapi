@@ -17,6 +17,7 @@ import com.itangcent.easyapi.psi.type.TypeResolver
  */
 object ReturnTypeUnwrapper {
     fun unwrap(type: PsiType?): ResolvedType {
+        if (type == null) return ResolvedType.UnresolvedType("null")
         val resolved = TypeResolver.resolve(type)
         return unwrapResolved(resolved)
     }

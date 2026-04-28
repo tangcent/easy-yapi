@@ -105,4 +105,59 @@ class ConfigTextParserTest {
         assertEquals(1, entries.size)
         assertEquals("api.name", entries[0].key)
     }
+
+    @Test
+    fun testParseBracketedKeyWithEquals() {
+        val parser = ConfigTextParser(null)
+        val entries = parser.parse("api.name[true]=test-api", "test").toList()
+        assertEquals(1, entries.size)
+        assertEquals("api.name[true]", entries[0].key)
+        assertEquals("test-api", entries[0].value)
+    }
+
+    @Test
+    fun testParseBracketedKeyWithColonSeparator() {
+        val parser = ConfigTextParser(null)
+        val entries = parser.parse("api.name[true]:test-api", "test").toList()
+        assertEquals(1, entries.size)
+        assertEquals("api.name[true]", entries[0].key)
+        assertEquals("test-api", entries[0].value)
+    }
+
+    @Test
+    fun testParseColonInsideBracketsNotTreatedAsSeparator() {
+        val parser = ConfigTextParser(null)
+        val entries = parser.parse("json.rule.convert[#regex:some.Type]=replacement", "test").toList()
+        assertEquals(1, entries.size)
+        assertEquals("json.rule.convert[#regex:some.Type]", entries[0].key)
+        assertEquals("replacement", entries[0].value)
+    }
+
+    @Test
+    fun testParseRegexFilterWithAngleBracketsAndCaptureGroups() {
+        val parser = ConfigTextParser(null)
+        val text = "json.rule.convert[#regex:reactor.core.publisher.Flux<(.*?)>]=java.util.List<\${1}>"
+        val entries = parser.parse(text, "test").toList()
+        assertEquals(1, entries.size)
+        assertEquals("json.rule.convert[#regex:reactor.core.publisher.Flux<(.*?)>]", entries[0].key)
+        assertEquals("java.util.List<\${1}>", entries[0].value)
+    }
+
+    @Test
+    fun testParseMultipleColonsInsideBrackets() {
+        val parser = ConfigTextParser(null)
+        val entries = parser.parse("rule[a:b:c]=value", "test").toList()
+        assertEquals(1, entries.size)
+        assertEquals("rule[a:b:c]", entries[0].key)
+        assertEquals("value", entries[0].value)
+    }
+
+    @Test
+    fun testParseColonInValueAfterBracketedKey() {
+        val parser = ConfigTextParser(null)
+        val entries = parser.parse("rule[filter]=host:port", "test").toList()
+        assertEquals(1, entries.size)
+        assertEquals("rule[filter]", entries[0].key)
+        assertEquals("host:port", entries[0].value)
+    }
 }

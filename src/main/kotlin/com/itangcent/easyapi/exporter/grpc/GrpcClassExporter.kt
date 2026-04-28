@@ -13,6 +13,7 @@ import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 
@@ -136,8 +137,11 @@ class GrpcClassExporter(
                     null
                 }
             }
+            val resolvedReturnType = read { TypeResolver.resolve(psiMethod.returnType ?: return@read null) }
+                ?: return null
             return endpointBuilder.buildResponseBody(
                 method = psiMethod,
+                resolvedReturnType = resolvedReturnType,
                 modelBuilder = grpcModelBuilder
             )
         }

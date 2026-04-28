@@ -75,6 +75,7 @@ class DefaultConfigReader(
                     settings.builtInConfig
                 ),
                 ExtensionConfigSource(
+                    project,
                     ExtensionConfigRegistry.stringToCodes(settings.extensionConfigs),
                     configTextParser
                 ),

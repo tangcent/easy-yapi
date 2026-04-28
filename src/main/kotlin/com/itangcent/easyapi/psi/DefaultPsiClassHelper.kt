@@ -95,33 +95,6 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
     private fun maxElements(): Int =
         configReader.getFirst("max.elements")?.toIntOrNull() ?: DEFAULT_MAX_ELEMENTS
 
-    override suspend fun buildObjectModelFromType(
-        psiType: PsiType,
-        option: Int,
-        genericContext: GenericContext,
-        contextElement: PsiElement?
-    ): ObjectModel? = read {
-        val engine = RuleEngine.getInstance(project)
-        val elementCounter = ElementCounter(maxElements())
-        val maxDepth = maxDeep()
-        val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, psiType, contextElement)
-        if (!converted.isNullOrBlank()) {
-            val result = buildObjectModelFromConvertedType(
-                convertedType = converted,
-                sourcePsiType = psiType,
-                contextElement = contextElement,
-                option = option,
-                maxDepth = maxDepth,
-                genericContext = genericContext,
-                elementCounter = elementCounter
-            )
-            if (result != null) return@read result
-        }
-
-        val resolvedType = TypeResolver.resolve(psiType, genericContext)
-        return@read buildObjectModelFromConvertedType(resolvedType, option, maxDepth, genericContext, elementCounter)
-    }
-
     override suspend fun buildObjectModel(
         psiClass: PsiClass,
         option: Int
@@ -151,6 +124,58 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         val visited = HashSet<String>()
         return buildTypeObject(
             psiClass, engine, docHelper, cache,
+            option, maxDepth, depth = 0, visited = visited,
+            elementCounter = elementCounter
+        )
+    }
+
+    override suspend fun buildObjectModel(
+        resolvedType: ResolvedType,
+        option: Int
+    ): ObjectModel? {
+        if (resolvedType is ResolvedType.PrimitiveType && resolvedType.kind == PrimitiveKind.VOID) return null
+        val elementCounter = ElementCounter(maxElements())
+        val maxDepth = maxDeep()
+        val engine = RuleEngine.getInstance(project)
+
+        // Apply json.rule.convert uniformly to all ResolvedType instances
+        val qualifiedName = resolvedType.qualifiedName()
+        LOG.info("buildObjectModel(resolvedType): evaluating json.rule.convert for: $qualifiedName")
+        val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, resolvedType, resolvedType.contextElement())
+        LOG.info("buildObjectModel(resolvedType): json.rule.convert result for '$qualifiedName': ${converted ?: "(null)"}")
+
+        if (!converted.isNullOrBlank()) {
+            val genericContext = if (resolvedType is ResolvedType.ClassType) {
+                resolvedType.genericContext
+            } else {
+                GenericContext.EMPTY
+            }
+            val psiType = resolvedType.contextElement()?.let { element ->
+                readSync {
+                    when (element) {
+                        is PsiClass -> com.intellij.psi.util.PsiTypesUtil.getClassType(element)
+                        else -> null
+                    }
+                }
+            }
+            val result = buildObjectModelFromConvertedType(
+                convertedType = converted,
+                sourcePsiType = psiType,
+                contextElement = resolvedType.contextElement(),
+                option = option,
+                maxDepth = maxDepth,
+                genericContext = genericContext,
+                elementCounter = elementCounter
+            )
+            LOG.info("buildObjectModel(resolvedType): converted '$qualifiedName' → '$converted' → model: $result")
+            if (result != null) return result
+        }
+
+        val docHelper = UnifiedDocHelper.getInstance(project)
+        val cache = JsonConstructionCache()
+        val visited = HashSet<String>()
+        return buildFieldValue(
+            resolvedType, engine, docHelper, cache,
             option, maxDepth, depth = 0, visited = visited,
             elementCounter = elementCounter
         )
@@ -342,7 +367,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             cache.put(cacheKey, result)
         }
 
-        val accessibleFields = collectAccessibleFields(psiClass, option)
+        val accessibleFields = collectAccessibleFields(psiClass, option, genericContext)
 
         for (accessibleField in accessibleFields) {
             val fieldName = accessibleField.name
@@ -379,8 +404,10 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
             // Increment element counter and check if we've exceeded the limit
             if (elementCounter.incrementAndCheckExceeded()) {
-                LOG.info("Element limit exceeded while parsing ${qualifiedName}. " +
-                        "Processed ${elementCounter.count()} elements. Stopping field expansion.")
+                LOG.info(
+                    "Element limit exceeded while parsing ${qualifiedName}. " +
+                            "Processed ${elementCounter.count()} elements. Stopping field expansion."
+                )
                 break
             }
 
@@ -407,22 +434,26 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, accessibleField.type, accessibleField.psi)
             val rawResolved: ResolvedType
             val fieldType: ResolvedType
+            // Use the field's declaring context if available (per-level generic resolution),
+            // falling back to the flat effectiveContext for backward compatibility.
+            val fieldContext = accessibleField.declaringContext ?: effectiveContext
             if (!converted.isNullOrBlank()) {
                 rawResolved = TypeResolver.resolveFromCanonicalText(
                     canonicalText = converted,
                     project = project,
                     contextElement = accessibleField.psi,
-                    context = effectiveContext
+                    context = fieldContext
                 )
-                fieldType = TypeResolver.substitute(rawResolved, effectiveContext)
+                fieldType = TypeResolver.substitute(rawResolved, fieldContext)
             } else {
-                rawResolved = TypeResolver.resolve(accessibleField.type, effectiveContext)
-                fieldType = TypeResolver.substitute(rawResolved, effectiveContext)
+                rawResolved = TypeResolver.resolve(accessibleField.type, fieldContext)
+                fieldType = TypeResolver.resolveAndSubstitute(accessibleField.type, fieldContext)
             }
 
             // A field is "generic" if its declared type is a type parameter (e.g., T in Result<T>)
             val isGenericField = rawResolved is ResolvedType.UnresolvedType
-                    && effectiveContext.genericMap.containsKey(rawResolved.canonicalText)
+                    && (effectiveContext.genericMap.containsKey(rawResolved.canonicalText)
+                    || fieldContext.genericMap.containsKey(rawResolved.canonicalText))
 
             val fieldModel = buildFieldModel(
                 fieldType, engine, docHelper, cache,
@@ -489,21 +520,59 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
     private data class AccessibleField(
         val name: String,
         val type: PsiType,
-        val psi: PsiElement
+        val psi: PsiElement,
+        /** The generic context of the class that declares this field.
+         *  For inherited fields, this is the context of the superclass at the level
+         *  where the field is declared, with type parameters resolved through the
+         *  full inheritance chain. This ensures that a field `T value` in Layer1<T>
+         *  gets the correct binding for T at that level (e.g., Wrapper<Pair<String, Integer>>)
+         *  rather than the bottom-level binding (e.g., Integer). */
+        val declaringContext: GenericContext? = null
     )
 
     private fun collectAccessibleFields(psiClass: PsiClass, option: Int): List<AccessibleField> {
+        return collectAccessibleFields(psiClass, option, GenericContext.EMPTY)
+    }
+
+    /**
+     * Collects accessible fields by walking the class hierarchy level by level.
+     *
+     * Unlike using `psiClass.allFields` with a single flat generic context, this method
+     * builds a per-level generic context for each class in the hierarchy. This ensures
+     * that when different levels reuse the same type parameter name (e.g., `T`), each
+     * field gets resolved with the correct binding for its declaring class.
+     *
+     * For example, in the chain:
+     *   ConcreteLayer3 extends Layer3<Integer>
+     *   Layer3<T> extends Layer2<Pair<String, T>>
+     *   Layer2<T> extends Layer1<Wrapper<T>>
+     *   Layer1<T> { T value; }
+     *
+     * Layer1's `value` field needs T=Wrapper<Pair<String, Integer>>, not T=Integer.
+     * This method achieves this by building a fresh context at each level.
+     */
+    private fun collectAccessibleFields(
+        psiClass: PsiClass,
+        option: Int,
+        genericContext: GenericContext
+    ): List<AccessibleField> {
         val fields = mutableListOf<AccessibleField>()
         val fieldNames = mutableSetOf<String>()
 
-        for (field in psiClass.allFields) {
+        // First, collect fields from superclasses (with per-level generic contexts)
+        collectSuperFields(psiClass, option, genericContext, fields, fieldNames)
+
+        // Then collect this class's own declared fields
+        val ownContext = buildOwnContext(psiClass, genericContext)
+        for (field in psiClass.fields) {
             if (shouldIgnoreField(field)) continue
             val name = field.name
             if (fieldNames.add(name)) {
-                fields.add(AccessibleField(name = name, type = field.type, psi = field))
+                fields.add(AccessibleField(name = name, type = field.type, psi = field, declaringContext = ownContext))
             }
         }
 
+        // Collect getter-based properties
         try {
             if (JsonOption.has(option, JsonOption.READ_GETTER)) {
                 for (method in psiClass.allMethods) {
@@ -512,7 +581,15 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                         val propertyName = getPropertyNameFromGetter(method.name)
                         if (fieldNames.add(propertyName)) {
                             val returnType = method.returnType ?: continue
-                            fields.add(AccessibleField(name = propertyName, type = returnType, psi = method))
+                            val methodContext = resolveContextForMember(method, psiClass, genericContext)
+                            fields.add(
+                                AccessibleField(
+                                    name = propertyName,
+                                    type = returnType,
+                                    psi = method,
+                                    declaringContext = methodContext
+                                )
+                            )
                         }
                     }
                 }
@@ -521,6 +598,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             LOG.warn("failed collect fields from getters. class: ${psiClass.name}", e)
         }
 
+        // Collect setter-based properties
         try {
             if (JsonOption.has(option, JsonOption.READ_SETTER)) {
                 for (method in psiClass.allMethods) {
@@ -529,7 +607,15 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                         val propertyName = getPropertyNameFromSetter(method.name)
                         if (fieldNames.add(propertyName)) {
                             val paramType = method.parameterList.parameters.firstOrNull()?.type ?: continue
-                            fields.add(AccessibleField(name = propertyName, type = paramType, psi = method))
+                            val methodContext = resolveContextForMember(method, psiClass, genericContext)
+                            fields.add(
+                                AccessibleField(
+                                    name = propertyName,
+                                    type = paramType,
+                                    psi = method,
+                                    declaringContext = methodContext
+                                )
+                            )
                         }
                     }
                 }
@@ -539,6 +625,132 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         }
 
         return fields
+    }
+
+    /**
+     * Recursively collects fields from superclasses, building per-level generic contexts.
+     */
+    private fun collectSuperFields(
+        psiClass: PsiClass,
+        option: Int,
+        genericContext: GenericContext,
+        fields: MutableList<AccessibleField>,
+        fieldNames: MutableSet<String>
+    ) {
+        val ownContext = buildOwnContext(psiClass, genericContext)
+
+        for (superType in psiClass.superTypes) {
+            val classType = superType as? PsiClassType ?: continue
+            val superClass = classType.resolve() ?: continue
+            if (superClass.qualifiedName == "java.lang.Object") continue
+
+            // Build the generic context for this superclass by resolving its type arguments
+            // using the current class's context
+            val superContext = buildSuperContext(superClass, classType, ownContext)
+
+            // Recurse into the superclass first (depth-first, so base fields come first)
+            collectSuperFields(superClass, option, superContext, fields, fieldNames)
+
+            // Collect the superclass's own declared fields with its context
+            for (field in superClass.fields) {
+                if (shouldIgnoreField(field)) continue
+                val name = field.name
+                if (fieldNames.add(name)) {
+                    val fieldContext = buildOwnContext(superClass, superContext)
+                    fields.add(
+                        AccessibleField(
+                            name = name,
+                            type = field.type,
+                            psi = field,
+                            declaringContext = fieldContext
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds the generic context for the given class itself, resolving its own type parameters
+     * from the provided external context.
+     */
+    private fun buildOwnContext(psiClass: PsiClass, externalContext: GenericContext): GenericContext {
+        if (externalContext == GenericContext.EMPTY && psiClass.typeParameters.isEmpty()) {
+            return GenericContext.EMPTY
+        }
+        val map = LinkedHashMap<String, ResolvedType>()
+        for (tp in psiClass.typeParameters) {
+            val name = tp.name ?: continue
+            map[name] = externalContext.genericMap[name] ?: ResolvedType.UnresolvedType(name)
+        }
+        return if (map.isEmpty()) GenericContext.EMPTY else GenericContext(map)
+    }
+
+    /**
+     * Builds the generic context for a superclass by resolving its type arguments
+     * using the current class's context.
+     *
+     * For example, if Layer2<T> extends Layer1<Wrapper<T>> and T=Pair<String, Integer>,
+     * this builds {T → Wrapper<Pair<String, Integer>>} for Layer1.
+     */
+    private fun buildSuperContext(
+        superClass: PsiClass,
+        superClassType: PsiClassType,
+        currentContext: GenericContext
+    ): GenericContext {
+        val superParams = superClass.typeParameters
+        val superArgs = superClassType.parameters
+        if (superParams.isEmpty()) return GenericContext.EMPTY
+
+        val map = LinkedHashMap<String, ResolvedType>()
+        for (i in superParams.indices) {
+            val name = superParams[i].name ?: continue
+            val arg = superArgs.getOrNull(i)
+            map[name] = TypeResolver.resolveAndSubstitute(arg, currentContext)
+        }
+        return GenericContext(map)
+    }
+
+    /**
+     * Resolves the generic context for a method/getter/setter member by finding
+     * which class in the hierarchy declares it and building the appropriate context.
+     */
+    private fun resolveContextForMember(
+        method: PsiMethod,
+        rootClass: PsiClass,
+        rootContext: GenericContext
+    ): GenericContext {
+        val declaringClass = method.containingClass ?: return rootContext
+        if (declaringClass == rootClass || declaringClass.qualifiedName == rootClass.qualifiedName) {
+            return buildOwnContext(rootClass, rootContext)
+        }
+        // Walk the hierarchy to find the context for the declaring class
+        return findContextForClass(rootClass, declaringClass, rootContext)
+            ?: buildOwnContext(rootClass, rootContext)
+    }
+
+    /**
+     * Walks the hierarchy from rootClass to find the generic context for targetClass.
+     */
+    private fun findContextForClass(
+        currentClass: PsiClass,
+        targetClass: PsiClass,
+        currentContext: GenericContext
+    ): GenericContext? {
+        val ownContext = buildOwnContext(currentClass, currentContext)
+        for (superType in currentClass.superTypes) {
+            val classType = superType as? PsiClassType ?: continue
+            val superClass = classType.resolve() ?: continue
+            if (superClass.qualifiedName == "java.lang.Object") continue
+
+            val superContext = buildSuperContext(superClass, classType, ownContext)
+            if (superClass.qualifiedName == targetClass.qualifiedName) {
+                return superContext
+            }
+            val found = findContextForClass(superClass, targetClass, superContext)
+            if (found != null) return found
+        }
+        return null
     }
 
     private fun shouldIgnoreField(field: PsiField): Boolean {
@@ -928,8 +1140,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
     private fun isMap(psiClass: PsiClass): Boolean = InheritanceHelper.isMap(psiClass)
 
-    private fun isEnum(psiClass: PsiClass): Boolean {
-        return psiClass.isEnum || psiClass.supers.any { it.qualifiedName == ClassNameConstants.JAVA_LANG_ENUM }
+    private fun isEnum(psiClass: PsiClass): Boolean = readSync {
+        psiClass.isEnum || psiClass.supers.any { it.qualifiedName == ClassNameConstants.JAVA_LANG_ENUM }
     }
 
     private fun isSimpleType(psiClass: PsiClass): Boolean {

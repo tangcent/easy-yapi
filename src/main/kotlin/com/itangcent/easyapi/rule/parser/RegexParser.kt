@@ -65,7 +65,7 @@ class RegexParser : RuleParser {
     }
 
     private fun parseRegexWithGroups(expression: String, context: RuleContext): List<String>? {
-        val text = context.typeText ?: return null
+        val text = context.matchText ?: return null
         val pattern = expression.removePrefix(REGEX_PREFIX)
         if (pattern.isEmpty()) return null
 
@@ -80,6 +80,7 @@ class RegexParser : RuleParser {
                     emptyList()
                 }
             } else {
+                LOG.info("RegexParser: pattern '$pattern' did NOT match text '$text'")
                 null
             }
         }.getOrNull()
@@ -104,7 +105,7 @@ class RegexParser : RuleParser {
         }
     }
 
-    companion object {
+    companion object : com.itangcent.easyapi.logging.IdeaLog {
         private const val REGEX_PREFIX = "#regex:"
         private val PLACEHOLDER_PATTERN = Regex("\\$\\{(\\d+)}")
     }

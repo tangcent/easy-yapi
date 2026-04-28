@@ -13,7 +13,6 @@ import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
-import com.itangcent.easyapi.psi.type.GenericContext
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.psi.type.searchAnnotation
@@ -84,7 +83,7 @@ class JaxRsClassExporter(
                 val httpMethodAnn = read { resolvedMethod.searchAnnotation(JAXRS_HTTP_METHOD_ANNOTATIONS) }
                     ?: continue
                 val annotatedMethod = (httpMethodAnn.owner as? PsiMethod) ?: resolvedMethod.psiMethod
-                endpoints.addAll(exportMethod(psiClass, resolvedMethod.psiMethod, annotatedMethod))
+                endpoints.addAll(exportMethod(psiClass, annotatedMethod, resolvedMethod))
             }
         } finally {
             withContext(IdeDispatchers.Background) {
@@ -97,16 +96,17 @@ class JaxRsClassExporter(
 
     private suspend fun exportMethod(
         psiClass: PsiClass,
-        method: PsiMethod,
-        annotatedMethod: PsiMethod
+        annotatedMethod: PsiMethod,
+        resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
     ): List<ApiEndpoint> {
+        val method = resolvedMethod.psiMethod
         val methodKey = read {
             "${psiClass.qualifiedName ?: psiClass.name}#${method.name}"
         }
         LOG.info("before parse method:$methodKey")
 
         withContext(IdeDispatchers.Background) {
-            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, method)
+            engine.evaluate(RuleKeys.API_METHOD_PARSE_BEFORE, resolvedMethod)
         }
 
         val classQualifiedName = read { psiClass.qualifiedName ?: psiClass.name }
@@ -135,9 +135,9 @@ class JaxRsClassExporter(
                 val description = metadataResolver.resolveMethodDoc(method)
                 val classDesc = metadataResolver.resolveClassDoc(psiClass)
 
-                val params = buildParameters(method)
+                val params = buildParameters(resolvedMethod)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
-                val paramHeaders = extractParamHeaders(method)
+                val paramHeaders = extractParamHeaders(resolvedMethod)
                 val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
                 val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
                 val contentTypeOverride = engine.evaluate(RuleKeys.METHOD_CONTENT_TYPE, method)
@@ -147,9 +147,8 @@ class JaxRsClassExporter(
                     types.consumes.firstOrNull()
                 }
                 val headers = endpointBuilder.buildHeaders(contentType, paramHeaders, additionalHeaders, additionalResponseHeaders)
-                val genericContext = GenericContext(TypeResolver.resolveGenericParams(psiClass, emptyList()))
-                val body = buildRequestBody(method, genericContext)
-                val responseBody = endpointBuilder.buildResponseBody(method, genericContext)
+                val body = buildRequestBody(resolvedMethod)
+                val responseBody = endpointBuilder.buildResponseBody(method, resolvedMethod.returnType)
                 val responseTypeName = read { method.returnType?.canonicalText }
 
                 LOG.info("after parse method:$methodKey")
@@ -179,7 +178,7 @@ class JaxRsClassExporter(
 
             withContext(IdeDispatchers.Background) {
                 for (endpoint in endpoints) {
-                    engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
+                    engine.evaluate(RuleKeys.EXPORT_AFTER, resolvedMethod) { ctx ->
                         ctx.setExt("api", endpoint)
                     }
                 }
@@ -188,15 +187,15 @@ class JaxRsClassExporter(
             return endpoints
         } finally {
             withContext(IdeDispatchers.Background) {
-                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, method)
+                engine.evaluate(RuleKeys.API_METHOD_PARSE_AFTER, resolvedMethod)
             }
         }
     }
 
-    private suspend fun extractParamHeaders(method: PsiMethod): List<ApiHeader> {
+    private suspend fun extractParamHeaders(resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiHeader> {
         val headers = ArrayList<ApiHeader>()
         read {
-            for (p in method.parameterList.parameters) {
+            for (p in resolvedMethod.psiMethod.parameterList.parameters) {
                 val resolved = parameterResolver.resolve(p)
                 for (param in resolved) {
                     if (param.binding == ParameterBinding.Header) {
@@ -210,20 +209,26 @@ class JaxRsClassExporter(
 
 
 
-    private suspend fun buildRequestBody(method: PsiMethod, genericContext: GenericContext = GenericContext.EMPTY): ObjectModel? = read {
+    private suspend fun buildRequestBody(
+        resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
+    ): ObjectModel? = read {
+        val method = resolvedMethod.psiMethod
         for (p in method.parameterList.parameters) {
             val resolved = parameterResolver.resolve(p)
             if (resolved.any { it.binding == ParameterBinding.Body }) {
-                return@read endpointBuilder.expandBodyParam(p, genericContext)
+                val resolvedParamType = resolvedMethod.params
+                    .firstOrNull { it.psiParameter == p }?.type
+                    ?: TypeResolver.resolve(p.type)
+                return@read endpointBuilder.expandBodyParam(resolvedParamType)
             }
         }
         return@read null
     }
 
-    private suspend fun buildParameters(method: PsiMethod): List<ApiParameter> {
+    private suspend fun buildParameters(resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod): List<ApiParameter> {
         val result = ArrayList<ApiParameter>()
         read {
-            for (p in method.parameterList.parameters) {
+            for (p in resolvedMethod.psiMethod.parameterList.parameters) {
                 if (metadataResolver.isParamIgnored(p)) continue
 
                 val paramName = p.name ?: "param"

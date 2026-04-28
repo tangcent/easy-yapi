@@ -378,7 +378,7 @@ class ScriptContextPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         )
         val method = findClass("demo.ToStringDemo")!!.methods.first { it.name == "greet" }
         val wrapper = RuleContext.from(project, method).asScriptIt() as ScriptPsiMethodContext
-        assertEquals("ToStringDemo#greet", wrapper.toString())
+        assertEquals("demo.ToStringDemo#greet", wrapper.toString())
     }
 
     fun testMethodContextIsEnumField() {
@@ -408,7 +408,7 @@ class ScriptContextPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         )
         val field = findClass("demo.FieldToStringDemo")!!.fields.first { it.name == "name" }
         val wrapper = RuleContext.from(project, field).asScriptIt() as ScriptPsiFieldContext
-        assertEquals("FieldToStringDemo#name", wrapper.toString())
+        assertEquals("demo.FieldToStringDemo#name", wrapper.toString())
     }
 
     fun testParameterContextToString() {
@@ -424,7 +424,7 @@ class ScriptContextPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val method = findClass("demo.ParamToStringDemo")!!.methods.first { it.name == "process" }
         val param = method.parameterList.parameters.first()
         val wrapper = RuleContext.from(project, param).asScriptIt() as ScriptPsiParameterContext
-        assertEquals("inputName", wrapper.toString())
+        assertEquals("demo.ParamToStringDemo#process.inputName", wrapper.toString())
     }
 
     fun testEnumConstantContextToString() {

@@ -1,8 +1,6 @@
 package com.itangcent.easyapi.property
 
-import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
-import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
@@ -192,7 +190,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("demo.ReactorCtrl")!!
         val mono = psiClass.methods.first { it.name == "mono" }
         val flux = psiClass.methods.first { it.name == "flux" }
-        val resolvedMono = TypeResolver.resolve(mono.returnType)
+        val resolvedMono = TypeResolver.resolve(mono.returnType!!)
         assertTrue(resolvedMono is ResolvedType.ClassType)
         assertEquals("reactor.core.publisher.Mono", (resolvedMono as ResolvedType.ClassType).psiClass.qualifiedName)
         val resolvedArg = resolvedMono.typeArgs.firstOrNull()

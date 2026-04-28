@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.rule.context
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiField
@@ -30,7 +29,13 @@ fun RuleContext.asScriptIt(): Any {
     if (psiType != null && element == null) {
         return ScriptPsiTypeContext(this, psiType)
     }
-    return when (element) {
+    // Dispatch on core first — resolved elements take priority
+    return when (core) {
+        is ResolvedMethod -> ScriptResolvedMethodContext(this, core)
+        is ResolvedField -> ScriptResolvedFieldContext(this, core)
+        is ResolvedParam -> ScriptResolvedParameterContext(this, core)
+        is ResolvedType.ClassType -> ScriptResolvedClassContext(this, core)
+        // Fall through to PSI dispatch
         is PsiClass -> ScriptPsiClassContext(this)
         is PsiMethod -> ScriptPsiMethodContext(this)
         is PsiField -> ScriptPsiFieldContext(this)
@@ -87,7 +92,7 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
 
     fun fieldCnt(): Int = readSync { psiClass().allFields.size }
 
-    fun type(): ScriptTypeContext {
+    open fun type(): ScriptTypeContext {
         return ScriptTypeContext(context, ResolvedType.ClassType(psiClass()))
     }
 
@@ -130,8 +135,8 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
     fun isPackagePrivate(): Boolean = readSync {
         val cls = psiClass()
         !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PUBLIC) &&
-        !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PROTECTED) &&
-        !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PRIVATE)
+                !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PROTECTED) &&
+                !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PRIVATE)
     }
 
     fun isInnerClass(): Boolean = readSync { psiClass().containingClass != null }
@@ -160,6 +165,8 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
+
+    override fun canonicalText(): String = qualifiedName() ?: name()
 
     override fun contextType(): String = "class"
 }
@@ -233,7 +240,7 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
     fun isOverride(): Boolean = readSync {
         val method = psiMethod()
         method.modifierList.findAnnotation("java.lang.Override") != null ||
-        method.findSuperMethods().isNotEmpty()
+                method.findSuperMethods().isNotEmpty()
     }
 
     fun throwsExceptions(): Array<String> = readSync {
@@ -244,16 +251,19 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
 
     fun isAbstract(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.ABSTRACT) }
 
-    fun isSynchronized(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.SYNCHRONIZED) }
+    fun isSynchronized(): Boolean =
+        readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.SYNCHRONIZED) }
 
     fun isNative(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.NATIVE) }
 
+    override fun canonicalText(): String {
+        val cls = readSync { psiMethod().containingClass?.qualifiedName } ?: ""
+        return "$cls#${name()}"
+    }
+
     override fun contextType(): String = "method"
 
-    override fun toString(): String {
-        val cls = containingClass()
-        return if (cls != null) "${cls.name()}#${name()}" else name()
-    }
+    override fun toString(): String = canonicalText()
 }
 
 class ScriptPsiMethodInClassContext(
@@ -327,19 +337,22 @@ open class ScriptPsiFieldContext(context: RuleContext) : ScriptItContext(context
     fun constantValue(): Any? = readSync {
         val field = psiField()
         if (field.hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) &&
-            field.hasModifierProperty(com.intellij.psi.PsiModifier.FINAL)) {
+            field.hasModifierProperty(com.intellij.psi.PsiModifier.FINAL)
+        ) {
             field.computeConstantValue()
         } else {
             null
         }
     }
 
+    override fun canonicalText(): String {
+        val cls = readSync { psiField().containingClass?.qualifiedName } ?: ""
+        return "$cls#${name()}"
+    }
+
     override fun contextType(): String = "field"
 
-    override fun toString(): String {
-        val cls = containingClass()
-        return if (cls != null) "${cls.name()}#${name()}" else name()
-    }
+    override fun toString(): String = canonicalText()
 }
 
 class ScriptPsiFieldInClassContext(
@@ -412,9 +425,18 @@ open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(con
         }
     }
 
+    override fun canonicalText(): String = readSync {
+        val param = psiParameter()
+        val scope = param.declarationScope
+        if (scope is PsiMethod) {
+            val cls = scope.containingClass?.qualifiedName ?: ""
+            "$cls#${scope.name}.${param.name}"
+        } else param.name ?: ""
+    }
+
     override fun contextType(): String = "param"
 
-    override fun toString(): String = name()
+    override fun toString(): String = canonicalText()
 }
 
 /**
@@ -444,47 +466,11 @@ open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(con
  */
 class ScriptTypeContext(private val context: RuleContext, private val resolvedType: ResolvedType) {
 
-    private fun <T> readAction(block: () -> T): T {
-        val app = ApplicationManager.getApplication()
-        return if (app.isReadAccessAllowed) {
-            block()
-        } else {
-            app.runReadAction<T>(block)
-        }
-    }
-
-    fun name(): String = readSync {
-        when (resolvedType) {
-            is ResolvedType.ClassType -> (resolvedType.psiClass.qualifiedName ?: resolvedType.psiClass.name
-            ?: "Anonymous") +
-                    resolvedType.typeArgs.takeIf { it.isNotEmpty() }
-                        ?.joinToString(prefix = "<", postfix = ">") { ScriptTypeContext(context, it).name() }
-                        .orEmpty()
-
-            is ResolvedType.ArrayType -> ScriptTypeContext(context, resolvedType.componentType).name() + "[]"
-            is ResolvedType.UnresolvedType -> resolvedType.canonicalText
-            is ResolvedType.PrimitiveType -> resolvedType.kind.name.lowercase()
-            is ResolvedType.WildcardType -> when {
-                resolvedType.upper != null -> "? extends " + ScriptTypeContext(context, resolvedType.upper).name()
-                resolvedType.lower != null -> "? super " + ScriptTypeContext(context, resolvedType.lower).name()
-                else -> "?"
-            }
-        }
-    }
+    fun name(): String = readSync { resolvedType.qualifiedName() }
 
     fun getName(): String = name()
 
-    fun simpleName(): String = readSync {
-        when (resolvedType) {
-            is ResolvedType.ClassType -> resolvedType.psiClass.name ?: resolvedType.psiClass.qualifiedName
-            ?: "Anonymous"
-
-            is ResolvedType.ArrayType -> ScriptTypeContext(context, resolvedType.componentType).simpleName() + "[]"
-            is ResolvedType.UnresolvedType -> resolvedType.canonicalText.substringAfterLast('.')
-            is ResolvedType.PrimitiveType -> resolvedType.kind.name.lowercase()
-            is ResolvedType.WildcardType -> "?"
-        }
-    }
+    fun simpleName(): String = readSync { resolvedType.simpleName() }
 
     fun getSimpleName(): String = simpleName()
 
@@ -504,7 +490,7 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
         Array(fields.size) { i -> ScriptResolvedFieldContext(context, fields[i]) }
     }
 
-    override fun toString(): String = name()
+    override fun toString(): String = resolvedType.qualifiedName()
 
     fun isExtend(superClass: String): Boolean = when (resolvedType) {
         is ResolvedType.ClassType -> InheritanceHelper.isInheritor(resolvedType.psiClass, superClass)
@@ -631,7 +617,45 @@ class ScriptPsiTypeContext(
 
     override fun contextType(): String = "type"
 
-    override fun toString(): String = readSync { psiType.canonicalText }
+    override fun toString(): String = resolvedType.qualifiedName()
+}
+
+/**
+ * Script context for a resolved [ResolvedType.ClassType].
+ *
+ * Extends [ScriptPsiClassContext] so all PSI operations (annotations, docs, modifiers)
+ * work unchanged. Overrides [methods], [fields], [type] to use the resolved ClassType
+ * which carries per-level generic context.
+ *
+ * This ensures that when a script calls `it.containingClass().methods()`, the returned
+ * methods have fully-resolved generic types.
+ */
+class ScriptResolvedClassContext(
+    context: RuleContext,
+    private val classType: ResolvedType.ClassType
+) : ScriptPsiClassContext(context.withElement(classType.psiClass)) {
+
+    override fun methods(): Array<ScriptPsiMethodContext> = readSync {
+        val methods = classType.methods()
+        Array(methods.size) { i -> ScriptResolvedMethodContext(context, methods[i]) }
+    }
+
+    override fun fields(): Array<ScriptPsiFieldContext> = readSync {
+        val fields = classType.fields()
+        Array(fields.size) { i -> ScriptResolvedFieldContext(context, fields[i]) }
+    }
+
+    override fun type(): ScriptTypeContext = ScriptTypeContext(context, classType)
+
+    override fun superClass(): ScriptPsiClassContext? = readSync {
+        classType.superClasses().firstOrNull()?.let { ScriptResolvedClassContext(context, it) }
+    }
+
+    override fun extends(): Array<ScriptPsiClassContext>? = readSync {
+        val supers = classType.superClasses().toList()
+        if (supers.isEmpty()) null
+        else supers.map { ScriptResolvedClassContext(context, it) }.toTypedArray()
+    }
 }
 
 class ScriptResolvedMethodContext(context: RuleContext, private val resolvedMethod: ResolvedMethod) :
@@ -652,6 +676,8 @@ class ScriptResolvedMethodContext(context: RuleContext, private val resolvedMeth
     }
 
     override fun containingClass(): ScriptPsiClassContext? {
+        val ownerClassType = resolvedMethod.ownerClassType
+        if (ownerClassType != null) return ScriptResolvedClassContext(context, ownerClassType)
         return resolvedMethod.containClass?.let { ScriptPsiClassContext(context.withElement(it)) }
     }
 

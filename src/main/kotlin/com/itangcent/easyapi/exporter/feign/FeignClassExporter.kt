@@ -3,7 +3,6 @@ package com.itangcent.easyapi.exporter.feign
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiParameter
 import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
@@ -13,12 +12,13 @@ import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.exporter.springmvc.RequestMappingResolver
 import com.itangcent.easyapi.exporter.springmvc.SpringParameterBindingResolver
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
-import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.type.ResolvedMethod
 import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.util.PathVariablePattern
@@ -100,7 +100,7 @@ class FeignClassExporter(
     private suspend fun exportMethod(
         basePath: String,
         psiClass: PsiClass,
-        resolvedMethod: com.itangcent.easyapi.psi.type.ResolvedMethod
+        resolvedMethod: ResolvedMethod
     ): List<ApiEndpoint> {
         val method = resolvedMethod.psiMethod
         val methodKey = read {
@@ -113,7 +113,7 @@ class FeignClassExporter(
         try {
             val requestLine = nativeParser.parseRequestLine(method)
             if (requestLine != null) {
-                val endpoint = buildFromNativeFeign(basePath, psiClass, method, requestLine)
+                val endpoint = buildFromNativeFeign(basePath, psiClass, resolvedMethod, requestLine)
                 LOG.info("after parse method:$methodKey")
                 return listOf(endpoint).also {
                     engine.evaluate(RuleKeys.EXPORT_AFTER, method) { ctx ->
@@ -138,8 +138,8 @@ class FeignClassExporter(
 
                 val params = buildSpringParams(method)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
-                val body = buildSpringRequestBody(method)
-                val responseBody = endpointBuilder.buildResponseBody(method)
+                val body = buildSpringRequestBody(resolvedMethod)
+                val responseBody = endpointBuilder.buildResponseBody(method, resolvedMethod.returnType)
                 val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
                 val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
 
@@ -221,9 +221,10 @@ class FeignClassExporter(
     private suspend fun buildFromNativeFeign(
         basePath: String,
         psiClass: PsiClass,
-        method: PsiMethod,
+        resolvedMethod: ResolvedMethod,
         requestLine: RequestLine
     ): ApiEndpoint {
+        val method = resolvedMethod.psiMethod
         val headers = nativeParser.parseHeaders(method)
         val (finalHeaders, headerVars) = nativeParser.toHeaderParams(headers, method)
         val body = nativeParser.parseBodyTemplate(method)
@@ -241,8 +242,8 @@ class FeignClassExporter(
             }
         } else emptyList()
 
-        val expandedBody = buildNativeFeignBody(method, bodyParams)
-        val responseBody = endpointBuilder.buildResponseBody(method)
+        val expandedBody = buildNativeFeignBody(resolvedMethod, bodyParams)
+        val responseBody = endpointBuilder.buildResponseBody(method, resolvedMethod.returnType)
         val additionalHeaders = metadataResolver.resolveAdditionalHeaders(method)
         val additionalParams = metadataResolver.resolveAdditionalParams(method)
         val additionalResponseHeaders = metadataResolver.resolveAdditionalResponseHeaders(method)
@@ -335,23 +336,29 @@ class FeignClassExporter(
         return result
     }
 
-    private suspend fun buildSpringRequestBody(method: PsiMethod): ObjectModel? {
-        for (p in method.parameterList.parameters) {
+    private suspend fun buildSpringRequestBody(resolvedMethod: ResolvedMethod): ObjectModel? {
+        for (p in resolvedMethod.psiMethod.parameterList.parameters) {
             val binding = springParamResolver.resolve(p) ?: continue
             if (binding == ParameterBinding.Ignored) continue
             if (binding != ParameterBinding.Body) continue
-            return endpointBuilder.expandBodyParam(p)
+            val resolvedParamType = resolvedMethod.params
+                .firstOrNull { it.psiParameter == p }?.type
+                ?: TypeResolver.resolve(p.type)
+            return endpointBuilder.expandBodyParam(resolvedParamType)
         }
         return null
     }
 
-    private suspend fun buildNativeFeignBody(method: PsiMethod, bodyParams: List<ApiParameter>): ObjectModel? {
+    private suspend fun buildNativeFeignBody(resolvedMethod: ResolvedMethod, bodyParams: List<ApiParameter>): ObjectModel? {
         if (bodyParams.isEmpty()) return null
-        for (p in method.parameterList.parameters) {
+        for (p in resolvedMethod.psiMethod.parameterList.parameters) {
             val psiClass = PsiTypesUtil.getPsiClass(p.type) ?: continue
             val qualifiedName = psiClass.qualifiedName ?: continue
             if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") continue
-            return endpointBuilder.expandBodyParam(p)
+            val resolvedParamType = resolvedMethod.params
+                .firstOrNull { it.psiParameter == p }?.type
+                ?: TypeResolver.resolve(p.type)
+            return endpointBuilder.expandBodyParam(resolvedParamType)
         }
         return null
     }

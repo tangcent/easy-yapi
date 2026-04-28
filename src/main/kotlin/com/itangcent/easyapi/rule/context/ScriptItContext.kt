@@ -147,6 +147,17 @@ open class ScriptItContext(protected val context: RuleContext) {
     open fun contextType(): String = "unknown"
 
     /**
+     * Canonical text representation of this element.
+     *
+     * - class → qualified name (e.g., `com.itangcent.UserCtrl`)
+     * - method → `class#method` (e.g., `com.itangcent.UserCtrl#greeting`)
+     * - field → `class#field` (e.g., `com.itangcent.UserInfo#name`)
+     * - param → `class#method.param` (e.g., `com.itangcent.UserCtrl#greeting.id`)
+     * - type → qualified name with type args (e.g., `Mono<UserInfo>`)
+     */
+    open fun canonicalText(): String = name()
+
+    /**
      * Get an extension value from the rule context.
      * Used by scripts to access context-specific data (e.g. request, response).
      */
@@ -157,5 +168,5 @@ open class ScriptItContext(protected val context: RuleContext) {
      */
     fun setExt(name: String, value: Any?) = context.setExt(name, value)
 
-    override fun toString(): String = name()
+    override fun toString(): String = canonicalText()
 }

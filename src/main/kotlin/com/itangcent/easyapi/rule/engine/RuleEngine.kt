@@ -64,6 +64,19 @@ class RuleEngine internal constructor(
         return forEachApplicable(key) { RuleContext.withPsiType(project, psiType, contextElement) }
     }
 
+    /**
+     * Evaluates a string rule against a resolved type.
+     * Uses the resolved type's [ResolvedType.qualifiedName] as the typeText for regex matching,
+     * ensuring rules like `#regex:Mono<(.*?)>` match the fully-resolved type text.
+     */
+    suspend fun evaluate(
+        key: RuleKey.StringKey,
+        resolvedType: com.itangcent.easyapi.psi.type.ResolvedType,
+        contextElement: PsiElement? = null
+    ): String? {
+        return forEachApplicable(key) { RuleContext.withResolvedType(project, resolvedType, contextElement = contextElement) }
+    }
+
     suspend fun evaluate(key: RuleKey.BooleanKey, element: PsiElement, fieldContext: String? = null): Boolean {
         return forEachApplicable(key) { RuleContext.from(project, element, fieldContext) } ?: false
     }
@@ -91,6 +104,41 @@ class RuleEngine internal constructor(
     suspend fun evaluate(key: RuleKey.EventKey, contextHandle: (RuleContext) -> Unit = {}) {
         forEachApplicable(key) {
             RuleContext.withoutElement(project).also(contextHandle)
+        }
+    }
+
+    // ========== Resolved element overloads ==========
+    // These accept ResolvedMethod/ResolvedField/ResolvedParam directly.
+    // The RuleContext carries the resolved element as `core`, so script contexts
+    // can access resolved types (e.g., returnType() returns Result<String> not Result<T>).
+
+    suspend fun evaluate(key: RuleKey.StringKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, fieldContext: String? = null): String? {
+        return forEachApplicable(key) { RuleContext.from(project, method, fieldContext) }
+    }
+
+    suspend fun evaluate(key: RuleKey.StringKey, field: com.itangcent.easyapi.psi.type.ResolvedField, fieldContext: String? = null): String? {
+        return forEachApplicable(key) { RuleContext.from(project, field, fieldContext) }
+    }
+
+    suspend fun evaluate(key: RuleKey.BooleanKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, fieldContext: String? = null): Boolean {
+        return forEachApplicable(key) { RuleContext.from(project, method, fieldContext) } ?: false
+    }
+
+    suspend fun evaluate(key: RuleKey.BooleanKey, field: com.itangcent.easyapi.psi.type.ResolvedField, fieldContext: String? = null): Boolean {
+        return forEachApplicable(key) { RuleContext.from(project, field, fieldContext) } ?: false
+    }
+
+    suspend fun evaluate(key: RuleKey.EventKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, fieldContext: String? = null) {
+        forEachApplicable(key) { RuleContext.from(project, method, fieldContext) }
+    }
+
+    suspend fun evaluate(key: RuleKey.EventKey, field: com.itangcent.easyapi.psi.type.ResolvedField, fieldContext: String? = null) {
+        forEachApplicable(key) { RuleContext.from(project, field, fieldContext) }
+    }
+
+    suspend fun evaluate(key: RuleKey.EventKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, contextHandle: (RuleContext) -> Unit) {
+        forEachApplicable(key) {
+            RuleContext.from(project, method).also(contextHandle)
         }
     }
 

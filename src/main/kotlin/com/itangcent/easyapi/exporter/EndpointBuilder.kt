@@ -5,11 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiParameter
-import com.intellij.psi.PsiType
-import com.intellij.psi.PsiTypes
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.util.PsiTypesUtil
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.psi.PsiClassHelper
@@ -18,7 +14,8 @@ import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelUtils
-import com.itangcent.easyapi.psi.type.GenericContext
+import com.itangcent.easyapi.psi.type.PrimitiveKind
+import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
@@ -40,7 +37,7 @@ import com.itangcent.easyapi.settings.Settings
  * ```
  * val builder = EndpointBuilder.getInstance(project)
  * val headers = builder.buildHeaders(contentType, paramHeaders, additionalHeaders)
- * val responseBody = builder.buildResponseBody(method, genericContext)
+ * val responseBody = builder.buildResponseBody(method, resolvedReturnType)
  * ```
  */
 class EndpointBuilder(private val project: Project) {
@@ -66,34 +63,31 @@ class EndpointBuilder(private val project: Project) {
     }
 
     /**
-     * Builds the response body [ObjectModel] for the given method.
+     * Builds the response body model from an already-resolved return type.
      *
      * Resolution order:
      * 1. **`method.return` rule** — if set, resolves the class by qualified name and delegates
-     *    to [modelBuilder] to construct the model (e.g., `method.return = com.example.Result`).
-     * 2. **Original return type** — uses [PsiClassHelper] to build from the method's declared
-     *    return type, which respects `json.rule.convert` rules (e.g., `Mono<T>` → `T`).
-     * 3. **Return type override** — if the original type yields no model and [returnTypeOverride]
-     *    is provided, tries the unwrapped type (e.g., `ResponseEntity<T>` → `T` for SpringMVC).
-     * 4. **`method.return.main` rule** — after building the model, applies the `@return` doc
-     *    comment to a specific field within the response type (e.g., `data` in `Result<T>`).
+     *    to [modelBuilder] to construct the model.
+     * 2. **Resolved return type** — uses [PsiClassHelper.buildObjectModel] with the
+     *    already-resolved type (generics already substituted by the caller).
+     * 3. **`method.return.main` rule** — after building the model, applies the `@return` doc
+     *    comment to a specific field within the response type.
      *
-     * @param method The PSI method whose response body is being built
-     * @param genericContext Generic type resolution context for the method's class
-     * @param modelBuilder Strategy for constructing an ObjectModel from a PsiClass;
-     *        defaults to [DefaultResponseModelBuilder] which uses [PsiClassHelper]
-     * @param returnTypeOverride Optional function to unwrap container types (e.g., ResponseEntity, Mono);
-     *        receives the original return type and returns the unwrapped type, or null if no unwrapping applies
-     * @return The response body model, or null if the method returns void or no model could be built
+     * @param method The PSI method (for rule evaluation and doc extraction)
+     * @param resolvedReturnType The already-resolved return type from [ResolvedMethod.returnType]
+     * @param modelBuilder Strategy for constructing an ObjectModel from a PsiClass
+     * @return The response body model, or null if void or no model could be built
      */
     suspend fun buildResponseBody(
         method: PsiMethod,
-        genericContext: GenericContext = GenericContext.EMPTY,
-        modelBuilder: ResponseModelBuilder = DefaultResponseModelBuilder(project, genericContext, method),
-        returnTypeOverride: ((PsiType) -> PsiType?)? = null
+        resolvedReturnType: ResolvedType,
+        modelBuilder: ResponseModelBuilder = DefaultResponseModelBuilder(project)
     ): ObjectModel? {
+        LOG.info("buildResponseBody: method=${method.name}, resolvedReturnType=${resolvedReturnType.qualifiedName()}")
+
         val returnTypeByRule = metadataResolver.resolveMethodReturn(method)
         if (!returnTypeByRule.isNullOrBlank()) {
+            LOG.info("buildResponseBody: method.return rule override: $returnTypeByRule")
             val psiClass = JavaPsiFacade.getInstance(project)
                 .findClass(returnTypeByRule.trim(), GlobalSearchScope.allScope(project))
             if (psiClass != null) {
@@ -101,34 +95,17 @@ class EndpointBuilder(private val project: Project) {
             }
         }
 
-        val returnType = method.returnType ?: return null
-        if (returnType == PsiTypes.voidType()) return null
-
-        var responseModel = runCatching {
-            val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(
-                psiType = returnType,
-                genericContext = genericContext,
-                contextElement = method
-            )
-        }.getOrNull()
-
-        if (responseModel == null && returnTypeOverride != null) {
-            val unwrappedType = returnTypeOverride(returnType)
-            if (unwrappedType != null && unwrappedType != PsiTypes.voidType() && unwrappedType !== returnType) {
-                responseModel = runCatching {
-                    val helper = PsiClassHelper.getInstance(project)
-                    helper.buildObjectModelFromType(
-                        psiType = unwrappedType,
-                        genericContext = genericContext,
-                        contextElement = method
-                    )
-                }.getOrNull()
-            }
+        if (resolvedReturnType is ResolvedType.PrimitiveType && resolvedReturnType.kind == PrimitiveKind.VOID) {
+            LOG.info("buildResponseBody: void return type, returning null")
+            return null
         }
 
-        if (responseModel == null) return null
+        val responseModel = runCatching {
+            PsiClassHelper.getInstance(project).buildObjectModel(resolvedReturnType)
+        }.getOrNull()
+        LOG.info("buildResponseBody: buildObjectModel result: $responseModel")
 
+        if (responseModel == null) return null
         return applyReturnMain(method, responseModel)
     }
 
@@ -239,30 +216,23 @@ class EndpointBuilder(private val project: Project) {
     }
 
     /**
-     * Expands a body parameter into its [ObjectModel] representation.
+     * Expands a body parameter using an already-resolved type.
      *
-     * Skips primitive/wrapper types (java.lang.* and String) since they don't have
-     * expandable fields. For complex types, uses [PsiClassHelper] which respects
-     * `json.rule.convert` rules (e.g., `Mono<T>` → `T`, `RequestEntity<T>` → `T`).
+     * Skips primitive/wrapper types since they don't have expandable fields.
+     * For complex types, uses [PsiClassHelper.buildObjectModel] with the
+     * already-resolved type.
      *
-     * @param parameter The PSI parameter annotated as `@RequestBody`
-     * @param genericContext Generic type resolution context
-     * @return The expanded object model, or null for simple types or if expansion fails
+     * @param resolvedParamType The already-resolved parameter type
+     * @return The expanded object model, or null for simple types
      */
-    suspend fun expandBodyParam(
-        parameter: PsiParameter,
-        genericContext: GenericContext = GenericContext.EMPTY
-    ): ObjectModel? {
-        val psiClass = PsiTypesUtil.getPsiClass(parameter.type) ?: return null
-        val qualifiedName = psiClass.qualifiedName ?: return null
-        if (qualifiedName.startsWith("java.lang.") || qualifiedName == "java.lang.String") return null
+    suspend fun expandBodyParam(resolvedParamType: ResolvedType): ObjectModel? {
+        if (resolvedParamType is ResolvedType.PrimitiveType) return null
+        if (resolvedParamType is ResolvedType.UnresolvedType) {
+            val text = resolvedParamType.canonicalText
+            if (text.startsWith("java.lang.") || text == "java.lang.String" || text == "String") return null
+        }
         return runCatching {
-            val helper = PsiClassHelper.getInstance(project)
-            helper.buildObjectModelFromType(
-                psiType = parameter.type,
-                genericContext = genericContext,
-                contextElement = parameter
-            )
+            PsiClassHelper.getInstance(project).buildObjectModel(resolvedParamType)
         }.getOrNull()
     }
 
@@ -327,9 +297,7 @@ class EndpointBuilder(private val project: Project) {
      * Default [ResponseModelBuilder] that uses [PsiClassHelper] to build models.
      */
     private class DefaultResponseModelBuilder(
-        private val project: Project,
-        private val genericContext: GenericContext,
-        private val method: PsiMethod
+        private val project: Project
     ) : ResponseModelBuilder {
         override suspend fun buildModel(psiClass: PsiClass): ObjectModel? {
             return runCatching {
@@ -339,7 +307,7 @@ class EndpointBuilder(private val project: Project) {
         }
     }
 
-    companion object {
+    companion object : com.itangcent.easyapi.logging.IdeaLog {
         /**
          * Returns the [EndpointBuilder] instance for the given project.
          * The instance is managed by the IntelliJ service container.
