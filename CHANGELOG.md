@@ -5,6 +5,18 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-04-28
+
+### Added
+-  show response JSON demo when viewing API endpoint
+-  add depth and element count limits to prevent OOM in object model building
+
+### Fixed
+-  fix config parsing and extension sources loading issues
+-  keep api dashboard in bottom tool window
+
+---
+
 ## [3.1.0] - 2026-04-26
 
 ### Added
