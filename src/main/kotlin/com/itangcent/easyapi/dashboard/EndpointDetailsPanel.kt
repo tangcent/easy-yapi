@@ -704,6 +704,7 @@ class EndpointDetailsPanel(
                     }
 
                     clearResponse()
+                    showResponseDemo()
                     autoSelectTab()
 
                     loadEndpointScripts()
@@ -758,6 +759,7 @@ class EndpointDetailsPanel(
 
         rebuildTabsForGrpc(meta)
         clearResponse()
+        showResponseDemo()
     }
 
     private fun loadGrpcFromCache(meta: GrpcMetadata, cache: GrpcRequestEditCache) {
@@ -1006,6 +1008,25 @@ class EndpointDetailsPanel(
         responseStatusLabel.text = ""
         responseStatusLabel.foreground = null
         testResultsTableModel.rowCount = 0
+    }
+
+    private fun showResponseDemo() {
+        val endpoint = currentEndpoint ?: return
+        val responseBody = when (val meta = endpoint.metadata) {
+            is HttpMetadata -> meta.responseBody
+            is GrpcMetadata -> meta.responseBody
+            else -> null
+        } ?: return
+
+        val demoJson = ObjectModelJsonConverter.toJson(responseBody)
+        if (demoJson.isBlank() || demoJson == "{}") return
+
+        rawResponseBody = demoJson
+        isPrettyJson = true
+        prettyToggleBtn.text = "Raw"
+        responseBodyArea.text = formatJson(demoJson)
+        responseStatusLabel.text = "Example Response"
+        responseStatusLabel.foreground = Color(0x888888)
     }
 
     fun clear() {
@@ -1406,6 +1427,7 @@ class EndpointDetailsPanel(
                 autoSelectTab()
             }
             clearResponse()
+            showResponseDemo()
         } finally {
             isLoading = false
         }
