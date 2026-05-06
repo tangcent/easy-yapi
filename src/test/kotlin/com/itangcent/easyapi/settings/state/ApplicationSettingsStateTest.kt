@@ -30,7 +30,7 @@ class ApplicationSettingsStateTest {
         assertEquals(30, s.httpTimeOut)
         assertFalse(s.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, s.httpClient)
-        assertEquals(50, s.logLevel)
+        assertEquals(0, s.logLevel)
         assertTrue(s.outputDemo)
         assertEquals("UTF-8", s.outputCharset)
         assertEquals(MarkdownFormatType.SIMPLE.name, s.markdownFormatType)
