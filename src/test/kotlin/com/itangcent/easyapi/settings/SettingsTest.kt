@@ -30,7 +30,7 @@ class SettingsTest {
         assertEquals(30, settings.httpTimeOut)
         assertFalse(settings.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, settings.httpClient)
-        assertEquals(50, settings.logLevel)
+        assertEquals(0, settings.logLevel)
         assertTrue(settings.outputDemo)
         assertEquals("UTF-8", settings.outputCharset)
         assertEquals(MarkdownFormatType.SIMPLE.name, settings.markdownFormatType)

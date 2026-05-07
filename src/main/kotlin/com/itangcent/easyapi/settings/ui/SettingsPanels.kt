@@ -399,7 +399,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         autoScanEnabled.isSelected = settings?.autoScanEnabled ?: true
         concurrentScanEnabled.isSelected = settings?.concurrentScanEnabled ?: false
         switchNotice.isSelected = settings?.switchNotice ?: true
-        logLevelCombo.selectedItem = CommonSettingsHelper.VerbosityLevel.toLevel(settings?.logLevel ?: 50)
+        logLevelCombo.selectedItem = CommonSettingsHelper.VerbosityLevel.toLevel(settings?.logLevel ?: 0)
         outputCharsetCombo.selectedItem = settings?.outputCharset ?: "UTF-8"
         outputDemoCheckBox.isSelected = settings?.outputDemo ?: true
         markdownFormatTypeCombo.selectedItem = settings?.markdownFormatType?.let {
@@ -422,7 +422,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         settings.autoScanEnabled = autoScanEnabled.isSelected
         settings.concurrentScanEnabled = concurrentScanEnabled.isSelected
         settings.switchNotice = switchNotice.isSelected
-        settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 50
+        settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 0
         settings.outputCharset = outputCharsetCombo.selectedItem?.toString() ?: "UTF-8"
         settings.outputDemo = outputDemoCheckBox.isSelected
         settings.markdownFormatType =
@@ -453,12 +453,12 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
 
 object CommonSettingsHelper {
     enum class VerbosityLevel(val level: Int, val displayName: String) {
-        SILENT(0, "Silent"),
-        ERROR(10, "Error"),
-        WARN(20, "Warning"),
-        INFO(30, "Info"),
-        DEBUG(40, "Debug"),
-        TRACE(50, "Trace");
+        SILENT(100, "Silent"),
+        ERROR(40, "Error"),
+        WARN(30, "Warning"),
+        INFO(20, "Info"),
+        DEBUG(10, "Debug"),
+        TRACE(0, "Trace");
 
         override fun toString(): String = displayName
 
