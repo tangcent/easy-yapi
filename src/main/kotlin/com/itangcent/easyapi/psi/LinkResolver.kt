@@ -7,6 +7,7 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.search.GlobalSearchScope
+import com.itangcent.easyapi.psi.helper.SourceHelper
 
 /**
  * Utility for resolving link references in documentation and scripts.
@@ -44,6 +45,8 @@ import com.intellij.psi.search.GlobalSearchScope
 @Service(Service.Level.PROJECT)
 class LinkResolver(private val project: Project) {
 
+    private val sourceHelper: SourceHelper by lazy { SourceHelper.getInstance(project) }
+
     /**
      * Parsed result of a link reference.
      */
@@ -77,9 +80,12 @@ class LinkResolver(private val project: Project) {
         val facade = JavaPsiFacade.getInstance(project)
         val scope = GlobalSearchScope.allScope(project)
 
-        return facade.findClass(className, scope)
+        val psiClass = facade.findClass(className, scope)
             ?: resolveClassFromPackage(className, contextElement, facade, scope)
             ?: resolveClassFromImports(className, contextElement, facade, scope)
+            ?: return null
+
+        return sourceHelper.getSourceClassSync(psiClass)
     }
 
     /**

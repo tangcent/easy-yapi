@@ -15,6 +15,7 @@ import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.core.threading.read
+import com.itangcent.easyapi.psi.helper.SourceHelper
 
 /**
  * Resolved information about a single gRPC RPC method.
@@ -395,8 +396,9 @@ class GrpcMethodResolver(private val project: Project) {
      * Finds a PsiClass by its fully qualified name.
      */
     private fun findClass(fqn: String): PsiClass? {
-        return JavaPsiFacade.getInstance(project)
-            .findClass(fqn, GlobalSearchScope.allScope(project))
+        val cls = JavaPsiFacade.getInstance(project)
+            .findClass(fqn, GlobalSearchScope.allScope(project)) ?: return null
+        return SourceHelper.getInstance(project).getSourceClassSync(cls)
     }
 
     // ── Private helpers ──────────────────────────────────────────────

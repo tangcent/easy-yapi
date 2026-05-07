@@ -128,7 +128,7 @@ class GrpcRuntimeResolver(private val project: Project) {
             }
             .forEach { path ->
                 val name = path.fileName?.toString() ?: return@forEach
-                val versionMatch = Regex("""-([\d]+\.[\d]+\.[\d]+)\.jar$""").find(name)
+                val versionMatch = Regex("""-([\d]+\.[\d]+\.[\d]+)(?:-[a-zA-Z]+)?\.jar$""").find(name)
                 if (versionMatch != null) {
                     val version = versionMatch.groupValues[1]
                     grpcJarsByVersion.getOrPut(version) { mutableListOf() }.add(path)
@@ -252,7 +252,7 @@ class GrpcRuntimeResolver(private val project: Project) {
     }
 
     private fun extractVersionFromFileName(fileName: String): String {
-        val match = Regex("""-([\d]+\.[\d]+\.[\d]+)\.jar$""").find(fileName)
+        val match = Regex("""-([\d]+\.[\d]+\.[\d]+)(?:-[a-zA-Z]+)?\.jar$""").find(fileName)
         return match?.groupValues?.get(1) ?: "0.0.0"
     }
 
