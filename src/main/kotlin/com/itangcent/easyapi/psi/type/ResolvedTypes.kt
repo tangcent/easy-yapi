@@ -753,9 +753,10 @@ object TypeResolver {
         if (className.isBlank()) return null
         val facade = JavaPsiFacade.getInstance(project)
         val scope = GlobalSearchScope.allScope(project)
-
+        val sourceHelper = com.itangcent.easyapi.psi.helper.SourceHelper.getInstance(project)
+        
         // Fully qualified name
-        facade.findClass(className, scope)?.let { return it }
+        facade.findClass(className, scope)?.let { return sourceHelper.getSourceClassSync(it) }
 
         if (contextElement == null) return null
         val javaFile = contextElement.containingFile as? PsiJavaFile ?: return null
@@ -763,10 +764,9 @@ object TypeResolver {
         // Same package
         val packageName = javaFile.packageName
         if (packageName.isNotBlank()) {
-            facade.findClass("$packageName.$className", scope)?.let { return it }
+            facade.findClass("$packageName.$className", scope)?.let { return sourceHelper.getSourceClassSync(it) }
         }
 
-        // Import statements
         val imports = javaFile.importList?.importStatements
         if (imports != null) {
             for (importStmt in imports) {
@@ -776,12 +776,11 @@ object TypeResolver {
                     importRef.endsWith(".*") -> importRef.removeSuffix("*") + className
                     else -> continue
                 }
-                facade.findClass(candidate, scope)?.let { return it }
+                facade.findClass(candidate, scope)?.let { return sourceHelper.getSourceClassSync(it) }
             }
         }
 
-        // Default packages
-        facade.findClass("java.lang.$className", scope)?.let { return it }
+        facade.findClass("java.lang.$className", scope)?.let { return sourceHelper.getSourceClassSync(it) }
 
         return null
     }

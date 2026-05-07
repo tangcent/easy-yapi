@@ -11,6 +11,7 @@ import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelUtils
@@ -90,6 +91,7 @@ class EndpointBuilder(private val project: Project) {
             LOG.info("buildResponseBody: method.return rule override: $returnTypeByRule")
             val psiClass = JavaPsiFacade.getInstance(project)
                 .findClass(returnTypeByRule.trim(), GlobalSearchScope.allScope(project))
+                ?.let { SourceHelper.getInstance(project).getSourceClassSync(it) }
             if (psiClass != null) {
                 return runCatching { modelBuilder.buildModel(psiClass) }.getOrNull()
             }

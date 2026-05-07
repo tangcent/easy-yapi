@@ -8,6 +8,7 @@ import com.intellij.psi.javadoc.PsiDocComment
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.psi.adapter.PsiLanguageAdapter
 import com.itangcent.easyapi.psi.adapter.PsiLanguageAdapterLoader
+import com.itangcent.easyapi.psi.doc.DocComment
 
 /**
  * Language-aware implementation of [DocHelper] that supports multiple JVM languages.
@@ -38,24 +39,17 @@ import com.itangcent.easyapi.psi.adapter.PsiLanguageAdapterLoader
  * @see PsiLanguageAdapterLoader for adapter discovery
  */
 @Service(Service.Level.PROJECT)
-class UnifiedDocHelper : DocHelper {
+class UnifiedDocHelper(private val project: Project) : DocHelper {
 
     companion object {
         private const val COMMENT_PREFIX = "//"
         private val DOC_COMMENT_PREFIXES = listOf("*", "///", "//")
 
-        /**
-         * Returns the [UnifiedDocHelper] instance for the given [project].
-         */
         fun getInstance(project: Project): UnifiedDocHelper = project.service()
     }
 
-    /**
-     * Lazily loaded list of available language adapters.
-     *
-     * Adapters for unavailable language plugins are automatically excluded
-     * by [PsiLanguageAdapterLoader].
-     */
+    private val sourceHelper: SourceHelper by lazy { SourceHelper.getInstance(project) }
+
     private val adapters: List<PsiLanguageAdapter> by lazy {
         PsiLanguageAdapterLoader.loadAdapters()
     }
@@ -63,16 +57,14 @@ class UnifiedDocHelper : DocHelper {
     override suspend fun hasTag(psiElement: PsiElement?, tag: String?): Boolean {
         if (psiElement == null || tag == null) return false
         return read {
-            val adapter = findAdapter(psiElement)
-            adapter?.resolveDocComment(psiElement)?.tags?.any { it.name == tag } == true
+            resolveDocComment(psiElement)?.tags?.any { it.name == tag } == true
         }
     }
 
     override suspend fun findDocByTag(psiElement: PsiElement?, tag: String?): String? {
         if (psiElement == null || tag == null) return null
         return read {
-            val adapter = findAdapter(psiElement)
-            adapter?.resolveDocComment(psiElement)
+            resolveDocComment(psiElement)
                 ?.tags?.firstOrNull { it.name == tag }?.value
         }
     }
@@ -80,8 +72,7 @@ class UnifiedDocHelper : DocHelper {
     override suspend fun findDocsByTag(psiElement: PsiElement?, tag: String?): List<String>? {
         if (psiElement == null || tag == null) return null
         return read {
-            val adapter = findAdapter(psiElement)
-            val tags = adapter?.resolveDocComment(psiElement)
+            val tags = resolveDocComment(psiElement)
                 ?.tags?.filter { it.name == tag }?.map { it.value }
             tags?.takeIf { it.isNotEmpty() }
         }
@@ -90,8 +81,7 @@ class UnifiedDocHelper : DocHelper {
     override suspend fun findDocsByTagAndName(psiElement: PsiElement?, tag: String, name: String): String? {
         if (psiElement == null) return null
         return read {
-            val adapter = findAdapter(psiElement)
-            adapter?.resolveDocComment(psiElement)
+            resolveDocComment(psiElement)
                 ?.tags?.firstOrNull { docTag ->
                     docTag.name == tag && (
                         docTag.value == name ||
@@ -104,10 +94,20 @@ class UnifiedDocHelper : DocHelper {
     }
 
     override suspend fun getAttrOfDocComment(psiElement: PsiElement?): String? {
+        if (psiElement == null) return null
         return read {
-            val owner = psiElement as? PsiDocCommentOwner ?: return@read null
-            val docComment = owner.docComment ?: return@read null
-            getDocCommentContent(docComment)
+            val owner = psiElement as? PsiDocCommentOwner
+            if (owner?.docComment != null) {
+                return@read getDocCommentContent(owner.docComment!!)
+            }
+            val sourceElement = sourceHelper.getSourceElementSync(psiElement)
+            if (sourceElement !== psiElement) {
+                val sourceOwner = sourceElement as? PsiDocCommentOwner
+                if (sourceOwner?.docComment != null) {
+                    return@read getDocCommentContent(sourceOwner.docComment!!)
+                }
+            }
+            null
         }
     }
 
@@ -124,8 +124,7 @@ class UnifiedDocHelper : DocHelper {
     override suspend fun getSubTagMapOfDocComment(psiElement: PsiElement?, tag: String): Map<String, String?> {
         if (psiElement == null) return emptyMap()
         return read {
-            val adapter = findAdapter(psiElement)
-            adapter?.resolveDocComment(psiElement)
+            resolveDocComment(psiElement)
                 ?.tags?.filter { it.name == tag }
                 ?.associate {
                     val firstWord = it.value.substringBefore(" ")
@@ -139,8 +138,7 @@ class UnifiedDocHelper : DocHelper {
     override suspend fun getTagMapOfDocComment(psiElement: PsiElement?): Map<String, String?> {
         if (psiElement == null) return emptyMap()
         return read {
-            val adapter = findAdapter(psiElement)
-            adapter?.resolveDocComment(psiElement)
+            resolveDocComment(psiElement)
                 ?.tags?.associate { it.name to it.value }
                 ?: emptyMap()
         }
@@ -166,11 +164,32 @@ class UnifiedDocHelper : DocHelper {
 
     override suspend fun getAttrOfField(field: PsiField): String? {
         val attrInDoc = getAttrOfDocComment(field)
-        val eolComment = getEolComment(field)?.takeIf { it != attrInDoc }
+        val eolComment = read {
+            val commentElement = if ((field as? PsiDocCommentOwner)?.docComment == null) {
+                sourceHelper.getSourceElementSync(field)
+            } else {
+                field
+            }
+            getEolComment(commentElement)
+        }?.takeIf { it != attrInDoc }
         return listOfNotNull(attrInDoc, eolComment)
             .distinct()
             .joinToString("\n")
             .ifEmpty { null }
+    }
+
+    private fun resolveDocComment(psiElement: PsiElement): DocComment? {
+        val adapter = findAdapter(psiElement)
+        val docComment = adapter?.resolveDocComment(psiElement)
+        if (docComment != null) return docComment
+
+        val sourceElement = sourceHelper.getSourceElementSync(psiElement)
+        if (sourceElement !== psiElement) {
+            val sourceAdapter = findAdapter(sourceElement)
+            return sourceAdapter?.resolveDocComment(sourceElement)
+        }
+
+        return null
     }
 
     /**

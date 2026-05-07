@@ -1,10 +1,13 @@
 package com.itangcent.easyapi.rule.parser
 
+import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.context.*
 import com.itangcent.easyapi.util.RegexUtils
@@ -162,10 +165,11 @@ class ScriptHelper(private val context: RuleContext) {
      */
     fun findClass(canonicalText: String): Any? {
         val project = context.project
+        val sourceHelper = SourceHelper.getInstance(project)
         val psiClass = readSync {
-            com.intellij.psi.JavaPsiFacade.getInstance(project)
-                .findClass(canonicalText, com.intellij.psi.search.GlobalSearchScope.allScope(project))
-        } ?: return null
+            JavaPsiFacade.getInstance(project)
+                .findClass(canonicalText, GlobalSearchScope.allScope(project))
+        }?.let { sourceHelper.getSourceClassSync(it) } ?: return null
         return ScriptPsiClassContext(context.withElement(psiClass))
     }
 
