@@ -2,6 +2,7 @@ package com.itangcent.easyapi.psi.helper
 
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.exporter.model.ApiHeader
@@ -13,14 +14,15 @@ import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.util.GsonUtils
-import com.itangcent.easyapi.util.append
+import com.itangcent.easyapi.util.appendWithDedup
 
 /**
- * Resolves API metadata from PSI elements using rules and doc comments.
+ * Resolves documentation metadata from PSI elements using rules and doc comments.
  *
  * Provides a unified interface for extracting:
  * - API names and descriptions
  * - Parameter names, types, and defaults
+ * - Field descriptions
  * - Folder/group names
  * - Required status
  * - Return type overrides and main field hints
@@ -34,12 +36,18 @@ import com.itangcent.easyapi.util.append
  * 2. Doc comment value
  * 3. Default value from PSI
  *
+ * ## Deduplication
+ * When combining doc comments with rule-based docs (e.g., `class.doc`, `method.doc`,
+ * `param.doc`, `field.doc`), lines from the rule result that already exist in the
+ * doc comment are removed to prevent duplication. This is handled by [appendWithDedup].
+ *
  * ## Framework Applicability
  *
  * ### All Frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
  * - [resolveApiName] — API endpoint name
  * - [resolveClassDoc] — class-level description
  * - [resolveMethodDoc] — method-level description
+ * - [resolveFieldDoc] — field-level description
  * - [resolveFolderName] — folder/group name
  * - [resolveMethodReturn] — override return type via rule
  * - [resolveMethodReturnMain] — specify which field receives @return doc
@@ -69,15 +77,16 @@ import com.itangcent.easyapi.util.append
  *
  * ## Usage
  * ```kotlin
- * val resolver = ApiMetadataResolver(ruleEngine, docHelper, settings)
+ * val resolver = DocMetadataResolver(ruleEngine, docHelper, settings)
  * val apiName = resolver.resolveApiName(method)
  * val paramType = resolver.resolveParamType(parameter, "java.lang.String")
+ * val fieldDoc = resolver.resolveFieldDoc(field, fieldPath = "data")
  * ```
  *
  * @see RuleEngine for rule evaluation
  * @see DocHelper for doc comment extraction
  */
-class ApiMetadataResolver(
+class DocMetadataResolver(
     private val engine: RuleEngine,
     private val docHelper: DocHelper,
     private val settings: Settings = Settings()
@@ -90,21 +99,17 @@ class ApiMetadataResolver(
      * Resolution order: `api.name` rule → doc comment first line → `method.doc` rule → method name
      */
     suspend fun resolveApiName(method: PsiMethod): String {
-        // 1. api.name rule
         val ruleApiName = engine.evaluate(RuleKeys.API_NAME, method)
         if (!ruleApiName.isNullOrBlank()) return ruleApiName
 
-        // 2. First line of doc comment
         val docComment = docHelper.getAttrOfDocComment(method)
         val headLine = docComment?.lines()?.firstOrNull { it.isNotBlank() }
         if (!headLine.isNullOrBlank()) return headLine
 
-        // 3. First line of method.doc rule
         val methodDoc = engine.evaluate(RuleKeys.METHOD_DOC, method)
         val docHeadLine = methodDoc?.lines()?.firstOrNull { it.isNotBlank() }
         if (!docHeadLine.isNullOrBlank()) return docHeadLine
 
-        // 4. Method name
         return method.name
     }
 
@@ -112,11 +117,13 @@ class ApiMetadataResolver(
      * Resolves the class-level description.
      *
      * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
+     *
+     * Resolution order: doc comment → `class.doc` rule (with dedup)
      */
     suspend fun resolveClassDoc(psiClass: PsiClass): String {
         val docComment = docHelper.getAttrOfDocComment(psiClass)
         val ruleClassDesc = engine.evaluate(RuleKeys.CLASS_DOC, psiClass)
-        val combined = docComment.append(ruleClassDesc)
+        val combined = docComment.appendWithDedup(ruleClassDesc)
         return combined.ifBlank { psiClass.name ?: "Unknown" }
     }
 
@@ -124,11 +131,34 @@ class ApiMetadataResolver(
      * Resolves the method-level description.
      *
      * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
+     *
+     * Resolution order: doc comment → `method.doc` rule (with dedup)
      */
     suspend fun resolveMethodDoc(method: PsiMethod): String {
         val docComment = docHelper.getAttrOfDocComment(method)
         val ruleDoc = engine.evaluate(RuleKeys.METHOD_DOC, method)
-        return docComment.append(ruleDoc)
+        return docComment.appendWithDedup(ruleDoc)
+    }
+
+    /**
+     * Resolves the field-level description.
+     *
+     * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
+     *
+     * Resolution order: doc comment (from [DocHelper.getAttrOfField] for PsiField,
+     * or [DocHelper.getAttrOfDocComment] for other elements) → `field.doc` rule (with dedup)
+     *
+     * @param field The PSI element representing the field
+     * @param fieldPath Optional field path context for rule evaluation (e.g., "data.items")
+     */
+    suspend fun resolveFieldDoc(field: PsiElement, fieldPath: String? = null): String? {
+        val directComment = when (field) {
+            is PsiField -> docHelper.getAttrOfField(field)
+            else -> docHelper.getAttrOfDocComment(field)
+        }
+        val ruleComment = engine.evaluate(RuleKeys.FIELD_DOC, field, fieldContext = fieldPath)
+        val combined = directComment.appendWithDedup(ruleComment)
+        return combined.ifBlank { null }
     }
 
     /**
@@ -137,24 +167,20 @@ class ApiMetadataResolver(
      * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
      */
     suspend fun resolveFolderName(method: PsiMethod?, psiClass: PsiClass? = null): String? {
-        // Try folder.name rule on the method first
         if (method != null) {
             val methodFolder = engine.evaluate(RuleKeys.FOLDER_NAME, method)
             if (!methodFolder.isNullOrBlank()) return methodFolder
         }
 
-        // Try folder.name rule on the containing class
         val cls = psiClass ?: method?.containingClass ?: return null
         val classFolder = engine.evaluate(RuleKeys.FOLDER_NAME, cls)
         if (!classFolder.isNullOrBlank()) return classFolder
 
-        // Fall back to first line of class doc comment
         val classDoc = docHelper.getAttrOfDocComment(cls)
         if (!classDoc.isNullOrBlank()) {
             return classDoc.lines().firstOrNull { it.isNotBlank() }
         }
 
-        // Fall back to class name
         return cls.name
     }
 
@@ -173,7 +199,7 @@ class ApiMetadataResolver(
 
         val ruleDoc = engine.evaluate(RuleKeys.PARAM_DOC, parameter)
 
-        return javaDocComment.append(ruleDoc)
+        return javaDocComment.appendWithDedup(ruleDoc)
     }
 
     suspend fun isParamRequired(parameter: PsiParameter): Boolean {
@@ -232,8 +258,6 @@ class ApiMetadataResolver(
      * Overrides the return type via the `method.return` rule.
      *
      * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
-     *
-     * Allows specifying a custom return type class instead of the actual method return type.
      */
     suspend fun resolveMethodReturn(method: PsiMethod): String? {
         return engine.evaluate(RuleKeys.METHOD_RETURN, method)
@@ -243,9 +267,6 @@ class ApiMetadataResolver(
      * Specifies which field in the response type should receive the `@return` doc comment.
      *
      * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
-     *
-     * For example, for `Result<T>` wrapper types, this rule can specify that the
-     * `@return` comment should be attached to the `data` field.
      */
     suspend fun resolveMethodReturnMain(method: PsiMethod): String? {
         return engine.evaluate(RuleKeys.METHOD_RETURN_MAIN, method)

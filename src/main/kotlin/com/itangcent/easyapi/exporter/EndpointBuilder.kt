@@ -9,7 +9,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.psi.PsiClassHelper
-import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
+import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
@@ -32,7 +32,7 @@ import com.itangcent.easyapi.settings.Settings
  * - Path parameter merging with enum/default/description enrichment
  *
  * Registered as a IntelliJ project-level service, so it can resolve dependencies
- * (RuleEngine, DocHelper, Settings, ApiMetadataResolver) from the project automatically.
+ * (RuleEngine, DocHelper, Settings, DocMetadataResolver) from the project automatically.
  *
  * Usage:
  * ```
@@ -45,8 +45,8 @@ class EndpointBuilder(private val project: Project) {
 
     private val settings: Settings by lazy { SettingBinder.getInstance(project).read() }
     private val docHelper: DocHelper by lazy { UnifiedDocHelper.getInstance(project) }
-    private val metadataResolver: ApiMetadataResolver by lazy {
-        ApiMetadataResolver(
+    private val metadataResolver: DocMetadataResolver by lazy {
+        DocMetadataResolver(
             RuleEngine.getInstance(project),
             UnifiedDocHelper.getInstance(project),
             settings

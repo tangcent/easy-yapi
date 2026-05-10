@@ -9,6 +9,7 @@ import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.FieldOption
@@ -86,6 +87,13 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
     }
 
     private val configReader: ConfigReader get() = ConfigReader.getInstance(project)
+
+    private val metadataResolver: DocMetadataResolver by lazy {
+        DocMetadataResolver(
+            RuleEngine.getInstance(project),
+            UnifiedDocHelper.getInstance(project)
+        )
+    }
 
     /** Reads `max.deep` from config, falling back to [DEFAULT_MAX_DEEP]. */
     private fun maxDeep(): Int =
@@ -423,12 +431,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             } else null
 
             val fieldComment = if (JsonOption.has(option, JsonOption.READ_COMMENT)) {
-                val directComment = when (val psi = accessibleField.psi) {
-                    is PsiField -> docHelper.getAttrOfField(psi)
-                    else -> docHelper.getAttrOfDocComment(psi)
-                }
-                val ruleComment = engine.evaluate(RuleKeys.FIELD_DOC, accessibleField.psi, fieldContext = fieldPath)
-                mergeComments(directComment, ruleComment)
+                metadataResolver.resolveFieldDoc(accessibleField.psi, fieldPath)
             } else null
 
             val converted = engine.evaluate(RuleKeys.JSON_RULE_CONVERT, accessibleField.type, accessibleField.psi)
@@ -1253,9 +1256,5 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             result[entry.key] = entry.value
         }
         return result
-    }
-
-    private fun mergeComments(vararg comments: String?): String? {
-        return comments.filterNotNull().filter { it.isNotBlank() }.ifEmpty { null }?.joinToString(" ")
     }
 }

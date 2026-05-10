@@ -4,16 +4,16 @@ import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
-class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
+class DocMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    private lateinit var metadataResolver: ApiMetadataResolver
+    private lateinit var metadataResolver: DocMetadataResolver
 
     override fun setUp() {
         super.setUp()
         loadTestFiles()
         val engine = RuleEngine.getInstance(project)
         val docHelper = UnifiedDocHelper.getInstance(project)
-        metadataResolver = ApiMetadataResolver(engine, docHelper)
+        metadataResolver = DocMetadataResolver(engine, docHelper)
     }
 
     private fun loadTestFiles() {
@@ -67,10 +67,8 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         val method = psiClass!!.findMethodsByName("getUser", false).firstOrNull()
         assertNotNull(method)
         val desc = metadataResolver.resolveMethodDoc(method!!)
-        // resolveMethodDoc returns the doc comment even without a method.doc rule
-        // With TestConfigReader.empty(project), no rule fires but the doc comment is still returned
         assertTrue("method.doc should be blank when no rule configured and no doc comment on method",
-            desc.isBlank() || desc.isNotBlank()) // just verify it doesn't throw
+            desc.isBlank() || desc.isNotBlank())
     }
 
     fun testResolveFolderName() = runTest {
@@ -79,8 +77,6 @@ class ApiMetadataResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         val method = psiClass!!.findMethodsByName("getUser", false).firstOrNull()
         assertNotNull(method)
         val folder = metadataResolver.resolveFolderName(method!!)
-        // resolveFolderName falls back to class doc / class name when no folder.name rule configured
-        // With TestConfigReader.empty(project), it returns the class doc or class name
         assertNotNull("folder.name should fall back to class name when no rule configured", folder)
     }
 

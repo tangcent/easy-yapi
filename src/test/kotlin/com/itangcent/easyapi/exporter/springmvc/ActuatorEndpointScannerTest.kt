@@ -5,7 +5,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
-import com.itangcent.easyapi.psi.helper.ApiMetadataResolver
+import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.rule.engine.RuleEngine
@@ -24,7 +24,7 @@ class ActuatorEndpointScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        actuatorEndpointScanner = ActuatorEndpointScanner(ApiMetadataResolver(RuleEngine.getInstance(project), UnifiedDocHelper.getInstance(project)), EndpointBuilder.getInstance(project))
+        actuatorEndpointScanner = ActuatorEndpointScanner(DocMetadataResolver(RuleEngine.getInstance(project), UnifiedDocHelper.getInstance(project)), EndpointBuilder.getInstance(project))
     }
 
     private fun loadTestFiles() {

@@ -11,6 +11,7 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.exporter.model.GrpcStreamingType
 import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.logging.IdeaLog
@@ -59,6 +60,7 @@ data class GrpcMethodInfo(
 class GrpcMethodResolver(private val project: Project) {
 
     private val docHelper: DocHelper get() = UnifiedDocHelper.getInstance(project)
+    private val metadataResolver: DocMetadataResolver by lazy { DocMetadataResolver(com.itangcent.easyapi.rule.engine.RuleEngine.getInstance(project), docHelper) }
     private val annotationHelper = UnifiedAnnotationHelper()
 
     companion object : IdeaLog {
@@ -107,7 +109,7 @@ class GrpcMethodResolver(private val project: Project) {
 
             val isStatic = method.hasModifierProperty(PsiModifier.STATIC)
             val description = try {
-                docHelper.getAttrOfDocComment(method)
+                metadataResolver.resolveMethodDoc(method)
             } catch (_: Exception) {
                 null
             }
