@@ -9,15 +9,14 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.psi.PsiClassHelper
-import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.DocHelper
+import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelUtils
 import com.itangcent.easyapi.psi.type.PrimitiveKind
 import com.itangcent.easyapi.psi.type.ResolvedType
-import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 
@@ -45,13 +44,7 @@ class EndpointBuilder(private val project: Project) {
 
     private val settings: Settings by lazy { SettingBinder.getInstance(project).read() }
     private val docHelper: DocHelper by lazy { UnifiedDocHelper.getInstance(project) }
-    private val metadataResolver: DocMetadataResolver by lazy {
-        DocMetadataResolver(
-            RuleEngine.getInstance(project),
-            UnifiedDocHelper.getInstance(project),
-            settings
-        )
-    }
+    private val metadataResolver: DocMetadataResolver get() = DocMetadataResolver.getInstance(project)
 
     /**
      * Strategy interface for building an [ObjectModel] from a [PsiClass].

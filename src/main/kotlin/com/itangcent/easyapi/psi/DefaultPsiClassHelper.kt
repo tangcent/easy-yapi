@@ -88,12 +88,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
 
     private val configReader: ConfigReader get() = ConfigReader.getInstance(project)
 
-    private val metadataResolver: DocMetadataResolver by lazy {
-        DocMetadataResolver(
-            RuleEngine.getInstance(project),
-            UnifiedDocHelper.getInstance(project)
-        )
-    }
+    private val metadataResolver: DocMetadataResolver get() = DocMetadataResolver.getInstance(project)
 
     /** Reads `max.deep` from config, falling back to [DEFAULT_MAX_DEEP]. */
     private fun maxDeep(): Int =

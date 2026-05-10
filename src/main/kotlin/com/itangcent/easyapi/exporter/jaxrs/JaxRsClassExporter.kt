@@ -10,7 +10,6 @@ import com.itangcent.easyapi.exporter.EndpointBuilder
 import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
-import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.ResolvedType
@@ -59,8 +58,7 @@ class JaxRsClassExporter(
     private val pathResolver = JaxRsPathResolver(annotationHelper)
     private val parameterResolver = JaxRsParameterResolver(annotationHelper)
     private val contentTypeResolver = JaxRsContentTypeResolver(annotationHelper)
-    private val docHelper = UnifiedDocHelper.getInstance(project)
-    private val metadataResolver = DocMetadataResolver(engine, docHelper)
+    private val metadataResolver = DocMetadataResolver.getInstance(project)
     private val endpointBuilder = EndpointBuilder.getInstance(project)
 
     override suspend fun export(psiClass: PsiClass): List<ApiEndpoint> {

@@ -1,5 +1,8 @@
 package com.itangcent.easyapi.psi.helper
 
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
@@ -12,7 +15,7 @@ import com.itangcent.easyapi.exporter.model.PathSelector
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.util.GsonUtils
 import com.itangcent.easyapi.util.appendWithDedup
 
@@ -77,7 +80,7 @@ import com.itangcent.easyapi.util.appendWithDedup
  *
  * ## Usage
  * ```kotlin
- * val resolver = DocMetadataResolver(ruleEngine, docHelper, settings)
+ * val resolver = DocMetadataResolver.getInstance(project)
  * val apiName = resolver.resolveApiName(method)
  * val paramType = resolver.resolveParamType(parameter, "java.lang.String")
  * val fieldDoc = resolver.resolveFieldDoc(field, fieldPath = "data")
@@ -86,11 +89,17 @@ import com.itangcent.easyapi.util.appendWithDedup
  * @see RuleEngine for rule evaluation
  * @see DocHelper for doc comment extraction
  */
-class DocMetadataResolver(
-    private val engine: RuleEngine,
-    private val docHelper: DocHelper,
-    private val settings: Settings = Settings()
+@Service(Service.Level.PROJECT)
+class DocMetadataResolver internal constructor(
+    private val project: Project
 ) {
+    private val engine: RuleEngine get() = RuleEngine.getInstance(project)
+    private val docHelper: DocHelper get() = UnifiedDocHelper.getInstance(project)
+    private val settings get() = SettingBinder.getInstance(project).read()
+
+    companion object {
+        fun getInstance(project: Project): DocMetadataResolver = project.service()
+    }
     /**
      * Resolves the API endpoint name.
      *

@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.exporter.springmvc
 
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
@@ -55,9 +56,11 @@ object SpringActuatorConstants {
  * All endpoints are mapped under `/actuator/{endpointId}`.
  */
 class ActuatorEndpointScanner(
-    private val metadataResolver: DocMetadataResolver,
+    private val project: Project,
     private val endpointBuilder: com.itangcent.easyapi.exporter.EndpointBuilder
 ) {
+
+    private val metadataResolver: DocMetadataResolver get() = DocMetadataResolver.getInstance(project)
 
     suspend fun scan(psiClass: PsiClass): List<ApiEndpoint> {
         val endpointId = findEndpointId(psiClass) ?: return emptyList()
