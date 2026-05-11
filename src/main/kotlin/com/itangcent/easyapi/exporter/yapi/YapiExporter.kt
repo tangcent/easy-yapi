@@ -83,11 +83,8 @@ class YapiExporter(private val project: Project) : ApiExporter {
                 val yapiProject = read {
                     val psiMethod = endpoint.sourceMethod
                     val psiClass = endpoint.sourceClass
-                    val ruleProject = when {
-                        psiMethod != null -> metadataResolver.resolveYapiProject(psiMethod)
-                        psiClass != null -> metadataResolver.resolveYapiProject(psiClass)
-                        else -> null
-                    }
+                    val ruleProject = psiMethod?.let { metadataResolver.resolveYapiProject(it) }
+                        ?: psiClass?.let { metadataResolver.resolveYapiProject(it) }
                     ruleProject?.takeIf { it.isNotBlank() }
                         ?: psiClass?.let { ModuleHelper.resolveModule(it)?.name }
                         ?: project.name
