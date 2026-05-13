@@ -40,7 +40,9 @@ class ApiSearchEverywhereContributor(
     private val project: Project
 ) : SearchEverywhereContributor<ApiEndpoint> {
 
-    private val apiIndex = ApiIndex.getInstance(project)
+    private val apiIndex: ApiIndex by lazy {
+        ApiIndex.getInstance(project)
+    }
 
     companion object : IdeaLog {
         const val CONTRIBUTOR_ID = "com.itangcent.easyapi.search.apis"
