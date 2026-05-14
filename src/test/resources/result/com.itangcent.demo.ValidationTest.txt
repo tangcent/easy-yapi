@@ -34,7 +34,6 @@
     ],
     "edit_uid": 0,
     "up_time": 1618124194,
-    "tag": [],
     "req_query": [],
     "api_opened": false,
     "add_time": 1618124194,

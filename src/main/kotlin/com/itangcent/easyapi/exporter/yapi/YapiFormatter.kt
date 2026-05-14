@@ -177,7 +177,7 @@ class YapiFormatter(
             desc = renderDesc(endpoint.description),
             markdown = endpoint.description?.takeIf { it.isNotBlank() },
             status = endpoint.status ?: "done",
-            tag = endpoint.tags,
+            tag = endpoint.tags.ifEmpty { null },
             reqHeaders = headers.ifEmpty { null },
             reqQuery = query.ifEmpty { null },
             reqParams = pathParams.ifEmpty { null },
