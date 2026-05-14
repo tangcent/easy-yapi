@@ -1,4 +1,4 @@
-<idea-plugin>
+<idea-plugin require-restart="true">
     <id>com.itangcent.idea.plugin.easy-yapi</id>
     <name>EasyYapi</name>
     <version>3.0.0.252.0</version>
