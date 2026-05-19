@@ -45,4 +45,30 @@ class SettingsDefaultsTest {
         val settings = Settings()
         assertEquals(HttpClientType.APACHE.value, settings.httpClient)
     }
+
+    @Test
+    fun `test Settings default gutterIconEnabled is true`() {
+        val settings = Settings()
+        assertTrue("gutterIconEnabled should default to true", settings.gutterIconEnabled)
+    }
+
+    @Test
+    fun `test ApplicationSettingsState State default gutterIconEnabled is true`() {
+        val state = ApplicationSettingsState.State()
+        assertTrue(
+            "ApplicationSettingsState default gutterIconEnabled should be true",
+            state.gutterIconEnabled
+        )
+    }
+
+    @Test
+    fun `test Settings and ApplicationSettingsState have matching gutterIconEnabled defaults`() {
+        val settings = Settings()
+        val appState = ApplicationSettingsState.State()
+        assertEquals(
+            "gutterIconEnabled defaults should match between Settings and ApplicationSettingsState",
+            settings.gutterIconEnabled,
+            appState.gutterIconEnabled
+        )
+    }
 }

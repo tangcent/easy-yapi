@@ -95,6 +95,9 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     private val concurrentScanEnabled = JBCheckBox("Enable concurrent API scanning (experimental)", false).apply {
         toolTipText = "Use multiple threads for API scanning (may improve performance but is experimental)"
     }
+    private val gutterIconEnabled = JBCheckBox("Show gutter icon on API methods", true).apply {
+        toolTipText = "Show a gutter icon on API methods for quick navigation to the API Dashboard. Disable if it conflicts with other plugins."
+    }
     private val switchNotice = JBCheckBox("Show notification on settings switch", true).apply {
         toolTipText = "Show a notification when switching between different setting profiles"
     }
@@ -382,6 +385,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         )
         .addComponent(autoScanEnabled)
         .addComponent(concurrentScanEnabled)
+        .addComponent(gutterIconEnabled)
         .addComponent(switchNotice)
         .addLabeledComponent("Log Level:", logLevelCombo)
         .addLabeledComponent("Output Charset:", outputCharsetCombo)
@@ -398,6 +402,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         actuatorEnable.isSelected = settings?.actuatorEnable ?: false
         autoScanEnabled.isSelected = settings?.autoScanEnabled ?: true
         concurrentScanEnabled.isSelected = settings?.concurrentScanEnabled ?: false
+        gutterIconEnabled.isSelected = settings?.gutterIconEnabled ?: true
         switchNotice.isSelected = settings?.switchNotice ?: true
         logLevelCombo.selectedItem = CommonSettingsHelper.VerbosityLevel.toLevel(settings?.logLevel ?: 0)
         outputCharsetCombo.selectedItem = settings?.outputCharset ?: "UTF-8"
@@ -421,6 +426,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         settings.actuatorEnable = actuatorEnable.isSelected
         settings.autoScanEnabled = autoScanEnabled.isSelected
         settings.concurrentScanEnabled = concurrentScanEnabled.isSelected
+        settings.gutterIconEnabled = gutterIconEnabled.isSelected
         settings.switchNotice = switchNotice.isSelected
         settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 0
         settings.outputCharset = outputCharsetCombo.selectedItem?.toString() ?: "UTF-8"
@@ -440,6 +446,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
                 actuatorEnable.isSelected != s.actuatorEnable ||
                 autoScanEnabled.isSelected != s.autoScanEnabled ||
                 concurrentScanEnabled.isSelected != s.concurrentScanEnabled ||
+                gutterIconEnabled.isSelected != s.gutterIconEnabled ||
                 switchNotice.isSelected != s.switchNotice ||
                 (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level != s.logLevel ||
                 outputCharsetCombo.selectedItem?.toString() != s.outputCharset ||

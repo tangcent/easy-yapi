@@ -37,6 +37,7 @@ class ApplicationSettingsStateTest {
         assertNull(s.builtInConfig)
         assertArrayEquals(emptyArray(), s.remoteConfig)
         assertTrue(s.autoScanEnabled)
+        assertTrue(s.gutterIconEnabled)
     }
 
     @Test
@@ -78,6 +79,13 @@ class ApplicationSettingsStateTest {
     }
 
     @Test
+    fun testState_inequality_gutterIconEnabled() {
+        val s1 = ApplicationSettingsState.State(gutterIconEnabled = true)
+        val s2 = ApplicationSettingsState.State(gutterIconEnabled = false)
+        assertNotEquals(s1, s2)
+    }
+
+    @Test
     fun testState_equalityWithArrays() {
         val s1 = ApplicationSettingsState.State(remoteConfig = arrayOf("http://a.com"))
         val s2 = ApplicationSettingsState.State(remoteConfig = arrayOf("http://a.com"))
@@ -105,6 +113,15 @@ class ApplicationSettingsStateTest {
         assertEquals(30, target.httpTimeOut)
         assertEquals(100, target.logLevel)
         assertEquals("ISO-8859-1", target.outputCharset)
+    }
+
+    @Test
+    fun testState_copyTo_gutterIconEnabled() {
+        val source = ApplicationSettingsState.State(gutterIconEnabled = false)
+        val target = ApplicationSettingsState.State()
+        assertTrue("target gutterIconEnabled should default to true", target.gutterIconEnabled)
+        source.copyTo(target)
+        assertFalse("gutterIconEnabled should be copied as false", target.gutterIconEnabled)
     }
 
     @Test

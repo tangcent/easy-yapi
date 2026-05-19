@@ -3,6 +3,7 @@ package com.itangcent.easyapi.ide.linemarker
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.PsiTreeUtil
+import com.itangcent.easyapi.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
@@ -99,6 +100,58 @@ class ApiMethodLineMarkerProviderTest : EasyApiLightCodeInsightFixtureTestCase()
         assertTrue(
             "Available annotations should be subset of all annotations",
             availableAnnotations.size < allApiAnnotations.size
+        )
+    }
+
+    fun testNoLineMarkerWhenGutterIconDisabled() = runTest {
+        settingBinder.update {
+            gutterIconEnabled = false
+        }
+
+        val file = myFixture.configureByFile("api/UserCtrl.java")
+        val classes = PsiTreeUtil.getChildrenOfType(file, PsiClass::class.java) ?: emptyArray()
+        assertTrue("Should have classes in test file", classes.isNotEmpty())
+
+        val methods = classes.flatMap { it.methods.toList() }
+        assertTrue("Should have methods in test file", methods.isNotEmpty())
+
+        methods.forEach { method ->
+            val identifier = method.nameIdentifier
+            if (identifier != null) {
+                val marker = lineMarkerProvider.getLineMarkerInfo(identifier)
+                assertNull(
+                    "Should not show gutter icon when gutterIconEnabled is false",
+                    marker
+                )
+            }
+        }
+    }
+
+    fun testLineMarkerWhenGutterIconEnabled() = runTest {
+        settingBinder.update {
+            gutterIconEnabled = true
+        }
+
+        val file = myFixture.configureByFile("api/UserCtrl.java")
+        val classes = PsiTreeUtil.getChildrenOfType(file, PsiClass::class.java) ?: emptyArray()
+        assertTrue("Should have classes in test file", classes.isNotEmpty())
+
+        val methods = classes.flatMap { it.methods.toList() }
+        assertTrue("Should have methods in test file", methods.isNotEmpty())
+
+        var foundMarker = false
+        methods.forEach { method ->
+            val identifier = method.nameIdentifier
+            if (identifier != null) {
+                val marker = lineMarkerProvider.getLineMarkerInfo(identifier)
+                if (marker != null) {
+                    foundMarker = true
+                }
+            }
+        }
+        assertTrue(
+            "Should show gutter icon on at least one API method when gutterIconEnabled is true",
+            foundMarker
         )
     }
 }
