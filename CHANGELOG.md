@@ -1,3 +1,118 @@
+## [3.1.4] - 2026-05-20
+
+### Added
+-  add setting to enable/disable API method gutter icon (#1340)
+-  add yapi project resolution fallback from method to class level (#1334)
+-  show response JSON demo when viewing API endpoint
+-  add depth and element count limits to prevent OOM in object model building
+-  add Postman-compatible script execution with PmScriptExecutor as project service
+-  support Scala/Kotlin/Groovy language adapters for PSI integration
+-  improve settings panel usability
+-  extract ClassNameConstants and InheritanceHelper with cached inheritance checks
+-  add YAPI mock rules support with separate extension config (#1320)
+-  add variable resolution support in ApiDashboard
+-  handle properties.prefix rule in FieldsToPropertiesAction
+-  render markdown to HTML when exporting APIs to YAPI (#1318)
+-  enhance script PSI context with class introspection methods and fix Swing dispatcher modality
+-  remember export dialog options for better UX
+-  add concurrent API scanning option for better performance
+-  add rule-based configuration support with cache invalidation
+-  add YAPI API update confirmation with multiple export modes (#1311)
+-  support URL paste in API Search Everywhere with path variable matching
+-  support api.status&api.open rule and fix tag export for YAPI (#1307)
+-  add API endpoint selection panel to ExportDialog
+-  add PsiType-aware rule evaluation for json.rule.convert
+-  replace recommend config system with extension-based system
+-  add ConfigSyncService with coroutine-based debounce for config reload (#640)
+-  add on-demand Swagger config loading and API lifecycle events (#639)
+-  add @RpcMethod annotation support for gRPC method resolution
+-  add gRPC support
+-  support file-type form params in API dashboard
+-  refactor YapiApiClient - extract interface, add provider, fix project ID resolution (#1294)
+-  add toString() methods to ScriptPsi contexts
+-  easy-yapi specific changes (yapi exporter, settings, and configurations)
+-  easy-api v3.0 progress and CI workflow fixes
+-  initial commit for easy-api v3.0
+
+### Fixed
+-  leave tag as null instead of empty array when no tags exist (#1338)
+-  resolve ClassCastException on double-shift Search Everywhere (#1336) (#1337)
+-  DocMetadataResolver now correctly reads settings.pathMulti dynamically
+-  remove duplicated comments when combining doc comments with rule-based docs
+-  support extracting comments from JAR classes and fix gRPC runtime Guava resolution (#1332)
+-  correct log level filtering semantic inversion (#1330)
+-  fix config parsing and extension sources loading issues
+-  keep api dashboard in bottom tool window
+-  always read full version from build.gradle.kts for release download link
+-  use full version in release download link
+- fix(extension): add fastjson and yapi to known extensions
+-  Postman workspace and collections stuck on loading in modal dialog
+-  add missing same-package imports in test resources
+-  resolve JacksonConfigIntegrationTest failures for @JsonUnwrapped and @JsonView
+-  implement proper enum.use.custom resolution with unified enum handling
+-  ensure fieldContext is always available for field rule evaluation
+-  inject fieldContext correctly into Groovy rule engine scripts
+-  resolve EDT threading violations in API dashboard navigation (#652)
+-  resolve generic types in API method params
+-  export multipart and file-like params as FILE type
+-  NegationParser should return null for null input
+-  respect ExportDialog output path and handle user cancellation properly (#645)
+-  resolve IDE freeze on startup (issue #1299) and improve script engine management (#638)
+-  prevent OOM from circular ObjectModel references in markdown formatter (#637)
+-  resolve export silent failure and threading issues (#636)
+-  support inherited method annotations and dashboard navigation
+-  support forked yapi success response format (#1296)
+-  support inherited API mappings and correct Feign metadata access (#633)
+-  allow optional 'v' prefix in release version pattern
+-  correct version extraction in release workflow
+-  catch CancellationException in ReadActionDispatcher to prevent unhandled coroutine exception
+-  expire setting binder cache after timeout
+-  improve yapi token diagnostics and test coverage (#1292)
+-  improve API scan performance and add auto-scan toggle
+-  inherited controller export — superMethod perf, generic param scoping, resolver early-exit
+-  add path formatting/sanitization for YAPI export (#1288)
+
+### Changed
+-  extract shared EndpointBuilder from ClassExporters
+-  remove enum mapping extensions and related configs (#1312)
+-  refactor event system and remove deprecated ActionContext
+
+### Improved
+- release v3.1.3 (#1335)
+- release v3.1.2 (#1333)
+- release v3.1.1 (#1327)
+- release v3.1.0 (#1324)
+- test: add unit tests for ScriptSupport, EventBus, RequestPersistence, RepositoryService, MavenHelper, ModuleHelper
+- docs: update README files with comprehensive feature documentation
+- release v3.0.9 (#1323)
+- amend: improve YapiUpdateConfirmationDialog UI layout (#1322)
+- test: add unit tests for IDE actions, settings, and utilities
+- release v3.0.8 (#1321)
+- amend: rename rule key 'module' to 'yapi.project' with backward-compatible aliases (#1319)
+- test: add missing unit tests and fix test failures
+- test: improve test coverage across multiple packages
+- perf: optimize rule engine with Flow-based lazy evaluation
+- perf: optimize exporter selection with framework availability caching
+- release v3.0.7 (#1313)
+- release v3.0.6 (#1308)
+- chore: cleanup unused test resource files
+- amend: remove Recommend settings from plugin configuration
+- amend: simplify SettingBinder and RuleEngine APIs
+- release v3.0.4 (#1303)
+- perf: use fine-grained ReadAction scoping in API exporters (#646)
+- chore: remove unused SPI infrastructure and MethodFilter
+- chore: remove redundant documentation
+- chore: update project branding from EasyAPI to EasyYapi
+- release v3.0.3 (#1297)
+- test: add comprehensive unit tests across modules
+- release v3.0.2 (#1295)
+- amend: improve HTTP client export and add format filtering
+- release v3.0.1 (#1293)
+- chore: update release workflow
+- chore: add release script
+
+---
+
 # Changelog
 
 All notable changes to the EasyAPI plugin will be documented in this file.
