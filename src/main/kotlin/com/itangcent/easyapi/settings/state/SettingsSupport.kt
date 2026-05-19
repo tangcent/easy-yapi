@@ -73,6 +73,8 @@ interface ApplicationSettingsSupport {
     var grpcRepositories: Array<String>
     /** Enable concurrent API scanning for better performance */
     var concurrentScanEnabled: Boolean
+    /** When true, show gutter icon on API methods for opening in API Dashboard */
+    var gutterIconEnabled: Boolean
     var globalEnvironments: String
 
     fun copyTo(newSetting: ApplicationSettingsSupport) {
@@ -111,6 +113,7 @@ interface ApplicationSettingsSupport {
         newSetting.grpcCallEnabled = this.grpcCallEnabled
         newSetting.grpcRepositories = this.grpcRepositories
         newSetting.concurrentScanEnabled = this.concurrentScanEnabled
+        newSetting.gutterIconEnabled = this.gutterIconEnabled
         newSetting.globalEnvironments = this.globalEnvironments
     }
 }

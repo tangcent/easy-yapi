@@ -4,28 +4,24 @@ import com.intellij.codeInsight.daemon.GutterIconNavigationHandler
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.icons.AllIcons
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.cache.ApiIndexManager
+import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiDashboardService
 import com.itangcent.easyapi.exporter.core.MetaAnnotationResolver
 import com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver
 import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
-import com.itangcent.easyapi.core.threading.IdeDispatchers
-import com.itangcent.easyapi.core.threading.backgroundAsync
-import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.runBlocking
 import java.awt.event.MouseEvent
 
@@ -54,6 +50,8 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
         if (element !is PsiIdentifier) return null
         val parent = element.parent as? PsiMethod ?: return null
 
+        if (!isGutterIconEnabled(element.project)) return null
+
         if (!isApiMethod(parent) && !isIndexedMethod(parent)) return null
 
         return LineMarkerInfo(
@@ -69,6 +67,10 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
 
     private fun isIndexedMethod(method: PsiMethod): Boolean {
         return ApiIndex.getInstance(method.project).containsMethod(method)
+    }
+
+    private fun isGutterIconEnabled(project: Project): Boolean {
+        return SettingBinder.getInstance(project).read().gutterIconEnabled
     }
 
     private fun isApiMethod(method: PsiMethod): Boolean {

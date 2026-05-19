@@ -44,6 +44,12 @@ class SettingsTest {
     }
 
     @Test
+    fun testDefaultGutterIconEnabled() {
+        val settings = Settings()
+        assertTrue("gutterIconEnabled should default to true", settings.gutterIconEnabled)
+    }
+
+    @Test
     fun testCustomValues() {
         val settings = Settings(
             feignEnable = true,
@@ -74,6 +80,13 @@ class SettingsTest {
     }
 
     @Test
+    fun testEquality_differentGutterIconEnabled() {
+        val s1 = Settings(gutterIconEnabled = true)
+        val s2 = Settings(gutterIconEnabled = false)
+        assertNotEquals(s1, s2)
+    }
+
+    @Test
     fun testEquality_withArrays() {
         val s1 = Settings(remoteConfig = arrayOf("http://example.com"))
         val s2 = Settings(remoteConfig = arrayOf("http://example.com"))
@@ -87,6 +100,15 @@ class SettingsTest {
         (source as ApplicationSettingsSupport).copyTo(target)
         assertTrue("feignEnable should be copied", target.feignEnable)
         assertEquals("httpTimeOut should be copied", 10, target.httpTimeOut)
+    }
+
+    @Test
+    fun testSettingsCopyToApplicationSettings_gutterIconEnabled() {
+        val source = Settings(gutterIconEnabled = false)
+        val target = Settings()
+        assertTrue("target gutterIconEnabled should default to true", target.gutterIconEnabled)
+        (source as ApplicationSettingsSupport).copyTo(target)
+        assertFalse("gutterIconEnabled should be copied as false", target.gutterIconEnabled)
     }
 
     @Test

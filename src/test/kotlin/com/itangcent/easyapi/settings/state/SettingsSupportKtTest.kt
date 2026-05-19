@@ -94,4 +94,13 @@ class SettingsSupportKtTest {
         assertEquals(100, target.logLevel)
         assertEquals("ISO-8859-1", target.outputCharset)
     }
+
+    @Test
+    fun testApplicationSettingsSupport_copyTo_gutterIconEnabled() {
+        val source = Settings(gutterIconEnabled = false)
+        val target = Settings()
+        assertTrue("target gutterIconEnabled should default to true", target.gutterIconEnabled)
+        source.copyTo(target as ApplicationSettingsSupport)
+        assertFalse("gutterIconEnabled should be copied as false", target.gutterIconEnabled)
+    }
 }
