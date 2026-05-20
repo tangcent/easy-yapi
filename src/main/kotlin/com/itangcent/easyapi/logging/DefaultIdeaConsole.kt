@@ -4,7 +4,7 @@ import com.intellij.execution.filters.TextConsoleBuilderFactory
 import com.intellij.execution.ui.ConsoleView
 import com.intellij.execution.ui.ConsoleViewContentType
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.wm.ToolWindowAnchor
+import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
 import com.itangcent.easyapi.core.threading.swing
 import kotlinx.coroutines.GlobalScope
@@ -47,36 +47,31 @@ class DefaultIdeaConsole(
         console
     }
 
+    fun bindToolWindow(toolWindow: ToolWindow) {
+        val content = toolWindow.contentManager.factory.createContent(
+            consoleView.component, "", false
+        )
+        toolWindow.contentManager.addContent(content)
+    }
+
     private suspend fun ensureConsoleInitialized() {
         if (consoleInitialized) return
         consoleInitialized = true
 
         swing {
-            val toolWindowManager = ToolWindowManager.getInstance(project)
-            var toolWindow = toolWindowManager.getToolWindow(WINDOW_ID)
-            if (toolWindow == null) {
-                toolWindow = toolWindowManager.registerToolWindow(WINDOW_ID) {
-                    anchor = ToolWindowAnchor.BOTTOM
-                    canCloseContent = false
-                }
-                val content = toolWindow.contentManager.factory.createContent(
-                    consoleView.component, "", false
-                )
-                toolWindow.contentManager.addContent(content)
-            } else {
-                val content = toolWindow.contentManager.getContent(0)
-                if (content != null) {
-                    content.component = consoleView.component
+            val toolWindow = ToolWindowManager.getInstance(project).getToolWindow(WINDOW_ID)
+            if (toolWindow != null) {
+                val existingContent = toolWindow.contentManager.getContent(0)
+                if (existingContent != null) {
+                    existingContent.component = consoleView.component
                 } else {
-                    val newContent = toolWindow.contentManager.factory.createContent(
-                        consoleView.component,
-                        "",
-                        false
+                    val content = toolWindow.contentManager.factory.createContent(
+                        consoleView.component, "", false
                     )
-                    toolWindow.contentManager.addContent(newContent)
+                    toolWindow.contentManager.addContent(content)
                 }
+                toolWindow.show()
             }
-            toolWindow.show()
         }
     }
 
