@@ -10,35 +10,19 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.read
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
+import com.itangcent.easyapi.dashboard.ApiScanner.Companion.MAX_CONCURRENT_SCANS
 import com.itangcent.easyapi.exporter.ClassExporter
+import com.itangcent.easyapi.exporter.ClassExporterRegistry
 import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
-import com.itangcent.easyapi.exporter.feign.FeignClassExporter
-import com.itangcent.easyapi.exporter.feign.FeignClientRecognizer
-import com.itangcent.easyapi.exporter.grpc.GrpcClassExporter
-import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
-import com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter
-import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointExporter
-import com.itangcent.easyapi.exporter.springmvc.SpringActuatorConstants
-import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
-import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
-import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
+import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -449,38 +433,6 @@ class ApiScanner(private val project: Project) {
     }
 
     private suspend fun getEnabledExporters(): List<ClassExporter> {
-        val settings = SettingBinder.getInstance(project).read()
-        val availabilityService = ProjectClassAvailabilityService.getInstance(project)
-
-        return buildList {
-            if (availabilityService.hasAnyClassInProject(SpringControllerRecognizer.CONTROLLER_ANNOTATIONS)) {
-                add(SpringMvcClassExporter(project))
-            }
-
-            if (settings.feignEnable &&
-                availabilityService.hasAnyClassInProject(FeignClientRecognizer.FEIGN_ANNOTATIONS)
-            ) {
-                add(FeignClassExporter(project))
-            }
-
-            if (settings.jaxrsEnable &&
-                availabilityService.hasAnyClassInProject(JaxRsResourceRecognizer.PATH_ANNOTATIONS)
-            ) {
-                add(JaxRsClassExporter(project))
-            }
-
-            if (settings.actuatorEnable &&
-                availabilityService.hasAnyClassInProject(SpringActuatorConstants.ENDPOINT_ANNOTATIONS)
-            ) {
-                add(ActuatorEndpointExporter(project))
-            }
-
-            if (settings.grpcEnable &&
-                (availabilityService.hasAnyClassInProject(GrpcServiceRecognizer.GRPC_SERVICE_ANNOTATIONS) ||
-                        availabilityService.hasClassInProject(GrpcServiceRecognizer.BINDABLE_SERVICE_FQN))
-            ) {
-                add(GrpcClassExporter(project))
-            }
-        }
+        return ClassExporterRegistry.getInstance(project).getEnabledExporters()
     }
 }

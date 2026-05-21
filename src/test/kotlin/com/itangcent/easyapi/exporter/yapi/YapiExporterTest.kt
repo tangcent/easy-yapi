@@ -1,17 +1,13 @@
 package com.itangcent.easyapi.exporter.yapi
 
-import com.itangcent.easyapi.exporter.model.ExportFormat
-import com.itangcent.easyapi.exporter.model.HttpMetadata
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.OutputConfig
-import com.itangcent.easyapi.exporter.model.YapiExportOptions
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.wrap
 import org.junit.Assert.*
 import org.mockito.kotlin.any
-import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 
@@ -24,11 +20,6 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         super.setUp()
         exporterProject = createExporterProject()
         exporter = YapiExporter(exporterProject)
-    }
-
-    @org.junit.Test
-    fun `test format is YAPI`() {
-        assertEquals(ExportFormat.YAPI, exporter.format)
     }
 
     @org.junit.Test
@@ -48,14 +39,9 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     @org.junit.Test
     fun `test export without token returns error`() {
         val endpoint = createTestEndpoint()
-        val outputConfig = OutputConfig(
-            yapiOptions = YapiExportOptions(
-                selectedToken = null
-            )
-        )
-        val context = createTestContext(listOf(endpoint), outputConfig)
+        val context = createTestContext(listOf(endpoint), selectedToken = null)
 
-        val result = kotlinx.coroutines.runBlocking { exporter.export(context) }
+        val result = kotlinx.coroutines.runBlocking { exporter.export(context, selectedToken = null) }
 
         assertTrue("Expected Error but got $result", result is ExportResult.Error)
         val error = result as ExportResult.Error
@@ -73,15 +59,9 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             method = HttpMethod.GET
         )
 
-        val outputConfig = OutputConfig(
-            yapiOptions = YapiExportOptions(
-                selectedToken = "test-token"
-            )
-        )
+        val context = createTestContext(listOf(endpoint), selectedToken = "test-token")
 
-        val context = createTestContext(listOf(endpoint), outputConfig)
-
-        val result = kotlinx.coroutines.runBlocking { exporter.export(context) }
+        val result = kotlinx.coroutines.runBlocking { exporter.export(context, selectedToken = "test-token") }
 
         assertTrue(
             "Expected Error (network) or Success, got $result",
@@ -97,14 +77,8 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             createTestEndpoint("Update User", "/api/users/{id}", HttpMethod.PUT)
         )
 
-        val outputConfig = OutputConfig(
-            yapiOptions = YapiExportOptions(
-                selectedToken = "test-token"
-            )
-        )
-
-        val context = createTestContext(endpoints, outputConfig)
-        val result = kotlinx.coroutines.runBlocking { exporter.export(context) }
+        val context = createTestContext(endpoints, selectedToken = "test-token")
+        val result = kotlinx.coroutines.runBlocking { exporter.export(context, selectedToken = "test-token") }
 
         assertTrue(
             "Expected Error (network) or Success, got $result",
@@ -121,14 +95,8 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             createTestEndpoint("DELETE Test", "/test", HttpMethod.DELETE)
         )
 
-        val outputConfig = OutputConfig(
-            yapiOptions = YapiExportOptions(
-                selectedToken = "test-token"
-            )
-        )
-
-        val context = createTestContext(endpoints, outputConfig)
-        val result = kotlinx.coroutines.runBlocking { exporter.export(context) }
+        val context = createTestContext(endpoints, selectedToken = "test-token")
+        val result = kotlinx.coroutines.runBlocking { exporter.export(context, selectedToken = "test-token") }
 
         assertTrue(
             "Expected Error (network) or Success, got $result",
@@ -142,21 +110,16 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = createTestContext(listOf(endpoint))
 
         assertEquals(exporterProject, context.project)
-        assertEquals(ExportFormat.YAPI, context.exportFormat)
+        assertEquals("yapi", context.channelId)
         assertNotNull(context.settings)
     }
 
     @org.junit.Test
     fun `test export with empty endpoints list`() {
         val endpoints = emptyList<com.itangcent.easyapi.exporter.model.ApiEndpoint>()
-        val outputConfig = OutputConfig(
-            yapiOptions = YapiExportOptions(
-                selectedToken = "test-token"
-            )
-        )
 
-        val context = createTestContext(endpoints, outputConfig)
-        val result = kotlinx.coroutines.runBlocking { exporter.export(context) }
+        val context = createTestContext(endpoints, selectedToken = "test-token")
+        val result = kotlinx.coroutines.runBlocking { exporter.export(context, selectedToken = "test-token") }
 
         assertTrue(
             "Expected Error (no endpoints) or Success (empty upload), got $result",
@@ -182,14 +145,19 @@ class YapiExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private fun createTestContext(
         endpoints: List<com.itangcent.easyapi.exporter.model.ApiEndpoint>,
-        outputConfig: OutputConfig = OutputConfig()
+        selectedToken: String? = null
     ): com.itangcent.easyapi.exporter.model.ExportContext {
+        val channelConfig = if (selectedToken != null) {
+            ChannelConfig.YapiConfig(selectedToken = selectedToken)
+        } else {
+            ChannelConfig.Empty
+        }
         return com.itangcent.easyapi.exporter.model.ExportContext(
             project = exporterProject,
             endpoints = endpoints,
-            exportFormat = ExportFormat.YAPI,
+            channelId = "yapi",
             settings = com.itangcent.easyapi.settings.Settings(),
-            outputConfig = outputConfig
+            channelConfig = channelConfig
         )
     }
 

@@ -171,18 +171,12 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testThrottling() = runTest {
-        // Test that multiple rapid scan requests are throttled properly
-        // Use requestScan which triggers a full scan
-
-        // Trigger multiple scan requests rapidly
         apiIndexManager.requestScan()
         apiIndexManager.requestScan()
         apiIndexManager.requestScan()
 
-        // Wait for initial scan delay + processing time
-        delay(7000)
+        apiIndex.waitUntilValid()
 
-        // Cache should be valid after scan completes
         assertTrue("Cache should be valid after scan", apiIndex.isValid())
 
         val endpoints = apiIndex.endpoints()

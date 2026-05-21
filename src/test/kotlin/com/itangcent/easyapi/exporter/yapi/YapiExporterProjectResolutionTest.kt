@@ -4,12 +4,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.registerServiceInstance
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.config.ConfigReloadListener
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportContext
-import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
@@ -82,9 +81,9 @@ class YapiExporterProjectResolutionTest : EasyApiLightCodeInsightFixtureTestCase
         return ExportContext(
             project = exporterProject,
             endpoints = endpoints,
-            exportFormat = ExportFormat.YAPI,
+            channelId = "yapi",
             settings = Settings(),
-            outputConfig = OutputConfig()
+            channelConfig = ChannelConfig.Empty
         )
     }
 

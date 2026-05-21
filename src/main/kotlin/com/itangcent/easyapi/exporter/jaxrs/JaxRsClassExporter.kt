@@ -17,6 +17,8 @@ import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.psi.type.searchAnnotation
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 import kotlinx.coroutines.withContext
 
 /**
@@ -45,15 +47,21 @@ import kotlinx.coroutines.withContext
  * @see JaxRsParameterResolver for parameter resolution
  */
 class JaxRsClassExporter(
-    private val project: Project,
-    jaxrsEnable: Boolean = true
+    private val project: Project
 ) : ClassExporter {
 
     override val frameworkName: String = "JAX-RS"
 
+    override suspend fun isEnabled(): Boolean {
+        val settings = SettingBinder.getInstance(project).read()
+        val availabilityService = ProjectClassAvailabilityService.getInstance(project)
+        return settings.jaxrsEnable &&
+                availabilityService.hasAnyClassInProject(JaxRsResourceRecognizer.PATH_ANNOTATIONS)
+    }
+
     private val annotationHelper = UnifiedAnnotationHelper()
     private val engine = RuleEngine.getInstance(project)
-    private val recognizer = JaxRsResourceRecognizer(engine, jaxrsEnable)
+    private val recognizer = JaxRsResourceRecognizer(engine)
     private val methodResolver = JaxRsHttpMethodResolver(annotationHelper)
     private val pathResolver = JaxRsPathResolver(annotationHelper)
     private val parameterResolver = JaxRsParameterResolver(annotationHelper)

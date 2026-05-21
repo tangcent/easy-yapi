@@ -23,7 +23,7 @@ import java.util.Properties
  * Used when exporting in UPDATE_EXISTING mode to maintain
  * consistent collection IDs across exports.
  *
- * @see PostmanExporter for usage in export workflow
+ * @see PostmanChannel for usage in export workflow
  */
 @Service(Service.Level.PROJECT)
 class PostmanCollectionHelper(private val project: Project) {

@@ -1,0 +1,55 @@
+package com.itangcent.easyapi.exporter.channel
+
+/**
+ * Sealed class representing channel-specific configuration.
+ *
+ * Each [ApiChannel] implementation uses a specific subclass to store
+ * its configuration (e.g., output directory, workspace ID).
+ *
+ * ## Subclasses
+ *
+ * - [Empty] — No configuration needed (e.g., cURL export)
+ * - [FileConfig] — File-based export configuration (e.g., Markdown)
+ * - [PostmanConfig] — Postman-specific configuration
+ * - [YapiConfig] — YAPI-specific configuration
+ *
+ * @see ApiChannel.createOptionsPanel for the UI that creates these configs
+ */
+sealed class ChannelConfig {
+
+    /** Placeholder for channels that require no configuration. */
+    object Empty : ChannelConfig()
+
+    /**
+     * Configuration for file-based export channels.
+     *
+     * @property outputDir the target output directory, or `null` to use the default
+     * @property fileName the output file name, or `null` to use the default
+     */
+    data class FileConfig(
+        val outputDir: String? = null,
+        val fileName: String? = null
+    ) : ChannelConfig()
+
+    /**
+     * Configuration for Postman export channel.
+     *
+     * @property workspaceId the Postman workspace ID
+     * @property workspaceName the Postman workspace name
+     * @property collectionId the Postman collection ID (for updates)
+     * @property collectionName the Postman collection name
+     * @property isUpdate whether to update an existing collection
+     */
+    data class PostmanConfig(
+        val workspaceId: String? = null,
+        val workspaceName: String? = null,
+        val collectionId: String? = null,
+        val collectionName: String? = null,
+        val isUpdate: Boolean = false
+    ) : ChannelConfig()
+
+    data class YapiConfig(
+        val selectedToken: String? = null,
+        val useCustomProject: Boolean = false
+    ) : ChannelConfig()
+}

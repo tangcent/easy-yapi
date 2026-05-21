@@ -12,18 +12,6 @@ class ActionExistenceTest {
     }
 
     @Test
-    fun testExportToMarkdownActionFormat() {
-        val action = ExportToMarkdownAction()
-        assertEquals("ExportFormat should be MARKDOWN", "MARKDOWN", action.exportFormat.name)
-    }
-
-    @Test
-    fun testExportToPostmanActionFormat() {
-        val action = ExportToPostmanAction()
-        assertEquals("ExportFormat should be POSTMAN", "POSTMAN", action.exportFormat.name)
-    }
-
-    @Test
     fun testFieldsToJsonActionTitle() {
         val action = FieldsToJsonAction()
         assertNotNull("FieldsToJsonAction should be created", action)

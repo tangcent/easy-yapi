@@ -12,7 +12,7 @@ class FeignRuleIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = FeignClassExporter(project, feignEnable = true)
+        exporter = FeignClassExporter(project)
     }
 
     private fun loadTestFiles() {

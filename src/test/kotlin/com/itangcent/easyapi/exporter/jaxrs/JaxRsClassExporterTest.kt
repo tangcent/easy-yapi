@@ -15,7 +15,7 @@ class JaxRsClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
     override fun setUp() {
         super.setUp()
         loadTestFiles()
-        exporter = JaxRsClassExporter(project, jaxrsEnable = true)
+        exporter = JaxRsClassExporter(project)
     }
 
     private fun loadTestFiles() {

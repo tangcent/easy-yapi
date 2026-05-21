@@ -32,7 +32,7 @@ class FeignInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("model/UserInfo.java")
         loadFile("api/feign/BaseUserApi.java")
         loadFile("api/feign/UserFeignClient.java")
-        exporter = FeignClassExporter(project, feignEnable = true)
+        exporter = FeignClassExporter(project)
     }
 
     override fun createConfigReader() = TestConfigReader.empty(project)

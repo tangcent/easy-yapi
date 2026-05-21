@@ -14,6 +14,8 @@ import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 
 /**
  * Exports API endpoints from gRPC service implementation classes.
@@ -37,6 +39,14 @@ class GrpcClassExporter(
 ) : ClassExporter {
 
     override val frameworkName: String = "gRPC"
+
+    override suspend fun isEnabled(): Boolean {
+        val settings = SettingBinder.getInstance(project).read()
+        val availabilityService = ProjectClassAvailabilityService.getInstance(project)
+        return settings.grpcEnable &&
+                (availabilityService.hasAnyClassInProject(GrpcServiceRecognizer.GRPC_SERVICE_ANNOTATIONS) ||
+                        availabilityService.hasClassInProject(GrpcServiceRecognizer.BINDABLE_SERVICE_FQN))
+    }
 
     private val engine = RuleEngine.getInstance(project)
     private val metadataResolver = DocMetadataResolver.getInstance(project)

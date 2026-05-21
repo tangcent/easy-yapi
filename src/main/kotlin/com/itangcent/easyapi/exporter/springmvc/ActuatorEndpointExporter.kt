@@ -9,12 +9,32 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 
+/**
+ * Exports API endpoints from Spring Boot Actuator endpoint classes.
+ *
+ * Processes classes annotated with `@Endpoint`, `@WebEndpoint`, or `@RestControllerEndpoint`
+ * and extracts actuator endpoint information.
+ *
+ * @param project The IntelliJ project
+ * @see ClassExporter for the interface
+ * @see ActuatorEndpointRecognizer for endpoint detection
+ * @see ActuatorEndpointScanner for endpoint scanning
+ */
 class ActuatorEndpointExporter(
     private val project: Project
 ) : ClassExporter {
 
     override val frameworkName: String = "SpringActuator"
+
+    override suspend fun isEnabled(): Boolean {
+        val settings = SettingBinder.getInstance(project).read()
+        val availabilityService = ProjectClassAvailabilityService.getInstance(project)
+        return settings.actuatorEnable &&
+                availabilityService.hasAnyClassInProject(SpringActuatorConstants.ENDPOINT_ANNOTATIONS)
+    }
 
     private val engine = RuleEngine.getInstance(project)
     private val scanner = ActuatorEndpointScanner(project, EndpointBuilder.getInstance(project))

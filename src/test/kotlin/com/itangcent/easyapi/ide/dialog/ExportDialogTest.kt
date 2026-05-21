@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.ide.dialog
 
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.*
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
@@ -7,25 +8,20 @@ class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testDialogShowsEndpointCount() {
         val dialog = ExportDialog(project, 10)
-        assertEquals("Dialog title should show endpoint count", 
+        assertEquals("Dialog title should show endpoint count",
             "Export API Endpoints (10 endpoints)", dialog.title)
     }
 
-    fun testDialogShowsAllExportFormats() {
+    fun testDialogShowsAvailableChannels() {
         val dialog = ExportDialog(project, 5)
         assertNotNull("Dialog should be created", dialog)
     }
 
-    fun testDefaultFormatIsMarkdown() {
+    fun testDefaultChannelConfigIsEmpty() {
         val dialog = ExportDialog(project, 5)
-        assertNotNull("Dialog should be created", dialog)
-    }
-
-    fun testOutputConfigDefaults() {
-        val dialog = ExportDialog(project, 5)
-        val config = dialog.outputConfig
-        assertNotNull("Output config should not be null", config)
-        assertEquals("Default output config", OutputConfig.DEFAULT, config)
+        val config = dialog.channelConfig
+        assertNotNull("Channel config should not be null", config)
+        assertEquals("Default channel config", ChannelConfig.Empty, config)
     }
 
     fun testDialogCanBeCreatedWithDifferentCounts() {
@@ -35,7 +31,7 @@ class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
     }
 
-    fun testFormatFilteringWithHttpEndpoints() {
+    fun testDialogWithHttpEndpoints() {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
@@ -46,12 +42,12 @@ class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
                 metadata = httpMetadata(path = "/api/users", method = HttpMethod.POST)
             )
         )
-        
+
         val dialog = ExportDialog(project, endpoints.size, endpoints)
         assertNotNull("Dialog should be created", dialog)
     }
 
-    fun testFormatFilteringWithGrpcEndpoints() {
+    fun testDialogWithGrpcEndpoints() {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "SayHello",
@@ -64,12 +60,12 @@ class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
                 )
             )
         )
-        
+
         val dialog = ExportDialog(project, endpoints.size, endpoints)
         assertNotNull("Dialog should be created", dialog)
     }
 
-    fun testFormatFilteringWithMixedEndpoints() {
+    fun testDialogWithMixedEndpoints() {
         val endpoints = listOf(
             ApiEndpoint(
                 name = "Get User",
@@ -86,14 +82,14 @@ class ExportDialogTest : EasyApiLightCodeInsightFixtureTestCase() {
                 )
             )
         )
-        
+
         val dialog = ExportDialog(project, endpoints.size, endpoints)
         assertNotNull("Dialog should be created", dialog)
     }
 
-    fun testFormatFilteringWithEmptyEndpoints() {
+    fun testDialogWithEmptyEndpoints() {
         val endpoints = emptyList<ApiEndpoint>()
-        
+
         val dialog = ExportDialog(project, 0, endpoints)
         assertNotNull("Dialog should be created with empty endpoints", dialog)
     }
