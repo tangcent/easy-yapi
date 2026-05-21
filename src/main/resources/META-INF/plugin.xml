@@ -13,6 +13,8 @@
     <depends optional="true" config-file="easy-api-kotlin.xml">org.jetbrains.kotlin</depends>
     <depends optional="true" config-file="easy-api-scala.xml">org.intellij.scala</depends>
     <depends optional="true" config-file="easy-api-groovy.xml">org.intellij.groovy</depends>
+    <depends optional="true" config-file="easy-api-maven.xml">org.jetbrains.idea.maven</depends>
+    <depends optional="true" config-file="easy-api-gradle.xml">org.jetbrains.plugins.gradle</depends>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">
         <supportsKotlinPluginMode supportsK2="true"/>
@@ -70,6 +72,11 @@
                 icon="AllIcons.Toolwindows.ToolWindowRun"
                 anchor="bottom"
                 factoryClass="com.itangcent.easyapi.dashboard.ApiDashboardToolWindowFactory"/>
+        <toolWindow
+                id="EasyAPI"
+                icon="AllIcons.Toolwindows.ToolWindowRun"
+                anchor="bottom"
+                factoryClass="com.itangcent.easyapi.logging.EasyApiConsoleToolWindowFactory"/>
         <notificationGroup id="EasyApi Notifications" displayType="BALLOON"/>
         <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.itangcent.easyapi.ide.linemarker.ApiMethodLineMarkerProvider"/>
         <searchEverywhereContributor implementation="com.itangcent.easyapi.ide.search.ApiSearchEverywhereContributorFactory"/>

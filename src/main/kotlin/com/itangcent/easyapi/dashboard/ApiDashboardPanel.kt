@@ -4,6 +4,7 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiClass
@@ -437,7 +438,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     private fun navigateToSource(endpoint: ApiEndpoint) {
         val method = endpoint.sourceMethod ?: return
         if (method.canNavigate()) {
-            com.intellij.openapi.application.WriteIntentReadAction.run {
+            ApplicationManager.getApplication().invokeLater {
                 method.navigate(true)
             }
         }
@@ -699,7 +700,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     private fun resolveScopeForNode(node: DefaultMutableTreeNode, nodeInfo: NodeInfo): ScriptScope {
         val psiClass = nodeInfo.psiClass
         return if (psiClass != null) {
-            val qualifiedName = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction<String?> {
+            val qualifiedName = ApplicationManager.getApplication().runReadAction<String?> {
                 psiClass.qualifiedName ?: psiClass.name
             } ?: nodeInfo.text
             ScriptScope.Class(qualifiedName)
@@ -728,7 +729,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
         if (folder != null) {
             scopes.add(ScriptScope.Module(folder))
         }
-        val qualifiedName = com.intellij.openapi.application.ApplicationManager.getApplication().runReadAction<String?> {
+        val qualifiedName = ApplicationManager.getApplication().runReadAction<String?> {
             endpoint.sourceClass?.qualifiedName
         } ?: endpoint.className
         if (qualifiedName != null) {

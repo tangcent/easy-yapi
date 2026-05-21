@@ -2,22 +2,22 @@ package com.itangcent.easyapi.psi.helper
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.fileTypes.StdFileTypes
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Key
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiClassOwner
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
-import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMember
 import com.intellij.psi.impl.compiled.ClsClassImpl
+import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.core.threading.read
 import java.io.File
 import java.util.*
@@ -26,7 +26,7 @@ import java.util.*
  * Resolves compiled JAR classes to their source counterparts for documentation extraction.
  *
  * When working with VO/DTO classes from external JAR dependencies, IntelliJ loads them
- * as compiled classes ([ClsClassImpl]) which don't have direct access to Javadoc comments.
+ * as compiled classes ([ClsClassImpl]) which don't have direct access to Javadoc/KDoc comments.
  * This helper resolves these compiled classes to their source versions when source JARs
  * are attached, enabling proper documentation extraction.
  *
@@ -36,6 +36,7 @@ import java.util.*
  * 2. **Cached resolution**: Return previously resolved source class if available
  * 3. **Navigation element**: Use IntelliJ's built-in navigation for decompiled classes
  * 4. **Source JAR search**: Search attached source roots for matching source files
+ *    (both `.java` and `.kt` files are supported via [SOURCE_EXTENSIONS])
  *
  * ## Usage
  *
@@ -69,6 +70,35 @@ import java.util.*
 class SourceHelper(private val project: Project) {
 
     companion object {
+        /**
+         * File extension for Java source files.
+         *
+         * Defined locally rather than using [com.intellij.openapi.fileTypes.StdFileTypes]
+         * because `StdFileTypes.JAVA.defaultExtension` only provides "java" without the dot,
+         * and `StdFileTypes` API may vary across IntelliJ versions. Using a simple constant
+         * avoids deprecated API dependencies and keeps the extension format consistent
+         * (with leading dot) for direct use in path construction.
+         */
+        private const val DOT_JAVA = ".java"
+
+        /**
+         * File extension for Kotlin source files.
+         *
+         * Kotlin source files (`.kt`) may contain classes that are referenced from JARs.
+         * Including this extension enables source resolution for Kotlin classes in
+         * attached source JARs, not just Java.
+         */
+        private const val DOT_KOTLIN = ".kt"
+
+        /**
+         * Supported source file extensions for class resolution.
+         *
+         * When searching for a source class in attached source roots, both `.java` and `.kt`
+         * files are checked. This allows resolving source for classes compiled from either
+         * language.
+         */
+        private val SOURCE_EXTENSIONS = listOf(DOT_JAVA, DOT_KOTLIN)
+
         /**
          * Cache key for storing resolved source classes on the original compiled class.
          * This avoids repeated source resolution for the same class during an operation.
@@ -152,12 +182,13 @@ class SourceHelper(private val project: Project) {
                     }
 
                     val orderEntriesForFile = idx.getOrderEntriesForFile(vFile)
-                    orderEntriesForFile.asSequence()
+                    @Suppress("DEPRECATION") // OrderRootType.SOURCES is deprecated but required for source JAR resolution on older IntelliJ versions
+                    val sourceFiles = orderEntriesForFile.asSequence()
                         .flatMap { it.getFiles(OrderRootType.SOURCES).asSequence() }
                         .distinct()
-                        .map { tryFindSourceClass(it, original) }
-                        .firstOrNull()
-                        ?.let { return it }
+                    for (srcFile in sourceFiles) {
+                        tryFindSourceClass(srcFile, original)?.let { return it }
+                    }
                 }
             }
         } catch (_: Exception) {
@@ -244,8 +275,9 @@ class SourceHelper(private val project: Project) {
     /**
      * Searches for a source class in a source root directory.
      *
-     * Looks for a Java file matching the class's qualified name and caches
-     * the result on the original class for future lookups.
+     * Looks for a Java or Kotlin source file matching the class's qualified name
+     * (see [SOURCE_EXTENSIONS]) and caches the result on the original class for
+     * future lookups via [SOURCE_ELEMENT].
      *
      * @param sourceRoot The virtual file representing the source root
      * @param original The compiled class to find source for
@@ -256,67 +288,65 @@ class SourceHelper(private val project: Project) {
         original: PsiClass
     ): PsiClass? {
         val qualifiedName = original.qualifiedName ?: return null
-        val find = findPsiFileInRoot(sourceRoot, qualifiedName)
-            ?: sourceRoot.findChild(qualifiedName)
-        if (find != null && find is PsiJavaFile) {
-            find.classes.forEach {
-                if (it.qualifiedName == qualifiedName) {
-                    original.putUserData(SOURCE_ELEMENT, it)
-                    return it
-                }
-            }
+        val sourceClass = findSourceClassInRoot(sourceRoot, qualifiedName)
+        if (sourceClass != null) {
+            original.putUserData(SOURCE_ELEMENT, sourceClass)
+            return sourceClass
         }
         return null
     }
 
     /**
-     * Finds a Java source file in a source root by class qualified name.
+     * Finds a source class in a source root directory by qualified name.
      *
-     * Uses a depth-first search to locate the file, handling nested packages
-     * and matching by qualified name to support classes that may not follow
-     * standard file naming conventions.
+     * Uses a two-phase search strategy:
+     *
+     * 1. **Direct path lookup**: Constructs the expected relative path from the
+     *    package and class name (e.g., `com/example/Foo.java` or `com/example/Foo.kt`)
+     *    and checks each extension in [SOURCE_EXTENSIONS]. This is the fast path
+     *    and works for most cases where the source file follows standard naming conventions.
+     *
+     * 2. **Directory traversal**: Falls back to a depth-first search through directories
+     *    that match the class's package prefix. Only source files whose names match
+     *    `SimpleName.java` or `SimpleName.kt` (from [SOURCE_EXTENSIONS]) are inspected.
+     *    This handles cases where the directory structure doesn't strictly follow the
+     *    package layout (e.g., Kotlin multi-file facades or non-standard source layouts).
+     *
+     * Both phases delegate to [findClassInVirtualFile] to resolve the [PsiClass] from
+     * the matched virtual file.
      *
      * @param dirFile The source root directory to search in
      * @param className The fully qualified class name to find
-     * @return The PsiJavaFile if found, null otherwise
+     * @return The source PsiClass if found, null otherwise
      */
-    private fun findPsiFileInRoot(dirFile: VirtualFile, className: String): PsiJavaFile? {
-        val javaName = StringUtil.getQualifiedName(className, StdFileTypes.JAVA.defaultExtension)
-        if (className.isNotEmpty()) {
-            val classFile = dirFile.findChild(javaName)
-            if (classFile != null) {
-                val psiFile = PsiManager.getInstance(project).findFile(classFile)
-                if (psiFile is PsiJavaFile) {
-                    return psiFile
-                }
+    private fun findSourceClassInRoot(dirFile: VirtualFile, className: String): PsiClass? {
+        val simpleName = className.substringAfterLast('.')
+        val packagePath = className.substringBeforeLast('.', "").replace('.', '/')
+
+        for (ext in SOURCE_EXTENSIONS) {
+            val relativePath = if (packagePath.isNotEmpty()) "$packagePath/$simpleName$ext" else "$simpleName$ext"
+            val file = dirFile.findFileByRelativePath(relativePath)
+            if (file != null && file.isValid) {
+                findClassInVirtualFile(file, className)?.let { return it }
             }
         }
 
+        val targetFileNames = SOURCE_EXTENSIONS.map { simpleName + it }.toSet()
         val dirs = Stack<VirtualFile>()
         var dir: VirtualFile = dirFile
         val rootPath = dirFile.path
         while (true) {
             val children = dir.children
             for (child in children) {
-                if (StdFileTypes.JAVA == child.fileType && child.isValid) {
-                    val psiFile = PsiManager.getInstance(project).findFile(child)
-                    if (psiFile is PsiJavaFile) {
-                        if (child.name == javaName) {
-                            return psiFile
-                        }
-
-                        for (cls in psiFile.classes) {
-                            if (cls.qualifiedName == className) {
-                                return psiFile
-                            }
-                        }
-                    }
-                } else {
-                    val prefix = dir.path.removePrefix(rootPath)
-                        .replace(File.separatorChar, '.')
-                    if (javaName.startsWith(prefix)) {
+                if (child.isDirectory) {
+                    val relativeDirPath = dir.path.removePrefix(rootPath)
+                        .removePrefix(File.separator)
+                    val packagePrefix = relativeDirPath.replace(File.separatorChar, '.')
+                    if (packagePrefix.isEmpty() || className.startsWith("$packagePrefix.")) {
                         dirs.push(child)
                     }
+                } else if (child.isValid && child.name in targetFileNames) {
+                    findClassInVirtualFile(child, className)?.let { return it }
                 }
             }
             if (dirs.isEmpty()) {
@@ -325,5 +355,25 @@ class SourceHelper(private val project: Project) {
             dir = dirs.pop()
         }
         return null
+    }
+
+    /**
+     * Resolves a PsiClass from a virtual file by qualified name.
+     *
+     * For files that implement [PsiClassOwner] (e.g., Java/Kotlin source files),
+     * directly inspects the declared classes. For other file types, uses
+     * [JavaPsiFacade] with a file-scoped search.
+     *
+     * @param file The virtual file to resolve the class from
+     * @param qualifiedName The fully qualified class name to find
+     * @return The matching PsiClass if found, null otherwise
+     */
+    private fun findClassInVirtualFile(file: VirtualFile, qualifiedName: String): PsiClass? {
+        val psiFile = PsiManager.getInstance(project).findFile(file) ?: return null
+        if (psiFile is PsiClassOwner) {
+            return psiFile.classes.find { it.qualifiedName == qualifiedName }
+        }
+        val scope = GlobalSearchScope.fileScope(project, file)
+        return JavaPsiFacade.getInstance(project).findClass(qualifiedName, scope)
     }
 }
