@@ -18,12 +18,11 @@ import com.itangcent.easyapi.cache.ApiIndex
 import com.itangcent.easyapi.cache.ApiIndexManager
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.exporter.ApiExporterRegistry
 import com.itangcent.easyapi.exporter.ExportOrchestrator
+import com.itangcent.easyapi.exporter.channel.ApiChannelRegistry
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.ide.dialog.EndpointSelection
@@ -393,13 +392,13 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @param endpoints The list of endpoints to export
      */
     private fun addExportMenuItems(menu: JMenu, endpoints: List<ApiEndpoint>) {
-        ExportFormat.entries
-            .filter { it.isAvailableFor(endpoints) }
-            .forEach { format ->
-                menu.add(createMenuItem("Export to ${format.displayName}") {
-                    showExportDialog(endpoints, format)
-                })
-            }
+        val channelRegistry = ApiChannelRegistry.getInstance(project)
+        val channels = channelRegistry.getAvailableChannels(endpoints)
+        channels.forEach { channel ->
+            menu.add(createMenuItem("Export to ${channel.displayName}") {
+                showExportDialog(endpoints, channel.id)
+            })
+        }
     }
 
     /**
@@ -475,7 +474,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @param endpoints The list of endpoints to export
      * @param format Optional pre-selected export format
      */
-    private fun showExportDialog(endpoints: List<ApiEndpoint>, format: ExportFormat? = null) {
+    private fun showExportDialog(endpoints: List<ApiEndpoint>, channelId: String? = null) {
         if (endpoints.isEmpty()) {
             Messages.showInfoMessage(project, "No API endpoints to export.", "Export API")
             return
@@ -483,35 +482,33 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
 
         val orchestrator = ExportOrchestrator.getInstance(project)
 
-        // Determine export format and config on EDT before launching background work
-        val exportFormat: ExportFormat
-        val outputConfig: OutputConfig
+        val selectedChannelId: String
+        val channelConfig: ChannelConfig
         val selectedEndpoints: List<EndpointSelection>?
-        if (format != null) {
-            exportFormat = format
-            outputConfig = OutputConfig()
+
+        if (channelId != null) {
+            selectedChannelId = channelId
+            channelConfig = ChannelConfig.Empty
             selectedEndpoints = null
         } else {
             val dialogResult = ExportDialog.show(project, endpoints.size, endpoints) ?: return
-            exportFormat = dialogResult.format
-            outputConfig = dialogResult.outputConfig
+            selectedChannelId = dialogResult.channelId
+            channelConfig = dialogResult.channelConfig
             selectedEndpoints = dialogResult.selectedEndpoints
         }
 
         backgroundAsync {
             try {
-                val result = if (!selectedEndpoints.isNullOrEmpty()) {
-                    val eps = selectedEndpoints.map { it.endpoint }
-                    runWithProgress(project, "Exporting APIs...") { indicator ->
-                        orchestrator.exportEndpoints(eps, exportFormat, outputConfig, indicator)
-                    }
+                val eps = if (!selectedEndpoints.isNullOrEmpty()) {
+                    selectedEndpoints.map { it.endpoint }
                 } else {
-                    runWithProgress(project, "Exporting APIs...") { indicator ->
-                        orchestrator.exportEndpoints(endpoints, exportFormat, outputConfig, indicator)
-                    }
+                    endpoints
+                }
+                val result = runWithProgress(project, "Exporting APIs...") { indicator ->
+                    orchestrator.exportViaChannel(selectedChannelId, eps, channelConfig, indicator)
                 }
 
-                handleExportResult(result, format, outputConfig)
+                handleExportResult(result, selectedChannelId, channelConfig)
             } catch (_: kotlin.coroutines.cancellation.CancellationException) {
                 LOG.info("Export cancelled by user")
             } catch (e: Throwable) {
@@ -536,27 +533,11 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      */
     private suspend fun handleExportResult(
         result: ExportResult,
-        format: ExportFormat?,
-        outputConfig: OutputConfig
+        channelId: String,
+        channelConfig: ChannelConfig
     ) {
         when (result) {
-            is ExportResult.Success -> {
-                val exporterRegistry = ApiExporterRegistry.getInstance(project)
-                val exporter = format?.let { exporterRegistry.getExporter(it) }
-
-                val handled = try {
-                    exporter?.handleExportResult(project, result, outputConfig) ?: false
-                } catch (e: kotlin.coroutines.cancellation.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    LOG.warn("Failed to handle export result", e)
-                    false
-                }
-
-                if (!handled) {
-                    showExportSuccessNotification(result)
-                }
-            }
+            is ExportResult.Success -> {}
 
             is ExportResult.Cancelled -> {
             }
@@ -569,23 +550,6 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
                 )
             }
         }
-    }
-
-    /**
-     * Shows a success notification after export completion.
-     * 
-     * @param result The successful export result containing count and target info
-     */
-    private fun showExportSuccessNotification(result: ExportResult.Success) {
-        val message = buildString {
-            append("Successfully exported ${result.count} endpoints to ${result.target}")
-            result.metadata?.formatDisplay()?.let { append(" $it") }
-        }
-        NotificationUtils.notifyInfo(
-            project,
-            "Export Successful",
-            message
-        )
     }
 
     /**

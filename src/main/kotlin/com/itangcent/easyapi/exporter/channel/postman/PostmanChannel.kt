@@ -1,68 +1,67 @@
-package com.itangcent.easyapi.exporter.postman
+package com.itangcent.easyapi.exporter.channel.postman
 
-import com.intellij.openapi.components.Service
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
 import com.itangcent.easyapi.core.threading.IdeDispatchers
+import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.exporter.ApiExporter
+import com.itangcent.easyapi.exporter.channel.ApiChannel
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
+import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
 import com.itangcent.easyapi.exporter.model.ExportContext
-import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.model.OutputConfig
+import com.itangcent.easyapi.exporter.postman.*
 import com.itangcent.easyapi.exporter.postman.model.PostmanCollection
 import com.itangcent.easyapi.exporter.postman.model.PostmanItem
+import com.itangcent.easyapi.exporter.postman.model.postmanGson
 import com.itangcent.easyapi.http.HttpClientProvider
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.exporter.postman.model.postmanGson
 import com.itangcent.easyapi.util.ide.ModuleHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
+import java.awt.BorderLayout
+import java.awt.event.ItemEvent
 import java.io.File
+import javax.swing.*
 
 /**
- * Exports API endpoints to Postman collections.
+ * [ApiChannel] that exports API endpoints to Postman collections.
  *
- * Supports two export modes:
- * 1. **File Export** - Saves collection as JSON file (when no API token configured)
- * 2. **API Export** - Uploads directly to Postman (when API token configured)
+ * Supports HTTP endpoints only (not gRPC). Provides a configuration panel
+ * for selecting workspace/collection, and exposes a top-level IDE action.
  *
- * ## Export Modes
- * - **CREATE_NEW** - Always creates a new collection
- * - **UPDATE_EXISTING** - Updates existing collections by module
- *
- * ## Features
- * - Automatic collection naming with timestamps
- * - Module-based collection organization
- * - Pre-request and test script support
- * - Workspace selection support
- *
- * @see PostmanFormatter for collection formatting
- * @see PostmanApiClient for API communication
+ * @see ApiChannel
+ * @see PostmanFormatter
+ * @see PostmanOptionsPanel
  */
-@Service(Service.Level.PROJECT)
-class PostmanExporter(private val project: Project) : ApiExporter {
+class PostmanChannel : ApiChannel, IdeaLog {
 
-    override val format: ExportFormat = ExportFormat.POSTMAN
+    override val id: String = "postman"
+    override val displayName: String = "Postman"
+    override val supportsGrpc: Boolean = false
+    override val exposeAsAction: Boolean = true
+    override val actionText: String = "Export to Postman"
 
-    companion object {
-        fun getInstance(project: Project): PostmanExporter {
-            return project.getService(PostmanExporter::class.java)
-        }
+    override fun createOptionsPanel(project: Project): ChannelOptionsPanel {
+        return PostmanOptionsPanel(project)
     }
 
     override suspend fun export(context: ExportContext): ExportResult {
+        val project = context.project
         val settings = SettingBinder.getInstance(project).read()
         val token = settings.postmanToken
-        val postmanOptions = context.outputConfig.postmanOptions
+        val postmanConfig = context.channelConfig as? ChannelConfig.PostmanConfig
 
-        val collectionName = postmanOptions?.selectedCollectionName ?: context.project.name
-        val hasExplicitName = postmanOptions?.selectedCollectionName != null
+        val collectionName = postmanConfig?.collectionName ?: project.name
+        val hasExplicitName = postmanConfig?.collectionName != null
 
         val formatter = PostmanFormatter(
             project = project,
@@ -77,10 +76,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
             )
         )
 
-        val collection = formatter.format(
-            context.endpointsToExport,
-            collectionName
-        )
+        val collection = formatter.format(context.endpointsToExport, collectionName)
 
         return if (token.isNullOrBlank()) {
             ExportResult.Success(
@@ -92,10 +88,10 @@ class PostmanExporter(private val project: Project) : ApiExporter {
                 )
             )
         } else {
-            val hasDialogSelection = postmanOptions?.selectedCollectionId != null
-                    || postmanOptions?.selectedCollectionName != null
+            val hasDialogSelection = postmanConfig?.collectionId != null
+                    || postmanConfig?.collectionName != null
             if (hasDialogSelection) {
-                uploadToPostmanWithDialogSelection(context, token, collection, settings)
+                uploadToPostmanWithDialogSelection(context, token, collection, settings, postmanConfig!!)
             } else {
                 val exportMode = settings.postmanExportMode?.let {
                     runCatching { PostmanExportMode.valueOf(it) }.getOrNull()
@@ -109,11 +105,12 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         context: ExportContext,
         token: String,
         collection: PostmanCollection,
-        settings: com.itangcent.easyapi.settings.Settings
+        settings: com.itangcent.easyapi.settings.Settings,
+        postmanConfig: ChannelConfig.PostmanConfig
     ): ExportResult {
-        val postmanOptions = context.outputConfig.postmanOptions!!
-        val workspaceId = postmanOptions.selectedWorkspaceId ?: settings.postmanWorkspace
-        val collectionId = postmanOptions.selectedCollectionId
+        val project = context.project
+        val workspaceId = postmanConfig.workspaceId ?: settings.postmanWorkspace
+        val collectionId = postmanConfig.collectionId
 
         val httpClient = HttpClientProvider.getInstance(project).getClient()
         val postmanClient = PostmanApiClient(token, workspaceId = workspaceId, httpClient = httpClient)
@@ -152,6 +149,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         settings: com.itangcent.easyapi.settings.Settings,
         exportMode: PostmanExportMode
     ): ExportResult {
+        val project = context.project
         val workspaceId = settings.postmanWorkspace
 
         val httpClient = HttpClientProvider.getInstance(project).getClient()
@@ -183,12 +181,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
 
             PostmanExportMode.UPDATE_EXISTING -> {
                 return uploadToPostmanUpdateMode(
-                    context,
-                    collection,
-                    settings,
-                    postmanClient,
-                    workspaceName,
-                    workspaceId
+                    context, collection, settings, postmanClient, workspaceName, workspaceId
                 )
             }
         }
@@ -202,6 +195,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         workspaceName: String?,
         workspaceId: String?
     ): ExportResult {
+        val project = context.project
         val collectionHelper = PostmanCollectionHelper.getInstance(project)
         collectionHelper.resetPromptedModules()
 
@@ -280,8 +274,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         }
 
         val successCount = results.count { it is ExportResult.Success }
-        val totalCount = results.size
-        return if (successCount == totalCount) {
+        return if (successCount == results.size) {
             ExportResult.Success(
                 count = results.sumOf { (it as ExportResult.Success).count },
                 target = "Postman",
@@ -314,6 +307,7 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         context: ExportContext,
         settings: com.itangcent.easyapi.settings.Settings
     ): PostmanCollection {
+        val project = context.project
         val formatter = PostmanFormatter(
             project = project,
             options = PostmanFormatOptions(
@@ -329,15 +323,15 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         return formatter.format(endpoints, baseName)
     }
 
-    override suspend fun handleExportResult(
+    override suspend fun handleResult(
         project: Project,
         result: ExportResult.Success,
-        outputConfig: OutputConfig
+        config: ChannelConfig
     ): Boolean {
         val metadata = result.metadata as? PostmanExportMetadata ?: return false
 
         if (metadata.collectionData != null) {
-            return handleFileExport(project, result, metadata, outputConfig)
+            return handleFileExport(project, result, metadata, config)
         }
 
         val details = metadata.formatDisplay()
@@ -347,7 +341,9 @@ class PostmanExporter(private val project: Project) : ApiExporter {
                 append("\n$details")
             }
         }
-        Messages.showInfoMessage(project, message, "Export API")
+        swing {
+            Messages.showInfoMessage(project, message, "Export API")
+        }
         return true
     }
 
@@ -355,9 +351,10 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         project: Project,
         result: ExportResult.Success,
         metadata: PostmanExportMetadata,
-        outputConfig: OutputConfig
+        config: ChannelConfig
     ): Boolean {
-        val targetFile = resolveTargetFile(project, outputConfig, "postman_collection.json")
+        val fileConfig = config as? ChannelConfig.FileConfig
+        val targetFile = resolveTargetFile(project, fileConfig, "postman_collection.json")
             ?: throw CancellationException("User cancelled file selection")
 
         val gson = postmanGson()
@@ -368,18 +365,22 @@ class PostmanExporter(private val project: Project) : ApiExporter {
         }
 
         swing {
-            showSuccessMessage(project, result, targetFile.absolutePath)
+            Messages.showInfoMessage(
+                project,
+                "Successfully exported ${result.count} endpoints to ${targetFile.absolutePath}",
+                "Export API"
+            )
         }
         return true
     }
 
     private suspend fun resolveTargetFile(
         project: Project,
-        outputConfig: OutputConfig,
+        fileConfig: ChannelConfig.FileConfig?,
         defaultFileName: String
     ): File? {
-        val outputDir = outputConfig.outputDir
-        val fileName = outputConfig.fileName
+        val outputDir = fileConfig?.outputDir
+        val fileName = fileConfig?.fileName
         if (!outputDir.isNullOrBlank()) {
             val dir = File(outputDir)
             if (!dir.exists()) {
@@ -398,22 +399,9 @@ class PostmanExporter(private val project: Project) : ApiExporter {
                 "Choose where to save the Postman collection file"
             )
             val saver = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-
             val wrapper: VirtualFileWrapper? = saver.save(null as VirtualFile?, defaultFileName)
             wrapper?.file
         }
-    }
-
-    private fun showSuccessMessage(project: Project, result: ExportResult.Success, target: String) {
-        val message = buildString {
-            append("Successfully exported ${result.count} endpoints to $target")
-            result.metadata?.formatDisplay()?.let { append(" $it") }
-        }
-        Messages.showInfoMessage(
-            project,
-            message,
-            "Export API"
-        )
     }
 
     private fun countApiItems(collection: PostmanCollection): Int {
@@ -421,5 +409,217 @@ class PostmanExporter(private val project: Project) : ApiExporter {
             if (item.request != null) 1 else count(item.item)
         }
         return count(collection.item)
+    }
+}
+
+private class PostmanCollectionItem(val name: String, val id: String, val uid: String? = null) {
+    override fun toString(): String = name
+}
+
+private class PostmanWorkspaceItem(val name: String, val id: String) {
+    override fun toString(): String = name
+}
+
+/**
+ * Configuration panel for [PostmanChannel].
+ *
+ * Allows the user to select a Postman workspace and collection,
+ * or choose to create a new collection.
+ */
+class PostmanOptionsPanel(private val project: Project) : ChannelOptionsPanel, IdeaLog {
+
+    private val postmanWorkspaces = mutableListOf<PostmanWorkspaceItem>()
+    private val postmanCollectionItems = mutableListOf<PostmanCollectionItem>()
+    private val postmanWorkspaceComboBox = ComboBox<String>().apply { isEditable = false }
+    private val postmanCollectionComboBox = ComboBox<String>().apply { isEditable = true }
+    private val postmanRefreshButton = JButton("Refresh").apply {
+        addActionListener { refreshPostmanData() }
+    }
+    private val errorLabel = JLabel("").apply { foreground = java.awt.Color.RED }
+
+    private var selectedPostmanCollection: PostmanCollectionItem? = null
+    private var postmanDataLoaded = false
+    private var postmanClient: CachedPostmanApiClient? = null
+
+    override val component: JComponent = JPanel().apply {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        add(JPanel(BorderLayout(8, 0)).apply {
+            add(JLabel("Workspace:"), BorderLayout.WEST)
+            add(postmanWorkspaceComboBox, BorderLayout.CENTER)
+            add(postmanRefreshButton, BorderLayout.EAST)
+        })
+        add(Box.createVerticalStrut(5))
+        add(JPanel(BorderLayout(8, 0)).apply {
+            add(JLabel("Collection:"), BorderLayout.WEST)
+            add(postmanCollectionComboBox, BorderLayout.CENTER)
+        })
+        add(Box.createVerticalStrut(5))
+        add(errorLabel)
+    }
+
+    override fun onShown() {
+        if (!postmanDataLoaded) {
+            postmanDataLoaded = true
+            loadPostmanDataFromApi()
+        }
+    }
+
+    override fun buildConfig(): ChannelConfig.PostmanConfig {
+        val wsIdx = postmanWorkspaceComboBox.selectedIndex
+        val ws = if (wsIdx >= 0 && wsIdx < postmanWorkspaces.size) postmanWorkspaces[wsIdx] else null
+
+        val collectionText = ((postmanCollectionComboBox.editor.editorComponent as? JTextField)?.text
+            ?: postmanCollectionComboBox.selectedItem?.toString())?.trim()
+            ?.removePrefix("(New): ")?.trim().orEmpty()
+
+        val remembered = selectedPostmanCollection
+        val isUpdate = remembered != null && collectionText == remembered.name
+
+        return ChannelConfig.PostmanConfig(
+            workspaceId = ws?.id,
+            workspaceName = ws?.name,
+            collectionId = if (isUpdate) (remembered.uid ?: remembered.id) else null,
+            collectionName = collectionText.ifEmpty { null },
+            isUpdate = isUpdate
+        )
+    }
+
+    private fun refreshPostmanData() {
+        postmanDataLoaded = false
+        errorLabel.text = ""
+        onShown()
+    }
+
+    private fun loadPostmanDataFromApi() {
+        val settings = SettingBinder.getInstance(project).read()
+        val token = settings.postmanToken
+
+        if (token.isNullOrBlank()) {
+            postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("No token configured"))
+            postmanCollectionComboBox.model = DefaultComboBoxModel(arrayOf(defaultNewCollectionName()))
+            (postmanCollectionComboBox.editor.editorComponent as? JTextField)?.text = defaultNewCollectionName()
+            return
+        }
+
+        postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("Loading..."))
+        postmanCollectionComboBox.model = DefaultComboBoxModel(arrayOf("Loading..."))
+
+        val httpClient = HttpClientProvider.getInstance(project).getClient()
+        val client = PostmanApiClient(token, httpClient = httpClient).asCached()
+        postmanClient = client
+
+        backgroundAsync {
+            try {
+                val workspaces = client.listWorkspaces(useCache = true)
+                val workspaceItems = workspaces.map { PostmanWorkspaceItem(it.name, it.id) }
+
+                swing(ModalityState.any()) {
+                    postmanWorkspaces.clear()
+                    postmanWorkspaces.addAll(workspaceItems)
+                    errorLabel.text = ""
+
+                    if (postmanWorkspaces.isNotEmpty()) {
+                        postmanWorkspaceComboBox.model = DefaultComboBoxModel(
+                            postmanWorkspaces.map { it.toString() }.toTypedArray()
+                        )
+                        postmanWorkspaceComboBox.selectedIndex = 0
+                    } else {
+                        postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("No workspaces found"))
+                        populateCollectionCombo(emptyList())
+                    }
+                }
+
+                if (workspaceItems.isNotEmpty()) {
+                    var wsIdx = -1
+                    swing(ModalityState.any()) { wsIdx = postmanWorkspaceComboBox.selectedIndex }
+                    if (wsIdx >= 0 && wsIdx < postmanWorkspaces.size) {
+                        loadCollectionsForWorkspace(client, postmanWorkspaces[wsIdx].id)
+                    }
+                }
+            } catch (e: Exception) {
+                LOG.warn("Failed to load Postman workspaces", e)
+                swing(ModalityState.any()) {
+                    postmanWorkspaceComboBox.model = DefaultComboBoxModel(arrayOf("Failed to load"))
+                    populateCollectionCombo(emptyList())
+                    errorLabel.text = "Failed to load workspaces — check your API token in Settings"
+                }
+            }
+        }
+    }
+
+    private suspend fun loadCollectionsForWorkspace(client: CachedPostmanApiClient, workspaceId: String) {
+        try {
+            val collections = client.listCollections(workspaceId, useCache = true)
+            swing(ModalityState.any()) {
+                populateCollectionCombo(collections.map { PostmanCollectionItem(it.name, it.id, it.uid) })
+                errorLabel.text = ""
+            }
+        } catch (e: Exception) {
+            LOG.warn("Failed to load Postman collections", e)
+            swing(ModalityState.any()) {
+                populateCollectionCombo(emptyList())
+                errorLabel.text = "Failed to load collections — check your API token in Settings"
+            }
+        }
+    }
+
+    private fun populateCollectionCombo(collections: List<PostmanCollectionItem>) {
+        postmanCollectionItems.clear()
+        postmanCollectionItems.addAll(collections)
+        selectedPostmanCollection = null
+
+        val inferredName = defaultNewCollectionName()
+        val matchIdx = collections.indexOfFirst { it.name == inferredName }
+            .takeIf { it >= 0 }
+            ?: collections.indexOfFirst { it.name.startsWith("$inferredName-") }
+
+        val hasNewEntry = matchIdx < 0
+        val entries = mutableListOf<String>()
+        if (hasNewEntry) {
+            entries.add("(New): $inferredName")
+        }
+        collections.forEach { entries.add(it.name) }
+
+        postmanCollectionComboBox.model = DefaultComboBoxModel(entries.toTypedArray())
+
+        if (matchIdx >= 0) {
+            selectedPostmanCollection = collections[matchIdx]
+            postmanCollectionComboBox.selectedIndex = matchIdx
+            (postmanCollectionComboBox.editor.editorComponent as? JTextField)?.text = collections[matchIdx].name
+        } else {
+            postmanCollectionComboBox.selectedIndex = 0
+            (postmanCollectionComboBox.editor.editorComponent as? JTextField)?.text = inferredName
+        }
+    }
+
+    private fun defaultNewCollectionName(): String = project.name
+
+    init {
+        postmanCollectionComboBox.addItemListener { e ->
+            if (e.stateChange == ItemEvent.SELECTED) {
+                val idx = postmanCollectionComboBox.selectedIndex
+                val hasNewEntry = postmanCollectionItems.isEmpty()
+                        || postmanCollectionComboBox.getItemAt(0)?.startsWith("(New)") == true
+                val collectionIdx = if (hasNewEntry) idx - 1 else idx
+                if (collectionIdx >= 0 && collectionIdx < postmanCollectionItems.size) {
+                    selectedPostmanCollection = postmanCollectionItems[collectionIdx]
+                } else {
+                    selectedPostmanCollection = null
+                }
+            }
+        }
+
+        postmanWorkspaceComboBox.addItemListener { e ->
+            if (e.stateChange == ItemEvent.SELECTED) {
+                val idx = postmanWorkspaceComboBox.selectedIndex
+                if (idx >= 0 && idx < postmanWorkspaces.size) {
+                    postmanCollectionComboBox.model = DefaultComboBoxModel(arrayOf("Loading..."))
+                    val client = postmanClient ?: return@addItemListener
+                    backgroundAsync {
+                        loadCollectionsForWorkspace(client, postmanWorkspaces[idx].id)
+                    }
+                }
+            }
+        }
     }
 }

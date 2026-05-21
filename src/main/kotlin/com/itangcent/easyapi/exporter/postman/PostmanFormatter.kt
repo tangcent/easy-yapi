@@ -97,7 +97,7 @@ data class PostmanFormatOptions(
  * - Pre-request and test scripts
  * - Response examples
  *
- * @see PostmanExporter for the export workflow
+ * @see PostmanChannel for the export workflow
  * @see PostmanScriptMerger for script merging logic
  */
 class PostmanFormatter(

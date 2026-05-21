@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
  * - Authentication: X-Api-Key header
  *
  * @see CachedPostmanApiClient for cached version
- * @see PostmanExporter for usage in export workflow
+ * @see PostmanChannel for usage in export workflow
  */
 class PostmanApiClient(
     private val apiKey: String = "",

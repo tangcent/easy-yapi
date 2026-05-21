@@ -20,6 +20,24 @@
         <supportsKotlinPluginMode supportsK2="true"/>
     </extensions>
 
+    <extensionPoints>
+        <extensionPoint name="classExporter" interface="com.itangcent.easyapi.exporter.ClassExporter" area="IDEA_PROJECT" dynamic="true"/>
+        <extensionPoint name="apiChannel" interface="com.itangcent.easyapi.exporter.channel.ApiChannel" dynamic="true"/>
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="com.itangcent.idea.plugin.easy-yapi">
+        <classExporter implementation="com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.exporter.feign.FeignClassExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointExporter"/>
+        <classExporter implementation="com.itangcent.easyapi.exporter.grpc.GrpcClassExporter"/>
+        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.markdown.MarkdownChannel"/>
+        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.postman.PostmanChannel"/>
+        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.yapi.YapiChannel"/>
+        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.curl.CurlChannel"/>
+        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.httpclient.HttpClientChannel"/>
+    </extensions>
+
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.itangcent.easyapi.core.EasyApiApplicationService"/>
         <applicationService serviceImplementation="com.itangcent.easyapi.settings.state.ApplicationSettingsState"/>
@@ -46,6 +64,8 @@
         <projectService serviceImplementation="com.itangcent.easyapi.grpc.CompositeDescriptorResolver"/>
 
         <projectService serviceImplementation="com.itangcent.easyapi.exporter.EndpointBuilder"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.exporter.ClassExporterRegistry"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.exporter.channel.ApiChannelRegistry"/>
         <projectService serviceImplementation="com.itangcent.easyapi.psi.helper.DocMetadataResolver"/>
         <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
 
@@ -100,20 +120,11 @@
             </action>
         </group>
 
-        <group id="EasyApiExportGroup" text="Export" description="Export apis">
-            <action id="com.itangcent.idea.easy_api.actions.PostmanExportAction"
-                    class="com.itangcent.easyapi.ide.action.ExportToPostmanAction" text="ExportToPostman"
-                    description="ExportToPostman">
-            </action>
-            <action id="com.itangcent.idea.easy_api.actions.YapiExportAction"
-                    class="com.itangcent.easyapi.ide.action.ExportToYapiAction" text="ExportToYapi"
-                    description="ExportToYapi">
-            </action>
-            <action id="com.itangcent.idea.easy_api.actions.MarkdownExportAction"
-                    class="com.itangcent.easyapi.ide.action.ExportToMarkdownAction" text="ExportMarkdown"
-                    description="ExportToMarkdown">
-            </action>
-        </group>
+        <group id="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"
+                class="com.itangcent.easyapi.ide.action.ChannelQuickActionGroup"
+                text="Export to..."
+                description="Export to channel"
+                popup="true"/>
 
         <group id="EasyApiFieldsGroup" text="FieldsTo*" description="Export apis">
             <action id="com.itangcent.idea.easy_api.actions.FieldsToJsonAction"
@@ -141,21 +152,21 @@
         <group id="EasyApiGenerateMenu" text="EasyApi" description="EasyApiGenerateMenu" popup="true">
             <add-to-group group-id="GenerateGroup" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
-            <reference ref="EasyApiExportGroup"/>
+            <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
             <reference ref="EasyApiFieldsGroup"/>
         </group>
 
         <group id="EasyApiEditorLangPopupMenu" text="EasyApi" description="EasyApiEditorLangPopupMenu" popup="true">
             <add-to-group group-id="EditorLangPopupMenu" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
-            <reference ref="EasyApiExportGroup"/>
+            <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
             <reference ref="EasyApiFieldsGroup"/>
         </group>
 
         <group id="EasyApiProjectViewPopupMenu" text="EasyApi" description="EasyApiProjectViewPopupMenu" popup="true">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
-            <reference ref="EasyApiExportGroup"/>
+            <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
         </group>
 
         <action

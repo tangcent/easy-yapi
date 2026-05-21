@@ -136,8 +136,11 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
     }
 
     override fun tearDown() {
-        project.syncPublish(ActionCompletedTopic.TOPIC)
-        super.tearDown()
+        try {
+            project.syncPublish(ActionCompletedTopic.TOPIC)
+        } finally {
+            super.tearDown()
+        }
     }
 
     protected fun runTest(block: suspend () -> Unit) {

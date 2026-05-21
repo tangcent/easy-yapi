@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.exporter.model
 
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
 import org.junit.Test
@@ -72,49 +73,36 @@ class ExportContextTest {
             project = mockProject(),
             endpoints = listOf(endpoint1, endpoint2)
         )
-        
+
         val modified = original.withSelectedEndpoints(listOf(endpoint2))
-        
+
         assertFalse(original.hasSelection)
         assertTrue(modified.hasSelection)
         assertEquals(1, modified.selectedEndpoints.size)
     }
 
     @Test
-    fun testWithExportFormat() {
+    fun testWithChannel() {
         val context = ExportContext(
             project = mockProject(),
             endpoints = emptyList()
         )
-        
-        assertEquals(ExportFormat.MARKDOWN, context.exportFormat)
-        
-        val modified = context.withExportFormat(ExportFormat.POSTMAN)
-        assertEquals(ExportFormat.POSTMAN, modified.exportFormat)
+
+        assertEquals("markdown", context.channelId)
+        assertEquals(ChannelConfig.Empty, context.channelConfig)
+
+        val modified = context.withChannel("postman", ChannelConfig.PostmanConfig(collectionName = "Test"))
+        assertEquals("postman", modified.channelId)
+        assertTrue(modified.channelConfig is ChannelConfig.PostmanConfig)
     }
 
     @Test
-    fun testWithOutputConfig() {
+    fun testChannelConfigDefault() {
         val context = ExportContext(
             project = mockProject(),
             endpoints = emptyList()
         )
-        
-        val newConfig = OutputConfig(
-            outputDir = "/tmp/export",
-            fileName = "api.md"
-        )
-        
-        val modified = context.withOutputConfig(newConfig)
-        assertEquals("/tmp/export", modified.outputConfig.outputDir)
-        assertEquals("api.md", modified.outputConfig.fileName)
-    }
-
-    @Test
-    fun testOutputConfigDefault() {
-        val defaultConfig = OutputConfig.DEFAULT
-        assertNull(defaultConfig.outputDir)
-        assertNull(defaultConfig.fileName)
+        assertEquals(ChannelConfig.Empty, context.channelConfig)
     }
 
     private fun mockProject(): com.intellij.openapi.project.Project {

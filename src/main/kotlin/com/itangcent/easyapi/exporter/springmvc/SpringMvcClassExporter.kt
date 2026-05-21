@@ -26,6 +26,7 @@ import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.util.PathVariablePattern
+import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 import kotlinx.coroutines.withContext
 
 /**
@@ -55,6 +56,12 @@ class SpringMvcClassExporter(
 ) : ClassExporter {
 
     override val frameworkName: String = "SpringMVC"
+
+    override suspend fun isEnabled(): Boolean {
+        val settings = SettingBinder.getInstance(project).read()
+        val availabilityService = ProjectClassAvailabilityService.getInstance(project)
+        return availabilityService.hasAnyClassInProject(SpringControllerRecognizer.CONTROLLER_ANNOTATIONS)
+    }
 
     private val annotationHelper = UnifiedAnnotationHelper()
     private val engine = RuleEngine.getInstance(project)

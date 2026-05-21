@@ -16,7 +16,7 @@ import com.itangcent.easyapi.ide.support.SelectionScope
  * @see SelectedHelper for selection resolution
  * @see SelectionScope for the selection model
  */
-abstract class EasyApiAction : AnAction() {
+abstract class EasyApiAction(text: String? = null) : AnAction(text) {
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {

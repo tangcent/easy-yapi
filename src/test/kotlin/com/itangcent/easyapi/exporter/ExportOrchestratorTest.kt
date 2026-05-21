@@ -1,11 +1,12 @@
 package com.itangcent.easyapi.exporter
 
+import com.intellij.openapi.ui.TestDialog
+import com.intellij.openapi.ui.TestDialogManager
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.ExportFormat
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.model.OutputConfig
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
@@ -13,11 +14,26 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
 class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var orchestrator: ExportOrchestrator
+    private var previousDialog: TestDialog? = null
+    private val testFileConfig = ChannelConfig.FileConfig(outputDir = "/tmp", fileName = "export_test")
 
     override fun setUp() {
         super.setUp()
         loadTestFiles()
         orchestrator = ExportOrchestrator.getInstance(project)
+        previousDialog = try {
+            TestDialogManager.setTestDialog(TestDialog { 0 })
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    override fun tearDown() {
+        try {
+            previousDialog?.let { TestDialogManager.setTestDialog(it) }
+        } finally {
+            super.tearDown()
+        }
     }
 
     private fun loadTestFiles() {
@@ -40,7 +56,7 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testGetInstanceReturnsSameInstance() {
         val instance1 = ExportOrchestrator.getInstance(project)
         val instance2 = ExportOrchestrator.getInstance(project)
-        
+
         assertSame("Should return same instance for same project", instance1, instance2)
     }
 
@@ -49,8 +65,8 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testOrchestrateExportWithNullSelectionReturnsResult() = runTest {
-        val result = orchestrator.orchestrateExport(null, ExportFormat.MARKDOWN)
-        
+        val result = orchestrator.orchestrateExport(null, "markdown", testFileConfig)
+
         assertNotNull("Result should not be null", result)
         assertTrue(
             "Result should be Error (no endpoints cached) or Success",
@@ -58,63 +74,49 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
-    fun testExportEndpointsWithEmptyListReturnsResult() = runTest {
+    fun testExportViaChannelWithEmptyListReturnsResult() = runTest {
         val endpoints = emptyList<ApiEndpoint>()
-        
-        val result = orchestrator.exportEndpoints(endpoints, ExportFormat.MARKDOWN, OutputConfig.DEFAULT)
-        
+
+        val result = orchestrator.exportViaChannel("markdown", endpoints, testFileConfig)
+
         assertNotNull("Result should not be null", result)
     }
 
-    fun testExportEndpointsWithSingleEndpointReturnsResult() = runTest {
+    fun testExportViaChannelWithSingleEndpointReturnsResult() = runTest {
         val endpoints = listOf(createTestEndpoint())
-        
-        val result = orchestrator.exportEndpoints(endpoints, ExportFormat.MARKDOWN, OutputConfig.DEFAULT)
-        
+
+        val result = orchestrator.exportViaChannel("markdown", endpoints, testFileConfig)
+
         assertNotNull("Result should not be null", result)
     }
 
-    fun testExportEndpointsWithMultipleEndpointsReturnsResult() = runTest {
+    fun testExportViaChannelWithMultipleEndpointsReturnsResult() = runTest {
         val endpoints = listOf(
             createTestEndpoint("API 1", "/test1", HttpMethod.GET),
             createTestEndpoint("API 2", "/test2", HttpMethod.POST),
             createTestEndpoint("API 3", "/test3", HttpMethod.PUT)
         )
-        
-        val result = orchestrator.exportEndpoints(endpoints, ExportFormat.MARKDOWN, OutputConfig.DEFAULT)
-        
+
+        val result = orchestrator.exportViaChannel("markdown", endpoints, testFileConfig)
+
         assertNotNull("Result should not be null", result)
     }
 
-    fun testExportEndpointsWithDifferentFormats() = runTest {
+    fun testExportViaChannelWithCustomChannelConfig() = runTest {
         val endpoints = listOf(createTestEndpoint())
-        // Skip formats that require host selection dialog (CURL, HTTP_CLIENT)
-        val dialogFormats = setOf(ExportFormat.CURL, ExportFormat.HTTP_CLIENT)
-        ExportFormat.values().filter { it !in dialogFormats }.forEach { format ->
-            val result = orchestrator.exportEndpoints(endpoints, format, OutputConfig.DEFAULT)
-            assertNotNull("Result should not be null for format $format", result)
-        }
-    }
-
-    fun testExportEndpointsWithCustomOutputConfig() = runTest {
-        val endpoints = listOf(createTestEndpoint())
-        val outputConfig = OutputConfig(
+        val channelConfig = ChannelConfig.FileConfig(
             outputDir = "/tmp",
             fileName = "test"
         )
-        
-        val result = orchestrator.exportEndpoints(endpoints, ExportFormat.MARKDOWN, outputConfig)
-        
+
+        val result = orchestrator.exportViaChannel("markdown", endpoints, channelConfig)
+
         assertNotNull("Result should not be null", result)
     }
 
-    fun testOrchestratorHandlesAllExportFormats() = runTest {
-        // Skip formats that require host selection dialog (CURL, HTTP_CLIENT)
-        val dialogFormats = setOf(ExportFormat.CURL, ExportFormat.HTTP_CLIENT)
-        ExportFormat.values().filter { it !in dialogFormats }.forEach { format ->
-            val result = orchestrator.orchestrateExport(null, format)
-            assertNotNull("Should handle format $format", result)
-        }
+    fun testOrchestratorHandlesMarkdownChannel() = runTest {
+        val result = orchestrator.orchestrateExport(null, "markdown", testFileConfig)
+        assertNotNull("Should handle markdown channel", result)
     }
 
     private fun createTestEndpoint(

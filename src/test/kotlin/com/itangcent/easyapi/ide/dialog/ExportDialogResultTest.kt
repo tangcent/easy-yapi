@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.ide.dialog
 
+import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -8,47 +9,44 @@ class ExportDialogResultTest {
 
     @Test
     fun testProperties() {
-        val config = OutputConfig()
-        val result = ExportDialogResult(ExportFormat.MARKDOWN, config)
-        assertEquals(ExportFormat.MARKDOWN, result.format)
-        assertSame(config, result.outputConfig)
+        val result = ExportDialogResult(channelId = "markdown")
+        assertEquals("markdown", result.channelId)
+        assertEquals(ChannelConfig.Empty, result.channelConfig)
         assertTrue(result.selectedEndpoints.isEmpty())
     }
 
     @Test
     fun testEquality() {
-        val config = OutputConfig()
-        val r1 = ExportDialogResult(ExportFormat.MARKDOWN, config)
-        val r2 = ExportDialogResult(ExportFormat.MARKDOWN, config)
+        val r1 = ExportDialogResult(channelId = "markdown")
+        val r2 = ExportDialogResult(channelId = "markdown")
         assertEquals(r1, r2)
     }
 
     @Test
-    fun testInequality_differentFormat() {
-        val config = OutputConfig()
-        val r1 = ExportDialogResult(ExportFormat.MARKDOWN, config)
-        val r2 = ExportDialogResult(ExportFormat.CURL, config)
+    fun testInequality_differentChannelId() {
+        val r1 = ExportDialogResult(channelId = "markdown")
+        val r2 = ExportDialogResult(channelId = "postman")
         assertNotEquals(r1, r2)
     }
 
     @Test
     fun testCopy() {
-        val config = OutputConfig()
-        val original = ExportDialogResult(ExportFormat.MARKDOWN, config)
-        val copy = original.copy(format = ExportFormat.CURL)
-        assertEquals(ExportFormat.CURL, copy.format)
-        assertSame(config, copy.outputConfig)
+        val original = ExportDialogResult(channelId = "markdown")
+        val copy = original.copy(channelId = "curl")
+        assertEquals("curl", copy.channelId)
     }
 
     @Test
     fun testWithSelectedEndpoints() {
-        val config = OutputConfig()
         val endpoint = ApiEndpoint(
             name = "Get User",
             metadata = httpMetadata(path = "/api/users", method = HttpMethod.GET)
         )
         val selection = EndpointSelection(endpoint)
-        val result = ExportDialogResult(ExportFormat.MARKDOWN, config, listOf(selection))
+        val result = ExportDialogResult(
+            channelId = "markdown",
+            selectedEndpoints = listOf(selection)
+        )
 
         assertEquals(1, result.selectedEndpoints.size)
         assertSame(endpoint, result.selectedEndpoints[0].endpoint)

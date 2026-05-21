@@ -3,11 +3,11 @@ package com.itangcent.easyapi.exporter.yapi
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.core.threading.read
-import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.exporter.ApiExporter
-import com.itangcent.easyapi.exporter.model.*
+import com.itangcent.easyapi.exporter.model.ExportContext
+import com.itangcent.easyapi.exporter.model.ExportMetadata
+import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
-import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
@@ -15,22 +15,8 @@ import com.itangcent.easyapi.settings.YapiExportMode
 import com.itangcent.easyapi.util.ide.ModuleHelper
 import com.itangcent.easyapi.util.markdown.MarkdownRender
 
-/**
- * Exporter for uploading API endpoints to YAPI platform.
- * 
- * This exporter handles:
- * - Token resolution and validation per module
- * - Category (cart) creation and management
- * - Batch upload of endpoints organized by module and folder
- * - Rule engine hooks for customization
- * 
- * YAPI is an efficient API management platform that provides
- * documentation, testing, and mocking capabilities.
- */
 @Service(Service.Level.PROJECT)
-class YapiExporter(private val project: Project) : ApiExporter {
-
-    override val format: ExportFormat = ExportFormat.YAPI
+class YapiExporter(private val project: Project) {
 
     private val settingBinder by lazy { SettingBinder.getInstance(project) }
 
@@ -40,7 +26,7 @@ class YapiExporter(private val project: Project) : ApiExporter {
         }
     }
 
-    override suspend fun export(context: ExportContext): ExportResult {
+    suspend fun export(context: ExportContext, selectedToken: String? = null): ExportResult {
         val clientProvider = DefaultYapiApiClientProvider(project)
         runCatching { clientProvider.init() }
             .onFailure { return ExportResult.Error(it.message ?: "Export failed: $it") }
@@ -92,7 +78,7 @@ class YapiExporter(private val project: Project) : ApiExporter {
 
                 val client = clientProvider.getYapiApiClient(
                     module = yapiProject,
-                    selectedToken = context.outputConfig.yapiOptions?.selectedToken
+                    selectedToken = selectedToken
                 )
                 if (client == null) {
                     failCount++
@@ -172,34 +158,6 @@ class YapiExporter(private val project: Project) : ApiExporter {
 
             else -> ExportResult.Error("No endpoints to export")
         }
-    }
-
-    override suspend fun handleExportResult(
-        project: Project,
-        result: ExportResult.Success,
-        outputConfig: OutputConfig
-    ): Boolean {
-        val metadata = result.metadata as? YapiExportMetadata ?: return false
-        swing {
-            val notification = com.intellij.notification.Notification(
-                "EasyAPI Notifications",
-                "Export to YAPI",
-                "Exported ${result.count} endpoints to YAPI",
-                com.intellij.notification.NotificationType.INFORMATION
-            )
-            for ((cartName, cartUrl) in metadata.cartLinks) {
-                notification.addAction(object : com.intellij.notification.NotificationAction(cartName) {
-                    override fun actionPerformed(
-                        e: com.intellij.openapi.actionSystem.AnActionEvent,
-                        notification: com.intellij.notification.Notification
-                    ) {
-                        com.intellij.ide.BrowserUtil.browse(cartUrl)
-                    }
-                })
-            }
-            com.intellij.notification.Notifications.Bus.notify(notification, project)
-        }
-        return true
     }
 }
 
