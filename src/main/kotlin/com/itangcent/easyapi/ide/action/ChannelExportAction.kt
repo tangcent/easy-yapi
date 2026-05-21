@@ -3,7 +3,7 @@ package com.itangcent.easyapi.ide.action
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.itangcent.easyapi.cache.ApiIndex
+import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner

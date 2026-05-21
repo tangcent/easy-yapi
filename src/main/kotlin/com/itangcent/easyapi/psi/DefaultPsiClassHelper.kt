@@ -3,7 +3,7 @@ package com.itangcent.easyapi.psi
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
-import com.itangcent.easyapi.cache.JsonConstructionCache
+import com.itangcent.easyapi.cache.json.JsonConstructionCache
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
@@ -17,7 +17,7 @@ import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.*
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import java.util.concurrent.atomic.AtomicInteger
 
 /**

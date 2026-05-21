@@ -15,7 +15,7 @@ import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

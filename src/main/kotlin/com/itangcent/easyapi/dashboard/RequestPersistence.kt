@@ -2,7 +2,7 @@ package com.itangcent.easyapi.dashboard
 
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.cache.ProjectCacheRepository
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
  * Data class representing a persisted API request configuration.

@@ -10,8 +10,8 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiIdentifier
 import com.intellij.psi.PsiMethod
-import com.itangcent.easyapi.cache.ApiIndex
-import com.itangcent.easyapi.cache.ApiIndexManager
+import com.itangcent.easyapi.cache.api.ApiIndex
+import com.itangcent.easyapi.cache.api.ApiIndexManager
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiDashboardService

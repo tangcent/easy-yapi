@@ -16,8 +16,8 @@ import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.util.GsonUtils
-import com.itangcent.easyapi.util.appendWithDedup
+import com.itangcent.easyapi.util.json.GsonUtils
+import com.itangcent.easyapi.util.text.appendWithDedup
 
 /**
  * Resolves documentation metadata from PSI elements using rules and doc comments.

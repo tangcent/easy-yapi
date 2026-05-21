@@ -8,7 +8,6 @@ import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.StringRuleMode
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
-import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.kotlin.mock
 

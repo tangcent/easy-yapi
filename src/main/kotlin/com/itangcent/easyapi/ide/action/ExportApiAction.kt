@@ -11,7 +11,7 @@ import com.itangcent.easyapi.ide.dialog.ExportDialogResult
 import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.ide.support.runWithProgress
-import com.itangcent.easyapi.cache.ApiIndex
+import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner

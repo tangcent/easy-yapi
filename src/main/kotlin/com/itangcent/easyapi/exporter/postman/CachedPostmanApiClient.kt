@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.exporter.postman
 
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.cache.AppCacheRepository
 import com.itangcent.easyapi.logging.IdeaLog
 

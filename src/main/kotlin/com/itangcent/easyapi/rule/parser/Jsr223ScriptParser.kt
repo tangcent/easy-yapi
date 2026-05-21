@@ -10,7 +10,7 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.rule.RuleKey
 import com.itangcent.easyapi.rule.context.*
-import com.itangcent.easyapi.util.RegexUtils
+import com.itangcent.easyapi.util.text.RegexUtils
 import com.itangcent.easyapi.util.RuleToolUtils
 import com.itangcent.easyapi.util.ide.ModuleHelper
 import kotlinx.coroutines.runBlocking

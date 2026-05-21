@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.dashboard
 
-import com.itangcent.easyapi.cache.ApiIndex
+import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader

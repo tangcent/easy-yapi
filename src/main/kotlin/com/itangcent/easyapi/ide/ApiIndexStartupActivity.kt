@@ -2,8 +2,8 @@ package com.itangcent.easyapi.ide
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import com.itangcent.easyapi.cache.ApiFileChangeListener
-import com.itangcent.easyapi.cache.ApiIndexManager
+import com.itangcent.easyapi.cache.api.ApiFileChangeListener
+import com.itangcent.easyapi.cache.api.ApiIndexManager
 import com.itangcent.easyapi.cache.VcsBranchChangeListener
 import com.itangcent.easyapi.config.ConfigSyncService
 import com.itangcent.easyapi.core.threading.backgroundAsync

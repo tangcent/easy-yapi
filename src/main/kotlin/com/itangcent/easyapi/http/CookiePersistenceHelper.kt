@@ -3,7 +3,7 @@ package com.itangcent.easyapi.http
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.cache.ProjectCacheRepository
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
  * Persists HTTP cookies to the project cache.

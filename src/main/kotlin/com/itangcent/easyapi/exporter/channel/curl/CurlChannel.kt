@@ -5,7 +5,7 @@ import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileWrapper
-import com.itangcent.easyapi.cache.DefaultHttpContextCacheHelper
+import com.itangcent.easyapi.cache.http.DefaultHttpContextCacheHelper
 import com.itangcent.easyapi.core.threading.background
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.channel.ApiChannel

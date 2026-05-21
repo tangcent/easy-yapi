@@ -2,7 +2,7 @@ package com.itangcent.easyapi.dashboard
 
 import com.itangcent.easyapi.config.DOUBLE_BRACE_PATTERN
 import com.itangcent.easyapi.config.DOLLAR_BRACE_PATTERN
-import com.itangcent.easyapi.dashboard.script.DynamicVariables
+import com.itangcent.easyapi.script.pm.DynamicVariables
 import com.itangcent.easyapi.http.FormParam
 import com.itangcent.easyapi.http.KeyValue
 import org.junit.Assert.*
@@ -368,8 +368,8 @@ class RequestResultTest {
     @Test
     fun testResultWithTestResults() {
         val testResults = listOf(
-            com.itangcent.easyapi.dashboard.script.TestResult("test1", true),
-            com.itangcent.easyapi.dashboard.script.TestResult("test2", false, "failed")
+            com.itangcent.easyapi.script.pm.TestResult("test1", true),
+            com.itangcent.easyapi.script.pm.TestResult("test2", false, "failed")
         )
         val result = RequestResult(
             body = """{"ok":true}""",
