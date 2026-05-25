@@ -5,9 +5,9 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
-import com.itangcent.easyapi.dashboard.env.Environment
-import com.itangcent.easyapi.dashboard.env.EnvironmentScope
-import com.itangcent.easyapi.dashboard.env.EnvironmentService
+import com.itangcent.easyapi.script.env.Environment
+import com.itangcent.easyapi.script.env.EnvironmentScope
+import com.itangcent.easyapi.script.env.EnvironmentService
 import com.itangcent.easyapi.settings.ui.EasyApiSettingsConfigurable
 import java.awt.BorderLayout
 import java.awt.Dimension

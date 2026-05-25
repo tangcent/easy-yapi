@@ -23,7 +23,7 @@ import com.itangcent.easyapi.exporter.model.PathSelector
 import com.itangcent.easyapi.http.ApacheHttpClient
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.settings.HttpClientType
 import com.itangcent.easyapi.settings.MarkdownFormatType
 import com.itangcent.easyapi.settings.PostmanExportMode

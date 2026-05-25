@@ -9,7 +9,7 @@ import com.itangcent.easyapi.http.HttpClient
 import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.HttpResponse
 import com.itangcent.easyapi.http.KeyValue
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder

@@ -2,7 +2,7 @@ package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiClass
-import com.itangcent.easyapi.format.PropertiesFormatter
+import com.itangcent.easyapi.exporter.formatter.PropertiesFormatter
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine

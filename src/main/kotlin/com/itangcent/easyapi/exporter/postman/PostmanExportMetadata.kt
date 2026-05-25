@@ -2,7 +2,7 @@ package com.itangcent.easyapi.exporter.postman
 
 import com.itangcent.easyapi.exporter.model.ExportMetadata
 import com.itangcent.easyapi.exporter.postman.model.PostmanCollection
-import com.itangcent.easyapi.util.append
+import com.itangcent.easyapi.util.text.append
 
 data class PostmanExportMetadata(
     val workspaceName: String? = null,

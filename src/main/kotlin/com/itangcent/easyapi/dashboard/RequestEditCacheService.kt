@@ -13,7 +13,7 @@ import com.itangcent.easyapi.exporter.model.grpcMetadata
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.model.isGrpc
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.storage.DbBeanBinder
 import com.itangcent.easyapi.util.storage.SqliteDataResourceHelper
 

@@ -405,9 +405,9 @@ class TestablePostmanFormatter {
 
         if (contentType.contains("json")) {
             val raw = when {
-                httpMeta?.body != null -> com.itangcent.easyapi.util.GsonUtils.prettyJson(httpMeta.body)
+                httpMeta?.body != null -> com.itangcent.easyapi.util.json.GsonUtils.prettyJson(httpMeta.body)
                 bodyParams.isNotEmpty() -> bodyParams.associate { it.name to (it.example ?: it.defaultValue ?: "") }
-                    .let { com.itangcent.easyapi.util.GsonUtils.prettyJson(it) }
+                    .let { com.itangcent.easyapi.util.json.GsonUtils.prettyJson(it) }
                 else -> "{}"
             }
             return PostmanBody(
@@ -448,7 +448,7 @@ class TestablePostmanFormatter {
         if (httpMeta?.body != null) {
             return PostmanBody(
                 mode = "raw",
-                raw = com.itangcent.easyapi.util.GsonUtils.prettyJson(httpMeta.body),
+                raw = com.itangcent.easyapi.util.json.GsonUtils.prettyJson(httpMeta.body),
                 options = mapOf("raw" to mapOf("language" to "json"))
             )
         }

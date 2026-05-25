@@ -14,8 +14,8 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import com.itangcent.easyapi.cache.ApiIndex
-import com.itangcent.easyapi.cache.ApiIndexManager
+import com.itangcent.easyapi.cache.api.ApiIndex
+import com.itangcent.easyapi.cache.api.ApiIndexManager
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ExportOrchestrator
@@ -31,6 +31,8 @@ import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.type.areMethodsRelated
+import com.itangcent.easyapi.script.ScriptEditorPanel
+import com.itangcent.easyapi.script.ScriptScope
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Dimension

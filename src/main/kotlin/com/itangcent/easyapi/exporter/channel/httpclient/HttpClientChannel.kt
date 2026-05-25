@@ -4,7 +4,7 @@ import com.intellij.ide.scratch.ScratchRootType
 import com.intellij.lang.Language
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.cache.DefaultHttpContextCacheHelper
+import com.itangcent.easyapi.cache.http.DefaultHttpContextCacheHelper
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.core.threading.write
 import com.itangcent.easyapi.exporter.channel.ApiChannel

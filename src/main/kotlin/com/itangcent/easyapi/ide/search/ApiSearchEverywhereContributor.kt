@@ -11,7 +11,7 @@ import com.intellij.util.Processor
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.editor.ScrollType
-import com.itangcent.easyapi.cache.ApiIndex
+import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.GrpcMetadata
 import com.itangcent.easyapi.exporter.model.HttpMetadata

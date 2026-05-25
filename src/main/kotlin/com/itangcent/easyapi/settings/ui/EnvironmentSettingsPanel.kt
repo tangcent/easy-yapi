@@ -7,11 +7,11 @@ import com.intellij.ui.table.TableView
 import com.intellij.util.ui.ColumnInfo
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.ListTableModel
-import com.itangcent.easyapi.dashboard.env.Environment
-import com.itangcent.easyapi.dashboard.env.EnvironmentData
-import com.itangcent.easyapi.dashboard.env.EnvironmentScope
+import com.itangcent.easyapi.script.env.Environment
+import com.itangcent.easyapi.script.env.EnvironmentData
+import com.itangcent.easyapi.script.env.EnvironmentScope
 import com.itangcent.easyapi.settings.Settings
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GridLayout

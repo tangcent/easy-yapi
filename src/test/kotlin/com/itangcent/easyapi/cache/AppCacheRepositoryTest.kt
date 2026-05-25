@@ -1,32 +1,36 @@
 package com.itangcent.easyapi.cache
 
-import org.junit.Assert.*
-import org.junit.Test
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
-class AppCacheRepositoryTest {
+class AppCacheRepositoryTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    @Test
+    private lateinit var repository: AppCacheRepository
+
+    override fun setUp() {
+        super.setUp()
+        repository = AppCacheRepository.getInstance()
+        repository.clear()
+    }
+
+    override fun tearDown() {
+        repository.clear()
+        super.tearDown()
+    }
+
     fun testGetInstance() {
-        val repository = AppCacheRepository.getInstance()
         assertNotNull(repository)
         assertSame(repository, AppCacheRepository.getInstance())
     }
 
-    @Test
     fun testReadNonExistentKey() {
-        val repository = AppCacheRepository()
         assertNull(repository.read("nonexistent_test_key.txt"))
     }
 
-    @Test
     fun testDeleteNonExistent() {
-        val repository = AppCacheRepository()
         repository.delete("nonexistent_test_key.txt")
     }
 
-    @Test
     fun testCacheSizeEmpty() {
-        val repository = AppCacheRepository()
         val size = repository.cacheSize()
         assertTrue(size >= 0L)
     }

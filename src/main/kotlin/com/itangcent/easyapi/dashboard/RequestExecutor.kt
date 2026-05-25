@@ -7,8 +7,11 @@ import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.config.resolveVariables
 import com.itangcent.easyapi.config.DOUBLE_BRACE_PATTERN
 import com.itangcent.easyapi.config.DOLLAR_BRACE_PATTERN
-import com.itangcent.easyapi.dashboard.env.EnvironmentService
-import com.itangcent.easyapi.dashboard.script.*
+import com.itangcent.easyapi.script.ResolvedScripts
+import com.itangcent.easyapi.script.ScriptCacheService
+import com.itangcent.easyapi.script.ScriptScope
+import com.itangcent.easyapi.script.env.EnvironmentService
+import com.itangcent.easyapi.script.pm.*
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.GrpcMetadata
 import com.itangcent.easyapi.exporter.model.HttpMetadata

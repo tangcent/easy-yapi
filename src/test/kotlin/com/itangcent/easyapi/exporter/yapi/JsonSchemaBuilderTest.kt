@@ -4,7 +4,7 @@ import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
-import com.itangcent.easyapi.util.GsonUtils
+import com.itangcent.easyapi.util.json.GsonUtils
 import com.google.gson.JsonParser
 import org.junit.Assert.*
 import org.junit.Test

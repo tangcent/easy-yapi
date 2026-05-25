@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.cache
 
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
-import org.junit.Assert.*
 import java.nio.file.Files
 
 class ProjectCacheRepositoryTest : EasyApiLightCodeInsightFixtureTestCase() {

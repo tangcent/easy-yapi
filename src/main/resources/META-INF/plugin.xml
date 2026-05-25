@@ -51,7 +51,6 @@
         <projectService serviceInterface="com.itangcent.easyapi.config.ConfigReader"
                         serviceImplementation="com.itangcent.easyapi.config.DefaultConfigReader"/>
         <projectService serviceImplementation="com.itangcent.easyapi.config.ConfigSyncService"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.cache.CacheService"/>
         <projectService serviceInterface="com.itangcent.easyapi.settings.SettingBinder"
                         serviceImplementation="com.itangcent.easyapi.settings.DefaultSettingBinder"/>
         <projectService serviceImplementation="com.itangcent.easyapi.settings.state.ProjectSettingsState"/>
