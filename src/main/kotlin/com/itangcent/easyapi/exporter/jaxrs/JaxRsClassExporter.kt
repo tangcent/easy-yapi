@@ -86,9 +86,11 @@ class JaxRsClassExporter(
         val endpoints = ArrayList<ApiEndpoint>()
         try {
             for (resolvedMethod in resolvedMethods) {
-                val httpMethodAnn = read { resolvedMethod.searchAnnotation(JAXRS_HTTP_METHOD_ANNOTATIONS) }
-                    ?: continue
-                val annotatedMethod = (httpMethodAnn.owner as? PsiMethod) ?: resolvedMethod.psiMethod
+                val annotatedMethod = read {
+                    val httpMethodAnn = resolvedMethod.searchAnnotation(JAXRS_HTTP_METHOD_ANNOTATIONS)
+                        ?: return@read null
+                    (httpMethodAnn.owner as? PsiMethod) ?: resolvedMethod.psiMethod
+                } ?: continue
                 endpoints.addAll(exportMethod(psiClass, annotatedMethod, resolvedMethod))
             }
         } finally {
