@@ -480,13 +480,13 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
 
     fun methods(): Array<ScriptPsiMethodContext> = readSync {
         val classType = resolvedType as? ResolvedType.ClassType ?: return@readSync emptyArray()
-        val methods = classType.methods()
+        val methods = classType.suitableMethods()
         Array(methods.size) { i -> ScriptResolvedMethodContext(context, methods[i]) }
     }
 
     fun fields(): Array<ScriptPsiFieldContext> = readSync {
         val classType = resolvedType as? ResolvedType.ClassType ?: return@readSync emptyArray()
-        val fields = classType.fields()
+        val fields = classType.suitableFields()
         Array(fields.size) { i -> ScriptResolvedFieldContext(context, fields[i]) }
     }
 
@@ -636,12 +636,12 @@ class ScriptResolvedClassContext(
 ) : ScriptPsiClassContext(context.withElement(classType.psiClass)) {
 
     override fun methods(): Array<ScriptPsiMethodContext> = readSync {
-        val methods = classType.methods()
+        val methods = classType.suitableMethods()
         Array(methods.size) { i -> ScriptResolvedMethodContext(context, methods[i]) }
     }
 
     override fun fields(): Array<ScriptPsiFieldContext> = readSync {
-        val fields = classType.fields()
+        val fields = classType.suitableFields()
         Array(fields.size) { i -> ScriptResolvedFieldContext(context, fields[i]) }
     }
 

@@ -214,4 +214,38 @@ class InheritedControllerExportTest : EasyApiLightCodeInsightFixtureTestCase() {
             body
         )
     }
+
+    // ========== Issue #1352: Non-overridden parent methods not exported ==========
+
+    fun testIssue1352_ParentMethodsWithoutOverride_Exported() = runTest {
+        loadFile("api/inherit/AbstractBaseController.java")
+        loadFile("api/inherit/ChildController.java")
+        val psiClass = findClass("com.itangcent.api.inherit.ChildController")!!
+        val endpoints = exporter.export(psiClass)
+
+        assertTrue("Should export endpoints from both parent and child", endpoints.isNotEmpty())
+
+        val getItem = endpoints.find { it.path.contains("item") && it.httpMetadata?.method == HttpMethod.GET }
+        assertNotNull("Should export GET /base/item inherited from AbstractBaseController", getItem)
+
+        val postItem = endpoints.find { it.path.contains("item") && it.httpMetadata?.method == HttpMethod.POST }
+        assertNotNull("Should export POST /base/item inherited from AbstractBaseController", postItem)
+
+        val getOwn = endpoints.find { it.path.contains("own") && it.httpMetadata?.method == HttpMethod.GET }
+        assertNotNull("Should export GET /own from ChildController", getOwn)
+    }
+
+    fun testIssue1352_ParentMethodPathPrefix() = runTest {
+        loadFile("api/inherit/AbstractBaseController.java")
+        loadFile("api/inherit/ChildController.java")
+        val psiClass = findClass("com.itangcent.api.inherit.ChildController")!!
+        val endpoints = exporter.export(psiClass)
+
+        val getItem = endpoints.find { it.path.contains("item") && it.httpMetadata?.method == HttpMethod.GET }
+        assertNotNull(getItem)
+        assertTrue(
+            "Path should include /base prefix from AbstractBaseController @RequestMapping, got: ${getItem!!.path}",
+            getItem.path.contains("base")
+        )
+    }
 }

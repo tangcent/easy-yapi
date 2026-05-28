@@ -113,69 +113,149 @@ sealed class ResolvedType {
         }
 
         /**
-         * Returns deduplicated, generics-resolved methods.
-         * Deduplicates by name#paramCount, preferring the override from [psiClass].
+         * Returns methods declared directly in this class (not inherited).
+         * Excludes constructors.
          * Each [ResolvedMethod] gets [ResolvedMethod.ownerClassType] = this.
-         *
-         * Uses per-level generic context propagation: each method's types are resolved
-         * using the context of its declaring class, not a flat merged context.
          */
-        fun methods(): List<ResolvedMethod> {
-            // Collect all non-constructor, non-Object methods
-            val allMethods = psiClass.allMethods.filter { method ->
-                !method.isConstructor &&
-                method.containingClass?.qualifiedName != "java.lang.Object"
-            }
-
-            // Group by name + param count to detect generic erasure duplicates
-            // (e.g., interface save(Req) and impl save(UserInfo) have same param count)
-            val result = LinkedHashMap<String, PsiMethod>()
-            for (method in allMethods) {
-                val fullKey = methodSignatureKey(method)
-                val countKey = "${method.name}#${method.parameterList.parametersCount}"
-
-                // Check if there's already a method with the same full signature
-                if (fullKey in result) {
-                    // Same exact signature — prefer concrete class over interface
-                    val existing = result[fullKey]!!
-                    if (shouldPrefer(method, existing, psiClass)) {
-                        result[fullKey] = method
-                    }
-                    continue
-                }
-
-                // Check if there's a method with same name+paramCount but different types
-                // (could be a generic erasure duplicate or a true overload)
-                val sameCountKey = result.entries.find { (k, v) ->
-                    "${v.name}#${v.parameterList.parametersCount}" == countKey
-                }
-
-                if (sameCountKey != null) {
-                    val existing = sameCountKey.value
-                    // If one is from an interface and the other from a class, it's generic erasure
-                    val existingIsInterface = existing.containingClass?.isInterface == true
-                    val newIsInterface = method.containingClass?.isInterface == true
-                    if (existingIsInterface != newIsInterface) {
-                        // Generic erasure: prefer the concrete class method
-                        if (!newIsInterface) {
-                            result.remove(sameCountKey.key)
-                            result[fullKey] = method
-                        }
-                        // else: existing is already the concrete one, skip
-                        continue
-                    }
-                    // Both from same kind (both interface or both class) — true overload, keep both
-                }
-
-                result[fullKey] = method
-            }
-            return result.values.map { method ->
+        fun declaredMethods(): List<ResolvedMethod> {
+            return psiClass.methods.filter { !it.isConstructor }.map { method ->
                 ResolvedMethod(
                     name = method.name,
                     psiMethod = method,
                     containClass = psiClass,
                     ownerClassType = this
                 )
+            }
+        }
+
+        /**
+         * Returns fields declared directly in this class (not inherited).
+         */
+        fun declaredFields(): List<ResolvedField> {
+            return psiClass.fields.map { field ->
+                ResolvedField(
+                    name = field.name,
+                    psiField = field,
+                    annotations = field.annotations.toList(),
+                    containClass = psiClass,
+                    ownerClassType = this
+                )
+            }
+        }
+
+        /**
+         * Returns all methods from this class and its superclasses, without deduplication.
+         * Excludes constructors and methods from java.lang.Object.
+         * Each [ResolvedMethod] gets [ResolvedMethod.ownerClassType] = this.
+         *
+         * Note: if a subclass overrides a superclass method, both versions will appear
+         * in the result. Use [suitableMethods] for a deduplicated view.
+         */
+        fun allMethods(): List<ResolvedMethod> {
+            return psiClass.allMethods.filter { method ->
+                !method.isConstructor &&
+                        method.containingClass?.qualifiedName != "java.lang.Object"
+            }.map { method ->
+                ResolvedMethod(
+                    name = method.name,
+                    psiMethod = method,
+                    containClass = psiClass,
+                    ownerClassType = this
+                )
+            }
+        }
+
+        /**
+         * Returns all fields from this class and its superclasses, without deduplication.
+         * Each field's type is resolved using the context of its declaring class.
+         *
+         * Note: if a subclass declares a field with the same name as a superclass field,
+         * both will appear in the result. Use [suitableFields] for a deduplicated view.
+         */
+        fun allFields(): List<ResolvedField> = fieldsSequence(deduplicate = false).toList()
+
+        /**
+         * Returns deduplicated methods from this class and its superclasses.
+         * If a method is overridden in a subclass, only the subclass version is kept.
+         * Handles generic erasure by preferring concrete class methods over interface methods.
+         * Each [ResolvedMethod] gets [ResolvedMethod.ownerClassType] = this.
+         *
+         * Uses per-level generic context propagation: each method's types are resolved
+         * using the context of its declaring class, not a flat merged context.
+         */
+        fun suitableMethods(): List<ResolvedMethod> {
+            val allMethods = psiClass.allMethods.filter { method ->
+                !method.isConstructor &&
+                        method.containingClass?.qualifiedName != "java.lang.Object"
+            }
+
+            val supersOf = mutableMapOf<PsiMethod, Set<PsiMethod>>()
+            for (method in allMethods) {
+                supersOf[method] = method.findSuperMethods().toSet()
+            }
+
+            val removed = mutableSetOf<PsiMethod>()
+            for (method in allMethods) {
+                val superMethods = supersOf[method] ?: emptySet()
+                for (superMethod in superMethods) {
+                    if (superMethod in removed) continue
+                    if (allMethods.any { it == superMethod }) {
+                        removed.add(superMethod)
+                    }
+                }
+            }
+
+            return allMethods.filter { it !in removed }.map { method ->
+                ResolvedMethod(
+                    name = method.name,
+                    psiMethod = method,
+                    containClass = psiClass,
+                    ownerClassType = this
+                )
+            }
+        }
+
+        /**
+         * Returns deduplicated fields from this class and its superclasses.
+         * If a subclass declares a field with the same name as a superclass field,
+         * only the subclass version is kept.
+         * Each field's type is resolved using the context of its declaring class.
+         */
+        fun suitableFields(): List<ResolvedField> = fieldsSequence(deduplicate = true).toList()
+
+        private fun fieldsSequence(deduplicate: Boolean): Sequence<ResolvedField> = sequence {
+            val seen: (PsiField) -> Boolean
+            when {
+                deduplicate -> {
+                    val set = mutableSetOf<String>()
+                    seen = { set.add(it.name) }
+                }
+
+                else -> {
+                    seen = { true }
+                }
+            }
+            yieldAll(fieldsFromClass(this@ClassType, seen))
+        }
+
+        private fun fieldsFromClass(
+            classType: ClassType,
+            filter: (PsiField) -> Boolean
+        ): Sequence<ResolvedField> = sequence {
+            for (field in classType.psiClass.fields) {
+                if (!filter(field)) continue
+                yield(
+                    ResolvedField(
+                        name = field.name,
+                        psiField = field,
+                        annotations = field.annotations.toList(),
+                        containClass = psiClass,
+                        ownerClassType = classType
+                    )
+                )
+            }
+            for (superClassType in classType.superClasses()) {
+                yieldAll(fieldsFromClass(superClassType, filter))
             }
         }
 
@@ -195,21 +275,6 @@ sealed class ResolvedType {
                 }
                 yield(ClassType(superClass, args))
             }
-        }
-
-        /**
-         * Returns all fields from this class and its superclasses, with types resolved
-         * using per-level generic context propagation.
-         *
-         * Each field's type is resolved using the context of its declaring class,
-         * ensuring that type parameter `T` in `Layer1<T>` gets the correct binding
-         * even when multiple levels reuse the same name.
-         */
-        fun fields(): List<ResolvedField> {
-            val result = mutableListOf<ResolvedField>()
-            val fieldNames = mutableSetOf<String>()
-            collectFieldsPerLevel(this, result, fieldNames)
-            return result
         }
 
         fun annotations(): List<PsiAnnotation> = psiClass.annotations.toList()
@@ -270,6 +335,7 @@ sealed class ResolvedType {
             lower != null -> "? super " + lower.qualifiedName()
             else -> "?"
         }
+
         override fun simpleName(): String = "?"
         override fun contextElement(): PsiElement? = upper?.contextElement() ?: lower?.contextElement()
     }
@@ -428,38 +494,6 @@ class ResolvedParam internal constructor(
     override fun toString(): String = "ResolvedParam(name=$name)"
 }
 
-/**
- * Collects fields per-level by walking the hierarchy via [ResolvedType.ClassType.superClasses].
- * Each level's fields are resolved using that level's own generic context.
- * Super fields come first (depth-first), then this class's own declared fields.
- *
- * @param rootClass The root class being queried (used as containClass for all fields)
- */
-private fun collectFieldsPerLevel(
-    classType: ResolvedType.ClassType,
-    result: MutableList<ResolvedField>,
-    fieldNames: MutableSet<String>,
-    rootClass: PsiClass = classType.psiClass
-) {
-    // Recurse into supertypes first (depth-first so base fields come first)
-    for (superClassType in classType.superClasses()) {
-        collectFieldsPerLevel(superClassType, result, fieldNames, rootClass)
-    }
-    // Then this class's own declared fields (not allFields — just this level)
-    for (field in classType.psiClass.fields) {
-        if (fieldNames.add(field.name)) {
-            result.add(
-                ResolvedField(
-                    name = field.name,
-                    psiField = field,
-                    annotations = field.annotations.toList(),
-                    containClass = rootClass,
-                    ownerClassType = classType
-                )
-            )
-        }
-    }
-}
 
 /**
  * Walks the supertype hierarchy from [root] to find the per-level generic context
@@ -754,7 +788,7 @@ object TypeResolver {
         val facade = JavaPsiFacade.getInstance(project)
         val scope = GlobalSearchScope.allScope(project)
         val sourceHelper = com.itangcent.easyapi.psi.helper.SourceHelper.getInstance(project)
-        
+
         // Fully qualified name
         facade.findClass(className, scope)?.let { return sourceHelper.getSourceClassSync(it) }
 
@@ -795,13 +829,20 @@ object TypeResolver {
         val current = StringBuilder()
         for (ch in typeArgsText) {
             when {
-                ch == '<' -> { depth++; current.append(ch) }
-                ch == '>' -> { depth--; current.append(ch) }
+                ch == '<' -> {
+                    depth++; current.append(ch)
+                }
+
+                ch == '>' -> {
+                    depth--; current.append(ch)
+                }
+
                 ch == ',' && depth == 0 -> {
                     val arg = current.toString().trim()
                     if (arg.isNotEmpty()) result.add(arg)
                     current.clear()
                 }
+
                 else -> current.append(ch)
             }
         }
@@ -985,29 +1026,6 @@ object TypeResolver {
     }
 
     private fun canonicalNameOf(type: ResolvedType): String = type.qualifiedName()
-}
-
-/**
- * Builds a signature key for method deduplication that includes parameter types,
- * correctly distinguishing overloaded methods like `add(UserInfo, MultipartFile)`
- * from `add(UserInfo, MultipartFile[])`.
- */
-private fun methodSignatureKey(method: PsiMethod): String {
-    val params = method.parameterList.parameters.joinToString(",") { it.type.canonicalText }
-    return "${method.name}($params)"
-}
-
-/**
- * Returns true if [candidate] should replace [existing] in the deduplication map.
- * Prefers methods from the concrete [psiClass] over inherited ones,
- * and concrete class methods over interface methods.
- */
-private fun shouldPrefer(candidate: PsiMethod, existing: PsiMethod, psiClass: PsiClass): Boolean {
-    if (candidate.containingClass == psiClass) return true
-    if (existing.containingClass == psiClass) return false
-    val existingIsInterface = existing.containingClass?.isInterface == true
-    val candidateIsClass = candidate.containingClass?.isInterface == false
-    return existingIsInterface && candidateIsClass
 }
 
 /**

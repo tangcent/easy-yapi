@@ -78,7 +78,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.Ctrl")!!
         val classType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethod = classType.methods().first { it.name == "x" }
+        val resolvedMethod = classType.suitableMethods().first { it.name == "x" }
         val engine = RuleEngine.getInstance(project)
         val resolver = RequestMappingResolver(UnifiedAnnotationHelper(), engine)
         val mappings = resolver.resolve(resolvedMethod)
@@ -104,7 +104,7 @@ class PsiAndExporterPropertyTests : EasyApiLightCodeInsightFixtureTestCase() {
         )
         val psiClass = findClass("demo.Ctrl2")!!
         val classType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethod = classType.methods().first { it.name == "x" }
+        val resolvedMethod = classType.suitableMethods().first { it.name == "x" }
         val engine = RuleEngine.getInstance(project)
         val resolver = RequestMappingResolver(UnifiedAnnotationHelper(), engine)
         val mappings = resolver.resolve(resolvedMethod)

@@ -89,7 +89,7 @@ class FeignClassExporter(
         val basePath = normalizePath(info.path ?: "")
 
         val classType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethods = read { classType.methods() }
+        val resolvedMethods = read { classType.suitableMethods() }
         val endpoints = ArrayList<ApiEndpoint>()
         try {
             for (resolvedMethod in resolvedMethods) {
