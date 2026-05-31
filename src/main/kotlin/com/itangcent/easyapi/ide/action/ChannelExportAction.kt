@@ -8,6 +8,7 @@ import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
 import com.itangcent.easyapi.exporter.ExportOrchestrator
+import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
@@ -30,6 +31,8 @@ class ChannelExportAction(
         val selection = SelectedHelper.resolveSelection(e)
 
         backgroundAsync {
+            if (!DumbModeHelper.waitForSmartModeOrNotify(project)) return@backgroundAsync
+
             val scanner = ApiScanner.getInstance(project)
             val apiIndex = ApiIndex.getInstance(project)
 
