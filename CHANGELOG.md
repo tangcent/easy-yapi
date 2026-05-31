@@ -5,6 +5,21 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.5] - 2026-06-01
+
+### Added
+-  implement pluggable exporter architecture with extension points (#1346)
+
+### Fixed
+-  handle IndexNotReadyException during IDEA Dumb Mode export (#1355)
+-  resolve inherited method/field handling in ClassType (#1352) (#1354)
+-  wrap PsiAnnotation.owner access in read action in JaxRsClassExporter (#1350)
+
+### Changed
+-  reorganize project structure with feature-based package layout (#1347)
+
+---
+
 ## [3.1.4] - 2026-05-21
 
 ### Added
