@@ -83,7 +83,7 @@ class SpringMvcClassExporter(
         engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
 
         val resolvedType = ResolvedType.ClassType(psiClass, emptyList())
-        val resolvedMethods = read { resolvedType.methods() }
+        val resolvedMethods = read { resolvedType.suitableMethods() }
         val endpoints = ArrayList<ApiEndpoint>()
         try {
             for (resolvedMethod in resolvedMethods) {

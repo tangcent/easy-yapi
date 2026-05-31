@@ -714,7 +714,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testClassTypeFields_GenericResolution() = runTest {
         val psiClass = findClass("com.itangcent.model.generic.StringChild")!!
         val ct = ResolvedType.ClassType(psiClass, emptyList())
-        val fields = ct.fields()
+        val fields = ct.suitableFields()
         val dataField = fields.firstOrNull { it.name == "data" }
         assertNotNull("Should have 'data' field", dataField)
         // StringChild extends GenericBase<String>, so data: T should resolve
@@ -729,7 +729,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testClassTypeFields_MultiLevelGenericResolution() = runTest {
         val psiClass = findClass("com.itangcent.model.generic.ConcreteLeaf")!!
         val ct = ResolvedType.ClassType(psiClass, emptyList())
-        val fields = ct.fields()
+        val fields = ct.suitableFields()
 
         val firstField = fields.firstOrNull { it.name == "first" }
         assertNotNull("Should have 'first' field", firstField)
@@ -929,7 +929,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     // ==================== Per-level generic context propagation via ClassType ====================
     //
-    // These tests verify that ResolvedType.ClassType.fields(), .genericContext,
+    // These tests verify that ResolvedType.ClassType.suitableFields(), .genericContext,
     // .contextForDeclaringClass(), and .superClasses() correctly propagate generic
     // bindings through inheritance hierarchies with inverted/swapped type parameters.
     //
@@ -1045,7 +1045,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     /**
-     * Verify ClassType.fields() resolves all fields correctly through the inverse hierarchy.
+     * Verify ClassType.suitableFields() resolves all fields correctly through the inverse hierarchy.
      *
      * InverseC extends InverseB<String, Integer>
      * B<X=String, Y=Integer> extends A<Y, X> = A<Integer, String>
@@ -1061,7 +1061,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val inverseCClass = findClass("com.itangcent.model.generic.InverseC")!!
         val cType = ResolvedType.ClassType(inverseCClass, emptyList())
-        val fields = cType.fields()
+        val fields = cType.suitableFields()
         val fieldMap = fields.associateBy { it.name }
 
         // B's own fields: x=String, y=Integer
@@ -1214,7 +1214,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     /**
-     * Verify ClassType.fields() for the double-inversion chain.
+     * Verify ClassType.suitableFields() for the double-inversion chain.
      */
     fun testClassTypeFields_DoubleInversion() = runTest {
         loadFile("model/generic/InverseA.java")
@@ -1224,7 +1224,7 @@ class ResolvedTypeTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         val psiClass = findClass("com.itangcent.model.generic.ConcreteInverseE")!!
         val cType = ResolvedType.ClassType(psiClass, emptyList())
-        val fields = cType.fields()
+        val fields = cType.suitableFields()
         val fieldMap = fields.associateBy { it.name }
 
         // A level: t=Long, r=Boolean

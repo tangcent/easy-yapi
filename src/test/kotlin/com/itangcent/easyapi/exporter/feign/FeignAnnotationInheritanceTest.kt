@@ -31,7 +31,7 @@ class FeignAnnotationInheritanceTest : EasyApiLightCodeInsightFixtureTestCase() 
     fun testOverrideMethodInheritsGetMappingFromSuperInterface() = runTest {
         val psiClass = findClass("com.itangcent.api.feign.UserFeignClient")!!
         val classType = ResolvedType.ClassType(psiClass, emptyList())
-        val getUserById = classType.methods().first { it.name == "getUserById" }
+        val getUserById = classType.suitableMethods().first { it.name == "getUserById" }
 
         // searchAnnotation walks super methods — the correct way to check inherited annotations
         val ann = getUserById.searchAnnotation("org.springframework.web.bind.annotation.GetMapping")

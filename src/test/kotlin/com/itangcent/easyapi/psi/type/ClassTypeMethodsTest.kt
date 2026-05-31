@@ -33,7 +33,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCase1_NoDuplicates() = runTest {
         loadFile("api/inherit/SimpleCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val names = methods.map { it.name }
         assertTrue("list" in names)
         assertTrue("create" in names)
@@ -45,7 +45,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/SimpleCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
         val ct = ResolvedType.ClassType(psiClass, emptyList())
-        val methods = ct.methods()
+        val methods = ct.suitableMethods()
         for (m in methods) {
             assertNotNull(m.ownerClassType)
             assertEquals(psiClass, m.ownerClassType?.psiClass)
@@ -55,7 +55,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testCase1_SuperMethodIsNull() = runTest {
         loadFile("api/inherit/SimpleCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         for (m in methods) {
             assertNull("Simple method '${m.name}' should have no superMethod", m.superMethod())
         }
@@ -67,7 +67,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/AnnotatedBaseCtrl.java")
         loadFile("api/inherit/PlainSubCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         assertEquals(1, methods.count { it.name == "getItem" })
         assertEquals(1, methods.count { it.name == "saveItem" })
     }
@@ -76,7 +76,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/AnnotatedBaseCtrl.java")
         loadFile("api/inherit/PlainSubCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
 
         // The method from methods() should be the override (from PlainSubCtrl)
@@ -92,7 +92,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/AnnotatedBaseCtrl.java")
         loadFile("api/inherit/PlainSubCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
 
         // PlainSubCtrl.getItem has no @GetMapping, but AnnotatedBaseCtrl.getItem does
@@ -106,7 +106,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/PlainBaseCtrl.java")
         loadFile("api/inherit/AnnotatedSubCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.AnnotatedSubCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
 
         // AnnotatedSubCtrl.getItem has @GetMapping directly
@@ -118,7 +118,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/PlainBaseCtrl.java")
         loadFile("api/inherit/AnnotatedSubCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.AnnotatedSubCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
 
         assertEquals("AnnotatedSubCtrl", getItem.psiMethod.containingClass?.name)
@@ -133,7 +133,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/generic/GenericBaseCtrl.java")
         loadFile("api/generic/StringCtrl.java")
         val psiClass = findClass("com.itangcent.api.generic.StringCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val names = methods.map { it.name }
         assertTrue("getItem" in names)
         assertTrue("createItem" in names)
@@ -143,7 +143,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/generic/GenericBaseCtrl.java")
         loadFile("api/generic/StringCtrl.java")
         val psiClass = findClass("com.itangcent.api.generic.StringCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
         val rt = getItem.returnType as ResolvedType.ClassType
         assertEquals("Result", rt.psiClass.name)
@@ -156,7 +156,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/generic/MiddleCtrl.java")
         loadFile("api/generic/ConcreteCtrl.java")
         val psiClass = findClass("com.itangcent.api.generic.ConcreteCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val query = methods.first { it.name == "query" }
         val rt = query.returnType as ResolvedType.ClassType
         assertEquals("Result", rt.psiClass.name)
@@ -170,7 +170,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/GenericIface.java")
         loadFile("api/inherit/GenericIfaceImpl.java")
         val psiClass = findClass("com.itangcent.api.inherit.GenericIfaceImpl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val names = methods.map { it.name }
         assertTrue("query" in names)
         assertTrue("save" in names)
@@ -180,7 +180,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/GenericIface.java")
         loadFile("api/inherit/GenericIfaceImpl.java")
         val psiClass = findClass("com.itangcent.api.inherit.GenericIfaceImpl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         assertEquals(1, methods.count { it.name == "query" })
         assertEquals(1, methods.count { it.name == "save" })
     }
@@ -189,7 +189,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/GenericIface.java")
         loadFile("api/inherit/GenericIfaceImpl.java")
         val psiClass = findClass("com.itangcent.api.inherit.GenericIfaceImpl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val query = methods.first { it.name == "query" }
 
         // GenericIfaceImpl.query has no @GetMapping, but GenericIface.query does
@@ -205,7 +205,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/generic/GenericBaseCtrl.java")
         loadFile("api/generic/StringCtrl.java")
         val psiClass = findClass("com.itangcent.api.generic.StringCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
 
         // searchAnnotation should find @GetMapping on the inherited method
@@ -237,7 +237,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/AnnotatedBaseCtrl.java")
         loadFile("api/inherit/PlainSubCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.PlainSubCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val keys = methods.map { "${it.name}#${it.params.size}" }
         assertEquals(keys.size, keys.toSet().size)
     }
@@ -250,7 +250,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/SameParamNameBase.java")
         loadFile("api/inherit/SameParamNameSub.java")
         val psiClass = findClass("com.itangcent.api.inherit.SameParamNameSub")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
         val rt = getItem.returnType as ResolvedType.ClassType
         assertEquals("Result", rt.psiClass.name)
@@ -268,7 +268,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("api/inherit/SameParamNameBase.java")
         loadFile("api/inherit/SameParamNameSub.java")
         val psiClass = findClass("com.itangcent.api.inherit.SameParamNameSub")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val getItem = methods.first { it.name == "getItem" }
         val sup = getItem.superMethod()
         assertNotNull("Should find superMethod in SameParamNameBase", sup)
@@ -288,14 +288,14 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testExcludesConstructors() = runTest {
         loadFile("api/inherit/SimpleCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         for (m in methods) assertFalse(m.psiMethod.isConstructor)
     }
 
     fun testExcludesObjectMethods() = runTest {
         loadFile("api/inherit/SimpleCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.SimpleCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         for (m in methods) {
             assertFalse(m.psiMethod.containingClass?.qualifiedName == "java.lang.Object")
         }
@@ -307,7 +307,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("org/springframework/web/multipart/MultipartFile.java")
         loadFile("api/inherit/OverloadedCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.OverloadedCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val addMethods = methods.filter { it.name == "add" }
         assertEquals(
             "Both overloaded add() methods should be exported",
@@ -319,7 +319,7 @@ class ClassTypeMethodsTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadFile("org/springframework/web/multipart/MultipartFile.java")
         loadFile("api/inherit/OverloadedCtrl.java")
         val psiClass = findClass("com.itangcent.api.inherit.OverloadedCtrl")!!
-        val methods = ResolvedType.ClassType(psiClass, emptyList()).methods()
+        val methods = ResolvedType.ClassType(psiClass, emptyList()).suitableMethods()
         val addMethods = methods.filter { it.name == "add" }
 
         // One has MultipartFile, the other has MultipartFile[]
