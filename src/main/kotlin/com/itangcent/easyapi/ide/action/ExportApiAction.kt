@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.exporter.ExportOrchestrator
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.dialog.ExportDialog
 import com.itangcent.easyapi.ide.dialog.ExportDialogResult
 import com.itangcent.easyapi.ide.support.SelectedHelper
@@ -26,6 +27,8 @@ class ExportApiAction : AnAction(), IdeaLog {
         val selection = SelectedHelper.resolveSelection(e)
 
         backgroundAsync {
+            if (!DumbModeHelper.waitForSmartModeOrNotify(project)) return@backgroundAsync
+
             val apiIndex = ApiIndex.getInstance(project)
             val scanner = ApiScanner.getInstance(project)
             val endpoints = if (selection != null) {
