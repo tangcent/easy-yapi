@@ -93,7 +93,7 @@ class GsonUtilsTest {
         val json = "{\"name\":\"test\",\"value\":123}"
         val result: Map<String, Any> = GsonUtils.fromJson(json)
         assertEquals("test", result["name"])
-        assertEquals(123.0, result["value"])
+        assertEquals(123L, result["value"])
     }
 
     @Test
@@ -135,8 +135,8 @@ class GsonUtilsTest {
         val json = "{\"data\":{\"x\":1,\"y\":2}}"
         val result: Map<String, Any> = GsonUtils.fromJson(json)
         val data = result["data"] as Map<*, *>
-        assertEquals(1.0, data["x"])
-        assertEquals(2.0, data["y"])
+        assertEquals(1L, data["x"])
+        assertEquals(2L, data["y"])
     }
 
     @Test
@@ -157,7 +157,7 @@ class GsonUtilsTest {
         val json = GsonUtils.toJson(original)
         val restored: Map<String, Any> = GsonUtils.fromJson(json)
         assertEquals("value1", restored["key1"])
-        assertEquals(123.0, restored["key2"])
+        assertEquals(123L, restored["key2"])
         assertEquals(true, restored["key3"])
     }
 

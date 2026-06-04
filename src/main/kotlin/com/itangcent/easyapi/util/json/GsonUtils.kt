@@ -2,6 +2,7 @@ package com.itangcent.easyapi.util.json
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.ToNumberPolicy
 import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 
@@ -27,12 +28,17 @@ object GsonUtils {
     /**
      * Standard Gson instance for compact JSON output.
      */
-    val GSON: Gson = GsonBuilder().create()
+    val GSON: Gson = GsonBuilder()
+        .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+        .create()
 
     /**
      * Gson instance with pretty printing enabled.
      */
-    val PRETTY: Gson = GsonBuilder().setPrettyPrinting().create()
+    val PRETTY: Gson = GsonBuilder()
+        .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+        .setPrettyPrinting()
+        .create()
 
     /**
      * Serializes an object to compact JSON.

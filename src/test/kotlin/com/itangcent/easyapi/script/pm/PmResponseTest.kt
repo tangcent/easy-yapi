@@ -53,7 +53,7 @@ class PmResponseTest {
         val json = response.json() as? Map<*, *>
         assertNotNull(json)
         assertEquals("Alice", json!!["name"])
-        assertEquals(30, json["age"])
+        assertEquals(30L, json["age"])
     }
 
     @Test

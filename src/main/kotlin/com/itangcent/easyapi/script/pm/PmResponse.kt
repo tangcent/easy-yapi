@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.script.pm
 
-import groovy.json.JsonSlurper
+import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
  * Represents an HTTP response received from the server, compatible with Postman's `pm.response` API.
@@ -40,26 +40,28 @@ class PmResponse(
     fun text(): String = rawBody
 
     /**
-     * Parses the response body as JSON using Groovy's [JsonSlurper].
+     * Parses the response body as JSON using Gson.
      *
      * @return The parsed JSON object (Map, List, etc.), or null if parsing fails
      */
     fun json(): Any? {
         return try {
-            JsonSlurper().parseText(rawBody)
+            GsonUtils.fromJson(rawBody)
         } catch (_: Exception) {
             null
         }
     }
 
     /**
-     * Parses the response body as XML using Groovy's [XmlSlurper].
+     * Parses the response body as XML using javax.xml.
      *
-     * @return The parsed XML GPathResult, or null if parsing fails
+     * @return The parsed XML as a DOM Document, or null if parsing fails
      */
     fun xml(): Any? {
         return try {
-            groovy.xml.XmlSlurper().parseText(rawBody)
+            val factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+            val builder = factory.newDocumentBuilder()
+            builder.parse(rawBody.byteInputStream())
         } catch (_: Exception) {
             null
         }

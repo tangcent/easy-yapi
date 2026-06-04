@@ -1,8 +1,6 @@
 package com.itangcent.easyapi.ide.search
 
-import com.intellij.icons.AllIcons
 import com.intellij.ui.JBColor
-import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
