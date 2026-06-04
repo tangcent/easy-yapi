@@ -436,4 +436,162 @@ class RuleEngineTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertFalse(ruleEngine.evaluate(RuleKey.boolean("test.bool.zero"), mockElement))
         assertFalse(ruleEngine.evaluate(RuleKey.boolean("test.bool.no"), mockElement))
     }
+
+    // ── Array/Collection return value tests ──────────────────────
+
+    @Test
+    fun testGroovyListReturnWithMergeDistinct() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:return [\"tag1\", \"tag2\"]"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT), mockElement)
+        assertEquals("tag1\ntag2", result)
+    }
+
+    @Test
+    fun testGroovyListReturnWithMerge() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:return [\"tag1\", \"tag2\"]"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.MERGE), mockElement)
+        assertEquals("tag1\ntag2", result)
+    }
+
+    @Test
+    fun testGroovyListReturnWithSingle() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:return [\"tag1\", \"tag2\"]"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.SINGLE), mockElement)
+        assertEquals("tag1", result)
+    }
+
+    @Test
+    fun testGroovyJavaArrayReturnWithMergeDistinct() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:String[] result = new String[2]; result[0] = \"tag1\"; result[1] = \"tag2\"; return result"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT), mockElement)
+        assertEquals("tag1\ntag2", result)
+    }
+
+    @Test
+    fun testGroovyJavaArrayReturnWithSingle() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:String[] result = new String[2]; result[0] = \"tag1\"; result[1] = \"tag2\"; return result"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.SINGLE), mockElement)
+        assertEquals("tag1", result)
+    }
+
+    @Test
+    fun testGroovyListReturnWithDuplicatesMergeDistinct() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:return [\"tag1\", \"tag2\", \"tag1\"]"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT), mockElement)
+        assertEquals("tag1\ntag2", result)
+    }
+
+    @Test
+    fun testGroovyListReturnCombinedWithSimpleValue() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "tag0",
+                "api.tag" to "groovy:return [\"tag1\", \"tag2\"]"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT), mockElement)
+        assertEquals("tag0\ntag1\ntag2", result)
+    }
+
+    @Test
+    fun testGroovyListReturnWithEmptyStringElement() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:return [\"\"]"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT), mockElement)
+        // empty string is filtered out by MERGE_DISTINCT (filter { it.isNotEmpty() })
+        assertNull(result)
+    }
+
+    @Test
+    fun testGroovyJavaArrayReturnWithEmptyStringElement() = runTest {
+        project.registerServiceInstance(
+            serviceInterface = ConfigReader::class.java,
+            instance = TestConfigReader.fromRules(
+                project,
+                "api.tag" to "groovy:String[] result = new String[1]; result[0] = \"\"; return result"
+            )
+        )
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val mockElement = mock<PsiElement>()
+
+        val result = ruleEngine.evaluate(RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT), mockElement)
+        // empty string is filtered out by MERGE_DISTINCT (filter { it.isNotEmpty() })
+        assertNull(result)
+    }
 }
