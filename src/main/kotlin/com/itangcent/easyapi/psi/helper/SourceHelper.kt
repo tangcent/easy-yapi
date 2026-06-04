@@ -4,10 +4,12 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.LibraryOrderEntry
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Key
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassOwner
@@ -182,9 +184,14 @@ class SourceHelper(private val project: Project) {
                     }
 
                     val orderEntriesForFile = idx.getOrderEntriesForFile(vFile)
-                    @Suppress("DEPRECATION") // OrderRootType.SOURCES is deprecated but required for source JAR resolution on older IntelliJ versions
+                    val vfm = VirtualFileManager.getInstance()
                     val sourceFiles = orderEntriesForFile.asSequence()
-                        .flatMap { it.getFiles(OrderRootType.SOURCES).asSequence() }
+                        .filterIsInstance<LibraryOrderEntry>()
+                        .mapNotNull { it.library }
+                        .flatMap { library ->
+                            library.getUrls(OrderRootType.SOURCES).asSequence()
+                                .mapNotNull { url -> vfm.findFileByUrl(url) }
+                        }
                         .distinct()
                     for (srcFile in sourceFiles) {
                         tryFindSourceClass(srcFile, original)?.let { return it }
