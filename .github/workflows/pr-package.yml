@@ -59,12 +59,24 @@ jobs:
         run: |
           FILENAME=$(ls build/distributions/easy-yapi-*.zip | xargs basename)
           echo "plugin_filename=${FILENAME}" >> $GITHUB_OUTPUT
+          # Artifact name without the .zip extension. GitHub Actions always
+          # re-zips the uploaded path and serves it as <name>.zip on download,
+          # so naming the artifact without .zip yields the correct final name.
+          echo "artifact_name=${FILENAME%.zip}" >> $GITHUB_OUTPUT
+
+      - name: Extract plugin distribution
+        # Unzip the built plugin so we upload its contents, not the zip itself.
+        # Uploading the .zip directly would cause GitHub to wrap it in another
+        # zip, forcing users to unzip twice to reach the real plugin.
+        run: |
+          mkdir -p build/artifact
+          unzip -q build/distributions/easy-yapi-*.zip -d build/artifact
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.get_filename.outputs.plugin_filename }}
-          path: build/distributions/easy-yapi-*.zip
+          name: ${{ steps.get_filename.outputs.artifact_name }}
+          path: build/artifact/
           if-no-files-found: error
 
       - name: Comment on target issue
