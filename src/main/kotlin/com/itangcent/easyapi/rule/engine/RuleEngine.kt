@@ -74,7 +74,13 @@ class RuleEngine internal constructor(
         resolvedType: com.itangcent.easyapi.psi.type.ResolvedType,
         contextElement: PsiElement? = null
     ): String? {
-        return forEachApplicable(key) { RuleContext.withResolvedType(project, resolvedType, contextElement = contextElement) }
+        return forEachApplicable(key) {
+            RuleContext.withResolvedType(
+                project,
+                resolvedType,
+                contextElement = contextElement
+            )
+        }
     }
 
     suspend fun evaluate(key: RuleKey.BooleanKey, element: PsiElement, fieldContext: String? = null): Boolean {
@@ -112,31 +118,59 @@ class RuleEngine internal constructor(
     // The RuleContext carries the resolved element as `core`, so script contexts
     // can access resolved types (e.g., returnType() returns Result<String> not Result<T>).
 
-    suspend fun evaluate(key: RuleKey.StringKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, fieldContext: String? = null): String? {
+    suspend fun evaluate(
+        key: RuleKey.StringKey,
+        method: com.itangcent.easyapi.psi.type.ResolvedMethod,
+        fieldContext: String? = null
+    ): String? {
         return forEachApplicable(key) { RuleContext.from(project, method, fieldContext) }
     }
 
-    suspend fun evaluate(key: RuleKey.StringKey, field: com.itangcent.easyapi.psi.type.ResolvedField, fieldContext: String? = null): String? {
+    suspend fun evaluate(
+        key: RuleKey.StringKey,
+        field: com.itangcent.easyapi.psi.type.ResolvedField,
+        fieldContext: String? = null
+    ): String? {
         return forEachApplicable(key) { RuleContext.from(project, field, fieldContext) }
     }
 
-    suspend fun evaluate(key: RuleKey.BooleanKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, fieldContext: String? = null): Boolean {
+    suspend fun evaluate(
+        key: RuleKey.BooleanKey,
+        method: com.itangcent.easyapi.psi.type.ResolvedMethod,
+        fieldContext: String? = null
+    ): Boolean {
         return forEachApplicable(key) { RuleContext.from(project, method, fieldContext) } ?: false
     }
 
-    suspend fun evaluate(key: RuleKey.BooleanKey, field: com.itangcent.easyapi.psi.type.ResolvedField, fieldContext: String? = null): Boolean {
+    suspend fun evaluate(
+        key: RuleKey.BooleanKey,
+        field: com.itangcent.easyapi.psi.type.ResolvedField,
+        fieldContext: String? = null
+    ): Boolean {
         return forEachApplicable(key) { RuleContext.from(project, field, fieldContext) } ?: false
     }
 
-    suspend fun evaluate(key: RuleKey.EventKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, fieldContext: String? = null) {
+    suspend fun evaluate(
+        key: RuleKey.EventKey,
+        method: com.itangcent.easyapi.psi.type.ResolvedMethod,
+        fieldContext: String? = null
+    ) {
         forEachApplicable(key) { RuleContext.from(project, method, fieldContext) }
     }
 
-    suspend fun evaluate(key: RuleKey.EventKey, field: com.itangcent.easyapi.psi.type.ResolvedField, fieldContext: String? = null) {
+    suspend fun evaluate(
+        key: RuleKey.EventKey,
+        field: com.itangcent.easyapi.psi.type.ResolvedField,
+        fieldContext: String? = null
+    ) {
         forEachApplicable(key) { RuleContext.from(project, field, fieldContext) }
     }
 
-    suspend fun evaluate(key: RuleKey.EventKey, method: com.itangcent.easyapi.psi.type.ResolvedMethod, contextHandle: (RuleContext) -> Unit) {
+    suspend fun evaluate(
+        key: RuleKey.EventKey,
+        method: com.itangcent.easyapi.psi.type.ResolvedMethod,
+        contextHandle: (RuleContext) -> Unit
+    ) {
         forEachApplicable(key) {
             RuleContext.from(project, method).also(contextHandle)
         }
@@ -167,8 +201,10 @@ class RuleEngine internal constructor(
                 if (shouldApply) {
                     try {
                         val result = parse(expression, ruleContext, key)
-                        @Suppress("UNCHECKED_CAST")
-                        emit(RuleResult.success(key.castValue(result)))
+                        key.emitCastValues(result) { value ->
+                            @Suppress("UNCHECKED_CAST")
+                            emit(RuleResult.success(value))
+                        }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -181,22 +217,43 @@ class RuleEngine internal constructor(
         return key.mode.aggregate(results)
     }
 
+    /**
+     * Converts a script result and invokes [handle] for each typed value,
+     * expanding arrays and collections into individual elements.
+     *
+     * Groovy scripts may return Java arrays (e.g., `String[]`) or collections (e.g., `List`),
+     * whose default `toString()` produces unhelpful output like `[Ljava.lang.String;@abc123`.
+     * This method expands such results into individual elements so that each element
+     * is emitted separately, allowing aggregation modes like
+     * [StringRuleMode.MERGE_DISTINCT] to treat each element independently.
+     */
     @Suppress("UNCHECKED_CAST")
-    private fun <T> RuleKey<T>.castValue(value: Any?): T? {
-        return when (this) {
-            is RuleKey.StringKey -> value?.toString()
-            is RuleKey.BooleanKey -> value.asBooleanOrNull()
-            is RuleKey.IntKey -> value.asInt()
-            is RuleKey.EventKey -> null
-        } as T?
+    private suspend fun <T> RuleKey<T>.emitCastValues(value: Any?, handle: suspend (T?) -> Unit) {
+        when (this) {
+            is RuleKey.StringKey -> emitStringValues(value) { handle(it as T?) }
+            is RuleKey.BooleanKey -> handle(value.asBooleanOrNull() as T?)
+            is RuleKey.IntKey -> handle(value.asInt() as T?)
+            is RuleKey.EventKey -> handle(null as T?)
+        }
+    }
+
+    private suspend fun emitStringValues(value: Any?, handle: suspend (String?) -> Unit) {
+        if (value == null) {
+            handle(null)
+            return
+        }
+        when (value) {
+            is String -> handle(value)
+            is Array<*> -> value.forEach { handle(it?.toString()) }
+            is Collection<*> -> value.forEach { handle(it?.toString()) }
+            else -> handle(value.toString())
+        }
     }
 
     private suspend fun parse(expression: String, ctx: RuleContext, ruleKey: RuleKey<*>? = null): Any? {
         val parser = parsers.firstOrNull { it.canParse(expression) }
         return parser?.parse(expression, ctx, ruleKey)
     }
-
-    private fun toBoolean(value: Any): Boolean = value.asBooleanOrNull() ?: false
 
     companion object {
         private val FILTER_KEY = RuleKey.boolean("__filter__")
