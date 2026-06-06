@@ -1,12 +1,19 @@
 plugins {
     kotlin("jvm") version "2.1.0"
     id("org.jetbrains.intellij.platform") version "2.11.0"
+    id("org.jetbrains.changelog")
     id("com.google.protobuf") version "0.9.4"
     jacoco
 }
 
 group = "com.itangcent"
 version = "3.1.5.252.0"
+
+changelog {
+    val v = project.version.toString()
+    // version is like "3.1.5.252.0", changelog uses semver "3.1.5"
+    version.set(v.substringBeforeLast(".0").substringBeforeLast("."))
+}
 
 repositories {
     mavenCentral()
@@ -106,13 +113,10 @@ intellijPlatform {
         version = project.version.toString()
         description = file("src/main/resources/pluginDescription.html").readText()
         changeNotes = provider {
-            val lines = file("CHANGELOG.md").readLines()
-            val start = lines.indexOfFirst { it.startsWith("## [") }
-            val end = lines.drop(start + 1).indexOfFirst { it.startsWith("## [") }
-            val section = if (end >= 0) lines.subList(start, start + 1 + end) else lines.drop(start)
-            section.joinToString("<br/>")
-                .replace("### ", "<h3>")
-                .replace("<br/>- ", "<br/>• ")
+            changelog.renderItem(
+                changelog.getLatest(),
+                org.jetbrains.changelog.Changelog.OutputType.HTML
+            )
         }
         ideaVersion {
             sinceBuild = "252"
