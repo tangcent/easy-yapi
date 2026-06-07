@@ -5,6 +5,20 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.6] - 2026-06-07
+
+### Fixed
+-  api.tag=#tag captures all @tag values instead of only the first (#1361)
+-  avoid double-zip when downloading PR artifact
+-  properly handle array/collection return values from groovy scripts (#1358)
+- fix(source helper): fix source file resolution for library classes
+-  Fix binary incompatibility with IntelliJ 2026.2 by removing Groovy runtime dependencies
+
+### Improved
+- chore: use org.jetbrains.changelog plugin for proper HTML rendering in marketplace (#1359)
+
+---
+
 ## [3.1.5] - 2026-06-01
 
 ### Added
