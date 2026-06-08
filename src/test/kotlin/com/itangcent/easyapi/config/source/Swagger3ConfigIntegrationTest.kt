@@ -97,6 +97,10 @@ class Swagger3ConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
             "Tags should be extracted from @Operation#tags",
             createEndpoint?.tags?.contains("order") == true
         )
+        assertTrue(
+            "Multiple tags should be extracted from @Operation#tags array",
+            createEndpoint?.tags?.contains("create") == true
+        )
     }
 
     // ── @Tag: api.tag, class.doc ─────────────────────────────────
