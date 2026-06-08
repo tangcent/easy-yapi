@@ -185,15 +185,17 @@ Add settings coverage:
 
 ## Verification
 
-This repository is a single Gradle module. Do not use the project `gradlew` script.
+This repository is a Gradle project. Do not use the project `gradlew` script for any Gradle operation.
 
-Run syntax verification from the project root with the global Gradle installation:
+This repository is currently a single-module project, so run syntax verification from the project root with the system Gradle installation:
 
 ```bash
-JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home \
+env JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_181.jdk/Contents/Home \
 GRADLE_HOME=/Users/advance/Documents/work/gradle-4.10.3 \
 GRADLE_OPTS=-Dorg.gradle.native=false \
 gradle classes
 ```
 
 Do not add `--no-daemon`.
+
+If this work is later moved into a multi-module layout, verify only changed subprojects with `gradle :<sub-module>:classes` after confirming the exact subproject name, while keeping the same `JAVA_HOME`, `GRADLE_HOME`, and `GRADLE_OPTS` environment settings.
