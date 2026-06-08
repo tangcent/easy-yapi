@@ -29,6 +29,13 @@ public class ProductController {
         return product;
     }
 
+    @ApiOperation(value = "Search products", tags = {"product", "search"})
+    @GetMapping("/search")
+    public java.util.List<ProductDTO> searchProducts(
+            @ApiParam(value = "keyword") String keyword) {
+        return java.util.Collections.emptyList();
+    }
+
     @GetMapping("/list")
     public java.util.List<ProductDTO> listProducts(
             @ApiParam(value = "page number", defaultValue = "1") Integer page,

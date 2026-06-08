@@ -26,7 +26,7 @@ public class OrderController {
         return new OrderDTO();
     }
 
-    @Operation(summary = "Create a new order", tags = "order")
+    @Operation(summary = "Create a new order", tags = {"order", "create"})
     @PostMapping("/create")
     public OrderDTO createOrder(@RequestBody OrderDTO order) {
         return order;

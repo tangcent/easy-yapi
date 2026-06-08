@@ -29,6 +29,6 @@ class AnnotationExpressionParser : RuleParser {
         if (attr.isNullOrBlank()) {
             return helper.hasAnn(element, annFqn)
         }
-        return helper.findAttrAsString(element, annFqn, attr)
+        return helper.findAttr(element, annFqn, attr)
     }
 }
