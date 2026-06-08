@@ -60,7 +60,7 @@ jobs:
       - name: Generate coverage report
         run: ./gradlew test jacocoTestReport --stacktrace
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: build/reports/jacoco/report.xml
