@@ -487,6 +487,9 @@ class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testMethodContext_ThrowsExceptions() {
+        loadJDKClass("java.io.IOException")
+        loadJDKClass("java.lang.RuntimeException")
+
         val classSource = """
             package com.test;
             public class TestClass {
@@ -662,4 +665,466 @@ class ScriptPsiContextsTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Parameter should have containing method", method)
         assertEquals("testMethod", method?.name())
     }
+
+    //region Interface implementation tests
+
+    fun testScriptPsiClassContext_ImplementsClassContext() {
+        val classSource = """
+            package com.test;
+            public class TestClass {}
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        assertTrue("ScriptPsiClassContext should implement ClassContext", context is ClassContext)
+    }
+
+    fun testScriptPsiMethodContext_ImplementsMethodContext() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public void testMethod() {}
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val context = createMethodContext("com.test.TestClass", "testMethod")
+        assertTrue("ScriptPsiMethodContext should implement MethodContext", context is MethodContext)
+    }
+
+    fun testScriptPsiFieldContext_ImplementsFieldContext() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public String testField;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val context = createFieldContext("com.test.TestClass", "testField")
+        assertTrue("ScriptPsiFieldContext should implement FieldContext", context is FieldContext)
+    }
+
+    fun testScriptPsiParameterContext_ImplementsParameterContext() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public void testMethod(String param1) {}
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val methodContext = createMethodContext("com.test.TestClass", "testMethod")
+        val paramContext = methodContext.args()[0]
+        assertTrue("ScriptPsiParameterContext should implement ParameterContext", paramContext is ParameterContext)
+    }
+
+    fun testClassContext_InterfaceMethods() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public String name;
+                public int age;
+                public void doSomething() {}
+            }
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        val classContext = context as ClassContext
+
+        // Verify ClassContext interface methods are accessible
+        assertNotNull("methods() should work via ClassContext", classContext.methods())
+        assertTrue("methodCnt() should be >= 0 via ClassContext", classContext.methodCnt() >= 0)
+        assertNotNull("fields() should work via ClassContext", classContext.fields())
+        assertTrue("fieldCnt() should be >= 0 via ClassContext", classContext.fieldCnt() >= 0)
+        assertNotNull("type() should work via ClassContext", classContext.type())
+        assertFalse("isExtend() should work via ClassContext", classContext.isExtend("java.lang.List"))
+        assertFalse("isMap() should work via ClassContext", classContext.isMap())
+        assertFalse("isCollection() should work via ClassContext", classContext.isCollection())
+        assertFalse("isArray() should work via ClassContext", classContext.isArray())
+        assertFalse("isInterface() should work via ClassContext", classContext.isInterface())
+        assertFalse("isAnnotationType() should work via ClassContext", classContext.isAnnotationType())
+        assertFalse("isEnum() should work via ClassContext", classContext.isEnum())
+        assertFalse("isPrimitive() should work via ClassContext", classContext.isPrimitive())
+        assertFalse("isPrimitiveWrapper() should work via ClassContext", classContext.isPrimitiveWrapper())
+        assertFalse("isNormalType() should work via ClassContext", classContext.isNormalType())
+        assertEquals("com.test.TestClass", classContext.qualifiedName())
+        assertEquals("com.test", classContext.packageName())
+        assertTrue("isPublic() should work via ClassContext", classContext.isPublic())
+        assertFalse("isProtected() should work via ClassContext", classContext.isProtected())
+        assertFalse("isPrivate() should work via ClassContext", classContext.isPrivate())
+        assertFalse("isPackagePrivate() should work via ClassContext", classContext.isPackagePrivate())
+        assertFalse("isInnerClass() should work via ClassContext", classContext.isInnerClass())
+        assertFalse("isStatic() should work via ClassContext", classContext.isStatic())
+        assertNull("outerClass() should work via ClassContext", classContext.outerClass())
+    }
+
+    fun testMethodContext_InterfaceMethods() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public String testMethod(String param1, int param2) { return null; }
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val context = createMethodContext("com.test.TestClass", "testMethod")
+        val methodContext = context as MethodContext
+
+        // Verify MethodContext interface methods are accessible
+        assertNotNull("returnType() should work via MethodContext", methodContext.returnType())
+        assertNotNull("type() should work via MethodContext", methodContext.type())
+        assertFalse("isVarArgs() should work via MethodContext", methodContext.isVarArgs())
+        assertEquals(2, methodContext.args().size)
+        assertEquals(2, methodContext.params().size)
+        assertEquals(2, methodContext.parameters().size)
+        assertEquals(2, methodContext.argCnt())
+        assertEquals(2, methodContext.paramCnt())
+        assertNotNull("containingClass() should work via MethodContext", methodContext.containingClass())
+        assertNotNull("defineClass() should work via MethodContext", methodContext.defineClass())
+        assertFalse("isEnumField() should work via MethodContext", methodContext.isEnumField())
+        assertFalse("isConstructor() should work via MethodContext", methodContext.isConstructor())
+        assertFalse("isOverride() should work via MethodContext", methodContext.isOverride())
+        assertFalse("isDefault() should work via MethodContext", methodContext.isDefault())
+        assertFalse("isAbstract() should work via MethodContext", methodContext.isAbstract())
+        assertFalse("isSynchronized() should work via MethodContext", methodContext.isSynchronized())
+        assertFalse("isNative() should work via MethodContext", methodContext.isNative())
+    }
+
+    fun testFieldContext_InterfaceMethods() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public String testField;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val context = createFieldContext("com.test.TestClass", "testField")
+        val fieldContext = context as FieldContext
+
+        // Verify FieldContext interface methods are accessible
+        assertNotNull("type() should work via FieldContext", fieldContext.type())
+        assertNotNull("jsonType() should work via FieldContext", fieldContext.jsonType())
+        assertNotNull("containingClass() should work via FieldContext", fieldContext.containingClass())
+        assertNotNull("defineClass() should work via FieldContext", fieldContext.defineClass())
+        assertFalse("isEnumField() should work via FieldContext", fieldContext.isEnumField())
+        assertNull("asEnumField() should work via FieldContext", fieldContext.asEnumField())
+        assertFalse("isStatic() should work via FieldContext", fieldContext.isStatic())
+        assertFalse("isFinal() should work via FieldContext", fieldContext.isFinal())
+        assertFalse("isTransient() should work via FieldContext", fieldContext.isTransient())
+        assertFalse("isVolatile() should work via FieldContext", fieldContext.isVolatile())
+        assertNull("constantValue() should work via FieldContext", fieldContext.constantValue())
+    }
+
+    fun testParameterContext_InterfaceMethods() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public void testMethod(String param1) {}
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val methodContext = createMethodContext("com.test.TestClass", "testMethod")
+        val paramContext = methodContext.args()[0] as ParameterContext
+
+        // Verify ParameterContext interface methods are accessible
+        assertNotNull("type() should work via ParameterContext", paramContext.type())
+        assertNotNull("jsonType() should work via ParameterContext", paramContext.jsonType())
+        assertFalse("isVarArgs() should work via ParameterContext", paramContext.isVarArgs())
+        assertFalse("isFinal() should work via ParameterContext", paramContext.isFinal())
+        assertNotNull("method() should work via ParameterContext", paramContext.method())
+        assertNotNull("declaration() should work via ParameterContext", paramContext.declaration())
+    }
+
+    //endregion
+
+    //region contextType tests
+
+    fun testContextType_Class() {
+        val classSource = """
+            package com.test;
+            public class TestClass {}
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        assertEquals("class", context.contextType())
+    }
+
+    fun testContextType_Method() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public void testMethod() {}
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val context = createMethodContext("com.test.TestClass", "testMethod")
+        assertEquals("method", context.contextType())
+    }
+
+    fun testContextType_Field() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public String testField;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val context = createFieldContext("com.test.TestClass", "testField")
+        assertEquals("field", context.contextType())
+    }
+
+    fun testContextType_Parameter() {
+        val classSource = """
+            package com.test;
+            public class TestClass {
+                public void testMethod(String param1) {}
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val methodContext = createMethodContext("com.test.TestClass", "testMethod")
+        val paramContext = methodContext.args()[0]
+        assertEquals("param", paramContext.contextType())
+    }
+
+    //endregion
+
+    //region toJson/toJson5 tests
+
+    fun testToJson_SimpleClass() {
+        val classSource = """
+            package com.test;
+            public class SimpleModel {
+                public String name;
+                public int age;
+                public boolean active;
+            }
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        val json = context.toJson()
+
+        assertNotNull("toJson should not return null", json)
+        assertTrue("toJson should contain 'name'", json.contains("name"))
+        assertTrue("toJson should contain 'age'", json.contains("age"))
+        assertTrue("toJson should contain 'active'", json.contains("active"))
+        assertTrue("toJson should start with {", json.trimStart().startsWith("{"))
+    }
+
+    fun testToJson5_SimpleClass() {
+        val classSource = """
+            package com.test;
+            public class SimpleModel {
+                public String name;
+                public int age;
+                public boolean active;
+            }
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        val json5 = context.toJson5()
+
+        assertNotNull("toJson5 should not return null", json5)
+        assertTrue("toJson5 should contain 'name'", json5.contains("name"))
+        assertTrue("toJson5 should contain 'age'", json5.contains("age"))
+        assertTrue("toJson5 should contain 'active'", json5.contains("active"))
+        assertTrue("toJson5 should start with {", json5.trimStart().startsWith("{"))
+    }
+
+    fun testToJson_EmptyClass() {
+        val classSource = """
+            package com.test;
+            public class EmptyClass {}
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        val json = context.toJson()
+
+        assertNotNull("toJson should not return null for empty class", json)
+        assertTrue("toJson should return valid JSON", json.startsWith("{"))
+    }
+
+    fun testToJson5_EmptyClass() {
+        val classSource = """
+            package com.test;
+            public class EmptyClass {}
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        val json5 = context.toJson5()
+
+        assertNotNull("toJson5 should not return null for empty class", json5)
+        assertTrue("toJson5 should return valid JSON5", json5.startsWith("{"))
+    }
+
+    fun testToJson_NestedClass() {
+        val classSource = """
+            package com.test;
+            public class OuterModel {
+                public String name;
+                public InnerModel inner;
+            }
+            public class InnerModel {
+                public String value;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val outerContext = createClassContextFromText("com.test.OuterModel", classSource)
+        val json = outerContext.toJson()
+
+        assertNotNull("toJson should not return null for nested class", json)
+        assertTrue("toJson should contain 'name'", json.contains("name"))
+        assertTrue("toJson should contain 'inner'", json.contains("inner"))
+    }
+
+    fun testToJson5_NestedClass() {
+        val classSource = """
+            package com.test;
+            public class OuterModel {
+                public String name;
+                public InnerModel inner;
+            }
+            public class InnerModel {
+                public String value;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val outerContext = createClassContextFromText("com.test.OuterModel", classSource)
+        val json5 = outerContext.toJson5()
+
+        assertNotNull("toJson5 should not return null for nested class", json5)
+        assertTrue("toJson5 should contain 'name'", json5.contains("name"))
+        assertTrue("toJson5 should contain 'inner'", json5.contains("inner"))
+    }
+
+    fun testToJson_ViaClassContextInterface() {
+        val classSource = """
+            package com.test;
+            public class TestModel {
+                public String name;
+            }
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        val classContext = context as ClassContext
+        val json = classContext.toJson()
+
+        assertNotNull("toJson should work via ClassContext interface", json)
+        assertTrue("toJson should contain 'name'", json.contains("name"))
+    }
+
+    fun testToJson5_ViaClassContextInterface() {
+        val classSource = """
+            package com.test;
+            public class TestModel {
+                public String name;
+            }
+        """.trimIndent()
+
+        val context = createClassContext(classSource)
+        val classContext = context as ClassContext
+        val json5 = classContext.toJson5()
+
+        assertNotNull("toJson5 should work via ClassContext interface", json5)
+        assertTrue("toJson5 should contain 'name'", json5.contains("name"))
+    }
+
+    fun testToJson_ArrayType() {
+        val classSource = """
+            package com.test;
+            public class TestModel {
+                public String[] items;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val fieldContext = createFieldContext("com.test.TestModel", "items")
+        val typeContext = fieldContext.type()
+        val json = typeContext.toJson()
+
+        assertNotNull("toJson should not return null for array type", json)
+        assertTrue("toJson for array type should start with [", json.trimStart().startsWith("["))
+    }
+
+    fun testToJson5_ArrayType() {
+        val classSource = """
+            package com.test;
+            public class TestModel {
+                public String[] items;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val fieldContext = createFieldContext("com.test.TestModel", "items")
+        val typeContext = fieldContext.type()
+        val json5 = typeContext.toJson5()
+
+        assertNotNull("toJson5 should not return null for array type", json5)
+        assertTrue("toJson5 for array type should start with [", json5.trimStart().startsWith("["))
+    }
+
+    fun testToJson_PrimitiveType() {
+        val classSource = """
+            package com.test;
+            public class TestModel {
+                public int count;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val fieldContext = createFieldContext("com.test.TestModel", "count")
+        val typeContext = fieldContext.type()
+        val json = typeContext.toJson()
+
+        assertNotNull("toJson should not return null for primitive type", json)
+        assertTrue("toJson for primitive type should return a value", json.isNotEmpty())
+    }
+
+    fun testToJson5_PrimitiveType() {
+        val classSource = """
+            package com.test;
+            public class TestModel {
+                public int count;
+            }
+        """.trimIndent()
+
+        fixture.addClass(classSource)
+        val fieldContext = createFieldContext("com.test.TestModel", "count")
+        val typeContext = fieldContext.type()
+        val json5 = typeContext.toJson5()
+
+        assertNotNull("toJson5 should not return null for primitive type", json5)
+        assertTrue("toJson5 for primitive type should return a value", json5.isNotEmpty())
+    }
+
+    fun testToJson_CollectionType() {
+        loadJDKClass("java.util.List")
+        loadJDKClass("java.lang.String")
+        loadFile("model/Model.java")
+        val fieldContext = createFieldContext("com.itangcent.model.Model", "stringList")
+        val typeContext = fieldContext.type()
+        val json = typeContext.toJson()
+
+        assertNotNull("toJson should not return null for collection type", json)
+        assertTrue("toJson for collection type should start with [ but got: $json", json.trimStart().startsWith("["))
+    }
+
+    fun testToJson5_CollectionType() {
+        loadJDKClass("java.util.List")
+        loadFile("model/Model.java")
+        val fieldContext = createFieldContext("com.itangcent.model.Model", "stringList")
+        val typeContext = fieldContext.type()
+        val json5 = typeContext.toJson5()
+
+        assertNotNull("toJson5 should not return null for collection type", json5)
+        assertTrue("toJson5 for collection type should start with [ but got: $json5", json5.trimStart().startsWith("["))
+    }
+
+    //endregion
 }

@@ -25,7 +25,21 @@ object JsonOption {
 }
 
 /**
- * Helper for building object models from PSI classes.
+ * Helper for building JSON models from PSI classes and resolved types.
+ *
+ * Supports all Java types — not just object classes, but also:
+ * - Primitive types (int, boolean, etc.)
+ * - Array types (String[], int[])
+ * - Collection types (List<T>, Set<T>)
+ * - Map types (Map<K, V>)
+ * - Enum types
+ * - Simple/wrapper types (String, Integer, etc.)
+ *
+ * The returned [ObjectModel] can be any variant:
+ * - [ObjectModel.Object] for class types → `{}`
+ * - [ObjectModel.Array] for collection/array types → `[]`
+ * - [ObjectModel.Single] for primitive/simple types → `0`, `""`, `true`
+ * - [ObjectModel.MapModel] for map types → `{"": ""}`
  *
  * ## Usage
  * ```kotlin
@@ -44,11 +58,15 @@ object JsonOption {
  */
 interface PsiClassHelper {
     /**
-     * Builds an object model from a PSI class.
+     * Builds a JSON model from a PSI class.
+     *
+     * Delegates to [buildObjectModel(ResolvedType)] internally, so the result
+     * may be any [ObjectModel] variant (Object, Array, Single, MapModel, etc.)
+     * depending on the actual type.
      *
      * @param psiClass The class to analyze
      * @param option Options for what to include (see JsonOption constants)
-     * @return The object model, or null if the class cannot be analyzed
+     * @return The JSON model, or null if the type cannot be analyzed (e.g., void)
      */
     suspend fun buildObjectModel(
         psiClass: PsiClass,
@@ -56,11 +74,21 @@ interface PsiClassHelper {
     ): ObjectModel?
 
     /**
-     * Builds an object model from an already-resolved type.
+     * Builds a JSON model from an already-resolved type.
      *
      * This is the preferred entry point when you have a [ResolvedType]
      * (e.g., from [ResolvedType.ClassType.fields] or [ResolvedType.ClassType.methods]).
      * No generic context is needed because the type is already fully resolved.
+     *
+     * Handles all [ResolvedType] variants:
+     * - [ResolvedType.PrimitiveType] → [ObjectModel.Single]
+     * - [ResolvedType.ArrayType] → [ObjectModel.Array]
+     * - [ResolvedType.ClassType] → depends on the class (Object, Array, Single, MapModel)
+     * - [ResolvedType.WildcardType] → resolved from upper bound
+     *
+     * @param resolvedType The resolved type to analyze
+     * @param option Options for what to include (see JsonOption constants)
+     * @return The JSON model, or null if the type cannot be analyzed (e.g., void)
      */
     suspend fun buildObjectModel(
         resolvedType: ResolvedType,

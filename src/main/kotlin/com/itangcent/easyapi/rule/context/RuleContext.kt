@@ -152,7 +152,7 @@ class RuleContext private constructor(
 
     fun wrapExt(key: String, value: Any?): Any? {
         if (value == null) return null
-        if (key == "fieldContext" && value is String) return ScriptFieldContext(value)
+        if (key == "fieldContext" && value is String) return ScriptFieldPathContext(value)
         if (value is PsiElement) return withElement(value).asScriptIt()
         if (value is ApiEndpoint) return ScriptApiEndpoint(value)
         return value

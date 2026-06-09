@@ -5,9 +5,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.itangcent.easyapi.cache.json.JsonConstructionCache
 import com.itangcent.easyapi.config.ConfigReader
-import com.itangcent.easyapi.core.threading.read
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.psi.DefaultPsiClassHelper.Companion.DEFAULT_MAX_DEEP
+import com.itangcent.easyapi.psi.DefaultPsiClassHelper.Companion.DEFAULT_MAX_ELEMENTS
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
@@ -102,34 +103,8 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         psiClass: PsiClass,
         option: Int
     ): ObjectModel? {
-        val engine = RuleEngine.getInstance(project)
-        val elementCounter = ElementCounter(maxElements())
-        val maxDepth = maxDeep()
-
-        val converted = engine.evaluate(
-            RuleKeys.JSON_RULE_CONVERT,
-            com.intellij.psi.util.PsiTypesUtil.getClassType(psiClass),
-            psiClass
-        )
-        if (!converted.isNullOrBlank()) {
-            return buildObjectModelFromConvertedType(
-                convertedType = converted,
-                contextElement = psiClass,
-                option = option,
-                maxDepth = maxDepth,
-                genericContext = GenericContext.EMPTY,
-                elementCounter = elementCounter
-            )
-        }
-
-        val docHelper = UnifiedDocHelper.getInstance(project)
-        val cache = JsonConstructionCache()
-        val visited = HashSet<String>()
-        return buildTypeObject(
-            psiClass, engine, docHelper, cache,
-            option, maxDepth, depth = 0, visited = visited,
-            elementCounter = elementCounter
-        )
+        val resolvedType = ResolvedType.ClassType(psiClass)
+        return buildObjectModel(resolvedType, option)
     }
 
     override suspend fun buildObjectModel(

@@ -6,6 +6,9 @@ import com.intellij.psi.PsiField
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.core.threading.readSync
+import com.itangcent.easyapi.psi.JsonOption
+import com.itangcent.easyapi.psi.PsiClassHelper
+import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import com.itangcent.easyapi.psi.type.InheritanceHelper
 import com.itangcent.easyapi.psi.type.ResolvedField
 import com.itangcent.easyapi.psi.type.ResolvedMethod
@@ -13,6 +16,125 @@ import com.itangcent.easyapi.psi.type.ResolvedParam
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 import com.itangcent.easyapi.psi.type.TypeResolver
+import kotlinx.coroutines.runBlocking
+
+//region Context Type Interfaces
+
+/**
+ * Interface defining the contract for contextType "class".
+ *
+ * Implemented by [ScriptPsiClassContext] and its subclasses.
+ * Provides class-specific operations for scripts including:
+ * - Method and field access
+ * - Type checking (isMap, isCollection, isArray, etc.)
+ * - Inheritance queries (extends, implements, superClass)
+ * - JSON serialization (toJson, toJson5)
+ */
+interface ClassContext {
+    fun methods(): Array<ScriptPsiMethodContext>
+    fun methodCnt(): Int
+    fun fields(): Array<ScriptPsiFieldContext>
+    fun fieldCnt(): Int
+    fun type(): ScriptTypeContext
+    fun isExtend(superClass: String): Boolean
+    fun isMap(): Boolean
+    fun isCollection(): Boolean
+    fun isArray(): Boolean
+    fun isInterface(): Boolean
+    fun isAnnotationType(): Boolean
+    fun isEnum(): Boolean
+    fun isPrimitive(): Boolean
+    fun isPrimitiveWrapper(): Boolean
+    fun isNormalType(): Boolean
+    fun qualifiedName(): String?
+    fun packageName(): String?
+    fun isPublic(): Boolean
+    fun isProtected(): Boolean
+    fun isPrivate(): Boolean
+    fun isPackagePrivate(): Boolean
+    fun isInnerClass(): Boolean
+    fun isStatic(): Boolean
+    fun outerClass(): ScriptPsiClassContext?
+    fun superClass(): ScriptPsiClassContext?
+    fun extends(): Array<ScriptPsiClassContext>?
+    fun implements(): Array<ScriptPsiClassContext>?
+    fun toJson(): String
+    fun toJson5(): String
+}
+
+/**
+ * Interface defining the contract for contextType "method".
+ *
+ * Implemented by [ScriptPsiMethodContext] and its subclasses.
+ * Provides method-specific operations for scripts including:
+ * - Return type and parameter access
+ * - Containing class access
+ * - Method modifier checks
+ */
+interface MethodContext {
+    fun returnType(): ScriptTypeContext?
+    fun type(): ScriptTypeContext?
+    fun isVarArgs(): Boolean
+    fun args(): Array<ScriptPsiParameterContext>
+    fun params(): Array<ScriptPsiParameterContext>
+    fun parameters(): Array<ScriptPsiParameterContext>
+    fun argTypes(): Array<ScriptTypeContext>
+    fun argCnt(): Int
+    fun paramCnt(): Int
+    fun containingClass(): ScriptPsiClassContext?
+    fun defineClass(): ScriptPsiClassContext?
+    fun isEnumField(): Boolean
+    fun isConstructor(): Boolean
+    fun isOverride(): Boolean
+    fun throwsExceptions(): Array<String>
+    fun isDefault(): Boolean
+    fun isAbstract(): Boolean
+    fun isSynchronized(): Boolean
+    fun isNative(): Boolean
+}
+
+/**
+ * Interface defining the contract for contextType "field".
+ *
+ * Implemented by [ScriptPsiFieldContext] and its subclasses.
+ * Provides field-specific operations for scripts including:
+ * - Type access
+ * - Containing class access
+ * - Field modifier checks
+ */
+interface FieldContext {
+    fun type(): ScriptTypeContext
+    fun jsonType(): ScriptTypeContext
+    fun containingClass(): ScriptPsiClassContext?
+    fun defineClass(): ScriptPsiClassContext?
+    fun isEnumField(): Boolean
+    fun asEnumField(): ScriptPsiEnumConstantContext?
+    fun isStatic(): Boolean
+    fun isFinal(): Boolean
+    fun isTransient(): Boolean
+    fun isVolatile(): Boolean
+    fun constantValue(): Any?
+}
+
+/**
+ * Interface defining the contract for contextType "param".
+ *
+ * Implemented by [ScriptPsiParameterContext] and its subclasses.
+ * Provides parameter-specific operations for scripts including:
+ * - Type access
+ * - Varargs detection
+ * - Declaring method access
+ */
+interface ParameterContext {
+    fun type(): ScriptTypeContext
+    fun jsonType(): ScriptTypeContext
+    fun isVarArgs(): Boolean
+    fun isFinal(): Boolean
+    fun method(): ScriptPsiMethodContext?
+    fun declaration(): ScriptItContext?
+}
+
+//endregion
 
 /**
  * Converts a [RuleContext] to a script-friendly context based on the element type.
@@ -68,11 +190,11 @@ fun RuleContext.asScriptIt(): Any {
  * if (it.isMap()) { ... }
  * ```
  */
-open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context) {
+open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context), ClassContext {
 
     private fun psiClass(): PsiClass = context.element as PsiClass
 
-    open fun methods(): Array<ScriptPsiMethodContext> = readSync {
+    override fun methods(): Array<ScriptPsiMethodContext> = readSync {
         val cls = psiClass()
         val methods = cls.allMethods
         Array(methods.size) { i ->
@@ -80,9 +202,9 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
         }
     }
 
-    fun methodCnt(): Int = readSync { psiClass().allMethods.size }
+    override fun methodCnt(): Int = readSync { psiClass().allMethods.size }
 
-    open fun fields(): Array<ScriptPsiFieldContext> = readSync {
+    override fun fields(): Array<ScriptPsiFieldContext> = readSync {
         val cls = psiClass()
         val fields = cls.allFields
         Array(fields.size) { i ->
@@ -90,80 +212,96 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
         }
     }
 
-    fun fieldCnt(): Int = readSync { psiClass().allFields.size }
+    override fun fieldCnt(): Int = readSync { psiClass().allFields.size }
 
-    open fun type(): ScriptTypeContext {
+    override fun type(): ScriptTypeContext {
         return ScriptTypeContext(context, ResolvedType.ClassType(psiClass()))
     }
 
-    fun isExtend(superClass: String): Boolean =
+    override fun isExtend(superClass: String): Boolean =
         InheritanceHelper.isInheritor(psiClass(), superClass)
 
-    fun isMap(): Boolean =
+    override fun isMap(): Boolean =
         InheritanceHelper.isMap(psiClass())
 
-    fun isCollection(): Boolean =
+    override fun isCollection(): Boolean =
         InheritanceHelper.isCollection(psiClass())
 
-    fun isArray(): Boolean = name().endsWith("[]")
+    override fun isArray(): Boolean = name().endsWith("[]")
 
-    fun isInterface(): Boolean = readSync { psiClass().isInterface }
+    override fun isInterface(): Boolean = readSync { psiClass().isInterface }
 
-    fun isAnnotationType(): Boolean = readSync { psiClass().isAnnotationType }
+    override fun isAnnotationType(): Boolean = readSync { psiClass().isAnnotationType }
 
-    fun isEnum(): Boolean = readSync { psiClass().isEnum }
+    override fun isEnum(): Boolean = readSync { psiClass().isEnum }
 
-    fun isPrimitive(): Boolean = SpecialTypeHandler.isPrimitive(name())
+    override fun isPrimitive(): Boolean = SpecialTypeHandler.isPrimitive(name())
 
-    fun isPrimitiveWrapper(): Boolean = SpecialTypeHandler.isPrimitiveWrapper(name())
+    override fun isPrimitiveWrapper(): Boolean = SpecialTypeHandler.isPrimitiveWrapper(name())
 
-    fun isNormalType(): Boolean {
+    override fun isNormalType(): Boolean {
         val n = name()
         return isPrimitive() || isPrimitiveWrapper() || n == "java.lang.String" || n == "java.lang.Object"
     }
 
-    fun qualifiedName(): String? = readSync { psiClass().qualifiedName }
+    override fun qualifiedName(): String? = readSync { psiClass().qualifiedName }
 
-    fun packageName(): String? = readSync { psiClass().qualifiedName?.substringBeforeLast('.', "") }
+    override fun packageName(): String? = readSync { psiClass().qualifiedName?.substringBeforeLast('.', "") }
 
-    fun isPublic(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PUBLIC) }
+    override fun isPublic(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PUBLIC) }
 
-    fun isProtected(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PROTECTED) }
+    override fun isProtected(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PROTECTED) }
 
-    fun isPrivate(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PRIVATE) }
+    override fun isPrivate(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.PRIVATE) }
 
-    fun isPackagePrivate(): Boolean = readSync {
+    override fun isPackagePrivate(): Boolean = readSync {
         val cls = psiClass()
         !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PUBLIC) &&
                 !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PROTECTED) &&
                 !cls.hasModifierProperty(com.intellij.psi.PsiModifier.PRIVATE)
     }
 
-    fun isInnerClass(): Boolean = readSync { psiClass().containingClass != null }
+    override fun isInnerClass(): Boolean = readSync { psiClass().containingClass != null }
 
-    fun isStatic(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) }
+    override fun isStatic(): Boolean = readSync { psiClass().hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) }
 
-    open fun outerClass(): ScriptPsiClassContext? = readSync {
+    override fun outerClass(): ScriptPsiClassContext? = readSync {
         psiClass().containingClass?.let { ScriptPsiClassContext(context.withElement(it)) }
     }
 
-    open fun superClass(): ScriptPsiClassContext? = readSync {
+    override fun superClass(): ScriptPsiClassContext? = readSync {
         val cls = psiClass()
         if (cls.isInterface || cls.isAnnotationType || cls.isEnum) return@readSync null
         extends()?.takeIf { it.isNotEmpty() }?.get(0)?.let { return@readSync it }
         cls.superClass?.let { ScriptPsiClassContext(context.withElement(it)) }
     }
 
-    open fun extends(): Array<ScriptPsiClassContext>? = readSync {
+    override fun extends(): Array<ScriptPsiClassContext>? = readSync {
         psiClass().extendsList?.referencedTypes?.mapNotNull { ref ->
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
 
-    open fun implements(): Array<ScriptPsiClassContext>? = readSync {
+    override fun implements(): Array<ScriptPsiClassContext>? = readSync {
         psiClass().implementsList?.referencedTypes?.mapNotNull { ref ->
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
+    }
+
+    override fun toJson(): String {
+        val helper = PsiClassHelper.getInstance(context.project)
+        val model = runBlocking {
+            helper.buildObjectModel(ResolvedType.ClassType(psiClass()), JsonOption.READ_GETTER_OR_SETTER)
+        }
+        return ObjectModelJsonConverter.toJson(model)
+    }
+
+    override fun toJson5(): String {
+        val helper = PsiClassHelper.getInstance(context.project)
+        val model = runBlocking {
+            helper.buildObjectModel(ResolvedType.ClassType(psiClass()), JsonOption.ALL)
+        }
+        return ObjectModelJsonConverter.toJson5(model)
     }
 
     override fun canonicalText(): String = qualifiedName() ?: name()
@@ -194,67 +332,67 @@ open class ScriptPsiClassContext(context: RuleContext) : ScriptItContext(context
  * it.containingClass().name()
  * ```
  */
-open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(context) {
+open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(context), MethodContext {
 
     protected fun psiMethod(): PsiMethod = context.element as PsiMethod
 
-    open fun returnType(): ScriptTypeContext? = readSync {
+    override fun returnType(): ScriptTypeContext? = readSync {
         val type = psiMethod().returnType ?: return@readSync null
         ScriptTypeContext(context, TypeResolver.resolve(type))
     }
 
-    fun type(): ScriptTypeContext? = returnType()
+    override fun type(): ScriptTypeContext? = returnType()
 
-    fun isVarArgs(): Boolean = readSync { psiMethod().isVarArgs }
+    override fun isVarArgs(): Boolean = readSync { psiMethod().isVarArgs }
 
-    open fun args(): Array<ScriptPsiParameterContext> = readSync {
+    override fun args(): Array<ScriptPsiParameterContext> = readSync {
         val params = psiMethod().parameterList.parameters
         Array(params.size) { i -> ScriptPsiParameterContext(context.withElement(params[i])) }
     }
 
-    fun params(): Array<ScriptPsiParameterContext> = args()
+    override fun params(): Array<ScriptPsiParameterContext> = args()
 
-    fun parameters(): Array<ScriptPsiParameterContext> = args()
+    override fun parameters(): Array<ScriptPsiParameterContext> = args()
 
-    open fun argTypes(): Array<ScriptTypeContext> = readSync {
+    override fun argTypes(): Array<ScriptTypeContext> = readSync {
         val params = psiMethod().parameterList.parameters
         Array(params.size) { i -> ScriptTypeContext(context, TypeResolver.resolve(params[i].type)) }
     }
 
-    fun argCnt(): Int = readSync { psiMethod().parameterList.parametersCount }
+    override fun argCnt(): Int = readSync { psiMethod().parameterList.parametersCount }
 
-    fun paramCnt(): Int = argCnt()
+    override fun paramCnt(): Int = argCnt()
 
-    open fun containingClass(): ScriptPsiClassContext? = readSync {
+    override fun containingClass(): ScriptPsiClassContext? = readSync {
         val cls = psiMethod().containingClass ?: return@readSync null
         ScriptPsiClassContext(context.withElement(cls))
     }
 
-    open fun defineClass(): ScriptPsiClassContext? = containingClass()
+    override fun defineClass(): ScriptPsiClassContext? = containingClass()
 
     /* for backward compatibility only */
-    fun isEnumField(): Boolean = false
+    override fun isEnumField(): Boolean = false
 
-    fun isConstructor(): Boolean = readSync { psiMethod().isConstructor }
+    override fun isConstructor(): Boolean = readSync { psiMethod().isConstructor }
 
-    fun isOverride(): Boolean = readSync {
+    override fun isOverride(): Boolean = readSync {
         val method = psiMethod()
         method.modifierList.findAnnotation("java.lang.Override") != null ||
                 method.findSuperMethods().isNotEmpty()
     }
 
-    fun throwsExceptions(): Array<String> = readSync {
+    override fun throwsExceptions(): Array<String> = readSync {
         psiMethod().throwsList.referencedTypes.map { it.canonicalText }.toTypedArray()
     }
 
-    fun isDefault(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.DEFAULT) }
+    override fun isDefault(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.DEFAULT) }
 
-    fun isAbstract(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.ABSTRACT) }
+    override fun isAbstract(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.ABSTRACT) }
 
-    fun isSynchronized(): Boolean =
+    override fun isSynchronized(): Boolean =
         readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.SYNCHRONIZED) }
 
-    fun isNative(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.NATIVE) }
+    override fun isNative(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.NATIVE) }
 
     override fun canonicalText(): String {
         val cls = readSync { psiMethod().containingClass?.qualifiedName } ?: ""
@@ -303,38 +441,38 @@ class ScriptPsiMethodInClassContext(
  * if (it.isEnumField()) { ... }
  * ```
  */
-open class ScriptPsiFieldContext(context: RuleContext) : ScriptItContext(context) {
+open class ScriptPsiFieldContext(context: RuleContext) : ScriptItContext(context), FieldContext {
 
     protected fun psiField(): PsiField = context.element as PsiField
 
-    open fun type(): ScriptTypeContext = readSync {
+    override fun type(): ScriptTypeContext = readSync {
         ScriptTypeContext(context, TypeResolver.resolve(psiField().type))
     }
 
-    open fun jsonType(): ScriptTypeContext = type()
+    override fun jsonType(): ScriptTypeContext = type()
 
-    open fun containingClass(): ScriptPsiClassContext? = readSync {
+    override fun containingClass(): ScriptPsiClassContext? = readSync {
         val cls = psiField().containingClass ?: return@readSync null
         ScriptPsiClassContext(context.withElement(cls))
     }
 
-    open fun defineClass(): ScriptPsiClassContext? = containingClass()
+    override fun defineClass(): ScriptPsiClassContext? = containingClass()
 
-    fun isEnumField(): Boolean = readSync { psiField() is PsiEnumConstant }
+    override fun isEnumField(): Boolean = readSync { psiField() is PsiEnumConstant }
 
-    fun asEnumField(): ScriptPsiEnumConstantContext? = readSync {
+    override fun asEnumField(): ScriptPsiEnumConstantContext? = readSync {
         (psiField() as? PsiEnumConstant)?.let { ScriptPsiEnumConstantContext(context, it) }
     }
 
-    fun isStatic(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) }
+    override fun isStatic(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) }
 
-    fun isFinal(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.FINAL) }
+    override fun isFinal(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.FINAL) }
 
-    fun isTransient(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.TRANSIENT) }
+    override fun isTransient(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.TRANSIENT) }
 
-    fun isVolatile(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.VOLATILE) }
+    override fun isVolatile(): Boolean = readSync { psiField().hasModifierProperty(com.intellij.psi.PsiModifier.VOLATILE) }
 
-    fun constantValue(): Any? = readSync {
+    override fun constantValue(): Any? = readSync {
         val field = psiField()
         if (field.hasModifierProperty(com.intellij.psi.PsiModifier.STATIC) &&
             field.hasModifierProperty(com.intellij.psi.PsiModifier.FINAL)
@@ -392,24 +530,24 @@ class ScriptPsiFieldInClassContext(
  * it.method().name()
  * ```
  */
-open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(context) {
+open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(context), ParameterContext {
 
     private fun psiParameter(): PsiParameter = context.element as PsiParameter
 
-    open fun type(): ScriptTypeContext = readSync {
+    override fun type(): ScriptTypeContext = readSync {
         ScriptTypeContext(context, TypeResolver.resolve(psiParameter().type))
     }
 
-    open fun jsonType(): ScriptTypeContext = type()
+    override fun jsonType(): ScriptTypeContext = type()
 
-    fun isVarArgs(): Boolean = readSync { psiParameter().isVarArgs }
+    override fun isVarArgs(): Boolean = readSync { psiParameter().isVarArgs }
 
-    fun isFinal(): Boolean = readSync { psiParameter().hasModifierProperty(com.intellij.psi.PsiModifier.FINAL) }
+    override fun isFinal(): Boolean = readSync { psiParameter().hasModifierProperty(com.intellij.psi.PsiModifier.FINAL) }
 
     /**
      * Returns the method which declares this parameter. May be null.
      */
-    open fun method(): ScriptPsiMethodContext? = readSync {
+    override fun method(): ScriptPsiMethodContext? = readSync {
         val scope = psiParameter().declarationScope
         if (scope is PsiMethod) ScriptPsiMethodContext(context.withElement(scope)) else null
     }
@@ -417,7 +555,7 @@ open class ScriptPsiParameterContext(context: RuleContext) : ScriptItContext(con
     /**
      * Returns the element which declares this parameter.
      */
-    open fun declaration(): ScriptItContext? = readSync {
+    override fun declaration(): ScriptItContext? = readSync {
         val scope = psiParameter().declarationScope
         when (scope) {
             is PsiMethod -> ScriptPsiMethodContext(context.withElement(scope))
@@ -588,6 +726,22 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
             ref.resolve()?.let { ScriptPsiClassContext(context.withElement(it)) }
         }?.toTypedArray()
     }
+
+    fun toJson(): String {
+        val helper = PsiClassHelper.getInstance(context.project)
+        val model = runBlocking {
+            helper.buildObjectModel(resolvedType, JsonOption.READ_GETTER_OR_SETTER)
+        }
+        return ObjectModelJsonConverter.toJson(model)
+    }
+
+    fun toJson5(): String {
+        val helper = PsiClassHelper.getInstance(context.project)
+        val model = runBlocking {
+            helper.buildObjectModel(resolvedType, JsonOption.ALL)
+        }
+        return ObjectModelJsonConverter.toJson5(model)
+    }
 }
 
 /**
@@ -607,15 +761,75 @@ class ScriptTypeContext(private val context: RuleContext, private val resolvedTy
 class ScriptPsiTypeContext(
     context: RuleContext,
     private val psiType: com.intellij.psi.PsiType
-) : ScriptItContext(context) {
+) : ScriptItContext(context), ClassContext {
 
     private val resolvedType: ResolvedType by lazy { TypeResolver.resolve(psiType) }
 
-    fun type(): ScriptTypeContext = ScriptTypeContext(context, resolvedType)
+    private val typeContext: ScriptTypeContext by lazy { ScriptTypeContext(context, resolvedType) }
 
-    fun returnType(): ScriptTypeContext = type()
+    override fun type(): ScriptTypeContext = typeContext
 
-    override fun contextType(): String = "type"
+    override fun contextType(): String = "class"
+
+    override fun methods(): Array<ScriptPsiMethodContext> = typeContext.methods()
+
+    override fun methodCnt(): Int = typeContext.methods().size
+
+    override fun fields(): Array<ScriptPsiFieldContext> = typeContext.fields()
+
+    override fun fieldCnt(): Int = typeContext.fields().size
+
+    override fun isExtend(superClass: String): Boolean = typeContext.isExtend(superClass)
+
+    override fun isMap(): Boolean = typeContext.isMap()
+
+    override fun isCollection(): Boolean = typeContext.isCollection()
+
+    override fun isArray(): Boolean = typeContext.isArray()
+
+    override fun isInterface(): Boolean = typeContext.isInterface()
+
+    override fun isAnnotationType(): Boolean = typeContext.isAnnotationType()
+
+    override fun isEnum(): Boolean = typeContext.isEnum()
+
+    override fun isPrimitive(): Boolean = typeContext.isPrimitive()
+
+    override fun isPrimitiveWrapper(): Boolean = typeContext.isPrimitiveWrapper()
+
+    override fun isNormalType(): Boolean = typeContext.isNormalType()
+
+    override fun qualifiedName(): String? = typeContext.name()
+
+    override fun packageName(): String? = readSync {
+        val name = typeContext.name()
+        val lastDot = name.lastIndexOf('.')
+        if (lastDot > 0) name.substring(0, lastDot) else null
+    }
+
+    override fun isPublic(): Boolean = true
+
+    override fun isProtected(): Boolean = false
+
+    override fun isPrivate(): Boolean = false
+
+    override fun isPackagePrivate(): Boolean = false
+
+    override fun isInnerClass(): Boolean = false
+
+    override fun isStatic(): Boolean = false
+
+    override fun outerClass(): ScriptPsiClassContext? = null
+
+    override fun superClass(): ScriptPsiClassContext? = typeContext.superClass()
+
+    override fun extends(): Array<ScriptPsiClassContext>? = typeContext.extends()
+
+    override fun implements(): Array<ScriptPsiClassContext>? = typeContext.implements()
+
+    override fun toJson(): String = typeContext.toJson()
+
+    override fun toJson5(): String = typeContext.toJson5()
 
     override fun toString(): String = resolvedType.qualifiedName()
 }
