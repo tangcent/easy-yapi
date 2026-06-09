@@ -47,6 +47,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var yapiExportMode: String = YapiExportMode.ALWAYS_UPDATE.name,
         override var yapiReqBodyJson5: Boolean = false,
         override var yapiResBodyJson5: Boolean = false,
+        override var yapiResponseWrapperEnabled: Boolean = false,
+        override var yapiResponseWrapperTemplate: String = "",
         override var httpTimeOut: Int = 30,
         override var unsafeSsl: Boolean = false,
         override var httpClient: String = HttpClientType.APACHE.value,
@@ -86,6 +88,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (switchNotice != other.switchNotice) return false
             if (yapiReqBodyJson5 != other.yapiReqBodyJson5) return false
             if (yapiResBodyJson5 != other.yapiResBodyJson5) return false
+            if (yapiResponseWrapperEnabled != other.yapiResponseWrapperEnabled) return false
+            if (yapiResponseWrapperTemplate != other.yapiResponseWrapperTemplate) return false
             if (httpTimeOut != other.httpTimeOut) return false
             if (unsafeSsl != other.unsafeSsl) return false
             if (logLevel != other.logLevel) return false
@@ -128,6 +132,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + switchNotice.hashCode()
             result = 31 * result + yapiReqBodyJson5.hashCode()
             result = 31 * result + yapiResBodyJson5.hashCode()
+            result = 31 * result + yapiResponseWrapperEnabled.hashCode()
+            result = 31 * result + yapiResponseWrapperTemplate.hashCode()
             result = 31 * result + httpTimeOut
             result = 31 * result + unsafeSsl.hashCode()
             result = 31 * result + logLevel

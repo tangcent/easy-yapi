@@ -39,6 +39,9 @@ class YapiFormatter(
     private val resBodyJson5: Boolean = false,
     private val mockGenerator: MockDataGenerator? = MockDataGenerator(),
     private val autoFormatUrl: Boolean = true,
+    private val responseWrapperEnabled: Boolean = false,
+    private val responseWrapperTemplate: String? = null,
+    private val responseWrapper: YapiResponseWrapper = YapiResponseWrapper(jsonSchemaBuilder),
     private val markdownRender: MarkdownRender
 ) {
     constructor(
@@ -47,6 +50,9 @@ class YapiFormatter(
         resBodyJson5: Boolean = false,
         mockRules: Map<String, String>,
         autoFormatUrl: Boolean = true,
+        responseWrapperEnabled: Boolean = false,
+        responseWrapperTemplate: String? = null,
+        responseWrapper: YapiResponseWrapper = YapiResponseWrapper(jsonSchemaBuilder),
         markdownRender: MarkdownRender
     ) : this(
         jsonSchemaBuilder,
@@ -54,6 +60,9 @@ class YapiFormatter(
         resBodyJson5,
         MockDataGenerator(mockRules),
         autoFormatUrl,
+        responseWrapperEnabled,
+        responseWrapperTemplate,
+        responseWrapper,
         markdownRender
     )
 
@@ -68,6 +77,9 @@ class YapiFormatter(
         resBodyJson5 = useJson5,
         mockGenerator = MockDataGenerator(mockRules),
         autoFormatUrl = true,
+        responseWrapperEnabled = false,
+        responseWrapperTemplate = null,
+        responseWrapper = YapiResponseWrapper(jsonSchemaBuilder),
         markdownRender = markdownRender
     )
 
@@ -157,18 +169,19 @@ class YapiFormatter(
         val reqBodyIsJsonSchema = hasJsonBody && !reqBodyJson5
 
         val responseBody = httpMeta?.responseBody
-        val resBody = if (responseBody != null) {
-            if (resBodyJson5) {
-                formatAsJson5(responseBody)
+        val resBody = if (responseWrapperEnabled) {
+            val wrapped = if (resBodyJson5) {
+                responseWrapper.wrapJson5(responseWrapperTemplate, responseBody)
             } else {
-                jsonSchemaBuilder.build(responseBody)
+                responseWrapper.wrapSchema(responseWrapperTemplate, responseBody)
             }
+            wrapped ?: buildOriginalResponseBody(responseBody)
         } else {
-            null
+            buildOriginalResponseBody(responseBody)
         }
 
         // res_body_is_json_schema: true when we use JSON schema (not JSON5) for response body
-        val resBodyIsJsonSchema = responseBody != null && !resBodyJson5
+        val resBodyIsJsonSchema = resBody != null && !resBodyJson5
 
         return YapiApiDoc(
             title = endpoint.name ?: "${httpMeta?.method?.name ?: "UNKNOWN"} ${endpoint.path}",
@@ -186,7 +199,7 @@ class YapiFormatter(
             reqBodyType = reqBodyType,
             reqBodyIsJsonSchema = reqBodyIsJsonSchema,
             resBody = resBody,
-            resBodyType = if (responseBody != null) "json" else null,
+            resBodyType = if (resBody != null) "json" else null,
             resBodyIsJsonSchema = resBodyIsJsonSchema,
             tags = endpoint.tags.ifEmpty { null },
             open = if (endpoint.open) true else null
@@ -288,12 +301,22 @@ class YapiFormatter(
     /**
      * Formats an object model as JSON5 string.
      * JSON5 is a more readable JSON format with comments and trailing commas.
-     * 
+     *
      * @param model The object model to format
      * @return A JSON5 formatted string
      */
     private fun formatAsJson5(model: ObjectModel): String {
         return ObjectModelJsonConverter.toJson5(model)
+    }
+
+    private fun buildOriginalResponseBody(responseBody: ObjectModel?): String? {
+        return responseBody?.let {
+            if (resBodyJson5) {
+                formatAsJson5(it)
+            } else {
+                jsonSchemaBuilder.build(it)
+            }
+        }
     }
 
     /**

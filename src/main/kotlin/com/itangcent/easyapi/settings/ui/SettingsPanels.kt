@@ -30,6 +30,7 @@ import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
 import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.settings.YapiExportMode
+import com.itangcent.easyapi.exporter.yapi.YapiResponseWrapper
 import java.awt.*
 import java.io.File
 import javax.swing.*
@@ -684,6 +685,11 @@ class YapiSettingsPanel : SettingsPanel {
     private val yapiExportModeCombo = ComboBox(YapiExportMode.entries.toTypedArray())
     private val yapiReqBodyJson5 = JBCheckBox("Request body JSON5")
     private val yapiResBodyJson5 = JBCheckBox("Response body JSON5")
+    private val yapiResponseWrapperEnabled = JBCheckBox("Enable response wrapper")
+    private val yapiResponseWrapperTemplate = JBTextArea(4, 40).apply {
+        text = YapiResponseWrapper.DEFAULT_TEMPLATE
+        toolTipText = "Strict JSON object. Use \"\$response\" where the original response should be inserted."
+    }
 
     override val component: JComponent = FormBuilder.createFormBuilder()
         .addLabeledComponent("Yapi Server:", yapiServer)
@@ -693,6 +699,8 @@ class YapiSettingsPanel : SettingsPanel {
         .addLabeledComponent("Export Mode:", yapiExportModeCombo)
         .addComponent(yapiReqBodyJson5)
         .addComponent(yapiResBodyJson5)
+        .addComponent(yapiResponseWrapperEnabled)
+        .addLabeledComponent("Response wrapper template:", JScrollPane(yapiResponseWrapperTemplate))
         .addComponentFillVertically(JPanel(), 0)
         .panel
 
@@ -706,6 +714,10 @@ class YapiSettingsPanel : SettingsPanel {
         } ?: YapiExportMode.ALWAYS_UPDATE
         yapiReqBodyJson5.isSelected = settings?.yapiReqBodyJson5 ?: false
         yapiResBodyJson5.isSelected = settings?.yapiResBodyJson5 ?: false
+        yapiResponseWrapperEnabled.isSelected = settings?.yapiResponseWrapperEnabled ?: false
+        yapiResponseWrapperTemplate.text = settings?.yapiResponseWrapperTemplate
+            ?.takeIf { it.isNotBlank() }
+            ?: YapiResponseWrapper.DEFAULT_TEMPLATE
     }
 
     override fun applyTo(settings: Settings) {
@@ -717,6 +729,8 @@ class YapiSettingsPanel : SettingsPanel {
             (yapiExportModeCombo.selectedItem as? YapiExportMode)?.name ?: YapiExportMode.ALWAYS_UPDATE.name
         settings.yapiReqBodyJson5 = yapiReqBodyJson5.isSelected
         settings.yapiResBodyJson5 = yapiResBodyJson5.isSelected
+        settings.yapiResponseWrapperEnabled = yapiResponseWrapperEnabled.isSelected
+        settings.yapiResponseWrapperTemplate = yapiResponseWrapperTemplate.text.trim()
     }
 
     override fun isModified(settings: Settings?): Boolean {
@@ -727,7 +741,10 @@ class YapiSettingsPanel : SettingsPanel {
                 switchNotice.isSelected != s.switchNotice ||
                 yapiExportModeCombo.selectedItem?.toString() != s.yapiExportMode ||
                 yapiReqBodyJson5.isSelected != s.yapiReqBodyJson5 ||
-                yapiResBodyJson5.isSelected != s.yapiResBodyJson5
+                yapiResBodyJson5.isSelected != s.yapiResBodyJson5 ||
+                yapiResponseWrapperEnabled.isSelected != s.yapiResponseWrapperEnabled ||
+                yapiResponseWrapperTemplate.text != ((s.yapiResponseWrapperTemplate).takeIf { it.isNotBlank() }
+                    ?: YapiResponseWrapper.DEFAULT_TEMPLATE)
     }
 }
 

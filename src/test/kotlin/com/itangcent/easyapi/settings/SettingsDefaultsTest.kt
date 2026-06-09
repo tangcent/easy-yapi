@@ -71,4 +71,13 @@ class SettingsDefaultsTest {
             appState.gutterIconEnabled
         )
     }
+
+    @Test
+    fun `test Settings and ApplicationSettingsState have matching yapi response wrapper defaults`() {
+        val settings = Settings()
+        val appState = ApplicationSettingsState.State()
+
+        assertEquals(settings.yapiResponseWrapperEnabled, appState.yapiResponseWrapperEnabled)
+        assertEquals(settings.yapiResponseWrapperTemplate, appState.yapiResponseWrapperTemplate)
+    }
 }

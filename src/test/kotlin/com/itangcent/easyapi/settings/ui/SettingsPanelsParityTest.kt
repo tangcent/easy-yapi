@@ -41,4 +41,20 @@ class SettingsPanelsParityTest {
         assertFalse(builtIn.isModified(settings))
         builtIn.applyTo(settings)
     }
+
+    @Test
+    fun testYapiPanelResponseWrapperApplyReset() {
+        val settings = Settings().apply {
+            yapiResponseWrapperEnabled = true
+            yapiResponseWrapperTemplate = """{"code":0,"msg":"","data":"${'$'}response"}"""
+        }
+        val panel = YapiSettingsPanel()
+
+        panel.resetFrom(settings)
+
+        assertFalse(panel.isModified(settings))
+        panel.applyTo(settings)
+        assertTrue(settings.yapiResponseWrapperEnabled)
+        assertTrue(settings.yapiResponseWrapperTemplate.contains("${'$'}response"))
+    }
 }

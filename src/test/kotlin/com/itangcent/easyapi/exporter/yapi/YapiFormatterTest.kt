@@ -727,4 +727,95 @@ class YapiFormatterTest {
     }
 
     // endregion
+
+    // region Response Wrapper
+
+    @Test
+    fun testResponseWrapperDisabledKeepsOriginalResponseSchema() {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                responseBody = ObjectModel.Object(
+                    mapOf(
+                        "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                    )
+                )
+            )
+        )
+
+        val doc = formatter.format(endpoint)
+
+        assertNotNull(doc.resBody)
+        assertFalse("Unwrapped response should not contain wrapper code field", doc.resBody!!.contains("\"code\""))
+        assertTrue(doc.resBody!!.contains("\"id\""))
+        assertTrue(doc.resBody!!.contains("\"name\""))
+    }
+
+    @Test
+    fun testResponseWrapperWrapsSchemaResponseBody() {
+        val wrapperFormatter = YapiFormatter(
+            responseWrapperEnabled = true,
+            responseWrapperTemplate = """{"code":0,"msg":"","data":"${'$'}response"}""",
+            markdownRender = BundledMarkdownRender()
+        )
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                responseBody = ObjectModel.Object(
+                    mapOf(
+                        "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                    )
+                )
+            )
+        )
+
+        val doc = wrapperFormatter.format(endpoint)
+
+        assertNotNull(doc.resBody)
+        assertTrue(doc.resBody!!.contains("\"code\""))
+        assertTrue(doc.resBody!!.contains("\"msg\""))
+        assertTrue(doc.resBody!!.contains("\"data\""))
+        assertTrue(doc.resBody!!.contains("\"id\""))
+        assertTrue(doc.resBody!!.contains("\"name\""))
+        assertTrue(doc.resBodyIsJsonSchema)
+    }
+
+    @Test
+    fun testResponseWrapperWrapsJson5ResponseBody() {
+        val wrapperFormatter = YapiFormatter(
+            resBodyJson5 = true,
+            responseWrapperEnabled = true,
+            responseWrapperTemplate = """{"code":0,"msg":"","data":"${'$'}response"}""",
+            markdownRender = BundledMarkdownRender()
+        )
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET,
+                responseBody = ObjectModel.Object(
+                    mapOf(
+                        "id" to FieldModel(ObjectModel.Single(JsonType.INT)),
+                        "name" to FieldModel(ObjectModel.Single(JsonType.STRING))
+                    )
+                )
+            )
+        )
+
+        val doc = wrapperFormatter.format(endpoint)
+
+        assertNotNull(doc.resBody)
+        assertTrue(doc.resBody!!.contains("\"code\"") || doc.resBody!!.contains("code"))
+        assertTrue(doc.resBody!!.contains("\"data\"") || doc.resBody!!.contains("data"))
+        assertTrue(doc.resBody!!.contains("\"id\"") || doc.resBody!!.contains("id"))
+        assertFalse(doc.resBodyIsJsonSchema)
+    }
+
+    // endregion
 }

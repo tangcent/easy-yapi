@@ -52,6 +52,8 @@ interface ApplicationSettingsSupport {
     var yapiExportMode: String
     var yapiReqBodyJson5: Boolean
     var yapiResBodyJson5: Boolean
+    var yapiResponseWrapperEnabled: Boolean
+    var yapiResponseWrapperTemplate: String
     var httpTimeOut: Int
     var unsafeSsl: Boolean
     var httpClient: String
@@ -98,6 +100,8 @@ interface ApplicationSettingsSupport {
         newSetting.yapiExportMode = this.yapiExportMode
         newSetting.yapiReqBodyJson5 = this.yapiReqBodyJson5
         newSetting.yapiResBodyJson5 = this.yapiResBodyJson5
+        newSetting.yapiResponseWrapperEnabled = this.yapiResponseWrapperEnabled
+        newSetting.yapiResponseWrapperTemplate = this.yapiResponseWrapperTemplate
         newSetting.logLevel = this.logLevel
         newSetting.outputDemo = this.outputDemo
         newSetting.outputCharset = this.outputCharset

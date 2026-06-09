@@ -38,6 +38,8 @@ class YapiExporter(private val project: Project) {
             reqBodyJson5 = settings.yapiReqBodyJson5,
             resBodyJson5 = settings.yapiResBodyJson5,
             mockRules = mockRules,
+            responseWrapperEnabled = settings.yapiResponseWrapperEnabled,
+            responseWrapperTemplate = settings.yapiResponseWrapperTemplate,
             markdownRender = MarkdownRender.getInstance(project)
         )
         val engine = RuleEngine.getInstance(project)

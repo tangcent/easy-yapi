@@ -38,6 +38,8 @@ class ApplicationSettingsStateTest {
         assertArrayEquals(emptyArray(), s.remoteConfig)
         assertTrue(s.autoScanEnabled)
         assertTrue(s.gutterIconEnabled)
+        assertFalse(s.yapiResponseWrapperEnabled)
+        assertEquals("", s.yapiResponseWrapperTemplate)
     }
 
     @Test
@@ -122,6 +124,31 @@ class ApplicationSettingsStateTest {
         assertTrue("target gutterIconEnabled should default to true", target.gutterIconEnabled)
         source.copyTo(target)
         assertFalse("gutterIconEnabled should be copied as false", target.gutterIconEnabled)
+    }
+
+    @Test
+    fun testState_copyTo_yapiResponseWrapper() {
+        val source = ApplicationSettingsState.State(
+            yapiResponseWrapperEnabled = true,
+            yapiResponseWrapperTemplate = """{"code":0,"data":"${'$'}response"}"""
+        )
+        val target = ApplicationSettingsState.State()
+
+        source.copyTo(target)
+
+        assertTrue(target.yapiResponseWrapperEnabled)
+        assertEquals("""{"code":0,"data":"${'$'}response"}""", target.yapiResponseWrapperTemplate)
+    }
+
+    @Test
+    fun testState_inequality_yapiResponseWrapper() {
+        val enabled = ApplicationSettingsState.State(yapiResponseWrapperEnabled = true)
+        val disabled = ApplicationSettingsState.State(yapiResponseWrapperEnabled = false)
+        assertNotEquals(enabled, disabled)
+
+        val templateA = ApplicationSettingsState.State(yapiResponseWrapperTemplate = """{"data":"${'$'}response"}""")
+        val templateB = ApplicationSettingsState.State(yapiResponseWrapperTemplate = """{"result":"${'$'}response"}""")
+        assertNotEquals(templateA, templateB)
     }
 
     @Test
