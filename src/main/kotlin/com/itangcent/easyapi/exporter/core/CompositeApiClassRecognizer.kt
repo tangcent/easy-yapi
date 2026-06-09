@@ -10,6 +10,7 @@ import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
 import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointRecognizer
 import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.SettingsChangeListener
 
 /**
  * Composite recognizer that combines all framework-specific [ApiClassRecognizer]s.
@@ -21,9 +22,20 @@ import com.itangcent.easyapi.settings.SettingBinder
 @Service(Service.Level.PROJECT)
 class CompositeApiClassRecognizer(private val project: Project) {
 
-    private val recognizers: List<ApiClassRecognizer> by lazy {
+    @Volatile
+    private var cachedRecognizers: List<ApiClassRecognizer> = buildRecognizers()
+
+    init {
+        project.messageBus.connect().subscribe(SettingsChangeListener.TOPIC, object : SettingsChangeListener {
+            override fun settingsChanged() {
+                cachedRecognizers = buildRecognizers()
+            }
+        })
+    }
+
+    private fun buildRecognizers(): List<ApiClassRecognizer> {
         val settings = SettingBinder.getInstance(project).read()
-        buildList {
+        return buildList {
             add(SpringControllerRecognizer())
             if (settings.jaxrsEnable) {
                 add(JaxRsResourceRecognizer(enabled = true))
@@ -44,14 +56,14 @@ class CompositeApiClassRecognizer(private val project: Project) {
      * Returns true if [psiClass] is an API class for any enabled framework.
      */
     suspend fun isApiClass(psiClass: PsiClass): Boolean {
-        return recognizers.any { it.isApiClass(psiClass) }
+        return cachedRecognizers.any { it.isApiClass(psiClass) }
     }
 
     /**
      * Returns the names of frameworks that recognize [psiClass] as an API class.
      */
     suspend fun matchingFrameworks(psiClass: PsiClass): List<String> {
-        return recognizers.filter { it.isApiClass(psiClass) }.map { it.frameworkName }
+        return cachedRecognizers.filter { it.isApiClass(psiClass) }.map { it.frameworkName }
     }
 
     /**
@@ -59,7 +71,7 @@ class CompositeApiClassRecognizer(private val project: Project) {
      * Useful for [AnnotatedElementsSearch] in scanning.
      */
     val allTargetAnnotations: Set<String>
-        get() = recognizers.flatMap { it.targetAnnotations }.toSet()
+        get() = cachedRecognizers.flatMap { it.targetAnnotations }.toSet()
 
     companion object {
         fun getInstance(project: Project): CompositeApiClassRecognizer = project.service()
