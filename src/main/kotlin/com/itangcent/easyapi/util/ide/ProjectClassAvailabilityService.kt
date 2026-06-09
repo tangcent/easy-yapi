@@ -42,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
 @Service(Service.Level.PROJECT)
 class ProjectClassAvailabilityService(
     private val project: Project
-) : Disposable, IdeaLog {
+) : Disposable {
 
     private val psiFacade: JavaPsiFacade = JavaPsiFacade.getInstance(project)
     private val searchScope: GlobalSearchScope = GlobalSearchScope.allScope(project)
@@ -62,27 +62,20 @@ class ProjectClassAvailabilityService(
     @Volatile
     private var messageBusConnection: MessageBusConnection? = null
 
-    private val branchChangeListener = object : BranchChangeListener {
-        override fun branchWillChange(branchName: String) {
-            // no-op
-        }
-
-        override fun branchHasChanged(branchName: String) {
-            LOG.info("Branch changed to '$branchName', clearing class availability cache")
-            clearCache()
-        }
-    }
-
-    private fun ensureConnected() {
-        if (messageBusConnection != null) return
-        if (project.isDisposed) return
-        synchronized(this) {
-            if (messageBusConnection != null) return
-            if (project.isDisposed) return
+    init {
+        if (!project.isDisposed) {
             val connection = project.messageBus.connect(this)
-            connection.subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, branchChangeListener)
+            connection.subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, object : BranchChangeListener {
+                override fun branchWillChange(branchName: String) {
+                    // no-op
+                }
+
+                override fun branchHasChanged(branchName: String) {
+                    LOG.info("Branch changed to '$branchName', clearing class availability cache")
+                    clearCache()
+                }
+            })
             messageBusConnection = connection
-            LOG.info("ProjectClassAvailabilityService connected to message bus")
         }
     }
 
@@ -99,8 +92,6 @@ class ProjectClassAvailabilityService(
      * @return true if the class exists in the project's dependencies, false otherwise
      */
     suspend fun hasClassInProject(qName: String): Boolean {
-        ensureConnected()
-
         val now = System.currentTimeMillis()
 
         val cached = cache[qName]
@@ -141,7 +132,7 @@ class ProjectClassAvailabilityService(
         clearCache()
     }
 
-    companion object {
+    companion object : IdeaLog {
         /**
          * Gets the service instance for the given project.
          */
