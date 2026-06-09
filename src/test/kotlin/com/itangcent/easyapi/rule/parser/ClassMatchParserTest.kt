@@ -44,6 +44,7 @@ class ClassMatchParserTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testParseExtendsMatch() = runBlocking {
+        loadJDKClass("java.util.ArrayList")
         loadFile("rule/SubClass.java", """
             package com.test.rule;
             public class SubClass extends java.util.ArrayList {}

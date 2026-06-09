@@ -108,7 +108,7 @@ abstract class Jsr223ScriptParser(
         // localStorage (wrapped to match legacy Storage API)
         bindings["localStorage"] = ScriptStorageWrapper(context.localStorage)
 
-        // extensions from rule context — fieldContext strings are auto-wrapped as ScriptFieldContext
+        // extensions from rule context — fieldContext strings are auto-wrapped as ScriptFieldPathContext
         context.exts().forEach { (key, value) ->
             bindings[key] = context.wrapExt(key, value)
         }

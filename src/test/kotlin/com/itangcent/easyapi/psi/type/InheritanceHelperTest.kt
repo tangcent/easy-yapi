@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.psi.type
 
-import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -11,32 +10,32 @@ class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testIsCollectionWithArrayList() {
-        val psiClass = loadJavaCollectionClass("ArrayList")
+        val psiClass = loadJDKClass("java.util.ArrayList")
         assertTrue("ArrayList should be detected as Collection", InheritanceHelper.isCollection(psiClass))
     }
 
     fun testIsCollectionWithHashSet() {
-        val psiClass = loadJavaCollectionClass("HashSet")
+        val psiClass = loadJDKClass("java.util.HashSet")
         assertTrue("HashSet should be detected as Collection", InheritanceHelper.isCollection(psiClass))
     }
 
     fun testIsCollectionWithLinkedList() {
-        val psiClass = loadJavaCollectionClass("LinkedList")
+        val psiClass = loadJDKClass("java.util.LinkedList")
         assertTrue("LinkedList should be detected as Collection", InheritanceHelper.isCollection(psiClass))
     }
 
     fun testIsCollectionWithListInterface() {
-        val psiClass = loadJavaCollectionClass("List")
+        val psiClass = loadJDKClass("java.util.List")
         assertTrue("List should be detected as Collection", InheritanceHelper.isCollection(psiClass))
     }
 
     fun testIsCollectionWithSetInterface() {
-        val psiClass = loadJavaCollectionClass("Set")
+        val psiClass = loadJDKClass("java.util.Set")
         assertTrue("Set should be detected as Collection", InheritanceHelper.isCollection(psiClass))
     }
 
     fun testIsCollectionWithCollectionInterface() {
-        val psiClass = loadJavaCollectionClass("Collection")
+        val psiClass = loadJDKClass("java.util.Collection")
         assertTrue("Collection should be detected as Collection", InheritanceHelper.isCollection(psiClass))
     }
 
@@ -53,7 +52,7 @@ class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testIsCollectionWithCustomCollectionSubclass() {
-        setupCollectionInheritanceStubs()
+        loadJDKClass("java.util.ArrayList")
         myFixture.addClass("""
             package com.test;
             import java.util.ArrayList;
@@ -64,22 +63,22 @@ class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testIsMapWithHashMap() {
-        val psiClass = loadJavaMapClass("HashMap")
+        val psiClass = loadJDKClass("java.util.HashMap")
         assertTrue("HashMap should be detected as Map", InheritanceHelper.isMap(psiClass))
     }
 
     fun testIsMapWithLinkedHashMap() {
-        val psiClass = loadJavaMapClass("LinkedHashMap")
+        val psiClass = loadJDKClass("java.util.LinkedHashMap")
         assertTrue("LinkedHashMap should be detected as Map", InheritanceHelper.isMap(psiClass))
     }
 
     fun testIsMapWithTreeMap() {
-        val psiClass = loadJavaMapClass("TreeMap")
+        val psiClass = loadJDKClass("java.util.TreeMap")
         assertTrue("TreeMap should be detected as Map", InheritanceHelper.isMap(psiClass))
     }
 
     fun testIsMapWithMapInterface() {
-        val psiClass = loadJavaMapClass("Map")
+        val psiClass = loadJDKClass("java.util.Map")
         assertTrue("Map interface should be detected as Map", InheritanceHelper.isMap(psiClass))
     }
 
@@ -96,7 +95,7 @@ class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testIsMapWithCustomMapSubclass() {
-        setupMapInheritanceStubs()
+        loadJDKClass("java.util.HashMap")
         myFixture.addClass("""
             package com.test;
             import java.util.HashMap;
@@ -107,12 +106,12 @@ class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testIsInheritorDirectMatch() {
-        val psiClass = loadJavaMapClass("Map")
+        val psiClass = loadJDKClass("java.util.Map")
         assertTrue("Map should be inheritor of itself", InheritanceHelper.isInheritor(psiClass, "java.util.Map"))
     }
 
     fun testIsInheritorSubclass() {
-        setupCollectionInheritanceStubs()
+        loadJDKClass("java.util.ArrayList")
         myFixture.addClass("""
             package com.test;
             import java.util.ArrayList;
@@ -133,14 +132,14 @@ class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testCacheReturnsSameResult() {
-        val psiClass = loadJavaCollectionClass("ArrayList")
+        val psiClass = loadJDKClass("java.util.ArrayList")
         val result1 = InheritanceHelper.isCollection(psiClass)
         val result2 = InheritanceHelper.isCollection(psiClass)
         assertEquals("Cached result should be the same", result1, result2)
     }
 
     fun testClearCache() {
-        val psiClass = loadJavaCollectionClass("ArrayList")
+        val psiClass = loadJDKClass("java.util.ArrayList")
         InheritanceHelper.isCollection(psiClass)
         InheritanceHelper.clearCache()
         val result = InheritanceHelper.isCollection(psiClass)
@@ -148,76 +147,12 @@ class InheritanceHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testIsCollectionReturnsFalseForMap() {
-        val psiClass = loadJavaMapClass("HashMap")
+        val psiClass = loadJDKClass("java.util.HashMap")
         assertFalse("HashMap should not be detected as Collection", InheritanceHelper.isCollection(psiClass))
     }
 
     fun testIsMapReturnsFalseForCollection() {
-        val psiClass = loadJavaCollectionClass("ArrayList")
+        val psiClass = loadJDKClass("java.util.ArrayList")
         assertFalse("ArrayList should not be detected as Map", InheritanceHelper.isMap(psiClass))
-    }
-
-    private fun setupCollectionInheritanceStubs() {
-        myFixture.addClass("""
-            package java.util;
-            public interface Collection<E> extends Iterable<E> {}
-        """.trimIndent())
-        myFixture.addClass("""
-            package java.util;
-            public interface List<E> extends Collection<E> {}
-        """.trimIndent())
-        myFixture.addClass("""
-            package java.util;
-            public interface Set<E> extends Collection<E> {}
-        """.trimIndent())
-        myFixture.addClass("""
-            package java.util;
-            public abstract class AbstractCollection<E> implements Collection<E> {}
-        """.trimIndent())
-        myFixture.addClass("""
-            package java.util;
-            public abstract class AbstractList<E> extends AbstractCollection<E> implements List<E> {}
-        """.trimIndent())
-        myFixture.addClass("""
-            package java.util;
-            public class ArrayList<E> extends AbstractList<E> {}
-        """.trimIndent())
-    }
-
-    private fun setupMapInheritanceStubs() {
-        myFixture.addClass("""
-            package java.util;
-            public interface Map<K, V> {}
-        """.trimIndent())
-        myFixture.addClass("""
-            package java.util;
-            public abstract class AbstractMap<K, V> implements Map<K, V> {}
-        """.trimIndent())
-        myFixture.addClass("""
-            package java.util;
-            public class HashMap<K, V> extends AbstractMap<K, V> {}
-        """.trimIndent())
-    }
-
-    private fun loadJavaCollectionClass(className: String): PsiClass {
-        val fqn = "java.util.$className"
-        val existing = findClass(fqn)
-        if (existing != null) return existing
-        myFixture.addClass("""
-            package java.util;
-            public class $className {}
-        """.trimIndent())
-        return findClass(fqn)!!
-    }
-
-    private fun loadJavaMapClass(className: String): PsiClass {
-        val fqn = "java.util.$className"
-        val existing = findClass(fqn)
-        if (existing != null) return existing
-        myFixture.addClass("""
-            package java.util;
-            public class $className {}
-        """.trimIndent())
-        return findClass(fqn)!!
     }
 }

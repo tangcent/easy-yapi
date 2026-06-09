@@ -119,6 +119,7 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
 
     override fun setUp() {
         super.setUp()
+        loadCommonJDKClasses()
         val configReader = createConfigReader() ?: TestConfigReader.empty(project)
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
@@ -199,6 +200,34 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
         }
     }
 
+    /**
+     * Loads commonly needed JDK classes into the test fixture.
+     *
+     * Called automatically by [setUp] so all test classes have access to
+     * basic JDK types. This is necessary because the light test fixture
+     * environment does not include a real JDK classpath.
+     *
+     * **Important**: Only classes that are known to be safe to load as source
+     * stubs are included here. The mock JDK already provides some core types
+     * (e.g., `java.lang.Object`, `java.lang.String`, `java.util.List`,
+     * `java.util.Map`), and loading them as source stubs would shadow the
+     * compiled versions, breaking generic type resolution and collection
+     * detection. Similarly, wrapper types like `java.lang.Integer` and
+     * `java.lang.Long` should not be loaded as source stubs because their
+     * minimal stubs interfere with generic type binding.
+     *
+     * Tests that need specific JDK classes should call [loadJDKClass]
+     * explicitly in their test methods.
+     */
+    protected fun loadCommonJDKClasses() {
+        // Annotations commonly used in test source code
+        loadJDKClass("java.lang.Override")
+        loadJDKClass("java.lang.Deprecated")
+        loadJDKClass("java.lang.SuppressWarnings")
+        // Common interface
+        loadJDKClass("java.io.Serializable")
+    }
+
     protected fun loadSource(clazz: Class<*>): PsiClass {
         val className = clazz.simpleName
         val packageName = clazz.`package`.name
@@ -218,6 +247,60 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
         return findClass(clazz.name)!!
     }
 
+    /**
+     * Loads a JDK class into the test fixture's virtual file system with proper inheritance.
+     *
+     * In the light test fixture environment, JDK classes are not available by default.
+     * This method loads a JDK class by its fully qualified name, first checking for a
+     * pre-written stub in `/jdk/<simpleName>.java` resources, then falling back to a
+     * built-in stub from [JDK_STUBS], and finally generating a minimal empty stub.
+     *
+     * Dependencies (superclasses/interfaces) are automatically loaded first to ensure
+     * the PSI resolver can traverse the full inheritance chain.
+     *
+     * Example usage:
+     * ```kotlin
+     * loadJDKClass("java.util.ArrayList")  // loads ArrayList + all dependencies
+     * loadJDKClass("java.util.List")       // loads List + Collection + Iterable
+     * ```
+     *
+     * @param fqn the fully qualified name of the JDK class (e.g., "java.util.List")
+     * @return the loaded PsiClass
+     */
+    protected fun loadJDKClass(fqn: String): PsiClass {
+        val existing = findClass(fqn)
+        if (existing != null) return existing
+
+        val stub = JDK_STUBS[fqn]
+        val content = if (stub != null) {
+            // Load dependencies first so the PSI resolver can resolve supertypes
+            for (dep in stub.dependencies) {
+                loadJDKClass(dep)
+            }
+            stub.source
+        } else {
+            val lastDot = fqn.lastIndexOf('.')
+            val packageName = fqn.substring(0, lastDot)
+            val className = fqn.substring(lastDot + 1)
+            // Try resource file before generating empty stub
+            val resourceStream = javaClass.getResourceAsStream("/jdk/$className.java")
+            if (resourceStream != null) {
+                val reader = InputStreamReader(resourceStream, Charsets.UTF_8)
+                val text = reader.readText()
+                reader.close()
+                text
+            } else {
+                "package $packageName; public class $className {}"
+            }
+        }
+
+        val path = fqn.replace('.', '/') + ".java"
+        ApplicationManager.getApplication().runWriteAction<PsiFile> {
+            myFixture.addFileToProject(path, content)
+        }
+        return findClass(fqn) ?: throw AssertionError("Failed to load JDK class: $fqn")
+    }
+
     private fun generateStubClass(clazz: Class<*>): String {
         val packageName = clazz.`package`.name
         val className = clazz.simpleName
@@ -227,5 +310,213 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
             clazz.isArray -> "package $packageName; public class $className {}"
             else -> "package $packageName; public class $className {}"
         }
+    }
+
+    /**
+     * Pre-built JDK class stubs with correct inheritance hierarchies.
+     *
+     * Each entry maps a fully qualified name to a [JdkStub] containing the source
+     * and a list of dependency FQNs that must be loaded first. This ensures the
+     * PSI resolver can traverse the complete type hierarchy (e.g., ArrayList →
+     * AbstractList → AbstractCollection → Collection → Iterable).
+     */
+    private data class JdkStub(val source: String, val dependencies: List<String> = emptyList())
+
+    private val JDK_STUBS: Map<String, JdkStub> by lazy {
+        mapOf(
+            // java.lang
+            "java.lang.Iterable" to JdkStub(
+                "package java.lang; public interface Iterable<T> {}"
+            ),
+            "java.lang.Comparable" to JdkStub(
+                "package java.lang; public interface Comparable<T> {}"
+            ),
+            // java.util - Collection hierarchy
+            "java.util.Collection" to JdkStub(
+                "package java.util; public interface Collection<E> extends Iterable<E> {}",
+                listOf("java.lang.Iterable")
+            ),
+            "java.util.List" to JdkStub(
+                "package java.util; public interface List<E> extends Collection<E> {}",
+                listOf("java.util.Collection")
+            ),
+            "java.util.Set" to JdkStub(
+                "package java.util; public interface Set<E> extends Collection<E> {}",
+                listOf("java.util.Collection")
+            ),
+            "java.util.SortedSet" to JdkStub(
+                "package java.util; public interface SortedSet<E> extends Set<E> {}",
+                listOf("java.util.Set")
+            ),
+            "java.util.NavigableSet" to JdkStub(
+                "package java.util; public interface NavigableSet<E> extends SortedSet<E> {}",
+                listOf("java.util.SortedSet")
+            ),
+            "java.util.Queue" to JdkStub(
+                "package java.util; public interface Queue<E> extends Collection<E> {}",
+                listOf("java.util.Collection")
+            ),
+            "java.util.Deque" to JdkStub(
+                "package java.util; public interface Deque<E> extends Queue<E> {}",
+                listOf("java.util.Queue")
+            ),
+            "java.util.AbstractCollection" to JdkStub(
+                "package java.util; public abstract class AbstractCollection<E> implements Collection<E> {}",
+                listOf("java.util.Collection")
+            ),
+            "java.util.AbstractList" to JdkStub(
+                "package java.util; public abstract class AbstractList<E> extends AbstractCollection<E> implements List<E> {}",
+                listOf("java.util.AbstractCollection", "java.util.List")
+            ),
+            "java.util.AbstractSet" to JdkStub(
+                "package java.util; public abstract class AbstractSet<E> extends AbstractCollection<E> implements Set<E> {}",
+                listOf("java.util.AbstractCollection", "java.util.Set")
+            ),
+            "java.util.AbstractSequentialList" to JdkStub(
+                "package java.util; public abstract class AbstractSequentialList<E> extends AbstractList<E> {}",
+                listOf("java.util.AbstractList")
+            ),
+            "java.util.ArrayList" to JdkStub(
+                "package java.util; public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAccess {}",
+                listOf("java.util.AbstractList", "java.util.List")
+            ),
+            "java.util.LinkedList" to JdkStub(
+                "package java.util; public class LinkedList<E> extends AbstractSequentialList<E> implements List<E>, Deque {}",
+                listOf("java.util.AbstractSequentialList", "java.util.List", "java.util.Deque")
+            ),
+            "java.util.HashSet" to JdkStub(
+                "package java.util; public class HashSet<E> extends AbstractSet<E> implements Set<E> {}",
+                listOf("java.util.AbstractSet", "java.util.Set")
+            ),
+            "java.util.LinkedHashSet" to JdkStub(
+                "package java.util; public class LinkedHashSet<E> extends HashSet<E> implements Set<E> {}",
+                listOf("java.util.HashSet", "java.util.Set")
+            ),
+            "java.util.TreeSet" to JdkStub(
+                "package java.util; public class TreeSet<E> extends AbstractSet<E> implements NavigableSet<E> {}",
+                listOf("java.util.AbstractSet", "java.util.NavigableSet")
+            ),
+            "java.util.Vector" to JdkStub(
+                "package java.util; public class Vector<E> extends AbstractList<E> implements List<E> {}",
+                listOf("java.util.AbstractList", "java.util.List")
+            ),
+            "java.util.Stack" to JdkStub(
+                "package java.util; public class Stack<E> extends Vector<E> {}",
+                listOf("java.util.Vector")
+            ),
+            "java.util.ArrayDeque" to JdkStub(
+                "package java.util; public class ArrayDeque<E> extends AbstractCollection<E> implements Deque<E> {}",
+                listOf("java.util.AbstractCollection", "java.util.Deque")
+            ),
+            "java.util.Collections" to JdkStub(
+                "package java.util; public class Collections {}"
+            ),
+            "java.util.RandomAccess" to JdkStub(
+                "package java.util; public interface RandomAccess {}"
+            ),
+            // java.util - Map hierarchy
+            "java.util.Map" to JdkStub(
+                "package java.util; public interface Map<K, V> {}"
+            ),
+            "java.util.SortedMap" to JdkStub(
+                "package java.util; public interface SortedMap<K, V> extends Map<K, V> {}",
+                listOf("java.util.Map")
+            ),
+            "java.util.NavigableMap" to JdkStub(
+                "package java.util; public interface NavigableMap<K, V> extends SortedMap<K, V> {}",
+                listOf("java.util.SortedMap")
+            ),
+            "java.util.AbstractMap" to JdkStub(
+                "package java.util; public abstract class AbstractMap<K, V> implements Map<K, V> {}",
+                listOf("java.util.Map")
+            ),
+            "java.util.HashMap" to JdkStub(
+                "package java.util; public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {}",
+                listOf("java.util.AbstractMap", "java.util.Map")
+            ),
+            "java.util.LinkedHashMap" to JdkStub(
+                "package java.util; public class LinkedHashMap<K, V> extends HashMap<K, V> implements Map<K, V> {}",
+                listOf("java.util.HashMap", "java.util.Map")
+            ),
+            "java.util.TreeMap" to JdkStub(
+                "package java.util; public class TreeMap<K, V> extends AbstractMap<K, V> implements NavigableMap<K, V> {}",
+                listOf("java.util.AbstractMap", "java.util.NavigableMap")
+            ),
+            // java.util.concurrent - Map hierarchy
+            "java.util.concurrent.ConcurrentMap" to JdkStub(
+                "package java.util.concurrent; public interface ConcurrentMap<K, V> extends Map<K, V> {}",
+                listOf("java.util.Map")
+            ),
+            "java.util.concurrent.ConcurrentHashMap" to JdkStub(
+                "package java.util.concurrent; public class ConcurrentHashMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K, V> {}",
+                listOf("java.util.AbstractMap", "java.util.concurrent.ConcurrentMap")
+            ),
+            // java.lang - core types
+            "java.lang.Object" to JdkStub(
+                "package java.lang; public class Object {}"
+            ),
+            "java.lang.Enum" to JdkStub(
+                "package java.lang; public abstract class Enum<E extends Enum<E>> implements Comparable<E> {}",
+                listOf("java.lang.Comparable")
+            ),
+            "java.lang.String" to JdkStub(
+                "package java.lang; public final class String implements Comparable<String>, CharSequence {}",
+                listOf("java.lang.Comparable")
+            ),
+            "java.lang.CharSequence" to JdkStub(
+                "package java.lang; public interface CharSequence {}"
+            ),
+            "java.lang.Number" to JdkStub(
+                "package java.lang; public abstract class Number implements java.io.Serializable {}"
+            ),
+            "java.lang.Integer" to JdkStub(
+                "package java.lang; public final class Integer extends Number implements Comparable<Integer> {}",
+                listOf("java.lang.Number", "java.lang.Comparable")
+            ),
+            "java.lang.Long" to JdkStub(
+                "package java.lang; public final class Long extends Number implements Comparable<Long> {}",
+                listOf("java.lang.Number", "java.lang.Comparable")
+            ),
+            "java.lang.Double" to JdkStub(
+                "package java.lang; public final class Double extends Number implements Comparable<Double> {}",
+                listOf("java.lang.Number", "java.lang.Comparable")
+            ),
+            "java.lang.Float" to JdkStub(
+                "package java.lang; public final class Float extends Number implements Comparable<Float> {}",
+                listOf("java.lang.Number", "java.lang.Comparable")
+            ),
+            "java.lang.Boolean" to JdkStub(
+                "package java.lang; public final class Boolean implements Comparable<Boolean> {}",
+                listOf("java.lang.Comparable")
+            ),
+            "java.lang.Throwable" to JdkStub(
+                "package java.lang; public class Throwable {}"
+            ),
+            "java.lang.Exception" to JdkStub(
+                "package java.lang; public class Exception extends Throwable {}",
+                listOf("java.lang.Throwable")
+            ),
+            "java.lang.RuntimeException" to JdkStub(
+                "package java.lang; public class RuntimeException extends Exception {}",
+                listOf("java.lang.Exception")
+            ),
+            "java.lang.Deprecated" to JdkStub(
+                "package java.lang; public @interface Deprecated {}"
+            ),
+            "java.lang.Override" to JdkStub(
+                "package java.lang; public @interface Override {}"
+            ),
+            "java.lang.SuppressWarnings" to JdkStub(
+                "package java.lang; public @interface SuppressWarnings {}"
+            ),
+            // java.io
+            "java.io.Serializable" to JdkStub(
+                "package java.io; public interface Serializable {}"
+            ),
+            "java.io.IOException" to JdkStub(
+                "package java.io; public class IOException extends Exception {}",
+                listOf("java.lang.Exception")
+            ),
+        )
     }
 }

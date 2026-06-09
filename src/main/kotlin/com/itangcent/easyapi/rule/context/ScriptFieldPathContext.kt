@@ -9,7 +9,7 @@ package com.itangcent.easyapi.rule.context
  *
  * @param fieldPath The dot-separated JSON path of the current field
  */
-class ScriptFieldContext(private val fieldPath: String) {
+class ScriptFieldPathContext(private val fieldPath: String) {
 
     /** Returns the full JSON path of the current field. */
     fun path(): String = fieldPath
