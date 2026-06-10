@@ -69,6 +69,7 @@
         <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
 
         <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>
+        <postStartupActivity implementation="com.itangcent.easyapi.ide.action.ChannelActionInitActivity"/>
 
         <projectConfigurable groupId="null"
                              displayName="EasyApi"
