@@ -2,21 +2,19 @@ package com.itangcent.easyapi.exporter
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.psi.PsiClassHelper
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
-import com.itangcent.easyapi.psi.helper.SourceHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelUtils
 import com.itangcent.easyapi.psi.type.PrimitiveKind
 import com.itangcent.easyapi.psi.type.ResolvedType
+import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 
@@ -60,8 +58,8 @@ class EndpointBuilder(private val project: Project) {
      * Builds the response body model from an already-resolved return type.
      *
      * Resolution order:
-     * 1. **`method.return` rule** — if set, resolves the class by qualified name and delegates
-     *    to [modelBuilder] to construct the model.
+     * 1. **`method.return` rule** — if set, resolves the configured canonical type
+     *    and builds the model from the resolved type.
      * 2. **Resolved return type** — uses [PsiClassHelper.buildObjectModel] with the
      *    already-resolved type (generics already substituted by the caller).
      * 3. **`method.return.main` rule** — after building the model, applies the `@return` doc
@@ -82,11 +80,12 @@ class EndpointBuilder(private val project: Project) {
         val returnTypeByRule = metadataResolver.resolveMethodReturn(method)
         if (!returnTypeByRule.isNullOrBlank()) {
             LOG.info("buildResponseBody: method.return rule override: $returnTypeByRule")
-            val psiClass = JavaPsiFacade.getInstance(project)
-                .findClass(returnTypeByRule.trim(), GlobalSearchScope.allScope(project))
-                ?.let { SourceHelper.getInstance(project).getSourceClassSync(it) }
-            if (psiClass != null) {
-                return runCatching { modelBuilder.buildModel(psiClass) }.getOrNull()
+            val responseModel = runCatching {
+                val resolvedType = TypeResolver.resolveFromCanonicalText(returnTypeByRule.trim(), project, method)
+                PsiClassHelper.getInstance(project).buildObjectModel(resolvedType)
+            }.getOrNull()
+            if (responseModel != null) {
+                return applyReturnMain(method, responseModel)
             }
         }
 
