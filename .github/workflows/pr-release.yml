@@ -1,9 +1,14 @@
 name: 'Update Release PR'
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - master
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
 
 jobs:
   update-pr:
@@ -13,6 +18,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Check if branch is release branch and add label if needed
         uses: actions/github-script@v6
