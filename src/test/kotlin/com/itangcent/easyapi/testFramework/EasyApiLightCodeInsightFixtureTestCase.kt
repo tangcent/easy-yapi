@@ -15,6 +15,7 @@ import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.settings.SettingBinder
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.io.InputStreamReader
 
@@ -157,6 +158,40 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
 
     protected fun findMethod(psiClass: PsiClass, name: String): PsiMethod? {
         return psiClass.findMethodsByName(name, false).firstOrNull() as? PsiMethod
+    }
+
+    /**
+     * Waits until a class with the given qualified name is findable via [JavaPsiFacade].
+     *
+     * In the light test fixture, [addFileToProject] creates the VirtualFile and PsiFile
+     * immediately, but [JavaPsiFacade.findClass] depends on the PSI index which updates
+     * asynchronously. A fixed [delay] is fragile because the indexing latency is
+     * non-deterministic. This method polls with short intervals until the class is
+     * resolvable, or throws after [timeoutMs].
+     *
+     * @param qualifiedName the fully qualified class name to wait for
+     * @param timeoutMs maximum time to wait in milliseconds (default 5000)
+     * @param pollIntervalMs interval between polls in milliseconds (default 50)
+     * @return the found PsiClass
+     * @throws AssertionError if the class is not found within the timeout
+     */
+    protected suspend fun waitForClass(
+        qualifiedName: String,
+        timeoutMs: Long = 5000,
+        pollIntervalMs: Long = 50
+    ): PsiClass {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (true) {
+            val psiClass = readSync {
+                JavaPsiFacade.getInstance(project)
+                    .findClass(qualifiedName, GlobalSearchScope.allScope(project))
+            }
+            if (psiClass != null) return psiClass
+            if (System.currentTimeMillis() >= deadline) {
+                throw AssertionError("Class '$qualifiedName' not found within ${timeoutMs}ms")
+            }
+            delay(pollIntervalMs)
+        }
     }
 
     /**

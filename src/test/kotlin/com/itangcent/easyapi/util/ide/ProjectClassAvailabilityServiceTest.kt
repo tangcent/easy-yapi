@@ -1,8 +1,6 @@
 package com.itangcent.easyapi.util.ide
 
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -11,11 +9,12 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
     override fun setUp() {
         super.setUp()
         availabilityService = ProjectClassAvailabilityService.getInstance(project)
+        availabilityService.clearCache()
     }
 
     fun testHasClassInProjectReturnsTrueForExistingClass() = runTest {
         loadFile("spring/RestController.java")
-        delay(1000.milliseconds)
+        waitForClass("org.springframework.web.bind.annotation.RestController")
         
         val hasClass = availabilityService.hasClassInProject(
             "org.springframework.web.bind.annotation.RestController"
@@ -32,7 +31,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
 
     fun testHasAnyClassInProjectReturnsTrueWhenAnyExists() = runTest {
         loadFile("spring/RestController.java")
-        delay(1000.milliseconds)
+        waitForClass("org.springframework.web.bind.annotation.RestController")
         
         val hasAny = availabilityService.hasAnyClassInProject(
             setOf(
@@ -55,7 +54,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
 
     fun testCacheIsUsedForRepeatedCalls() = runTest {
         loadFile("spring/RestController.java")
-        delay(1000.milliseconds)
+        waitForClass("org.springframework.web.bind.annotation.RestController")
         
         val qName = "org.springframework.web.bind.annotation.RestController"
         
@@ -68,7 +67,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
 
     fun testClearCache() = runTest {
         loadFile("spring/RestController.java")
-        delay(1000.milliseconds)
+        waitForClass("org.springframework.web.bind.annotation.RestController")
         
         val qName = "org.springframework.web.bind.annotation.RestController"
         
@@ -84,7 +83,8 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
     fun testMultipleFrameworks() = runTest {
         loadFile("spring/RestController.java")
         loadFile("spring/GetMapping.java")
-        delay(1000.milliseconds)
+        waitForClass("org.springframework.web.bind.annotation.RestController")
+        waitForClass("org.springframework.web.bind.annotation.GetMapping")
         
         val springAnnotations = setOf(
             "org.springframework.web.bind.annotation.RestController",
