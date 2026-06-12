@@ -1,12 +1,12 @@
 package com.itangcent.easyapi.cache.api
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
-import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -18,7 +18,7 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
         loadTestFiles()
         apiIndexManager = ApiIndexManager.getInstance(project)
         apiIndex = ApiIndex.getInstance(project)
-        apiIndex.invalidate()
+        runBlocking { apiIndex.invalidate() }
         apiIndexManager.start(triggerInitialScan = false)
     }
 

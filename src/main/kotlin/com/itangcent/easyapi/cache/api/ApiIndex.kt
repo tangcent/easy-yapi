@@ -233,10 +233,12 @@ class ApiIndex {
      *
      * The cache will be repopulated by the next scan from [ApiIndexManager].
      */
-    fun invalidate() {
-        LOG.debug("Cache invalidated")
-        cacheValid.set(false)
-        endpointsByClass = emptyMap()
+    suspend fun invalidate() {
+        cacheMutex.withLock {
+            LOG.debug("Cache invalidated")
+            cacheValid.set(false)
+            endpointsByClass = emptyMap()
+        }
     }
 
     /**
