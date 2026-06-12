@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.util.ide
 
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -13,6 +15,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
 
     fun testHasClassInProjectReturnsTrueForExistingClass() = runTest {
         loadFile("spring/RestController.java")
+        delay(1000.milliseconds)
         
         val hasClass = availabilityService.hasClassInProject(
             "org.springframework.web.bind.annotation.RestController"
@@ -29,6 +32,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
 
     fun testHasAnyClassInProjectReturnsTrueWhenAnyExists() = runTest {
         loadFile("spring/RestController.java")
+        delay(1000.milliseconds)
         
         val hasAny = availabilityService.hasAnyClassInProject(
             setOf(
@@ -51,6 +55,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
 
     fun testCacheIsUsedForRepeatedCalls() = runTest {
         loadFile("spring/RestController.java")
+        delay(1000.milliseconds)
         
         val qName = "org.springframework.web.bind.annotation.RestController"
         
@@ -63,6 +68,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
 
     fun testClearCache() = runTest {
         loadFile("spring/RestController.java")
+        delay(1000.milliseconds)
         
         val qName = "org.springframework.web.bind.annotation.RestController"
         
@@ -78,6 +84,7 @@ class ProjectClassAvailabilityServiceTest : EasyApiLightCodeInsightFixtureTestCa
     fun testMultipleFrameworks() = runTest {
         loadFile("spring/RestController.java")
         loadFile("spring/GetMapping.java")
+        delay(1000.milliseconds)
         
         val springAnnotations = setOf(
             "org.springframework.web.bind.annotation.RestController",
