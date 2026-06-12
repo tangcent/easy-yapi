@@ -17,17 +17,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Fetch PR head
+        run: |
+          git fetch origin refs/pull/${{ github.event.pull_request.number }}/head:pr-head
+          git checkout pr-head
 
       - name: Check if branch is release branch and add label if needed
         uses: actions/github-script@v6
         id: check_branch
+        env:
+          BRANCH_NAME: ${{ github.event.pull_request.head.ref }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { issue: { number: issueNumber }, repo: { owner, repo } } = context;
-            const branchName = '${{ github.event.pull_request.head.ref }}';
+            const branchName = process.env.BRANCH_NAME;
             
             console.log(`Branch name: ${branchName}`);
             
@@ -110,12 +115,14 @@ jobs:
       - name: Update Pull Request
         if: contains(github.event.pull_request.labels.*.name, 'release') || steps.check_branch.outputs.result == 'true'
         uses: actions/github-script@v6
+        env:
+          PR_BODY: ${{ steps.generate_content.outputs.pr_body }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { issue: { number: issueNumber }, repo: { owner, repo } } = context;
             
-            const prBody = `${{ steps.generate_content.outputs.pr_body }}`;
+            const prBody = process.env.PR_BODY;
             
             github.rest.issues.update({
               owner,
