@@ -41,4 +41,28 @@ class FeignClientRecognizerTest : EasyApiLightCodeInsightFixtureTestCase() {
         val isFeignClient = recognizer.isFeignClient(psiClass!!)
         assertFalse("Should not recognize model class as Feign client", isFeignClient)
     }
+
+    fun testDisabledRecognizer() = runTest {
+        val disabledRecognizer = FeignClientRecognizer(enabled = false)
+        val psiClass = findClass("com.itangcent.springboot.demo.client.UserClient")
+        assertNotNull(psiClass)
+
+        val isFeignClient = disabledRecognizer.isFeignClient(psiClass!!)
+        assertFalse("Disabled recognizer should return false", isFeignClient)
+    }
+
+    fun testFeignAnnotationsConstant() {
+        assertEquals(
+            setOf("org.springframework.cloud.openfeign.FeignClient"),
+            FeignClientRecognizer.FEIGN_ANNOTATIONS
+        )
+    }
+
+    fun testFrameworkName() {
+        assertEquals("Feign", recognizer.frameworkName)
+    }
+
+    fun testTargetAnnotations() {
+        assertEquals(FeignClientRecognizer.FEIGN_ANNOTATIONS, recognizer.targetAnnotations)
+    }
 }

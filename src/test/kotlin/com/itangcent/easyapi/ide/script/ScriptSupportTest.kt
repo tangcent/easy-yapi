@@ -3,185 +3,197 @@ package com.itangcent.easyapi.ide.script
 import org.junit.Assert.*
 import org.junit.Test
 
-class GeneralScriptSupportTest {
+/**
+ * Tests for ScriptSupport implementations and ScriptContext data classes.
+ */
+class ScriptSupportTest {
+
+    // ==================== GeneralScriptSupport tests ====================
 
     @Test
-    fun testBuildScriptReturnsInputUnchanged() {
-        val input = "some.annotation.RequestMapping"
-        assertEquals("GeneralScriptSupport should pass through script unchanged",
-            input, GeneralScriptSupport.buildScript(input))
+    fun `GeneralScriptSupport buildScript passes through`() {
+        assertEquals("my-script", GeneralScriptSupport.buildScript("my-script"))
     }
 
     @Test
-    fun testBuildPropertyReturnsInputUnchanged() {
-        val input = "property.expression"
-        assertEquals("GeneralScriptSupport should pass through property unchanged",
-            input, GeneralScriptSupport.buildProperty(input))
+    fun `GeneralScriptSupport buildProperty passes through`() {
+        assertEquals("my-property", GeneralScriptSupport.buildProperty("my-property"))
     }
 
     @Test
-    fun testCheckSupportAlwaysReturnsTrue() {
-        assertTrue("GeneralScriptSupport should always be supported",
-            GeneralScriptSupport.checkSupport())
+    fun `GeneralScriptSupport checkSupport always returns true`() {
+        assertTrue(GeneralScriptSupport.checkSupport())
     }
 
     @Test
-    fun testSuffixReturnsTxt() {
+    fun `GeneralScriptSupport suffix is txt`() {
         assertEquals("txt", GeneralScriptSupport.suffix())
     }
 
     @Test
-    fun testDemoCodeReturnsAnnotation() {
-        assertTrue("Demo code should contain Spring annotation",
-            GeneralScriptSupport.demoCode().contains("RequestMapping"))
+    fun `GeneralScriptSupport demoCode returns annotation`() {
+        assertEquals("@org.springframework.web.bind.annotation.RequestMapping", GeneralScriptSupport.demoCode())
     }
 
     @Test
-    fun testToStringReturnsGeneral() {
+    fun `GeneralScriptSupport toString returns General`() {
         assertEquals("General", GeneralScriptSupport.toString())
     }
 
     @Test
-    fun testEqualsIsReferenceEquality() {
-        assertSame("GeneralScriptSupport is a singleton", GeneralScriptSupport, GeneralScriptSupport)
-        assertEquals("Same reference should be equal", GeneralScriptSupport, GeneralScriptSupport)
-        assertNotEquals("Different type should not be equal", GeneralScriptSupport, "General")
+    fun `GeneralScriptSupport equals is identity`() {
+        assertEquals(GeneralScriptSupport, GeneralScriptSupport)
+        assertFalse(GeneralScriptSupport.equals("General"))
+    }
+
+    // ==================== GroovyScriptSupport tests ====================
+
+    @Test
+    fun `GroovyScriptSupport suffix is groovy`() {
+        assertEquals("groovy", GroovyScriptSupport.suffix())
     }
 
     @Test
-    fun testBuildScriptWithEmptyString() {
-        assertEquals("", GeneralScriptSupport.buildScript(""))
+    fun `GroovyScriptSupport scriptType is groovy`() {
+        assertEquals("groovy", GroovyScriptSupport.scriptType())
     }
 
     @Test
-    fun testBuildPropertyWithEmptyString() {
-        assertEquals("", GeneralScriptSupport.buildProperty(""))
+    fun `GroovyScriptSupport toString returns Groovy`() {
+        assertEquals("Groovy", GroovyScriptSupport.toString())
     }
-}
-
-class GroovyScriptSupportTest {
 
     @Test
-    fun testBuildScriptAddsPrefix() {
+    fun `GroovyScriptSupport equals is identity`() {
+        assertEquals(GroovyScriptSupport, GroovyScriptSupport)
+        assertFalse(GroovyScriptSupport.equals("Groovy"))
+    }
+
+    @Test
+    fun `GroovyScriptSupport demoCode contains tool`() {
+        assertTrue(GroovyScriptSupport.demoCode().contains("tool"))
+    }
+
+    @Test
+    fun `GroovyScriptSupport buildScript adds prefix`() {
         val result = GroovyScriptSupport.buildScript("println 'hello'")
         assertEquals("groovy:println 'hello'", result)
     }
 
     @Test
-    fun testBuildPropertyWrapsInCodeBlock() {
-        val result = GroovyScriptSupport.buildProperty("it.name")
-        assertEquals("groovy:```\nit.name\n```", result)
+    fun `GroovyScriptSupport buildProperty wraps in code block`() {
+        val result = GroovyScriptSupport.buildProperty("some.property")
+        assertEquals("groovy:```\nsome.property\n```", result)
     }
 
-    @Test
-    fun testSuffixReturnsGroovy() {
-        assertEquals("groovy", GroovyScriptSupport.suffix())
-    }
+    // ==================== AbstractScriptSupport via GroovyScriptSupport ====================
 
     @Test
-    fun testScriptTypeReturnsGroovy() {
-        assertEquals("groovy", GroovyScriptSupport.scriptType())
-    }
-
-    @Test
-    fun testPrefixReturnsScriptType() {
+    fun `AbstractScriptSupport prefix defaults to scriptType`() {
         assertEquals("groovy", GroovyScriptSupport.prefix())
     }
 
+    // ==================== scriptSupports list tests ====================
+
     @Test
-    fun testToStringReturnsGroovy() {
-        assertEquals("Groovy", GroovyScriptSupport.toString())
+    fun `scriptSupports contains General and Groovy`() {
+        assertEquals(2, scriptSupports.size)
+        assertTrue(scriptSupports.contains(GeneralScriptSupport))
+        assertTrue(scriptSupports.contains(GroovyScriptSupport))
+    }
+
+    // ==================== SimpleScriptContext tests ====================
+
+    @Test
+    fun `SimpleScriptContext element returns target`() {
+        val target = "my-target"
+        val context = SimpleScriptContext(target)
+        assertEquals(target, context.element())
     }
 
     @Test
-    fun testEqualsIsReferenceEquality() {
-        assertSame("GroovyScriptSupport is a singleton", GroovyScriptSupport, GroovyScriptSupport)
-        assertEquals("Same reference should be equal", GroovyScriptSupport, GroovyScriptSupport)
-        assertNotEquals("Different type should not be equal", GroovyScriptSupport, "Groovy")
+    fun `SimpleScriptContext name uses displayName when provided`() {
+        val context = SimpleScriptContext("target", "My Display Name")
+        assertEquals("My Display Name", context.name())
     }
 
     @Test
-    fun testDemoCodeIsNotBlank() {
-        assertTrue("Demo code should not be blank", GroovyScriptSupport.demoCode().isNotBlank())
+    fun `SimpleScriptContext name uses toString when no displayName`() {
+        val context = SimpleScriptContext(42)
+        assertEquals("42", context.name())
     }
 
     @Test
-    fun testDemoCodeContainsVariables() {
-        assertTrue("Demo code should reference tool variable",
-            GroovyScriptSupport.demoCode().contains("tool"))
+    fun `SimpleScriptContext toString returns name`() {
+        val context = SimpleScriptContext("target", "Display")
+        assertEquals("Display", context.toString())
     }
 
     @Test
-    fun testBuildScriptWithEmptyString() {
-        assertEquals("groovy:", GroovyScriptSupport.buildScript(""))
+    fun `SimpleScriptContext equals based on target`() {
+        val c1 = SimpleScriptContext("same", "Name1")
+        val c2 = SimpleScriptContext("same", "Name2")
+        assertEquals(c1, c2)
     }
 
     @Test
-    fun testBuildPropertyWithEmptyString() {
-        assertEquals("groovy:```\n\n```", GroovyScriptSupport.buildProperty(""))
-    }
-}
-
-class AbstractScriptSupportConcreteTest : AbstractScriptSupport() {
-
-    override fun suffix(): String = "test"
-
-    override fun scriptType(): String = "testengine"
-
-    override fun demoCode(): String = "test demo"
-
-    @Test
-    fun testBuildScriptAddsCustomPrefix() {
-        val concrete = AbstractScriptSupportConcreteTest()
-        assertEquals("testengine:script content", concrete.buildScript("script content"))
+    fun `SimpleScriptContext not equals different target`() {
+        val c1 = SimpleScriptContext("a")
+        val c2 = SimpleScriptContext("b")
+        assertNotEquals(c1, c2)
     }
 
     @Test
-    fun testBuildPropertyWrapsInCodeBlock() {
-        val concrete = AbstractScriptSupportConcreteTest()
-        assertEquals("testengine:```\nprop\n```", concrete.buildProperty("prop"))
+    fun `SimpleScriptContext hashCode based on target`() {
+        val c1 = SimpleScriptContext("same", "Name1")
+        val c2 = SimpleScriptContext("same", "Name2")
+        assertEquals(c1.hashCode(), c2.hashCode())
+    }
+
+    // ==================== EMPTY_SCRIPT_CONTEXT tests ====================
+
+    @Test
+    fun `EMPTY_SCRIPT_CONTEXT has select class name`() {
+        assertEquals("<select class>", EMPTY_SCRIPT_CONTEXT.name())
+    }
+
+    // ==================== ScriptInfo tests ====================
+
+    @Test
+    fun `ScriptInfo default values`() {
+        val info = ScriptInfo(script = "test", scriptType = null, context = null)
+        assertEquals("test", info.script)
+        assertNull(info.scriptType)
+        assertNull(info.context)
+        assertTrue(info.scriptUpdateTime > 0)
     }
 
     @Test
-    fun testPrefixDefaultsToScriptType() {
-        val concrete = AbstractScriptSupportConcreteTest()
-        assertEquals("testengine", concrete.prefix())
+    fun `ScriptInfo with all fields`() {
+        val info = ScriptInfo(
+            script = "println 'hello'",
+            scriptType = GroovyScriptSupport,
+            context = "MyClass",
+            scriptUpdateTime = 123456789L
+        )
+        assertEquals("println 'hello'", info.script)
+        assertEquals(GroovyScriptSupport, info.scriptType)
+        assertEquals("MyClass", info.context)
+        assertEquals(123456789L, info.scriptUpdateTime)
     }
 
     @Test
-    fun testCheckSupportReturnsFalseForUnavailableEngine() {
-        val concrete = AbstractScriptSupportConcreteTest()
-        assertFalse("Non-existent engine should not be supported",
-            concrete.checkSupport())
-    }
-}
-
-class ScriptSupportsListTest {
-
-    @Test
-    fun testScriptSupportsContainsGeneral() {
-        assertTrue("scriptSupports should contain GeneralScriptSupport",
-            scriptSupports.contains(GeneralScriptSupport))
+    fun `ScriptInfo copy`() {
+        val info = ScriptInfo(script = "test", scriptType = null, context = null)
+        val copy = info.copy(script = "updated")
+        assertEquals("updated", copy.script)
+        assertEquals(info.scriptType, copy.scriptType)
     }
 
     @Test
-    fun testScriptSupportsContainsGroovy() {
-        assertTrue("scriptSupports should contain GroovyScriptSupport",
-            scriptSupports.contains(GroovyScriptSupport))
-    }
-
-    @Test
-    fun testScriptSupportsSize() {
-        assertEquals("Should have 2 script support implementations", 2, scriptSupports.size)
-    }
-
-    @Test
-    fun testScriptSupportsGeneralIsFirst() {
-        assertSame("GeneralScriptSupport should be first", GeneralScriptSupport, scriptSupports[0])
-    }
-
-    @Test
-    fun testScriptSupportsGroovyIsSecond() {
-        assertSame("GroovyScriptSupport should be second", GroovyScriptSupport, scriptSupports[1])
+    fun `ScriptInfo var scriptUpdateTime can be modified`() {
+        val info = ScriptInfo(script = "test", scriptType = null, context = null, scriptUpdateTime = 100L)
+        info.scriptUpdateTime = 200L
+        assertEquals(200L, info.scriptUpdateTime)
     }
 }

@@ -225,6 +225,55 @@ class PmResponseTest {
         val response = jsonResponse()
         response.to.not().have.body("wrong")
     }
+
+    @Test(expected = AssertionError::class)
+    fun testHaveJsonBodyWithNonJsonObject() {
+        val response = PmResponse(
+            code = 200,
+            status = "OK",
+            headers = PmHeaderList(),
+            responseTime = 0,
+            responseSize = 0,
+            rawBody = """[1, 2, 3]"""
+        )
+        response.to.have.jsonBody("name")
+    }
+
+    @Test
+    fun testNotHaveJsonBodyWithNonJsonObject() {
+        val response = PmResponse(
+            code = 200,
+            status = "OK",
+            headers = PmHeaderList(),
+            responseTime = 0,
+            responseSize = 0,
+            rawBody = """[1, 2, 3]"""
+        )
+        // Non-JSON-object body should not contain key, so this passes
+        response.to.not().have.jsonBody("name")
+    }
+
+    @Test
+    fun testHaveJsonSchemaFromResponse() {
+        val response = jsonResponse()
+        response.to.have.jsonSchema(mapOf(
+            "type" to "object",
+            "required" to listOf("name")
+        ))
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testHaveJsonSchemaFailsForInvalidJson() {
+        val response = PmResponse(
+            code = 200,
+            status = "OK",
+            headers = PmHeaderList(),
+            responseTime = 0,
+            responseSize = 0,
+            rawBody = "not json"
+        )
+        response.to.have.jsonSchema(mapOf("type" to "object"))
+    }
 }
 
 class JsonSchemaValidatorTest {

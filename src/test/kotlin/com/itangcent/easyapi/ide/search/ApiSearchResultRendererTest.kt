@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.ide.search
 
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.GrpcStreamingType
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import org.junit.Assert.*
@@ -200,6 +202,95 @@ class ApiSearchResultRendererTest {
         )
 
         assertNotNull("Renderer should handle OPTIONS method", component)
+    }
+
+    @Test
+    fun testRendererWithGrpcEndpoint() {
+        val endpoint = ApiEndpoint(
+            name = "GetUser",
+            className = "com.example.UserService",
+            metadata = GrpcMetadata(
+                path = "/com.example.UserService/GetUser",
+                serviceName = "UserService",
+                methodName = "GetUser",
+                packageName = "com.example",
+                streamingType = GrpcStreamingType.UNARY
+            )
+        )
+
+        val component = renderer.getListCellRendererComponent(
+            mockList, endpoint, 0, false, false
+        )
+
+        assertNotNull("Renderer should handle gRPC endpoint", component)
+        assertTrue("Component should be a JPanel", component is JPanel)
+    }
+
+    @Test
+    fun testRendererWithGrpcEndpointNoName() {
+        val endpoint = ApiEndpoint(
+            name = null,
+            className = "com.example.UserService",
+            metadata = GrpcMetadata(
+                path = "/com.example.UserService/GetUser",
+                serviceName = "UserService",
+                methodName = "GetUser",
+                packageName = "com.example",
+                streamingType = GrpcStreamingType.UNARY
+            )
+        )
+
+        val component = renderer.getListCellRendererComponent(
+            mockList, endpoint, 0, false, false
+        )
+
+        assertNotNull("Renderer should handle gRPC endpoint without name", component)
+    }
+
+    @Test
+    fun testRendererWithBlankName() {
+        val endpoint = createEndpoint(
+            name = "",
+            path = "/api/users",
+            method = HttpMethod.GET
+        )
+
+        val component = renderer.getListCellRendererComponent(
+            mockList, endpoint, 0, false, false
+        )
+
+        assertNotNull("Renderer should handle endpoint with blank name", component)
+    }
+
+    @Test
+    fun testRendererWithBlankClassName() {
+        val endpoint = createEndpoint(
+            name = "getUser",
+            path = "/api/users",
+            method = HttpMethod.GET,
+            className = ""
+        )
+
+        val component = renderer.getListCellRendererComponent(
+            mockList, endpoint, 0, false, false
+        )
+
+        assertNotNull("Renderer should handle endpoint with blank class name", component)
+    }
+
+    @Test
+    fun testRendererWithNoMethod() {
+        val endpoint = createEndpoint(
+            name = "test",
+            path = "/api/test",
+            method = HttpMethod.NO_METHOD
+        )
+
+        val component = renderer.getListCellRendererComponent(
+            mockList, endpoint, 0, false, false
+        )
+
+        assertNotNull("Renderer should handle NO_METHOD", component)
     }
 
     private fun createEndpoint(

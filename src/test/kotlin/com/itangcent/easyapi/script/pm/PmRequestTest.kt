@@ -79,6 +79,13 @@ class PmHeaderListTest {
     }
 
     @Test
+    fun testAddFromMapMissingValue() {
+        val headers = PmHeaderList()
+        headers.add(mapOf("key" to "Authorization"))
+        assertTrue(headers.all().isEmpty())
+    }
+
+    @Test
     fun testUpsertInserts() {
         val headers = PmHeaderList()
         headers.upsert("Content-Type", "application/json")
@@ -238,5 +245,19 @@ class PmPropertyListTest {
         list.add("key", "second")
         assertEquals("first", list.get("key"))
         assertEquals(2, list.all().size)
+    }
+
+    @Test
+    fun testToList() {
+        val list = PmPropertyList()
+        list.add("a", "1")
+        list.add("b", "2")
+        val snapshot = list.toList()
+        assertEquals(2, snapshot.size)
+        assertEquals("a", snapshot[0]["key"])
+        assertEquals("1", snapshot[0]["value"])
+        // Modifying list after snapshot should not affect snapshot
+        list.add("c", "3")
+        assertEquals(2, snapshot.size)
     }
 }

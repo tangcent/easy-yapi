@@ -547,6 +547,7 @@ class PostmanFormatter(
 
     fun buildScript(listen: String, content: String?): PostmanEvent? {
         val lines = content?.lines()?.filter { it.isNotBlank() } ?: return null
+        if (lines.isEmpty()) return null
         return PostmanEvent(listen = listen, script = PostmanScript(exec = lines))
     }
 
@@ -558,7 +559,7 @@ class PostmanFormatter(
         const val RESPONSE_BODY_TYPE = 8
 
         fun parsePath(path: String): List<String> {
-            val paths = path.trim().trim('/').split("/")
+            val paths = path.trim().trim('/').split("/").filter { it.isNotEmpty() }
             return paths.map { it.resolvePathVariable() }
         }
 

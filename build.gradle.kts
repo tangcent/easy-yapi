@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.11.0"
     id("org.jetbrains.changelog")
     id("com.google.protobuf") version "0.9.4"
-    jacoco
+    id("org.jetbrains.kotlinx.kover") version "0.9.8"
 }
 
 group = "com.itangcent"
@@ -99,11 +99,7 @@ tasks.withType<Test>().configureEach {
         showStackTraces = true
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
-    // Ensure JaCoCo agent is attached to the forked test JVM
-    extensions.configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf("jdk.internal.*")
-    }
+
 }
 
 intellijPlatform {
@@ -127,18 +123,20 @@ intellijPlatform {
     sandboxContainer = layout.projectDirectory.dir("idea-sandbox")
 }
 
-tasks.jacocoTestReport {
-    dependsOn(tasks.test)
-    classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("classes/kotlin/main"))
-    )
-    sourceDirectories.setFrom(files("src/main/kotlin"))
-    executionData.setFrom(
-        fileTree(layout.buildDirectory) { include("jacoco/*.exec") }
-    )
+kover {
     reports {
-        xml.required.set(true)
-        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/report.xml"))
-        html.required.set(true)
+        filters {
+            excludes {
+                classes("jdk.internal.*")
+            }
+        }
+        total {
+            xml {
+                onCheck = false
+            }
+            html {
+                onCheck = false
+            }
+        }
     }
 }

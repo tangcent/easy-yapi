@@ -362,4 +362,224 @@ class PmExpectationTest {
     fun testChainWordsAreNoOps() {
         PmExpectation(42).to.be.been.is_.that.which.and.has.have.with.at.of.same.but.does.equal(42)
     }
+
+    // --- Negated number assertions ---
+
+    @Test
+    fun testNotAbovePasses() {
+        PmExpectation(5).not.to.be.above(10)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotAboveFails() {
+        PmExpectation(10).not.to.be.above(5)
+    }
+
+    @Test
+    fun testNotBelowPasses() {
+        PmExpectation(10).not.to.be.below(5)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotBelowFails() {
+        PmExpectation(5).not.to.be.below(10)
+    }
+
+    @Test
+    fun testNotAtLeastPasses() {
+        PmExpectation(5).not.to.be.atLeast(10)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotAtLeastFails() {
+        PmExpectation(10).not.to.be.atLeast(5)
+    }
+
+    @Test
+    fun testNotAtMostPasses() {
+        PmExpectation(15).not.to.be.atMost(10)
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotAtMostFails() {
+        PmExpectation(5).not.to.be.atMost(10)
+    }
+
+    // --- Negated type assertions ---
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotAnTypeFails() {
+        PmExpectation("hello").not.to.be.an("string")
+    }
+
+    // --- Negated contain for list ---
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotContainListFails() {
+        PmExpectation(listOf(1, 2, 3)).not.to.contain(2)
+    }
+
+    // --- Negated match ---
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotMatchFails() {
+        PmExpectation("hello123").not.to.match(Regex("\\d+"))
+    }
+
+    // --- Negated lengthOf ---
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotLengthOfFails() {
+        PmExpectation("hello").not.to.have.lengthOf(5)
+    }
+
+    // --- Negated ok/true/false/empty/oneOf ---
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotOkFails() {
+        PmExpectation("value").not.to.be.ok
+    }
+
+    @Test
+    fun testNotOkFalsy() {
+        PmExpectation(null).not.to.be.ok
+        PmExpectation(0).not.to.be.ok
+        PmExpectation("").not.to.be.ok
+        PmExpectation(false).not.to.be.ok
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotTrueFails() {
+        PmExpectation(true).not.to.be.true_
+    }
+
+    @Test
+    fun testNotTruePasses() {
+        PmExpectation(false).not.to.be.true_
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotFalseFails() {
+        PmExpectation(false).not.to.be.false_
+    }
+
+    @Test
+    fun testNotFalsePasses() {
+        PmExpectation(true).not.to.be.false_
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotEmptyFails() {
+        PmExpectation("").not.to.be.empty
+    }
+
+    @Test
+    fun testNotEmptyPasses() {
+        PmExpectation("hello").not.to.be.empty
+        PmExpectation(listOf(1)).not.to.be.empty
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotOneOfFails() {
+        PmExpectation("apple").not.to.be.oneOf(listOf("apple", "banana"))
+    }
+
+    // --- LengthOf for Array ---
+
+    @Test
+    fun testLengthOfArray() {
+        PmExpectation(arrayOf(1, 2, 3)).to.have.lengthOf(3)
+    }
+
+    @Test(expected = AssertionError::class)
+    fun testLengthOfUnsupportedType() {
+        PmExpectation(42).to.have.lengthOf(1)
+    }
+
+    // --- Contain for non-string/non-list ---
+
+    @Test
+    fun testContainForObject() {
+        PmExpectation(mapOf("key" to "hello world")).to.contain("hello")
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun testContainForObjectFails() {
+        PmExpectation(mapOf("key" to "hello")).to.contain("xyz")
+    }
+
+    @Test
+    fun testNotContainForObject() {
+        PmExpectation(mapOf("key" to "hello")).not.to.contain("xyz")
+    }
+
+    // --- Negated exist ---
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotExistFails() {
+        PmExpectation("value").not.to.exist
+    }
+
+    // --- Negated null ---
+
+    @Test(expected = IllegalStateException::class)
+    fun testNotNullFails() {
+        PmExpectation(null).not.to.be.null_
+    }
+
+    // --- Empty for Array ---
+
+    @Test
+    fun testEmptyArray() {
+        PmExpectation(emptyArray<Any>()).to.be.empty
+    }
+
+    // --- an() type for Runnable (Closure) ---
+
+    @Test
+    fun testAnTypeRunnable() {
+        PmExpectation(Runnable {}).to.be.an("Closure")
+    }
+
+    // --- a() alias ---
+
+    @Test
+    fun testATypeNumber() {
+        PmExpectation(3.14).to.be.a("number")
+    }
+
+    // --- Float type as Number ---
+
+    @Test
+    fun testAnTypeFloat() {
+        PmExpectation(3.14f).to.be.an("number")
+    }
+
+    // --- Long type as Number ---
+
+    @Test
+    fun testAnTypeLong() {
+        PmExpectation(42L).to.be.an("number")
+    }
+
+    // --- Boolean type ---
+
+    @Test
+    fun testAnTypeBoolean() {
+        PmExpectation(false).to.be.an("boolean")
+    }
+
+    // --- Unknown type falls back to class simpleName ---
+
+    @Test
+    fun testAnTypeUnknownObject() {
+        val obj = object : Any() {}
+        val expectation = PmExpectation(obj)
+        // Should not crash — the type name will be the anonymous class simpleName
+        try {
+            expectation.to.be.an("UnknownType")
+        } catch (_: IllegalStateException) {
+            // expected for mismatched type
+        }
+    }
 }

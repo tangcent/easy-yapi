@@ -58,12 +58,14 @@ jobs:
       - name: Start Xvfb
         run: Xvfb :99 -screen 0 1024x768x24 &
       - name: Generate coverage report
-        run: ./gradlew test jacocoTestReport --stacktrace
+        run: |
+          ./gradlew check --stacktrace
+          ./gradlew koverXmlReport
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: build/reports/jacoco/report.xml
+          files: build/reports/kover/xml/report.xml
           flags: unittests
           env_vars: OS
           name: codecov-umbrella

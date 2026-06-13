@@ -3,12 +3,19 @@ package com.itangcent.easyapi.exporter.markdown
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.GrpcMetadata
+import com.itangcent.easyapi.exporter.model.GrpcStreamingType
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.ParameterType
+import com.itangcent.easyapi.exporter.model.grpcMetadata
 import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.exporter.model.isGrpc
+import com.itangcent.easyapi.exporter.model.isHttp
+import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.model.FieldModel
+import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
 import kotlinx.coroutines.runBlocking
@@ -397,5 +404,417 @@ class DefaultMarkdownFormatterTest {
         assertTrue(markdown.contains("middle"))
         assertTrue(markdown.contains("inner"))
         assertTrue(markdown.contains("value"))
+    }
+
+    // ==================== gRPC endpoint tests ====================
+
+    @Test
+    fun testFormatGrpcEndpoint() = runBlocking {
+        val endpoint = ApiEndpoint(
+            name = "GetUser",
+            metadata = GrpcMetadata(
+                path = "/user.UserService/GetUser",
+                serviceName = "UserService",
+                methodName = "GetUser",
+                packageName = "user",
+                streamingType = GrpcStreamingType.UNARY
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "gRPC API")
+
+        assertTrue(markdown.contains("# gRPC API"))
+        assertTrue(markdown.contains("### GetUser"))
+        assertTrue(markdown.contains("**Protocol:** gRPC"))
+        assertTrue(markdown.contains("**Service:** UserService"))
+        assertTrue(markdown.contains("GetUser"))
+        assertTrue(markdown.contains("**Streaming:** UNARY"))
+        assertTrue(markdown.contains("**Full Path:** /user.UserService/GetUser"))
+    }
+
+    @Test
+    fun testFormatGrpcEndpointWithDescription() = runBlocking {
+        val endpoint = ApiEndpoint(
+            name = "GetUser",
+            description = "Retrieves a user by ID",
+            metadata = GrpcMetadata(
+                path = "/user.UserService/GetUser",
+                serviceName = "UserService",
+                methodName = "GetUser",
+                packageName = "user",
+                streamingType = GrpcStreamingType.UNARY
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "gRPC API")
+
+        assertTrue(markdown.contains("Retrieves a user by ID"))
+    }
+
+    @Test
+    fun testFormatGrpcEndpointWithRequestBody() = runBlocking {
+        val bodyModel = ObjectModel.Object(
+            mapOf(
+                "user_id" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user ID")
+            )
+        )
+
+        val endpoint = ApiEndpoint(
+            name = "GetUser",
+            metadata = GrpcMetadata(
+                path = "/user.UserService/GetUser",
+                serviceName = "UserService",
+                methodName = "GetUser",
+                packageName = "user",
+                streamingType = GrpcStreamingType.UNARY,
+                body = bodyModel
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "gRPC API")
+
+        assertTrue(markdown.contains("> REQUEST"))
+        assertTrue(markdown.contains("**Request Body:**"))
+        assertTrue(markdown.contains("user_id"))
+        assertTrue(markdown.contains("**Request Demo:**"))
+        assertTrue(markdown.contains("```json"))
+    }
+
+    @Test
+    fun testFormatGrpcEndpointWithResponseBody() = runBlocking {
+        val responseModel = ObjectModel.Object(
+            mapOf(
+                "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
+            )
+        )
+
+        val endpoint = ApiEndpoint(
+            name = "GetUser",
+            metadata = GrpcMetadata(
+                path = "/user.UserService/GetUser",
+                serviceName = "UserService",
+                methodName = "GetUser",
+                packageName = "user",
+                streamingType = GrpcStreamingType.UNARY,
+                responseBody = responseModel
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "gRPC API")
+
+        assertTrue(markdown.contains("> RESPONSE"))
+        assertTrue(markdown.contains("**Body:**"))
+        assertTrue(markdown.contains("name"))
+    }
+
+    @Test
+    fun testFormatGrpcServerStreaming() = runBlocking {
+        val endpoint = ApiEndpoint(
+            name = "ListUsers",
+            metadata = GrpcMetadata(
+                path = "/user.UserService/ListUsers",
+                serviceName = "UserService",
+                methodName = "ListUsers",
+                packageName = "user",
+                streamingType = GrpcStreamingType.SERVER_STREAMING
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "gRPC API")
+
+        assertTrue(markdown.contains("**Streaming:** SERVER_STREAMING"))
+    }
+
+    @Test
+    fun testFormatGrpcBidiStreaming() = runBlocking {
+        val endpoint = ApiEndpoint(
+            name = "Chat",
+            metadata = GrpcMetadata(
+                path = "/chat.ChatService/Chat",
+                serviceName = "ChatService",
+                methodName = "Chat",
+                packageName = "chat",
+                streamingType = GrpcStreamingType.BIDIRECTIONAL
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "gRPC API")
+
+        assertTrue(markdown.contains("**Streaming:** BIDIRECTIONAL"))
+    }
+
+    // ==================== No-demo mode ====================
+
+    @Test
+    fun testFormatNoDemoMode() = runBlocking {
+        val noDemoFormatter = DefaultMarkdownFormatter(outputDemo = false)
+        val bodyModel = ObjectModel.Object(
+            mapOf(
+                "name" to FieldModel(ObjectModel.single(JsonType.STRING), comment = "user name")
+            )
+        )
+
+        val endpoint = ApiEndpoint(
+            name = "Create User",
+            metadata = httpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST,
+                body = bodyModel,
+                headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
+            )
+        )
+
+        val markdown = noDemoFormatter.format(listOf(endpoint), "User API")
+
+        assertTrue(markdown.contains("**Request Body:**"))
+        assertFalse(markdown.contains("**Request Demo:**"))
+    }
+
+    // ==================== Endpoint without name ====================
+
+    @Test
+    fun testFormatEndpointWithoutName() = runBlocking {
+        val endpoint = ApiEndpoint(
+            metadata = httpMetadata(
+                path = "/api/users",
+                method = HttpMethod.POST
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "API")
+
+        assertTrue(markdown.contains("POST /api/users"))
+    }
+
+    // ==================== Endpoint with blank description ====================
+
+    @Test
+    fun testFormatEndpointWithBlankDescription() = runBlocking {
+        val endpoint = ApiEndpoint(
+            name = "Get User",
+            description = "   ",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.GET
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "API")
+
+        assertFalse(markdown.contains("**Desc:**"))
+    }
+
+    // ==================== Endpoint with all param types ====================
+
+    @Test
+    fun testFormatEndpointWithAllParamTypes() = runBlocking {
+        val endpoint = ApiEndpoint(
+            name = "Update User",
+            metadata = httpMetadata(
+                path = "/api/users/{id}",
+                method = HttpMethod.PUT,
+                parameters = listOf(
+                    ApiParameter(name = "id", binding = ParameterBinding.Path, required = true, description = "User ID"),
+                    ApiParameter(name = "page", binding = ParameterBinding.Query, required = false, description = "Page number"),
+                    ApiParameter(name = "X-Token", binding = ParameterBinding.Header, required = true, description = "Auth token"),
+                    ApiParameter(name = "avatar", type = ParameterType.FILE, binding = ParameterBinding.Form, required = false, description = "Avatar file")
+                ),
+                headers = listOf(
+                    ApiHeader(name = "Content-Type", value = "multipart/form-data")
+                )
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "API")
+
+        assertTrue(markdown.contains("**Path Params:**"))
+        assertTrue(markdown.contains("**Query:**"))
+        assertTrue(markdown.contains("**Headers:**"))
+        assertTrue(markdown.contains("**Form:**"))
+    }
+
+    // ==================== Mixed HTTP and gRPC endpoints ====================
+
+    @Test
+    fun testFormatMixedHttpAndGrpcEndpoints() = runBlocking {
+        val endpoints = listOf(
+            ApiEndpoint(
+                name = "Get User",
+                metadata = httpMetadata(path = "/api/users/{id}", method = HttpMethod.GET)
+            ),
+            ApiEndpoint(
+                name = "GetUserGrpc",
+                metadata = GrpcMetadata(
+                    path = "/user.UserService/GetUser",
+                    serviceName = "UserService",
+                    methodName = "GetUser",
+                    packageName = "user",
+                    streamingType = GrpcStreamingType.UNARY
+                )
+            )
+        )
+
+        val markdown = formatter.format(endpoints, "Mixed API")
+
+        assertTrue(markdown.contains("### Get User"))
+        assertTrue(markdown.contains("### GetUserGrpc"))
+        assertTrue(markdown.contains("**Protocol:** gRPC"))
+    }
+
+    // ==================== Map type in body ====================
+
+    @Test
+    fun testFormatEndpointWithMapBody() = runBlocking {
+        val mapModel = ObjectModel.MapModel(
+            keyType = ObjectModel.single(JsonType.STRING),
+            valueType = ObjectModel.single(JsonType.INT)
+        )
+        val bodyModel = ObjectModel.Object(
+            mapOf(
+                "metadata" to FieldModel(mapModel, comment = "key-value metadata")
+            )
+        )
+
+        val endpoint = ApiEndpoint(
+            name = "Create Resource",
+            metadata = httpMetadata(
+                path = "/api/resources",
+                method = HttpMethod.POST,
+                body = bodyModel,
+                headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "API")
+
+        assertTrue(markdown.contains("metadata"))
+        assertTrue(markdown.contains("map"))
+    }
+
+    // ==================== Array of primitives ====================
+
+    @Test
+    fun testFormatEndpointWithArrayOfPrimitives() = runBlocking {
+        val bodyModel = ObjectModel.Object(
+            mapOf(
+                "tags" to FieldModel(ObjectModel.array(ObjectModel.single(JsonType.STRING)), comment = "tag list")
+            )
+        )
+
+        val endpoint = ApiEndpoint(
+            name = "Create Post",
+            metadata = httpMetadata(
+                path = "/api/posts",
+                method = HttpMethod.POST,
+                body = bodyModel,
+                headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "API")
+
+        assertTrue(markdown.contains("tags"))
+        assertTrue(markdown.contains("string[]"))
+    }
+
+    // ==================== FieldModel with options ====================
+
+    @Test
+    fun testFormatEndpointWithFieldOptions() = runBlocking {
+        val bodyModel = ObjectModel.Object(
+            mapOf(
+                "status" to FieldModel(
+                    ObjectModel.single(JsonType.STRING),
+                    comment = "status",
+                    options = listOf(
+                        FieldOption(value = "active", desc = "Active user"),
+                        FieldOption(value = "inactive", desc = "Inactive user")
+                    )
+                )
+            )
+        )
+
+        val endpoint = ApiEndpoint(
+            name = "Update Status",
+            metadata = httpMetadata(
+                path = "/api/status",
+                method = HttpMethod.PUT,
+                body = bodyModel,
+                headers = listOf(ApiHeader(name = "Content-Type", value = "application/json"))
+            )
+        )
+
+        val markdown = formatter.format(listOf(endpoint), "API")
+
+        assertTrue(markdown.contains("active"))
+        assertTrue(markdown.contains("inactive"))
+    }
+
+    // ==================== GrpcMetadata properties ====================
+
+    @Test
+    fun testGrpcMetadataProtocol() {
+        val meta = GrpcMetadata(
+            path = "/test.Service/Method",
+            serviceName = "Service",
+            methodName = "Method",
+            packageName = "test",
+            streamingType = GrpcStreamingType.UNARY
+        )
+        assertEquals("gRPC", meta.protocol)
+    }
+
+    @Test
+    fun testGrpcStreamingTypeValues() {
+        assertEquals(4, GrpcStreamingType.values().size)
+        assertNotNull(GrpcStreamingType.UNARY)
+        assertNotNull(GrpcStreamingType.SERVER_STREAMING)
+        assertNotNull(GrpcStreamingType.CLIENT_STREAMING)
+        assertNotNull(GrpcStreamingType.BIDIRECTIONAL)
+    }
+
+    // ==================== ApiEndpoint gRPC helpers ====================
+
+    @Test
+    fun testApiEndpointIsGrpc() {
+        val endpoint = ApiEndpoint(
+            metadata = GrpcMetadata(
+                path = "/test.Service/Method",
+                serviceName = "Service",
+                methodName = "Method",
+                packageName = "test",
+                streamingType = GrpcStreamingType.UNARY
+            )
+        )
+        assertTrue(endpoint.isGrpc)
+        assertFalse(endpoint.isHttp)
+    }
+
+    @Test
+    fun testApiEndpointGrpcMetadata() {
+        val grpcMeta = GrpcMetadata(
+            path = "/test.Service/Method",
+            serviceName = "Service",
+            methodName = "Method",
+            packageName = "test",
+            streamingType = GrpcStreamingType.UNARY
+        )
+        val endpoint = ApiEndpoint(metadata = grpcMeta)
+        assertNotNull(endpoint.grpcMetadata)
+        assertEquals("Service", endpoint.grpcMetadata?.serviceName)
+    }
+
+    @Test
+    fun testApiEndpointPathForGrpc() {
+        val endpoint = ApiEndpoint(
+            metadata = GrpcMetadata(
+                path = "/test.Service/Method",
+                serviceName = "Service",
+                methodName = "Method",
+                packageName = "test",
+                streamingType = GrpcStreamingType.UNARY
+            )
+        )
+        assertEquals("/test.Service/Method", endpoint.path)
     }
 }

@@ -48,4 +48,31 @@ class FeignPathResolverTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNull(info.url)
         assertNull(info.name)
     }
+
+    fun testFeignClientInfoDataClass() {
+        val info = FeignClientInfo(path = "/api", url = "http://localhost", name = "test")
+        assertEquals("/api", info.path)
+        assertEquals("http://localhost", info.url)
+        assertEquals("test", info.name)
+
+        val defaultInfo = FeignClientInfo()
+        assertNull(defaultInfo.path)
+        assertNull(defaultInfo.url)
+        assertNull(defaultInfo.name)
+    }
+
+    fun testFeignClientInfoEquality() {
+        val info1 = FeignClientInfo(path = "/api", name = "test")
+        val info2 = FeignClientInfo(path = "/api", name = "test")
+        assertEquals(info1, info2)
+        assertEquals(info1.hashCode(), info2.hashCode())
+    }
+
+    fun testFeignClientInfoCopy() {
+        val info = FeignClientInfo(path = "/api", url = "http://localhost", name = "test")
+        val copy = info.copy(path = "/v2")
+        assertEquals("/v2", copy.path)
+        assertEquals("http://localhost", copy.url)
+        assertEquals("test", copy.name)
+    }
 }

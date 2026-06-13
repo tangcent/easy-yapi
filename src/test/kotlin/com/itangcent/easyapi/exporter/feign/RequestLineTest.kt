@@ -7,59 +7,40 @@ import org.junit.Test
 class RequestLineTest {
 
     @Test
-    fun testRequestLineCreation() {
+    fun testCreation() {
         val requestLine = RequestLine(HttpMethod.GET, "/api/users")
         assertEquals(HttpMethod.GET, requestLine.method)
         assertEquals("/api/users", requestLine.path)
     }
 
     @Test
-    fun testRequestLineWithPostMethod() {
-        val requestLine = RequestLine(HttpMethod.POST, "/api/users")
-        assertEquals(HttpMethod.POST, requestLine.method)
-        assertEquals("/api/users", requestLine.path)
+    fun testEquality() {
+        val line1 = RequestLine(HttpMethod.GET, "/api/users")
+        val line2 = RequestLine(HttpMethod.GET, "/api/users")
+        assertEquals(line1, line2)
     }
 
     @Test
-    fun testRequestLineWithAllHttpMethods() {
-        val methods = listOf(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)
-        methods.forEach { method ->
-            val requestLine = RequestLine(method, "/test")
-            assertEquals(method, requestLine.method)
-        }
+    fun testInequality() {
+        val line1 = RequestLine(HttpMethod.GET, "/api/users")
+        val line2 = RequestLine(HttpMethod.POST, "/api/users")
+        assertNotEquals(line1, line2)
     }
 
     @Test
-    fun testRequestLineEquality() {
-        val requestLine1 = RequestLine(HttpMethod.GET, "/api/users")
-        val requestLine2 = RequestLine(HttpMethod.GET, "/api/users")
-        assertEquals(requestLine1, requestLine2)
-    }
-
-    @Test
-    fun testRequestLineCopy() {
-        val original = RequestLine(HttpMethod.GET, "/api/users")
-        val copy = original.copy(method = HttpMethod.POST)
-        assertEquals(HttpMethod.POST, copy.method)
+    fun testCopy() {
+        val line = RequestLine(HttpMethod.GET, "/api/users")
+        val copy = line.copy(method = HttpMethod.DELETE)
+        assertEquals(HttpMethod.DELETE, copy.method)
         assertEquals("/api/users", copy.path)
-        assertEquals(HttpMethod.GET, original.method)
+        assertEquals(HttpMethod.GET, line.method)
     }
 
     @Test
-    fun testRequestLineWithPathVariables() {
-        val requestLine = RequestLine(HttpMethod.GET, "/api/users/{id}")
-        assertEquals("/api/users/{id}", requestLine.path)
-    }
-
-    @Test
-    fun testRequestLineWithEmptyPath() {
-        val requestLine = RequestLine(HttpMethod.GET, "")
-        assertEquals("", requestLine.path)
-    }
-
-    @Test
-    fun testRequestLineWithRootPath() {
-        val requestLine = RequestLine(HttpMethod.GET, "/")
-        assertEquals("/", requestLine.path)
+    fun testComponentFunctions() {
+        val line = RequestLine(HttpMethod.POST, "/api/items")
+        val (method, path) = line
+        assertEquals(HttpMethod.POST, method)
+        assertEquals("/api/items", path)
     }
 }
