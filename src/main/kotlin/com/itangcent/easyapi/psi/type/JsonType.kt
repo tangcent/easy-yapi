@@ -52,6 +52,25 @@ object JsonType {
 
     fun isValid(type: String?): Boolean = type != null && type in ALL_TYPES
 
+    /**
+     * Map a JSON type to the corresponding JSON Schema / YApi type.
+     * Standard JSON types + date/datetime extensions → YApi schema types.
+     */
+    fun toSchemaType(type: String): String {
+        return when (type) {
+            STRING, DATE, DATETIME, FILE -> "string"
+            SHORT, INT, LONG -> "integer"
+            FLOAT, DOUBLE -> "number"
+            BOOLEAN -> "boolean"
+            ARRAY -> "array"
+            OBJECT -> "object"
+            "null" -> "null"
+            "text" -> "string"
+            "file" -> "string"
+            else -> "string"
+        }
+    }
+
     fun defaultValueForType(type: String): Any? {
         return when (type) {
             STRING -> ""

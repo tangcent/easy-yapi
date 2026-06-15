@@ -4,13 +4,16 @@ import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.model.path
+import com.itangcent.easyapi.exporter.yapi.model.Extension
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiApiDoc
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiFormParam
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiHeader
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiPathParam
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiQuery
 import com.itangcent.easyapi.exporter.yapi.model.YapiApiDoc
-import com.itangcent.easyapi.exporter.yapi.model.YapiFormParam
-import com.itangcent.easyapi.exporter.yapi.model.YapiHeader
-import com.itangcent.easyapi.exporter.yapi.model.YapiPathParam
-import com.itangcent.easyapi.exporter.yapi.model.YapiQuery
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
+import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.markdown.MarkdownRender
 
 /**
@@ -81,7 +84,7 @@ class YapiFormatter(
     fun format(endpoint: ApiEndpoint): YapiApiDoc {
         val httpMeta = endpoint.httpMetadata
         val headers = (httpMeta?.headers ?: emptyList()).map {
-            YapiHeader(
+            MutableYapiHeader(
                 name = it.name,
                 value = it.value,
                 desc = it.description,
@@ -94,7 +97,7 @@ class YapiFormatter(
         val query = parameters
             .filter { it.binding == ParameterBinding.Query }
             .map {
-                YapiQuery(
+                MutableYapiQuery(
                     name = it.name,
                     value = it.defaultValue,
                     desc = it.description,
@@ -106,7 +109,7 @@ class YapiFormatter(
         val pathParams = parameters
             .filter { it.binding == ParameterBinding.Path }
             .map {
-                YapiPathParam(
+                MutableYapiPathParam(
                     name = it.name,
                     example = it.example ?: it.defaultValue,
                     desc = it.description
@@ -116,7 +119,7 @@ class YapiFormatter(
         val formParams = parameters
             .filter { it.binding == ParameterBinding.Form }
             .map {
-                YapiFormParam(
+                MutableYapiFormParam(
                     name = it.name,
                     example = it.example ?: it.defaultValue,
                     type = it.type.rawType(),
@@ -170,7 +173,7 @@ class YapiFormatter(
         // res_body_is_json_schema: true when we use JSON schema (not JSON5) for response body
         val resBodyIsJsonSchema = responseBody != null && !resBodyJson5
 
-        return YapiApiDoc(
+        return MutableYapiApiDoc.create(
             title = endpoint.name ?: "${httpMeta?.method?.name ?: "UNKNOWN"} ${endpoint.path}",
             path = formatPath(endpoint.path),
             method = httpMeta?.method?.name?.lowercase() ?: "get",
@@ -221,7 +224,7 @@ class YapiFormatter(
      * @return A YAPI document with mock examples
      */
     fun formatWithMock(endpoint: ApiEndpoint): YapiApiDoc {
-        val doc = format(endpoint)
+        val doc = format(endpoint) as MutableYapiApiDoc
         val parameters = endpoint.httpMetadata?.parameters ?: emptyList()
 
         mockGenerator?.let { generator ->
@@ -311,6 +314,84 @@ class YapiFormatter(
         if (desc.isNullOrBlank()) return null
         val html = markdownRender.render(desc)
         return html.ifBlank { "<p>$desc</p>" }
+    }
+
+    /**
+     * Builds the JSON request body for YAPI's save API endpoint.
+     *
+     * Serializes [doc] and [catId] into the JSON body expected by
+     * `POST /api/interface/save`. If [existingId] is provided it is included
+     * as `id`, triggering an update instead of insert.
+     *
+     * Any extra key-value pairs from [Extension.getExts] on the doc or its
+     * sub-objects are merged into the respective serialized maps, allowing
+     * secondary developers to inject custom fields for customized YAPI servers.
+     *
+     * @param doc The YAPI API document to serialize
+     * @param token Project private token for authentication
+     * @param catId Target category ID
+     * @param existingId Optional existing API ID for update (null = create new)
+     * @return JSON string ready for the request body
+     */
+    fun buildApiDocBody(doc: YapiApiDoc, token: String, catId: String, existingId: String? = null): String {
+        val map = mutableMapOf(
+            "token" to token,
+            "catid" to catId,
+            "title" to doc.title,
+            "path" to doc.path,
+            "method" to doc.method,
+            "desc" to doc.desc,
+            "markdown" to doc.markdown,
+            "status" to (doc.status ?: "done"),
+            "req_body_is_json_schema" to doc.reqBodyIsJsonSchema,
+            "res_body_is_json_schema" to doc.resBodyIsJsonSchema,
+            "req_headers" to (doc.reqHeaders?.map {
+                linkedMapOf(
+                    "name" to it.name, "value" to (it.value ?: ""), "desc" to (it.desc ?: ""),
+                    "example" to (it.example ?: it.value ?: ""), "required" to it.required
+                ).mergeExtension(it)
+            } ?: emptyList<Any>()),
+            "req_query" to (doc.reqQuery?.map {
+                linkedMapOf(
+                    "name" to it.name, "value" to (it.value ?: ""), "example" to (it.example ?: it.value ?: ""),
+                    "desc" to (it.desc ?: ""), "required" to it.required
+                ).mergeExtension(it)
+            } ?: emptyList<Any>()),
+            "req_params" to (doc.reqParams?.map {
+                linkedMapOf(
+                    "name" to it.name, "example" to (it.example ?: ""), "desc" to (it.desc ?: "")
+                ).mergeExtension(it)
+            } ?: emptyList<Any>()),
+            "req_body_other" to (doc.reqBodyOther ?: ""),
+            "res_body" to (doc.resBody ?: ""),
+            "req_body_form" to (doc.reqBodyForm?.map {
+                linkedMapOf(
+                    "name" to it.name, "example" to (it.example ?: ""), "type" to it.type,
+                    "required" to it.required, "desc" to (it.desc ?: "")
+                ).mergeExtension(it)
+            } ?: emptyList<Any>())
+        )
+        doc.reqBodyType?.let { map["req_body_type"] = it }
+        doc.resBodyType?.let { map["res_body_type"] = it }
+        doc.open?.let { map["api_opened"] = it }
+        doc.tag?.let { map["tag"] = it }
+        doc.tags?.let { map["tags"] = it }
+        existingId?.let { map["id"] = it }
+
+        // Merge top-level extensions from the doc
+        map.mergeExtension(doc)
+
+        return GsonUtils.toJson(map)
+    }
+
+    /**
+     * Merges extension key-value pairs from an [Extension] object into a base map.
+     * Extension values take precedence over base map values for the same key.
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : MutableMap<*, *>> T.mergeExtension(ext: Extension): T {
+        (this as MutableMap<Any?, Any?>).putAll(ext.getExts())
+        return this
     }
 
     companion object {

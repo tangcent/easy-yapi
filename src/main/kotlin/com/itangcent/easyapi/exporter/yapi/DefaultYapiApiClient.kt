@@ -10,6 +10,7 @@ import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.HttpResponse
 import com.itangcent.easyapi.http.KeyValue
 import com.itangcent.easyapi.util.json.GsonUtils
+import com.itangcent.easyapi.util.markdown.BundledMarkdownRender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
@@ -34,7 +35,8 @@ import java.net.URLEncoder
 class DefaultYapiApiClient(
     private val serverUrl: String,
     private val token: String,
-    private val httpClient: HttpClient
+    private val httpClient: HttpClient,
+    private val yapiFormatter: YapiFormatter = YapiFormatter(markdownRender = BundledMarkdownRender())
 ) : YapiApiClient {
 
     /** Cached project ID for this client instance. Populated on first [getProjectId] call. */
@@ -233,7 +235,7 @@ class DefaultYapiApiClient(
                         url = "$serverUrl$SAVE_API",
                         method = "POST",
                         headers = listOf("Content-Type" to "application/json"),
-                        body = buildApiDocBody(doc, catId, existingId)
+                        body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
                     )
                 )
                 parseResponse(resp) { Unit }
@@ -271,7 +273,7 @@ class DefaultYapiApiClient(
                         url = "$serverUrl$SAVE_API",
                         method = "POST",
                         headers = listOf("Content-Type" to "application/json"),
-                        body = buildApiDocBody(doc, catId, existingId)
+                        body = yapiFormatter.buildApiDocBody(doc, token, catId, existingId)
                     )
                 )
                 parseResponse(resp) { Unit }
@@ -335,55 +337,6 @@ class DefaultYapiApiClient(
          */
         @Volatile
         private var apiPageLimit: Int = 1000
-    }
-
-    /**
-     * Serializes [doc] and [catId] into the JSON body expected by [SAVE_API].
-     * If [existingId] is provided it is included as `id`, triggering an update instead of insert.
-     */
-    private fun buildApiDocBody(doc: YapiApiDoc, catId: String, existingId: String? = null): String {
-        val map = mutableMapOf<String, Any?>(
-            "token" to token,
-            "catid" to catId,
-            "title" to doc.title,
-            "path" to doc.path,
-            "method" to doc.method,
-            "desc" to doc.desc,
-            "markdown" to doc.markdown,
-            "status" to (doc.status ?: "done"),
-            "req_body_is_json_schema" to doc.reqBodyIsJsonSchema,
-            "res_body_is_json_schema" to doc.resBodyIsJsonSchema,
-            "req_headers" to (doc.reqHeaders?.map {
-                linkedMapOf(
-                    "name" to it.name, "value" to (it.value ?: ""), "desc" to (it.desc ?: ""),
-                    "example" to (it.example ?: it.value ?: ""), "required" to it.required
-                )
-            } ?: emptyList<Any>()),
-            "req_query" to (doc.reqQuery?.map {
-                linkedMapOf(
-                    "name" to it.name, "value" to (it.value ?: ""), "example" to (it.example ?: it.value ?: ""),
-                    "desc" to (it.desc ?: ""), "required" to it.required
-                )
-            } ?: emptyList<Any>()),
-            "req_params" to (doc.reqParams?.map {
-                linkedMapOf("name" to it.name, "example" to (it.example ?: ""), "desc" to (it.desc ?: ""))
-            } ?: emptyList<Any>()),
-            "req_body_other" to (doc.reqBodyOther ?: ""),
-            "res_body" to (doc.resBody ?: ""),
-            "req_body_form" to (doc.reqBodyForm?.map {
-                linkedMapOf(
-                    "name" to it.name, "example" to (it.example ?: ""), "type" to it.type,
-                    "required" to it.required, "desc" to (it.desc ?: "")
-                )
-            } ?: emptyList<Any>())
-        )
-        doc.reqBodyType?.let { map["req_body_type"] = it }
-        doc.resBodyType?.let { map["res_body_type"] = it }
-        doc.open?.let { map["api_opened"] = it }
-        doc.tag?.let { map["tag"] = it }
-        doc.tags?.let { map["tags"] = it }
-        existingId?.let { map["id"] = it }
-        return GsonUtils.toJson(map)
     }
 
     private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
