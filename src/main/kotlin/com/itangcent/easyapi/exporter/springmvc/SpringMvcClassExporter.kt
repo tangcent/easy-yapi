@@ -18,6 +18,7 @@ import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.InheritanceHelper
+import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.psi.type.ResolvedMethod
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
@@ -407,7 +408,8 @@ class SpringMvcClassExporter(
                     required = fieldRequired,
                     binding = binding,
                     defaultValue = fieldDefault,
-                    description = fieldDoc
+                    description = fieldDoc,
+                    jsonType = resolveFieldJsonType(fieldModel)
                 )
             )
         }
@@ -422,6 +424,20 @@ class SpringMvcClassExporter(
         return when {
             isFileType(model) || isFileArrayType(model) -> ParameterType.FILE
             else -> ParameterType.TEXT
+        }
+    }
+
+    private fun resolveFieldJsonType(fieldModel: FieldModel): String {
+        return when (val model = fieldModel.model) {
+            is ObjectModel.Single -> model.type
+            is ObjectModel.Array -> {
+                when {
+                    isFileArrayType(model) -> "file[]"
+                    else -> JsonType.ARRAY
+                }
+            }
+            is ObjectModel.Object,
+            is ObjectModel.MapModel -> JsonType.OBJECT
         }
     }
 

@@ -380,6 +380,41 @@ class SpringMvcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    fun testExpandedQueryObjectFieldsKeepJsonType() = runTest {
+        loadFile("api/ExpandedQueryParamCtrl.java",
+            """
+            package com.itangcent.api;
+            import com.itangcent.model.UserInfo;
+            import org.springframework.web.bind.annotation.GetMapping;
+            import org.springframework.web.bind.annotation.RequestMapping;
+            import org.springframework.web.bind.annotation.RestController;
+
+            @RestController
+            @RequestMapping("/expanded-query")
+            public class ExpandedQueryParamCtrl {
+                @GetMapping("/fields")
+                public String query(UserInfo req) {
+                    return "ok";
+                }
+            }
+            """.trimIndent()
+        )
+
+        val psiClass = findClass("com.itangcent.api.ExpandedQueryParamCtrl")
+        assertNotNull(psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        val endpoint = endpoints.find { it.httpMetadata?.path == "/expanded-query/fields" }
+        assertNotNull("Should find /expanded-query/fields endpoint", endpoint)
+
+        val params = endpoint!!.httpMetadata?.parameters ?: emptyList()
+        val paramsByName = params.associateBy { it.name }
+        val dump = params.joinToString { "${it.name}:${it.binding}:${it.type}:${it.jsonType}" }
+        assertEquals(dump, "long", paramsByName["id"]?.jsonType)
+        assertEquals(dump, "int", paramsByName["age"]?.jsonType)
+        assertEquals(dump, "string", paramsByName["name"]?.jsonType)
+    }
+
     fun testMultipartFileDirectParamExportedAsFileParam() = runTest {
         loadFile("api/DirectFileUploadCtrl.java",
             """
