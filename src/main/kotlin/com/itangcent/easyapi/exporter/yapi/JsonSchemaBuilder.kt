@@ -81,7 +81,7 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
             val propSchema = linkedMapOf<String, Any?>()
 
             param.type.rawType().let { type ->
-                propSchema["type"] = mapJsonTypeToSchemaType(type)
+                propSchema["type"] = JsonType.toSchemaType(type)
             }
 
             param.description?.let { desc ->
@@ -145,7 +145,7 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
      * @return A schema map with type
      */
     private fun buildSingleSchema(model: ObjectModel.Single): LinkedHashMap<String, Any?> {
-        return linkedMapOf("type" to mapJsonTypeToSchemaType(model.type))
+        return linkedMapOf("type" to JsonType.toSchemaType(model.type))
     }
 
     /**
@@ -273,27 +273,5 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
             "type" to "object",
             "additionalProperties" to buildSchema(model.valueType, visitCounts)
         )
-    }
-
-    /**
-     * Maps a JSON type string to JSON Schema type.
-     * Handles standard JSON types plus date/datetime extensions.
-     * 
-     * @param type The JSON type string
-     * @return The corresponding JSON Schema type
-     */
-    private fun mapJsonTypeToSchemaType(type: String): String {
-        return when (type) {
-            JsonType.STRING, JsonType.DATE, JsonType.DATETIME, JsonType.FILE -> "string"
-            JsonType.SHORT, JsonType.INT, JsonType.LONG -> "integer"
-            JsonType.FLOAT, JsonType.DOUBLE -> "number"
-            JsonType.BOOLEAN -> "boolean"
-            JsonType.ARRAY -> "array"
-            JsonType.OBJECT -> "object"
-            "null" -> "null"
-            "text" -> "string"
-            "file" -> "string"
-            else -> "string"
-        }
     }
 }

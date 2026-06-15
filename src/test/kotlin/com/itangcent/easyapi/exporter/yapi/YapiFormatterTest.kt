@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.exporter.yapi
 
+import com.google.gson.JsonParser
 import com.itangcent.easyapi.exporter.model.*
+import com.itangcent.easyapi.exporter.yapi.model.*
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.JsonType
@@ -74,7 +76,7 @@ class YapiFormatterTest {
 
         assertNotNull(doc.reqBodyOther)
         assertTrue(doc.reqBodyOther!!.contains("name"))
-        assertTrue(doc.reqBodyOther.contains("email"))
+        assertTrue(doc.reqBodyOther!!.contains("email"))
     }
 
     @Test
@@ -724,6 +726,530 @@ class YapiFormatterTest {
 
         assertNotNull(doc.reqQuery)
         assertEquals("@email", doc.reqQuery!![0].example)
+    }
+
+    // endregion
+
+    // region buildApiDocBody
+
+    @Test
+    fun testBuildApiDocBodyBasicFields() {
+        val doc = MutableYapiApiDoc.create(
+            title = "Get User",
+            path = "/api/users/{id}",
+            method = "get",
+            desc = "<p>desc</p>",
+            markdown = "desc",
+            status = "done"
+        )
+        val json = formatter.buildApiDocBody(doc, "my-token", "cat123")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertEquals("my-token", obj.get("token").asString)
+        assertEquals("cat123", obj.get("catid").asString)
+        assertEquals("Get User", obj.get("title").asString)
+        assertEquals("/api/users/{id}", obj.get("path").asString)
+        assertEquals("get", obj.get("method").asString)
+        assertEquals("<p>desc</p>", obj.get("desc").asString)
+        assertEquals("desc", obj.get("markdown").asString)
+        assertEquals("done", obj.get("status").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyWithExistingId() {
+        val doc = MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1", "existing-123")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertEquals("existing-123", obj.get("id").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyWithoutExistingId() {
+        val doc = MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertNull(obj.get("id"))
+    }
+
+    @Test
+    fun testBuildApiDocBodyWithHeaders() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "get",
+            reqHeaders = listOf(
+                MutableYapiHeader(name = "Authorization", value = "Bearer x", desc = "Auth header", required = 1)
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val headers = obj.getAsJsonArray("req_headers")
+
+        assertEquals(1, headers.size())
+        val header = headers[0].asJsonObject
+        assertEquals("Authorization", header.get("name").asString)
+        assertEquals("Bearer x", header.get("value").asString)
+        assertEquals("Auth header", header.get("desc").asString)
+        assertEquals(1, header.get("required").asInt)
+    }
+
+    @Test
+    fun testBuildApiDocBodyWithQueryParams() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "get",
+            reqQuery = listOf(
+                MutableYapiQuery(name = "page", value = "1", desc = "Page number", required = 0)
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val queries = obj.getAsJsonArray("req_query")
+
+        assertEquals(1, queries.size())
+        val query = queries[0].asJsonObject
+        assertEquals("page", query.get("name").asString)
+        assertEquals("1", query.get("value").asString)
+        assertEquals("Page number", query.get("desc").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyWithFormParams() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "post",
+            reqBodyType = "form",
+            reqBodyForm = listOf(
+                MutableYapiFormParam(name = "username", example = "admin", type = "text", required = 1, desc = "Login name")
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val forms = obj.getAsJsonArray("req_body_form")
+
+        assertEquals(1, forms.size())
+        val form = forms[0].asJsonObject
+        assertEquals("username", form.get("name").asString)
+        assertEquals("admin", form.get("example").asString)
+        assertEquals("text", form.get("type").asString)
+        assertEquals(1, form.get("required").asInt)
+        assertEquals("form", obj.get("req_body_type").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyWithPathParams() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p/{id}", method = "get",
+            reqParams = listOf(
+                MutableYapiPathParam(name = "id", example = "42", desc = "User ID")
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val params = obj.getAsJsonArray("req_params")
+
+        assertEquals(1, params.size())
+        val param = params[0].asJsonObject
+        assertEquals("id", param.get("name").asString)
+        assertEquals("42", param.get("example").asString)
+        assertEquals("User ID", param.get("desc").asString)
+    }
+
+    // endregion
+
+    // region Extension support
+
+    @Test
+    fun testExtensionDefaultReturnsEmptyMap() {
+        val doc = MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        assertTrue(doc.getExts().isEmpty())
+
+        val header = MutableYapiHeader(name = "X-Custom")
+        assertTrue(header.getExts().isEmpty())
+
+        val query = MutableYapiQuery(name = "q")
+        assertTrue(query.getExts().isEmpty())
+
+        val pathParam = MutableYapiPathParam(name = "id")
+        assertTrue(pathParam.getExts().isEmpty())
+
+        val formParam = MutableYapiFormParam(name = "field")
+        assertTrue(formParam.getExts().isEmpty())
+    }
+
+    @Test
+    fun testExtensionWithCustomExts() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "get",
+            exts = mapOf("custom_field" to "custom_value", "is_custom" to true)
+        )
+        assertEquals(mapOf("custom_field" to "custom_value", "is_custom" to true), doc.getExts())
+    }
+
+    @Test
+    fun testBuildApiDocBodyMergesDocExtensions() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "get",
+            exts = mapOf("custom_field" to "custom_value", "api_opened" to 1)
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertEquals("custom_value", obj.get("custom_field").asString)
+        // Extension value overwrites the standard field
+        assertEquals(1, obj.get("api_opened").asInt)
+    }
+
+    @Test
+    fun testBuildApiDocBodyMergesHeaderExtensions() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "get",
+            reqHeaders = listOf(
+                MutableYapiHeader(
+                    name = "Authorization",
+                    value = "Bearer x"
+                ).also { it.putAllExts(mapOf("custom_header_field" to "extra")) }
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val header = obj.getAsJsonArray("req_headers")[0].asJsonObject
+
+        assertEquals("Authorization", header.get("name").asString)
+        assertEquals("extra", header.get("custom_header_field").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyMergesQueryExtensions() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "get",
+            reqQuery = listOf(
+                MutableYapiQuery(
+                    name = "page",
+                    value = "1"
+                ).also { it.putAllExts(mapOf("custom_query_field" to "extra")) }
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val query = obj.getAsJsonArray("req_query")[0].asJsonObject
+
+        assertEquals("page", query.get("name").asString)
+        assertEquals("extra", query.get("custom_query_field").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyMergesPathParamExtensions() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p/{id}", method = "get",
+            reqParams = listOf(
+                MutableYapiPathParam(
+                    name = "id",
+                    example = "1"
+                ).also { it.putAllExts(mapOf("custom_param_field" to "extra")) }
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val param = obj.getAsJsonArray("req_params")[0].asJsonObject
+
+        assertEquals("id", param.get("name").asString)
+        assertEquals("extra", param.get("custom_param_field").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyMergesFormParamExtensions() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "post",
+            reqBodyForm = listOf(
+                MutableYapiFormParam(
+                    name = "file",
+                    type = "file"
+                ).also { it.putAllExts(mapOf("custom_form_field" to "extra")) }
+            )
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+        val form = obj.getAsJsonArray("req_body_form")[0].asJsonObject
+
+        assertEquals("file", form.get("name").asString)
+        assertEquals("file", form.get("type").asString)
+        assertEquals("extra", form.get("custom_form_field").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyExtensionOverwritesStandardField() {
+        val doc = MutableYapiApiDoc.create(
+            title = "Original Title",
+            path = "/p",
+            method = "get",
+            exts = mapOf("title" to "Overridden Title")
+        )
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        // Extension value should overwrite the standard field
+        assertEquals("Overridden Title", obj.get("title").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyWithNoExtensions() {
+        val doc = MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        val json = formatter.buildApiDocBody(doc, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        // Should have standard fields but no extra extension fields
+        assertEquals("T", obj.get("title").asString)
+        assertEquals("/p", obj.get("path").asString)
+        assertFalse(obj.has("custom_field"))
+    }
+
+    // endregion
+
+    // region YapiApiDoc interface
+
+    @Test
+    fun testYapiApiDocInterface() {
+        val doc: YapiApiDoc = MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        assertEquals("T", doc.title)
+        assertEquals("/p", doc.path)
+        assertEquals("get", doc.method)
+        assertNull(doc.desc)
+        assertNull(doc.markdown)
+        assertNull(doc.status)
+        assertNull(doc.tag)
+        assertNull(doc.reqHeaders)
+        assertNull(doc.reqQuery)
+        assertNull(doc.reqParams)
+        assertNull(doc.reqBodyForm)
+        assertNull(doc.reqBodyOther)
+        assertNull(doc.reqBodyType)
+        assertFalse(doc.reqBodyIsJsonSchema)
+        assertNull(doc.resBody)
+        assertEquals("json", doc.resBodyType)
+        assertTrue(doc.resBodyIsJsonSchema)
+        assertNull(doc.tags)
+        assertNull(doc.open)
+        assertTrue(doc.getExts().isEmpty())
+    }
+
+    @Test
+    fun testYapiApiDocPolymorphism() {
+        val doc: YapiApiDoc = MutableYapiApiDoc.create(title = "A", path = "/a", method = "get")
+        val copy: YapiApiDoc = MutableYapiApiDoc.from(doc)
+
+        assertEquals("A", doc.title)
+        assertEquals("A", copy.title)
+    }
+
+    @Test
+    fun testBuildApiDocBodyAcceptsYapiApiDoc() {
+        val info: YapiApiDoc = MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        val json = formatter.buildApiDocBody(info, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertEquals("T", obj.get("title").asString)
+        assertEquals("/p", obj.get("path").asString)
+    }
+
+    @Test
+    fun testBuildApiDocBodyAcceptsMutableYapiApiDoc() {
+        val mutable = MutableYapiApiDoc.from(
+            MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        )
+        mutable.title = "Changed"
+        mutable.setExt("custom", "value")
+
+        val json = formatter.buildApiDocBody(mutable, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertEquals("Changed", obj.get("title").asString)
+        assertEquals("value", obj.get("custom").asString)
+    }
+
+    // endregion
+
+    // region MutableYapiApiDoc
+
+    @Test
+    fun testMutableYapiApiDocFromYapiApiDoc() {
+        val doc = MutableYapiApiDoc.create(
+            title = "Get User",
+            path = "/api/users/{id}",
+            method = "get",
+            desc = "desc",
+            markdown = "md",
+            status = "done",
+            tag = listOf("user"),
+            reqHeaders = listOf(MutableYapiHeader(name = "Auth")),
+            reqQuery = listOf(MutableYapiQuery(name = "page")),
+            reqParams = listOf(MutableYapiPathParam(name = "id")),
+            reqBodyForm = listOf(MutableYapiFormParam(name = "name")),
+            reqBodyOther = "{}",
+            reqBodyType = "json",
+            reqBodyIsJsonSchema = true,
+            resBody = "{}",
+            resBodyType = "json",
+            resBodyIsJsonSchema = false,
+            tags = listOf("tag1"),
+            open = true,
+            exts = mapOf("key1" to "val1")
+        )
+        val mutable = MutableYapiApiDoc.from(doc)
+
+        assertEquals("Get User", mutable.title)
+        assertEquals("/api/users/{id}", mutable.path)
+        assertEquals("get", mutable.method)
+        assertEquals("desc", mutable.desc)
+        assertEquals("md", mutable.markdown)
+        assertEquals("done", mutable.status)
+        assertEquals(listOf("user"), mutable.tag)
+        assertEquals(1, mutable.reqHeaders?.size)
+        assertEquals(1, mutable.reqQuery?.size)
+        assertEquals(1, mutable.reqParams?.size)
+        assertEquals(1, mutable.reqBodyForm?.size)
+        assertEquals("{}", mutable.reqBodyOther)
+        assertEquals("json", mutable.reqBodyType)
+        assertTrue(mutable.reqBodyIsJsonSchema)
+        assertEquals("{}", mutable.resBody)
+        assertEquals("json", mutable.resBodyType)
+        assertFalse(mutable.resBodyIsJsonSchema)
+        assertEquals(listOf("tag1"), mutable.tags)
+        assertEquals(true, mutable.open)
+        assertEquals(mapOf("key1" to "val1"), mutable.getExts())
+    }
+
+    @Test
+    fun testMutableYapiApiDocFromMutableYapiApiDoc() {
+        val original = MutableYapiApiDoc.from(
+            MutableYapiApiDoc.create(title = "T", path = "/p", method = "get", exts = mapOf("k" to "v"))
+        )
+        original.setExt("extra", "data")
+        val copy = MutableYapiApiDoc.from(original)
+
+        assertEquals("T", copy.title)
+        assertEquals(mapOf("k" to "v", "extra" to "data"), copy.getExts())
+    }
+
+    @Test
+    fun testMutableYapiApiDocPropertyMutation() {
+        val mutable = MutableYapiApiDoc.from(
+            MutableYapiApiDoc.create(title = "Original", path = "/original", method = "get")
+        )
+
+        mutable.title = "Changed"
+        mutable.path = "/changed"
+        mutable.method = "post"
+        mutable.desc = "new desc"
+        mutable.markdown = "new md"
+        mutable.status = "undone"
+        mutable.tag = listOf("new-tag")
+        mutable.reqHeaders = listOf(MutableYapiHeader(name = "X-New"))
+        mutable.reqQuery = listOf(MutableYapiQuery(name = "q"))
+        mutable.reqParams = listOf(MutableYapiPathParam(name = "p"))
+        mutable.reqBodyForm = listOf(MutableYapiFormParam(name = "f"))
+        mutable.reqBodyOther = """{"type":"object"}"""
+        mutable.reqBodyType = "json"
+        mutable.reqBodyIsJsonSchema = true
+        mutable.resBody = """{"type":"array"}"""
+        mutable.resBodyType = "json"
+        mutable.resBodyIsJsonSchema = false
+        mutable.tags = listOf("new-tag")
+        mutable.open = false
+
+        assertEquals("Changed", mutable.title)
+        assertEquals("/changed", mutable.path)
+        assertEquals("post", mutable.method)
+        assertEquals("new desc", mutable.desc)
+        assertEquals("new md", mutable.markdown)
+        assertEquals("undone", mutable.status)
+        assertEquals(listOf("new-tag"), mutable.tag)
+        assertEquals(1, mutable.reqHeaders!!.size)
+        assertEquals("X-New", mutable.reqHeaders!![0].name)
+        assertEquals(1, mutable.reqQuery!!.size)
+        assertEquals(1, mutable.reqParams!!.size)
+        assertEquals(1, mutable.reqBodyForm!!.size)
+        assertEquals("""{"type":"object"}""", mutable.reqBodyOther)
+        assertEquals("json", mutable.reqBodyType)
+        assertTrue(mutable.reqBodyIsJsonSchema)
+        assertEquals("""{"type":"array"}""", mutable.resBody)
+        assertFalse(mutable.resBodyIsJsonSchema)
+        assertEquals(listOf("new-tag"), mutable.tags)
+        assertEquals(false, mutable.open)
+    }
+
+    @Test
+    fun testMutableYapiApiDocSetExt() {
+        val mutable = MutableYapiApiDoc.from(
+            MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        )
+
+        assertTrue(mutable.getExts().isEmpty())
+
+        mutable.setExt("custom_field", "custom_value")
+        assertEquals("custom_value", mutable.getExts()["custom_field"])
+
+        mutable.setExt("custom_field", "updated")
+        assertEquals("updated", mutable.getExts()["custom_field"])
+
+        mutable.setExt("null_field", null)
+        assertTrue(mutable.getExts().containsKey("null_field"))
+        assertNull(mutable.getExts()["null_field"])
+    }
+
+    @Test
+    fun testMutableYapiApiDocPutAllExts() {
+        val mutable = MutableYapiApiDoc.from(
+            MutableYapiApiDoc.create(title = "T", path = "/p", method = "get", exts = mapOf("a" to 1))
+        )
+
+        mutable.putAllExts(mapOf("b" to 2, "c" to 3))
+        assertEquals(mapOf("a" to 1, "b" to 2, "c" to 3), mutable.getExts())
+
+        mutable.putAllExts(mapOf("a" to 10))
+        assertEquals(10, mutable.getExts()["a"])
+    }
+
+    @Test
+    fun testMutableYapiApiDocExtsInheritedFromSource() {
+        val doc = MutableYapiApiDoc.create(
+            title = "T", path = "/p", method = "get",
+            exts = mapOf("inherited" to true)
+        )
+        val mutable = MutableYapiApiDoc.from(doc)
+
+        assertEquals(mapOf("inherited" to true), mutable.getExts())
+
+        // Modifying mutable exts should not affect the original
+        mutable.setExt("new_key", "new_val")
+        assertEquals(mapOf("inherited" to true), doc.getExts())
+        assertEquals(mapOf("inherited" to true, "new_key" to "new_val"), mutable.getExts())
+    }
+
+    @Test
+    fun testMutableYapiApiDocBuildApiDocBody() {
+        val mutable = MutableYapiApiDoc.from(
+            MutableYapiApiDoc.create(title = "T", path = "/p", method = "get")
+        )
+        mutable.title = "Modified Title"
+        mutable.setExt("custom_ext", "ext_value")
+
+        val json = formatter.buildApiDocBody(mutable, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertEquals("Modified Title", obj.get("title").asString)
+        assertEquals("ext_value", obj.get("custom_ext").asString)
+    }
+
+    @Test
+    fun testMutableYapiApiDocExtensionOverwritesStandardField() {
+        val mutable = MutableYapiApiDoc.from(
+            MutableYapiApiDoc.create(title = "Original", path = "/p", method = "get")
+        )
+        mutable.setExt("title", "Overridden")
+
+        val json = formatter.buildApiDocBody(mutable, "tok", "cat1")
+        val obj = JsonParser.parseString(json).asJsonObject
+
+        assertEquals("Overridden", obj.get("title").asString)
     }
 
     // endregion

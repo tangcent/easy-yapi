@@ -2,7 +2,12 @@ package com.itangcent.easyapi.exporter.yapi
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiApiDoc
 import com.itangcent.easyapi.exporter.yapi.model.YapiApiDoc
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiFormParam
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiHeader
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiPathParam
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiQuery
 import com.itangcent.easyapi.exporter.yapi.model.YapiFormParam
 import com.itangcent.easyapi.exporter.yapi.model.YapiHeader
 import com.itangcent.easyapi.exporter.yapi.model.YapiPathParam
@@ -246,7 +251,7 @@ class DefaultUpdateConfirmationTest {
         val doc = testDoc(
             title = "Get Users",
             reqHeaders = listOf(
-                YapiHeader(name = "Authorization", desc = "Auth header updated", required = 1)
+                MutableYapiHeader(name = "Authorization", desc = "Auth header updated", required = 1)
             )
         )
         val result = confirmation.confirm(doc, "cat1")
@@ -278,8 +283,8 @@ class DefaultUpdateConfirmationTest {
         val doc = testDoc(
             title = "Get Users",
             reqQuery = listOf(
-                YapiQuery(name = "page", required = 0),
-                YapiQuery(name = "size", required = 0)
+                MutableYapiQuery(name = "page", required = 0),
+                MutableYapiQuery(name = "size", required = 0)
             )
         )
         val result = confirmation.confirm(doc, "cat1")
@@ -311,7 +316,7 @@ class DefaultUpdateConfirmationTest {
         val doc = testDoc(
             title = "Get Users",
             reqQuery = listOf(
-                YapiQuery(name = "pageNumber", required = 0)
+                MutableYapiQuery(name = "pageNumber", required = 0)
             )
         )
         val result = confirmation.confirm(doc, "cat1")
@@ -344,7 +349,7 @@ class DefaultUpdateConfirmationTest {
             path = "/api/users/{id}",
             title = "Get User",
             reqParams = listOf(
-                YapiPathParam(name = "id", desc = "User ID updated")
+                MutableYapiPathParam(name = "id", desc = "User ID updated")
             )
         )
         val result = confirmation.confirm(doc, "cat1")
@@ -379,7 +384,7 @@ class DefaultUpdateConfirmationTest {
             method = "POST",
             title = "Upload File",
             reqBodyForm = listOf(
-                YapiFormParam(name = "file", type = "file", required = 0)
+                MutableYapiFormParam(name = "file", type = "file", required = 0)
             )
         )
         val result = confirmation.confirm(doc, "cat1")
@@ -487,7 +492,7 @@ class DefaultUpdateConfirmationTest {
         val doc = testDoc(
             title = "Get Users",
             reqQuery = listOf(
-                YapiQuery(name = "page", desc = "Page number", example = "1", required = 0)
+                MutableYapiQuery(name = "page", desc = "Page number", example = "1", required = 0)
             )
         )
         val result = confirmation.confirm(doc, "cat1")
@@ -511,7 +516,7 @@ class DefaultUpdateConfirmationTest {
         reqParams: List<YapiPathParam>? = null,
         reqBodyForm: List<YapiFormParam>? = null
     ): YapiApiDoc {
-        return YapiApiDoc(
+        return MutableYapiApiDoc.create(
             title = title,
             path = path,
             method = method,

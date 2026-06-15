@@ -8,6 +8,7 @@ import com.itangcent.easyapi.exporter.model.ExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.path
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiApiDoc
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder

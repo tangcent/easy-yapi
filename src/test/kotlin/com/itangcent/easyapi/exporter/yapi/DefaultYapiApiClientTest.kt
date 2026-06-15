@@ -2,9 +2,10 @@ package com.itangcent.easyapi.exporter.yapi
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiApiDoc
 import com.itangcent.easyapi.exporter.yapi.model.YapiApiDoc
-import com.itangcent.easyapi.exporter.yapi.model.YapiHeader
-import com.itangcent.easyapi.exporter.yapi.model.YapiQuery
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiHeader
+import com.itangcent.easyapi.exporter.yapi.model.MutableYapiQuery
 import com.itangcent.easyapi.http.HttpClient
 import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.HttpResponse
@@ -522,12 +523,12 @@ class DefaultYapiApiClientTest {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private fun testDoc(path: String = "/api/test", method: String = "GET") = YapiApiDoc(
+    private fun testDoc(path: String = "/api/test", method: String = "GET") = MutableYapiApiDoc.create(
         title = "Test API",
         path = path,
         method = method,
         desc = "desc",
-        reqHeaders = listOf(YapiHeader("Content-Type", "application/json")),
-        reqQuery = listOf(YapiQuery("id", "1"))
+        reqHeaders = listOf(MutableYapiHeader("Content-Type", "application/json")),
+        reqQuery = listOf(MutableYapiQuery("id", "1"))
     )
 }
