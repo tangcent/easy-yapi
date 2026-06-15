@@ -5,6 +5,31 @@ All notable changes to the EasyAPI plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.7] - 2026-06-15
+
+### Added
+-  make yapiInfo mutable so save.before scripts can customize YAPI exports (#1379)
+-  add toJson/toJson5 to script class context and define context interfaces (#1369)
+
+### Fixed
+-  req object add jsonType (#1380)
+-  replace fragile delay with waitForClass to fix flaky test (#1377)
+-  add delay after loadFile in ProjectClassAvailabilityServiceTest to prevent flaky failures (#1375)
+-  make ApiIndex.invalidate() atomic to prevent race condition (#1376)
+-  channel export actions missing from Keymap settings (#1371)
+-  invalidate cache on settings/branch change to prevent occasional test failures (#1368)
+-  annotation array attributes are stringified instead of expanded (#1363) (#1364)
+
+### Improved
+- test: replace jacoco with kotlinx kover for coverage reporting and add variety of new unit tests across codebase
+- docs: remove contributing section and contributor image from readmes
+- ci: fix pr-release workflow checkout and script injection (#1374)
+- build: fix github workflow permissions and add missing configs (#1373)
+- fix : method.return support generic canonical types (#1372)
+- chore: upgrade codecov-action from v5 to v7 (#1365)
+
+---
+
 ## [3.1.6] - 2026-06-07
 
 ### Fixed
