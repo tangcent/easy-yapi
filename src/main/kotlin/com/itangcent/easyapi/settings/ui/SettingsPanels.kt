@@ -957,7 +957,7 @@ class RemoteConfigPanel : SettingsPanel {
 
     override fun resetFrom(settings: Settings?) {
         val raw = settings?.remoteConfig ?: emptyArray()
-        remoteItems = if (raw.isEmpty()) mutableListOf(true to DEFAULT_REMOTE_URL) else raw.map {
+        remoteItems = raw.map {
             val clean = it.trim()
             if (clean.startsWith("!")) false to clean.removePrefix("!").trim() else true to clean
         }.filter { it.second.isNotBlank() }.toMutableList()
@@ -998,11 +998,6 @@ class RemoteConfigPanel : SettingsPanel {
                 }
             }
         }
-    }
-
-    companion object {
-        private const val DEFAULT_REMOTE_URL =
-            "https://raw.githubusercontent.com/tangcent/easy-yapi/master/.default.remote.easy.api.config"
     }
 }
 

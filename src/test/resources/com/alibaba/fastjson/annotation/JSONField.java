@@ -1,0 +1,14 @@
+package com.alibaba.fastjson.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target({ElementType.FIELD, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface JSONField {
+    String value() default "";
+    boolean serialize() default true;
+    boolean deserialize() default true;
+}

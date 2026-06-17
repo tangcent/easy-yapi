@@ -9,9 +9,23 @@ import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.rule.RuleKeys
+import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
+/**
+ * Integration test for the `jackson` extension.
+ *
+ * The extension defines rules for:
+ *   - [RuleKeys.FIELD_NAME]: `field.name=@com.fasterxml.jackson.annotation.JsonProperty#value`
+ *   - [RuleKeys.FIELD_IGNORE]: `field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value`
+ *     (plus groovy-based rules for `@JsonIgnoreProperties` and `@JsonView`)
+ *   - [RuleKeys.FIELD_MOCK]: `field.mock[@com.fasterxml.jackson.annotation.JsonFormat]=groovy:...`
+ *   - [RuleKeys.FIELD_ORDER]: `field.order=@com.fasterxml.jackson.annotation.JsonProperty#index`
+ *   - [RuleKeys.FIELD_ORDER_WITH]: `field.order.with=groovy:...` (for `@JsonPropertyOrder`)
+ *   - [RuleKeys.ENUM_USE_CUSTOM]: `enum.use.custom=groovy:...` (for `@JsonValue`)
+ */
 class JacksonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var exporter: SpringMvcClassExporter
@@ -62,6 +76,107 @@ class JacksonConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("jackson extension should exist", extension)
         assertEquals("Extension code should be jackson", "jackson", extension?.code)
         assertTrue("Extension should have content", extension?.content?.isNotBlank() == true)
+    }
+
+    // =====================================================================
+    // Rule-level tests: ruleEngine.evaluate
+    // =====================================================================
+
+    /**
+     * The core rule: a field annotated `@JsonProperty("user_id")` should resolve
+     * [RuleKeys.FIELD_NAME] to `"user_id"`.
+     */
+    fun testFieldNameRuleForJsonPropertyAnnotatedField() = runTest {
+        val psiClass = findClass("com.itangcent.jackson.UserDTO")
+        assertNotNull("Should find UserDTO", psiClass)
+
+        val idField = psiClass!!.fields.find { it.name == "id" }
+        assertNotNull("Should find id field", idField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val name = ruleEngine.evaluate(RuleKeys.FIELD_NAME, idField!!)
+        assertEquals(
+            "FIELD_NAME should be 'user_id' for field with @JsonProperty(\"user_id\")",
+            "user_id",
+            name
+        )
+    }
+
+    /**
+     * The core rule: a field annotated `@JsonProperty("user_name")` should resolve
+     * [RuleKeys.FIELD_NAME] to `"user_name"`.
+     */
+    fun testFieldNameRuleForJsonPropertyAnnotatedNameField() = runTest {
+        val psiClass = findClass("com.itangcent.jackson.UserDTO")
+        assertNotNull("Should find UserDTO", psiClass)
+
+        val nameField = psiClass!!.fields.find { it.name == "name" }
+        assertNotNull("Should find name field", nameField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val name = ruleEngine.evaluate(RuleKeys.FIELD_NAME, nameField!!)
+        assertEquals(
+            "FIELD_NAME should be 'user_name' for field with @JsonProperty(\"user_name\")",
+            "user_name",
+            name
+        )
+    }
+
+    /**
+     * The core rule: a field without `@JsonProperty` should resolve
+     * [RuleKeys.FIELD_NAME] to `null`.
+     */
+    fun testFieldNameRuleForUnannotatedField() = runTest {
+        val psiClass = findClass("com.itangcent.jackson.UserDTO")
+        assertNotNull("Should find UserDTO", psiClass)
+
+        val passwordField = psiClass!!.fields.find { it.name == "password" }
+        assertNotNull("Should find password field", passwordField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val name = ruleEngine.evaluate(RuleKeys.FIELD_NAME, passwordField!!)
+        assertNull(
+            "FIELD_NAME should be null for field without @JsonProperty",
+            name
+        )
+    }
+
+    /**
+     * The core rule: a field annotated `@JsonIgnore` should resolve
+     * [RuleKeys.FIELD_IGNORE] to `true`.
+     */
+    fun testFieldIgnoreRuleForJsonIgnoreAnnotatedField() = runTest {
+        val psiClass = findClass("com.itangcent.jackson.UserDTO")
+        assertNotNull("Should find UserDTO", psiClass)
+
+        val passwordField = psiClass!!.fields.find { it.name == "password" }
+        assertNotNull("Should find password field", passwordField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val ignored = ruleEngine.evaluate(RuleKeys.FIELD_IGNORE, passwordField!!)
+        assertTrue(
+            "FIELD_IGNORE should be true for field with @JsonIgnore",
+            ignored
+        )
+    }
+
+    /**
+     * The core rule: a field without `@JsonIgnore` should resolve
+     * [RuleKeys.FIELD_IGNORE] to `false`.
+     */
+    fun testFieldIgnoreRuleForUnannotatedField() = runTest {
+        val psiClass = findClass("com.itangcent.jackson.UserDTO")
+        assertNotNull("Should find UserDTO", psiClass)
+
+        val idField = psiClass!!.fields.find { it.name == "id" }
+        assertNotNull("Should find id field", idField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val ignored = ruleEngine.evaluate(RuleKeys.FIELD_IGNORE, idField!!)
+        assertFalse(
+            "FIELD_IGNORE should be false for field without @JsonIgnore",
+            ignored
+        )
     }
 
     // =====================================================================

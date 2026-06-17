@@ -1,9 +1,22 @@
 package com.itangcent.easyapi.config.source
 
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
+import com.itangcent.easyapi.rule.RuleKeys
+import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
+/**
+ * Integration test for the `spring-configuration` extension.
+ *
+ * The extension defines rules for [RuleKeys.PROPERTIES_PREFIX], which is consumed by
+ * `com.itangcent.easyapi.ide.action.FieldsToPropertiesAction` to prepend a prefix
+ * (typically from `@ConfigurationProperties(prefix=...)`) to generated property keys.
+ *
+ * Therefore, the meaningful test is to evaluate `RuleKeys.PROPERTIES_PREFIX` against
+ * a class annotated with `@ConfigurationProperties(prefix = "app.config")` and
+ * verify that the prefix is correctly resolved.
+ */
 class SpringConfigurationConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun setUp() {
@@ -24,22 +37,38 @@ class SpringConfigurationConfigIntegrationTest : EasyApiLightCodeInsightFixtureT
         return TestConfigReader.fromConfigText(project, content)
     }
 
-    fun testSpringConfigurationConfigLoadsCorrectly() = runTest {
-        val extension = ExtensionConfigRegistry.getExtension("spring-configuration")
-        assertNotNull("spring-configuration extension should exist", extension)
-        assertEquals("Extension code should be spring-configuration", "spring-configuration", extension?.code)
-        assertTrue("Extension should have content", extension?.content?.isNotBlank() == true)
-        
-        val configReader = createConfigReader()
-        assertTrue("properties.prefix rules should exist", configReader.getAll("properties.prefix").isNotEmpty())
-    }
-
-    fun testConfigurationPropertiesAnnotationIsDetected() = runTest {
+    /**
+     * The core behavior: `@ConfigurationProperties(prefix = "app.config")` should
+     * resolve `properties.prefix` to `"app.config"`.
+     */
+    fun testPropertiesPrefixResolvedFromAnnotation() = runTest {
         val psiClass = findClass("com.itangcent.config.AppConfig")
         assertNotNull("Should find AppConfig", psiClass)
-        
-        val annotations = psiClass!!.annotations
-        assertTrue("AppConfig should have @ConfigurationProperties annotation", 
-            annotations.any { it.qualifiedName == "org.springframework.boot.context.properties.ConfigurationProperties" })
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val prefix = ruleEngine.evaluate(RuleKeys.PROPERTIES_PREFIX, psiClass!!)
+        assertEquals(
+            "properties.prefix should be resolved from @ConfigurationProperties(prefix = \"app.config\")",
+            "app.config",
+            prefix
+        )
+    }
+
+    /**
+     * A class without `@ConfigurationProperties` should resolve `properties.prefix`
+     * to null (no rule applies).
+     */
+    fun testPropertiesPrefixIsNullForNonAnnotatedClass() = runTest {
+        // Use a class that is loaded by the fixture but not annotated.
+        // ConfigurationProperties itself is a class without @ConfigurationProperties.
+        val psiClass = findClass("org.springframework.boot.context.properties.ConfigurationProperties")
+        assertNotNull("Should find ConfigurationProperties annotation class", psiClass)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val prefix = ruleEngine.evaluate(RuleKeys.PROPERTIES_PREFIX, psiClass!!)
+        assertNull(
+            "properties.prefix should be null for a class without @ConfigurationProperties",
+            prefix
+        )
     }
 }
