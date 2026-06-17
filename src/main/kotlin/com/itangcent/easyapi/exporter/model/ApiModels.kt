@@ -4,6 +4,17 @@ import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.SpecialTypeHandler
 
 /**
+ * Represents a folder/group for organizing API endpoints.
+ *
+ * @param name The folder/group name used for categorization
+ * @param description The folder/group description
+ */
+data class Folder(
+    val name: String,
+    val description: String? = null
+)
+
+/**
  * Protocol-agnostic API endpoint model.
  * Contains only fields shared across all API protocols (HTTP, gRPC, etc.).
  * Protocol-specific fields are held in the [metadata] field.

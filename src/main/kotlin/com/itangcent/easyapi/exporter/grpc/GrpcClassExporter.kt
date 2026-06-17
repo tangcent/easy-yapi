@@ -65,11 +65,7 @@ class GrpcClassExporter(
 
         engine.evaluate(RuleKeys.API_CLASS_PARSE_BEFORE, psiClass)
 
-        val classDescription = metadataResolver.resolveClassDoc(psiClass)
-        val folder = metadataResolver.resolveFolderName(null, psiClass)
-            ?: classDescription?.lines()?.firstOrNull { it.isNotBlank() }
-            ?: read { psiClass.name }
-            ?: "Unknown"
+        val classFolder = metadataResolver.resolveFolder(psiClass)
 
         val rpcMethods = methodResolver.resolveRpcMethods(psiClass)
         val endpoints: List<ApiEndpoint>
@@ -82,19 +78,19 @@ class GrpcClassExporter(
 
                     val apiName = metadataResolver.resolveApiName(methodInfo.psiMethod)
                     val methodDescription = metadataResolver.resolveMethodDoc(methodInfo.psiMethod)
+                    val methodFolderName = metadataResolver.resolveFolderName(methodInfo.psiMethod)
+                    val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
 
                     ApiEndpoint(
                         name = apiName
-                            ?: methodInfo.description
                             ?: methodInfo.methodName,
                         folder = folder,
-                        description = methodDescription
-                            ?: methodInfo.description,
+                        description = methodDescription,
                         tags = listOf("gRPC"),
                         sourceClass = psiClass,
                         sourceMethod = methodInfo.psiMethod,
                         className = className,
-                        classDescription = classDescription,
+                        classDescription = classFolder.description,
                         metadata = GrpcMetadata(
                             path = methodInfo.fullPath,
                             serviceName = methodInfo.serviceName,

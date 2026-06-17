@@ -66,9 +66,11 @@ class ActuatorEndpointScanner(
         val endpointId = findEndpointId(psiClass) ?: return emptyList()
         val basePath = "/actuator/$endpointId"
 
+        val classFolder = metadataResolver.resolveFolder(psiClass)
+
         val endpoints = ArrayList<ApiEndpoint>()
         for (method in psiClass.methods) {
-            val endpoint = processMethod(psiClass, method, basePath)
+            val endpoint = processMethod(psiClass, method, basePath, classFolder)
             if (endpoint != null) {
                 endpoints.add(endpoint)
             }
@@ -87,7 +89,12 @@ class ActuatorEndpointScanner(
         return null
     }
 
-    private suspend fun processMethod(psiClass: PsiClass, method: PsiMethod, basePath: String): ApiEndpoint? {
+    private suspend fun processMethod(
+        psiClass: PsiClass,
+        method: PsiMethod,
+        basePath: String,
+        classFolder: Folder
+    ): ApiEndpoint? {
         val operation = findOperation(method) ?: return null
 
         val (httpMethod, hasBody) = when (operation) {
@@ -98,9 +105,9 @@ class ActuatorEndpointScanner(
         }
 
         val apiName = metadataResolver.resolveApiName(method)
-        val folder = metadataResolver.resolveFolderName(method, psiClass)
+        val methodFolderName = metadataResolver.resolveFolderName(method)
+        val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
         val description = metadataResolver.resolveMethodDoc(method)
-        val classDesc = metadataResolver.resolveClassDoc(psiClass)
 
         val path = StringBuilder(basePath)
         val pathParams = ArrayList<ApiParameter>()
@@ -145,7 +152,7 @@ class ActuatorEndpointScanner(
             sourceClass = psiClass,
             sourceMethod = method,
             className = psiClass.qualifiedName ?: psiClass.name ?: "",
-            classDescription = classDesc,
+            classDescription = classFolder.description,
             metadata = httpMetadata(
                 path = path.toString(),
                 method = httpMethod,
