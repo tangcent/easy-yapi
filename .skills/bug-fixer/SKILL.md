@@ -36,6 +36,7 @@ Before fixing, verify:
 - Create a test that reproduces the bug (should fail)
 - This ensures we understand the bug correctly
 - Provides regression protection
+- Follow the **write-test-case** skill (`.skills/write-test-case/SKILL.md`) to choose the correct test pattern and utilities for the target class
 
 ### 5. Fix the Bug
 
@@ -48,6 +49,14 @@ Before fixing, verify:
 - Run the test case - it should now pass
 - Run related tests to ensure no regression
 - If tests fail, re-analyze and fix again
+
+```bash
+# Run a specific test class
+./gradlew test --tests "com.itangcent.easyapi.{package}.{ClassName}Test"
+
+# Run all tests
+./gradlew test
+```
 
 ## Example Workflow
 
