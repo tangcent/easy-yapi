@@ -65,6 +65,32 @@ class SwaggerConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    /**
+     * Regression test for issue #1382: @Api annotation on class should generate
+     * the folder/category name from the annotation value, not just the class name.
+     *
+     * The swagger.config maps `class.doc=@io.swagger.annotations.Api#value` and
+     * `class.doc=@io.swagger.annotations.Api#tags`. The folder name should fall
+     * back to the class doc (which includes these rule-based values) when no
+     * explicit `folder.name` rule is configured.
+     */
+    fun testApiAnnotationGeneratesFolderName() = runTest {
+        val psiClass = findClass("com.itangcent.swagger.ProductController")
+        assertNotNull("Should find ProductController", psiClass)
+
+        val endpoints = exporter.export(psiClass!!)
+        assertTrue("Should export endpoints", endpoints.isNotEmpty())
+
+        for (endpoint in endpoints) {
+            assertNotNull("Folder should not be null", endpoint.folder)
+            assertTrue(
+                "Folder name should be generated from @Api annotation, not class name. " +
+                    "Actual: ${endpoint.folder}",
+                endpoint.folder == "Product Management" || endpoint.folder == "Product API"
+            )
+        }
+    }
+
     // ── @ApiOperation: method.doc, api.tag ───────────────────────
 
     fun testApiOperationExtractsMethodDoc() = runTest {

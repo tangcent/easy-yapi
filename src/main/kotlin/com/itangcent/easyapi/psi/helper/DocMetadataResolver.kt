@@ -10,6 +10,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.itangcent.easyapi.exporter.model.ApiHeader
 import com.itangcent.easyapi.exporter.model.ApiParameter
+import com.itangcent.easyapi.exporter.model.Folder
 import com.itangcent.easyapi.exporter.model.ParameterType
 import com.itangcent.easyapi.exporter.model.PathSelector
 import com.itangcent.easyapi.psi.type.JsonType
@@ -51,7 +52,8 @@ import com.itangcent.easyapi.util.text.appendWithDedup
  * - [resolveClassDoc] — class-level description
  * - [resolveMethodDoc] — method-level description
  * - [resolveFieldDoc] — field-level description
- * - [resolveFolderName] — folder/group name
+ * - [resolveFolder] — folder/group for a class
+ * - [resolveFolderName] — folder name override for a method
  * - [resolveMethodReturn] — override return type via rule
  * - [resolveMethodReturnMain] — specify which field receives @return doc
  * - [isIgnored] — skip element during export
@@ -171,26 +173,41 @@ class DocMetadataResolver internal constructor(
     }
 
     /**
-     * Resolves the folder/group name for an API endpoint.
+     * Resolves the folder/group for a class-level API endpoint.
      *
      * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
+     *
+     * Resolution order for name: `folder.name` rule on class → first line of class doc
+     * (which includes rule-based `class.doc`, e.g. from Swagger `@Api`) → class name.
+     *
+     * @param psiClass The PSI class to resolve the folder for
+     * @return A [Folder] containing the resolved name and description
      */
-    suspend fun resolveFolderName(method: PsiMethod?, psiClass: PsiClass? = null): String? {
-        if (method != null) {
-            val methodFolder = engine.evaluate(RuleKeys.FOLDER_NAME, method)
-            if (!methodFolder.isNullOrBlank()) return methodFolder
-        }
+    suspend fun resolveFolder(psiClass: PsiClass): Folder {
+        val classFolder = engine.evaluate(RuleKeys.FOLDER_NAME, psiClass)
+        val desc = resolveClassDoc(psiClass)
+        val name = classFolder?.takeIf { it.isNotBlank() }
+            ?: desc.lines().firstOrNull { it.isNotBlank() }
+            ?: psiClass.name
+            ?: "Unknown"
+        return Folder(name = name, description = desc)
+    }
 
-        val cls = psiClass ?: method?.containingClass ?: return null
-        val classFolder = engine.evaluate(RuleKeys.FOLDER_NAME, cls)
-        if (!classFolder.isNullOrBlank()) return classFolder
-
-        val classDoc = docHelper.getAttrOfDocComment(cls)
-        if (!classDoc.isNullOrBlank()) {
-            return classDoc.lines().firstOrNull { it.isNotBlank() }
-        }
-
-        return cls.name
+    /**
+     * Resolves the folder name override for a specific method.
+     *
+     * **Applicable to**: All frameworks (SpringMVC, JAX-RS, Feign, gRPC, Actuator)
+     *
+     * This checks only the method-level `folder.name` rule, allowing a method to
+     * override the class-scope folder. Returns an empty string when no method-level
+     * rule is configured, in which case the caller should fall back to the class
+     * folder resolved by [resolveFolder].
+     *
+     * @param method The PSI method to check for a folder name override
+     * @return The method-level folder name, or empty string if not configured
+     */
+    suspend fun resolveFolderName(method: PsiMethod): String {
+        return engine.evaluate(RuleKeys.FOLDER_NAME, method) ?: ""
     }
 
     suspend fun resolveParamName(parameter: PsiParameter, defaultName: String): String {

@@ -138,9 +138,10 @@ class FeignClassExporter(
 
             withContext(IdeDispatchers.ReadAction) {
                 val name = metadataResolver.resolveApiName(method)
-                val folder = metadataResolver.resolveFolderName(method, psiClass)
                 val description = metadataResolver.resolveMethodDoc(method)
-                val classDesc = metadataResolver.resolveClassDoc(psiClass)
+                val classFolder = metadataResolver.resolveFolder(psiClass)
+                val methodFolderName = metadataResolver.resolveFolderName(method)
+                val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
 
                 val params = buildSpringParams(method)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
@@ -194,7 +195,7 @@ class FeignClassExporter(
                         sourceClass = psiClass,
                         sourceMethod = method,
                         className = read { psiClass.qualifiedName ?: psiClass.name },
-                        classDescription = classDesc,
+                        classDescription = classFolder.description,
                         metadata = httpMetadata(
                             path = normalizedPath,
                             method = m.method,
@@ -262,7 +263,9 @@ class FeignClassExporter(
         )
 
         val name = metadataResolver.resolveApiName(method)
-        val classDesc = metadataResolver.resolveClassDoc(psiClass)
+        val classFolder = metadataResolver.resolveFolder(psiClass)
+        val methodFolderName = metadataResolver.resolveFolderName(method)
+        val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
 
         val contentTypeOverride = engine.evaluate(RuleKeys.METHOD_CONTENT_TYPE, method)
         val finalHeadersWithContentType = if (!contentTypeOverride.isNullOrBlank()) {
@@ -292,11 +295,11 @@ class FeignClassExporter(
 
         return ApiEndpoint(
             name = name,
-            folder = null,
+            folder = folder,
             sourceClass = psiClass,
             sourceMethod = method,
             className = read { psiClass.qualifiedName ?: psiClass.name },
-            classDescription = classDesc,
+            classDescription = classFolder.description,
             metadata = httpMetadata(
                 path = normalizedPathTemplate,
                 method = requestLine.method,

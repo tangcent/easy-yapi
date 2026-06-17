@@ -139,9 +139,10 @@ class JaxRsClassExporter(
                 val types = contentTypeResolver.resolve(psiClass, annotatedMethod)
 
                 val name = metadataResolver.resolveApiName(method)
-                val folder = metadataResolver.resolveFolderName(method, psiClass)
                 val description = metadataResolver.resolveMethodDoc(method)
-                val classDesc = metadataResolver.resolveClassDoc(psiClass)
+                val classFolder = metadataResolver.resolveFolder(psiClass)
+                val methodFolderName = metadataResolver.resolveFolderName(method)
+                val folder = methodFolderName.takeIf { it.isNotBlank() } ?: classFolder.name
 
                 val params = buildParameters(resolvedMethod)
                 val additionalParams = metadataResolver.resolveAdditionalParams(method)
@@ -169,7 +170,7 @@ class JaxRsClassExporter(
                         sourceClass = psiClass,
                         sourceMethod = method,
                         className = classQualifiedName,
-                        classDescription = classDesc,
+                        classDescription = classFolder.description,
                         metadata = httpMetadata(
                             path = path,
                             method = httpMethod,
