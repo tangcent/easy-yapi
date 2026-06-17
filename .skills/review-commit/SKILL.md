@@ -50,7 +50,7 @@ Filter to focus on source code files:
 
 For each changed source file:
 
-1. Read the file content using `mcp_Filesystem_read_text_file` or `Read` tool
+1. Read the file content using the `Read` tool (preferred) or `mcp_Filesystem_read_text_file`
 2. Analyze the class structure:
    - Class name and purpose
    - Key methods and their responsibilities
@@ -150,8 +150,8 @@ Create a markdown document at `docs/test-plan-<feature-name>.md` with:
 ## 5. Test File Locations
 
 ```
-src/test/kotlin/com/example/
-├── package/
+src/test/kotlin/com/itangcent/easyapi/
+├── {package}/
 │   ├── ClassTest.kt
 │   └── ...
 ```
@@ -178,14 +178,15 @@ src/test/kotlin/com/example/
 
 ## 8. Test Patterns and Utilities
 
-### Test Base Classes
-- List applicable test base classes
+Refer to the **write-test-case** skill (`.skills/write-test-case/SKILL.md`) for the project's test patterns and utilities:
 
-### Test Data
-- Test data file locations
+- **Pattern A** — Simple Unit Test (plain JUnit 4, no IDE dependency)
+- **Pattern B** — IDE Fixture Test (`EasyApiLightCodeInsightFixtureTestCase` for PSI/Project-aware tests)
+- **Pattern C** — ResultLoader Test (golden-file comparison)
+- **Pattern D** — Action Test (extends IDE fixture, uses `AnActionEvent.createFromDataContext`)
+- **Pattern E** — Parity Test (multiple implementations of same interface)
 
-### Mock Utilities
-- Available mock utilities
+Key test utilities: `ApiFixtures`, `TestConfigReader`, `ResultLoader`, `SettingBinder.update { }`, `ProjectWrapper`
 
 ---
 
@@ -250,3 +251,4 @@ The skill produces a comprehensive test plan document that:
 - Check if tests already exist for modified files
 - Consider integration tests for complex workflows
 - Group related classes by package or feature
+- When suggesting test patterns, follow the **write-test-case** skill guidelines (`.skills/write-test-case/SKILL.md`)
