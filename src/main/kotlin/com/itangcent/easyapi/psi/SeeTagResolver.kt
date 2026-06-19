@@ -62,6 +62,8 @@ class SeeTagResolver(
 
     private val linkResolver: LinkResolver by lazy { LinkResolver.getInstance(project) }
 
+    private val enumValueResolver: EnumValueResolver by lazy { EnumValueResolver.getInstance(project) }
+
     /**
      * Resolve options from all `@see` tags on the given PSI element.
      * Returns options from the first `@see` tag that successfully resolves, or null.
@@ -72,199 +74,97 @@ class SeeTagResolver(
     ): List<FieldOption>? {
         val seeTags = docHelper.findDocsByTag(psiElement, "see") ?: return null
         for (seeTag in seeTags) {
-            val options = resolveFromSeeText(seeTag.trim(), psiElement)
+            val options = resolveFromSeeText(seeTag.trim(), psiElement, docHelper)
             if (!options.isNullOrEmpty()) return options
         }
         return null
     }
 
     /**
+     * Resolve options from all `@see` tags on the given PSI element, along with
+     * the resolved enum's value-field JSON type (for Case 2 type reconciliation).
+     *
+     * The `valueFieldJsonType` is non-null only when the `@see` target is an enum;
+     * it is null for static-constant classes or when no `@see` tag resolves.
+     * Callers use it with [EnumValueResolver.reconcileType] to adjust the
+     * declared field type against the actual enum value type (Req 7, D-TYPE).
+     */
+    suspend fun resolveOptionsWithType(
+        psiElement: PsiElement,
+        docHelper: DocHelper
+    ): ResolvedSeeOptions? {
+        val seeTags = docHelper.findDocsByTag(psiElement, "see") ?: return null
+        for (seeTag in seeTags) {
+            val resolved = resolveFromSeeTextWithType(seeTag.trim(), psiElement, docHelper)
+            if (resolved != null) return resolved
+        }
+        return null
+    }
+
+    /**
+     * Result of resolving a `@see` tag: the options plus the resolved enum's
+     * value-field JSON type (null for non-enum / static-constant targets).
+     */
+    data class ResolvedSeeOptions(
+        val options: List<FieldOption>,
+        val valueFieldJsonType: String?
+    )
+
+    /**
      * Resolve options from a single `@see` tag text.
      *
      * @param seeText the raw text after `@see`, e.g. `{@link com.example.UserType#type}`
      * @param context the PSI element where the tag appears (used for import resolution and type matching)
+     * @param docHelper the [DocHelper] for doc-comment extraction (Req 6.2 — unifies Case 1/Case 2)
      */
     suspend fun resolveFromSeeText(
         seeText: String,
-        context: PsiElement
-    ): List<FieldOption>? {
+        context: PsiElement,
+        docHelper: DocHelper
+    ): List<FieldOption>? =
+        resolveFromSeeTextWithType(seeText, context, docHelper)?.options
+
+    /**
+     * Resolve options from a single `@see` tag text, along with the resolved
+     * enum's value-field JSON type (for Case 2 type reconciliation).
+     *
+     * @param seeText the raw text after `@see`, e.g. `{@link com.example.UserType#type}`
+     * @param context the PSI element where the tag appears (used for import resolution and type matching)
+     * @param docHelper the [DocHelper] for doc-comment extraction (Req 6.2 — unifies Case 1/Case 2)
+     * @return [ResolvedSeeOptions] with options and the enum's value-field JSON type
+     *         (null for non-enum targets or when resolution fails)
+     */
+    suspend fun resolveFromSeeTextWithType(
+        seeText: String,
+        context: PsiElement,
+        docHelper: DocHelper
+    ): ResolvedSeeOptions? {
         val parsed = linkResolver.parseLinkReference(seeText) ?: return null
-        val psiClass = linkResolver.resolveClass(parsed.className, context) ?: return null
 
         return withContext(IdeDispatchers.ReadAction) {
+            // resolveClass accesses PSI (imports, containingFile) and must be
+            // inside a read action — otherwise it can intermittently return null
+            // when the PSI index is not ready, causing NPEs in callers.
+            val psiClass = linkResolver.resolveClass(parsed.className, context) ?: return@withContext null
+
             if (psiClass.isEnum) {
-                resolveEnumOptions(psiClass, parsed.memberName, context)
+                // Delegate to EnumValueResolver (D-CENTRAL).
+                // `parsed.memberName` carries the preserved `()` from `parseLinkReference`
+                // so the resolver can distinguish `name()` (pseudo-field) from `name`
+                // (instance field) — issue #1383.
+                val resolution = enumValueResolver.resolve(
+                    enumClass = psiClass,
+                    context = context,
+                    seeMemberName = parsed.memberName
+                )
+                val options = enumValueResolver.buildOptions(psiClass, resolution, docHelper)
+                val jsonType = enumValueResolver.resolveJsonType(psiClass, resolution)
+                if (options != null) ResolvedSeeOptions(options, jsonType) else null
             } else {
-                resolveStaticOptions(psiClass)
+                val staticOptions = resolveStaticOptions(psiClass)
+                if (staticOptions != null) ResolvedSeeOptions(staticOptions, null) else null
             }
         }
-    }
-
-    /**
-     * Resolve enum constants as options.
-     *
-     * When [propertyName] is specified (e.g. `@see UserType#type`), uses that field's
-     * constructor argument as the value.
-     *
-     * When [propertyName] is null (e.g. `@see UserType`), auto-matches by comparing
-     * the referencing field's type against the enum's instance fields. For example,
-     * if `private int type` references `UserType` which has `Integer code`, the `code`
-     * field is selected automatically.
-     *
-     * Falls back to enum constant names if no match is found.
-     *
-     * Supports both field names and getter method names:
-     * - `type` → matches field `type` directly
-     * - `getType` / `getType()` → converted to field `type`
-     * - `isActive` / `isActive()` → converted to field `active`
-     */
-    private fun resolveEnumOptions(
-        psiClass: PsiClass,
-        propertyName: String?,
-        context: PsiElement
-    ): List<FieldOption>? {
-        val constants = psiClass.fields.filterIsInstance<PsiEnumConstant>()
-        if (constants.isEmpty()) return null
-
-        val resolvedFieldName = if (propertyName != null) {
-            // Explicit member: @see UserType#type or @see UserType#getType()
-            resolveFieldName(psiClass, propertyName)
-        } else {
-            // No member: @see UserType → auto-match by type
-            findEnumFieldByType(psiClass, context)
-        }
-
-        val instanceFields = psiClass.allFields
-            .filter { it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC) }
-        val valueFieldIndex = if (resolvedFieldName != null) {
-            instanceFields.indexOfFirst { it.name == resolvedFieldName }
-        } else -1
-
-        return constants.mapNotNull { constant ->
-            val name = constant.name ?: return@mapNotNull null
-            val desc = constant.docComment?.let { extractDocText(it) }
-
-            val value: Any? = if (valueFieldIndex >= 0) {
-                val args = constant.argumentList?.expressions
-                if (args != null && valueFieldIndex < args.size) {
-                    extractConstantValue(args[valueFieldIndex])
-                } else name
-            } else name
-
-            // When using a custom field, build description from other fields if no doc comment
-            val effectiveDesc = if (valueFieldIndex >= 0 && desc == null) {
-                buildDescFromOtherFields(constant, instanceFields, valueFieldIndex) ?: name
-            } else {
-                desc
-            }
-
-            FieldOption(value = value, desc = effectiveDesc)
-        }.ifEmpty { null }
-    }
-
-    /**
-     * Finds an enum instance field whose type matches the referencing element's declared type.
-     *
-     * For example, if `private int type` references `UserType` which has
-     * `private final Integer code`, this returns `"code"`.
-     *
-     * When multiple fields match, prefers the one whose name matches the referencing field name.
-     */
-    private fun findEnumFieldByType(psiClass: PsiClass, contextElement: PsiElement): String? {
-        val targetCanonical = when (contextElement) {
-            is PsiField -> contextElement.type.canonicalText
-            is PsiMethod -> contextElement.returnType?.canonicalText
-            is PsiParameter -> contextElement.type.canonicalText
-            else -> null
-        } ?: return null
-
-        val instanceFields = psiClass.allFields.filter {
-            it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC)
-        }
-
-        val candidates = instanceFields.filter { field ->
-            isTypeCompatible(field.type.canonicalText, targetCanonical)
-        }
-
-        if (candidates.isEmpty()) return null
-        if (candidates.size == 1) return candidates.first().name
-
-        // Multiple candidates: prefer the one whose name matches the referencing field
-        val contextName = when (contextElement) {
-            is PsiField -> contextElement.name
-            is PsiMethod -> LinkResolver.getterToPropertyName(contextElement.name) ?: contextElement.name
-            is PsiParameter -> contextElement.name
-            else -> null
-        }
-        if (contextName != null) {
-            candidates.firstOrNull { it.name == contextName }?.let { return it.name }
-        }
-        return candidates.first().name
-    }
-
-    /**
-     * Builds a description string from enum constructor arguments other than the value field.
-     */
-    private fun buildDescFromOtherFields(
-        constant: PsiEnumConstant,
-        instanceFields: List<PsiField>,
-        excludeIndex: Int
-    ): String? {
-        val args = constant.argumentList?.expressions ?: return null
-        val parts = mutableListOf<String>()
-        for ((i, _) in instanceFields.withIndex()) {
-            if (i == excludeIndex) continue
-            if (i < args.size) {
-                val value = extractConstantValue(args[i])
-                if (value != null) {
-                    parts.add(value.toString())
-                }
-            }
-        }
-        return parts.joinToString(" ").takeIf { it.isNotBlank() }
-    }
-
-    private fun isTypeCompatible(fieldType: String, targetType: String): Boolean {
-        if (fieldType == targetType) return true
-        return normalizeBoxedType(fieldType) == normalizeBoxedType(targetType)
-    }
-
-    private fun normalizeBoxedType(type: String): String {
-        return when (type) {
-            "int", "Integer", "java.lang.Integer" -> "java.lang.Integer"
-            "long", "Long", "java.lang.Long" -> "java.lang.Long"
-            "short", "Short", "java.lang.Short" -> "java.lang.Short"
-            "byte", "Byte", "java.lang.Byte" -> "java.lang.Byte"
-            "float", "Float", "java.lang.Float" -> "java.lang.Float"
-            "double", "Double", "java.lang.Double" -> "java.lang.Double"
-            "boolean", "Boolean", "java.lang.Boolean" -> "java.lang.Boolean"
-            "char", "Character", "java.lang.Character" -> "java.lang.Character"
-            else -> type
-        }
-    }
-
-    /**
-     * Resolve a property name that may be a getter method name to the actual field name.
-     * Tries direct match first, then getter-to-property conversion.
-     */
-    private fun resolveFieldName(psiClass: PsiClass, propertyName: String?): String? {
-        if (propertyName == null) return null
-
-        val instanceFields = psiClass.allFields
-            .filter { it !is PsiEnumConstant && !it.hasModifierProperty(PsiModifier.STATIC) }
-
-        // Direct field name match
-        if (instanceFields.any { it.name == propertyName }) {
-            return propertyName
-        }
-
-        // Try getter-to-property conversion: getXxx → xxx, isXxx → xxx
-        val derived = LinkResolver.getterToPropertyName(propertyName)
-        if (derived != null && instanceFields.any { it.name == derived }) {
-            return derived
-        }
-
-        return propertyName
     }
 
     /**

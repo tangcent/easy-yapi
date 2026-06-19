@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.settings.ui
 
 import com.itangcent.easyapi.settings.Settings
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -40,5 +41,29 @@ class SettingsPanelsParityTest {
         builtIn.resetFrom(settings)
         assertFalse(builtIn.isModified(settings))
         builtIn.applyTo(settings)
+    }
+
+    @Test
+    fun testIntelligentPanelEnumFieldAutoInferEnabledRoundTrip() {
+        val settings = Settings().apply {
+            enumFieldAutoInferEnabled = true
+        }
+        val panel = IntelligentSettingsPanel()
+        panel.resetFrom(settings)
+        assertFalse(panel.isModified(settings))
+        panel.applyTo(settings)
+        assertEquals(true, settings.enumFieldAutoInferEnabled)
+    }
+
+    @Test
+    fun testIntelligentPanelEnumFieldAutoInferEnabledChangeDetected() {
+        val settings = Settings().apply {
+            enumFieldAutoInferEnabled = false
+        }
+        val panel = IntelligentSettingsPanel()
+        panel.resetFrom(settings)
+        assertFalse(panel.isModified(settings))
+        settings.enumFieldAutoInferEnabled = true
+        assertTrue(panel.isModified(settings))
     }
 }

@@ -50,10 +50,10 @@ class SeeTagResolverTest {
     //  Plain reference — class + getter method
     // ================================================================
 
-    @Test fun `Xxx#getField()`()        = assertParsed("Xxx#getField()", "Xxx", "getField")
-    @Test fun `fqcn#getField()`()       = assertParsed("xxx.xxx.Xxx#getField()", "xxx.xxx.Xxx", "getField")
+    @Test fun `Xxx#getField()`()        = assertParsed("Xxx#getField()", "Xxx", "getField()")
+    @Test fun `fqcn#getField()`()       = assertParsed("xxx.xxx.Xxx#getField()", "xxx.xxx.Xxx", "getField()")
     @Test fun `Xxx#getType`()           = assertParsed("Xxx#getType", "Xxx", "getType")
-    @Test fun `Xxx#isActive()`()        = assertParsed("Xxx#isActive()", "Xxx", "isActive")
+    @Test fun `Xxx#isActive()`()        = assertParsed("Xxx#isActive()", "Xxx", "isActive()")
 
     // ================================================================
     //  {@link ...} — class only
@@ -83,11 +83,11 @@ class SeeTagResolverTest {
     //  {@link ...} — class + getter method
     // ================================================================
 
-    @Test fun `link Xxx#getField()`()   = assertParsed("{@link Xxx#getField()}", "Xxx", "getField")
-    @Test fun `link fqcn#getField()`()  = assertParsed("{@link xxx.xxx.Xxx#getField()}", "xxx.xxx.Xxx", "getField")
-    @Test fun `link Xxx#getType()`()    = assertParsed("{@link UserType#getType()}", "UserType", "getType")
-    @Test fun `link fqcn#getType()`()   = assertParsed("{@link com.example.UserType#getType()}", "com.example.UserType", "getType")
-    @Test fun `link Xxx#isActive()`()   = assertParsed("{@link Xxx#isActive()}", "Xxx", "isActive")
+    @Test fun `link Xxx#getField()`()   = assertParsed("{@link Xxx#getField()}", "Xxx", "getField()")
+    @Test fun `link fqcn#getField()`()  = assertParsed("{@link xxx.xxx.Xxx#getField()}", "xxx.xxx.Xxx", "getField()")
+    @Test fun `link Xxx#getType()`()    = assertParsed("{@link UserType#getType()}", "UserType", "getType()")
+    @Test fun `link fqcn#getType()`()   = assertParsed("{@link com.example.UserType#getType()}", "com.example.UserType", "getType()")
+    @Test fun `link Xxx#isActive()`()   = assertParsed("{@link Xxx#isActive()}", "Xxx", "isActive()")
 
     // ================================================================
     //  [...] (Kotlin KDoc) — class only

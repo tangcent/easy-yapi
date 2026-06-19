@@ -63,7 +63,8 @@ data class Settings(
     override var concurrentScanEnabled: Boolean = false,
     override var gutterIconEnabled: Boolean = true,
     override var projectEnvironments: String = "",
-    override var globalEnvironments: String = ""
+    override var globalEnvironments: String = "",
+    override var enumFieldAutoInferEnabled: Boolean = false
 ) : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     companion object {
@@ -120,6 +121,7 @@ data class Settings(
         if (gutterIconEnabled != other.gutterIconEnabled) return false
         if (projectEnvironments != other.projectEnvironments) return false
         if (globalEnvironments != other.globalEnvironments) return false
+        if (enumFieldAutoInferEnabled != other.enumFieldAutoInferEnabled) return false
 
         return true
     }
@@ -167,6 +169,7 @@ data class Settings(
         result = 31 * result + gutterIconEnabled.hashCode()
         result = 31 * result + projectEnvironments.hashCode()
         result = 31 * result + globalEnvironments.hashCode()
+        result = 31 * result + enumFieldAutoInferEnabled.hashCode()
         return result
     }
 }

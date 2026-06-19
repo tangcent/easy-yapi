@@ -64,7 +64,8 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var grpcRepositories: Array<String> = emptyArray(),
         override var concurrentScanEnabled: Boolean = false,
         override var gutterIconEnabled: Boolean = true,
-        override var globalEnvironments: String = ""
+        override var globalEnvironments: String = "",
+        override var enumFieldAutoInferEnabled: Boolean = false
     ) : ApplicationSettingsSupport {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -109,6 +110,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (concurrentScanEnabled != other.concurrentScanEnabled) return false
             if (gutterIconEnabled != other.gutterIconEnabled) return false
             if (globalEnvironments != other.globalEnvironments) return false
+            if (enumFieldAutoInferEnabled != other.enumFieldAutoInferEnabled) return false
 
             return true
         }
@@ -151,6 +153,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + concurrentScanEnabled.hashCode()
             result = 31 * result + gutterIconEnabled.hashCode()
             result = 31 * result + globalEnvironments.hashCode()
+            result = 31 * result + enumFieldAutoInferEnabled.hashCode()
             return result
         }
     }

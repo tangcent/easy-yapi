@@ -99,12 +99,26 @@ class KotlinPsiAdapter : PsiLanguageAdapter {
                 val name = tag.name ?: continue
                 val subjectName = tag.getSubjectName()
                 val content = tag.contentOrLink() ?: ""
-                // Include subject name in value to match Javadoc convention:
+                // For most tags, include subject name in value to match Javadoc convention:
                 // @param id the user ID → DocTag("param", "id the user ID")
-                val value = if (subjectName != null && content.isNotEmpty()) {
-                    "$subjectName $content"
-                } else {
-                    subjectName ?: content
+                //
+                // For @see tags, the subject name is the class part of a reference
+                // (e.g., "UserType" in "UserType#code") and must be combined with the
+                // content WITHOUT a space to preserve the reference syntax.
+                val value = when {
+                    name == "see" -> {
+                        val trimmedContent = content.trim()
+                        when {
+                            subjectName != null && trimmedContent.isNotEmpty()
+                                && trimmedContent != subjectName ->
+                                "$subjectName$trimmedContent"
+                            subjectName != null -> subjectName
+                            else -> content
+                        }
+                    }
+                    subjectName != null && content.isNotEmpty() ->
+                        "$subjectName $content"
+                    else -> subjectName ?: content
                 }
                 tags.add(DocTag(name, value))
             }

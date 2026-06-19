@@ -141,4 +141,20 @@ class ApplicationSettingsStateTest {
         val s = ApplicationSettingsState.State()
         assertNotEquals(s, "not a state")
     }
+
+    @Test
+    fun testState_inequality_enumFieldAutoInferEnabled() {
+        val s1 = ApplicationSettingsState.State(enumFieldAutoInferEnabled = false)
+        val s2 = ApplicationSettingsState.State(enumFieldAutoInferEnabled = true)
+        assertNotEquals(s1, s2)
+    }
+
+    @Test
+    fun testState_copyTo_enumFieldAutoInferEnabled() {
+        val source = ApplicationSettingsState.State(enumFieldAutoInferEnabled = true)
+        val target = ApplicationSettingsState.State()
+        assertEquals(false, target.enumFieldAutoInferEnabled)
+        source.copyTo(target)
+        assertEquals(true, target.enumFieldAutoInferEnabled)
+    }
 }

@@ -91,6 +91,17 @@ interface MethodContext {
     fun isAbstract(): Boolean
     fun isSynchronized(): Boolean
     fun isNative(): Boolean
+    /**
+     * Returns the underlying field name derived from this method's name.
+     *
+     * - `getCode` → `code`
+     * - `isActive` → `active`
+     * - `name` (or any non-getter/non-is method) → returned as-is
+     *
+     * Useful for mapping getter methods to their backing instance fields
+     * (e.g. Jackson `@JsonValue` on a getter).
+     */
+    fun fieldName(): String
 }
 
 /**
@@ -393,6 +404,15 @@ open class ScriptPsiMethodContext(context: RuleContext) : ScriptItContext(contex
         readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.SYNCHRONIZED) }
 
     override fun isNative(): Boolean = readSync { psiMethod().hasModifierProperty(com.intellij.psi.PsiModifier.NATIVE) }
+
+    override fun fieldName(): String {
+        val n = name()
+        return when {
+            n.startsWith("get") && n.length > 3 -> n.substring(3, 4).lowercase() + n.substring(4)
+            n.startsWith("is") && n.length > 2 -> n.substring(2, 3).lowercase() + n.substring(3)
+            else -> n
+        }
+    }
 
     override fun canonicalText(): String {
         val cls = readSync { psiMethod().containingClass?.qualifiedName } ?: ""
