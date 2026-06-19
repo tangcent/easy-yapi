@@ -76,6 +76,16 @@ interface ApplicationSettingsSupport {
     /** When true, show gutter icon on API methods for opening in API Dashboard */
     var gutterIconEnabled: Boolean
     var globalEnvironments: String
+    /**
+     * When true, auto-infer the enum value field for ambiguous references
+     * (e.g. `@see XxxEnum` without a specific field, or enum-typed fields
+     * with a single instance field). When false, always fall back to the
+     * enum constant name.
+     *
+     * Explicit references (`@see Xxx#code`, `@JsonValue`, `enum.use.custom`)
+     * are always resolved regardless of this setting.
+     */
+    var enumFieldAutoInferEnabled: Boolean
 
     fun copyTo(newSetting: ApplicationSettingsSupport) {
         newSetting.postmanToken = this.postmanToken
@@ -115,6 +125,7 @@ interface ApplicationSettingsSupport {
         newSetting.concurrentScanEnabled = this.concurrentScanEnabled
         newSetting.gutterIconEnabled = this.gutterIconEnabled
         newSetting.globalEnvironments = this.globalEnvironments
+        newSetting.enumFieldAutoInferEnabled = this.enumFieldAutoInferEnabled
     }
 }
 

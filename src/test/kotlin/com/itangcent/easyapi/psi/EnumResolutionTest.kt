@@ -1,10 +1,8 @@
 package com.itangcent.easyapi.psi
 
-import com.itangcent.easyapi.psi.model.FieldModel
-import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.model.ObjectModel
-import com.itangcent.easyapi.psi.model.ObjectModelValueConverter
 import com.itangcent.easyapi.psi.type.JsonType
+import com.itangcent.easyapi.settings.update
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import kotlinx.coroutines.runBlocking
@@ -62,6 +60,48 @@ class EnumResolutionTest {
                 INACTIVE,
                 /** Pending review */
                 PENDING
+            }
+        """
+
+        /** Enum that declares an instance field literally named `name` (issue #1383). */
+        const val NAME_CONFLICT_ENUM = """
+            package constant;
+            public enum NameConflict {
+                /** first */
+                ONE(1),
+                /** second */
+                TWO(2),
+                /** third */
+                THREE(3);
+
+                private final Integer name;
+
+                NameConflict(Integer name) {
+                    this.name = name;
+                }
+
+                public Integer getName() { return name; }
+            }
+        """
+
+        /** Enum with a single instance field — used to test INTELLIGENT mode in Case 1. */
+        const val SINGLE_FIELD_ENUM = """
+            package constant;
+            public enum SingleField {
+                /** guest */
+                GUEST(30),
+                /** admin */
+                ADMIN(1100),
+                /** developer */
+                DEVELOPER(1200);
+
+                private final Integer type;
+
+                SingleField(Integer type) {
+                    this.type = type;
+                }
+
+                public Integer getType() { return type; }
             }
         """
     }
@@ -491,6 +531,14 @@ class EnumResolutionTest {
 
         override fun createConfigReader() = TestConfigReader.empty(project)
 
+        override fun setUp() {
+            super.setUp()
+            // Auto-match by type is only performed in INTELLIGENT mode (issue #1383).
+            settingBinder.update {
+                enumFieldAutoInferEnabled = true
+            }
+        }
+
         fun testSeeEnumAutoMatchByIntType() = runBlocking {
             myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
             myFixture.addFileToProject(
@@ -641,6 +689,816 @@ class EnumResolutionTest {
             assertEquals(30, firstOption.value)
             // Description should be from doc comment ("who is not logged in") or from other fields ("unspecified")
             assertNotNull("Option should have a description", firstOption.desc)
+        }
+    }
+
+    // ================================================================
+    //  Issue #1383 — name/name() ambiguity (Case 1)
+    //  An enum with an instance field literally named `name` should
+    //  use that field's values when `enum.use.custom=name`, while
+    //  `enum.use.custom=name()` still resolves to the pseudo-field.
+    // ================================================================
+
+    class Case1_NameFieldConflict : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.fromRules(
+            project, "enum.use.custom" to "name"
+        )
+
+        fun testCustomNameResolvesToInstanceField() = runBlocking {
+            myFixture.addFileToProject("constant/NameConflict.java", NAME_CONFLICT_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/NameConflictDto.java", """
+                package model;
+                import constant.NameConflict;
+                public class NameConflictDto {
+                    public NameConflict value;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.NameConflictDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["value"]!!
+            // `name` resolves to the Integer instance field, not the pseudo-field
+            assertEquals(
+                "enum.use.custom=name with instance field `name` should produce INT type",
+                JsonType.INT, (field.model as ObjectModel.Single).type
+            )
+            assertNotNull(field.options)
+            assertEquals(
+                "Options should use the `name` instance field values",
+                listOf(1, 2, 3),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    class Case1_NameCallPseudoField : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.fromRules(
+            project, "enum.use.custom" to "name()"
+        )
+
+        fun testCustomNameCallResolvesToPseudoField() = runBlocking {
+            myFixture.addFileToProject("constant/NameConflict.java", NAME_CONFLICT_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/NameConflictDto.java", """
+                package model;
+                import constant.NameConflict;
+                public class NameConflictDto {
+                    public NameConflict value;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.NameConflictDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["value"]!!
+            // `name()` is unambiguous → pseudo-field → STRING
+            assertEquals(
+                "enum.use.custom=name() should produce STRING type",
+                JsonType.STRING, (field.model as ObjectModel.Single).type
+            )
+            assertNotNull(field.options)
+            assertEquals(
+                "Options should be enum constant names",
+                listOf("ONE", "TWO", "THREE"),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Issue #1383 — INTELLIGENT mode for Case 1
+    //  When the enum has exactly one instance field, that field is
+    //  auto-selected without requiring `enum.use.custom`.
+    // ================================================================
+
+    class Case1_IntelligentMode : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        override fun setUp() {
+            super.setUp()
+            settingBinder.update {
+                enumFieldAutoInferEnabled = true
+            }
+        }
+
+        fun testIntelligentModeSelectsSingleInstanceField() = runBlocking {
+            myFixture.addFileToProject("constant/SingleField.java", SINGLE_FIELD_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/SingleFieldDto.java", """
+                package model;
+                import constant.SingleField;
+                public class SingleFieldDto {
+                    public SingleField value;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.SingleFieldDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["value"]!!
+            assertEquals(
+                "INTELLIGENT mode should pick the single Integer field → INT",
+                JsonType.INT, (field.model as ObjectModel.Single).type
+            )
+            assertNotNull(field.options)
+            assertEquals(
+                "Options should use the single instance field values",
+                listOf(30, 1100, 1200),
+                field.options!!.map { it.value }
+            )
+        }
+
+        fun testIntelligentModeFallsBackToNameForMultiFieldEnum() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/UserDto.java", """
+                package model;
+                import constant.UserType;
+                public class UserDto {
+                    public UserType type;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.UserDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["type"]!!
+            // UserType has two instance fields (code, desc) → fall back to name()
+            assertEquals(
+                "INTELLIGENT mode should fall back to STRING when multiple instance fields exist",
+                JsonType.STRING, (field.model as ObjectModel.Single).type
+            )
+            assertEquals(
+                "Options should be enum constant names",
+                listOf("GUEST", "ADMIN", "DEVELOPER"),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    class Case1_NameModeIgnoresSingleField : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        override fun setUp() {
+            super.setUp()
+            settingBinder.update {
+                enumFieldAutoInferEnabled = false
+            }
+        }
+
+        fun testNameModeDoesNotAutoSelectSingleInstanceField() = runBlocking {
+            myFixture.addFileToProject("constant/SingleField.java", SINGLE_FIELD_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/SingleFieldDto.java", """
+                package model;
+                import constant.SingleField;
+                public class SingleFieldDto {
+                    public SingleField value;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.SingleFieldDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["value"]!!
+            // NAME mode → always enum constant name, even with a single instance field
+            assertEquals(
+                "NAME mode should produce STRING type",
+                JsonType.STRING, (field.model as ObjectModel.Single).type
+            )
+            assertEquals(
+                "Options should be enum constant names",
+                listOf("GUEST", "ADMIN", "DEVELOPER"),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Issue #1383 — INTELLIGENT mode for Case 2 (@see auto-match)
+    //  In NAME mode, a class-only @see falls back to enum constant
+    //  names. In INTELLIGENT mode, type-based auto-match is applied.
+    // ================================================================
+
+    class Case2_NameModeIgnoresAutoMatch : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        override fun setUp() {
+            super.setUp()
+            settingBinder.update {
+                enumFieldAutoInferEnabled = false
+            }
+        }
+
+        fun testNameModeFallsBackToConstantNames() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/UserDto.java", """
+                package model;
+                import constant.UserType;
+                public class UserDto {
+                    /**
+                     * @see UserType
+                     */
+                    public int type;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.UserDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["type"]!!
+            assertNotNull(field.options)
+            // NAME mode → no auto-match → enum constant names
+            assertEquals(
+                "NAME mode should fall back to enum constant names for class-only @see",
+                listOf("GUEST", "ADMIN", "DEVELOPER"),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    class Case2_IntelligentModeAutoMatch : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        override fun setUp() {
+            super.setUp()
+            settingBinder.update {
+                enumFieldAutoInferEnabled = true
+            }
+        }
+
+        fun testIntelligentModeAutoMatchesByType() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/UserDto.java", """
+                package model;
+                import constant.UserType;
+                public class UserDto {
+                    /**
+                     * @see UserType
+                     */
+                    public int type;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.UserDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["type"]!!
+            assertNotNull(field.options)
+            // INTELLIGENT mode → int matches Integer code
+            assertEquals(
+                "INTELLIGENT mode should auto-match by type to the `code` field",
+                listOf(30, 1100, 1200),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Req 1.3 — Simple enum with zero instance fields
+    // ================================================================
+
+    class Case1_SimpleEnum : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        fun testSimpleEnumUsesConstantNamesInNameMode() = runBlocking {
+            myFixture.addFileToProject("constant/SimpleStatus.java", SIMPLE_STATUS_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/SimpleDto.java", """
+                package model;
+                import constant.SimpleStatus;
+                public class SimpleDto {
+                    public SimpleStatus status;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.SimpleDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["status"]!!
+            assertEquals(JsonType.STRING, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf("ACTIVE", "INACTIVE", "PENDING"),
+                field.options!!.map { it.value }
+            )
+        }
+
+        fun testSimpleEnumUsesConstantNamesInIntelligentMode() = runBlocking {
+            settingBinder.update {
+                enumFieldAutoInferEnabled = true
+            }
+            myFixture.addFileToProject("constant/SimpleStatus.java", SIMPLE_STATUS_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/SimpleDto.java", """
+                package model;
+                import constant.SimpleStatus;
+                public class SimpleDto {
+                    public SimpleStatus status;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.SimpleDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["status"]!!
+            // No instance fields → falls back to name regardless of mode
+            assertEquals(JsonType.STRING, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf("ACTIVE", "INACTIVE", "PENDING"),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Req 2 — @JsonValue annotation detection (Case 1b)
+    // ================================================================
+
+    class Case1_JsonValueOnGetter : EasyApiLightCodeInsightFixtureTestCase() {
+
+        private val jsonValueAnnotation = """
+            package com.fasterxml.jackson.annotation;
+            public @interface JsonValue {
+            }
+        """.trimIndent()
+
+        val enumWithJsonValue = """
+            package constant;
+            import com.fasterxml.jackson.annotation.JsonValue;
+            public enum StatusWithJsonValue {
+                /** guest */
+                GUEST(30),
+                /** admin */
+                ADMIN(1100),
+                /** developer */
+                DEVELOPER(1200);
+
+                private final Integer code;
+
+                StatusWithJsonValue(Integer code) {
+                    this.code = code;
+                }
+
+                @JsonValue
+                public Integer getCode() { return code; }
+            }
+        """.trimIndent()
+
+        override fun createConfigReader() = TestConfigReader.fromConfigText(
+            project,
+            """
+            enum.use.custom=groovy:```
+                if (!it.isEnum()) return null
+                def m = it.methods().find {
+                    it.hasAnn("com.fasterxml.jackson.annotation.JsonValue") && !it.hasModifier("static")
+                }
+                if (m != null) {
+                    def n = m.name()
+                    def derived = n.startsWith("get") ? n.substring(3,4).toLowerCase() + n.substring(4)
+                                : n.startsWith("is")  ? n.substring(2,3).toLowerCase() + n.substring(3)
+                                : n
+                    return it.fields().any { it.name() == derived && !it.isStatic() && !it.isEnumField() } ? derived : null
+                }
+                def f = it.fields().find { it.hasAnn("com.fasterxml.jackson.annotation.JsonValue") && !it.isStatic() && !it.isEnumField() }
+                return f?.name()
+            ```
+            """.trimIndent()
+        )
+
+        fun testJsonValueOnGetterUsesCodeField() = runBlocking {
+            myFixture.addFileToProject("com/fasterxml/jackson/annotation/JsonValue.java", jsonValueAnnotation)
+            myFixture.addFileToProject("constant/StatusWithJsonValue.java", enumWithJsonValue)
+            myFixture.addFileToProject(
+                "model/StatusDto.java", """
+                package model;
+                import constant.StatusWithJsonValue;
+                public class StatusDto {
+                    public StatusWithJsonValue status;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.StatusDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["status"]!!
+            // @JsonValue on getCode() → code field → INT type, code values
+            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf(30, 1100, 1200),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    class Case1_JsonValueOnField : EasyApiLightCodeInsightFixtureTestCase() {
+
+        private val jsonValueAnnotation = """
+            package com.fasterxml.jackson.annotation;
+            public @interface JsonValue {
+            }
+        """.trimIndent()
+
+        val enumWithJsonValueOnField = """
+            package constant;
+            import com.fasterxml.jackson.annotation.JsonValue;
+            public enum StatusWithJsonValueField {
+                /** guest */
+                GUEST(30),
+                /** admin */
+                ADMIN(1100);
+
+                private final Integer code;
+
+                StatusWithJsonValueField(Integer code) {
+                    this.code = code;
+                }
+
+                @JsonValue
+                private final Integer code;
+            }
+        """.trimIndent()
+
+        override fun createConfigReader() = TestConfigReader.fromConfigText(
+            project,
+            """
+            enum.use.custom=groovy:```
+                if (!it.isEnum()) return null
+                def m = it.methods().find {
+                    it.hasAnn("com.fasterxml.jackson.annotation.JsonValue") && !it.hasModifier("static")
+                }
+                if (m != null) {
+                    def n = m.name()
+                    def derived = n.startsWith("get") ? n.substring(3,4).toLowerCase() + n.substring(4)
+                                : n.startsWith("is")  ? n.substring(2,3).toLowerCase() + n.substring(3)
+                                : n
+                    return it.fields().any { it.name() == derived && !it.isStatic() && !it.isEnumField() } ? derived : null
+                }
+                def f = it.fields().find { it.hasAnn("com.fasterxml.jackson.annotation.JsonValue") && !it.isStatic() && !it.isEnumField() }
+                return f?.name()
+            ```
+            """.trimIndent()
+        )
+
+        fun testJsonValueOnFieldUsesThatField() = runBlocking {
+            myFixture.addFileToProject("com/fasterxml/jackson/annotation/JsonValue.java", jsonValueAnnotation)
+            myFixture.addFileToProject("constant/StatusWithJsonValueField.java", enumWithJsonValueOnField)
+            myFixture.addFileToProject(
+                "model/StatusDto2.java", """
+                package model;
+                import constant.StatusWithJsonValueField;
+                public class StatusDto2 {
+                    public StatusWithJsonValueField status;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.StatusDto2")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["status"]!!
+            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf(30, 1100),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Req 2 — @EnumValue annotation detection (Case 1b)
+    // ================================================================
+
+    class Case1_EnumValue : EasyApiLightCodeInsightFixtureTestCase() {
+
+        private val enumValueAnnotation = """
+            package com.baomidou.mybatisplus.annotation;
+            public @interface EnumValue {
+            }
+        """.trimIndent()
+
+        val enumWithEnumValue = """
+            package constant;
+            import com.baomidou.mybatisplus.annotation.EnumValue;
+            public enum StatusWithEnumValue {
+                /** guest */
+                GUEST(30),
+                /** admin */
+                ADMIN(1100);
+
+                private final Integer code;
+
+                StatusWithEnumValue(Integer code) {
+                    this.code = code;
+                }
+
+                @EnumValue
+                private final Integer code;
+            }
+        """.trimIndent()
+
+        override fun createConfigReader() = TestConfigReader.fromConfigText(
+            project,
+            """
+            enum.use.custom=groovy:```
+                if (!it.isEnum()) return null
+                def f = it.fields().find { it.hasAnn("com.baomidou.mybatisplus.annotation.EnumValue") && !it.isStatic() && !it.isEnumField() }
+                return f?.name()
+            ```
+            """.trimIndent()
+        )
+
+        fun testEnumValueOnFieldUsesThatField() = runBlocking {
+            myFixture.addFileToProject("com/baomidou/mybatisplus/annotation/EnumValue.java", enumValueAnnotation)
+            myFixture.addFileToProject("constant/StatusWithEnumValue.java", enumWithEnumValue)
+            myFixture.addFileToProject(
+                "model/StatusDto3.java", """
+                package model;
+                import constant.StatusWithEnumValue;
+                public class StatusDto3 {
+                    public StatusWithEnumValue status;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.StatusDto3")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["status"]!!
+            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf(30, 1100),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Req 7 — Type reconciliation (Case 2)
+    // ================================================================
+
+    class Case2_TypeReconciliation : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        fun testIntFieldSeeEnumCodeReconcilesToInteger() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/TypeReconDto.java", """
+                package model;
+                import constant.UserType;
+                public class TypeReconDto {
+                    /**
+                     * @see UserType#code
+                     */
+                    public int type;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.TypeReconDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["type"]!!
+            // int field + @see Enum#code (Integer) → INT (primitive↔boxed normalize)
+            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf(30, 1100, 1200),
+                field.options!!.map { it.value }
+            )
+        }
+
+        fun testStringFieldSeeEnumCodeReconcilesToInteger() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/TypeReconDto2.java", """
+                package model;
+                import constant.UserType;
+                public class TypeReconDto2 {
+                    /**
+                     * @see UserType#code
+                     */
+                    public String type;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.TypeReconDto2")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["type"]!!
+            // String field + @see Enum#code (Integer) → INT (incompatible, values authoritative)
+            assertEquals(
+                "String field with @see Enum#code (Integer) should reconcile to INT",
+                JsonType.INT, (field.model as ObjectModel.Single).type
+            )
+            assertEquals(
+                listOf(30, 1100, 1200),
+                field.options!!.map { it.value }
+            )
+        }
+
+        fun testLongFieldSeeEnumCodeReconcilesToInteger() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/TypeReconDto3.java", """
+                package model;
+                import constant.UserType;
+                public class TypeReconDto3 {
+                    /**
+                     * @see UserType#code
+                     */
+                    public long type;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.TypeReconDto3")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["type"]!!
+            // long field + @see Enum#code (Integer) → INT (numeric narrowing, value-field wins)
+            assertEquals(
+                "long field with @see Enum#code (Integer) should reconcile to INT",
+                JsonType.INT, (field.model as ObjectModel.Single).type
+            )
+        }
+    }
+
+    // ================================================================
+    //  Req 4.2 — @see name()/name parity (Case 2)
+    // ================================================================
+
+    class Case2_SeeNameParity : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        fun testSeeNameCallResolvesToPseudoField() = runBlocking {
+            myFixture.addFileToProject("constant/NameConflict.java", NAME_CONFLICT_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/SeeNameCallDto.java", """
+                package model;
+                import constant.NameConflict;
+                public class SeeNameCallDto {
+                    /**
+                     * @see NameConflict#name()
+                     */
+                    public int value;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.SeeNameCallDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["value"]!!
+            // name() → pseudo-field → STRING, constant names
+            assertEquals(JsonType.STRING, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf("ONE", "TWO", "THREE"),
+                field.options!!.map { it.value }
+            )
+        }
+
+        fun testSeeNameBareResolvesToInstanceField() = runBlocking {
+            myFixture.addFileToProject("constant/NameConflict.java", NAME_CONFLICT_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/SeeNameBareDto.java", """
+                package model;
+                import constant.NameConflict;
+                public class SeeNameBareDto {
+                    /**
+                     * @see NameConflict#name
+                     */
+                    public int value;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.SeeNameBareDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["value"]!!
+            // bare name → instance field wins (issue #1383) → INT, field values
+            assertEquals(JsonType.INT, (field.model as ObjectModel.Single).type)
+            assertEquals(
+                listOf(1, 2, 3),
+                field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Req 6 — Case 1 / Case 2 consistency
+    // ================================================================
+
+    class Case1Case2Consistency : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.fromRules(
+            project, "enum.use.custom" to "code"
+        )
+
+        fun testSameEnumProducesIdenticalResultsCase1AndCase2() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            // Case 1: enum-typed field
+            myFixture.addFileToProject(
+                "model/Case1Dto.java", """
+                package model;
+                import constant.UserType;
+                public class Case1Dto {
+                    public UserType type;
+                }
+            """.trimIndent()
+            )
+            // Case 2: int field with @see UserType#code
+            myFixture.addFileToProject(
+                "model/Case2Dto.java", """
+                package model;
+                import constant.UserType;
+                public class Case2Dto {
+                    /**
+                     * @see UserType#code
+                     */
+                    public int type;
+                }
+            """.trimIndent()
+            )
+
+            val case1Result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(findClass("model.Case1Dto")!!, option = JsonOption.ALL)
+            val case2Result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(findClass("model.Case2Dto")!!, option = JsonOption.ALL)
+
+            val case1Field = (case1Result as ObjectModel.Object).fields["type"]!!
+            val case2Field = (case2Result as ObjectModel.Object).fields["type"]!!
+
+            // Same JSON type
+            assertEquals(
+                "Case 1 and Case 2 should produce the same JSON type",
+                (case1Field.model as ObjectModel.Single).type,
+                (case2Field.model as ObjectModel.Single).type
+            )
+            // Same option values
+            assertEquals(
+                "Case 1 and Case 2 should produce the same option values",
+                case1Field.options!!.map { it.value },
+                case2Field.options!!.map { it.value }
+            )
+        }
+    }
+
+    // ================================================================
+    //  Req 4.1 — @see with nonexistent member falls back to names
+    // ================================================================
+
+    class Case2_SeeNonexistentMember : EasyApiLightCodeInsightFixtureTestCase() {
+
+        override fun createConfigReader() = TestConfigReader.empty(project)
+
+        fun testSeeNonexistentMemberFallsBackToNames() = runBlocking {
+            myFixture.addFileToProject("constant/UserType.java", USER_TYPE_ENUM.trimIndent())
+            myFixture.addFileToProject(
+                "model/NonexistentDto.java", """
+                package model;
+                import constant.UserType;
+                public class NonexistentDto {
+                    /**
+                     * @see UserType#nonexistent
+                     */
+                    public int type;
+                }
+            """.trimIndent()
+            )
+            val psiClass = findClass("model.NonexistentDto")!!
+            val result = DefaultPsiClassHelper.getInstance(project)
+                .buildObjectModel(psiClass, option = JsonOption.ALL)
+
+            val field = (result as ObjectModel.Object).fields["type"]!!
+            // Nonexistent member → falls back to constant names
+            assertEquals(
+                listOf("GUEST", "ADMIN", "DEVELOPER"),
+                field.options!!.map { it.value }
+            )
         }
     }
 }

@@ -5,9 +5,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.search.GlobalSearchScope
 import com.itangcent.easyapi.psi.helper.SourceHelper
+import org.jetbrains.kotlin.asJava.elements.KtLightElement
+import org.jetbrains.kotlin.psi.KtFile
 
 /**
  * Utility for resolving link references in documentation and scripts.
@@ -62,9 +65,12 @@ class LinkResolver(private val project: Project) {
      * - `ClassName` → (ClassName, null)
      * - `com.example.ClassName` → (com.example.ClassName, null)
      * - `ClassName#field` → (ClassName, field)
-     * - `com.example.ClassName#method()` → (com.example.ClassName, method)
+     * - `com.example.ClassName#method()` → (com.example.ClassName, method())
      * - `ClassName.field` → (ClassName, field)
-     * - `com.example.ClassName.method()` → (com.example.ClassName, method)
+     * - `com.example.ClassName.method()` → (com.example.ClassName, method())
+     *
+     * Note: trailing `()` on a member is preserved so the resolver can distinguish
+     * `name()` (pseudo-field) from `name` (instance field) — issue #1383.
      */
     fun parseLinkReference(linkRef: String): LinkReference? = Companion.parseLinkReference(linkRef)
 
@@ -172,10 +178,23 @@ class LinkResolver(private val project: Project) {
         facade: JavaPsiFacade,
         scope: GlobalSearchScope
     ): PsiClass? {
-        val containingFile = contextElement.containingFile as? PsiJavaFile ?: return null
-        val packageName = containingFile.packageName
-        if (packageName.isBlank()) return null
-        return facade.findClass("$packageName.$className", scope)
+        val containingFile = resolveContainingFile(contextElement) ?: return null
+
+        // Java files
+        if (containingFile is PsiJavaFile) {
+            val packageName = containingFile.packageName
+            if (packageName.isBlank()) return null
+            return facade.findClass("$packageName.$className", scope)
+        }
+
+        // Kotlin files
+        if (containingFile is KtFile) {
+            val packageName = containingFile.packageFqName?.asString() ?: return null
+            if (packageName.isBlank()) return null
+            return facade.findClass("$packageName.$className", scope)
+        }
+
+        return null
     }
 
     private fun resolveClassFromImports(
@@ -184,11 +203,18 @@ class LinkResolver(private val project: Project) {
         facade: JavaPsiFacade,
         scope: GlobalSearchScope
     ): PsiClass? {
-        val containingFile = contextElement.containingFile as? PsiJavaFile ?: return null
-        val imports = containingFile.importList?.importStatements ?: return null
+        val containingFile = resolveContainingFile(contextElement) ?: return null
 
-        for (importStmt in imports) {
-            val importRef = importStmt.qualifiedName ?: continue
+        val importRefs: List<String> = when (containingFile) {
+            is PsiJavaFile -> containingFile.importList?.importStatements
+                ?.mapNotNull { it.qualifiedName }
+                ?: emptyList()
+            is KtFile -> containingFile.importDirectives
+                .mapNotNull { it.importedFqName?.asString() }
+            else -> return null
+        }
+
+        for (importRef in importRefs) {
             val candidate = when {
                 importRef.endsWith(".$className") -> importRef
                 importRef.endsWith(".*") -> importRef.removeSuffix("*") + className
@@ -196,6 +222,41 @@ class LinkResolver(private val project: Project) {
             }
             facade.findClass(candidate, scope)?.let { return it }
         }
+
+        return null
+    }
+
+    /**
+     * Resolve the containing file for import/package lookup.
+     *
+     * For Kotlin light PSI elements (e.g., `KtLightField`), the `containingFile`
+     * is a synthetic `SymbolFakeFile` with language "JAVA" that has no package or
+     * import information. This method walks up the PSI tree to find a
+     * [KtLightElement] with a `kotlinOrigin`, then navigates to the real [KtFile].
+     */
+    private fun resolveContainingFile(contextElement: PsiElement): PsiFile? {
+        // For Kotlin light PSI elements, walk up the tree to find a KtLightElement
+        // whose kotlinOrigin gives us the original KtFile. Do this BEFORE checking
+        // the containingFile, because the containingFile of a KtLightElement is a
+        // synthetic SymbolFakeFile that implements PsiJavaFile but has no real
+        // package or import information.
+        var element: PsiElement? = contextElement
+        while (element != null) {
+            if (element is KtLightElement<*, *>) {
+                val kotlinOrigin = element.kotlinOrigin
+                if (kotlinOrigin != null) {
+                    val originFile = kotlinOrigin.containingFile
+                    if (originFile is KtFile) return originFile
+                }
+            }
+            element = element.parent
+        }
+
+        val containingFile = contextElement.containingFile ?: return null
+
+        // If it's a real Java or Kotlin file, use it directly
+        if (containingFile is KtFile) return containingFile
+        if (containingFile is PsiJavaFile) return containingFile
 
         return null
     }
@@ -209,11 +270,14 @@ class LinkResolver(private val project: Project) {
          * - `ClassName` → (ClassName, null)
          * - `com.example.ClassName` → (com.example.ClassName, null)
          * - `ClassName#field` → (ClassName, field)
-         * - `com.example.ClassName#method()` → (com.example.ClassName, method)
+         * - `com.example.ClassName#method()` → (com.example.ClassName, method())
          * - `ClassName.field` → (ClassName, field)
-         * - `com.example.ClassName.method()` → (com.example.ClassName, method)
+         * - `com.example.ClassName.method()` → (com.example.ClassName, method())
          * - `{@link ClassName}` → (ClassName, null)
          * - `[ClassName]` → (ClassName, null)
+         *
+         * Note: trailing `()` on a member is preserved so the resolver can distinguish
+         * `name()` (pseudo-field) from `name` (instance field) — issue #1383.
          */
         fun parseLinkReference(linkRef: String): LinkReference? {
             var ref = linkRef.trim()
@@ -236,8 +300,9 @@ class LinkResolver(private val project: Project) {
             // Split on '#' first (standard javadoc separator)
             if (ref.contains('#')) {
                 val className = ref.substringBefore('#').trim()
+                // Preserve trailing `()` on the member so the resolver can distinguish
+                // `name()` (pseudo-field) from `name` (instance field) — issue #1383.
                 val member = ref.substringAfter('#').trim()
-                    .removeSuffix("()")
                     .takeIf { it.isNotBlank() }
                 if (className.isNotBlank()) {
                     return LinkReference(className, member)
@@ -252,7 +317,8 @@ class LinkResolver(private val project: Project) {
                 val afterDot = ref.substring(lastDot + 1)
                 if (afterDot.isNotBlank() && afterDot[0].isLowerCase()) {
                     val className = ref.substring(0, lastDot).trim()
-                    val member = afterDot.trim().removeSuffix("()")
+                    // Preserve trailing `()` for consistency with the `#`-branch.
+                    val member = afterDot.trim()
                     if (className.isNotBlank()) {
                         return LinkReference(className, member)
                     }

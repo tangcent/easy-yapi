@@ -71,4 +71,33 @@ class SettingsDefaultsTest {
             appState.gutterIconEnabled
         )
     }
+
+    @Test
+    fun `test Settings default enumFieldAutoInferEnabled is false`() {
+        val settings = Settings()
+        assertFalse(
+            "Default enumFieldAutoInferEnabled should be false",
+            settings.enumFieldAutoInferEnabled
+        )
+    }
+
+    @Test
+    fun `test ApplicationSettingsState State default enumFieldAutoInferEnabled is false`() {
+        val state = ApplicationSettingsState.State()
+        assertFalse(
+            "ApplicationSettingsState default enumFieldAutoInferEnabled should be false",
+            state.enumFieldAutoInferEnabled
+        )
+    }
+
+    @Test
+    fun `test Settings and ApplicationSettingsState have matching enumFieldAutoInferEnabled defaults`() {
+        val settings = Settings()
+        val appState = ApplicationSettingsState.State()
+        assertEquals(
+            "enumFieldAutoInferEnabled defaults should match between Settings and ApplicationSettingsState",
+            settings.enumFieldAutoInferEnabled,
+            appState.enumFieldAutoInferEnabled
+        )
+    }
 }
