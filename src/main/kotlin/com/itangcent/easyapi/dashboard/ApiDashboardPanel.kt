@@ -24,7 +24,6 @@ import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.path
-import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.ide.dialog.EndpointSelection
 import com.itangcent.easyapi.ide.dialog.ExportDialog
 import com.itangcent.easyapi.ide.support.NotificationUtils
@@ -103,8 +102,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * Initializes the panel with HTTP client, UI components, tree listeners, and API data.
      */
     init {
-        val httpClient = HttpClientProvider.getInstance(project).getClient()
-        endpointDetailsPanel = EndpointDetailsPanel(project, httpClient)
+        endpointDetailsPanel = EndpointDetailsPanel(project)
         
         inlineEnvPanel = InlineEnvironmentPanel(project).apply {
             onEnvironmentSaved = {
