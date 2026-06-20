@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.testFramework
 
-import java.io.InputStreamReader
 import kotlin.reflect.KClass
 
 object ResultLoader {
@@ -26,12 +25,10 @@ object ResultLoader {
         val fileName = if (name.isEmpty()) rawName else "$rawName.$name"
         val resourcePath = "result/$fileName.txt"
 
-        val stream = javaClass.getResourceAsStream("/$resourcePath")
-            ?: throw AssertionError("Expected result file not found: $resourcePath")
-        
-        return InputStreamReader(stream, Charsets.UTF_8).readText()
-            .replace("\r\n", "\n")
-            .trimEnd()
+        // Delegate the actual read + CRLF/trim normalization to ResourceLoader,
+        // using the caller's class loader so the resource resolves correctly
+        // even when the caller lives in a different module/classpath.
+        return ResourceLoader.read(resourcePath, callerClass.classLoader)
     }
 
     fun loadOrNull(name: String): String? {

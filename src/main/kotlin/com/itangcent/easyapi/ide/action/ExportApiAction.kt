@@ -78,14 +78,13 @@ class ExportApiAction : AnAction(), IdeaLog {
                 val exportResult = orchestrator.exportViaChannel(
                     channelId, endpoints, dialogResult.channelConfig, indicator
                 )
-                handleExportResult(project, channelId, exportResult)
+                handleExportResult(project, exportResult)
             }
         }
     }
 
     private suspend fun handleExportResult(
         project: Project,
-        channelId: String,
         result: ExportResult
     ) {
         when (result) {

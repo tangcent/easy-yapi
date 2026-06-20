@@ -23,6 +23,7 @@
     <extensionPoints>
         <extensionPoint name="classExporter" interface="com.itangcent.easyapi.exporter.ClassExporter" area="IDEA_PROJECT" dynamic="true"/>
         <extensionPoint name="apiChannel" interface="com.itangcent.easyapi.exporter.channel.ApiChannel" dynamic="true"/>
+        <extensionPoint name="fieldFormatChannel" interface="com.itangcent.easyapi.ide.fieldformat.FieldFormatChannel" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.itangcent.idea.plugin.easy-yapi">
@@ -36,6 +37,10 @@
         <apiChannel implementation="com.itangcent.easyapi.exporter.channel.yapi.YapiChannel"/>
         <apiChannel implementation="com.itangcent.easyapi.exporter.channel.curl.CurlChannel"/>
         <apiChannel implementation="com.itangcent.easyapi.exporter.channel.httpclient.HttpClientChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.JsonFieldFormatChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.Json5FieldFormatChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.PropertiesFieldFormatChannel"/>
+        <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.YamlFieldFormatChannel"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -67,6 +72,7 @@
         <projectService serviceImplementation="com.itangcent.easyapi.exporter.channel.ApiChannelRegistry"/>
         <projectService serviceImplementation="com.itangcent.easyapi.psi.helper.DocMetadataResolver"/>
         <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.ide.PropertiesService"/>
 
         <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>
         <postStartupActivity implementation="com.itangcent.easyapi.ide.action.ChannelActionInitActivity"/>
@@ -126,20 +132,11 @@
                 description="Export to channel"
                 popup="true"/>
 
-        <group id="EasyApiFieldsGroup" text="FieldsTo*" description="Export apis">
-            <action id="com.itangcent.idea.easy_api.actions.FieldsToJsonAction"
-                    class="com.itangcent.easyapi.ide.action.FieldsToJsonAction" text="ToJson"
-                    description="ToJson">
-            </action>
-            <action id="com.itangcent.idea.easy_api.actions.FieldsToJson5Action"
-                    class="com.itangcent.easyapi.ide.action.FieldsToJson5Action" text="ToJson5"
-                    description="ToJson5">
-            </action>
-            <action id="com.itangcent.idea.easy_api.actions.FieldsToPropertiesAction"
-                    class="com.itangcent.easyapi.ide.action.FieldsToPropertiesAction" text="ToProperties"
-                    description="ToProperties">
-            </action>
-        </group>
+        <group id="com.itangcent.idea.easy_api.actions.FieldFormatGroup"
+                class="com.itangcent.easyapi.ide.fieldformat.FieldFormatActionGroup"
+                text="FieldsTo*"
+                description="Convert fields to various formats"
+                popup="true"/>
 
         <group id="EasyApiCodeMenu" text="EasyApi" description="EasyApiCodeMenu" popup="true">
             <add-to-group group-id="CodeMenu" anchor="last"/>
@@ -153,14 +150,14 @@
             <add-to-group group-id="GenerateGroup" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
             <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
-            <reference ref="EasyApiFieldsGroup"/>
+            <reference ref="com.itangcent.idea.easy_api.actions.FieldFormatGroup"/>
         </group>
 
         <group id="EasyApiEditorLangPopupMenu" text="EasyApi" description="EasyApiEditorLangPopupMenu" popup="true">
             <add-to-group group-id="EditorLangPopupMenu" anchor="last"/>
             <reference ref="EasyApiExportFromFileGroup"/>
             <reference ref="com.itangcent.idea.easy_api.actions.ChannelQuickExportGroup"/>
-            <reference ref="EasyApiFieldsGroup"/>
+            <reference ref="com.itangcent.idea.easy_api.actions.FieldFormatGroup"/>
         </group>
 
         <group id="EasyApiProjectViewPopupMenu" text="EasyApi" description="EasyApiProjectViewPopupMenu" popup="true">

@@ -1,6 +1,8 @@
 package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ActionUiKind
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
@@ -26,20 +28,26 @@ class ScriptExecutorActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testActionPerformedWithoutProject() {
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext(
+        val event = AnActionEvent.createEvent(
+            DataContext { null },
+            presentation,
             "test",
-            presentation
-        ) { null }
+            ActionUiKind.NONE,
+            null
+        )
 
         action.actionPerformed(event)
     }
 
     fun testActionPerformedReturnsEarlyWithoutProject() {
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext(
+        val event = AnActionEvent.createEvent(
+            DataContext { null },
+            presentation,
             "test",
-            presentation
-        ) { null }
+            ActionUiKind.NONE,
+            null
+        )
 
         action.actionPerformed(event)
     }

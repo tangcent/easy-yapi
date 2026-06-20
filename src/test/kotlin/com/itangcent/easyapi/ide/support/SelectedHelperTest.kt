@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.ide.support
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
@@ -232,7 +233,7 @@ class SelectedHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
         if (psiElement != null) data[CommonDataKeys.PSI_ELEMENT.name] = psiElement
         if (navigatables != null) data[CommonDataKeys.NAVIGATABLE_ARRAY.name] = navigatables
         if (psiFile != null) data[CommonDataKeys.PSI_FILE.name] = psiFile
-        return AnActionEvent.createFromDataContext("test", Presentation(), MapDataContext(data))
+        return AnActionEvent.createEvent(MapDataContext(data), Presentation(), "test", ActionUiKind.NONE, null)
     }
 
     private class MapDataContext(private val data: Map<String, Any?>) : DataContext {

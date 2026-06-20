@@ -1,7 +1,9 @@
 package com.itangcent.easyapi.ide.action
 
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
 import com.intellij.pom.Navigatable
 import com.intellij.psi.PsiClass
@@ -94,10 +96,13 @@ class ApiCallActionTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testActionPerformedReturnsEarlyWithoutProject() {
         val action = ApiCallAction()
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext(
+        val event = AnActionEvent.createEvent(
+            DataContext { null },
+            presentation,
             "test",
-            presentation
-        ) { null }
+            ActionUiKind.NONE,
+            null
+        )
 
         action.actionPerformed(event)
     }
@@ -145,7 +150,7 @@ class ApiCallActionTest : EasyApiLightCodeInsightFixtureTestCase() {
         if (psiElement != null) data[CommonDataKeys.PSI_ELEMENT.name] = psiElement
         if (navigatables != null) data[CommonDataKeys.NAVIGATABLE_ARRAY.name] = navigatables
         if (psiFile != null) data[CommonDataKeys.PSI_FILE.name] = psiFile
-        return AnActionEvent.createFromDataContext("test", Presentation(), MapDataContext(data))
+        return AnActionEvent.createEvent(MapDataContext(data), Presentation(), "test", ActionUiKind.NONE, null)
     }
 
     private class MapDataContext(private val data: Map<String, Any?>) : com.intellij.openapi.actionSystem.DataContext {

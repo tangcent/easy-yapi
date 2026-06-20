@@ -1,8 +1,9 @@
 package com.itangcent.easyapi.ide.action
 
+import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
-import com.intellij.psi.PsiClass
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class ChannelExportActionTest : EasyApiLightCodeInsightFixtureTestCase() {
@@ -23,7 +24,7 @@ class ChannelExportActionTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testUpdateWithProject() {
         val action = ChannelExportAction("test", "Test")
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext("test", presentation) { project }
+        val event = AnActionEvent.createEvent(DataContext { project }, presentation, "test", ActionUiKind.NONE, null)
 
         action.update(event)
 
@@ -33,7 +34,7 @@ class ChannelExportActionTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testUpdateWithoutProject() {
         val action = ChannelExportAction("test", "Test")
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext("test", presentation) { null }
+        val event = AnActionEvent.createEvent(DataContext { null }, presentation, "test", ActionUiKind.NONE, null)
 
         action.update(event)
 
@@ -43,7 +44,7 @@ class ChannelExportActionTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testActionPerformedReturnsEarlyWithoutProject() {
         val action = ChannelExportAction("test", "Test")
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext("test", presentation) { null }
+        val event = AnActionEvent.createEvent(DataContext { null }, presentation, "test", ActionUiKind.NONE, null)
 
         // Should not throw
         action.actionPerformed(event)

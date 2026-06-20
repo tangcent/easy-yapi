@@ -1,10 +1,11 @@
 package com.itangcent.easyapi.ide.action
 
+import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
-import org.junit.Assert.*
 
 class ExportApiActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -31,10 +32,13 @@ class ExportApiActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testUpdateWithProject() {
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext(
+        val event = AnActionEvent.createEvent(
+            DataContext { project },
+            presentation,
             "test",
-            presentation
-        ) { project }
+            ActionUiKind.NONE,
+            null
+        )
 
         action.update(event)
 
@@ -43,10 +47,13 @@ class ExportApiActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testUpdateWithoutProject() {
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext(
+        val event = AnActionEvent.createEvent(
+            DataContext { null },
+            presentation,
             "test",
-            presentation
-        ) { null }
+            ActionUiKind.NONE,
+            null
+        )
 
         action.update(event)
 
@@ -55,10 +62,13 @@ class ExportApiActionTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testActionPerformedReturnsEarlyWithoutProject() {
         val presentation = Presentation()
-        val event = AnActionEvent.createFromDataContext(
+        val event = AnActionEvent.createEvent(
+            DataContext { null },
+            presentation,
             "test",
-            presentation
-        ) { null }
+            ActionUiKind.NONE,
+            null
+        )
 
         action.actionPerformed(event)
     }
