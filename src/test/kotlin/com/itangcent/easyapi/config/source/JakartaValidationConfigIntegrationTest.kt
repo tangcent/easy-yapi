@@ -4,9 +4,22 @@ import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
+import com.itangcent.easyapi.rule.RuleKeys
+import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
+/**
+ * Integration test for the `jakarta-validation` extension.
+ *
+ * The extension defines rules for [RuleKeys.FIELD_REQUIRED] and [RuleKeys.PARAM_REQUIRED]:
+ *   - `field.required=@jakarta.validation.constraints.NotBlank` (and NotNull, NotEmpty)
+ *   - `param.required=@jakarta.validation.constraints.NotBlank` (and NotNull, NotEmpty)
+ *
+ * With the AnnotationExpressionParser fix, a boolean rule like
+ * `field.required=@jakarta.validation.constraints.NotNull` resolves to `true` when the
+ * annotation is present (no attribute specified → presence check).
+ */
 class JakartaValidationConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var exporter: SpringMvcClassExporter
@@ -50,10 +63,82 @@ class JakartaValidationConfigIntegrationTest : EasyApiLightCodeInsightFixtureTes
         assertNotNull("jakarta-validation extension should exist", extension)
         assertEquals("Extension code should be jakarta-validation", "jakarta-validation", extension?.code)
         assertTrue("Extension should have content", extension?.content?.isNotBlank() == true)
-        
-        val configReader = createConfigReader()
-        assertTrue("param.required rules should exist", configReader.getAll("param.required").isNotEmpty())
-        assertTrue("field.required rules should exist", configReader.getAll("field.required").isNotEmpty())
+    }
+
+    /**
+     * The core rule: a field annotated with `@NotNull` should resolve
+     * [RuleKeys.FIELD_REQUIRED] to `true`.
+     */
+    fun testFieldRequiredRuleForNotNullField() = runTest {
+        val psiClass = findClass("com.itangcent.validation.ValidatedUserDTO")
+        assertNotNull("Should find ValidatedUserDTO", psiClass)
+
+        val idField = psiClass!!.fields.find { it.name == "id" }
+        assertNotNull("Should find id field", idField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val required = ruleEngine.evaluate(RuleKeys.FIELD_REQUIRED, idField!!)
+        assertTrue(
+            "FIELD_REQUIRED should be true for field with @NotNull",
+            required
+        )
+    }
+
+    /**
+     * The core rule: a field annotated with `@NotBlank` should resolve
+     * [RuleKeys.FIELD_REQUIRED] to `true`.
+     */
+    fun testFieldRequiredRuleForNotBlankField() = runTest {
+        val psiClass = findClass("com.itangcent.validation.ValidatedUserDTO")
+        assertNotNull("Should find ValidatedUserDTO", psiClass)
+
+        val nameField = psiClass!!.fields.find { it.name == "name" }
+        assertNotNull("Should find name field", nameField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val required = ruleEngine.evaluate(RuleKeys.FIELD_REQUIRED, nameField!!)
+        assertTrue(
+            "FIELD_REQUIRED should be true for field with @NotBlank",
+            required
+        )
+    }
+
+    /**
+     * The core rule: a field annotated with `@NotEmpty` should resolve
+     * [RuleKeys.FIELD_REQUIRED] to `true`.
+     */
+    fun testFieldRequiredRuleForNotEmptyField() = runTest {
+        val psiClass = findClass("com.itangcent.validation.ValidatedUserDTO")
+        assertNotNull("Should find ValidatedUserDTO", psiClass)
+
+        val emailField = psiClass!!.fields.find { it.name == "email" }
+        assertNotNull("Should find email field", emailField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val required = ruleEngine.evaluate(RuleKeys.FIELD_REQUIRED, emailField!!)
+        assertTrue(
+            "FIELD_REQUIRED should be true for field with @NotEmpty",
+            required
+        )
+    }
+
+    /**
+     * The core rule: a field without any validation annotation should resolve
+     * [RuleKeys.FIELD_REQUIRED] to `false`.
+     */
+    fun testFieldRequiredRuleForUnannotatedField() = runTest {
+        val psiClass = findClass("com.itangcent.validation.ValidatedUserDTO")
+        assertNotNull("Should find ValidatedUserDTO", psiClass)
+
+        val addressField = psiClass!!.fields.find { it.name == "address" }
+        assertNotNull("Should find address field", addressField)
+
+        val ruleEngine = RuleEngine.getInstance(project)
+        val required = ruleEngine.evaluate(RuleKeys.FIELD_REQUIRED, addressField!!)
+        assertFalse(
+            "FIELD_REQUIRED should be false for field without validation annotations",
+            required
+        )
     }
 
     fun testJakartaValidationControllerExportsEndpoints() = runTest {

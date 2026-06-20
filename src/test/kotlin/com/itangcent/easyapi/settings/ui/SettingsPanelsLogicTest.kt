@@ -366,8 +366,8 @@ class RemoteConfigPanelLogicTest {
         val panel = RemoteConfigPanel()
         val settings = Settings(remoteConfig = emptyArray())
         panel.resetFrom(settings)
-        // When empty, a default URL is added, so the panel IS modified compared to empty settings
-        assertTrue(panel.isModified(settings))
+        // When empty, both remoteItems and settings are empty, so panel is NOT modified
+        assertFalse(panel.isModified(settings))
     }
 
     @Test

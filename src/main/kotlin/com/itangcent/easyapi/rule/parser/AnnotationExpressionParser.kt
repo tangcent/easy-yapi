@@ -26,9 +26,30 @@ class AnnotationExpressionParser : RuleParser {
             parts[0] to parts.getOrNull(1)
         }
         if (annFqn.isBlank()) return null
-        if (attr.isNullOrBlank()) {
-            return helper.hasAnn(element, annFqn)
+        // Behavior depends on the rule's expected type:
+        //  - String rules resolve the annotation attribute value, defaulting to "value"
+        //    when no attribute is specified (e.g. `@ConfigurationProperties` reads `value()`).
+        //  - Boolean rules check annotation presence when no attribute is specified,
+        //    and otherwise resolve the attribute (e.g. `@Deprecated#since`).
+        return when (ruleKey) {
+            is RuleKey.StringKey -> {
+                val attrName = attr.takeUnless { it.isNullOrBlank() } ?: "value"
+                helper.findAttr(element, annFqn, attrName)
+            }
+            is RuleKey.BooleanKey -> {
+                if (attr.isNullOrBlank()) {
+                    helper.hasAnn(element, annFqn)
+                } else {
+                    helper.findAttr(element, annFqn, attr)
+                }
+            }
+            else -> {
+                if (attr.isNullOrBlank()) {
+                    helper.hasAnn(element, annFqn)
+                } else {
+                    helper.findAttr(element, annFqn, attr)
+                }
+            }
         }
-        return helper.findAttr(element, annFqn, attr)
     }
 }
