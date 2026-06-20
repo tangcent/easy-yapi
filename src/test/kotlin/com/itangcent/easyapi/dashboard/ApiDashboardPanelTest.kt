@@ -57,7 +57,7 @@ class ApiDashboardPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testEndpointDetailsPanelShowsEndpoint() {
         val endpoint = ApiFixtures.createGetEndpoint()
-        val detailsPanel = EndpointDetailsPanel(project, com.itangcent.easyapi.http.UrlConnectionHttpClient)
+        val detailsPanel = EndpointDetailsPanel(project)
         
         detailsPanel.showEndpoint(endpoint)
         

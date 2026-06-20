@@ -61,11 +61,9 @@ import javax.swing.table.DefaultTableModel
  * - Host history management
  * 
  * @param project The IntelliJ IDEA project context
- * @param httpClient The HTTP client for executing requests
  */
 class EndpointDetailsPanel(
-    private val project: Project,
-    private val httpClient: HttpClient
+    private val project: Project
 ) : JBPanel<EndpointDetailsPanel>(BorderLayout()) {
     companion object : IdeaLog
 
@@ -684,6 +682,7 @@ class EndpointDetailsPanel(
     }
 
     fun showEndpoint(endpoint: ApiEndpoint) {
+        saveCurrentEditBeforeSwitch()
         saveEndpointScripts()
         isLoading = true
         try {
@@ -866,44 +865,77 @@ class EndpointDetailsPanel(
         pathParamsTableModel.rowCount = 0
         pathParamsEnumValues.clear()
         val cachedPathParams = cache.pathParams.associateBy { it.name }
+        val originalPathParamNames = mutableSetOf<String>()
         pathParams.forEachIndexed { index, p ->
+            originalPathParamNames.add(p.name)
             val cachedValue = cachedPathParams[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
             pathParamsTableModel.addRow(arrayOf(p.name, cachedValue, p.description ?: "", ""))
             updatePathParamComboBox(index, p.enumValues)
+        }
+        // Restore custom path params added by the user that are not part of the original endpoint
+        cache.pathParams.forEach { p ->
+            if (p.name !in originalPathParamNames) {
+                pathParamsTableModel.addRow(arrayOf(p.name, p.value ?: "", p.description ?: "", ""))
+            }
         }
         ensureEmptyRow(pathParamsTableModel)
 
         paramsTableModel.rowCount = 0
         val cachedQueryParams = cache.queryParams.associateBy { it.name }
+        val originalQueryParamNames = mutableSetOf<String>()
         parameters
             .filter { it.binding == ParameterBinding.Query || it.binding == ParameterBinding.Cookie }
             .forEach { p ->
+                originalQueryParamNames.add(p.name)
                 val cachedValue = cachedQueryParams[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
                 paramsTableModel.addRow(arrayOf(p.name, cachedValue, p.description ?: "", ""))
             }
+        // Restore custom query params added by the user that are not part of the original endpoint
+        cache.queryParams.forEach { p ->
+            if (p.name !in originalQueryParamNames) {
+                paramsTableModel.addRow(arrayOf(p.name, p.value ?: "", p.description ?: "", ""))
+            }
+        }
         ensureEmptyRow(paramsTableModel)
 
         headersTableModel.rowCount = 0
         val cachedHeaders = cache.headers.associateBy { it.name }
+        val originalHeaderNames = mutableSetOf<String>()
         headers.forEach { h ->
+            originalHeaderNames.add(h.name)
             val cachedValue = cachedHeaders[h.name]?.value ?: h.value ?: ""
             headersTableModel.addRow(arrayOf(h.name, cachedValue, ""))
         }
         parameters.filter { it.binding == ParameterBinding.Header }
             .forEach { p ->
+                originalHeaderNames.add(p.name)
                 val cachedValue = cachedHeaders[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
                 headersTableModel.addRow(arrayOf(p.name, cachedValue, ""))
             }
+        // Restore custom headers added by the user that are not part of the original endpoint
+        cache.headers.forEach { h ->
+            if (h.name !in originalHeaderNames) {
+                headersTableModel.addRow(arrayOf(h.name, h.value ?: "", ""))
+            }
+        }
         ensureEmptyRow(headersTableModel)
 
         val formParams = parameters.filter { it.binding == ParameterBinding.Form }
         formTableModel.rowCount = 0
         formFileRows.clear()
         val cachedFormParams = cache.formParams.associateBy { it.name }
+        val originalFormParamNames = mutableSetOf<String>()
         formParams.forEachIndexed { index, p ->
+            originalFormParamNames.add(p.name)
             val cachedValue = cachedFormParams[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
             formTableModel.addRow(arrayOf(p.name, cachedValue, p.description ?: "", ""))
             if (p.type == ParameterType.FILE) formFileRows.add(index)
+        }
+        // Restore custom form params added by the user that are not part of the original endpoint
+        cache.formParams.forEach { p ->
+            if (p.name !in originalFormParamNames) {
+                formTableModel.addRow(arrayOf(p.name, p.value ?: "", p.description ?: "", ""))
+            }
         }
         ensureEmptyRow(formTableModel)
         setupFormTableFileEditors()
@@ -1033,6 +1065,7 @@ class EndpointDetailsPanel(
     }
 
     fun clear() {
+        saveCurrentEditBeforeSwitch()
         saveEndpointScripts()
         currentEndpoint = null
         currentEndpointKey = ""
@@ -1451,6 +1484,20 @@ class EndpointDetailsPanel(
         autoSaveTimer.restart()
     }
 
+    /**
+     * Flushes any pending auto-save for the current endpoint before switching away.
+     *
+     * Without this, the debounced auto-save timer would fire after `currentEndpointKey`
+     * has already been updated to the new endpoint, causing the previous endpoint's
+     * edits to be lost (or worse, overwritten with the new endpoint's data).
+     */
+    private fun saveCurrentEditBeforeSwitch() {
+        autoSaveTimer.stop()
+        if (!isLoading && currentEndpointKey.isNotEmpty()) {
+            doSaveCurrentEdit()
+        }
+    }
+
     private fun doSaveCurrentEdit() {
         val endpoint = currentEndpoint ?: return
 
@@ -1553,6 +1600,7 @@ class EndpointDetailsPanel(
     }
 
     fun dispose() {
+        saveCurrentEditBeforeSwitch()
         saveEndpointScripts()
         scope.cancel()
     }
