@@ -3,9 +3,9 @@ package com.itangcent.easyapi.exporter.formatter
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.util.text.append
-import java.util.IdentityHashMap
 
 /**
  * Formats an [ObjectModel] as a Java properties string.
@@ -27,7 +27,7 @@ import java.util.IdentityHashMap
  *
  * ## Recursive Reference Handling
  * To prevent infinite loops with self-referencing types, each object
- * is tracked and limited to [maxVisits] expansions (default: 2).
+ * is tracked and limited to [ObjectModel.DEFAULT_MAX_VISITS] expansions.
  *
  * ## Usage
  * ```kotlin
@@ -35,15 +35,14 @@ import java.util.IdentityHashMap
  * val properties = formatter.format(objectModel)
  * ```
  *
- * @param maxVisits Maximum number of times to expand the same object
  * @see ObjectModel for the input model
  */
-class PropertiesFormatter(private val maxVisits: Int = 2) {
+class PropertiesFormatter {
 
     fun format(model: ObjectModel, prefix: String = ""): String {
         val sb = StringBuilder()
-        val visitCounts = IdentityHashMap<ObjectModel.Object, Int>()
-        flatten(prefix, model, null, sb, visitCounts)
+        val tracker = ObjectModelVisitTracker()
+        flatten(prefix, model, null, sb, tracker)
         return sb.toString()
     }
 
@@ -52,12 +51,11 @@ class PropertiesFormatter(private val maxVisits: Int = 2) {
         model: ObjectModel,
         fieldModel: FieldModel?,
         sb: StringBuilder,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         when (model) {
             is ObjectModel.Object -> {
-                val count = visitCounts.getOrDefault(model, 0)
-                if (count >= maxVisits) {
+                if (!tracker.tryEnter(model)) {
                     // Recursive reference — emit as empty value to avoid infinite loop
                     sb.appendComment(fieldModel?.comment)
                     if (prefix.isNotEmpty()) {
@@ -65,13 +63,15 @@ class PropertiesFormatter(private val maxVisits: Int = 2) {
                     }
                     return
                 }
-                visitCounts[model] = count + 1
-                sb.appendComment(fieldModel?.comment)
-                for ((name, field) in model.fields) {
-                    val full = prefix.append(name, separator = ".")
-                    flatten(full, field.model, field, sb, visitCounts)
+                try {
+                    sb.appendComment(fieldModel?.comment)
+                    for ((name, field) in model.fields) {
+                        val full = prefix.append(name, separator = ".")
+                        flatten(full, field.model, field, sb, tracker)
+                    }
+                } finally {
+                    tracker.exit(model)
                 }
-                visitCounts[model] = count
             }
 
             is ObjectModel.Array -> {

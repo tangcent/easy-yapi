@@ -208,35 +208,4 @@ class ObjectModelJsonBuilderTest : TestCase() {
         assertTrue(json.contains("\"inner\""))
         assertTrue(json.contains("\"leaf\""))
     }
-
-    fun testCustomMaxVisitsOfOne() {
-        // With maxVisits=1, self-reference should be {} immediately
-        val fields = linkedMapOf<String, FieldModel>()
-        val nodeModel = ObjectModel.Object(fields)
-
-        fields["id"] = FieldModel(ObjectModel.single(JsonType.LONG))
-        fields["parent"] = FieldModel(nodeModel)
-
-        val builder = ObjectModelJsonBuilder(RawJsonHandler, maxVisits = 1)
-        val json = builder.build(nodeModel)
-
-        // id appears only once — parent is {} on first re-encounter
-        val idCount = Regex("\"id\"").findAll(json).count()
-        assertEquals("With maxVisits=1, id should appear once", 1, idCount)
-    }
-
-    fun testCustomMaxVisitsOfThree() {
-        // With maxVisits=3, self-reference expands 3 levels
-        val fields = linkedMapOf<String, FieldModel>()
-        val nodeModel = ObjectModel.Object(fields)
-
-        fields["id"] = FieldModel(ObjectModel.single(JsonType.LONG))
-        fields["parent"] = FieldModel(nodeModel)
-
-        val builder = ObjectModelJsonBuilder(RawJsonHandler, maxVisits = 3)
-        val json = builder.build(nodeModel)
-
-        val idCount = Regex("\"id\"").findAll(json).count()
-        assertEquals("With maxVisits=3, id should appear three times", 3, idCount)
-    }
 }

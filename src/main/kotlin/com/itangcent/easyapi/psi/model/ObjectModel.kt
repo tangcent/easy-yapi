@@ -203,6 +203,9 @@ sealed class ObjectModel {
     fun asMap(): MapModel? = this as? MapModel
 
     companion object {
+        /** Default maximum times to visit the same object during traversal (prevents infinite recursion). */
+        const val DEFAULT_MAX_VISITS = 2
+
         fun emptyObject(): Object = Object(emptyMap())
         fun nullValue(): Single = Single("null")
         fun single(type: String): Single = Single(type)
