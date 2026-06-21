@@ -124,7 +124,7 @@ class PropertiesFormatterTest {
         val obj = ObjectModel.Object(fields = mutableMapOf())
         val selfField = FieldModel(model = obj)
         (obj.fields as MutableMap)["parent"] = selfField
-        val formatter = PropertiesFormatter(maxVisits = 2)
+        val formatter = PropertiesFormatter()
         
         val result = formatter.format(obj)
         assertTrue(result.contains("parent="))

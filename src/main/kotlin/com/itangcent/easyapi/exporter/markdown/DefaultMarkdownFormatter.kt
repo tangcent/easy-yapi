@@ -10,18 +10,8 @@ import com.itangcent.easyapi.exporter.model.ParameterBinding
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
+import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
 
-/**
- * Default implementation of MarkdownFormatter.
- * 
- * This formatter generates comprehensive Markdown documentation including:
- * - Endpoint grouping by folder
- * - Request parameters (path, query, headers, form)
- * - Request body with optional JSON demo
- * - Response body documentation
- * 
- * @param outputDemo Whether to include JSON demo snippets in the output
- */
 /**
  * Default implementation of Markdown formatter for API documentation.
  * 
@@ -36,10 +26,9 @@ import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
  * @param outputDemo Whether to include JSON demo examples in the output
  */
 class DefaultMarkdownFormatter(
-    private val outputDemo: Boolean = true,
-    private val maxVisits: Int = 2
+    private val outputDemo: Boolean = true
 ) : MarkdownFormatter {
-    
+
     /**
      * Formats a list of API endpoints as Markdown documentation.
      * Groups endpoints by folder and generates detailed documentation for each.
@@ -59,22 +48,22 @@ class DefaultMarkdownFormatter(
     override suspend fun format(endpoints: List<ApiEndpoint>, moduleName: String): String {
         val sb = StringBuilder()
         sb.append("# ").append(moduleName).append('\n')
-        
+
         val grouped = endpoints.groupBy { it.folder ?: "" }
-        
+
         for ((folder, list) in grouped) {
             if (folder.isNotBlank()) {
                 sb.append('\n').append("## ").append(folder).append('\n')
             }
-            
+
             for (ep in list) {
                 formatEndpoint(sb, ep)
             }
         }
-        
+
         return sb.toString()
     }
-    
+
     /**
      * Formats a single API endpoint as a Markdown section.
      * Dispatches to protocol-specific formatting based on metadata type.
@@ -99,18 +88,18 @@ class DefaultMarkdownFormatter(
     private fun formatHttpEndpoint(sb: StringBuilder, ep: ApiEndpoint, meta: HttpMetadata) {
         sb.append('\n').append("---\n")
         sb.append("### ").append(ep.name ?: "${meta.method.name} ${meta.path}").append('\n')
-        
+
         sb.append('\n').append("> BASIC").append('\n').append('\n')
         sb.append("**Path:** ").append(meta.path).append('\n').append('\n')
         sb.append("**Method:** ").append(meta.method.name).append('\n').append('\n')
-        
+
         ep.description?.takeIf { it.isNotBlank() }?.let {
             sb.append("**Desc:**").append('\n').append('\n')
             sb.append(it).append('\n').append('\n')
         }
-        
+
         formatRequest(sb, ep, meta)
-        
+
         formatResponse(sb, ep, meta)
     }
 
@@ -153,7 +142,7 @@ class DefaultMarkdownFormatter(
 
         formatResponse(sb, ep, meta)
     }
-    
+
     /**
      * Formats the request section of an endpoint.
      * Includes path params, query params, headers, form data, and body.
@@ -170,34 +159,34 @@ class DefaultMarkdownFormatter(
      */
     private fun formatRequest(sb: StringBuilder, ep: ApiEndpoint, meta: HttpMetadata) {
         sb.append('\n').append("> REQUEST").append('\n').append('\n')
-        
+
         val pathParams = meta.parameters.filter { it.binding == ParameterBinding.Path }
         if (pathParams.isNotEmpty()) {
             sb.append("**Path Params:**").append('\n').append('\n')
             formatParamsTable(sb, pathParams)
         }
-        
+
         val queryParams = meta.parameters.filter { it.binding == ParameterBinding.Query }
         if (queryParams.isNotEmpty()) {
             sb.append("**Query:**").append('\n').append('\n')
             formatQueryTable(sb, queryParams)
         }
-        
+
         if (meta.headers.isNotEmpty()) {
             sb.append("**Headers:**").append('\n').append('\n')
             formatHeadersTable(sb, meta.headers)
         }
-        
+
         val formParams = meta.parameters.filter { it.binding == ParameterBinding.Form }
         if (formParams.isNotEmpty()) {
             sb.append("**Form:**").append('\n').append('\n')
             formatFormTable(sb, formParams)
         }
-        
+
         if (meta.body != null) {
             sb.append("**Request Body:**").append('\n').append('\n')
             formatBodyTable(sb, meta.body)
-            
+
             if (outputDemo) {
                 sb.append('\n').append("**Request Demo:**").append('\n').append('\n')
                 sb.append("```json").append('\n')
@@ -205,12 +194,12 @@ class DefaultMarkdownFormatter(
                 sb.append('\n').append("```").append('\n')
             }
         }
-        
+
         if (pathParams.isEmpty() && queryParams.isEmpty() && meta.headers.isEmpty() && formParams.isEmpty() && meta.body == null) {
             sb.append('\n')
         }
     }
-    
+
     /**
      * Formats the response section of an endpoint.
      * 
@@ -229,14 +218,14 @@ class DefaultMarkdownFormatter(
             is GrpcMetadata -> meta.responseBody
             else -> null
         }
-        
+
         if (responseBody == null) return
-        
+
         sb.append('\n').append("> RESPONSE").append('\n').append('\n')
-        
+
         sb.append("**Body:**").append('\n').append('\n')
         formatBodyTable(sb, responseBody)
-        
+
         if (outputDemo) {
             sb.append('\n').append("**Response Demo:**").append('\n').append('\n')
             sb.append("```json").append('\n')
@@ -244,7 +233,7 @@ class DefaultMarkdownFormatter(
             sb.append('\n').append("```").append('\n')
         }
     }
-    
+
     /**
      * Formats a table for path parameters.
      * 
@@ -254,7 +243,7 @@ class DefaultMarkdownFormatter(
     private fun formatParamsTable(sb: StringBuilder, params: List<ApiParameter>) {
         sb.append("| name | value | required | desc |").append('\n')
         sb.append("| ------------ | ------------ | ------------ | ------------ |").append('\n')
-        
+
         for (p in params) {
             sb.append("| ")
                 .append(escape(p.name)).append(" | ")
@@ -265,7 +254,7 @@ class DefaultMarkdownFormatter(
         }
         sb.append('\n')
     }
-    
+
     /**
      * Formats a table for query parameters.
      * 
@@ -275,7 +264,7 @@ class DefaultMarkdownFormatter(
     private fun formatQueryTable(sb: StringBuilder, params: List<ApiParameter>) {
         sb.append("| name | value | required | desc |").append('\n')
         sb.append("| ------------ | ------------ | ------------ | ------------ |").append('\n')
-        
+
         for (p in params) {
             sb.append("| ")
                 .append(escape(p.name)).append(" | ")
@@ -286,7 +275,7 @@ class DefaultMarkdownFormatter(
         }
         sb.append('\n')
     }
-    
+
     /**
      * Formats a table for HTTP headers.
      * 
@@ -296,7 +285,7 @@ class DefaultMarkdownFormatter(
     private fun formatHeadersTable(sb: StringBuilder, headers: List<ApiHeader>) {
         sb.append("| name | value | required | desc |").append('\n')
         sb.append("| ------------ | ------------ | ------------ | ------------ |").append('\n')
-        
+
         for (h in headers) {
             sb.append("| ")
                 .append(escape(h.name)).append(" | ")
@@ -307,7 +296,7 @@ class DefaultMarkdownFormatter(
         }
         sb.append('\n')
     }
-    
+
     /**
      * Formats a table for form data parameters.
      * 
@@ -317,7 +306,7 @@ class DefaultMarkdownFormatter(
     private fun formatFormTable(sb: StringBuilder, params: List<ApiParameter>) {
         sb.append("| name | value | required | type | desc |").append('\n')
         sb.append("| ------------ | ------------ | ------------ | ------------ | ------------ |").append('\n')
-        
+
         for (p in params) {
             sb.append("| ")
                 .append(escape(p.name)).append(" | ")
@@ -329,7 +318,7 @@ class DefaultMarkdownFormatter(
         }
         sb.append('\n')
     }
-    
+
     /**
      * Formats a table describing the structure of a request/response body.
      * 
@@ -338,14 +327,14 @@ class DefaultMarkdownFormatter(
      */
     private fun formatBodyTable(sb: StringBuilder, model: ObjectModel?) {
         if (model == null) return
-        
+
         sb.append("| name | type | desc |").append('\n')
         sb.append("| ------------ | ------------ | ------------ |").append('\n')
-        
+
         formatObjectModelRecursive(sb, model, 0)
         sb.append('\n')
     }
-    
+
     /**
      * Recursively formats an object model into table rows.
      * Handles objects, arrays, single values, and maps.
@@ -355,39 +344,43 @@ class DefaultMarkdownFormatter(
      * @param depth The current nesting depth for indentation
      */
     private fun formatObjectModelRecursive(sb: StringBuilder, model: ObjectModel, depth: Int) {
-        val visitCounts = HashMap<Int, Int>()
-        formatObjectModelRecursive(sb, model, depth, visitCounts)
+        val tracker = ObjectModelVisitTracker()
+        formatObjectModelRecursive(sb, model, depth, tracker)
     }
 
     private fun formatObjectModelRecursive(
         sb: StringBuilder,
         model: ObjectModel,
         depth: Int,
-        visitCounts: HashMap<Int, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         when (model) {
             is ObjectModel.Object -> {
-                val count = visitCounts.getOrDefault(model.id, 0)
-                if (count >= maxVisits) return
-                visitCounts[model.id] = count + 1
-                for ((fieldName, fieldModel) in model.fields) {
-                    formatFieldRow(sb, fieldName, fieldModel, depth, visitCounts)
+                if (!tracker.tryEnter(model)) return
+                try {
+                    for ((fieldName, fieldModel) in model.fields) {
+                        formatFieldRow(sb, fieldName, fieldModel, depth, tracker)
+                    }
+                } finally {
+                    tracker.exit(model)
                 }
-                visitCounts[model.id] = count
             }
+
             is ObjectModel.Array -> {
-                formatArrayItemRecursive(sb, model.item, "[0]", depth, visitCounts)
+                formatArrayItemRecursive(sb, model.item, "[0]", depth, tracker)
             }
+
             is ObjectModel.Single -> {
                 sb.append("| | ").append(escape(model.type)).append(" | |").append('\n')
             }
+
             is ObjectModel.MapModel -> {
                 sb.append("| key | ").append(formatType(model.keyType)).append(" | |").append('\n')
                 sb.append("| value | ").append(formatType(model.valueType)).append(" | |").append('\n')
             }
         }
     }
-    
+
     /**
      * Recursively formats array items with a prefix.
      * 
@@ -401,26 +394,30 @@ class DefaultMarkdownFormatter(
         item: ObjectModel,
         prefix: String,
         depth: Int,
-        visitCounts: HashMap<Int, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         when (item) {
             is ObjectModel.Object -> {
-                val count = visitCounts.getOrDefault(item.id, 0)
-                if (count >= maxVisits) return
-                visitCounts[item.id] = count + 1
-                for ((fieldName, fieldModel) in item.fields) {
-                    formatFieldRow(sb, "$prefix.$fieldName", fieldModel, depth, visitCounts)
+                if (!tracker.tryEnter(item)) return
+                try {
+                    for ((fieldName, fieldModel) in item.fields) {
+                        formatFieldRow(sb, "$prefix.$fieldName", fieldModel, depth, tracker)
+                    }
+                } finally {
+                    tracker.exit(item)
                 }
-                visitCounts[item.id] = count
             }
+
             is ObjectModel.Array -> {
-                formatArrayItemRecursive(sb, item.item, "$prefix[0]", depth, visitCounts)
+                formatArrayItemRecursive(sb, item.item, "$prefix[0]", depth, tracker)
             }
+
             is ObjectModel.Single -> {
                 sb.append("| ").append(escape(prefix)).append(" | ")
                     .append(escape(item.type)).append("[] | |")
                     .append('\n')
             }
+
             is ObjectModel.MapModel -> {
                 sb.append("| ").append(escape(prefix)).append(".key | ")
                     .append(formatType(item.keyType)).append(" | |")
@@ -431,7 +428,7 @@ class DefaultMarkdownFormatter(
             }
         }
     }
-    
+
     /**
      * Formats a single field row in a body table.
      * Includes indentation for nested fields.
@@ -446,60 +443,67 @@ class DefaultMarkdownFormatter(
         fieldName: String,
         fieldModel: FieldModel,
         depth: Int,
-        visitCounts: HashMap<Int, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         val indent = if (depth > 0) {
             "&ensp;&ensp;".repeat(depth) + "&#124;─"
         } else {
             ""
         }
-        
+
         val type = formatType(fieldModel.model)
         val desc = buildFieldDescription(fieldModel)
-        
+
         sb.append("| ")
             .append(indent).append(escape(fieldName)).append(" | ")
             .append(escape(type)).append(" | ")
             .append(escape(desc)).append(" |")
             .append('\n')
-        
+
         when (val nestedModel = fieldModel.model) {
             is ObjectModel.Object -> {
-                val count = visitCounts.getOrDefault(nestedModel.id, 0)
-                if (count >= maxVisits) return
-                visitCounts[nestedModel.id] = count + 1
-                for ((nestedFieldName, nestedFieldModel) in nestedModel.fields) {
-                    formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1, visitCounts)
+                if (tracker.tryEnter(nestedModel)) {
+                    try {
+                        for ((nestedFieldName, nestedFieldModel) in nestedModel.fields) {
+                            formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1, tracker)
+                        }
+                    } finally {
+                        tracker.exit(nestedModel)
+                    }
                 }
-                visitCounts[nestedModel.id] = count
             }
+
             is ObjectModel.Array -> {
                 when (val item = nestedModel.item) {
                     is ObjectModel.Object -> {
-                        val count = visitCounts.getOrDefault(item.id, 0)
-                        if (count >= maxVisits) return
-                        visitCounts[item.id] = count + 1
-                        for ((nestedFieldName, nestedFieldModel) in item.fields) {
-                            formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1, visitCounts)
+                        if (tracker.tryEnter(item)) {
+                            try {
+                                for ((nestedFieldName, nestedFieldModel) in item.fields) {
+                                    formatFieldRow(sb, nestedFieldName, nestedFieldModel, depth + 1, tracker)
+                                }
+                            } finally {
+                                tracker.exit(item)
+                            }
                         }
-                        visitCounts[item.id] = count
                     }
+
                     else -> {
                         // For simple array types, no nested rows needed
                     }
                 }
             }
+
             else -> {
                 // Simple types don't need nested rows
             }
         }
     }
-    
+
     private fun buildFieldDescription(fieldModel: FieldModel): String {
         val parts = mutableListOf<String>()
-        
+
         fieldModel.comment?.takeIf { it.isNotBlank() }?.let { parts.add(it) }
-        
+
         fieldModel.options?.takeIf { it.isNotEmpty() }?.let { options ->
             val optionDesc = options.joinToString("<br>") { opt ->
                 if (opt.desc.isNullOrBlank()) {
@@ -510,10 +514,10 @@ class DefaultMarkdownFormatter(
             }
             parts.add(optionDesc)
         }
-        
+
         return parts.joinToString("<br>")
     }
-    
+
     private fun formatType(model: ObjectModel): String {
         return when (model) {
             is ObjectModel.Single -> model.type
@@ -522,7 +526,7 @@ class DefaultMarkdownFormatter(
             is ObjectModel.MapModel -> "map"
         }
     }
-    
+
     private fun escape(text: String): String {
         return MarkdownEscapeUtils.escape(text)
     }

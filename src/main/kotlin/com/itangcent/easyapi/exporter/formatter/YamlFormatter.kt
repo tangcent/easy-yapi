@@ -2,8 +2,8 @@ package com.itangcent.easyapi.exporter.formatter
 
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
 import com.itangcent.easyapi.psi.type.JsonType
-import java.util.IdentityHashMap
 
 /**
  * Renders an [ObjectModel] as YAML (block style, 2-space indent).
@@ -28,8 +28,8 @@ import java.util.IdentityHashMap
  *
  * ## Recursive Reference Handling
  * To prevent infinite loops with self-referencing types, each object
- * is tracked and limited to [MAX_VISITS] expansions — same pattern as
- * [PropertiesFormatter].
+ * is tracked and limited to [ObjectModel.DEFAULT_MAX_VISITS] expansions —
+ * same pattern as [PropertiesFormatter].
  *
  * ## Usage
  * ```kotlin
@@ -41,25 +41,24 @@ import java.util.IdentityHashMap
 object YamlFormatter {
 
     private const val INDENT = "  "
-    private const val MAX_VISITS = 2
 
     /** YAML rendering of an [ObjectModel]. */
     fun format(model: ObjectModel): String {
         val sb = StringBuilder()
-        val visitCounts = IdentityHashMap<ObjectModel.Object, Int>()
-        renderTop(model, sb, visitCounts)
+        val tracker = ObjectModelVisitTracker()
+        renderTop(model, sb, tracker)
         return sb.toString().trimEnd()
     }
 
     private fun renderTop(
         model: ObjectModel,
         sb: StringBuilder,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         when (model) {
-            is ObjectModel.Object -> renderObjectFields(model, 0, sb, visitCounts, firstLine = true)
-            is ObjectModel.Array -> renderArray(model, 0, sb, visitCounts)
-            is ObjectModel.MapModel -> renderMap(model, 0, sb, visitCounts)
+            is ObjectModel.Object -> renderObjectFields(model, 0, sb, tracker, firstLine = true)
+            is ObjectModel.Array -> renderArray(model, 0, sb, tracker)
+            is ObjectModel.MapModel -> renderMap(model, 0, sb, tracker)
             is ObjectModel.Single -> sb.append("value: ").append(formatSingleValue(model, null))
         }
     }
@@ -73,7 +72,7 @@ object YamlFormatter {
         model: ObjectModel.Object,
         indent: Int,
         sb: StringBuilder,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>,
+        tracker: ObjectModelVisitTracker,
         firstLine: Boolean
     ) {
         if (model.fields.isEmpty()) {
@@ -81,20 +80,20 @@ object YamlFormatter {
             return
         }
 
-        val count = visitCounts.getOrDefault(model, 0)
-        if (count >= MAX_VISITS) {
+        if (!tracker.tryEnter(model)) {
             sb.append("{}")
             return
         }
-        visitCounts[model] = count + 1
 
-        model.fields.entries.forEachIndexed { index, (name, field) ->
-            if (!firstLine || index > 0) sb.appendLine()
-            sb.append(INDENT.repeat(indent)).append(name).append(":")
-            renderFieldValue(field, indent, sb, visitCounts)
+        try {
+            model.fields.entries.forEachIndexed { index, (name, field) ->
+                if (!firstLine || index > 0) sb.appendLine()
+                sb.append(INDENT.repeat(indent)).append(name).append(":")
+                renderFieldValue(field, indent, sb, tracker)
+            }
+        } finally {
+            tracker.exit(model)
         }
-
-        visitCounts[model] = count
     }
 
     /**
@@ -105,31 +104,34 @@ object YamlFormatter {
         field: FieldModel,
         indent: Int,
         sb: StringBuilder,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         when (val model = field.model) {
             is ObjectModel.Object -> {
                 if (model.fields.isEmpty()) {
                     sb.append(" {}")
                 } else {
-                    val count = visitCounts.getOrDefault(model, 0)
-                    if (count >= MAX_VISITS) {
+                    if (!tracker.tryEnter(model)) {
                         sb.append(" {}")
                     } else {
-                        sb.appendLine()
-                        renderObjectFields(model, indent + 1, sb, visitCounts, firstLine = false)
+                        try {
+                            sb.appendLine()
+                            renderObjectFields(model, indent + 1, sb, tracker, firstLine = false)
+                        } finally {
+                            tracker.exit(model)
+                        }
                     }
                 }
             }
 
             is ObjectModel.Array -> {
                 sb.appendLine()
-                renderArray(model, indent + 1, sb, visitCounts)
+                renderArray(model, indent + 1, sb, tracker)
             }
 
             is ObjectModel.MapModel -> {
                 sb.appendLine()
-                renderMap(model, indent + 1, sb, visitCounts)
+                renderMap(model, indent + 1, sb, tracker)
             }
 
             is ObjectModel.Single -> {
@@ -145,7 +147,7 @@ object YamlFormatter {
         model: ObjectModel.Array,
         indent: Int,
         sb: StringBuilder,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         sb.append(INDENT.repeat(indent)).append("- ")
         when (val item = model.item) {
@@ -153,33 +155,34 @@ object YamlFormatter {
                 if (item.fields.isEmpty()) {
                     sb.append("{}")
                 } else {
-                    val count = visitCounts.getOrDefault(item, 0)
-                    if (count >= MAX_VISITS) {
+                    if (!tracker.tryEnter(item)) {
                         sb.append("{}")
                     } else {
-                        visitCounts[item] = count + 1
-                        // First field inline with `- `, rest on new lines
-                        val entries = item.fields.entries.toList()
-                        entries.forEachIndexed { index, (name, field) ->
-                            if (index > 0) {
-                                sb.appendLine()
-                                sb.append(INDENT.repeat(indent + 1))
+                        try {
+                            // First field inline with `- `, rest on new lines
+                            val entries = item.fields.entries.toList()
+                            entries.forEachIndexed { index, (name, field) ->
+                                if (index > 0) {
+                                    sb.appendLine()
+                                    sb.append(INDENT.repeat(indent + 1))
+                                }
+                                sb.append(name).append(":")
+                                renderFieldValue(field, indent + 1, sb, tracker)
                             }
-                            sb.append(name).append(":")
-                            renderFieldValue(field, indent + 1, sb, visitCounts)
+                        } finally {
+                            tracker.exit(item)
                         }
-                        visitCounts[item] = count
                     }
                 }
             }
 
             is ObjectModel.Array -> {
-                renderArray(item, indent + 1, sb, visitCounts)
+                renderArray(item, indent + 1, sb, tracker)
             }
 
             is ObjectModel.MapModel -> {
                 sb.appendLine()
-                renderMap(item, indent + 1, sb, visitCounts)
+                renderMap(item, indent + 1, sb, tracker)
             }
 
             is ObjectModel.Single -> {
@@ -195,20 +198,20 @@ object YamlFormatter {
         model: ObjectModel.MapModel,
         indent: Int,
         sb: StringBuilder,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         sb.append(INDENT.repeat(indent)).append("key:")
-        renderMapValue(model.keyType, indent, sb, visitCounts)
+        renderMapValue(model.keyType, indent, sb, tracker)
         sb.appendLine()
         sb.append(INDENT.repeat(indent)).append("value:")
-        renderMapValue(model.valueType, indent, sb, visitCounts)
+        renderMapValue(model.valueType, indent, sb, tracker)
     }
 
     private fun renderMapValue(
         model: ObjectModel,
         indent: Int,
         sb: StringBuilder,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ) {
         when (model) {
             is ObjectModel.Object -> {
@@ -216,18 +219,18 @@ object YamlFormatter {
                     sb.append(" {}")
                 } else {
                     sb.appendLine()
-                    renderObjectFields(model, indent + 1, sb, visitCounts, firstLine = false)
+                    renderObjectFields(model, indent + 1, sb, tracker, firstLine = false)
                 }
             }
 
             is ObjectModel.Array -> {
                 sb.appendLine()
-                renderArray(model, indent + 1, sb, visitCounts)
+                renderArray(model, indent + 1, sb, tracker)
             }
 
             is ObjectModel.MapModel -> {
                 sb.appendLine()
-                renderMap(model, indent + 1, sb, visitCounts)
+                renderMap(model, indent + 1, sb, tracker)
             }
 
             is ObjectModel.Single -> {

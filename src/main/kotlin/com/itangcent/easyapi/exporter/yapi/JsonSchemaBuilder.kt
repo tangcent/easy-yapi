@@ -3,9 +3,9 @@ package com.itangcent.easyapi.exporter.yapi
 import com.itangcent.easyapi.exporter.model.ApiParameter
 import com.itangcent.easyapi.psi.model.FieldModel
 import com.itangcent.easyapi.psi.model.ObjectModel
+import com.itangcent.easyapi.psi.model.ObjectModelVisitTracker
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.util.json.GsonUtils
-import java.util.IdentityHashMap
 
 /**
  * Builder for creating JSON Schema from object models.
@@ -18,14 +18,11 @@ import java.util.IdentityHashMap
  * - Field descriptions, defaults, and mock data
  * - Enum values with descriptions
  * - Circular reference detection
- * 
- * @param maxVisits Maximum times to visit the same object (prevents infinite recursion)
  */
-class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
+class JsonSchemaBuilder {
 
     /** Configuration constants */
     companion object {
-        private const val MAX_VISITS = 2
         private const val SCHEMA_URL = "http://json-schema.org/draft-04/schema#"
     }
 
@@ -123,18 +120,18 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
      * Dispatches to the appropriate type-specific builder.
      * 
      * @param model The object model
-     * @param visitCounts Tracking map for circular reference detection
+     * @param tracker Tracking map for circular reference detection
      * @return A schema map
      */
     private fun buildSchema(
         model: ObjectModel,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int> = IdentityHashMap()
+        tracker: ObjectModelVisitTracker = ObjectModelVisitTracker()
     ): LinkedHashMap<String, Any?> {
         return when (model) {
             is ObjectModel.Single -> buildSingleSchema(model)
-            is ObjectModel.Object -> buildObjectSchema(model, visitCounts)
-            is ObjectModel.Array -> buildArraySchema(model, visitCounts)
-            is ObjectModel.MapModel -> buildMapSchema(model, visitCounts)
+            is ObjectModel.Object -> buildObjectSchema(model, tracker)
+            is ObjectModel.Array -> buildArraySchema(model, tracker)
+            is ObjectModel.MapModel -> buildMapSchema(model, tracker)
         }
     }
 
@@ -154,25 +151,23 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
      * Implements circular reference detection using visit counts.
      * 
      * @param model The object model
-     * @param visitCounts Tracking map for circular reference detection
+     * @param tracker Tracking map for circular reference detection
      * @return A schema map with type, properties, and required
      */
     private fun buildObjectSchema(
         model: ObjectModel.Object,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ): LinkedHashMap<String, Any?> {
-        val count = visitCounts.getOrDefault(model, 0)
-        if (count >= maxVisits) {
+        if (!tracker.tryEnter(model)) {
             return linkedMapOf("type" to "object")
         }
-        visitCounts[model] = count + 1
 
         try {
             val properties = linkedMapOf<String, Any?>()
             val requiredList = mutableListOf<String>()
 
             for ((name, field) in model.fields) {
-                val propSchema = buildSchema(field.model, visitCounts)
+                val propSchema = buildSchema(field.model, tracker)
 
                 // Add description from field comment
                 field.comment?.let { propSchema["description"] = it }
@@ -236,7 +231,7 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
 
             return result
         } finally {
-            visitCounts[model] = count
+            tracker.exit(model)
         }
     }
 
@@ -244,16 +239,16 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
      * Builds a schema for an array type.
      * 
      * @param model The array model
-     * @param visitCounts Tracking map for circular reference detection
+     * @param tracker Tracking map for circular reference detection
      * @return A schema map with type and items
      */
     private fun buildArraySchema(
         model: ObjectModel.Array,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ): LinkedHashMap<String, Any?> {
         return linkedMapOf(
             "type" to "array",
-            "items" to buildSchema(model.item, visitCounts)
+            "items" to buildSchema(model.item, tracker)
         )
     }
 
@@ -262,16 +257,16 @@ class JsonSchemaBuilder(private val maxVisits: Int = MAX_VISITS) {
      * Uses additionalProperties to define value types.
      * 
      * @param model The map model
-     * @param visitCounts Tracking map for circular reference detection
+     * @param tracker Tracking map for circular reference detection
      * @return A schema map with type and additionalProperties
      */
     private fun buildMapSchema(
         model: ObjectModel.MapModel,
-        visitCounts: IdentityHashMap<ObjectModel.Object, Int>
+        tracker: ObjectModelVisitTracker
     ): LinkedHashMap<String, Any?> {
         return linkedMapOf(
             "type" to "object",
-            "additionalProperties" to buildSchema(model.valueType, visitCounts)
+            "additionalProperties" to buildSchema(model.valueType, tracker)
         )
     }
 }
