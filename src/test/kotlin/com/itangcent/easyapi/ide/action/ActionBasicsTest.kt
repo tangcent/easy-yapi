@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.ide.action
 
+import com.itangcent.easyapi.ide.fieldformat.FieldFormatChannel
+import com.intellij.openapi.extensions.ExtensionPointName
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -12,21 +14,22 @@ class ActionExistenceTest {
     }
 
     @Test
-    fun testFieldsToJsonActionTitle() {
-        val action = FieldsToJsonAction()
-        assertNotNull("FieldsToJsonAction should be created", action)
+    fun testFieldFormatChannelsRegistered() {
+        val ep = ExtensionPointName.create<FieldFormatChannel>(
+            "com.itangcent.idea.plugin.easy-yapi.fieldFormatChannel"
+        )
+        val channels = ep.extensionList
+        val ids = channels.map { it.id }.toSet()
+        assertTrue("JSON channel should be registered", "json" in ids)
+        assertTrue("JSON5 channel should be registered", "json5" in ids)
+        assertTrue("Properties channel should be registered", "properties" in ids)
+        assertTrue("YAML channel should be registered", "yaml" in ids)
     }
 
     @Test
-    fun testFieldsToJson5ActionTitle() {
-        val action = FieldsToJson5Action()
-        assertNotNull("FieldsToJson5Action should be created", action)
-    }
-
-    @Test
-    fun testFieldsToPropertiesActionTitle() {
-        val action = FieldsToPropertiesAction()
-        assertNotNull("FieldsToPropertiesAction should be created", action)
+    fun testFieldFormatActionGroupClassExists() {
+        val clazz = Class.forName("com.itangcent.easyapi.ide.fieldformat.FieldFormatActionGroup")
+        assertNotNull("FieldFormatActionGroup class should exist", clazz)
     }
 
     @Test

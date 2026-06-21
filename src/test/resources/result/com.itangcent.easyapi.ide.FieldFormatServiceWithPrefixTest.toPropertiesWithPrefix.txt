@@ -1,0 +1,13 @@
+# user id
+demo.id=0
+# user type
+demo.type=0
+# user name
+demo.name=
+# user age
+demo.age=0
+demo.sex=0
+# user birthDay
+demo.birthDay=
+# user regtime
+demo.regtime=

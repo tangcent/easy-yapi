@@ -5,6 +5,7 @@ import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
@@ -117,7 +118,7 @@ class ApiSearchEverywhereContributorFactoryTest : EasyApiLightCodeInsightFixture
                 else -> null
             }
         }
-        val event = AnActionEvent.createFromDataContext("test", presentation, dataContext)
+        val event = AnActionEvent.createEvent(dataContext, presentation, "test", ActionUiKind.NONE, null)
         val contributor = factory.createContributor(event)
         assertNotNull("Contributor should not be null", contributor)
         assertTrue("Should be ApiSearchEverywhereContributor", contributor is ApiSearchEverywhereContributor)

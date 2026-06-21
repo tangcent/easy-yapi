@@ -1,0 +1,9 @@
+{
+  "id": 0, // user id
+  "type": 0, // user type
+  "name": "", // user name
+  "age": 0, // user age
+  "sex": 0,
+  "birthDay": null, // user birthDay
+  "regtime": null // user regtime
+}
