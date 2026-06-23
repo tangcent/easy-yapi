@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.grpc
 
+import com.itangcent.easyapi.logging.IdeaLog
 import java.lang.reflect.Proxy
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference
  * @see DescriptorResolver
  * @see CompositeDescriptorResolver
  */
-class ServerReflectionResolver : DescriptorResolver {
+class ServerReflectionResolver : DescriptorResolver, IdeaLog {
 
     override suspend fun resolve(
         classLoader: ClassLoader,
@@ -37,7 +38,7 @@ class ServerReflectionResolver : DescriptorResolver {
         serviceName: String,
         methodName: String
     ): ResolvedDescriptor? {
-        println("[DEBUG] fetchReflectionData: serviceName=$serviceName, methodName=$methodName")
+        LOG.debug("ServerReflectionResolver.fetchReflectionData: serviceName=$serviceName, methodName=$methodName")
         // Try v1 first (grpc-services >= 1.39), fall back to v1alpha
         val reflectionPackage = listOf(
             "io.grpc.reflection.v1",
@@ -48,14 +49,14 @@ class ServerReflectionResolver : DescriptorResolver {
 
         return try {
             val reflectionStubClass = classLoader.loadClass("$reflectionPackage.ServerReflectionGrpc")
-            println("[DEBUG] Loaded reflection stub class: ${reflectionStubClass.name}")
+            LOG.debug("ServerReflectionResolver: loaded reflection stub class: ${reflectionStubClass.name}")
             val newStubMethod = reflectionStubClass.getMethod("newStub", classLoader.loadClass("io.grpc.Channel"))
             val stub = newStubMethod.invoke(null, channel)
-            println("[DEBUG] Created stub: ${stub.javaClass.name}")
+            LOG.debug("ServerReflectionResolver: created stub: ${stub.javaClass.name}")
 
             val serverReflectionRequestClass =
                 classLoader.loadClass("$reflectionPackage.ServerReflectionRequest")
-            println("[DEBUG] Loaded request class: ${serverReflectionRequestClass.name}")
+            LOG.debug("ServerReflectionResolver: loaded request class: ${serverReflectionRequestClass.name}")
             val newBuilderMethod = serverReflectionRequestClass.getMethod("newBuilder")
             val requestBuilder = newBuilderMethod.invoke(null)
 
@@ -67,43 +68,43 @@ class ServerReflectionResolver : DescriptorResolver {
 
             val buildMethod = requestBuilder.javaClass.getMethod("build")
             val request = buildMethod.invoke(requestBuilder)
-            println("[DEBUG] Created request: $request")
+            LOG.debug("ServerReflectionResolver: created request: $request")
 
             val streamObserverClass = classLoader.loadClass("io.grpc.stub.StreamObserver")
-            println("[DEBUG] Loaded StreamObserver class")
+            LOG.debug("ServerReflectionResolver: loaded StreamObserver class")
 
             val resultRef = AtomicReference<ResolvedDescriptor?>(null)
             val errorRef = AtomicReference<Throwable?>(null)
             val latch = CountDownLatch(1)
 
-            println("[DEBUG] Creating response observer proxy...")
+            LOG.debug("ServerReflectionResolver: creating response observer proxy...")
             val responseObserver = Proxy.newProxyInstance(
                 classLoader,
                 arrayOf(streamObserverClass)
             ) { _, method, args ->
-                println("[DEBUG] Proxy called: ${method.name}")
+                LOG.debug("ServerReflectionResolver: proxy called: ${method.name}")
                 when (method.name) {
                     "onNext" -> {
                         val response = args?.get(0) ?: return@newProxyInstance null
-                        println("[DEBUG] onNext response type: ${response.javaClass.name}")
+                        LOG.debug("ServerReflectionResolver: onNext response type: ${response.javaClass.name}")
                         try {
                             val getMessageResponseMethod = response.javaClass.getMethod("getMessageResponseCase")
                             val messageResponseCase = getMessageResponseMethod.invoke(response)
                             val getNumberMethod = messageResponseCase.javaClass.getMethod("getNumber")
                             val caseNumber = getNumberMethod.invoke(messageResponseCase) as Int
-                            println("[DEBUG] Message response case: $caseNumber")
+                            LOG.debug("ServerReflectionResolver: message response case: $caseNumber")
 
                             if (caseNumber == 1) {
                                 val getFileDescriptorResponseMethod =
                                     response.javaClass.getMethod("getFileDescriptorResponse")
                                 val fdResponse = getFileDescriptorResponseMethod.invoke(response)
-                                println("[DEBUG] File descriptor response: ${fdResponse?.javaClass?.name}")
+                                LOG.debug("ServerReflectionResolver: file descriptor response: ${fdResponse?.javaClass?.name}")
                                 if (fdResponse != null) {
                                     val getFileDescriptorProtoListMethod =
                                         fdResponse.javaClass.getMethod("getFileDescriptorProtoList")
                                     val protoBytesList =
                                         getFileDescriptorProtoListMethod.invoke(fdResponse) as List<*>
-                                    println("[DEBUG] Proto bytes list size: ${protoBytesList.size}")
+                                    LOG.debug("ServerReflectionResolver: proto bytes list size: ${protoBytesList.size}")
 
                                     for (protoBytes in protoBytesList) {
                                         // v1 returns ByteString, v1alpha returns byte[]
@@ -123,7 +124,7 @@ class ServerReflectionResolver : DescriptorResolver {
                                             methodName
                                         )
                                         if (result != null) {
-                                            println("[DEBUG] Found reflection data!")
+                                            LOG.debug("ServerReflectionResolver: found reflection data!")
                                             resultRef.set(result)
                                             break
                                         }
@@ -138,11 +139,11 @@ class ServerReflectionResolver : DescriptorResolver {
                                     val getErrorMessageMethod =
                                         errorResponse.javaClass.getMethod("getErrorMessage")
                                     val errorMsg = getErrorMessageMethod.invoke(errorResponse) as String
-                                    println("[DEBUG] Reflection error: code=$errorCode, message=$errorMsg")
+                                    LOG.warn("ServerReflectionResolver: reflection error: code=$errorCode, message=$errorMsg")
                                     errorRef.set(RuntimeException("Reflection error: code=$errorCode, message=$errorMsg"))
                                 }
                             } else {
-                                println("[DEBUG] Unknown message response case: $caseNumber")
+                                LOG.debug("ServerReflectionResolver: unknown message response case: $caseNumber")
                             }
                         } catch (e: Exception) {
                             errorRef.set(e)
@@ -186,8 +187,7 @@ class ServerReflectionResolver : DescriptorResolver {
             errorRef.get()?.let { return null }
             resultRef.get()
         } catch (e: Exception) {
-            println("[DEBUG] Exception in fetchReflectionData: ${e.javaClass.name}: ${e.message}")
-            e.printStackTrace()
+            LOG.warn("ServerReflectionResolver.fetchReflectionData: exception for serviceName=$serviceName, methodName=$methodName", e)
             null
         }
     }

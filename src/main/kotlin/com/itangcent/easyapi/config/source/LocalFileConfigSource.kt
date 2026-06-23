@@ -41,7 +41,9 @@ class LocalFileConfigSource(
 
         return sequence {
             for (file in configFiles) {
-                val content = runCatching { Files.readString(file, Charsets.UTF_8) }.getOrNull() ?: continue
+                val content = runCatching { Files.readString(file, Charsets.UTF_8) }
+                    .onFailure { LOG.warn("LocalFileConfigSource: failed to read $file", it) }
+                    .getOrNull() ?: continue
                 val entries = configTextParser.parse(content, sourceId, file.parent?.toString()).toList()
                 LOG.info("Loaded ${entries.size} entries from local config file: $file")
                 yieldAll(entries)

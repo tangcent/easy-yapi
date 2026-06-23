@@ -3,6 +3,7 @@ package com.itangcent.easyapi.http
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.cache.ProjectCacheRepository
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
@@ -26,7 +27,7 @@ import com.itangcent.easyapi.util.json.GsonUtils
  * @see ProjectCacheRepository for the underlying storage
  */
 @Service(Service.Level.PROJECT)
-class CookiePersistenceHelper(project: Project) {
+class CookiePersistenceHelper(project: Project) : IdeaLog {
 
     private val projectCacheRepository = ProjectCacheRepository.getInstance(project)
 
@@ -40,7 +41,9 @@ class CookiePersistenceHelper(project: Project) {
     fun loadCookies(): List<HttpCookie> {
         val raw = projectCacheRepository.read(CACHE_FILE) ?: return emptyList()
         if (raw.isBlank()) return emptyList()
-        return runCatching { GsonUtils.fromJson<List<HttpCookie>>(raw) }.getOrNull().orEmpty()
+        return runCatching { GsonUtils.fromJson<List<HttpCookie>>(raw) }
+            .onFailure { LOG.warn("CookiePersistenceHelper: failed to parse cookies from '$CACHE_FILE'", it) }
+            .getOrNull().orEmpty()
     }
 
     fun saveCookies(cookies: List<HttpCookie>) {

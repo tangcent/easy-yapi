@@ -53,11 +53,11 @@ class DefaultYapiApiClientProvider(
 
         val token = selectedToken
             ?: settingsHelper.resolveToken(module) { candidate ->
-                DefaultYapiApiClient(_serverUrl, candidate, httpClient).getProjectId().isSuccess
+                DefaultYapiApiClient(_serverUrl, candidate, httpClient, project = project).getProjectId().isSuccess
             }
             ?: return null
 
-        return DefaultYapiApiClient(_serverUrl, token, httpClient)
+        return DefaultYapiApiClient(_serverUrl, token, httpClient, project = project)
             .also { clientCache[module] = it }
     }
 }

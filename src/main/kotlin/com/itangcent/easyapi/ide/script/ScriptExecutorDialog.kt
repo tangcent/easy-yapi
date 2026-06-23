@@ -361,6 +361,7 @@ class ScriptExecutorDialog(
             val result = ruleEngine.parseExpression(expression, ruleContext, RuleKey.string("__script__"))
             result?.toString() ?: "null"
         } catch (e: Exception) {
+            LOG.warn("ScriptExecutorDialog: script eval failed", e)
             "script eval failed:" + ExceptionUtils.getStackTrace(e)
         }
     }

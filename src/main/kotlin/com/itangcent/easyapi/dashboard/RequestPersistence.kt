@@ -2,6 +2,7 @@ package com.itangcent.easyapi.dashboard
 
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.cache.ProjectCacheRepository
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
@@ -30,7 +31,7 @@ data class PersistedRequest(
  * 
  * @param project The IntelliJ project context
  */
-class RequestPersistence(project: Project) {
+class RequestPersistence(project: Project) : IdeaLog {
     /** Repository for accessing project cache storage */
     private val repo = ProjectCacheRepository.getInstance(project)
     /** Key for the persisted requests file */
@@ -43,7 +44,9 @@ class RequestPersistence(project: Project) {
      */
     fun loadAll(): List<PersistedRequest> {
         val raw = repo.read(key) ?: return emptyList()
-        return runCatching { GsonUtils.fromJson<List<PersistedRequest>>(raw) }.getOrNull().orEmpty()
+        return runCatching { GsonUtils.fromJson<List<PersistedRequest>>(raw) }
+            .onFailure { LOG.warn("RequestPersistence: failed to parse persisted requests from '$key'", it) }
+            .getOrNull().orEmpty()
     }
 
     /**

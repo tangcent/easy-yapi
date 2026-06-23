@@ -2,6 +2,7 @@ package com.itangcent.easyapi.cache
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.itangcent.easyapi.logging.IdeaLog
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -23,7 +24,7 @@ import java.nio.file.Paths
  * @see AppCacheRepository for application-wide cache
  */
 @Service(Service.Level.PROJECT)
-class ProjectCacheRepository(private val project: Project) : CacheRepository {
+class ProjectCacheRepository(private val project: Project) : CacheRepository, IdeaLog {
 
     private val cacheDir: Path by lazy {
         project.basePath?.let { Paths.get(it, ".idea", "easyapi-cache") }
@@ -41,7 +42,8 @@ class ProjectCacheRepository(private val project: Project) : CacheRepository {
         return runCatching {
             if (!Files.exists(file)) return@runCatching null
             Files.readString(file, Charsets.UTF_8)
-        }.getOrNull()
+        }.onFailure { LOG.warn("ProjectCacheRepository: failed to read cache key '$key'", it) }
+            .getOrNull()
     }
 
     override fun write(key: String, content: String) {
@@ -49,12 +51,13 @@ class ProjectCacheRepository(private val project: Project) : CacheRepository {
         runCatching {
             Files.createDirectories(file.parent)
             Files.writeString(file, content, Charsets.UTF_8)
-        }
+        }.onFailure { LOG.warn("ProjectCacheRepository: failed to write cache key '$key'", it) }
     }
 
     override fun delete(key: String) {
         val file = cacheDir.resolve(key)
         runCatching { Files.deleteIfExists(file) }
+            .onFailure { LOG.warn("ProjectCacheRepository: failed to delete cache key '$key'", it) }
     }
 
     override fun clear() {
@@ -63,7 +66,7 @@ class ProjectCacheRepository(private val project: Project) : CacheRepository {
             if (file.exists()) {
                 file.deleteRecursively()
             }
-        }
+        }.onFailure { LOG.warn("ProjectCacheRepository: failed to clear cache directory", it) }
     }
 
     override fun cacheSize(): Long {

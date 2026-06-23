@@ -69,7 +69,7 @@ import java.util.*
  * @see LinkResolver Uses SourceHelper for link resolution from JAR classes
  */
 @Service(Service.Level.PROJECT)
-class SourceHelper(private val project: Project) {
+class SourceHelper(private val project: Project) : com.itangcent.easyapi.logging.IdeaLog {
 
     companion object {
         /**
@@ -198,7 +198,8 @@ class SourceHelper(private val project: Project) {
                     }
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            LOG.warn("SourceHelper: failed to find source class for ${original.qualifiedName}", e)
         }
 
         return original

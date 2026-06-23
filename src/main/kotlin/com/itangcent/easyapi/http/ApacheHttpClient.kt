@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.http
 
+import com.itangcent.easyapi.logging.IdeaLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.http.client.config.CookieSpecs
@@ -48,7 +49,7 @@ import javax.net.ssl.X509TrustManager
 class ApacheHttpClient(
     timeoutMs: Int = 30_000,
     unsafeSsl: Boolean = false
-) : HttpClient {
+) : HttpClient, IdeaLog {
 
     private val client: CloseableHttpClient = buildClient(timeoutMs, unsafeSsl)
 
@@ -96,6 +97,7 @@ class ApacheHttpClient(
 
     override fun close() {
         runCatching { client.close() }
+            .onFailure { LOG.warn("ApacheHttpClient: failed to close client", it) }
     }
 
     companion object {

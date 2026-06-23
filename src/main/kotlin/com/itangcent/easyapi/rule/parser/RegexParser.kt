@@ -83,7 +83,8 @@ class RegexParser : RuleParser {
                 LOG.info("RegexParser: pattern '$pattern' did NOT match text '$text'")
                 null
             }
-        }.getOrNull()
+        }.onFailure { LOG.warn("RegexParser: failed to apply pattern '$pattern' to text '$text'", it) }
+            .getOrNull()
     }
 
     private fun resolvePlaceholders(text: String, groups: List<String>): String {

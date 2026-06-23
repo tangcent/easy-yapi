@@ -18,12 +18,15 @@ import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
 import com.itangcent.easyapi.ide.dialog.ExportDialogPreferences
 import com.itangcent.easyapi.ide.dialog.ExportDialogPreferencesPersistence
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
 
 class ExportApiAction : AnAction(), IdeaLog {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        console.debug("ExportApiAction.actionPerformed: project=${project.name}")
         val selection = SelectedHelper.resolveSelection(e)
 
         backgroundAsync {

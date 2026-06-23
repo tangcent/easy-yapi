@@ -7,8 +7,10 @@ import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.path
+import com.itangcent.easyapi.logging.IdeaConsole
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
-import com.itangcent.easyapi.exporter.yapi.model.MutableYapiApiDoc
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.SettingBinder
@@ -17,9 +19,10 @@ import com.itangcent.easyapi.util.ide.ModuleHelper
 import com.itangcent.easyapi.util.markdown.MarkdownRender
 
 @Service(Service.Level.PROJECT)
-class YapiExporter(private val project: Project) {
+class YapiExporter(private val project: Project) : IdeaLog {
 
     private val settingBinder by lazy { SettingBinder.getInstance(project) }
+    private val console: IdeaConsole by lazy { IdeaConsoleProvider.getInstance(project).getConsole() }
 
     companion object {
         fun getInstance(project: Project): YapiExporter {
@@ -28,9 +31,13 @@ class YapiExporter(private val project: Project) {
     }
 
     suspend fun export(context: ExportContext, selectedToken: String? = null): ExportResult {
+        LOG.info("YapiExporter.export: start. endpoints=${context.endpointsToExport.size}")
         val clientProvider = DefaultYapiApiClientProvider(project)
         runCatching { clientProvider.init() }
-            .onFailure { return ExportResult.Error(it.message ?: "Export failed: $it") }
+            .onFailure {
+                LOG.warn("YapiExporter.export: clientProvider.init failed", it)
+                return ExportResult.Error(it.message ?: "Export failed: $it")
+            }
 
         val serverUrl = clientProvider.serverUrl
         val settings = settingBinder.read()
@@ -83,7 +90,9 @@ class YapiExporter(private val project: Project) {
                 )
                 if (client == null) {
                     failCount++
-                    errors.add("${endpoint.name}: No valid token for module '$yapiProject'")
+                    val msg = "${endpoint.name}: No valid token for module '$yapiProject'"
+                    errors.add(msg)
+                    console.warn(msg)
                     processedCount++
                     continue
                 }
@@ -92,7 +101,9 @@ class YapiExporter(private val project: Project) {
                 val catId = client.findOrCreateCart(folderName).getOrNull()
                 if (catId == null) {
                     failCount++
-                    errors.add("${endpoint.name}: Failed to resolve cart '$folderName'")
+                    val msg = "${endpoint.name}: Failed to resolve cart '$folderName'"
+                    errors.add(msg)
+                    console.warn(msg)
                     processedCount++
                     continue
                 }
@@ -129,18 +140,22 @@ class YapiExporter(private val project: Project) {
                     }
                 } else {
                     failCount++
-                    result.errorMessage()?.let { errors.add("${endpoint.name}: $it") }
+                    val msg = "${endpoint.name}: ${result.errorMessage()}"
+                    errors.add(msg)
+                    console.warn(msg)
                 }
             } catch (e: Exception) {
                 failCount++
-                errors.add("${endpoint.name}: ${e.message}")
+                val msg = "${endpoint.name}: ${e.message}"
+                errors.add(msg)
+                console.warn("YapiExporter.export: endpoint failed", e)
             }
             processedCount++
         }
 
         val metadata = if (exportedCarts.isNotEmpty()) YapiExportMetadata(exportedCarts) else null
 
-        return when {
+        val exportResult = when {
             failCount == 0 && successCount > 0 -> ExportResult.Success(
                 count = successCount,
                 target = "$serverUrl (YAPI)",
@@ -159,6 +174,8 @@ class YapiExporter(private val project: Project) {
 
             else -> ExportResult.Error("No endpoints to export")
         }
+        LOG.info("YapiExporter.export: done. success=$successCount fail=$failCount")
+        return exportResult
     }
 }
 

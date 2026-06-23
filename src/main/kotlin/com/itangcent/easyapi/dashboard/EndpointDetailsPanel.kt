@@ -1,7 +1,5 @@
 package com.itangcent.easyapi.dashboard
 
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.ui.EditorTextField
@@ -34,6 +32,7 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.model.grpcMetadata
 import com.itangcent.easyapi.exporter.model.isGrpc
+import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.psi.model.ObjectModelJsonConverter
 import kotlinx.coroutines.*
 import java.awt.BorderLayout
@@ -1327,10 +1326,7 @@ class EndpointDetailsPanel(
     }
 
     private fun showCopyNotification() {
-        NotificationGroupManager.getInstance()
-            .getNotificationGroup("EasyApi Notifications")
-            .createNotification("Copied to clipboard", NotificationType.INFORMATION)
-            .notify(project)
+        NotificationUtils.notifyInfo(project, "EasyApi", "Copied to clipboard")
     }
 
     private fun displayTestResults(results: List<TestResult>) {

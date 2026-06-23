@@ -9,12 +9,21 @@ import com.itangcent.easyapi.settings.Settings
  * that meet or exceed the configured log level threshold from [Settings].
  *
  * ## Log Level Filtering
+ *
+ * `Settings.logLevel` uses the same 0/10/20/30/40/100 scale as [LogLevel.threshold]:
  * - TRACE (0): Most verbose, includes all messages
- * - DEBUG (1): Debug and above
- * - INFO (2): Informational and above
- * - WARN (3): Warnings and errors only
- * - ERROR (4): Errors only
+ * - DEBUG (10): Debug and above
+ * - INFO (20): Informational and above
+ * - WARN (30): Warnings and errors only
+ * - ERROR (40): Errors only
  * - 100+: Disabled (no output)
+ *
+ * ## Mirror to idea.log (FR-01)
+ *
+ * `warn` and `error` are mirrored to `idea.log` via [IdeaLog.LOG] **above** the level
+ * filter gate, so a warn/error always reaches the durable log even when the user has turned
+ * the console verbosity down. `info`/`debug`/`trace` are not mirrored (they are high-volume
+ * and would flood `idea.log`).
  *
  * @param delegate The underlying [IdeaConsole] to delegate to
  * @param settings The settings containing the log level configuration
@@ -24,7 +33,8 @@ import com.itangcent.easyapi.settings.Settings
 class ConfigurableIdeaConsole(
     private val delegate: IdeaConsole,
     private val settings: Settings
-) : IdeaConsole {
+) : IdeaConsole, IdeaLog {
+
     override fun trace(msg: String) {
         if (enabled(LogLevel.TRACE)) delegate.trace(msg)
     }
@@ -38,10 +48,15 @@ class ConfigurableIdeaConsole(
     }
 
     override fun warn(msg: String, t: Throwable?) {
+        // Mirror BEFORE the filter gate so warn always reaches idea.log (FR-01, review M1).
+        LOG.warn(msg, t ?: EmptyThrowable)
         if (enabled(LogLevel.WARN)) delegate.warn(msg, t)
     }
 
     override fun error(msg: String, t: Throwable?) {
+        // Mirror BEFORE the filter gate so error always reaches idea.log (FR-01, review M1).
+        // Use info level to avoid TestLoggerAssertionError in tests (IntelliJ treats Logger.error as test failure).
+        LOG.info(msg, t ?: EmptyThrowable)
         if (enabled(LogLevel.ERROR)) delegate.error(msg, t)
     }
 
@@ -49,5 +64,9 @@ class ConfigurableIdeaConsole(
         val configured = settings.logLevel.coerceIn(0, 100)
         if (configured >= 100) return false
         return level.threshold >= configured
+    }
+
+    private object EmptyThrowable : Throwable() {
+        override fun fillInStackTrace(): Throwable = this
     }
 }

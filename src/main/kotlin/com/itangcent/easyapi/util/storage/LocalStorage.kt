@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.cache.ProjectCacheRepository
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.storage.Storage.Companion.DEFAULT_GROUP
 
 /**
@@ -24,7 +25,7 @@ import com.itangcent.easyapi.util.storage.Storage.Companion.DEFAULT_GROUP
  * @see SessionStorage for in-memory storage
  */
 @Service(Service.Level.PROJECT)
-class LocalStorage(project: Project) : AbstractStorage() {
+class LocalStorage(project: Project) : AbstractStorage(), IdeaLog {
 
     private val sqliteHelper: SqliteDataResourceHelper = run {
         val dbPath = ProjectCacheRepository.getInstance(project).resolve(".api.local.storage.v2.db")
@@ -47,7 +48,8 @@ class LocalStorage(project: Project) : AbstractStorage() {
         val raw = sqliteHelper.query(group) ?: return linkedMapOf()
         return runCatching {
             GsonUtils.fromJson<LinkedHashMap<String, Any?>>(raw, MAP_TYPE)
-        }.getOrDefault(linkedMapOf())
+        }.onFailure { LOG.warn("LocalStorage: failed to parse cache for group '$group', raw='$raw'", it) }
+            .getOrDefault(linkedMapOf())
     }
 
     override fun onUpdate(group: String?, cache: MutableMap<String, Any?>) {
