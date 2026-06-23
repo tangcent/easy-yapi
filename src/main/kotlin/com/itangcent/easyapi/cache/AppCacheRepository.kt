@@ -2,6 +2,7 @@ package com.itangcent.easyapi.cache
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.itangcent.easyapi.logging.IdeaLog
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -22,7 +23,7 @@ import java.nio.file.Paths
  * @see ProjectCacheRepository for project-specific cache
  */
 @Service(Service.Level.APP)
-class AppCacheRepository : CacheRepository {
+class AppCacheRepository : CacheRepository, IdeaLog {
 
     private val cacheDir: Path by lazy {
         val home = System.getProperty("user.home")
@@ -40,7 +41,8 @@ class AppCacheRepository : CacheRepository {
         return runCatching {
             if (!Files.exists(file)) return@runCatching null
             Files.readString(file, Charsets.UTF_8)
-        }.getOrNull()
+        }.onFailure { LOG.warn("AppCacheRepository: failed to read cache key '$key'", it) }
+            .getOrNull()
     }
 
     override fun write(key: String, content: String) {
@@ -48,12 +50,13 @@ class AppCacheRepository : CacheRepository {
         runCatching {
             Files.createDirectories(file.parent)
             Files.writeString(file, content, Charsets.UTF_8)
-        }
+        }.onFailure { LOG.warn("AppCacheRepository: failed to write cache key '$key'", it) }
     }
 
     override fun delete(key: String) {
         val file = cacheDir.resolve(key)
         runCatching { Files.deleteIfExists(file) }
+            .onFailure { LOG.warn("AppCacheRepository: failed to delete cache key '$key'", it) }
     }
 
     override fun clear() {
@@ -62,7 +65,7 @@ class AppCacheRepository : CacheRepository {
             if (file.exists()) {
                 file.deleteRecursively()
             }
-        }
+        }.onFailure { LOG.warn("AppCacheRepository: failed to clear cache directory", it) }
     }
 
     override fun cacheSize(): Long {

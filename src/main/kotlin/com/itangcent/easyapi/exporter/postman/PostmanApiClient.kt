@@ -63,9 +63,11 @@ class PostmanApiClient(
                         collectionId = result.getAsJsonObject("collection")?.get("uid")?.asString
                     )
                 } else {
+                    LOG.warn("Postman uploadCollection: HTTP ${response.code}, body=${response.body?.take(500)}")
                     UploadResult(success = false, message = "HTTP ${response.code}")
                 }
             } catch (e: Exception) {
+                LOG.warn("Postman uploadCollection: exception", e)
                 UploadResult(success = false, message = e.message)
             }
         }
@@ -96,9 +98,11 @@ class PostmanApiClient(
                 if (response.code == 200) {
                     UploadResult(success = true, message = "Collection updated successfully")
                 } else {
+                    LOG.warn("Postman updateCollection: HTTP ${response.code}, body=${response.body?.take(500)}")
                     UploadResult(success = false, message = "HTTP ${response.code}")
                 }
             } catch (e: Exception) {
+                LOG.warn("Postman updateCollection: exception", e)
                 UploadResult(success = false, message = e.message)
             }
         }

@@ -189,6 +189,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
             val globalSize = try {
                 AppCacheRepository.getInstance().cacheSize()
             } catch (e: Exception) {
+                LOG.warn("Failed to get app cache size", e)
                 -1L
             }
 

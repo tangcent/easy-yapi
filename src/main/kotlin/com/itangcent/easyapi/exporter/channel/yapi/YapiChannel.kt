@@ -1,6 +1,10 @@
 package com.itangcent.easyapi.exporter.channel.yapi
 
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.intellij.ide.BrowserUtil
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.channel.ApiChannel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
@@ -9,8 +13,10 @@ import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.yapi.YapiExporter
 import com.itangcent.easyapi.exporter.yapi.YapiExportMetadata
+import com.itangcent.easyapi.ide.support.NotificationUtils
+import com.itangcent.easyapi.logging.IdeaLog
 
-class YapiChannel : ApiChannel {
+class YapiChannel : ApiChannel, IdeaLog {
 
     override val id: String = "yapi"
     override val displayName: String = "Yapi"
@@ -23,6 +29,7 @@ class YapiChannel : ApiChannel {
     }
 
     override suspend fun export(context: ExportContext): ExportResult {
+        LOG.debug("YapiChannel.export: endpoints=${context.endpointsToExport.size}")
         val yapiConfig = context.channelConfig as? ChannelConfig.YapiConfig
         val exporter = YapiExporter.getInstance(context.project)
         return exporter.export(context, yapiConfig?.selectedToken)
@@ -35,23 +42,23 @@ class YapiChannel : ApiChannel {
     ): Boolean {
         val metadata = result.metadata as? YapiExportMetadata ?: return false
         swing {
-            val notification = com.intellij.notification.Notification(
-                "EasyAPI Notifications",
-                "Export to YAPI",
-                "Exported ${result.count} endpoints to YAPI",
-                com.intellij.notification.NotificationType.INFORMATION
-            )
-            for ((cartName, cartUrl) in metadata.cartLinks) {
-                notification.addAction(object : com.intellij.notification.NotificationAction(cartName) {
-                    override fun actionPerformed(
-                        e: com.intellij.openapi.actionSystem.AnActionEvent,
-                        notification: com.intellij.notification.Notification
-                    ) {
-                        com.intellij.ide.BrowserUtil.browse(cartUrl)
-                    }
-                })
+            // Route through NotificationUtils so the group id and mirror policy are centralized.
+            NotificationUtils.notifyInfoWithConfig(
+                project = project,
+                title = "Export to YAPI",
+                content = "Exported ${result.count} endpoints to YAPI"
+            ) {
+                for ((cartName, cartUrl) in metadata.cartLinks) {
+                    addAction(object : NotificationAction(cartName) {
+                        override fun actionPerformed(
+                            e: AnActionEvent,
+                            notification: Notification
+                        ) {
+                            BrowserUtil.browse(cartUrl)
+                        }
+                    })
+                }
             }
-            com.intellij.notification.Notifications.Bus.notify(notification, project)
         }
         return true
     }

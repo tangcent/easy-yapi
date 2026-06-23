@@ -1,8 +1,5 @@
 package com.itangcent.easyapi.ide.fieldformat
 
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -12,7 +9,8 @@ import com.intellij.psi.PsiClass
 import com.intellij.psi.util.PsiTreeUtil
 import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
-import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.ide.support.NotificationUtils
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import java.awt.datatransfer.StringSelection
 
 /**
@@ -32,21 +30,20 @@ import java.awt.datatransfer.StringSelection
  */
 class FieldFormatAction(
     private val channel: FieldFormatChannel
-) : AnAction(channel.actionText), IdeaLog {
+) : AnAction(channel.actionText) {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val psiClass = findPsiClass(e) ?: return
+        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        console.debug("FieldFormatAction.actionPerformed: channel=${channel.id}, class=${psiClass.qualifiedName}")
         try {
             val text = kotlinx.coroutines.runBlocking { channel.format(project, psiClass) }
             CopyPasteManager.getInstance().setContents(StringSelection(text))
-            Notifications.Bus.notify(
-                Notification(
-                    "EasyAPI Notifications",
-                    "Fields To ${channel.displayName}",
-                    "Copied to clipboard",
-                    NotificationType.INFORMATION
-                ), project
+            NotificationUtils.notifyInfo(
+                project,
+                "Fields To ${channel.displayName}",
+                "Copied to clipboard"
             )
         } finally {
             project.syncPublish(ActionCompletedTopic.TOPIC)

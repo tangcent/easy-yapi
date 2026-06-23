@@ -561,7 +561,7 @@ internal data class GenericContext(val genericMap: Map<String, ResolvedType>) {
  * - Wildcard types
  * - Type parameter substitution
  */
-object TypeResolver {
+object TypeResolver : com.itangcent.easyapi.logging.IdeaLog {
     /**
      * Resolves a PSI type to a [ResolvedType].
      *
@@ -732,8 +732,8 @@ object TypeResolver {
                 resolve(psiType, context)
             }
             if (resolved !is ResolvedType.UnresolvedType) return resolved
-        } catch (_: Exception) {
-            // Fall through to manual resolution
+        } catch (e: Exception) {
+            LOG.debug("TypeResolver: createTypeFromText failed for '$trimmed', falling through to manual resolution", e)
         }
 
         // 2. Handle generic types like "List<User>" where the base class or

@@ -3,16 +3,14 @@ package com.itangcent.easyapi.exporter.yapi
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.itangcent.easyapi.exporter.yapi.model.MutableYapiApiDoc
-import com.itangcent.easyapi.exporter.yapi.model.YapiApiDoc
 import com.itangcent.easyapi.exporter.yapi.model.MutableYapiHeader
 import com.itangcent.easyapi.exporter.yapi.model.MutableYapiQuery
 import com.itangcent.easyapi.http.HttpClient
 import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.HttpResponse
+import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
-import org.junit.Before
-import org.junit.Test
 import org.mockito.kotlin.*
 
 /**
@@ -21,8 +19,12 @@ import org.mockito.kotlin.*
  * All HTTP calls are intercepted via a mock [HttpClient] so no real server is needed.
  * Each test configures the mock to return a specific JSON response and then asserts
  * the client's behaviour (caching, deduplication, error propagation, etc.).
+ *
+ * Extends [EasyApiLightCodeInsightFixtureTestCase] so the client's `project`-dependent
+ * services (e.g. [com.itangcent.easyapi.logging.IdeaConsoleProvider]) resolve against
+ * the real fixture project, consistent with every other project-service-dependent test.
  */
-class DefaultYapiApiClientTest {
+class DefaultYapiApiClientTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var httpClient: HttpClient
     private lateinit var client: DefaultYapiApiClient
@@ -30,10 +32,10 @@ class DefaultYapiApiClientTest {
     private val serverUrl = "http://yapi.example.com"
     private val token = "test-token-abc"
 
-    @Before
-    fun setUp() {
+    override fun setUp() {
+        super.setUp()
         httpClient = mock()
-        client = DefaultYapiApiClient(serverUrl, token, httpClient)
+        client = DefaultYapiApiClient(serverUrl, token, httpClient, project = project)
     }
 
     // -------------------------------------------------------------------------
@@ -100,24 +102,21 @@ class DefaultYapiApiClientTest {
     // getProjectId
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `getProjectId returns failure when serverUrl is blank`() = runBlocking {
-        val c = DefaultYapiApiClient("", token, httpClient)
+    fun testGetProjectIdReturnsFailureWhenServerUrlIsBlank() = runBlocking {
+        val c = DefaultYapiApiClient("", token, httpClient, project = project)
         val result = c.getProjectId()
         assertFalse(result.isSuccess)
         assertTrue(result.errorMessage()!!.contains("server URL"))
     }
 
-    @Test
-    fun `getProjectId returns failure when token is blank`() = runBlocking {
-        val c = DefaultYapiApiClient(serverUrl, "", httpClient)
+    fun testGetProjectIdReturnsFailureWhenTokenIsBlank() = runBlocking {
+        val c = DefaultYapiApiClient(serverUrl, "", httpClient, project = project)
         val result = c.getProjectId()
         assertFalse(result.isSuccess)
         assertTrue(result.errorMessage()!!.contains("Token"))
     }
 
-    @Test
-    fun `getProjectId resolves from GET_PROJECT`() = runBlocking {
+    fun testGetProjectIdResolvesFromGetProject() = runBlocking {
         val data = projectDataJson("99")
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(successJson(data)))
@@ -127,8 +126,7 @@ class DefaultYapiApiClientTest {
         assertEquals("99", result.getOrNull())
     }
 
-    @Test
-    fun `getProjectId caches result on second call`() = runBlocking {
+    fun testGetProjectIdCachesResultOnSecondCall() = runBlocking {
         val data = projectDataJson("99")
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(successJson(data)))
@@ -141,8 +139,7 @@ class DefaultYapiApiClientTest {
         Unit
     }
 
-    @Test
-    fun `getProjectId falls back to list_menu when GET_PROJECT returns no data`() = runBlocking {
+    fun testGetProjectIdFallsBackToListMenuWhenGetProjectReturnsNoData() = runBlocking {
         // GET_PROJECT returns success but no _id
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse("""{"errcode":0,"errmsg":"成功！","data":{}}"""))
@@ -158,16 +155,14 @@ class DefaultYapiApiClientTest {
         assertEquals("77", result.getOrNull())
     }
 
-    @Test
-    fun `getProjectId returns failure when both endpoints fail`() = runBlocking {
+    fun testGetProjectIdReturnsFailureWhenBothEndpointsFail() = runBlocking {
         whenever(httpClient.execute(any())).thenReturn(mockResponse(errorJson(), code = 500))
 
         val result = client.getProjectId()
         assertFalse(result.isSuccess)
     }
 
-    @Test
-    fun `getProjectId resolves via list_menu when fork server returns code 0 without data`() = runBlocking {
+    fun testGetProjectIdResolvesViaListMenuWhenForkServerReturnsCode0WithoutData() = runBlocking {
         // Fork server returns {"code":0,"message":"成功！"} with no data from GET_PROJECT
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse("""{"code":0,"message":"成功！"}"""))
@@ -187,8 +182,7 @@ class DefaultYapiApiClientTest {
     // Fork-format response handling (code/message instead of errcode/errmsg)
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `getProjectId resolves from GET_PROJECT with fork code 0 response`() = runBlocking {
+    fun testGetProjectIdResolvesFromGetProjectWithForkCode0Response() = runBlocking {
         val data = projectDataJson("200")
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(forkSuccessJson(data)))
@@ -198,8 +192,7 @@ class DefaultYapiApiClientTest {
         assertEquals("200", result.getOrNull())
     }
 
-    @Test
-    fun `getProjectId resolves when errcode is non-zero but errmsg indicates success`() = runBlocking {
+    fun testGetProjectIdResolvesWhenErrcodeIsNonZeroButErrmsgIndicatesSuccess() = runBlocking {
         // Some forks return errcode=200 with errmsg="成功" to mean success
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse("""{"errcode":200,"errmsg":"成功","data":{"_id":"42"}}"""))
@@ -209,8 +202,7 @@ class DefaultYapiApiClientTest {
         assertEquals("42", result.getOrNull())
     }
 
-    @Test
-    fun `getProjectId resolves when errcode is 200 with no message`() = runBlocking {
+    fun testGetProjectIdResolvesWhenErrcodeIs200WithNoMessage() = runBlocking {
         // errcode=200 alone is a success code
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse("""{"errcode":200,"data":{"_id":"99"}}"""))
@@ -220,8 +212,7 @@ class DefaultYapiApiClientTest {
         assertEquals("99", result.getOrNull())
     }
 
-    @Test
-    fun `getProjectId fails when fork server returns non-zero code`() = runBlocking {
+    fun testGetProjectIdFailsWhenForkServerReturnsNonZeroCode() = runBlocking {
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(forkErrorJson(401, "token无效")))
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_menu") }))
@@ -231,8 +222,7 @@ class DefaultYapiApiClientTest {
         assertFalse(result.isSuccess)
     }
 
-    @Test
-    fun `listCarts works with fork-format responses`() = runBlocking {
+    fun testListCartsWorksWithForkFormatResponses() = runBlocking {
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(forkSuccessJson(projectDataJson("1"))))
 
@@ -246,8 +236,7 @@ class DefaultYapiApiClientTest {
         assertEquals("Fork Cart", result.getOrNull()!![0].name)
     }
 
-    @Test
-    fun `uploadApi succeeds with fork-format responses`() = runBlocking {
+    fun testUploadApiSucceedsWithForkFormatResponses() = runBlocking {
         val emptyList = JsonObject().apply { add("list", JsonArray()) }
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
             .thenReturn(mockResponse(forkSuccessJson(emptyList)))
@@ -259,8 +248,7 @@ class DefaultYapiApiClientTest {
         assertTrue(result.isSuccess)
     }
 
-    @Test
-    fun `uploadApi fails when fork server returns error code`() = runBlocking {
+    fun testUploadApiFailsWhenForkServerReturnsErrorCode() = runBlocking {
         val emptyList = JsonObject().apply { add("list", JsonArray()) }
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
             .thenReturn(mockResponse(forkSuccessJson(emptyList)))
@@ -273,8 +261,7 @@ class DefaultYapiApiClientTest {
         assertEquals("save failed", result.errorMessage())
     }
 
-    @Test
-    fun `getProjectId handles response with only success message and no code field`() = runBlocking {
+    fun testGetProjectIdHandlesResponseWithOnlySuccessMessageAndNoCodeField() = runBlocking {
         // Some forks return just {"message":"成功","data":{...}}
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse("""{"message":"成功","data":{"_id":"333"}}"""))
@@ -288,15 +275,13 @@ class DefaultYapiApiClientTest {
     // listCarts
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `listCarts returns failure when project ID cannot be resolved`() = runBlocking {
+    fun testListCartsReturnsFailureWhenProjectIdCannotBeResolved() = runBlocking {
         whenever(httpClient.execute(any())).thenReturn(mockResponse(errorJson(), code = 500))
         val result = client.listCarts()
         assertFalse(result.isSuccess)
     }
 
-    @Test
-    fun `listCarts returns parsed carts`() = runBlocking {
+    fun testListCartsReturnsParsedCarts() = runBlocking {
         // stub getProjectId
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(successJson(projectDataJson("1"))))
@@ -321,8 +306,7 @@ class DefaultYapiApiClientTest {
     // createCart
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `createCart returns created cart`() = runBlocking {
+    fun testCreateCartReturnsCreatedCart() = runBlocking {
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(successJson(projectDataJson("1"))))
 
@@ -344,8 +328,7 @@ class DefaultYapiApiClientTest {
     // findOrCreateCart
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `findOrCreateCart returns existing cart id without creating`() = runBlocking {
+    fun testFindOrCreateCartReturnsExistingCartIdWithoutCreating() = runBlocking {
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(successJson(projectDataJson("1"))))
 
@@ -361,8 +344,7 @@ class DefaultYapiApiClientTest {
         Unit
     }
 
-    @Test
-    fun `findOrCreateCart creates cart when not found`() = runBlocking {
+    fun testFindOrCreateCartCreatesCartWhenNotFound() = runBlocking {
         whenever(httpClient.execute(argThat { url.contains("/api/project/get") }))
             .thenReturn(mockResponse(successJson(projectDataJson("1"))))
 
@@ -386,8 +368,7 @@ class DefaultYapiApiClientTest {
     // listApis
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `listApis returns api array`() = runBlocking {
+    fun testListApisReturnsApiArray() = runBlocking {
         val body = apiListJson(apiJson("1", "/api/users", "GET"))
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
             .thenReturn(mockResponse(body))
@@ -397,8 +378,7 @@ class DefaultYapiApiClientTest {
         assertEquals(1, result.getOrNull()!!.size())
     }
 
-    @Test
-    fun `listApis retries with larger limit when response hits limit`() = runBlocking {
+    fun testListApisRetriesWithLargerLimitWhenResponseHitsLimit() = runBlocking {
         // First call returns exactly 1000 items (hits limit)
         val fullPage = JsonArray().apply { repeat(1000) { add(apiJson(it.toString(), "/p/$it", "GET")) } }
         val fullData = JsonObject().apply { add("list", fullPage) }
@@ -421,8 +401,7 @@ class DefaultYapiApiClientTest {
     // findExistingApi
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `findExistingApi returns id when match found`() = runBlocking {
+    fun testFindExistingApiReturnsIdWhenMatchFound() = runBlocking {
         val body = apiListJson(
             apiJson("id-1", "/api/users", "GET"),
             apiJson("id-2", "/api/users", "POST")
@@ -434,8 +413,7 @@ class DefaultYapiApiClientTest {
         assertEquals("id-1", id)
     }
 
-    @Test
-    fun `findExistingApi is case-insensitive on method`() = runBlocking {
+    fun testFindExistingApiIsCaseInsensitiveOnMethod() = runBlocking {
         val body = apiListJson(apiJson("id-1", "/api/users", "get"))
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
             .thenReturn(mockResponse(body))
@@ -444,8 +422,7 @@ class DefaultYapiApiClientTest {
         assertEquals("id-1", id)
     }
 
-    @Test
-    fun `findExistingApi returns null when no match`() = runBlocking {
+    fun testFindExistingApiReturnsNullWhenNoMatch() = runBlocking {
         val body = apiListJson(apiJson("id-1", "/api/other", "GET"))
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
             .thenReturn(mockResponse(body))
@@ -458,16 +435,14 @@ class DefaultYapiApiClientTest {
     // uploadApi
     // -------------------------------------------------------------------------
 
-    @Test
-    fun `uploadApi returns success in mock mode (blank serverUrl)`() = runBlocking {
-        val c = DefaultYapiApiClient("", token, httpClient)
+    fun testUploadApiReturnsSuccessInMockModeBlankServerUrl() = runBlocking {
+        val c = DefaultYapiApiClient("", token, httpClient, project = project)
         val result = c.uploadApi(testDoc(), "cat1")
         assertTrue(result.isSuccess)
         verifyNoInteractions(httpClient)
     }
 
-    @Test
-    fun `uploadApi creates new api when no duplicate exists`() = runBlocking {
+    fun testUploadApiCreatesNewApiWhenNoDuplicateExists() = runBlocking {
         // listApis returns empty — no duplicate
         val emptyList = JsonObject().apply { add("list", JsonArray()) }
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
@@ -486,8 +461,7 @@ class DefaultYapiApiClientTest {
         assertFalse("Should not contain existing id", saveCall.body?.contains("\"id\":") == true)
     }
 
-    @Test
-    fun `uploadApi updates existing api when duplicate found`() = runBlocking {
+    fun testUploadApiUpdatesExistingApiWhenDuplicateFound() = runBlocking {
         // listApis returns one matching api
         val body = apiListJson(apiJson("existing-id", "/api/users", "GET"))
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
@@ -506,8 +480,7 @@ class DefaultYapiApiClientTest {
         assertTrue("Should contain existing id", saveCall.body?.contains("existing-id") == true)
     }
 
-    @Test
-    fun `uploadApi returns failure when save endpoint returns error`() = runBlocking {
+    fun testUploadApiReturnsFailureWhenSaveEndpointReturnsError() = runBlocking {
         whenever(httpClient.execute(argThat { url.contains("/api/interface/list_cat") }))
             .thenReturn(mockResponse(apiListJson()))
 

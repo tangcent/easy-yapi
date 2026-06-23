@@ -14,6 +14,7 @@ import com.itangcent.easyapi.exporter.formatter.HttpClientFileFormatter
 import com.itangcent.easyapi.exporter.httpclient.HttpClientExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.logging.IdeaLog
 
 /**
  * [ApiChannel] that exports API endpoints as IntelliJ HTTP Client files.
@@ -24,7 +25,7 @@ import com.itangcent.easyapi.exporter.model.ExportResult
  * @see ApiChannel
  * @see HttpClientFileFormatter
  */
-class HttpClientChannel : ApiChannel {
+class HttpClientChannel : ApiChannel, IdeaLog {
 
     override val id: String = "http-client"
     override val displayName: String = "HTTP Client"
@@ -33,6 +34,7 @@ class HttpClientChannel : ApiChannel {
     override fun createOptionsPanel(project: Project): ChannelOptionsPanel? = null
 
     override suspend fun export(context: ExportContext): ExportResult {
+        LOG.debug("HttpClientChannel.export: endpoints=${context.endpointsToExport.size}")
         val hostCacheHelper = DefaultHttpContextCacheHelper.getInstance(context.project)
         val host = swing {
             hostCacheHelper.selectHost("Select Host For HTTP Client Export")

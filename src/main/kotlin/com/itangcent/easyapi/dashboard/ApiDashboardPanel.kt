@@ -1,7 +1,5 @@
 package com.itangcent.easyapi.dashboard
 
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
@@ -460,10 +458,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * Shows a notification indicating content was copied to clipboard.
      */
     private fun showCopyNotification() {
-        NotificationGroupManager.getInstance()
-            .getNotificationGroup("EasyApi Notifications")
-            .createNotification("Copied to clipboard", NotificationType.INFORMATION)
-            .notify(project)
+        NotificationUtils.notifyInfo(project, "EasyApi", "Copied to clipboard")
     }
 
     /**

@@ -36,6 +36,7 @@ class CurlChannel : ApiChannel, IdeaLog {
     override fun createOptionsPanel(project: Project): ChannelOptionsPanel? = null
 
     override suspend fun export(context: ExportContext): ExportResult {
+        LOG.debug("CurlChannel.export: endpoints=${context.endpointsToExport.size}")
         val hostCacheHelper = DefaultHttpContextCacheHelper.getInstance(context.project)
         val host = swing {
             hostCacheHelper.selectHost("Select Host For cURL Export")

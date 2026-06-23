@@ -83,7 +83,8 @@ class EndpointBuilder(private val project: Project) {
             val responseModel = runCatching {
                 val resolvedType = TypeResolver.resolveFromCanonicalText(returnTypeByRule.trim(), project, method)
                 PsiClassHelper.getInstance(project).buildObjectModel(resolvedType)
-            }.getOrNull()
+            }.onFailure { LOG.warn("buildResponseBody: method.return rule failed for method=${method.name}", it) }
+                .getOrNull()
             if (responseModel != null) {
                 return applyReturnMain(method, responseModel)
             }
@@ -96,7 +97,8 @@ class EndpointBuilder(private val project: Project) {
 
         val responseModel = runCatching {
             PsiClassHelper.getInstance(project).buildObjectModel(resolvedReturnType)
-        }.getOrNull()
+        }.onFailure { LOG.warn("buildResponseBody: buildObjectModel failed for method=${method.name}", it) }
+            .getOrNull()
         LOG.info("buildResponseBody: buildObjectModel result: $responseModel")
 
         if (responseModel == null) return null
@@ -227,7 +229,8 @@ class EndpointBuilder(private val project: Project) {
         }
         return runCatching {
             PsiClassHelper.getInstance(project).buildObjectModel(resolvedParamType)
-        }.getOrNull()
+        }.onFailure { LOG.warn("expandBodyParam: buildObjectModel failed for type=${resolvedParamType.qualifiedName()}", it) }
+            .getOrNull()
     }
 
     /**
@@ -297,7 +300,8 @@ class EndpointBuilder(private val project: Project) {
             return runCatching {
                 val helper = PsiClassHelper.getInstance(project)
                 helper.buildObjectModel(psiClass)
-            }.getOrNull()
+            }.onFailure { LOG.warn("DefaultResponseModelBuilder: buildModel failed for class=${psiClass.qualifiedName}", it) }
+                .getOrNull()
         }
     }
 

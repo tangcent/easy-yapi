@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.cache.ProjectCacheRepository
 import com.itangcent.easyapi.http.HttpCookie
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
@@ -25,7 +26,7 @@ import com.itangcent.easyapi.util.json.GsonUtils
 @Service(Service.Level.PROJECT)
 class DefaultHttpContextCacheHelper(
     project: Project
-) : HttpContextCacheHelper {
+) : HttpContextCacheHelper, IdeaLog {
 
     private val projectCacheRepository: ProjectCacheRepository = ProjectCacheRepository.getInstance(project)
 
@@ -59,7 +60,8 @@ class DefaultHttpContextCacheHelper(
         val raw = projectCacheRepository.read(COOKIES_KEY) ?: return emptyList()
         return runCatching {
             GsonUtils.fromJson<List<HttpCookie>>(raw)
-        }.getOrNull().orEmpty()
+        }.onFailure { LOG.warn("DefaultHttpContextCacheHelper: failed to parse cookies from '$COOKIES_KEY'", it) }
+            .getOrNull().orEmpty()
     }
 
     override fun addCookies(cookies: List<HttpCookie>) {

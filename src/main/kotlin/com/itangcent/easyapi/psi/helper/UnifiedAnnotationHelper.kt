@@ -35,7 +35,7 @@ import com.itangcent.easyapi.psi.adapter.PsiLanguageAdapterLoader
  * @see AnnotationHelper for the interface
  * @see PsiLanguageAdapter for language-specific handling
  */
-class UnifiedAnnotationHelper : AnnotationHelper {
+class UnifiedAnnotationHelper : AnnotationHelper, com.itangcent.easyapi.logging.IdeaLog {
 
     private val adapters: List<PsiLanguageAdapter> by lazy {
         PsiLanguageAdapterLoader.loadAdapters()
@@ -116,7 +116,8 @@ class UnifiedAnnotationHelper : AnnotationHelper {
             JavaPsiFacade.getInstance(project)
                 .constantEvaluationHelper
                 .computeConstantExpression(expression)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            LOG.warn("UnifiedAnnotationHelper: failed to evaluate constant expression", e)
             null
         }
     }

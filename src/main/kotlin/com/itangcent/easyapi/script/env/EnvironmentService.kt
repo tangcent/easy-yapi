@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
  * ```
  */
 @Service(Service.Level.PROJECT)
-class EnvironmentService(private val project: Project) {
+class EnvironmentService(private val project: Project) : com.itangcent.easyapi.logging.IdeaLog {
 
     private val _environmentData = MutableStateFlow(loadEnvironmentData())
 
@@ -173,12 +173,16 @@ class EnvironmentService(private val project: Project) {
         val settings = SettingBinder.getInstance(project).read()
         val projectEnvJson = settings.projectEnvironments
         val projectData = if (projectEnvJson.isNotBlank()) {
-            runCatching { GsonUtils.fromJson<EnvironmentData>(projectEnvJson) }.getOrNull()
+            runCatching { GsonUtils.fromJson<EnvironmentData>(projectEnvJson) }
+                .onFailure { LOG.warn("EnvironmentService: failed to parse project environments JSON", it) }
+                .getOrNull()
         } else null
 
         val globalEnvJson = settings.globalEnvironments
         val globalData = if (globalEnvJson.isNotBlank()) {
-            runCatching { GsonUtils.fromJson<EnvironmentData>(globalEnvJson) }.getOrNull()
+            runCatching { GsonUtils.fromJson<EnvironmentData>(globalEnvJson) }
+                .onFailure { LOG.warn("EnvironmentService: failed to parse global environments JSON", it) }
+                .getOrNull()
         } else null
 
         val projectEnvs = projectData?.environments ?: emptyList()

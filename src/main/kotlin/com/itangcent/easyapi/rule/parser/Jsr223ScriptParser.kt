@@ -122,7 +122,8 @@ abstract class Jsr223ScriptParser(
         // httpClient
         val httpClient = runCatching {
             HttpClientProvider.getInstance(context.project).getClient()
-        }.getOrNull()
+        }.onFailure { LOG.warn("Jsr223ScriptParser: failed to get httpClient", it) }
+            .getOrNull()
         bindings["httpClient"] = httpClient
 
         // helper + alias

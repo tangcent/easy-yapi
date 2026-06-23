@@ -9,6 +9,9 @@ import com.itangcent.easyapi.http.HttpClient
 import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.HttpResponse
 import com.itangcent.easyapi.http.KeyValue
+import com.itangcent.easyapi.logging.IdeaConsole
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.markdown.BundledMarkdownRender
 import kotlinx.coroutines.Dispatchers
@@ -31,13 +34,21 @@ import java.net.URLEncoder
  * @param serverUrl Base URL of the YAPI server (trailing slash is trimmed automatically)
  * @param token Project private token used for authentication
  * @param httpClient HTTP client used for all network calls
+ * @param project IntelliJ [Project] used to obtain the [IdeaConsole] for user-facing logging.
+ *        When null (e.g. tests), logging falls back to [IdeaLog] only.
  */
 class DefaultYapiApiClient(
     private val serverUrl: String,
     private val token: String,
     private val httpClient: HttpClient,
-    private val yapiFormatter: YapiFormatter = YapiFormatter(markdownRender = BundledMarkdownRender())
-) : YapiApiClient {
+    private val yapiFormatter: YapiFormatter = YapiFormatter(markdownRender = BundledMarkdownRender()),
+    private val project: com.intellij.openapi.project.Project
+) : YapiApiClient, IdeaLog {
+
+    /** Console for user-facing messages; falls back to a no-op sink when no Project is available (tests). */
+    private val console: IdeaConsole by lazy {
+        IdeaConsoleProvider.getInstance(project).getConsole()
+    }
 
     /** Cached project ID for this client instance. Populated on first [getProjectId] call. */
     private var cachedProjectId: String? = null
@@ -67,6 +78,7 @@ class DefaultYapiApiClient(
                 return@withContext YapiResponse.success(fromMenu)
             }
 
+            console.warn("YApi: could not resolve project ID from token=***")
             YapiResponse.failure("Could not resolve project ID from token")
         }
     }
@@ -75,7 +87,7 @@ class DefaultYapiApiClient(
     private suspend fun resolveProjectIdFromGetProject(): String? = runCatching {
         val resp = httpClient.execute(HttpRequest(url = "$serverUrl$GET_PROJECT?token=${enc(token)}", method = "GET"))
         parseResponse(resp) { it.getAsJsonObject("data")?.get("_id")?.asString }.getOrNull()
-    }.getOrNull()
+    }.onFailure { console.warn("YApi: resolveProjectIdFromGetProject failed", it) }.getOrNull()
 
     /**
      * Fallback: extracts `project_id` from the first item returned by [LIST_MENU].
@@ -86,7 +98,7 @@ class DefaultYapiApiClient(
         parseResponse(resp) { json ->
             json.getAsJsonArray("data")?.firstOrNull()?.asJsonObject?.get("project_id")?.asString
         }.getOrNull()
-    }.getOrNull()
+    }.onFailure { console.warn("YApi: resolveProjectIdFromListMenu failed", it) }.getOrNull()
 
     // endregion
 
@@ -106,7 +118,8 @@ class DefaultYapiApiClient(
                         YapiCart(id = obj.get("_id").asLong, name = obj.get("name").asString)
                     } ?: emptyList()
                 }
-            }.getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
+            }.onFailure { console.warn("YApi: listCarts failed for projectId=$projectId", it) }
+                .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
         }
     }
 
@@ -131,7 +144,8 @@ class DefaultYapiApiClient(
                     val data = json.getAsJsonObject("data")
                     YapiCart(id = data.get("_id").asLong, name = data.get("name").asString)
                 }
-            }.getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
+            }.onFailure { console.warn("YApi: createCart failed for name='$name'", it) }
+                .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
         }
     }
 
@@ -170,7 +184,8 @@ class DefaultYapiApiClient(
                     return@runCatching listApis(catId, apiPageLimit)
                 }
                 result
-            }.getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
+            }.onFailure { console.warn("YApi: listApis failed for catId=$catId", it) }
+                .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
         }
     }
 
@@ -239,7 +254,8 @@ class DefaultYapiApiClient(
                     )
                 )
                 parseResponse(resp) { Unit }
-            }.getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
+            }.onFailure { console.warn("YApi: uploadApi failed for path='${doc.path}', method='${doc.method}'", it) }
+                .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
         }
     }
 
@@ -277,7 +293,8 @@ class DefaultYapiApiClient(
                     )
                 )
                 parseResponse(resp) { Unit }
-            }.getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
+            }.onFailure { console.warn("YApi: uploadApi failed for path='${doc.path}', method='${doc.method}'", it) }
+                .getOrElse { YapiResponse.failure(it.message ?: "Unknown error") }
         }
     }
 

@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.config.parser
 
 import com.itangcent.easyapi.config.model.ConfigEntry
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.Settings
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,7 +41,8 @@ import java.nio.file.Paths
  */
 class ConfigTextParser(
     private val settings: Settings?
-) {
+) : IdeaLog {
+
     fun parse(text: String, sourceId: String, baseDir: String? = null): Sequence<ConfigEntry> {
         return parseLines(text.lines(), sourceId, baseDir, DirectiveState())
     }
@@ -86,7 +88,9 @@ class ConfigTextParser(
             if (key == "properties.additional") {
                 val additional = resolveAdditionalPath(value, baseDir)
                 if (additional != null) {
-                    val loaded = runCatching { Files.readString(additional, Charsets.UTF_8) }.getOrNull()
+                    val loaded = runCatching { Files.readString(additional, Charsets.UTF_8) }
+                        .onFailure { LOG.warn("ConfigTextParser: failed to read additional properties: $additional", it) }
+                        .getOrNull()
                     if (loaded != null) {
                         yieldAll(parseLines(loaded.lines(), sourceId, additional.parent?.toString(), DirectiveState()))
                     } else if (!state.ignoreNotFoundFile) {

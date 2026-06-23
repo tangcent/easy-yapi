@@ -5,6 +5,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.itangcent.easyapi.core.threading.readSync
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.model.FieldOption
@@ -52,6 +53,8 @@ import com.itangcent.easyapi.settings.SettingBinder
  */
 @Service(Service.Level.PROJECT)
 class EnumValueResolver(private val project: Project) : IdeaLog {
+
+    private val console = IdeaConsoleProvider.getInstance(project).getConsole()
 
     /**
      * The resolved value field of an enum.
@@ -161,12 +164,23 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
             if (context == null) {
                 val instanceFields = instanceFields(enumClass)
                 if (instanceFields.size == 1) {
-                    return Resolution(ValueField.Instance(instanceFields.first()), Source.INTELLIGENT_SINGLE)
+                    val field = instanceFields.first()
+                    console.info(
+                        "EnumValueResolver: auto-inferred value field for " +
+                            "${enumClass.qualifiedName ?: enumClass.name} → instance field '${field.name}' " +
+                            "(INTELLIGENT_SINGLE: sole instance field)"
+                    )
+                    return Resolution(ValueField.Instance(field), Source.INTELLIGENT_SINGLE)
                 }
             } else {
                 // Case 2: context != null → type-match heuristic.
                 val matched = findEnumFieldByType(enumClass, context)
                 if (matched != null) {
+                    console.info(
+                        "EnumValueResolver: auto-inferred value field for " +
+                            "${enumClass.qualifiedName ?: enumClass.name} → instance field '${matched.name}' " +
+                            "(INTELLIGENT_TYPE_MATCH: type-compatible with referencing element)"
+                    )
                     return Resolution(ValueField.Instance(matched), Source.INTELLIGENT_TYPE_MATCH)
                 }
             }

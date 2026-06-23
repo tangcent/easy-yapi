@@ -94,7 +94,7 @@ import com.itangcent.easyapi.util.text.appendWithDedup
 @Service(Service.Level.PROJECT)
 class DocMetadataResolver internal constructor(
     private val project: Project
-) {
+) : com.itangcent.easyapi.logging.IdeaLog {
     private val engine: RuleEngine get() = RuleEngine.getInstance(project)
     private val docHelper: DocHelper get() = UnifiedDocHelper.getInstance(project)
     private val settings get() = SettingBinder.getInstance(project).read()
@@ -362,7 +362,8 @@ class DocMetadataResolver internal constructor(
                         required = map["required"]?.toString()?.toBooleanStrictOrNull() ?: false
                     )
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                LOG.warn("DocMetadataResolver: failed to parse header line '$trimmed'", e)
             }
         }
         return result
@@ -385,7 +386,8 @@ class DocMetadataResolver internal constructor(
                         defaultValue = map["value"]?.toString()
                     )
                 )
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                LOG.warn("DocMetadataResolver: failed to parse param line '$trimmed'", e)
             }
         }
         return result

@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.config.parser
 
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.Settings
 
 /**
@@ -30,7 +31,8 @@ import com.itangcent.easyapi.settings.Settings
 class DirectiveParser(
     private val state: DirectiveState,
     private val settings: Settings?
-) {
+) : IdeaLog {
+
     fun handle(line: String): Boolean {
         val trimmed = line.trim()
         if (!trimmed.startsWith("###")) return false
@@ -55,7 +57,8 @@ class DirectiveParser(
             "resolveProperty" -> state.resolveProperty = value.equals("true", true)
             "resolveMulti" -> state.resolveMulti = runCatching {
                 ResolveMultiMode.valueOf(value.uppercase())
-            }.getOrDefault(ResolveMultiMode.FIRST)
+            }.onFailure { LOG.warn("DirectiveParser: invalid resolveMulti value '$value', falling back to FIRST") }
+                .getOrDefault(ResolveMultiMode.FIRST)
             "ignoreNotFoundFile" -> state.ignoreNotFoundFile = value.equals("true", true)
             "ignoreUnresolved" -> state.ignoreUnresolved = value.equals("true", true)
         }

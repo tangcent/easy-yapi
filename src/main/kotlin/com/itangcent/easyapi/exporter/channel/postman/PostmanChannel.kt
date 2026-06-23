@@ -55,6 +55,7 @@ class PostmanChannel : ApiChannel, IdeaLog {
     }
 
     override suspend fun export(context: ExportContext): ExportResult {
+        LOG.debug("PostmanChannel.export: endpoints=${context.endpointsToExport.size}")
         val project = context.project
         val settings = SettingBinder.getInstance(project).read()
         val token = settings.postmanToken

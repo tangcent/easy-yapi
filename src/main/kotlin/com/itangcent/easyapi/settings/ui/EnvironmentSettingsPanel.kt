@@ -19,7 +19,7 @@ import javax.swing.*
 import javax.swing.border.TitledBorder
 import javax.swing.table.DefaultTableModel
 
-class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel {
+class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel, com.itangcent.easyapi.logging.IdeaLog {
 
     private val envTableModel = ListTableModel<EnvironmentRow>(
         arrayOf(
@@ -217,7 +217,9 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel {
 
         val projectEnvJson = settings?.projectEnvironments
         if (!projectEnvJson.isNullOrBlank()) {
-            val data = runCatching { GsonUtils.fromJson<EnvironmentData>(projectEnvJson) }.getOrNull()
+            val data = runCatching { GsonUtils.fromJson<EnvironmentData>(projectEnvJson) }
+                .onFailure { LOG.warn("EnvironmentSettingsPanel: failed to parse project environments JSON", it) }
+                .getOrNull()
             data?.environments?.forEach { env ->
                 envTableModel.addRow(EnvironmentRow(
                     name = env.name,
@@ -229,7 +231,9 @@ class EnvironmentSettingsPanel(private val project: Project) : SettingsPanel {
 
         val globalEnvJson = settings?.globalEnvironments
         if (!globalEnvJson.isNullOrBlank()) {
-            val data = runCatching { GsonUtils.fromJson<EnvironmentData>(globalEnvJson) }.getOrNull()
+            val data = runCatching { GsonUtils.fromJson<EnvironmentData>(globalEnvJson) }
+                .onFailure { LOG.warn("EnvironmentSettingsPanel: failed to parse global environments JSON", it) }
+                .getOrNull()
             data?.environments?.forEach { env ->
                 envTableModel.addRow(EnvironmentRow(
                     name = env.name,

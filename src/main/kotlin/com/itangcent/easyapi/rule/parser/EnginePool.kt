@@ -66,7 +66,9 @@ class EnginePool(
         val cached = pool.poll()
         if (cached != null) return cached
         return engineFactory?.invoke()
-            ?: runCatching { ScriptEngineManager().getEngineByName(engineName) }.getOrNull()
+            ?: runCatching { ScriptEngineManager().getEngineByName(engineName) }
+                .onFailure { LOG.warn("EnginePool: failed to create script engine for '$engineName'", it) }
+                .getOrNull()
     }
 
     private fun returnEngine(engine: ScriptEngine) {

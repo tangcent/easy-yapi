@@ -7,6 +7,7 @@ import com.intellij.openapi.ui.Messages
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.http.HttpClientProvider
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.SettingBinder
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -26,7 +27,7 @@ import java.util.Properties
  * @see PostmanChannel for usage in export workflow
  */
 @Service(Service.Level.PROJECT)
-class PostmanCollectionHelper(private val project: Project) {
+class PostmanCollectionHelper(private val project: Project) : IdeaLog {
 
     private val promptedModules = mutableSetOf<String>()
 
@@ -63,6 +64,7 @@ class PostmanCollectionHelper(private val project: Project) {
             val collections = try {
                 postmanClient.listCollections(workspaceId ?: "", useCache = true)
             } catch (e: Exception) {
+                LOG.warn("Postman: listCollections failed for module='$module', workspaceId=$workspaceId", e)
                 emptyList()
             }
 

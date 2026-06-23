@@ -3,6 +3,7 @@ package com.itangcent.easyapi.ide.action
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.wm.ToolWindowManager
+import com.itangcent.easyapi.logging.IdeaConsoleProvider
 
 /**
  * Action to open the API Dashboard tool window.
@@ -13,6 +14,8 @@ import com.intellij.openapi.wm.ToolWindowManager
 class OpenApiDashboardAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
+        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        console.debug("OpenApiDashboardAction.actionPerformed: project=${project.name}")
         ToolWindowManager.getInstance(project).getToolWindow("API Dashboard")?.activate(null)
     }
 }

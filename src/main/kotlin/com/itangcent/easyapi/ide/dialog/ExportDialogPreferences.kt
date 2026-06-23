@@ -2,6 +2,7 @@ package com.itangcent.easyapi.ide.dialog
 
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.cache.ProjectCacheRepository
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 
 /**
@@ -36,7 +37,7 @@ data class ExportDialogPreferences(
  * 
  * @param project The IntelliJ project context
  */
-class ExportDialogPreferencesPersistence(project: Project) {
+class ExportDialogPreferencesPersistence(project: Project) : IdeaLog {
     private val repo = ProjectCacheRepository.getInstance(project)
     private val key = "export_dialog_preferences.json"
 
@@ -47,7 +48,9 @@ class ExportDialogPreferencesPersistence(project: Project) {
      */
     fun load(): ExportDialogPreferences {
         val raw = repo.read(key) ?: return ExportDialogPreferences()
-        return runCatching { GsonUtils.fromJson<ExportDialogPreferences>(raw) }.getOrNull()
+        return runCatching { GsonUtils.fromJson<ExportDialogPreferences>(raw) }
+            .onFailure { LOG.warn("ExportDialogPreferences: failed to parse preferences from '$key'", it) }
+            .getOrNull()
             ?: ExportDialogPreferences()
     }
 
