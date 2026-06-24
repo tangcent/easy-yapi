@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.exporter.postman
 
+import com.itangcent.easyapi.exporter.postman.model.PostmanEnvironmentDetail
+import com.itangcent.easyapi.exporter.postman.model.PostmanEnvironmentInfo
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.cache.AppCacheRepository
 import com.itangcent.easyapi.logging.IdeaLog
@@ -23,6 +25,7 @@ class CachedPostmanApiClient(
     companion object : IdeaLog {
         private const val WORKSPACES_CACHE_KEY = "postman/workspaces.json"
         private const val COLLECTIONS_CACHE_KEY_PREFIX = "postman/collections_"
+        private const val ENVIRONMENTS_CACHE_KEY_PREFIX = "postman/environments_"
     }
 
     suspend fun listWorkspaces(useCache: Boolean = true): List<Workspace> {
@@ -120,6 +123,96 @@ class CachedPostmanApiClient(
 
     suspend fun updateCollection(collectionUid: String, collection: com.itangcent.easyapi.exporter.postman.model.PostmanCollection): UploadResult {
         return postmanClient.updateCollection(collectionUid, collection)
+    }
+
+    // --- Environment Methods ---
+
+    suspend fun listEnvironments(workspaceId: String, useCache: Boolean = true): List<PostmanEnvironmentInfo> {
+        LOG.info("CachedPostmanApiClient.listEnvironments: workspaceId=$workspaceId, useCache=$useCache")
+
+        val cacheKey = "${ENVIRONMENTS_CACHE_KEY_PREFIX}${workspaceId}.json"
+        if (useCache) {
+            val cached = loadCachedEnvironments(cacheKey)
+            if (cached.isNotEmpty()) {
+                LOG.info("CachedPostmanApiClient.listEnvironments: returning ${cached.size} cached environments")
+                return cached
+            }
+        }
+
+        val environments = postmanClient.listEnvironments(workspaceId)
+        if (environments.isNotEmpty()) {
+            cacheEnvironments(cacheKey, environments)
+        }
+        return environments
+    }
+
+    private fun cacheEnvironments(cacheKey: String, environments: List<PostmanEnvironmentInfo>) {
+        try {
+            AppCacheRepository.getInstance().write(cacheKey, GsonUtils.toJson(environments))
+            LOG.info("Cached ${environments.size} environments")
+        } catch (e: Exception) {
+            LOG.warn("Failed to cache environments", e)
+        }
+    }
+
+    private fun loadCachedEnvironments(cacheKey: String): List<PostmanEnvironmentInfo> {
+        return try {
+            val cached = AppCacheRepository.getInstance().read(cacheKey)
+            if (cached != null) {
+                val arr = GsonUtils.fromJson<Array<PostmanEnvironmentInfo>>(cached, Array<PostmanEnvironmentInfo>::class.java)
+                arr.toList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            LOG.warn("Failed to load cached environments", e)
+            emptyList()
+        }
+    }
+
+    suspend fun getEnvironment(environmentId: String): PostmanEnvironmentDetail? {
+        return postmanClient.getEnvironment(environmentId)
+    }
+
+    suspend fun createEnvironment(workspaceId: String, environment: PostmanEnvironmentDetail): UploadResult {
+        val result = postmanClient.createEnvironment(workspaceId, environment)
+        if (result.success) {
+            clearEnvironmentsCache(workspaceId)
+        }
+        return result
+    }
+
+    suspend fun updateEnvironment(environmentId: String, environment: PostmanEnvironmentDetail): UploadResult {
+        return postmanClient.updateEnvironment(environmentId, environment)
+    }
+
+    /**
+     * Updates a Postman environment and clears the cached environment list for the
+     * given workspace on success.
+     *
+     * Use this overload instead of [updateEnvironment] when the caller knows the
+     * workspace ID, so that subsequent `listEnvironments` calls return fresh data.
+     *
+     * @param environmentId Target Postman environment ID
+     * @param workspaceId Workspace ID the environment belongs to (for cache invalidation)
+     * @param environment Updated environment detail
+     * @return Upload result from the underlying API call
+     */
+    suspend fun updateEnvironment(
+        environmentId: String,
+        workspaceId: String,
+        environment: PostmanEnvironmentDetail
+    ): UploadResult {
+        val result = postmanClient.updateEnvironment(environmentId, environment)
+        if (result.success) {
+            clearEnvironmentsCache(workspaceId)
+        }
+        return result
+    }
+
+    fun clearEnvironmentsCache(workspaceId: String) {
+        val cacheKey = "${ENVIRONMENTS_CACHE_KEY_PREFIX}${workspaceId}.json"
+        AppCacheRepository.getInstance().delete(cacheKey)
     }
 }
 

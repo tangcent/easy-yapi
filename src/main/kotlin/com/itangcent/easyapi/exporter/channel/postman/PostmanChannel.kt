@@ -18,8 +18,8 @@ import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.postman.*
 import com.itangcent.easyapi.exporter.postman.model.PostmanCollection
+import com.itangcent.easyapi.exporter.postman.model.PostmanGson
 import com.itangcent.easyapi.exporter.postman.model.PostmanItem
-import com.itangcent.easyapi.exporter.postman.model.postmanGson
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.PostmanExportMode
@@ -109,17 +109,10 @@ class PostmanChannel : ApiChannel, IdeaLog {
         settings: com.itangcent.easyapi.settings.Settings,
         postmanConfig: ChannelConfig.PostmanConfig
     ): ExportResult {
-        val project = context.project
         val workspaceId = postmanConfig.workspaceId ?: settings.postmanWorkspace
         val collectionId = postmanConfig.collectionId
 
-        val httpClient = HttpClientProvider.getInstance(project).getClient()
-        val postmanClient = PostmanApiClient(token, workspaceId = workspaceId, httpClient = httpClient)
-            .asCached()
-
-        val workspaceName = workspaceId?.let {
-            postmanClient.listWorkspaces(useCache = true).find { it.id == workspaceId }?.name
-        }
+        val (postmanClient, workspaceName) = createPostmanClient(context.project, token, workspaceId)
 
         val result = if (collectionId != null) {
             postmanClient.updateCollection(collectionId, collection)
@@ -150,16 +143,9 @@ class PostmanChannel : ApiChannel, IdeaLog {
         settings: com.itangcent.easyapi.settings.Settings,
         exportMode: PostmanExportMode
     ): ExportResult {
-        val project = context.project
         val workspaceId = settings.postmanWorkspace
 
-        val httpClient = HttpClientProvider.getInstance(project).getClient()
-        val postmanClient = PostmanApiClient(token, workspaceId = workspaceId, httpClient = httpClient)
-            .asCached()
-
-        val workspaceName = workspaceId?.let {
-            postmanClient.listWorkspaces(useCache = true).find { it.id == workspaceId }?.name
-        }
+        val (postmanClient, workspaceName) = createPostmanClient(context.project, token, workspaceId)
 
         when (exportMode) {
             PostmanExportMode.CREATE_NEW -> {
@@ -358,7 +344,7 @@ class PostmanChannel : ApiChannel, IdeaLog {
         val targetFile = resolveTargetFile(project, fileConfig, "postman_collection.json")
             ?: throw CancellationException("User cancelled file selection")
 
-        val gson = postmanGson()
+        val gson = PostmanGson.pretty
         val content = gson.toJson(metadata.collectionData)
 
         withContext(IdeDispatchers.Background) {
@@ -405,9 +391,23 @@ class PostmanChannel : ApiChannel, IdeaLog {
         }
     }
 
+    private suspend fun createPostmanClient(
+        project: Project,
+        token: String,
+        workspaceId: String?
+    ): Pair<CachedPostmanApiClient, String?> {
+        val httpClient = HttpClientProvider.getInstance(project).getClient()
+        val postmanClient = PostmanApiClient(token, workspaceId = workspaceId, httpClient = httpClient)
+            .asCached()
+        val workspaceName = workspaceId?.let {
+            postmanClient.listWorkspaces(useCache = true).find { it.id == workspaceId }?.name
+        }
+        return postmanClient to workspaceName
+    }
+
     private fun countApiItems(collection: PostmanCollection): Int {
         fun count(items: List<PostmanItem>): Int = items.sumOf { item ->
-            if (item.request != null) 1 else count(item.item)
+            if (item.request != null) 1 else count(item.item.orEmpty())
         }
         return count(collection.item)
     }

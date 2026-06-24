@@ -218,7 +218,7 @@ class PostmanFormatterLogicTest {
             )
         )
         assertEquals("Users", item.name)
-        assertEquals(1, item.item.size)
+        assertEquals(1, item.item.orEmpty().size)
     }
 
     // ==================== PostmanRequest ====================

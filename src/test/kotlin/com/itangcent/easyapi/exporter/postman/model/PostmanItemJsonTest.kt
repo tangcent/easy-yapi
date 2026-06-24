@@ -1,13 +1,12 @@
 package com.itangcent.easyapi.exporter.postman.model
 
-import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import org.junit.Assert.*
 import org.junit.Test
 
-class PostmanItemSerializerTest {
+class PostmanItemJsonTest {
 
-    private val gson = postmanGson(prettyPrint = false)
+    private val gson = PostmanGson.compact
 
     @Test
     fun testSerialize_apiItem() {
@@ -97,18 +96,16 @@ class PostmanItemSerializerTest {
     }
 
     @Test
-    fun testPostmanGson_prettyPrint() {
-        val pretty = postmanGson(prettyPrint = true)
+    fun testPostmanGson_pretty() {
         val item = PostmanItem(name = "Test", request = PostmanRequest(method = "GET", url = PostmanUrl(raw = "/t")))
-        val json = pretty.toJson(item)
+        val json = PostmanGson.pretty.toJson(item)
         assertTrue(json.contains("\n"))
     }
 
     @Test
-    fun testPostmanGson_noPrettyPrint() {
-        val compact = postmanGson(prettyPrint = false)
+    fun testPostmanGson_compact() {
         val item = PostmanItem(name = "Test", request = PostmanRequest(method = "GET", url = PostmanUrl(raw = "/t")))
-        val json = compact.toJson(item)
+        val json = PostmanGson.compact.toJson(item)
         assertFalse(json.contains("\n"))
     }
 }

@@ -424,6 +424,7 @@ class EndpointDetailsPanel(
         sendButton.addActionListener { sendRequest() }
         resetButton.addActionListener { resetCurrentEndpoint() }
         envComboBox.addActionListener { onEnvironmentChanged() }
+        setupEnvContextMenu()
     }
 
     private fun buildResponseTabs() {
@@ -1622,6 +1623,35 @@ class EndpointDetailsPanel(
             cls.qualifiedName ?: cls.name ?: ""
         }
         return "$className#${method.name}"
+    }
+
+    private fun setupEnvContextMenu() {
+        val syncService = com.itangcent.easyapi.dashboard.sync.EnvironmentSyncService.getInstance(project)
+
+        envComboBox.componentPopupMenu = JPopupMenu().apply {
+            add(JMenuItem("Push to Postman").apply {
+                isEnabled = syncService.hasPostmanToken()
+                if (!isEnabled) toolTipText = "Configure Postman API token in settings"
+                addActionListener {
+                    syncService.showSyncDialogAndExecute(
+                        com.itangcent.easyapi.dashboard.sync.EnvironmentSyncDialog.SyncMode.PUSH
+                    )
+                }
+            })
+            add(JMenuItem("Pull from Postman").apply {
+                isEnabled = syncService.hasPostmanToken()
+                if (!isEnabled) toolTipText = "Configure Postman API token in settings"
+                addActionListener {
+                    syncService.showSyncDialogAndExecute(
+                        com.itangcent.easyapi.dashboard.sync.EnvironmentSyncDialog.SyncMode.PULL
+                    ) {
+                        loadEnvironments()
+                    }
+                }
+            })
+            addSeparator()
+            add(JMenuItem("Refresh").apply { addActionListener { loadEnvironments() } })
+        }
     }
 
     fun dispose() {

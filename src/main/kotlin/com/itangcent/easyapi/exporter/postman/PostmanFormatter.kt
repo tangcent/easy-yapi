@@ -147,9 +147,10 @@ class PostmanFormatter(
         // (use the folder's items directly instead of wrapping in an extra level)
         val items = if (!options.wrapCollection && folderItems.size == 1) {
             val singleFolder = folderItems.first()
+            val folderChildren = singleFolder.item
             // If the single folder has sub-items (endpoints), use them directly
-            if (singleFolder.item.isNotEmpty() && singleFolder.request == null) {
-                singleFolder.item
+            if (!folderChildren.isNullOrEmpty() && singleFolder.request == null) {
+                folderChildren
             } else {
                 folderItems
             }

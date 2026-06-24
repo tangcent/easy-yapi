@@ -5,6 +5,9 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
+import com.itangcent.easyapi.dashboard.sync.EnvironmentSyncDialog
+import com.itangcent.easyapi.dashboard.sync.EnvironmentSyncService
+import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.script.env.Environment
 import com.itangcent.easyapi.script.env.EnvironmentScope
 import com.itangcent.easyapi.script.env.EnvironmentService
@@ -18,7 +21,10 @@ import javax.swing.table.DefaultTableModel
 
 class InlineEnvironmentPanel(private val project: Project) : JPanel(BorderLayout()) {
 
+    companion object : IdeaLog
+
     private val environmentService: EnvironmentService = EnvironmentService.getInstance(project)
+    private val syncService: EnvironmentSyncService = EnvironmentSyncService.getInstance(project)
 
     private val nameField = JTextField(16)
     private val scopeCombo = JComboBox(arrayOf("Project", "Global"))
@@ -43,6 +49,9 @@ class InlineEnvironmentPanel(private val project: Project) : JPanel(BorderLayout
         isBorderPainted = false
         isContentAreaFilled = false
         foreground = UIManager.getColor("Link.activeForeground")
+    }
+    private val syncButton = JButton("Sync ▼").apply {
+        toolTipText = "Sync environments with Postman"
     }
 
     private var currentEnvName: String? = null
@@ -69,6 +78,8 @@ class InlineEnvironmentPanel(private val project: Project) : JPanel(BorderLayout
             add(scopeCombo)
             add(Box.createHorizontalGlue())
             add(saveButton)
+            add(Box.createHorizontalStrut(4))
+            add(syncButton)
             add(Box.createHorizontalStrut(4))
             add(settingsLink)
         }
@@ -115,6 +126,7 @@ class InlineEnvironmentPanel(private val project: Project) : JPanel(BorderLayout
 
         saveButton.addActionListener { saveCurrentEnvironment() }
         settingsLink.addActionListener { openSettings() }
+        syncButton.addActionListener { showSyncMenu() }
     }
 
     private fun checkDirty() {
@@ -158,6 +170,7 @@ class InlineEnvironmentPanel(private val project: Project) : JPanel(BorderLayout
                 savedState = null
             }
             saveButton.isEnabled = false
+            updateSyncButtonState()
         } finally {
             isUpdatingUI = false
         }
@@ -219,6 +232,49 @@ class InlineEnvironmentPanel(private val project: Project) : JPanel(BorderLayout
             project,
             EasyApiSettingsConfigurable::class.java
         )
+    }
+
+    private fun showSyncMenu() {
+        val popup = JPopupMenu()
+        val pushItem = JMenuItem("Push to Postman")
+        val pullItem = JMenuItem("Pull from Postman")
+
+        val hasToken = syncService.hasPostmanToken()
+        pushItem.isEnabled = hasToken
+        pullItem.isEnabled = hasToken
+        if (!hasToken) {
+            pushItem.toolTipText = "Configure Postman API token in settings"
+            pullItem.toolTipText = "Configure Postman API token in settings"
+        }
+
+        pushItem.addActionListener {
+            syncService.showSyncDialogAndExecute(
+                EnvironmentSyncDialog.SyncMode.PUSH
+            )
+        }
+        pullItem.addActionListener {
+            syncService.showSyncDialogAndExecute(
+                EnvironmentSyncDialog.SyncMode.PULL
+            ) {
+                onEnvironmentSaved?.invoke()
+            }
+        }
+
+        popup.add(pushItem)
+        popup.add(pullItem)
+        popup.show(syncButton, 0, syncButton.height)
+    }
+
+    /**
+     * Updates the sync button state based on whether a Postman token is configured.
+     */
+    fun updateSyncButtonState() {
+        syncButton.isEnabled = syncService.hasPostmanToken()
+        if (!syncButton.isEnabled) {
+            syncButton.toolTipText = "Configure Postman API token in settings"
+        } else {
+            syncButton.toolTipText = "Sync environments with Postman"
+        }
     }
 
     private data class EnvSnapshot(

@@ -153,7 +153,7 @@ class PostmanItemTest {
             item = listOf(childItem)
         )
         assertEquals("Users", folder.name)
-        assertEquals(1, folder.item.size)
+        assertEquals(1, folder.item.orEmpty().size)
         assertNull(folder.request)
     }
 
@@ -170,7 +170,7 @@ class PostmanItemTest {
         assertEquals("Get Users", item.name)
         assertNotNull(item.request)
         assertEquals("GET", item.request?.method)
-        assertTrue(item.item.isEmpty())
+        assertTrue(item.item.isNullOrEmpty())
     }
 }
 

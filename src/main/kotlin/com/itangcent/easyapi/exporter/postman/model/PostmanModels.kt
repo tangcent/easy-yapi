@@ -1,5 +1,24 @@
 package com.itangcent.easyapi.exporter.postman.model
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+
+/**
+ * Shared Gson instances for Postman collection serialization.
+ *
+ * Relies on Gson's default `serializeNulls = false` so that nullable fields
+ * (e.g. `PostmanItem.item` on API items, `PostmanItem.request` on folders)
+ * are omitted from the JSON output. This removes the need for a custom
+ * JsonSerializer to distinguish folder vs API items.
+ */
+object PostmanGson {
+    /** Compact Gson for API requests. */
+    val compact: Gson by lazy { GsonBuilder().create() }
+
+    /** Pretty-printing Gson for file export. */
+    val pretty: Gson by lazy { GsonBuilder().setPrettyPrinting().create() }
+}
+
 /**
  * Represents a Postman collection.
  *
@@ -40,15 +59,15 @@ data class CollectionInfo(
  * - A request (has request property)
  *
  * @param name Item name
- * @param item Nested items (for folders)
- * @param request The HTTP request (for request items)
+ * @param item Nested items (for folders); `null` for API items so Gson omits it
+ * @param request The HTTP request (for request items); `null` for folders so Gson omits it
  * @param response Saved responses
  * @param event Pre-request/post-response scripts
  * @param description Item description
  */
 data class PostmanItem(
     val name: String,
-    val item: List<PostmanItem> = emptyList(),
+    val item: List<PostmanItem>? = null,
     val request: PostmanRequest? = null,
     val response: List<PostmanResponse> = emptyList(),
     val event: List<PostmanEvent> = emptyList(),
@@ -234,4 +253,65 @@ data class PostmanVariable(
     val value: String,
     val type: String = "string",
     val description: String? = null
+)
+
+// --- Postman Environment Models ---
+
+/**
+ * Summary info for a Postman environment (from list API).
+ *
+ * @param id Environment ID
+ * @param name Environment name
+ * @param uid Environment UID
+ */
+data class PostmanEnvironmentInfo(
+    val id: String,
+    val name: String,
+    val uid: String? = null
+)
+
+/**
+ * A single variable in a Postman environment.
+ *
+ * @param key Variable name
+ * @param value Variable value
+ * @param enabled Whether the variable is active
+ * @param type Value type (text or secret)
+ */
+data class PostmanEnvironmentValue(
+    val key: String,
+    val value: String,
+    val enabled: Boolean = true,
+    val type: String = "text"
+)
+
+/**
+ * Full detail of a Postman environment (from get API).
+ *
+ * @param id Environment ID
+ * @param name Environment name
+ * @param uid Environment UID
+ * @param values List of environment variables
+ */
+data class PostmanEnvironmentDetail(
+    val id: String = "",
+    val name: String,
+    val uid: String? = null,
+    val values: List<PostmanEnvironmentValue> = emptyList()
+)
+
+/**
+ * Request body for creating a Postman environment.
+ * Wraps the environment data in a top-level "environment" key.
+ */
+data class PostmanEnvironmentCreateRequest(
+    val environment: PostmanEnvironmentDetail
+)
+
+/**
+ * Request body for updating a Postman environment.
+ * Wraps the environment data in a top-level "environment" key.
+ */
+data class PostmanEnvironmentUpdateRequest(
+    val environment: PostmanEnvironmentDetail
 )
