@@ -95,7 +95,7 @@ class GeneralSettingsPanelLogicTest {
         assertFalse(settings.concurrentScanEnabled)
         assertTrue(settings.gutterIconEnabled)
         assertTrue(settings.switchNotice)
-        assertEquals(0, settings.logLevel)
+        assertEquals(100, settings.logLevel)
         assertEquals("UTF-8", settings.outputCharset)
         assertTrue(settings.outputDemo)
         assertEquals(MarkdownFormatType.SIMPLE.name, settings.markdownFormatType)

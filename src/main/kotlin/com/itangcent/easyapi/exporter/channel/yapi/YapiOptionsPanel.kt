@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.ide.dialog.ExportDialogPreferences
 import com.itangcent.easyapi.ide.dialog.ExportDialogPreferencesPersistence
 import java.awt.BorderLayout
@@ -76,7 +76,7 @@ class YapiOptionsPanel(private val project: Project) : ChannelOptionsPanel {
     }
 
     private fun loadYapiProjects() {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val yapiTokens = settings.yapiTokens
         if (!yapiTokens.isNullOrBlank()) {
             yapiTokens.lines()

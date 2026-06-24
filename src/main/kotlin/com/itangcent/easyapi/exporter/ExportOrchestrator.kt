@@ -13,13 +13,14 @@ import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
+import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.ide.support.SelectionScope
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.withContext
 
 @Service(Service.Level.PROJECT)
-class ExportOrchestrator(private val project: Project) {
+class ExportOrchestrator(private val project: Project) : IdeaLog {
 
     private val apiScanner: ApiScanner = ApiScanner.getInstance(project)
     private val apiIndex: ApiIndex = ApiIndex.getInstance(project)
@@ -31,15 +32,13 @@ class ExportOrchestrator(private val project: Project) {
         }
     }
 
-    private val console = IdeaConsoleProvider.getInstance(project).getConsole()
-
     suspend fun orchestrateExport(
         selection: SelectionScope?,
         channelId: String,
         channelConfig: ChannelConfig = ChannelConfig.Empty,
         indicator: ProgressIndicator? = null
     ): ExportResult {
-        console.debug("ExportOrchestrator.orchestrateExport: channelId=$channelId, selection=$selection")
+        LOG.debug("ExportOrchestrator.orchestrateExport: channelId=$channelId, selection=$selection")
         val channel = channelRegistry.getChannel(channelId)
             ?: return ExportResult.Error("No channel registered for id: $channelId")
 
@@ -48,16 +47,16 @@ class ExportOrchestrator(private val project: Project) {
         val endpoints = scanEndpoints(selection, indicator)
 
         if (endpoints.isEmpty()) {
-            console.info("ExportOrchestrator.orchestrateExport: no endpoints found")
+            NotificationUtils.notifyWarning(project, "Export", "No API endpoints found in selection")
             return ExportResult.Error("No API endpoints found")
         }
 
-        console.info("ExportOrchestrator.orchestrateExport: exporting ${endpoints.size} endpoints via ${channel.displayName}")
+        NotificationUtils.notifyInfo(project, "Export", "Exporting ${endpoints.size} endpoints via ${channel.displayName}")
         indicator?.text = "Exporting ${endpoints.size} endpoints via ${channel.displayName}..."
         indicator?.isIndeterminate = false
         indicator?.fraction = 0.0
 
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
@@ -80,7 +79,7 @@ class ExportOrchestrator(private val project: Project) {
                 }
             }
         } else if (result is ExportResult.Error) {
-            console.warn("ExportOrchestrator.orchestrateExport: channel=$channelId failed: ${result.message}")
+            NotificationUtils.notifyError(project, "Export", "Channel $channelId failed: ${result.message}")
         }
         return result
     }
@@ -91,7 +90,7 @@ class ExportOrchestrator(private val project: Project) {
         channelConfig: ChannelConfig = ChannelConfig.Empty,
         indicator: ProgressIndicator? = null
     ): ExportResult {
-        console.debug("ExportOrchestrator.exportViaChannel: channelId=$channelId, endpoints=${endpoints.size}")
+        LOG.debug("ExportOrchestrator.exportViaChannel: channelId=$channelId, endpoints=${endpoints.size}")
         val channel = channelRegistry.getChannel(channelId)
             ?: return ExportResult.Error("No channel registered for id: $channelId")
 
@@ -99,7 +98,7 @@ class ExportOrchestrator(private val project: Project) {
         indicator?.isIndeterminate = false
         indicator?.fraction = 0.0
 
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
@@ -122,7 +121,7 @@ class ExportOrchestrator(private val project: Project) {
                 }
             }
         } else if (result is ExportResult.Error) {
-            console.warn("ExportOrchestrator.exportViaChannel: channel=$channelId failed: ${result.message}")
+            LOG.warn("ExportOrchestrator.exportViaChannel: channel=$channelId failed: ${result.message}")
         }
         return result
     }

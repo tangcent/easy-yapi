@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.cache.api
 
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -39,7 +40,7 @@ class ApiFileChangeListenerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testAutoScanDisabled() {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         settings.autoScanEnabled = false
         SettingBinder.getInstance(project).save(settings)
 

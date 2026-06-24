@@ -20,8 +20,8 @@ import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.model.isGrpc
 import com.itangcent.easyapi.grpc.DynamicJarClient
 import com.itangcent.easyapi.http.*
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.core.threading.readSync
 import kotlinx.coroutines.CancellationException
 import kotlin.system.measureTimeMillis
@@ -75,7 +75,7 @@ class RequestExecutor(private val project: Project) : IdeaLog {
     private val environmentService: EnvironmentService get() = EnvironmentService.getInstance(project)
     private val scriptCacheService: ScriptCacheService get() = ScriptCacheService.getInstance(project)
     private val pmScriptExecutor: PmScriptExecutor get() = PmScriptExecutor.getInstance(project)
-    private val console by lazy { IdeaConsoleProvider.getInstance(project).getConsole() }
+    private val console get() = project.console
 
     private val envVars: Map<String, String> get() = environmentService.resolveAllVariables()
 
@@ -219,7 +219,7 @@ class RequestExecutor(private val project: Project) : IdeaLog {
     ): RequestResult {
         val scopeDesc = input.scriptScopes.joinToString(" → ") { it.displayLabel() }
         LOG.info("Executing request with scripts for [${input.endpointName}], scopes: [$scopeDesc]")
-        console.info("[Script] Executing request for '${input.endpointName}' with scripts (scopes: $scopeDesc)")
+        LOG.info("[Script] Executing request for '${input.endpointName}' with scripts (scopes: $scopeDesc)")
 
         val envVars = LivePmVariableScope(environmentService)
         val globalVars = PmVariableScope()
@@ -243,13 +243,13 @@ class RequestExecutor(private val project: Project) : IdeaLog {
         if (!resolvedScripts.preRequestScript.isNullOrBlank()) {
             val preScriptLines = resolvedScripts.preRequestScript.lines().size
             LOG.info("Pre-request script: $preScriptLines lines, scopes: [$scopeDesc]")
-            console.info("[Script] Running pre-request script ($preScriptLines lines)...")
+            LOG.info("[Script] Running pre-request script ($preScriptLines lines)...")
             try {
                 val elapsed = measureTimeMillis {
                     pmScriptExecutor.executePreRequestScript(resolvedScripts.preRequestScript, pm)
                 }
                 LOG.info("Pre-request script completed in ${elapsed}ms")
-                console.info("[Script] Pre-request script completed (${elapsed}ms)")
+                LOG.info("[Script] Pre-request script completed (${elapsed}ms)")
             } catch (e: Exception) {
                 LOG.warn("Pre-request script error: ${e.message}", e)
                 console.error("[Script] Pre-request script failed: ${e.message}")
@@ -288,7 +288,7 @@ class RequestExecutor(private val project: Project) : IdeaLog {
         if (!resolvedScripts.postResponseScript.isNullOrBlank()) {
             val postScriptLines = resolvedScripts.postResponseScript.lines().size
             LOG.info("Post-response script: $postScriptLines lines, scopes: [$scopeDesc]")
-            console.info("[Script] Running post-response script ($postScriptLines lines)...")
+            LOG.info("[Script] Running post-response script ($postScriptLines lines)...")
             val postTestCollector = PmTestCollector()
             val postInfo = PmInfo(
                 eventName = "test",
@@ -311,10 +311,10 @@ class RequestExecutor(private val project: Project) : IdeaLog {
                     testResults = pmScriptExecutor.executePostResponseScript(resolvedScripts.postResponseScript, postPm)
                 }
                 LOG.info("Post-response script completed in ${elapsed}ms, tests: ${testResults?.size ?: 0}")
-                console.info("[Script] Post-response script completed (${elapsed}ms, ${testResults?.size ?: 0} tests)")
+                LOG.info("[Script] Post-response script completed (${elapsed}ms, ${testResults?.size ?: 0} tests)")
                 testResults?.forEach { tr ->
                     if (tr.passed) {
-                        console.info("[Script]   ✓ ${tr.name}")
+                        LOG.info("[Script]   ✓ ${tr.name}")
                     } else {
                         console.error("[Script]   ✗ ${tr.name}: ${tr.error ?: "failed"}")
                     }

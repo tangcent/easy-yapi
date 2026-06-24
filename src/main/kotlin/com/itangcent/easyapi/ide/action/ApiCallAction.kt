@@ -7,7 +7,8 @@ import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiDashboardService
 import com.itangcent.easyapi.ide.support.SelectionScope
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -19,12 +20,12 @@ import kotlinx.coroutines.runBlocking
  *
  * @see ApiDashboardService for the dashboard functionality
  */
-class ApiCallAction : EasyApiAction() {
+class ApiCallAction : EasyApiAction(), IdeaLog {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val selection = resolveScope(e) ?: return
-        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        val console = project.console
         console.debug("ApiCallAction.actionPerformed: project=${project.name}")
 
         backgroundAsync {

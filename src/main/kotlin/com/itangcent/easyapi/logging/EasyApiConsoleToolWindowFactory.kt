@@ -6,8 +6,7 @@ import com.intellij.openapi.wm.ToolWindowFactory
 
 class EasyApiConsoleToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val consoleProvider = IdeaConsoleProvider.getInstance(project)
-        val console = consoleProvider.getConsole()
+        val console = project.console
         if (console is DefaultIdeaConsole) {
             console.bindToolWindow(toolWindow)
         }

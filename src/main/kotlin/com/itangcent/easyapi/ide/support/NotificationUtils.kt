@@ -79,12 +79,12 @@ object NotificationUtils : IdeaLog {
     }
 
     fun notifyError(project: Project?, title: String, content: String, t: Throwable? = null) {
-        // Mirror to idea.log (FR-02). Use info level to avoid TestLoggerAssertionError in tests
-        // (IntelliJ treats Logger.error as test failure).
+        // Mirror to idea.log (FR-02). Use warn level: LOG.error is prohibited (triggers intrusive popup);
+        // warn preserves severity without popup (R-CH-03).
         if (t != null) {
-            LOG.info("$title: $content", t)
+            LOG.warn("$title: $content", t)
         } else {
-            LOG.info("$title: $content")
+            LOG.warn("$title: $content")
         }
         notify(Notification(GROUP_ID, title, content, NotificationType.ERROR), project)
     }

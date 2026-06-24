@@ -5,14 +5,14 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.itangcent.easyapi.core.threading.readSync
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.model.FieldOption
 import com.itangcent.easyapi.psi.type.JsonType
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 
 /**
  * Shared value-field resolver for enum usages, used by both Case 1
@@ -54,7 +54,7 @@ import com.itangcent.easyapi.settings.SettingBinder
 @Service(Service.Level.PROJECT)
 class EnumValueResolver(private val project: Project) : IdeaLog {
 
-    private val console = IdeaConsoleProvider.getInstance(project).getConsole()
+    private val console get() = project.console
 
     /**
      * The resolved value field of an enum.
@@ -120,7 +120,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      */
     private fun readAutoInferEnabled(): Boolean =
         runCatching {
-            SettingBinder.getInstance(project).read().enumFieldAutoInferEnabled
+            project.settings.enumFieldAutoInferEnabled
         }.getOrNull() ?: false
 
     /**
@@ -165,7 +165,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
                 val instanceFields = instanceFields(enumClass)
                 if (instanceFields.size == 1) {
                     val field = instanceFields.first()
-                    console.info(
+                    console.debug(
                         "EnumValueResolver: auto-inferred value field for " +
                             "${enumClass.qualifiedName ?: enumClass.name} → instance field '${field.name}' " +
                             "(INTELLIGENT_SINGLE: sole instance field)"
@@ -176,7 +176,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
                 // Case 2: context != null → type-match heuristic.
                 val matched = findEnumFieldByType(enumClass, context)
                 if (matched != null) {
-                    console.info(
+                    console.debug(
                         "EnumValueResolver: auto-inferred value field for " +
                             "${enumClass.qualifiedName ?: enumClass.name} → instance field '${matched.name}' " +
                             "(INTELLIGENT_TYPE_MATCH: type-compatible with referencing element)"

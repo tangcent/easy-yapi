@@ -11,7 +11,7 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -51,7 +51,7 @@ class ApiFileChangeListener(private val project: Project) : BulkFileListener, Di
     }
 
     override fun after(events: MutableList<out VFileEvent>) {
-        if (!SettingBinder.getInstance(project).read().autoScanEnabled) {
+        if (!project.settings.autoScanEnabled) {
             return
         }
 

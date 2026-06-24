@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.settings
 
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
 
 interface SettingsChangeListener {
@@ -12,4 +14,20 @@ interface SettingsChangeListener {
             SettingsChangeListener::class.java
         )
     }
+}
+
+fun Project.onSettingsChanged(disposable: Disposable, handler: () -> Unit) {
+    messageBus.connect(disposable).subscribe(SettingsChangeListener.TOPIC, object : SettingsChangeListener {
+        override fun settingsChanged() {
+            handler()
+        }
+    })
+}
+
+fun Project.onSettingsChanged(handler: () -> Unit) {
+    messageBus.connect().subscribe(SettingsChangeListener.TOPIC, object : SettingsChangeListener {
+        override fun settingsChanged() {
+            handler()
+        }
+    })
 }

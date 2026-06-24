@@ -5,9 +5,10 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Anti-pattern gate test (FR-12, R-PLACE-07).
+ * Anti-pattern gate test (FR-12, R-PLACE-07, FR-CH-04, FR-CH-11).
  *
  * Fails if `src/main` contains:
+ * - `LOG.error(` or `Logger.*.error(` (prohibited — triggers intrusive popup; use LOG.warn)
  * - `println(` outside `logging/IdeaConsole*` (the legit API)
  * - `.printStackTrace()`
  * - `Notifications.Bus.notify` / `NotificationGroupManager` outside `NotificationUtils.kt`
@@ -19,6 +20,25 @@ import java.io.File
 class AntiPatternGateTest {
 
     private val mainSrcRoot = File("src/main/kotlin")
+
+    @Test
+    fun noLogErrorInProductionCode() {
+        val offenders = scanFiles { content, file ->
+            val stripped = stripComments(content)
+            val patterns = listOf(
+                Regex("""\bLOG\.error\s*\("""),
+                Regex("""Logger\.getInstance\(.*\)\.error\s*\(""")
+            )
+            patterns.flatMap { regex ->
+                regex.findAll(stripped).map { it.value }.toList()
+            }
+        }
+        assertTrue(
+            "LOG.error is prohibited in production code (use LOG.warn as the error-level fallback per R-CH-03). " +
+                "Violations:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty()
+        )
+    }
 
     @Test
     fun noPrintlnInProductionCode() {

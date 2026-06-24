@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.json.GsonUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -170,7 +171,7 @@ class EnvironmentService(private val project: Project) : com.itangcent.easyapi.l
      * Global environments are listed first, followed by project environments.
      */
     private fun loadEnvironmentData(): EnvironmentData {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val projectEnvJson = settings.projectEnvironments
         val projectData = if (projectEnvJson.isNotBlank()) {
             runCatching { GsonUtils.fromJson<EnvironmentData>(projectEnvJson) }
@@ -205,7 +206,7 @@ class EnvironmentService(private val project: Project) : com.itangcent.easyapi.l
      * Project-scoped environments go to project settings; global-scoped go to application settings.
      */
     private fun persistEnvironmentData(data: EnvironmentData) {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val projectEnvs = data.environments.filter { it.scope == EnvironmentScope.PROJECT }
         val globalEnvs = data.environments.filter { it.scope == EnvironmentScope.GLOBAL }
 

@@ -7,7 +7,7 @@ import com.itangcent.easyapi.cache.api.ApiIndexManager
 import com.itangcent.easyapi.cache.VcsBranchChangeListener
 import com.itangcent.easyapi.config.ConfigSyncService
 import com.itangcent.easyapi.core.threading.backgroundAsync
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -36,7 +36,7 @@ class ApiIndexStartupActivity : ProjectActivity {
 
             delay(10.seconds)
 
-            val settings = SettingBinder.getInstance(project).read()
+            val settings = project.settings
             val autoScan = settings.autoScanEnabled
 
             ApiIndexManager.getInstance(project).start(triggerInitialScan = autoScan)

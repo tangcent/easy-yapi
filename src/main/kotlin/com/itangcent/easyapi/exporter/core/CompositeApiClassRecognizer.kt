@@ -9,8 +9,9 @@ import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
 import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointRecognizer
 import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.settings.SettingsChangeListener
+import com.itangcent.easyapi.settings.onSettingsChanged
 
 /**
  * Composite recognizer that combines all framework-specific [ApiClassRecognizer]s.
@@ -26,15 +27,13 @@ class CompositeApiClassRecognizer(private val project: Project) {
     private var cachedRecognizers: List<ApiClassRecognizer> = buildRecognizers()
 
     init {
-        project.messageBus.connect().subscribe(SettingsChangeListener.TOPIC, object : SettingsChangeListener {
-            override fun settingsChanged() {
-                cachedRecognizers = buildRecognizers()
-            }
-        })
+        project.onSettingsChanged {
+            cachedRecognizers = buildRecognizers()
+        }
     }
 
     private fun buildRecognizers(): List<ApiClassRecognizer> {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         return buildList {
             add(SpringControllerRecognizer())
             if (settings.jaxrsEnable) {

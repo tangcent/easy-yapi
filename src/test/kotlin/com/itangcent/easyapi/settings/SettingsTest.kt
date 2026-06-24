@@ -30,7 +30,7 @@ class SettingsTest {
         assertEquals(30, settings.httpTimeOut)
         assertFalse(settings.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, settings.httpClient)
-        assertEquals(0, settings.logLevel)
+        assertEquals(100, settings.logLevel) // SILENT — console off by default (FR-CH-13)
         assertTrue(settings.outputDemo)
         assertEquals("UTF-8", settings.outputCharset)
         assertEquals(MarkdownFormatType.SIMPLE.name, settings.markdownFormatType)
@@ -56,13 +56,13 @@ class SettingsTest {
             jaxrsEnable = false,
             postmanToken = "my-token",
             httpTimeOut = 30,
-            logLevel = 100
+            logLevel = 40
         )
         assertTrue(settings.feignEnable)
         assertFalse(settings.jaxrsEnable)
         assertEquals("my-token", settings.postmanToken)
         assertEquals(30, settings.httpTimeOut)
-        assertEquals(100, settings.logLevel)
+        assertEquals(40, settings.logLevel)
     }
 
     @Test

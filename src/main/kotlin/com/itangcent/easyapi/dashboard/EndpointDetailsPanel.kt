@@ -17,6 +17,7 @@ import com.itangcent.easyapi.script.ScriptCache
 import com.itangcent.easyapi.script.ScriptCacheService
 import com.itangcent.easyapi.script.ScriptScope
 import com.itangcent.easyapi.script.env.EnvironmentService
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.script.pm.*
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.GrpcMetadata
@@ -1114,7 +1115,7 @@ class EndpointDetailsPanel(
     }
 
     private fun checkGrpcCallReady(): Boolean {
-        val settings = com.itangcent.easyapi.settings.SettingBinder.getInstance(project).read()
+        val settings = project.settings
 
         if (!settings.grpcCallEnabled) {
             val result = Messages.showOkCancelDialog(

@@ -2,6 +2,7 @@ package com.itangcent.easyapi.settings
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.idea.facet.getInstance
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -64,15 +65,8 @@ fun SettingBinder.update(updater: Settings.() -> Unit) {
     this.read().also(updater).let { this.save(it) }
 }
 
-/**
- * Wraps this SettingBinder with a caching layer.
- *
- * @param cacheTimeoutMillis Cache timeout in milliseconds, defaults to 30000 (30 seconds)
- * @return A cached SettingBinder
- */
-fun SettingBinder.lazy(cacheTimeoutMillis: Duration): SettingBinder {
-    return CachedSettingBinder(this, cacheTimeoutMillis)
-}
+
+val Project.settings get() = SettingBinder.getInstance(this).read()
 
 /**
  * A cached wrapper for SettingBinder.
@@ -147,4 +141,14 @@ class CachedSettingBinder(
             }
         }
     }
+}
+
+/**
+ * Wraps this SettingBinder with a caching layer.
+ *
+ * @param cacheTimeoutMillis Cache timeout in milliseconds, defaults to 30000 (30 seconds)
+ * @return A cached SettingBinder
+ */
+fun SettingBinder.lazy(cacheTimeoutMillis: Duration): SettingBinder {
+    return CachedSettingBinder(this, cacheTimeoutMillis)
 }

@@ -28,6 +28,25 @@ EasyYapi is an IntelliJ IDEA plugin (v3.0 rewrite) for API development — expor
 - Add KDoc comments for public APIs
 - Prefer expression bodies for simple functions
 
+## Logging
+
+The plugin has three output channels:
+
+- **`LOG`** (`IdeaLog` → `idea.log`) — background recording. **Use this in the vast majority of cases.**
+- **`NotificationUtils`** (balloon toast, bottom-right) — progress updates and task-completion prompts.
+- **`IdeaConsole`** (EasyAPI tool window) — diagnostic overlay, **off by default** (`logLevel=SILENT`). Use for errors/exceptions, operation failures, and debug/trace diagnostics. `console.warn`/`console.error` always mirror to `LOG.warn` — failures are never lost.
+
+### Rules
+
+1. **Never call `LOG.error`.** IntelliJ's `Logger.error` triggers an intrusive error-report popup (and throws `TestLoggerAssertionError` in tests). If error-level severity is needed, use `LOG.warn` as the fallback.
+2. **Default to `LOG`.** Routine milestones, per-item decisions, debug detail, and recoverable failures all go to `LOG`.
+3. **Use `NotificationUtils` for progress and completion.** "Export started", "Upload complete", "Export failed".
+4. **Console is a diagnostic overlay, off by default.** Use `console.warn(msg, t)` for operation failures, `console.error(msg, t)` for errors/exceptions, `console.debug`/`console.trace` for diagnostics. At SILENT (default), only `console.warn`/`console.error` reach `idea.log` via mirror; the rest are no-ops. Users enable the console by lowering `logLevel`.
+5. **One call per event.** `IdeaConsole.warn/error` and `NotificationUtils.notifyWarning/notifyError` mirror to `idea.log` automatically — do not also write a `LOG.*` call.
+6. **Always pass the throwable** as the last arg to `LOG.warn` / `console.warn` / `console.error` / `notifyError`.
+
+See `.spec/logging-channel-discipline/` for the full spec.
+
 ## Project Structure
 
 ```

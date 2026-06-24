@@ -7,7 +7,7 @@ import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.logging.IdeaConsole
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.psi.helper.AnnotationHelper
 import com.itangcent.easyapi.psi.helper.DocHelper
 import com.itangcent.easyapi.psi.helper.UnifiedDocHelper
@@ -144,7 +144,7 @@ class RuleContext private constructor(
     val session: SessionStorage get() = sessionStorageInstance
     val config: ConfigReader get() = ConfigReader.getInstance(project)
     val localStorage: LocalStorage by lazy { LocalStorage.getInstance(project) }
-    val console: IdeaConsole by lazy { IdeaConsoleProvider.getInstance(project).getConsole() }
+    val console: IdeaConsole get() = project.console
 
     fun getExt(name: String): Any? = extensions[name]
     fun setExt(name: String, value: Any?) { extensions[name] = value }
