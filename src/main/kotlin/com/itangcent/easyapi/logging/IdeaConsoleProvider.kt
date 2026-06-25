@@ -4,30 +4,42 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.onSettingsChanged
+import com.itangcent.easyapi.settings.settings
 
 /**
  * Provides a project-level [IdeaConsole] instance for logging within the IDE.
  *
- * This is an IntelliJ project-level service that creates and manages a [ConfigurableIdeaConsole]
- * which wraps a [DefaultIdeaConsole] with settings from [DefaultSettingBinder].
+ * This is an IntelliJ project-level service that resolves the appropriate [IdeaConsole]
+ * implementation based on the current [Settings.logLevel]:
  *
- * The console instance is lazily initialized on first access and cached for subsequent calls.
+ * - **`logLevel > ERROR` (e.g. SILENT=100, the default):** returns [IdeaLogConsole] —
+ *   the tool window is bypassed and console output is redirected to `idea.log`.
+ *   `trace`/`debug` are routed to `LOG.trace`/`LOG.debug` (filtered by IntelliJ unless
+ *   debug logging is enabled); `warn`/`error` are routed to `LOG.warn` (always captured).
+ * - **`logLevel <= ERROR`:** returns a [ConfigurableIdeaConsole] wrapping a
+ *   [DefaultIdeaConsole] — output appears in the EasyAPI tool window, filtered by the
+ *   configured log level, with `warn`/`error` mirrored to `idea.log`.
  *
  * ## Usage
+ *
+ * Prefer the `Project.console` extension property over calling this service directly:
  * ```kotlin
- * val console = IdeaConsoleProvider.getInstance(project).getConsole()
- * console.info("Message")
+ * project.console.warn("Message", throwable)
  * ```
  *
  * @see IdeaConsole for the console interface
  * @see ConfigurableIdeaConsole for settings-aware console wrapper
- * @see DefaultIdeaConsole for the default implementation
+ * @see IdeaLogConsole for the idea.log-only fallback
+ * @see DefaultIdeaConsole for the default tool-window implementation
  */
 @Service(Service.Level.PROJECT)
 class IdeaConsoleProvider(private val project: Project) {
 
-    private val console by lazy {
-        val settings = SettingBinder.getInstance(project).read()
+    private val settingBinder: SettingBinder by lazy { SettingBinder.getInstance(project) }
+
+    private val ideaConsole: IdeaConsole by lazy {
+        val settings = project.settings
         val delegate = DefaultIdeaConsole(project)
         ConfigurableIdeaConsole(delegate, settings)
     }
@@ -35,11 +47,19 @@ class IdeaConsoleProvider(private val project: Project) {
     /**
      * Returns the project's console instance for logging.
      *
-     * The console is lazily initialized on first call and reused for subsequent calls.
+     * The implementation is chosen dynamically based on [Settings.logLevel]:
+     * - `logLevel > ERROR.threshold` → [IdeaLogConsole] (idea.log only, no tool window)
+     * - otherwise → [ConfigurableIdeaConsole] (tool window + mirror)
      *
      * @return The [IdeaConsole] instance for this project
      */
-    fun getConsole(): IdeaConsole = console
+    fun getConsole(): IdeaConsole {
+        return if (settingBinder.read().logLevel > LogLevel.ERROR.threshold) {
+            IdeaLogConsole
+        } else {
+            ideaConsole
+        }
+    }
 
     companion object {
         /**
@@ -51,3 +71,16 @@ class IdeaConsoleProvider(private val project: Project) {
         fun getInstance(project: Project): IdeaConsoleProvider = project.service()
     }
 }
+
+/**
+ * Returns the project's [IdeaConsole] for logging.
+ *
+ * Resolves the console implementation based on the current `logLevel` setting.
+ * Use this instead of `IdeaConsoleProvider.getInstance(project).getConsole()`.
+ *
+ * ```kotlin
+ * project.console.warn("Export failed", e)
+ * ```
+ */
+val Project.console
+    get() = IdeaConsoleProvider.getInstance(this).getConsole()

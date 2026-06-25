@@ -23,7 +23,7 @@ import com.itangcent.easyapi.exporter.postman.model.postmanGson
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.PostmanExportMode
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.ide.ModuleHelper
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
@@ -57,7 +57,7 @@ class PostmanChannel : ApiChannel, IdeaLog {
     override suspend fun export(context: ExportContext): ExportResult {
         LOG.debug("PostmanChannel.export: endpoints=${context.endpointsToExport.size}")
         val project = context.project
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val token = settings.postmanToken
         val postmanConfig = context.channelConfig as? ChannelConfig.PostmanConfig
 
@@ -492,7 +492,7 @@ class PostmanOptionsPanel(private val project: Project) : ChannelOptionsPanel, I
     }
 
     private fun loadPostmanDataFromApi() {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val token = settings.postmanToken
 
         if (token.isNullOrBlank()) {

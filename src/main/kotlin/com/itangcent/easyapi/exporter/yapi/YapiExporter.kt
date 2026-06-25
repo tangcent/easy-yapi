@@ -7,9 +7,8 @@ import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportMetadata
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.path
-import com.itangcent.easyapi.logging.IdeaConsole
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.psi.helper.DocMetadataResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
@@ -22,7 +21,7 @@ import com.itangcent.easyapi.util.markdown.MarkdownRender
 class YapiExporter(private val project: Project) : IdeaLog {
 
     private val settingBinder by lazy { SettingBinder.getInstance(project) }
-    private val console: IdeaConsole by lazy { IdeaConsoleProvider.getInstance(project).getConsole() }
+    private val console get() = project.console
 
     companion object {
         fun getInstance(project: Project): YapiExporter {

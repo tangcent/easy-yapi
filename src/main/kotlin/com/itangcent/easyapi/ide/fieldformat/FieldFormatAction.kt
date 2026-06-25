@@ -10,7 +10,8 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.ide.support.NotificationUtils
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import java.awt.datatransfer.StringSelection
 
 /**
@@ -30,12 +31,12 @@ import java.awt.datatransfer.StringSelection
  */
 class FieldFormatAction(
     private val channel: FieldFormatChannel
-) : AnAction(channel.actionText) {
+) : AnAction(channel.actionText), IdeaLog {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val psiClass = findPsiClass(e) ?: return
-        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        val console = project.console
         console.debug("FieldFormatAction.actionPerformed: channel=${channel.id}, class=${psiClass.qualifiedName}")
         try {
             val text = kotlinx.coroutines.runBlocking { channel.format(project, psiClass) }

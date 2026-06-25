@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 
 class CachedResourceResolverTest {
@@ -99,17 +100,37 @@ class CachedResourceResolverTest {
     }
 
     @Test
-    fun testWithNullConsole() {
+    fun testFetchFailureLogsWarningToConsole() {
         val url = "https://fake-local-test.example/config.txt"
 
         `when`(localStorage.get("remote-cache", url)).thenReturn(null)
         `when`(localStorage.get("remote-cache-ts", url)).thenReturn(null)
 
-        resolver = CachedResourceResolver(localStorage, null, 60000L)
+        resolver = CachedResourceResolver(localStorage, console, 60000L)
 
         runBlocking {
             val result = resolver.get(url)
-            assertNull(result)
+            assertNull("Should return null when fetch fails and no cache", result)
+            // The fetch failure (non-timeout) should be logged via console.warn
+            verify(console).warn(anyString(), any())
+        }
+    }
+
+    @Test
+    fun testFetchFailureWithExpiredCacheReturnsStaleContent() {
+        val url = "https://fake-local-test.example/config.txt"
+        val staleContent = "stale content"
+        val oldTimestamp = (System.currentTimeMillis() - 100000).toString()
+
+        `when`(localStorage.get("remote-cache", url)).thenReturn(staleContent)
+        `when`(localStorage.get("remote-cache-ts", url)).thenReturn(oldTimestamp)
+
+        resolver = CachedResourceResolver(localStorage, console, 1000L)
+
+        runBlocking {
+            val result = resolver.get(url)
+            assertEquals("Should fall back to stale cache on fetch failure", staleContent, result)
+            verify(console).warn(anyString(), any())
         }
     }
 }

@@ -51,7 +51,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var unsafeSsl: Boolean = false,
         override var httpClient: String = HttpClientType.APACHE.value,
         override var extensionConfigs: String = Settings().extensionConfigs,
-        override var logLevel: Int = 0,
+        override var logLevel: Int = 100, // SILENT — console off by default (FR-CH-13)
         override var outputDemo: Boolean = true,
         override var outputCharset: String = "UTF-8",
         override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name,

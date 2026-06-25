@@ -16,6 +16,15 @@ class NotificationUtilsTest : EasyApiLightCodeInsightFixtureTestCase() {
         NotificationUtils.notifyError(project, "Test Error", "Error Content")
     }
 
+    fun testNotifyErrorWithThrowableDoesNotThrow() {
+        val error = RuntimeException("boom")
+        NotificationUtils.notifyError(project, "Test Error", "Error Content", error)
+    }
+
+    fun testNotifyErrorWithNullThrowableDoesNotThrow() {
+        NotificationUtils.notifyError(project, "Test Error", "Error Content", null)
+    }
+
     fun testNotifyInfoWithLinksDoesNotThrow() {
         NotificationUtils.notifyInfoWithLinks(
             project,

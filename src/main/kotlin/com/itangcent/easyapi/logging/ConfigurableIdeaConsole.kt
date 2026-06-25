@@ -18,7 +18,7 @@ import com.itangcent.easyapi.settings.Settings
  * - ERROR (40): Errors only
  * - 100+: Disabled (no output)
  *
- * ## Mirror to idea.log (FR-01)
+ * ## Mirror to idea.log
  *
  * `warn` and `error` are mirrored to `idea.log` via [IdeaLog.LOG] **above** the level
  * filter gate, so a warn/error always reaches the durable log even when the user has turned
@@ -49,14 +49,22 @@ class ConfigurableIdeaConsole(
 
     override fun warn(msg: String, t: Throwable?) {
         // Mirror BEFORE the filter gate so warn always reaches idea.log (FR-01, review M1).
-        LOG.warn(msg, t ?: EmptyThrowable)
+        if (t == null) {
+            LOG.warn(msg)
+        } else {
+            LOG.warn(msg, t)
+        }
         if (enabled(LogLevel.WARN)) delegate.warn(msg, t)
     }
 
     override fun error(msg: String, t: Throwable?) {
         // Mirror BEFORE the filter gate so error always reaches idea.log (FR-01, review M1).
-        // Use info level to avoid TestLoggerAssertionError in tests (IntelliJ treats Logger.error as test failure).
-        LOG.info(msg, t ?: EmptyThrowable)
+        // Use warn level: LOG.error is prohibited (triggers intrusive popup); warn preserves severity without popup (R-CH-03).
+        if (t == null) {
+            LOG.warn(msg)
+        } else {
+            LOG.warn(msg, t)
+        }
         if (enabled(LogLevel.ERROR)) delegate.error(msg, t)
     }
 
@@ -64,9 +72,5 @@ class ConfigurableIdeaConsole(
         val configured = settings.logLevel.coerceIn(0, 100)
         if (configured >= 100) return false
         return level.threshold >= configured
-    }
-
-    private object EmptyThrowable : Throwable() {
-        override fun fillInStackTrace(): Throwable = this
     }
 }

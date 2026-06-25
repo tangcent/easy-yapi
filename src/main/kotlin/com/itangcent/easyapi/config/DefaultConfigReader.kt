@@ -6,7 +6,7 @@ import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.resource.CachedResourceResolver
 import com.itangcent.easyapi.config.source.*
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.util.storage.LocalStorage
 
@@ -45,8 +45,7 @@ class DefaultConfigReader(
     private val settingBinder = SettingBinder.getInstance(project)
     private val localStorage = LocalStorage.getInstance(project)
 
-    private val console by lazy { IdeaConsoleProvider.getInstance(project).getConsole() }
-    private val cachedResourceResolver by lazy { CachedResourceResolver(localStorage, console) }
+    private val cachedResourceResolver by lazy { CachedResourceResolver(localStorage, project.console) }
 
     @Volatile
     private var delegate: LayeredConfigReader = buildDelegate()

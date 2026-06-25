@@ -3,8 +3,8 @@ package com.itangcent.easyapi.script.pm
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.logging.IdeaConsole
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.rule.parser.EnginePool
 import javax.script.Bindings
 
@@ -33,7 +33,7 @@ import javax.script.Bindings
 class PmScriptExecutor(private val project: Project) : IdeaLog {
 
     private val enginePool = EnginePool("groovy")
-    private val console: IdeaConsole by lazy { IdeaConsoleProvider.getInstance(project).getConsole() }
+    private val console get() = project.console
 
     /**
      * Executes a pre-request script.

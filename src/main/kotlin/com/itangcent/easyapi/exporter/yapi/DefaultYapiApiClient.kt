@@ -9,9 +9,8 @@ import com.itangcent.easyapi.http.HttpClient
 import com.itangcent.easyapi.http.HttpRequest
 import com.itangcent.easyapi.http.HttpResponse
 import com.itangcent.easyapi.http.KeyValue
-import com.itangcent.easyapi.logging.IdeaConsole
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.markdown.BundledMarkdownRender
 import kotlinx.coroutines.Dispatchers
@@ -34,8 +33,8 @@ import java.net.URLEncoder
  * @param serverUrl Base URL of the YAPI server (trailing slash is trimmed automatically)
  * @param token Project private token used for authentication
  * @param httpClient HTTP client used for all network calls
- * @param project IntelliJ [Project] used to obtain the [IdeaConsole] for user-facing logging.
- *        When null (e.g. tests), logging falls back to [IdeaLog] only.
+ * @param project IntelliJ [Project] used for context. Per-item failures are logged via [IdeaLog];
+ *        the caller (e.g. [YapiExporter]) is responsible for user-facing progress/completion notifications.
  */
 class DefaultYapiApiClient(
     private val serverUrl: String,
@@ -45,13 +44,9 @@ class DefaultYapiApiClient(
     private val project: com.intellij.openapi.project.Project
 ) : YapiApiClient, IdeaLog {
 
-    /** Console for user-facing messages; falls back to a no-op sink when no Project is available (tests). */
-    private val console: IdeaConsole by lazy {
-        IdeaConsoleProvider.getInstance(project).getConsole()
-    }
-
     /** Cached project ID for this client instance. Populated on first [getProjectId] call. */
     private var cachedProjectId: String? = null
+    private val console get() = project.console
 
     // region Project
 

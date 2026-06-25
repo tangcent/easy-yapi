@@ -17,9 +17,9 @@ import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.logging.console
+import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -76,6 +76,7 @@ class ApiScanner(private val project: Project) {
     }
 
     private val apiClassRecognizer = CompositeApiClassRecognizer.getInstance(project)
+    private val console get() = project.console
 
     /**
      * Scans the entire project for API endpoints.
@@ -151,28 +152,31 @@ class ApiScanner(private val project: Project) {
             read {
                 LOG.debug("Looking for annotation: $annotationFqn")
                 val annotationClass = javaFacade.findClass(annotationFqn, GlobalSearchScope.allScope(project))
-                if (annotationClass != null) {
-                    LOG.debug("Found annotation class: $annotationFqn")
-                    if (!annotationClass.isAnnotationType) {
-                        LOG.debug("Skipping $annotationFqn — not an annotation type (interface or class)")
-                    } else {
-                        try {
-                            val annotated = AnnotatedElementsSearch.searchPsiClasses(annotationClass, scope)
-                            val found = annotated.findAll().filter { !it.isAnnotationType }
-                            LOG.debug("Found ${found.size} classes annotated with $annotationFqn")
-                            controllerClasses.addAll(found)
-
-                            val metaAnnotated = findMetaAnnotatedClasses(annotationClass, scope)
-                            if (metaAnnotated.isNotEmpty()) {
-                                LOG.debug("Found ${metaAnnotated.size} meta-annotated classes for $annotationFqn")
-                                controllerClasses.addAll(metaAnnotated)
-                            }
-                        } catch (e: Exception) {
-                            LOG.warn("Error searching for classes annotated with $annotationFqn: ${e.message}")
-                        }
-                    }
-                } else {
+                if (annotationClass == null) {
                     LOG.debug("Annotation class not found: $annotationFqn (project may not have this dependency)")
+                    return@read
+                }
+
+                // Verify the found class is actually an annotation type before proceeding
+                LOG.debug("Found annotation class: $annotationFqn")
+                if (!annotationClass.isAnnotationType) {
+                    LOG.debug("Skipping $annotationFqn — not an annotation type (interface or class)")
+                    return@read
+                }
+                
+                try {
+                    val annotated = AnnotatedElementsSearch.searchPsiClasses(annotationClass, scope)
+                    val found = annotated.findAll().filter { !it.isAnnotationType }
+                    LOG.debug("Found ${found.size} classes annotated with $annotationFqn")
+                    controllerClasses.addAll(found)
+
+                    val metaAnnotated = findMetaAnnotatedClasses(annotationClass, scope)
+                    if (metaAnnotated.isNotEmpty()) {
+                        LOG.debug("Found ${metaAnnotated.size} meta-annotated classes for $annotationFqn")
+                        controllerClasses.addAll(metaAnnotated)
+                    }
+                } catch (e: Exception) {
+                    console.warn("Error searching for classes annotated with $annotationFqn: ${e.message}")
                 }
             }
         }
@@ -211,11 +215,11 @@ class ApiScanner(private val project: Project) {
                     val annotated = AnnotatedElementsSearch.searchPsiClasses(customAnn, scope).findAll()
                     result.addAll(annotated)
                 } catch (e: Exception) {
-                    LOG.warn("Error searching for classes annotated with custom annotation $customFqn: ${e.message}")
+                    console.warn("Error searching for classes annotated with custom annotation $customFqn: ${e.message}")
                 }
             }
         } catch (e: Exception) {
-            LOG.warn("Error searching for meta-annotations of $targetFqn: ${e.message}")
+            console.warn("Error searching for meta-annotations of $targetFqn: ${e.message}")
         }
 
         return result.toList()
@@ -241,10 +245,9 @@ class ApiScanner(private val project: Project) {
      * @return List of discovered endpoints
      */
     private suspend fun exportClasses(classes: List<PsiClass>, indicator: ProgressIndicator): List<ApiEndpoint> {
-        val console = IdeaConsoleProvider.getInstance(project).getConsole()
         val exporters = getEnabledExporters()
         if (exporters.isEmpty()) {
-            LOG.warn("No exporters enabled")
+            console.warn("No exporters enabled")
             return emptyList()
         }
         LOG.debug("Enabled exporters: ${exporters.map { it::class.simpleName }}")
@@ -252,7 +255,7 @@ class ApiScanner(private val project: Project) {
         indicator.isIndeterminate = false
         indicator.fraction = 0.0
 
-        val endpoints = scanClassesWithExporters(classes, exporters, console, indicator)
+        val endpoints = scanClassesWithExporters(classes, exporters, indicator)
 
         indicator.fraction = 1.0
         LOG.info("Total endpoints found: ${endpoints.size}")
@@ -263,10 +266,9 @@ class ApiScanner(private val project: Project) {
         classes: List<PsiClass>,
         indicator: ProgressIndicator
     ): List<ApiEndpoint> {
-        val console = IdeaConsoleProvider.getInstance(project).getConsole()
         val exporters = getEnabledExporters()
         if (exporters.isEmpty()) {
-            LOG.warn("No exporters enabled")
+            console.warn("No exporters enabled")
             return emptyList()
         }
         LOG.info("Enabled exporters: ${exporters.map { it::class.simpleName }}")
@@ -274,7 +276,7 @@ class ApiScanner(private val project: Project) {
         indicator.isIndeterminate = false
         indicator.fraction = 0.0
 
-        val endpoints = scanClassesWithExporters(classes, exporters, console, indicator)
+        val endpoints = scanClassesWithExporters(classes, exporters, indicator)
 
         indicator.fraction = 1.0
         return endpoints
@@ -288,22 +290,20 @@ class ApiScanner(private val project: Project) {
      *
      * @param psiClasses The classes to scan
      * @param exporters The enabled class exporters
-     * @param console The console for logging
      * @param indicator Progress indicator for cancellation and progress updates
      * @return List of all discovered endpoints
      */
     private suspend fun scanClassesWithExporters(
         psiClasses: List<PsiClass>,
         exporters: List<ClassExporter>,
-        console: com.itangcent.easyapi.logging.IdeaConsole,
         indicator: ProgressIndicator?
     ): List<ApiEndpoint> {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
 
         return if (settings.concurrentScanEnabled) {
-            scanClassesConcurrently(psiClasses, exporters, console, indicator)
+            scanClassesConcurrently(psiClasses, exporters, indicator)
         } else {
-            scanClassesSequentially(psiClasses, exporters, console, indicator)
+            scanClassesSequentially(psiClasses, exporters, indicator)
         }
     }
 
@@ -315,14 +315,12 @@ class ApiScanner(private val project: Project) {
      *
      * @param psiClasses The classes to scan
      * @param exporters The enabled class exporters
-     * @param console The console for logging
      * @param indicator Progress indicator for cancellation and progress updates
      * @return List of all discovered endpoints
      */
     private suspend fun scanClassesSequentially(
         psiClasses: List<PsiClass>,
         exporters: List<ClassExporter>,
-        console: com.itangcent.easyapi.logging.IdeaConsole,
         indicator: ProgressIndicator?
     ): List<ApiEndpoint> {
         val endpoints = mutableListOf<ApiEndpoint>()
@@ -378,14 +376,12 @@ class ApiScanner(private val project: Project) {
      *
      * @param psiClasses The classes to scan
      * @param exporters The enabled class exporters
-     * @param console The console for logging
      * @param indicator Progress indicator for cancellation and progress updates
      * @return List of all discovered endpoints
      */
     private suspend fun scanClassesConcurrently(
         psiClasses: List<PsiClass>,
         exporters: List<ClassExporter>,
-        console: com.itangcent.easyapi.logging.IdeaConsole,
         indicator: ProgressIndicator?
     ): List<ApiEndpoint> = coroutineScope {
         val semaphore = Semaphore(MAX_CONCURRENT_SCANS)

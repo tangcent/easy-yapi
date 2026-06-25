@@ -30,7 +30,7 @@ class ApplicationSettingsStateTest {
         assertEquals(30, s.httpTimeOut)
         assertFalse(s.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, s.httpClient)
-        assertEquals(0, s.logLevel)
+        assertEquals(100, s.logLevel) // SILENT — console off by default (FR-CH-13)
         assertTrue(s.outputDemo)
         assertEquals("UTF-8", s.outputCharset)
         assertEquals(MarkdownFormatType.SIMPLE.name, s.markdownFormatType)
@@ -47,14 +47,14 @@ class ApplicationSettingsStateTest {
             feignEnable = true,
             jaxrsEnable = false,
             httpTimeOut = 30,
-            logLevel = 100
+            logLevel = 40
         )
         state.loadState(newState)
         val loaded = state.state
         assertTrue(loaded.feignEnable)
         assertFalse(loaded.jaxrsEnable)
         assertEquals(30, loaded.httpTimeOut)
-        assertEquals(100, loaded.logLevel)
+        assertEquals(40, loaded.logLevel)
     }
 
     @Test

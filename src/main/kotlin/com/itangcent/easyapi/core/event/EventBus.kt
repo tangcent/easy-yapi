@@ -6,8 +6,8 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.messages.Topic
-import com.itangcent.easyapi.logging.IdeaConsole
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Service(Service.Level.PROJECT)
-class EventBus(private val project: Project) : Disposable {
+class EventBus(private val project: Project) : Disposable, IdeaLog {
 
     private val handlers = ConcurrentHashMap<String, CopyOnWriteArrayList<suspend () -> Unit>>()
     private val oneTimeHandlers = ConcurrentHashMap<String, CopyOnWriteArrayList<suspend () -> Unit>>()
@@ -26,9 +26,7 @@ class EventBus(private val project: Project) : Disposable {
     @Volatile
     private var messageBusConnection: MessageBusConnection? = null
 
-    private val console: IdeaConsole by lazy {
-        IdeaConsoleProvider.getInstance(project).getConsole()
-    }
+    private val console get() = project.console
 
     private fun ensureConnected() {
         if (messageBusConnection != null) return

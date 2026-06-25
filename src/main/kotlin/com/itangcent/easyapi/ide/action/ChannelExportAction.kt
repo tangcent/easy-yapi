@@ -11,12 +11,13 @@ import com.itangcent.easyapi.exporter.ExportOrchestrator
 import com.itangcent.easyapi.ide.DumbModeHelper
 import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.ide.support.runWithProgress
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 
 class ChannelExportAction(
     private val channelId: String,
     channelDisplayName: String
-) : AnAction(channelDisplayName) {
+) : AnAction(channelDisplayName), IdeaLog {
 
     private val channelDisplayName = channelDisplayName
 
@@ -28,7 +29,7 @@ class ChannelExportAction(
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        val console = project.console
         console.debug("ChannelExportAction.actionPerformed: channel=$channelId, project=${project.name}")
         val selection = SelectedHelper.resolveSelection(e)
 

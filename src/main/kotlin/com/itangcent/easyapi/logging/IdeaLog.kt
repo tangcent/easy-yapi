@@ -9,6 +9,13 @@ import com.intellij.openapi.diagnostic.Logger
  * via the [LOG] property. The logger is automatically initialized with
  * the implementing class's name.
  *
+ * ## `LOG.error` is prohibited
+ *
+ * `Logger.error` triggers an intrusive error-report popup in the IDE and throws
+ * `TestLoggerAssertionError` in tests. Production code MUST NOT call `LOG.error`.
+ * Use `LOG.warn` as the error-level fallback (R-CH-03). A CI gate test
+ * (`AntiPatternGateTest.noLogErrorInProductionCode`) enforces this prohibition.
+ *
  * ## Usage
  * ```kotlin
  * class MyService : IdeaLog {

@@ -14,7 +14,7 @@ import com.itangcent.easyapi.psi.model.ObjectModel
 import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 
 /**
@@ -41,7 +41,7 @@ class GrpcClassExporter(
     override val frameworkName: String = "gRPC"
 
     override suspend fun isEnabled(): Boolean {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val availabilityService = ProjectClassAvailabilityService.getInstance(project)
         return settings.grpcEnable &&
                 (availabilityService.hasAnyClassInProject(GrpcServiceRecognizer.GRPC_SERVICE_ANNOTATIONS) ||

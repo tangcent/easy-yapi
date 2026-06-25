@@ -11,6 +11,7 @@ import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.ListTableModel
 import com.itangcent.easyapi.grpc.*
 import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.settings
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GridLayout
@@ -420,7 +421,7 @@ class GrpcSettingsPanel(private val project: com.intellij.openapi.project.Projec
 
     companion object {
         fun selectUnavailableArtifact(project: com.intellij.openapi.project.Project, artifact: Artifact) {
-            val settings = com.itangcent.easyapi.settings.SettingBinder.getInstance(project).read()
+            val settings = project.settings
             val configs = settings.grpcArtifactConfigs.mapNotNull { GrpcArtifactConfig.parse(it) }
             val index = configs.indexOfFirst { it.artifact == artifact }
             if (index >= 0) {

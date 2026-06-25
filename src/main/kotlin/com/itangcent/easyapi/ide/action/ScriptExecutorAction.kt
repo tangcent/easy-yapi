@@ -3,7 +3,8 @@ package com.itangcent.easyapi.ide.action
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.itangcent.easyapi.ide.script.ScriptExecutorDialog
-import com.itangcent.easyapi.logging.IdeaConsoleProvider
+import com.itangcent.easyapi.logging.IdeaLog
+import com.itangcent.easyapi.logging.console
 
 /**
  * Action to execute scripts against the selected PSI element.
@@ -13,10 +14,10 @@ import com.itangcent.easyapi.logging.IdeaConsoleProvider
  *
  * @see ScriptExecutorDialog for the dialog implementation
  */
-class ScriptExecutorAction : AnAction() {
+class ScriptExecutorAction : AnAction(), IdeaLog {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val console = IdeaConsoleProvider.getInstance(project).getConsole()
+        val console = project.console
         console.debug("ScriptExecutorAction.actionPerformed: project=${project.name}")
         ScriptExecutorDialog(project).show()
     }

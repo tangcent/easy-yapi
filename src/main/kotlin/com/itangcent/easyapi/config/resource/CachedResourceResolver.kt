@@ -27,12 +27,12 @@ import kotlin.time.Duration.Companion.milliseconds
  * - Default TTL: 2 hours
  *
  * @param localStorage The local storage for persisting fetched content
- * @param console Optional console for logging warnings
+ * @param console Console for logging warnings
  * @param ttlMs Time-to-live in milliseconds (default: 2 hours)
  */
 class CachedResourceResolver(
     private val localStorage: LocalStorage,
-    private val console: IdeaConsole? = null,
+    private val console: IdeaConsole,
     private val ttlMs: Long = 2 * 60 * 60 * 1000L,
     private val fetchTimeoutMs: Long = 30_000L
 ) {
@@ -48,9 +48,9 @@ class CachedResourceResolver(
         val content = runCatching { fetch(url) }
             .onFailure { e ->
                 if (e is TimeoutCancellationException) {
-                    console?.warn("Remote config fetch timed out (${fetchTimeoutMs}ms): $url")
+                    console.warn("Remote config fetch timed out (${fetchTimeoutMs}ms): $url")
                 } else {
-                    console?.warn("Remote config unreachable: $url", e)
+                    console.warn("Remote config unreachable: $url", e)
                 }
             }
             .getOrNull()

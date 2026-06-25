@@ -9,7 +9,7 @@ import com.itangcent.easyapi.http.HttpClientProvider.Companion.getInstance
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.HttpClientType
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.settings
 
 /**
  * Creates [HttpClient] instances based on the user's configured HTTP client type.
@@ -37,7 +37,7 @@ class HttpClientProvider(private val project: Project) {
         httpTimeOut: Int? = null,
         unsafeSsl: Boolean? = null
     ): HttpClient {
-        val settings = SettingBinder.getInstance(project).read()
+        val settings = project.settings
         val resolvedHttpClient = httpClient ?: settings.httpClient ?: HttpClientType.APACHE.value
         val resolvedHttpTimeOutSec = httpTimeOut ?: settings.httpTimeOut ?: 30
         val resolvedHttpTimeOutMs = resolvedHttpTimeOutSec * 1000

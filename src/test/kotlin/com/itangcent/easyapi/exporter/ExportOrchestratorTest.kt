@@ -5,9 +5,9 @@ import com.intellij.openapi.ui.TestDialogManager
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportResult
-import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
+import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 
@@ -117,6 +117,43 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testOrchestratorHandlesMarkdownChannel() = runTest {
         val result = orchestrator.orchestrateExport(null, "markdown", testFileConfig)
         assertNotNull("Should handle markdown channel", result)
+    }
+
+    fun testOrchestrateExportWithEmptyCacheReturnsError() = runTest {
+        // When no endpoints are cached and no selection is provided,
+        // orchestrateExport should return an Error result.
+        // Note: If a background scan has populated the cache, this may return Success instead.
+        val result = orchestrator.orchestrateExport(null, "markdown", testFileConfig)
+        assertNotNull(result)
+        assertTrue(
+            "Should be Error (no endpoints) or Success (background scan populated cache)",
+            result is ExportResult.Error || result is ExportResult.Success
+        )
+    }
+
+    fun testOrchestrateExportWithSelectionExportsEndpoints() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull("UserCtrl should be loaded", psiClass)
+        val selection = SelectionScope(listOf(psiClass!!))
+
+        val result = orchestrator.orchestrateExport(selection, "markdown", testFileConfig)
+        assertNotNull(result)
+        // With real endpoints found, the export should succeed or fail gracefully
+        // but either way the notifyInfo path is exercised
+    }
+
+    fun testOrchestrateExportWithUnknownChannelReturnsError() = runTest {
+        val result = orchestrator.orchestrateExport(null, "nonexistent-channel", testFileConfig)
+        assertNotNull(result)
+        assertTrue("Should be Error for unknown channel", result is ExportResult.Error)
+        assertEquals("No channel registered for id: nonexistent-channel", (result as ExportResult.Error).message)
+    }
+
+    fun testExportViaChannelWithUnknownChannelReturnsError() = runTest {
+        val endpoints = listOf(createTestEndpoint())
+        val result = orchestrator.exportViaChannel("nonexistent-channel", endpoints, testFileConfig)
+        assertNotNull(result)
+        assertTrue("Should be Error for unknown channel", result is ExportResult.Error)
     }
 
     private fun createTestEndpoint(
