@@ -90,6 +90,7 @@ class RequestEditCacheService(private val project: Project) {
         val meta = endpoint.httpMetadata
         val parameters = meta?.parameters ?: emptyList()
         val headers = meta?.headers ?: emptyList()
+        val headerNames = headers.map { it.name }.toSet()
         return HttpRequestEditCache(
             key = key,
             name = endpoint.name,
@@ -98,7 +99,7 @@ class RequestEditCacheService(private val project: Project) {
             host = host,
             headers = headers.map { EditableKeyValue(it.name, it.value ?: it.example ?: "", it.description) } +
                 parameters
-                    .filter { it.binding == ParameterBinding.Header }
+                    .filter { it.binding == ParameterBinding.Header && it.name !in headerNames }
                     .map { EditableKeyValue(it.name, it.defaultValue ?: it.example ?: "", it.description) },
             pathParams = parameters
                 .filter { it.binding == ParameterBinding.Path }
