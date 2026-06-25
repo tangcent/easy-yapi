@@ -689,6 +689,10 @@ class EndpointDetailsPanel(
             currentEndpoint = endpoint
             currentEndpointKey = computeCacheKey(endpoint)
 
+            // Always clear all request tables before rendering the new endpoint,
+            // so no stale entries from the previous API leak into the new view.
+            clearRequestTables()
+
             when (val meta = endpoint.metadata) {
                 is GrpcMetadata -> showGrpcEndpoint(endpoint, meta)
                 is HttpMetadata -> {
@@ -715,6 +719,23 @@ class EndpointDetailsPanel(
         } finally {
             isLoading = false
         }
+    }
+
+    /**
+     * Clears every multi-entry request table and its auxiliary state.
+     * Called at the start of [showEndpoint] so switching APIs never leaves
+     * stale rows from the previous endpoint. Single-value fields (host, path,
+     * body, labels) are overwritten in place by the specific loaders.
+     */
+    private fun clearRequestTables() {
+        pathParamsTableModel.rowCount = 0
+        pathParamsEnumValues.clear()
+        paramsTableModel.rowCount = 0
+        headersTableModel.rowCount = 0
+        formTableModel.rowCount = 0
+        formFileRows.clear()
+        hasFormData = false
+        endpointContentType = null
     }
 
     private fun loadEndpointScripts() {
@@ -908,6 +929,8 @@ class EndpointDetailsPanel(
         }
         parameters.filter { it.binding == ParameterBinding.Header }
             .forEach { p ->
+                // Skip headers already present in meta.headers to avoid duplicates
+                if (p.name in originalHeaderNames) return@forEach
                 originalHeaderNames.add(p.name)
                 val cachedValue = cachedHeaders[p.name]?.value ?: p.defaultValue ?: p.example ?: ""
                 headersTableModel.addRow(arrayOf(p.name, cachedValue, ""))
@@ -978,11 +1001,16 @@ class EndpointDetailsPanel(
         ensureEmptyRow(paramsTableModel)
 
         headersTableModel.rowCount = 0
+        val seenHeaderNames = mutableSetOf<String>()
         headers.forEach { h ->
+            seenHeaderNames.add(h.name)
             headersTableModel.addRow(arrayOf(h.name, h.value ?: "", ""))
         }
         parameters.filter { it.binding == ParameterBinding.Header }
             .forEach { p ->
+                // Skip headers already present in meta.headers to avoid duplicates
+                if (p.name in seenHeaderNames) return@forEach
+                seenHeaderNames.add(p.name)
                 headersTableModel.addRow(arrayOf(p.name, p.defaultValue ?: p.example ?: "", ""))
             }
         ensureEmptyRow(headersTableModel)
