@@ -76,6 +76,7 @@
 
         <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>
         <postStartupActivity implementation="com.itangcent.easyapi.ide.action.ChannelActionInitActivity"/>
+        <postStartupActivity implementation="com.itangcent.easyapi.logging.EasyApiConsoleToolWindowActivity"/>
 
         <projectConfigurable groupId="null"
                              displayName="EasyApi"
