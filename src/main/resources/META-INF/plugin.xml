@@ -96,12 +96,12 @@
                              instance="com.itangcent.easyapi.settings.ui.EasyApiOtherConfigurable"/>
         <toolWindow
                 id="API Dashboard"
-                icon="AllIcons.Toolwindows.ToolWindowRun"
+                icon="AllIcons.Toolwindows.WebToolWindow"
                 anchor="bottom"
                 factoryClass="com.itangcent.easyapi.dashboard.ApiDashboardToolWindowFactory"/>
         <toolWindow
                 id="EasyAPI"
-                icon="AllIcons.Toolwindows.ToolWindowRun"
+                icon="/icons/easyApiConsole.svg"
                 anchor="bottom"
                 factoryClass="com.itangcent.easyapi.logging.EasyApiConsoleToolWindowFactory"/>
         <notificationGroup id="EasyApi Notifications" displayType="BALLOON"/>
