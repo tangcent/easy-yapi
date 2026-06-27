@@ -3,6 +3,7 @@ package com.itangcent.easyapi.settings.state
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.itangcent.easyapi.ai.AiProvider
 import com.itangcent.easyapi.settings.HttpClientType
 import com.itangcent.easyapi.settings.MarkdownFormatType
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
@@ -72,7 +73,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var aiModel: String = "",
         override var aiRequestTimeoutSec: Int = 60,
         override var aiMaxRequests: Int = 100,
-        override var aiContextWindow: Int = 0
+        override var aiContextWindow: Int = AiProvider.DEFAULT_CONTEXT_WINDOW
     ) : ApplicationSettingsSupport {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

@@ -21,8 +21,8 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(AiProvider.OPENAI.name, settings.aiProvider)
         assertEquals(60, settings.aiRequestTimeoutSec)
         assertEquals(100, settings.aiMaxRequests)
-        // Default context window is 0 (auto = track provider default).
-        assertEquals(0, settings.aiContextWindow)
+        // Default context window is the provider default (128_000).
+        assertEquals(128_000, settings.aiContextWindow)
     }
 
     fun testProviderSwitchPreFillsDefaults() {
@@ -38,6 +38,48 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals(AiProvider.OLLAMA.name, settings.aiProvider)
         assertEquals(AiProvider.OLLAMA.defaultBaseUrl, settings.aiBaseUrl)
         assertEquals(AiProvider.OLLAMA.defaultModel, settings.aiModel)
+    }
+
+    /**
+     * Regression: a programmatic provider switch used to latch the
+     * `userEdited*` flags (via the fields' own document listeners), so the
+     * pre-fill only stuck on the *first* switch. Switching providers twice
+     * must keep pre-filling base URL + model until the user edits a field.
+     */
+    fun testProviderSwitchTwiceKeepsPreFilling() {
+        val section = AiAssistantSection()
+        val settings = Settings()
+        section.resetFrom(settings)
+
+        // First switch: OLLAMA defaults appear.
+        section.selectProvider(AiProvider.OLLAMA)
+        assertEquals(AiProvider.OLLAMA.defaultBaseUrl, section.baseUrlText())
+        assertEquals(AiProvider.OLLAMA.defaultModel, section.modelText())
+
+        // Second switch: GEMINI defaults must also appear (the bug froze the fields).
+        section.selectProvider(AiProvider.GEMINI)
+        assertEquals(AiProvider.GEMINI.defaultBaseUrl ?: "", section.baseUrlText())
+        assertEquals(AiProvider.GEMINI.defaultModel ?: "", section.modelText())
+    }
+
+    /**
+     * A real manual edit is sticky: once the user types a custom base URL,
+     * subsequent provider switches leave it alone.
+     */
+    fun testManualEditSticksAcrossProviderSwitch() {
+        val section = AiAssistantSection()
+        val settings = Settings()
+        section.resetFrom(settings)
+
+        section.selectProvider(AiProvider.CUSTOM)
+        section.setBaseUrl("http://my-litellm:4000/v1") // user edit
+        section.selectProvider(AiProvider.OPENAI)
+
+        assertEquals(
+            "manually edited base URL must survive a provider switch",
+            "http://my-litellm:4000/v1",
+            section.baseUrlText()
+        )
     }
 
     fun testCustomFieldsRoundTrip() {
@@ -79,6 +121,60 @@ class AiAssistantSectionTest : EasyApiLightCodeInsightFixtureTestCase() {
         section.resetFrom(roundTripped)
         assertFalse("after round-trip nothing modified", section.isModified(roundTripped))
         assertEquals(200_000, roundTripped.aiContextWindow)
+    }
+
+    // --- API key: provider switch clears it ---
+
+    /**
+     * Switching provider always clears the API key — a key is provider-specific
+     * and reusing it would just produce a 401.
+     */
+    fun testProviderSwitchClearsApiKey() {
+        val section = AiAssistantSection()
+        val settings = Settings()
+        section.resetFrom(settings)
+
+        section.setApiKey("sk-original")
+        assertEquals("sk-original", section.apiKeyText())
+
+        section.selectProvider(AiProvider.OLLAMA)
+        assertEquals("API key should be cleared on provider switch", "", section.apiKeyText())
+    }
+
+    /**
+     * The clear must not latch `userEditedApiKey`: a later Auto-detect hit
+     * should still be able to pre-fill the key.
+     */
+    fun testProviderSwitchClearDoesNotLatchEditedFlag() {
+        val section = AiAssistantSection()
+        val settings = Settings()
+        section.resetFrom(settings)
+
+        section.selectProvider(AiProvider.OLLAMA) // clears (empty) key, must not latch
+        section.setApiKey("sk-after")
+        assertEquals("a manual edit after a switch still works", "sk-after", section.apiKeyText())
+    }
+
+    // --- API key: eye-icon reveal toggle ---
+
+    fun testApiKeyMaskedByDefault() {
+        val section = AiAssistantSection()
+        section.resetFrom(Settings())
+        assertFalse("API key must be masked by default", section.isApiKeyRevealedForTest())
+    }
+
+    fun testRevealToggleShowsThenHidesApiKey() {
+        val section = AiAssistantSection()
+        section.resetFrom(Settings())
+        section.setApiKey("sk-secret")
+
+        section.toggleRevealApiKeyForTest()
+        assertTrue("key should be revealed after toggling", section.isApiKeyRevealedForTest())
+        assertEquals("reveal must not alter the value", "sk-secret", section.apiKeyText())
+
+        section.toggleRevealApiKeyForTest()
+        assertFalse("key should be re-masked on second toggle", section.isApiKeyRevealedForTest())
+        assertEquals("re-mask must not alter the value", "sk-secret", section.apiKeyText())
     }
 
     // --- Test Connection ---

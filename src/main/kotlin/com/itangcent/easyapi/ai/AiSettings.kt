@@ -51,8 +51,9 @@ data class AiSettings(
             if (provider.requiresApiKey && apiKey.isBlank()) return null
             val model = s.aiModel.takeIf { it.isNotBlank() }
                 ?: provider.defaultModel ?: return null
-            // 0 (or any non-positive value) means "auto": use the provider's
-            // per-model default. A user-set value overrides it.
+            // A legacy persisted `0` (the old "Auto" sentinel, before the
+            // default became DEFAULT_CONTEXT_WINDOW) is treated as the
+            // provider's per-model default so old installs migrate cleanly.
             val contextWindow = s.aiContextWindow.takeIf { it > 0 }
                 ?: provider.contextWindow
             return AiSettings(
