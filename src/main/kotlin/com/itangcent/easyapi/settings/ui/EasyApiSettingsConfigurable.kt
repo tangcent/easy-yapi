@@ -22,8 +22,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     private val httpPanel = HttpSettingsPanel()
     private val intelligentPanel = IntelligentSettingsPanel()
     private val extensionPanel = ExtensionConfigPanel()
-    private val remotePanel = RemoteConfigPanel()
-    private val builtInPanel = BuiltInConfigPanel()
+    private val aiPanel = AiSettingsPanel()
     private val otherPanel = OtherSettingsPanel()
     private val grpcPanel = GrpcSettingsPanel(project)
     private val environmentPanel = EnvironmentSettingsPanel(project)
@@ -40,8 +39,8 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         const val TAB_HTTP = "HTTP"
         const val TAB_INTELLIGENT = "Intelligent"
         const val TAB_EXTENSIONS = "Extensions"
-        const val TAB_REMOTE = "Remote"
-        const val TAB_BUILT_IN = "Built-in"
+        const val TAB_RULES = "Rules"
+        const val TAB_AI = "AI"
         const val TAB_OTHER = "Other"
         const val TAB_GRPC = "gRPC"
         const val TAB_ENVIRONMENT = "Environments"
@@ -65,9 +64,8 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
                 t.addTab(TAB_HTTP, wrapNorth(httpPanel.component))
                 t.addTab(TAB_INTELLIGENT, wrapNorth(intelligentPanel.component))
                 t.addTab(TAB_EXTENSIONS, extensionPanel.component)
-                t.addTab(TAB_REMOTE, remotePanel.component)
-                t.addTab(TAB_BUILT_IN, builtInPanel.component)
-                t.addTab(TAB_OTHER, otherPanel.component)
+                t.addTab(TAB_AI, wrapNorth(aiPanel.component))
+                t.addTab(TAB_OTHER, wrapNorth(otherPanel.component))
                 t.addTab(TAB_GRPC, wrapNorth(grpcPanel.component))
                 t.addTab(TAB_ENVIRONMENT, environmentPanel.component)
             }
@@ -113,7 +111,8 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         val settings = settingBinder.read()
         return listOf(
             generalPanel, postmanPanel, yapiPanel, httpPanel,
-            intelligentPanel, extensionPanel, remotePanel, builtInPanel, otherPanel, grpcPanel, environmentPanel
+            intelligentPanel, extensionPanel, aiPanel,
+            otherPanel, grpcPanel, environmentPanel
         ).any { it.isModified(settings) }
     }
 
@@ -128,8 +127,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         httpPanel.applyTo(settings)
         intelligentPanel.applyTo(settings)
         extensionPanel.applyTo(settings)
-        remotePanel.applyTo(settings)
-        builtInPanel.applyTo(settings)
+        aiPanel.applyTo(settings)
         otherPanel.applyTo(settings)
         grpcPanel.applyTo(settings)
         environmentPanel.applyTo(settings)
@@ -147,8 +145,7 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
         httpPanel.resetFrom(settings)
         intelligentPanel.resetFrom(settings)
         extensionPanel.resetFrom(settings)
-        remotePanel.resetFrom(settings)
-        builtInPanel.resetFrom(settings)
+        aiPanel.resetFrom(settings)
         otherPanel.resetFrom(settings)
         grpcPanel.resetFrom(settings)
         environmentPanel.resetFrom(settings)
@@ -157,6 +154,12 @@ class EasyApiSettingsConfigurable(private val project: com.intellij.openapi.proj
     override fun disposeUIResources() {
         panel = null
         tabs = null
+    }
+
+    /** Test-only: returns the titles of all tabs in the settings dialog. */
+    internal fun tabsForTest(): List<String> {
+        val t = tabs ?: return emptyList()
+        return (0 until t.tabCount).map { t.getTitleAt(it) }
     }
 }
 
@@ -208,8 +211,6 @@ abstract class BaseEasyApiChildConfigurable(
 
 class EasyApiExtensionConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("Extensions", { ExtensionConfigPanel() }) { init { this.project = project } }
 
-class EasyApiRemoteConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("Remote", { RemoteConfigPanel() }) { init { this.project = project } }
-
-class EasyApiBuiltInConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("BuiltInConfig", { BuiltInConfigPanel() }) { init { this.project = project } }
+class EasyApiRulesConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("Rules", { RulesTabPanel(project) }) { init { this.project = project } }
 
 class EasyApiOtherConfigurable(project: com.intellij.openapi.project.Project) : BaseEasyApiChildConfigurable("Other", { OtherSettingsPanel() }) { init { this.project = project } }

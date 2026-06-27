@@ -1284,7 +1284,7 @@ class EndpointDetailsPanel(
     private suspend fun handleResponse(endpoint: ApiEndpoint, response: RequestResult) {
         swing {
             if (currentEndpoint != endpoint) {
-                LOG.debug("Endpoint changed, discarding response")
+                LOG.info("Endpoint changed, discarding response")
                 return@swing
             }
 

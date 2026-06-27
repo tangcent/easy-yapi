@@ -30,11 +30,15 @@ class ApiIndexStartupActivity : ProjectActivity {
 
             delay(5.seconds)
 
+            if (project.isDisposed) return@backgroundAsync
+
             ConfigSyncService.getInstance(project).start()
             ApiFileChangeListener.getInstance(project).start()
             VcsBranchChangeListener.getInstance(project).start()
 
             delay(10.seconds)
+
+            if (project.isDisposed) return@backgroundAsync
 
             val settings = project.settings
             val autoScan = settings.autoScanEnabled

@@ -29,7 +29,7 @@ class YapiChannel : ApiChannel, IdeaLog {
     }
 
     override suspend fun export(context: ExportContext): ExportResult {
-        LOG.debug("YapiChannel.export: endpoints=${context.endpointsToExport.size}")
+        LOG.info("YapiChannel.export: endpoints=${context.endpointsToExport.size}")
         val yapiConfig = context.channelConfig as? ChannelConfig.YapiConfig
         val exporter = YapiExporter.getInstance(context.project)
         return exporter.export(context, yapiConfig?.selectedToken)

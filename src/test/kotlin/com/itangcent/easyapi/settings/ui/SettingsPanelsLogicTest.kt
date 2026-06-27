@@ -320,37 +320,6 @@ class OtherSettingsPanelLogicTest {
     }
 }
 
-class BuiltInConfigPanelLogicTest {
-
-    @Test
-    fun testBuiltInConfigPanel_resetFrom_notModified() {
-        val panel = BuiltInConfigPanel()
-        val settings = Settings()
-        panel.resetFrom(settings)
-        assertFalse(panel.isModified(settings))
-    }
-
-    @Test
-    fun testBuiltInConfigPanel_resetFrom_customConfig_notModified() {
-        val panel = BuiltInConfigPanel()
-        val settings = Settings(builtInConfig = "field.name=@x#v")
-        panel.resetFrom(settings)
-        assertFalse(panel.isModified(settings))
-    }
-
-    @Test
-    fun testBuiltInConfigPanel_isModified_nullSettings() {
-        val panel = BuiltInConfigPanel()
-        assertFalse(panel.isModified(null))
-    }
-
-    @Test
-    fun testBuiltInConfigPanel_componentNotNull() {
-        val panel = BuiltInConfigPanel()
-        assertNotNull(panel.component)
-    }
-}
-
 class RemoteConfigPanelLogicTest {
 
     @Test

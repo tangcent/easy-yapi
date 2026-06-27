@@ -30,7 +30,7 @@ class SettingsTest {
         assertEquals(30, settings.httpTimeOut)
         assertFalse(settings.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, settings.httpClient)
-        assertEquals(100, settings.logLevel) // SILENT — console off by default (FR-CH-13)
+        assertEquals(100, settings.logLevel) // SILENT — console off by default
         assertTrue(settings.outputDemo)
         assertEquals("UTF-8", settings.outputCharset)
         assertEquals(MarkdownFormatType.SIMPLE.name, settings.markdownFormatType)
@@ -129,5 +129,38 @@ class SettingsTest {
         assertTrue("feignEnable should be modified", settings.feignEnable)
         assertEquals("httpTimeOut should be modified", 30, settings.httpTimeOut)
         assertEquals("postmanToken should be modified", "test-token", settings.postmanToken)
+    }
+
+    @Test
+    fun testDefaultNewRuleAndAiFields() {
+        val settings = Settings()
+        assertArrayEquals(emptyArray(), settings.disabledGlobalRuleFiles)
+        assertEquals("OPENAI", settings.aiProvider)
+        assertEquals("", settings.aiBaseUrl)
+        assertEquals("", settings.aiModel)
+        assertEquals(60, settings.aiRequestTimeoutSec)
+        assertEquals(100, settings.aiMaxRequests)
+        assertArrayEquals(emptyArray(), settings.disabledAutoRuleFiles)
+    }
+
+    @Test
+    fun testEquality_newArrayFields() {
+        val s1 = Settings(
+            disabledGlobalRuleFiles = arrayOf("/a"),
+            disabledAutoRuleFiles = arrayOf("/d")
+        )
+        val s2 = Settings(
+            disabledGlobalRuleFiles = arrayOf("/a"),
+            disabledAutoRuleFiles = arrayOf("/d")
+        )
+        assertEquals(s1, s2)
+        assertEquals(s1.hashCode(), s2.hashCode())
+    }
+
+    @Test
+    fun testEquality_newScalarFields() {
+        val s1 = Settings(aiProvider = "ANTHROPIC", aiBaseUrl = "u1", aiModel = "m1", aiRequestTimeoutSec = 90, aiMaxRequests = 120)
+        val s2 = Settings(aiProvider = "OPENAI", aiBaseUrl = "u2", aiModel = "m2", aiRequestTimeoutSec = 60, aiMaxRequests = 100)
+        assertNotEquals(s1, s2)
     }
 }

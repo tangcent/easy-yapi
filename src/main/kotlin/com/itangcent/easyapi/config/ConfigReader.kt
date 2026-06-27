@@ -3,6 +3,23 @@ package com.itangcent.easyapi.config
 import com.intellij.openapi.components.service
 
 /**
+ * A single value for a configuration key along with the source that provided it.
+ *
+ * Used by [ConfigReader.sourcesForKey] to expose per-source metadata so callers
+ * (e.g. the AI `get_existing_rules_for_key` tool) can show which source owns a
+ * value and at what priority.
+ *
+ * @property sourceId Identifier of the source that provided this value
+ * @property priority Priority of the source (higher = higher precedence)
+ * @property value The resolved configuration value
+ */
+data class SourceValue(
+    val sourceId: String,
+    val priority: Int,
+    val value: String
+)
+
+/**
  * Interface for reading configuration values.
  *
  * Configuration can come from multiple sources:
@@ -68,10 +85,22 @@ interface ConfigReader {
     fun getAll(key: String): List<String>
 
     /**
+     * Gets all values for the given key along with their source metadata
+     * (sourceId + priority), ordered by source priority descending.
+     *
+     * Default implementation returns an empty list; [LayeredConfigReader]
+     * overrides to expose real per-source metadata.
+     *
+     * @param key The configuration key
+     * @return List of [SourceValue]s, highest priority first
+     */
+    fun sourcesForKey(key: String): List<SourceValue> = emptyList()
+
+    /**
      * Reloads configuration from sources.
      */
     suspend fun reload()
-    
+
     /**
      * Iterates over all configuration entries.
      *
@@ -80,7 +109,7 @@ interface ConfigReader {
     fun foreach(action: (String, String) -> Unit) {
         foreach({ true }, action)
     }
-    
+
     /**
      * Iterates over configuration entries matching the filter.
      *

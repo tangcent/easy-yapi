@@ -16,7 +16,7 @@ class OpenApiDashboardAction : AnAction(), IdeaLog {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val console = project.console
-        console.debug("OpenApiDashboardAction.actionPerformed: project=${project.name}")
+        console.info("OpenApiDashboardAction.actionPerformed: project=${project.name}")
         ToolWindowManager.getInstance(project).getToolWindow("API Dashboard")?.activate(null)
     }
 }

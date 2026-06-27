@@ -15,6 +15,8 @@ interface ProjectSettingsSupport {
     var postmanBuildExample: Boolean
     var projectEnvironments: String
     var yapiTokens: String?
+    /** Auto-detected rule files the user has disabled (absolute paths). */
+    var disabledAutoRuleFiles: Array<String>
 
     fun copyTo(newSetting: ProjectSettingsSupport) {
         newSetting.postmanWorkspace = this.postmanWorkspace
@@ -23,6 +25,7 @@ interface ProjectSettingsSupport {
         newSetting.postmanBuildExample = this.postmanBuildExample
         newSetting.projectEnvironments = this.projectEnvironments
         this.yapiTokens?.let { newSetting.yapiTokens = it }
+        newSetting.disabledAutoRuleFiles = this.disabledAutoRuleFiles
     }
 }
 
@@ -86,6 +89,24 @@ interface ApplicationSettingsSupport {
      * are always resolved regardless of this setting.
      */
     var enumFieldAutoInferEnabled: Boolean
+    /** Global rule files (`~/.easyapi/`) the user has disabled (absolute paths); all other files in the folder are loaded. */
+    var disabledGlobalRuleFiles: Array<String>
+    /** AI assistant provider name (AiProvider.name). */
+    var aiProvider: String
+    /** AI assistant base URL (auto-filled from provider default; user-editable). */
+    var aiBaseUrl: String
+    /** AI assistant model name (auto-filled from provider default; free-text). */
+    var aiModel: String
+    /** AI assistant request timeout in seconds. */
+    var aiRequestTimeoutSec: Int
+    /** Max requests per agent turn; asks to confirm when the limit is reached. */
+    var aiMaxRequests: Int
+    /**
+     * AI assistant model context window (in tokens), or `0` to auto-track the
+     * selected provider's default (see `AiProvider.contextWindow`). Used to
+     * derive the agent's token budget.
+     */
+    var aiContextWindow: Int
 
     fun copyTo(newSetting: ApplicationSettingsSupport) {
         newSetting.postmanToken = this.postmanToken
@@ -126,6 +147,13 @@ interface ApplicationSettingsSupport {
         newSetting.gutterIconEnabled = this.gutterIconEnabled
         newSetting.globalEnvironments = this.globalEnvironments
         newSetting.enumFieldAutoInferEnabled = this.enumFieldAutoInferEnabled
+        newSetting.disabledGlobalRuleFiles = this.disabledGlobalRuleFiles
+        newSetting.aiProvider = this.aiProvider
+        newSetting.aiBaseUrl = this.aiBaseUrl
+        newSetting.aiModel = this.aiModel
+        newSetting.aiRequestTimeoutSec = this.aiRequestTimeoutSec
+        newSetting.aiMaxRequests = this.aiMaxRequests
+        newSetting.aiContextWindow = this.aiContextWindow
     }
 }
 

@@ -162,7 +162,7 @@ class ApiIndex {
             endpointsByClass = endpoints.groupBy { it.className ?: "Unknown" }
             onCacheReady()
         }
-        LOG.debug("Cache updated with ${endpoints.size} endpoints across ${endpointsByClass.size} classes")
+        LOG.info("Cache updated with ${endpoints.size} endpoints across ${endpointsByClass.size} classes")
         _endpointsFlow.emit(endpoints)
     }
 
@@ -195,7 +195,7 @@ class ApiIndex {
             onCacheReady()
             allEndpoints = mutableMap.values.flatten()
         }
-        LOG.debug("Cache updated for ${classEndpoints.size} classes")
+        LOG.info("Cache updated for ${classEndpoints.size} classes")
         _endpointsFlow.emit(allEndpoints)
     }
 
@@ -214,7 +214,7 @@ class ApiIndex {
             endpointsByClass = mutableMap
             allEndpoints = mutableMap.values.flatten()
         }
-        LOG.debug("Removed endpoints for ${classNames.size} classes")
+        LOG.info("Removed endpoints for ${classNames.size} classes")
         _endpointsFlow.emit(allEndpoints)
     }
 
@@ -235,7 +235,7 @@ class ApiIndex {
      */
     suspend fun invalidate() {
         cacheMutex.withLock {
-            LOG.debug("Cache invalidated")
+            LOG.info("Cache invalidated")
             cacheValid.set(false)
             endpointsByClass = emptyMap()
         }

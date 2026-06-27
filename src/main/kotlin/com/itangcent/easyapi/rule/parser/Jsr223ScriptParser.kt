@@ -62,15 +62,15 @@ abstract class Jsr223ScriptParser(
     override suspend fun parse(expression: String, context: RuleContext, ruleKey: RuleKey<*>?): Any? {
         val script = expression.removePrefix(prefix)
         if (script.isBlank()) return null
-        LOG.debug("Jsr223ScriptParser: Starting to parse script (engine=${enginePool.engineName}, script length=${script.length})")
+        LOG.info("Jsr223ScriptParser: Starting to parse script (engine=${enginePool.engineName}, script length=${script.length})")
         return withContext(IdeDispatchers.Background) {
-            LOG.debug("Jsr223ScriptParser: Running on Background thread=${Thread.currentThread().name}")
+            LOG.info("Jsr223ScriptParser: Running on Background thread=${Thread.currentThread().name}")
             enginePool.withEngine { engine ->
                 val bindings = engine.createBindings()
                 bind(bindings, context)
-                LOG.debug("Jsr223ScriptParser: Executing script...")
+                LOG.info("Jsr223ScriptParser: Executing script...")
                 engine.eval(script, bindings).also { result ->
-                    LOG.debug("Jsr223ScriptParser: Script execution completed, result type=${result?.javaClass?.simpleName}")
+                    LOG.info("Jsr223ScriptParser: Script execution completed, result type=${result?.javaClass?.simpleName}")
                 }
             }
         }

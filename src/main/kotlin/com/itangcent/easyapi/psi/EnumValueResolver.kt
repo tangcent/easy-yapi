@@ -24,7 +24,7 @@ import com.itangcent.easyapi.settings.settings
  * 1. **`enum.use.custom` rule result** (includes annotation-driven config
  *    recipes such as `jackson.config`'s `@JsonValue` detection and
  *    `mybatis-plus.config`'s `@EnumValue` detection). The rule result
- *    always wins per Req 2.4; there is no fall-through to step 2/3.
+ *    always wins; there is no fall-through to step 2/3.
  *    - `"name()"` → [ValueField.Name] (pseudo-field, unambiguous)
  *    - `"ordinal()"` → [ValueField.Ordinal]
  *    - bare `"name"` / `"ordinal"` → [ValueField.Name] / [ValueField.Ordinal]
@@ -43,7 +43,7 @@ import com.itangcent.easyapi.settings.settings
  *      (type + name coincidence)
  * 4. **Fallback** → [ValueField.Name] (Spring default).
  *
- * Annotation intent enters at step 1 *via config* (D-GATE/D-RULE), so it
+ * Annotation intent enters at step 1 *via config*, so it
  * keeps top priority among non-`@see` signals. The `NAME`/`INTELLIGENT`
  * CODE heuristics (single-field, type-match) stay mode-gated for the cases
  * where no annotation exists.
@@ -83,7 +83,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      * How the value field was chosen — for logging/debugging.
      *
      * Note: there is no `ANNOTATION` source. Annotation detection rides
-     * the `enum.use.custom` rule (D-RULE), so its source is
+     * the `enum.use.custom` rule, so its source is
      * [ENUM_USE_CUSTOM_RULE].
      */
     enum class Source {
@@ -145,7 +145,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
         val ruleResult = engine.evaluate(RuleKeys.ENUM_USE_CUSTOM, enumClass)
         if (!ruleResult.isNullOrBlank()) {
             val resolved = parseRuleMember(enumClass, ruleResult)
-            // Multi-annotation warning (Req 2.5): best-effort FQN-based scan.
+            // Multi-annotation warning: best-effort FQN-based scan.
             warnIfMultipleAnnotatedMembers(enumClass)
             return Resolution(resolved, Source.ENUM_USE_CUSTOM_RULE)
         }
@@ -165,7 +165,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
                 val instanceFields = instanceFields(enumClass)
                 if (instanceFields.size == 1) {
                     val field = instanceFields.first()
-                    console.debug(
+                    console.info(
                         "EnumValueResolver: auto-inferred value field for " +
                             "${enumClass.qualifiedName ?: enumClass.name} → instance field '${field.name}' " +
                             "(INTELLIGENT_SINGLE: sole instance field)"
@@ -176,7 +176,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
                 // Case 2: context != null → type-match heuristic.
                 val matched = findEnumFieldByType(enumClass, context)
                 if (matched != null) {
-                    console.debug(
+                    console.info(
                         "EnumValueResolver: auto-inferred value field for " +
                             "${enumClass.qualifiedName ?: enumClass.name} → instance field '${matched.name}' " +
                             "(INTELLIGENT_TYPE_MATCH: type-compatible with referencing element)"
@@ -200,7 +200,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      * - any other string → [ValueField.Instance] for the matching field,
      *   or [ValueField.Name] fallback if no such field exists
      *
-     * The rule result always wins per Req 2.4; there is no fall-through.
+     * The rule result always wins; there is no fall-through.
      */
     private fun parseRuleMember(enumClass: PsiClass, ruleResult: String): ValueField {
         val normalized = ruleResult.removeSuffix("()")
@@ -304,11 +304,11 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     }
 
     /**
-     * Best-effort multi-annotation warning (Req 2.5).
+     * Best-effort multi-annotation warning.
      *
      * The groovy recipe returns the first `find` hit and cannot emit warnings
      * (it returns a string). This method does a separate FQN-based scan of the
-     * enum's fields and methods (NFR-3: `PsiAnnotation` qualified-name match,
+     * enum's fields and methods (`PsiAnnotation` qualified-name match,
      * no class-load) counting members annotated with any recognized annotation
      * FQN (`@JsonValue`, `@EnumValue`). If >1, logs a warning. The scan is
      * best-effort — failures are silently ignored.
@@ -343,9 +343,9 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
     /**
      * Build options from enum constants per the resolved [ValueField].
      *
-     * Description logic per Req 8:
+     * Description logic:
      * 1. `docHelper.getAttrOfDocComment(constant)` (NOT `SeeTagResolver.extractDocText` —
-     *    unifies Case 1/Case 2 per Req 6.2; changes Case 2 behavior, acceptable per NFR-1)
+     *    unifies Case 1/Case 2; changes Case 2 behavior)
      * 2. else if the enum has an instance field in the preferred set
      *    (`desc`, `description`, `label`, `text`, `remark`, `message`) → use that
      *    field's value for the constant
@@ -401,8 +401,8 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      *
      * 1. If the enum has an instance field in the preferred set
      *    (`desc`, `description`, `label`, `text`, `remark`, `message`) → use that
-     *    field's value for the constant (Req 8.2). First in the preferred set wins.
-     * 2. Else join remaining instance-field values (current behavior, Req 8.3).
+     *    field's value for the constant. First in the preferred set wins.
+     * 2. Else join remaining instance-field values (current behavior).
      */
     private fun buildDescForConstant(
         constant: PsiEnumConstant,
@@ -465,7 +465,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      * rather than re-accessing PSI — this keeps the function non-suspend and
      * avoids a redundant read action.
      *
-     * Per design.md D-TYPE compatibility table:
+     * Per the compatibility table:
      * - primitive↔boxed → boxed canonical
      * - same type → that type
      * - numeric widening/narrowing → narrower (value-field)
@@ -473,7 +473,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
      * - `String`↔numeric → value-field type
      * - default → value-field type (values are authoritative)
      *
-     * Logs at DEBUG when a reconciliation changes the declared type (Req 7.3).
+     * Logs at DEBUG when a reconciliation changes the declared type.
      */
     fun reconcileType(declared: String, valueFieldJsonType: String): String {
         if (declared == valueFieldJsonType) return declared
@@ -484,7 +484,7 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
         if (normalizedDeclared == normalizedValue) {
             // primitive↔boxed normalization — keep the value-field's form.
             if (declared != valueFieldJsonType) {
-                LOG.debug("Reconciled enum JSON type: $declared → $valueFieldJsonType (primitive↔boxed)")
+                LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (primitive↔boxed)")
             }
             return valueFieldJsonType
         }
@@ -492,19 +492,19 @@ class EnumValueResolver(private val project: Project) : IdeaLog {
         // Declared is wider/uninformative → value-field wins.
         val widerTypes = setOf(JsonType.OBJECT, "object")
         if (normalizedDeclared in widerTypes) {
-            LOG.debug("Reconciled enum JSON type: $declared → $valueFieldJsonType (declared is Object/uninformative)")
+            LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (declared is Object/uninformative)")
             return valueFieldJsonType
         }
 
         // Numeric widening/narrowing → narrower (value-field).
         if (JsonType.isNumber(normalizedDeclared) && JsonType.isNumber(normalizedValue)) {
-            LOG.debug("Reconciled enum JSON type: $declared → $valueFieldJsonType (numeric narrowing)")
+            LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (numeric narrowing)")
             return valueFieldJsonType
         }
 
         // String↔numeric → value-field wins (incompatible; values authoritative).
         // Default → value-field wins.
-        LOG.debug("Reconciled enum JSON type: $declared → $valueFieldJsonType (value-field authoritative)")
+        LOG.info("Reconciled enum JSON type: $declared → $valueFieldJsonType (value-field authoritative)")
         return valueFieldJsonType
     }
 

@@ -87,7 +87,7 @@ class SeeTagResolver(
      * The `valueFieldJsonType` is non-null only when the `@see` target is an enum;
      * it is null for static-constant classes or when no `@see` tag resolves.
      * Callers use it with [EnumValueResolver.reconcileType] to adjust the
-     * declared field type against the actual enum value type (Req 7, D-TYPE).
+     * declared field type against the actual enum value type.
      */
     suspend fun resolveOptionsWithType(
         psiElement: PsiElement,
@@ -115,7 +115,7 @@ class SeeTagResolver(
      *
      * @param seeText the raw text after `@see`, e.g. `{@link com.example.UserType#type}`
      * @param context the PSI element where the tag appears (used for import resolution and type matching)
-     * @param docHelper the [DocHelper] for doc-comment extraction (Req 6.2 — unifies Case 1/Case 2)
+     * @param docHelper the [DocHelper] for doc-comment extraction (unifies Case 1/Case 2)
      */
     suspend fun resolveFromSeeText(
         seeText: String,
@@ -130,7 +130,7 @@ class SeeTagResolver(
      *
      * @param seeText the raw text after `@see`, e.g. `{@link com.example.UserType#type}`
      * @param context the PSI element where the tag appears (used for import resolution and type matching)
-     * @param docHelper the [DocHelper] for doc-comment extraction (Req 6.2 — unifies Case 1/Case 2)
+     * @param docHelper the [DocHelper] for doc-comment extraction (unifies Case 1/Case 2)
      * @return [ResolvedSeeOptions] with options and the enum's value-field JSON type
      *         (null for non-enum targets or when resolution fails)
      */
@@ -148,7 +148,7 @@ class SeeTagResolver(
             val psiClass = linkResolver.resolveClass(parsed.className, context) ?: return@withContext null
 
             if (psiClass.isEnum) {
-                // Delegate to EnumValueResolver (D-CENTRAL).
+                // Delegate to EnumValueResolver.
                 // `parsed.memberName` carries the preserved `()` from `parseLinkReference`
                 // so the resolver can distinguish `name()` (pseudo-field) from `name`
                 // (instance field) — issue #1383.

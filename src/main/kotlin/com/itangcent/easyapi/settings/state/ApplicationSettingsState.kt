@@ -51,7 +51,7 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var unsafeSsl: Boolean = false,
         override var httpClient: String = HttpClientType.APACHE.value,
         override var extensionConfigs: String = Settings().extensionConfigs,
-        override var logLevel: Int = 100, // SILENT — console off by default (FR-CH-13)
+        override var logLevel: Int = 100, // SILENT — console off by default
         override var outputDemo: Boolean = true,
         override var outputCharset: String = "UTF-8",
         override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name,
@@ -65,7 +65,14 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
         override var concurrentScanEnabled: Boolean = false,
         override var gutterIconEnabled: Boolean = true,
         override var globalEnvironments: String = "",
-        override var enumFieldAutoInferEnabled: Boolean = false
+        override var enumFieldAutoInferEnabled: Boolean = false,
+        override var disabledGlobalRuleFiles: Array<String> = emptyArray(),
+        override var aiProvider: String = "OPENAI",
+        override var aiBaseUrl: String = "",
+        override var aiModel: String = "",
+        override var aiRequestTimeoutSec: Int = 60,
+        override var aiMaxRequests: Int = 100,
+        override var aiContextWindow: Int = 0
     ) : ApplicationSettingsSupport {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -111,6 +118,13 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             if (gutterIconEnabled != other.gutterIconEnabled) return false
             if (globalEnvironments != other.globalEnvironments) return false
             if (enumFieldAutoInferEnabled != other.enumFieldAutoInferEnabled) return false
+            if (!disabledGlobalRuleFiles.contentEquals(other.disabledGlobalRuleFiles)) return false
+            if (aiProvider != other.aiProvider) return false
+            if (aiBaseUrl != other.aiBaseUrl) return false
+            if (aiModel != other.aiModel) return false
+            if (aiRequestTimeoutSec != other.aiRequestTimeoutSec) return false
+            if (aiMaxRequests != other.aiMaxRequests) return false
+            if (aiContextWindow != other.aiContextWindow) return false
 
             return true
         }
@@ -154,6 +168,13 @@ class ApplicationSettingsState : PersistentStateComponent<ApplicationSettingsSta
             result = 31 * result + gutterIconEnabled.hashCode()
             result = 31 * result + globalEnvironments.hashCode()
             result = 31 * result + enumFieldAutoInferEnabled.hashCode()
+            result = 31 * result + disabledGlobalRuleFiles.contentHashCode()
+            result = 31 * result + aiProvider.hashCode()
+            result = 31 * result + aiBaseUrl.hashCode()
+            result = 31 * result + aiModel.hashCode()
+            result = 31 * result + aiRequestTimeoutSec
+            result = 31 * result + aiMaxRequests
+            result = 31 * result + aiContextWindow
             return result
         }
     }

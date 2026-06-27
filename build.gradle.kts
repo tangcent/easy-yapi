@@ -40,6 +40,40 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.12.2")
     implementation("org.xerial:sqlite-jdbc:3.34.0")
 
+    // LangChain4j — AI agent substrate (design §3.0)
+    // Explicit versions (avoid BOM — it imposes global kotlin-stdlib constraints
+    // that conflict with IntelliJ's bundled Kotlin 2.1+).
+    val langchain4jCoreVersion = "1.0.0-rc1"   // core + open-ai
+    val langchain4jBetaVersion = "1.0.0-beta4" // anthropic, gemini, ollama, azure
+    implementation("dev.langchain4j:langchain4j:$langchain4jCoreVersion") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+    implementation("dev.langchain4j:langchain4j-core:$langchain4jCoreVersion") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+    implementation("dev.langchain4j:langchain4j-open-ai:$langchain4jCoreVersion") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+    implementation("dev.langchain4j:langchain4j-anthropic:$langchain4jBetaVersion") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+    implementation("dev.langchain4j:langchain4j-google-ai-gemini:$langchain4jBetaVersion") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+    implementation("dev.langchain4j:langchain4j-ollama:$langchain4jBetaVersion") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+    implementation("dev.langchain4j:langchain4j-azure-open-ai:$langchain4jBetaVersion") {
+        exclude(group = "org.jetbrains.kotlin")
+        exclude(group = "org.slf4j")
+    }
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
@@ -120,6 +154,7 @@ intellijPlatform {
         }
     }
 
+    buildSearchableOptions = false
     sandboxContainer = layout.projectDirectory.dir("idea-sandbox")
 }
 

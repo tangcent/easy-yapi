@@ -154,7 +154,9 @@ EasyYapi uses a layered configuration system with multiple sources, processed in
 | Priority | Source | Description |
 |----------|--------|-------------|
 | Highest | Runtime | Programmatic overrides set during execution |
-| | Local file | `.easy.api.config` in the project root |
+| | Project rules | `<project>/.easyapi/*.rules` (3.0 folder model) |
+| | Global rules | `~/.easyapi/*.rules` (applied to every project on the machine) |
+| | Legacy project file | `.easy.api.config*` in the project root (and ancestor dirs) |
 | | Extension | Plugin extension configs (Swagger, validation, etc.) |
 | | Remote | Config files fetched from URLs |
 | Lowest | Built-in | Default bundled configuration |
@@ -165,6 +167,31 @@ Configuration supports:
 - **Directives** — Control parsing behavior (`#resolve`, `#ignore`, etc.)
 - **Rule engine** — Groovy scripts, regex, annotation expressions, tag expressions
 - **Remote configs** — Load shared configs from URLs (e.g., Swagger, javax.validation presets)
+
+### When do you need a custom rule?
+
+EasyApi understands standard HTTP frameworks (Spring MVC, WebFlux, JAX-RS, Feign) out of the box — **most projects need no custom rules**. For custom framework behaviour the scanner can't see (e.g. a `jakarta.servlet.Filter` that requires a header, or a `ResponseBodyAdvice` that wraps every response in an envelope), use the built-in AI Assistant or the external skill to detect it and generate the rule. See the [Rule Authoring Guide](src/main/resources/docs/knowledge-base/rule-guide.md) for the full Custom-Pattern Catalog.
+
+## Skills
+
+EasyYapi ships an external skill that lets your favourite AI coding assistant (Trae, Cursor, Cline, Continue, etc.) author EasyApi rule files using the same knowledge base as the built-in assistant.
+
+### Install the skill
+
+```bash
+npx skills add tangcent/easy-yapi -g -y
+```
+
+This installs the [`easy-yapi-assistant`](skills/easy-yapi-assistant/SKILL.md) skill globally. Once installed, your AI assistant will automatically invoke it when you ask to add or modify EasyApi rules.
+
+### Two approaches to AI-assisted rule authoring
+
+| Approach | Where it runs | Best for |
+|----------|---------------|----------|
+| **Built-in Rules-tab Chat / Magic** | Inside IntelliJ (Settings → EasyApi → Rules → Chat / Magic) | Users who want everything inside IntelliJ; the agent can call PSI tools to inspect the project. |
+| **External skill** | Any AI coding assistant with file access | Users already invested in an external AI workflow; the assistant uses its own file/PSI access. |
+
+Both approaches read the same [`docs/knowledge-base/rule-guide.md`](src/main/resources/docs/knowledge-base/rule-guide.md), so the rule content they produce is consistent.
 
 ## Development
 

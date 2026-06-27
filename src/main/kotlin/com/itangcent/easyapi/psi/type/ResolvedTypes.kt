@@ -733,7 +733,7 @@ object TypeResolver : com.itangcent.easyapi.logging.IdeaLog {
             }
             if (resolved !is ResolvedType.UnresolvedType) return resolved
         } catch (e: Exception) {
-            LOG.debug("TypeResolver: createTypeFromText failed for '$trimmed', falling through to manual resolution", e)
+            LOG.info("TypeResolver: createTypeFromText failed for '$trimmed', falling through to manual resolution", e)
         }
 
         // 2. Handle generic types like "List<User>" where the base class or

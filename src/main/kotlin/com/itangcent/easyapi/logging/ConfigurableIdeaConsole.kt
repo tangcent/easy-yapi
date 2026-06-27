@@ -48,7 +48,7 @@ class ConfigurableIdeaConsole(
     }
 
     override fun warn(msg: String, t: Throwable?) {
-        // Mirror BEFORE the filter gate so warn always reaches idea.log (FR-01, review M1).
+        // Mirror BEFORE the filter gate so warn always reaches idea.log.
         if (t == null) {
             LOG.warn(msg)
         } else {
@@ -58,8 +58,8 @@ class ConfigurableIdeaConsole(
     }
 
     override fun error(msg: String, t: Throwable?) {
-        // Mirror BEFORE the filter gate so error always reaches idea.log (FR-01, review M1).
-        // Use warn level: LOG.error is prohibited (triggers intrusive popup); warn preserves severity without popup (R-CH-03).
+        // Mirror BEFORE the filter gate so error always reaches idea.log.
+        // Use warn level: LOG.error is prohibited (triggers intrusive popup); warn preserves severity without popup.
         if (t == null) {
             LOG.warn(msg)
         } else {

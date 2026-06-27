@@ -98,7 +98,7 @@ class ApiFileChangeListener(private val project: Project) : BulkFileListener, Di
             files
         }
 
-        LOG.debug("Processing ${filesToProcess.size} changed files")
+        LOG.info("Processing ${filesToProcess.size} changed files")
         ApiIndexManager.getInstance(project).reIndex(filesToProcess)
     }
 

@@ -17,3 +17,5 @@ bin/
 .qodo/
 .vscode/
 .temp
+__pycache__/
+.easyapi/

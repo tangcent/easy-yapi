@@ -139,7 +139,7 @@ class ApiScanner(private val project: Project) {
     suspend fun findControllerClasses(): List<PsiClass> {
         DumbModeHelper.waitForSmartMode(project)
 
-        LOG.debug("Finding controller classes...")
+        LOG.info("Finding controller classes...")
         val scope = GlobalSearchScope.projectScope(project)
         val javaFacade = JavaPsiFacade.getInstance(project)
         val controllerClasses = mutableSetOf<PsiClass>()
@@ -150,29 +150,29 @@ class ApiScanner(private val project: Project) {
         // This breaks the long operation into smaller chunks and allows better cancellation
         for (annotationFqn in apiClassRecognizer.allTargetAnnotations) {
             read {
-                LOG.debug("Looking for annotation: $annotationFqn")
+                LOG.info("Looking for annotation: $annotationFqn")
                 val annotationClass = javaFacade.findClass(annotationFqn, GlobalSearchScope.allScope(project))
                 if (annotationClass == null) {
-                    LOG.debug("Annotation class not found: $annotationFqn (project may not have this dependency)")
+                    LOG.info("Annotation class not found: $annotationFqn (project may not have this dependency)")
                     return@read
                 }
 
                 // Verify the found class is actually an annotation type before proceeding
-                LOG.debug("Found annotation class: $annotationFqn")
+                LOG.info("Found annotation class: $annotationFqn")
                 if (!annotationClass.isAnnotationType) {
-                    LOG.debug("Skipping $annotationFqn — not an annotation type (interface or class)")
+                    LOG.info("Skipping $annotationFqn — not an annotation type (interface or class)")
                     return@read
                 }
                 
                 try {
                     val annotated = AnnotatedElementsSearch.searchPsiClasses(annotationClass, scope)
                     val found = annotated.findAll().filter { !it.isAnnotationType }
-                    LOG.debug("Found ${found.size} classes annotated with $annotationFqn")
+                    LOG.info("Found ${found.size} classes annotated with $annotationFqn")
                     controllerClasses.addAll(found)
 
                     val metaAnnotated = findMetaAnnotatedClasses(annotationClass, scope)
                     if (metaAnnotated.isNotEmpty()) {
-                        LOG.debug("Found ${metaAnnotated.size} meta-annotated classes for $annotationFqn")
+                        LOG.info("Found ${metaAnnotated.size} meta-annotated classes for $annotationFqn")
                         controllerClasses.addAll(metaAnnotated)
                     }
                 } catch (e: Exception) {
@@ -210,7 +210,7 @@ class ApiScanner(private val project: Project) {
 
             for (customAnn in customAnnotations) {
                 val customFqn = customAnn.qualifiedName ?: continue
-                LOG.debug("Found custom annotation $customFqn meta-annotated with $targetFqn")
+                LOG.info("Found custom annotation $customFqn meta-annotated with $targetFqn")
                 try {
                     val annotated = AnnotatedElementsSearch.searchPsiClasses(customAnn, scope).findAll()
                     result.addAll(annotated)
@@ -229,7 +229,7 @@ class ApiScanner(private val project: Project) {
      * Performs the full scan: find controllers and export endpoints.
      */
     private suspend fun doScan(indicator: ProgressIndicator): List<ApiEndpoint> {
-        LOG.debug("Finding controller classes...")
+        LOG.info("Finding controller classes...")
         indicator.text = "Finding controller classes..."
         indicator.isIndeterminate = true
         val psiClasses = findControllerClasses()
@@ -250,7 +250,7 @@ class ApiScanner(private val project: Project) {
             console.warn("No exporters enabled")
             return emptyList()
         }
-        LOG.debug("Enabled exporters: ${exporters.map { it::class.simpleName }}")
+        LOG.info("Enabled exporters: ${exporters.map { it::class.simpleName }}")
 
         indicator.isIndeterminate = false
         indicator.fraction = 0.0
@@ -351,7 +351,7 @@ class ApiScanner(private val project: Project) {
                         exporter.export(psiClass)
                     }
                     if (exported.isNotEmpty()) {
-                        LOG.debug("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
+                        LOG.info("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
                         endpoints.addAll(exported)
                     }
                 } catch (e: TimeoutCancellationException) {
@@ -413,7 +413,7 @@ class ApiScanner(private val project: Project) {
                                 exporter.export(psiClass)
                             }
                             if (exported.isNotEmpty()) {
-                                LOG.debug("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
+                                LOG.info("Exporter ${exporter::class.simpleName} found ${exported.size} endpoints in $className")
                                 endpoints.addAll(exported)
                             }
                         } catch (e: TimeoutCancellationException) {

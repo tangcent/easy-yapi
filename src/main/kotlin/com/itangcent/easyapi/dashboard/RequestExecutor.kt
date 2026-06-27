@@ -198,7 +198,7 @@ class RequestExecutor(private val project: Project) : IdeaLog {
                 executeWithoutScripts(fullUrl, method, finalHeaders, query, body, formParams, input.contentType)
             }
         } catch (_: CancellationException) {
-            LOG.debug("Request cancelled")
+            LOG.info("Request cancelled")
             RequestResult(body = "Request cancelled", isError = true)
         } catch (e: Exception) {
             LOG.warn("Request failed: ${e.message}", e)
@@ -354,7 +354,7 @@ class RequestExecutor(private val project: Project) : IdeaLog {
             formParams = formParams,
             contentType = contentType
         )
-        LOG.debug("Request: ${request.method} ${request.url}, headers=${request.headers.size}, hasBody=${request.body != null}")
+        LOG.info("Request: ${request.method} ${request.url}, headers=${request.headers.size}, hasBody=${request.body != null}")
         val response = httpClient.execute(request)
         LOG.info("Response: status=${response.code}, bodyLength=${response.body?.length ?: 0}")
 

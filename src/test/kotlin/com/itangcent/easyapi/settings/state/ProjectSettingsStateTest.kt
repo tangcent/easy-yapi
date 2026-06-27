@@ -66,4 +66,41 @@ class ProjectSettingsStateTest {
         assertEquals("data", target.postmanCollections)
         assertFalse(target.postmanBuildExample)
     }
+
+    @Test
+    fun testDefault_newRuleFileFields() {
+        val s = ProjectSettingsState.State()
+        assertArrayEquals(emptyArray(), s.disabledAutoRuleFiles)
+    }
+
+    @Test
+    fun testState_copyTo_newRuleFileFields() {
+        val source = ProjectSettingsState.State(
+            disabledAutoRuleFiles = arrayOf("/proj/.easy.api.config")
+        )
+        val target = ProjectSettingsState.State()
+        source.copyTo(target)
+        assertArrayEquals(arrayOf("/proj/.easy.api.config"), target.disabledAutoRuleFiles)
+    }
+
+    @Test
+    fun testState_equality_newRuleFileArrays() {
+        val s1 = ProjectSettingsState.State(disabledAutoRuleFiles = arrayOf("/b"))
+        val s2 = ProjectSettingsState.State(disabledAutoRuleFiles = arrayOf("/b"))
+        assertEquals(s1, s2)
+        assertEquals(s1.hashCode(), s2.hashCode())
+        val s3 = ProjectSettingsState.State(disabledAutoRuleFiles = arrayOf("/c"))
+        assertNotEquals(s1, s3)
+    }
+
+    @Test
+    fun testLoadState_preservesNewRuleFileFields() {
+        val state = ProjectSettingsState()
+        val newState = ProjectSettingsState.State(
+            disabledAutoRuleFiles = arrayOf("/p/d1")
+        )
+        state.loadState(newState)
+        val loaded = state.state
+        assertArrayEquals(arrayOf("/p/d1"), loaded.disabledAutoRuleFiles)
+    }
 }

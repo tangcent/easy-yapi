@@ -733,7 +733,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
         backgroundAsync {
             updateTree(apiIndex.endpoints())
             apiIndex.subscribe { endpoints ->
-                LOG.debug("Cache updated, refreshing tree with ${endpoints.size} endpoints")
+                LOG.info("Cache updated, refreshing tree with ${endpoints.size} endpoints")
                 cachedEndpoints = endpoints
                 swing {
                     updateTree(endpoints)
@@ -749,13 +749,13 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
     fun refresh() {
         LOG.info("Refreshing API endpoints...")
         backgroundAsync {
-            LOG.debug("Invalidating cache...")
+            LOG.info("Invalidating cache...")
             apiIndex.invalidate()
             swing {
-                LOG.debug("Setting tree to 'Scanning...' state")
+                LOG.info("Setting tree to 'Scanning...' state")
                 treeModel.setRoot(DefaultMutableTreeNode("Scanning..."))
             }
-            LOG.debug("Requesting re-scan...")
+            LOG.info("Requesting re-scan...")
             apiIndexManager.requestScan()
         }
     }

@@ -5,10 +5,12 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Anti-pattern gate test (FR-12, R-PLACE-07, FR-CH-04, FR-CH-11).
+ * Anti-pattern gate test.
  *
  * Fails if `src/main` contains:
  * - `LOG.error(` or `Logger.*.error(` (prohibited — triggers intrusive popup; use LOG.warn)
+ * - `LOG.debug(`/`LOG.trace(` or `Logger.*.debug/trace(` (prohibited on the LOG channel —
+ *   filtered out of idea.log by default; use LOG.info, or the console channel for opt-in trace)
  * - `println(` outside `logging/IdeaConsole*` (the legit API)
  * - `.printStackTrace()`
  * - `Notifications.Bus.notify` / `NotificationGroupManager` outside `NotificationUtils.kt`
@@ -34,7 +36,44 @@ class AntiPatternGateTest {
             }
         }
         assertTrue(
-            "LOG.error is prohibited in production code (use LOG.warn as the error-level fallback per R-CH-03). " +
+            "LOG.error is prohibited in production code (use LOG.warn as the error-level fallback). " +
+                "Violations:\n${offenders.joinToString("\n")}",
+            offenders.isEmpty()
+        )
+    }
+
+    /**
+     * `LOG.debug` / `LOG.trace` are filtered out of `idea.log` by default, so they
+     * are invisible when investigating bugs. `LOG.info` is the floor for diagnostics
+     * on the `LOG` channel; genuinely opt-in verbose trace belongs on the `console`
+     * channel (`project.console.debug/trace`). See AGENTS.md → Logging, Rule 2.
+     */
+    @Test
+    fun noDebugTraceOnLogChannel() {
+        val offenders = scanFiles { content, file ->
+            // Skip the logging infrastructure itself — IdeaLogConsole floors
+            // console trace/debug to LOG.info, and IdeaLog/IdeaConsoleProvider
+            // document the rule in KDoc. Those are the legitimate exceptions.
+            val normalizedPath = file.path.replace('\\', '/')
+            if (normalizedPath.contains("logging/IdeaLog") ||
+                normalizedPath.contains("logging/IdeaLogConsole") ||
+                normalizedPath.contains("logging/IdeaConsoleProvider")
+            ) return@scanFiles emptyList()
+
+            val stripped = stripComments(content)
+            val patterns = listOf(
+                Regex("""\bLOG\.debug\s*\("""),
+                Regex("""\bLOG\.trace\s*\("""),
+                Regex("""Logger\.getInstance\(.*\)\.debug\s*\("""),
+                Regex("""Logger\.getInstance\(.*\)\.trace\s*\(""")
+            )
+            patterns.flatMap { regex ->
+                regex.findAll(stripped).map { it.value }.toList()
+            }
+        }
+        assertTrue(
+            "LOG.debug/LOG.trace are prohibited in production code (they are filtered out of idea.log by " +
+                "default — use LOG.info, or the console channel for opt-in trace). " +
                 "Violations:\n${offenders.joinToString("\n")}",
             offenders.isEmpty()
         )

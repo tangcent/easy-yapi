@@ -9,7 +9,7 @@ import com.itangcent.easyapi.logging.IdeaLog
 /**
  * Centralized notification utility for posting balloon notifications.
  *
- * ## Mirror to idea.log (FR-02)
+ * ## Mirror to idea.log
  *
  * `notifyWarning` and `notifyError` are mirrored to `idea.log` via [IdeaLog.LOG] so the
  * durable triage record is created automatically — callers do **not** need to also write
@@ -69,7 +69,7 @@ object NotificationUtils : IdeaLog {
     }
 
     fun notifyWarning(project: Project?, title: String, content: String, t: Throwable? = null) {
-        // Mirror to idea.log (FR-02). Throwable is passed as the last arg so the stacktrace survives.
+        // Mirror to idea.log. Throwable is passed as the last arg so the stacktrace survives.
         if (t != null) {
             LOG.warn("$title: $content", t)
         } else {
@@ -79,8 +79,8 @@ object NotificationUtils : IdeaLog {
     }
 
     fun notifyError(project: Project?, title: String, content: String, t: Throwable? = null) {
-        // Mirror to idea.log (FR-02). Use warn level: LOG.error is prohibited (triggers intrusive popup);
-        // warn preserves severity without popup (R-CH-03).
+        // Mirror to idea.log. Use warn level: LOG.error is prohibited (triggers intrusive popup);
+        // warn preserves severity without popup.
         if (t != null) {
             LOG.warn("$title: $content", t)
         } else {

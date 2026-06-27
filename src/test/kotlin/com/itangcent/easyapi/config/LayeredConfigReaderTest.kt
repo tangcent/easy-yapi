@@ -200,6 +200,77 @@ api.name=test
         assertEquals("Updated", reader.getFirst("api.name"))
     }
 
+    @Test
+    fun testSourcesForKeyReturnsValuesOrderedByPriorityDesc() = runBlocking {
+        val lowSource = TestConfigSource(
+            listOf(ConfigEntry("api.name", "LowValue", "low-src")),
+            priority = 1,
+            sourceId = "low-src"
+        )
+        val highSource = TestConfigSource(
+            listOf(ConfigEntry("api.name", "HighValue", "high-src")),
+            priority = 10,
+            sourceId = "high-src"
+        )
+
+        val reader = LayeredConfigReader(listOf(lowSource, highSource))
+        reader.reload()
+
+        val sourceValues = reader.sourcesForKey("api.name")
+        assertEquals(2, sourceValues.size)
+        // Highest priority first
+        assertEquals("high-src", sourceValues[0].sourceId)
+        assertEquals(10, sourceValues[0].priority)
+        assertEquals("HighValue", sourceValues[0].value)
+        assertEquals("low-src", sourceValues[1].sourceId)
+        assertEquals(1, sourceValues[1].priority)
+        assertEquals("LowValue", sourceValues[1].value)
+    }
+
+    @Test
+    fun testSourcesForKeyEmptyForMissingKey() = runBlocking {
+        val source = TestConfigSource(
+            listOf(ConfigEntry("api.name", "Present", "test")),
+            priority = 0
+        )
+        val reader = LayeredConfigReader(listOf(source))
+        reader.reload()
+
+        assertTrue(reader.sourcesForKey("missing.key").isEmpty())
+    }
+
+    @Test
+    fun testSourcesForKeyConsistentWithGetAll() = runBlocking {
+        val source1 = TestConfigSource(
+            listOf(ConfigEntry("api.tag", "a", "s1")),
+            priority = 5,
+            sourceId = "s1"
+        )
+        val source2 = TestConfigSource(
+            listOf(ConfigEntry("api.tag", "b", "s2")),
+            priority = 2,
+            sourceId = "s2"
+        )
+        val reader = LayeredConfigReader(listOf(source1, source2))
+        reader.reload()
+
+        val all = reader.getAll("api.tag")
+        val sourceValues = reader.sourcesForKey("api.tag")
+        assertEquals(all, sourceValues.map { it.value })
+    }
+
+    @Test
+    fun testDefaultSourcesForKeyReturnsEmpty() = runBlocking {
+        // A ConfigReader that doesn't override sourcesForKey should return empty.
+        val reader = object : ConfigReader {
+            override fun getFirst(key: String): String? = null
+            override fun getAll(key: String): List<String> = emptyList()
+            override suspend fun reload() {}
+            override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {}
+        }
+        assertTrue(reader.sourcesForKey("any").isEmpty())
+    }
+
     private class TestConfigSource(
         private val testEntries: List<ConfigEntry>,
         override val priority: Int,

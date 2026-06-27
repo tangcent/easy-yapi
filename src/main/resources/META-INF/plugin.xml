@@ -53,6 +53,7 @@
         <projectService serviceImplementation="com.itangcent.easyapi.rule.engine.RuleEngine"/>
         <projectService serviceImplementation="com.itangcent.easyapi.http.HttpClientProvider"/>
         <projectService serviceImplementation="com.itangcent.easyapi.logging.IdeaConsoleProvider"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.ai.AiAssistantService"/>
         <projectService serviceInterface="com.itangcent.easyapi.config.ConfigReader"
                         serviceImplementation="com.itangcent.easyapi.config.DefaultConfigReader"/>
         <projectService serviceImplementation="com.itangcent.easyapi.config.ConfigSyncService"/>
@@ -83,13 +84,10 @@
                              id="easyapi.settings.EasyApiConfigurable"
                              instance="com.itangcent.easyapi.settings.ui.EasyApiSettingsConfigurable"/>
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
-                             displayName="Remote"
-                             id="easyapi.settings.EasyApiConfigurable.Remote"
-                             instance="com.itangcent.easyapi.settings.ui.EasyApiRemoteConfigurable"/>
-        <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
-                             displayName="BuiltInConfig"
-                             id="easyapi.settings.EasyApiConfigurable.BuiltInConfig"
-                             instance="com.itangcent.easyapi.settings.ui.EasyApiBuiltInConfigurable"/>
+                             displayName="Rules"
+                             id="easyapi.settings.EasyApiConfigurable.Rules"
+                             instance="com.itangcent.easyapi.settings.ui.EasyApiRulesConfigurable"
+                             weight="10"/>
         <projectConfigurable groupId="easyapi.settings.EasyApiConfigurable"
                              displayName="Other"
                              id="easyapi.settings.EasyApiConfigurable.Other"

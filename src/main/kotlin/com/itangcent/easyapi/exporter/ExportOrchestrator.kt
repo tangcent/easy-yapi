@@ -38,7 +38,7 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         channelConfig: ChannelConfig = ChannelConfig.Empty,
         indicator: ProgressIndicator? = null
     ): ExportResult {
-        LOG.debug("ExportOrchestrator.orchestrateExport: channelId=$channelId, selection=$selection")
+        LOG.info("ExportOrchestrator.orchestrateExport: channelId=$channelId, selection=$selection")
         val channel = channelRegistry.getChannel(channelId)
             ?: return ExportResult.Error("No channel registered for id: $channelId")
 
@@ -90,7 +90,7 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         channelConfig: ChannelConfig = ChannelConfig.Empty,
         indicator: ProgressIndicator? = null
     ): ExportResult {
-        LOG.debug("ExportOrchestrator.exportViaChannel: channelId=$channelId, endpoints=${endpoints.size}")
+        LOG.info("ExportOrchestrator.exportViaChannel: channelId=$channelId, endpoints=${endpoints.size}")
         val channel = channelRegistry.getChannel(channelId)
             ?: return ExportResult.Error("No channel registered for id: $channelId")
 
