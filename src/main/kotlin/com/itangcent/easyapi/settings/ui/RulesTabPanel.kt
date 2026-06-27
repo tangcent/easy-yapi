@@ -12,6 +12,7 @@ import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.Settings
 import com.itangcent.easyapi.util.file.UniqueFileNameUtils
+import com.itangcent.easyapi.util.text.ByteSizeUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -49,13 +50,6 @@ object RuleFileSupport {
     fun fileSize(path: String): Long = runCatching {
         Files.size(Paths.get(path))
     }.getOrDefault(0L)
-
-    fun formatSize(bytes: Long): String = when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
-        bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
-        else -> String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0))
-    }
 
     /**
      * Returns the file name (last path segment).
@@ -183,7 +177,7 @@ class GlobalRulesSubTab(
             },
             object : ColumnInfo<RuleFileRow, String>("Size") {
                 override fun valueOf(item: RuleFileRow?): String? =
-                    item?.let { RuleFileSupport.formatSize(it.size) }
+                    item?.let { ByteSizeUtil.format(it.size) }
             },
             object : ColumnInfo<RuleFileRow, Boolean>("Enabled") {
                 override fun valueOf(item: RuleFileRow?): Boolean = item?.enabled ?: false
@@ -483,7 +477,7 @@ class ProjectRulesSubTab(
             },
             object : ColumnInfo<RuleFileRow, String>("Size") {
                 override fun valueOf(item: RuleFileRow?): String? =
-                    item?.let { RuleFileSupport.formatSize(it.size) }
+                    item?.let { ByteSizeUtil.format(it.size) }
             },
             object : ColumnInfo<RuleFileRow, Boolean>("Enabled") {
                 override fun valueOf(item: RuleFileRow?): Boolean = item?.enabled ?: true

@@ -102,9 +102,10 @@ interface ApplicationSettingsSupport {
     /** Max requests per agent turn; asks to confirm when the limit is reached. */
     var aiMaxRequests: Int
     /**
-     * AI assistant model context window (in tokens), or `0` to auto-track the
-     * selected provider's default (see `AiProvider.contextWindow`). Used to
-     * derive the agent's token budget.
+     * AI assistant model context window (in tokens), used to derive the
+     * agent's token budget. Defaults to [com.itangcent.easyapi.ai.AiProvider.DEFAULT_CONTEXT_WINDOW];
+     * a value of `0` from legacy persisted state is treated as the provider's
+     * default at load time (see `com.itangcent.easyapi.ai.AiSettings.from`).
      */
     var aiContextWindow: Int
 

@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.settings
 
+import com.itangcent.easyapi.ai.AiProvider
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
 import com.itangcent.easyapi.settings.state.ApplicationSettingsSupport
 import com.itangcent.easyapi.settings.state.ProjectSettingsSupport
@@ -71,7 +72,7 @@ data class Settings(
     override var aiModel: String = "",
     override var aiRequestTimeoutSec: Int = 60,
     override var aiMaxRequests: Int = 100,
-    override var aiContextWindow: Int = 0,
+    override var aiContextWindow: Int = AiProvider.DEFAULT_CONTEXT_WINDOW,
     override var disabledAutoRuleFiles: Array<String> = emptyArray()
 ) : ProjectSettingsSupport, ApplicationSettingsSupport {
 
