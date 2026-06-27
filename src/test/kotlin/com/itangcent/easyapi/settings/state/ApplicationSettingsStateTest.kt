@@ -30,7 +30,7 @@ class ApplicationSettingsStateTest {
         assertEquals(30, s.httpTimeOut)
         assertFalse(s.unsafeSsl)
         assertEquals(HttpClientType.APACHE.value, s.httpClient)
-        assertEquals(100, s.logLevel) // SILENT — console off by default (FR-CH-13)
+        assertEquals(100, s.logLevel) // SILENT — console off by default
         assertTrue(s.outputDemo)
         assertEquals("UTF-8", s.outputCharset)
         assertEquals(MarkdownFormatType.SIMPLE.name, s.markdownFormatType)
@@ -156,5 +156,62 @@ class ApplicationSettingsStateTest {
         assertEquals(false, target.enumFieldAutoInferEnabled)
         source.copyTo(target)
         assertEquals(true, target.enumFieldAutoInferEnabled)
+    }
+
+    @Test
+    fun testDefault_newGlobalRuleAndAiFields() {
+        val s = ApplicationSettingsState.State()
+        assertArrayEquals(emptyArray(), s.disabledGlobalRuleFiles)
+        assertEquals("OPENAI", s.aiProvider)
+        assertEquals("", s.aiBaseUrl)
+        assertEquals("", s.aiModel)
+        assertEquals(60, s.aiRequestTimeoutSec)
+        assertEquals(100, s.aiMaxRequests)
+        assertEquals(0, s.aiContextWindow)
+    }
+
+    @Test
+    fun testState_equality_newAiScalarFields() {
+        val s1 = ApplicationSettingsState.State(aiProvider = "GEMINI", aiBaseUrl = "u", aiModel = "m", aiRequestTimeoutSec = 90, aiMaxRequests = 50)
+        val s2 = ApplicationSettingsState.State()
+        assertNotEquals(s1, s2)
+    }
+
+    @Test
+    fun testState_equality_aiContextWindow() {
+        val s1 = ApplicationSettingsState.State(aiContextWindow = 200_000)
+        val s2 = ApplicationSettingsState.State()
+        assertNotEquals(s1, s2)
+    }
+
+    @Test
+    fun testState_equality_newGlobalRuleArrays() {
+        val s1 = ApplicationSettingsState.State(disabledGlobalRuleFiles = arrayOf("/x"))
+        val s2 = ApplicationSettingsState.State(disabledGlobalRuleFiles = arrayOf("/x"))
+        assertEquals(s1, s2)
+        val s3 = ApplicationSettingsState.State(disabledGlobalRuleFiles = arrayOf("/z"))
+        assertNotEquals(s1, s3)
+    }
+
+    @Test
+    fun testState_copyTo_newAiAndGlobalRuleFields() {
+        val source = ApplicationSettingsState.State(
+            disabledGlobalRuleFiles = arrayOf("/gd"),
+            aiProvider = "ANTHROPIC",
+            aiBaseUrl = "https://api.anthropic.com",
+            aiModel = "claude-3",
+            aiRequestTimeoutSec = 75,
+            aiMaxRequests = 25,
+            aiContextWindow = 200_000
+        )
+        val target = ApplicationSettingsState.State()
+        source.copyTo(target)
+        assertArrayEquals(arrayOf("/gd"), target.disabledGlobalRuleFiles)
+        assertEquals("ANTHROPIC", target.aiProvider)
+        assertEquals("https://api.anthropic.com", target.aiBaseUrl)
+        assertEquals("claude-3", target.aiModel)
+        assertEquals(75, target.aiRequestTimeoutSec)
+        assertEquals(25, target.aiMaxRequests)
+        assertEquals(200_000, target.aiContextWindow)
     }
 }

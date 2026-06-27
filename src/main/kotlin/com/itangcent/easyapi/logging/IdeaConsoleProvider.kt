@@ -15,8 +15,9 @@ import com.itangcent.easyapi.settings.settings
  *
  * - **`logLevel > ERROR` (e.g. SILENT=100, the default):** returns [IdeaLogConsole] —
  *   the tool window is bypassed and console output is redirected to `idea.log`.
- *   `trace`/`debug` are routed to `LOG.trace`/`LOG.debug` (filtered by IntelliJ unless
- *   debug logging is enabled); `warn`/`error` are routed to `LOG.warn` (always captured).
+ *   All non-error levels (`trace`/`debug`/`info`) are floored to `LOG.info` so they
+ *   remain visible (IntelliJ filters `debug`/`trace` out of `idea.log` by default);
+ *   `warn`/`error` are routed to `LOG.warn` (always captured).
  * - **`logLevel <= ERROR`:** returns a [ConfigurableIdeaConsole] wrapping a
  *   [DefaultIdeaConsole] — output appears in the EasyAPI tool window, filtered by the
  *   configured log level, with `warn`/`error` mirrored to `idea.log`.

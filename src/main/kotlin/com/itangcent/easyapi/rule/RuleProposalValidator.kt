@@ -1,0 +1,182 @@
+package com.itangcent.easyapi.rule
+
+import com.itangcent.easyapi.util.json.GsonUtils
+import kotlin.reflect.full.memberProperties
+
+/**
+ * Deterministic, PSI-free reviewer for AI-authored rule proposals (the
+ * "review agent" is a fast local check, not an LLM).
+ *
+ * Catches the exact mechanical errors the preamble's CRITICAL sections warn
+ * about but the model still produces: unknown rule keys, invalid filter
+ * prefixes, and malformed JSON header/param values. Runs before a proposal
+ * is staged (see [com.itangcent.easyapi.ai.tools.ProposeRuleContentTool]),
+ * so a faulty proposal never reaches the user's Save dialog.
+ *
+ * Strictness policy (per product decision):
+ * - **Hard errors** (block the proposal): unknown key, invalid filter prefix,
+ *   malformed JSON value for the header/param keys.
+ * - **Soft warnings** (never block): deprecated-but-valid filter forms such
+ *   as the bare `class:` prefix. Reported back to the drafter / surfaced on
+ *   the proposal card, but the proposal still proceeds.
+ *
+ * Full duplicate-of-existing-rule detection needs live
+ * `get_existing_rules_for_key` data and is out of scope for this v1 pass.
+ */
+object RuleProposalValidator {
+
+    /**
+     * The keys whose values are single-line JSON objects, validated by
+     * attempting a JSON parse. Mirrors the preamble's contract.
+     */
+    private val JSON_VALUE_KEYS = setOf(
+        "method.additional.header",
+        "method.additional.param",
+        "method.additional.response.header",
+        "json.additional.field",
+    )
+
+    /**
+     * Valid filter prefixes inside `[...]`, mirroring the preamble's
+     * "Valid filter prefixes (and ONLY these)" list.
+     */
+    private val VALID_FILTER_PREFIXES = setOf(
+        "\$class:", "@", "#regex:", "#", "!", "groovy:"
+    )
+
+    /** The set of every known rule key name (primary + aliases), for O(1) lookup. */
+    private val knownKeyNames: Set<String> by lazy { collectKnownKeyNames() }
+
+    /**
+     * Validate [content] as a rule file.
+     *
+     * Comments (`#`), blank lines, and multi-line groovy value-blocks (delimited
+     * by ```` ``` ````) are tolerated; every non-comment `key[filter]=value`
+     * line is checked.
+     */
+    fun validate(content: String): RuleValidation {
+        val errors = mutableListOf<String>()
+        val warnings = mutableListOf<String>()
+        var inBlock = false
+        content.lines().forEachIndexed { idx, raw ->
+            val line = raw.trim()
+            if (line.isEmpty()) return@forEachIndexed
+            // Multi-line groovy value-block: skip the body (it is a free-form
+            // script whose lines are not key=value).
+            if (inBlock) {
+                if (line == "```") inBlock = false
+                return@forEachIndexed
+            }
+            // Plain comment (### is a directive, handled elsewhere; treat as
+            // non-rule for this check).
+            if (line.startsWith("#")) return@forEachIndexed
+            val parsed = splitKeyFilterValue(line) ?: run {
+                // Not a key=value line — skip (directives, stray text). We do
+                // not error on every non-kv line to avoid false positives on
+                // constructs the parser supports but this checker doesn't model.
+                return@forEachIndexed
+            }
+            val (key, filter, value) = parsed
+            val lineNo = idx + 1
+
+            if (key !in knownKeyNames) {
+                errors += "line $lineNo: unknown rule key '$key' (not in list_rule_keys)."
+                return@forEachIndexed
+            }
+            if (filter != null) {
+                val prefixIssue = checkFilterPrefix(filter)
+                when (prefixIssue) {
+                    is FilterIssue.Invalid ->
+                        errors += "line $lineNo: invalid filter '$filter'. " +
+                            "Valid prefixes: \$class:, @, #regex:, #<tag>, !, groovy:."
+                    is FilterIssue.Deprecated ->
+                        warnings += "line $lineNo: filter '$filter' uses the " +
+                            "deprecated bare 'class:' form — prefer '\$class:'."
+                    null -> Unit
+                }
+            }
+            if (key in JSON_VALUE_KEYS && value.isNotBlank()) {
+                val v = value.trim()
+                // Only validate inline single-line JSON here; a groovy
+                // value-block opens with `` ` `` and is script, not JSON.
+                if (!v.startsWith("groovy:") && !isParsableJson(v)) {
+                    errors += "line $lineNo: value for '$key' is not valid JSON " +
+                        "(expected an object like {\"name\":\"…\",\"value\":\"…\"})."
+                }
+            }
+            if (value.trim() == "```" || value.trim().endsWith("```")) {
+                inBlock = true
+            }
+        }
+        return RuleValidation(errors = errors, warnings = warnings)
+    }
+
+    private fun checkFilterPrefix(filter: String): FilterIssue? {
+        if (filter.startsWith("class:")) return FilterIssue.Deprecated
+        if (VALID_FILTER_PREFIXES.any { filter.startsWith(it) }) return null
+        return FilterIssue.Invalid
+    }
+
+    /**
+     * Split a `key[filter]=value` / `key=value` line, honoring bracket depth
+     * so `=`/`:` inside a filter or value don't trip the split. Mirrors the
+     * semantics of `ConfigTextParser.splitKeyValue` without reusing it (that
+     * parser folds `key[...]` into the key and doesn't expose the filter).
+     */
+    private fun splitKeyFilterValue(line: String): Triple<String, String?, String>? {
+        var bracketDepth = 0
+        var eqIdx = -1
+        for (i in line.indices) {
+            when (line[i]) {
+                '[' -> bracketDepth++
+                ']' -> if (bracketDepth > 0) bracketDepth--
+                '=', ':' -> if (bracketDepth == 0 && i > 0) {
+                    eqIdx = i
+                    break
+                }
+            }
+        }
+        if (eqIdx <= 0) return null
+        val left = line.substring(0, eqIdx).trim()
+        val value = line.substring(eqIdx + 1).trim()
+        if (left.isEmpty()) return null
+        val bracketStart = left.indexOf('[')
+        if (bracketStart < 0 || !left.endsWith("]")) return Triple(left, null, value)
+        val key = left.substring(0, bracketStart).trim()
+        val filter = left.substring(bracketStart + 1, left.length - 1).trim()
+        if (key.isEmpty() || filter.isEmpty()) return Triple(left, null, value)
+        return Triple(key, filter, value)
+    }
+
+    private fun isParsableJson(text: String): Boolean = runCatching {
+        GsonUtils.fromJson<Any>(text)
+        true
+    }.getOrDefault(false)
+
+    private fun collectKnownKeyNames(): Set<String> =
+        RuleKeys::class.memberProperties
+            .mapNotNull { prop ->
+                runCatching { prop.get(RuleKeys) as? RuleKey<*> }.getOrNull()
+            }
+            .flatMap { it.allNames }
+            .toSet()
+
+    private sealed class FilterIssue {
+        object Invalid : FilterIssue()
+        object Deprecated : FilterIssue()
+    }
+}
+
+/**
+ * Result of [RuleProposalValidator.validate].
+ *
+ * @param errors hard failures that block the proposal from being staged.
+ * @param warnings soft notes surfaced on the proposal card (never block).
+ */
+data class RuleValidation(
+    val errors: List<String>,
+    val warnings: List<String>
+) {
+    /** `true` when there are no blocking errors. */
+    val ok: Boolean get() = errors.isEmpty()
+}

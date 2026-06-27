@@ -32,16 +32,9 @@ class SettingsPanelsParityTest {
         assertTrue(settings.remoteConfig.isNotEmpty())
     }
 
-    @Test
-    fun testBuiltInPanelApplyReset() {
-        val settings = Settings().apply {
-            builtInConfig = "field.name=@x#v"
-        }
-        val builtIn = BuiltInConfigPanel()
-        builtIn.resetFrom(settings)
-        assertFalse(builtIn.isModified(settings))
-        builtIn.applyTo(settings)
-    }
+    // Rules tab round-trip is covered by GlobalRulesSubTabTest and
+    // ProjectRulesSubTabTest (fixture-based, since ToolbarDecorator requires
+    // the IntelliJ Application).
 
     @Test
     fun testIntelligentPanelEnumFieldAutoInferEnabledRoundTrip() {
@@ -65,5 +58,43 @@ class SettingsPanelsParityTest {
         assertFalse(panel.isModified(settings))
         settings.enumFieldAutoInferEnabled = true
         assertTrue(panel.isModified(settings))
+    }
+
+    /**
+     * Task 5.4: verify that the new Rules-tab fields round-trip through
+     * `Settings`. The Rules tab UI itself uses `ToolbarDecorator` (which
+     * requires the IntelliJ Application), so we test the data-model
+     * round-trip here and rely on `ProjectRulesSubTabTest` /
+     * `GlobalRulesSubTabTest` for the fixture-based UI round-trip.
+     */
+    @Test
+    fun testRulesFieldsRoundTripThroughSettings() {
+        val settings = Settings().apply {
+            disabledAutoRuleFiles = arrayOf("/tmp/auto.rules")
+            disabledGlobalRuleFiles = arrayOf("/tmp/global-disabled.rules")
+        }
+        val copy = settings.copy()
+        assertEquals(settings.disabledAutoRuleFiles.toList(), copy.disabledAutoRuleFiles.toList())
+        assertEquals(settings.disabledGlobalRuleFiles.toList(), copy.disabledGlobalRuleFiles.toList())
+    }
+
+    /**
+     * Task 5.4: verify `Settings.equals`/`hashCode` include the new Rules
+     * fields (silent parity-test failures occur otherwise).
+     */
+    @Test
+    fun testSettingsEqualityIncludesRulesFields() {
+        val base = Settings()
+        assertFalse("disabledAutoRuleFiles should affect equality",
+            base == base.copy(disabledAutoRuleFiles = arrayOf("/x")))
+        assertFalse("disabledGlobalRuleFiles should affect equality",
+            base == base.copy(disabledGlobalRuleFiles = arrayOf("/x")))
+    }
+
+    @Test
+    fun testSettingsEqualityIncludesAiContextWindow() {
+        val base = Settings()
+        assertFalse("aiContextWindow should affect equality",
+            base == base.copy(aiContextWindow = 200_000))
     }
 }

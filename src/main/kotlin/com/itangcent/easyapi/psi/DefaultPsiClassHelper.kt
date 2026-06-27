@@ -800,7 +800,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
         var options = resolveFieldOptions(resolvedType, docHelper)
         // Case 2: field is not enum-typed but may have @see pointing to an enum.
         // resolveOptionsWithType returns the enum's value-field JSON type so we
-        // can reconcile it against the declared type (Req 7, D-TYPE).
+        // can reconcile it against the declared type.
         var reconciledModel = model
         if (options == null && psiElement != null) {
             val resolved = SeeTagResolver(project).resolveOptionsWithType(psiElement, docHelper)
@@ -841,7 +841,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
             is ResolvedType.ClassType -> {
                 val psiClass = resolvedType.psiClass
                 if (isEnum(psiClass)) {
-                    // Delegate to EnumValueResolver (D-CENTRAL). Case 1 path:
+                    // Delegate to EnumValueResolver. Case 1 path:
                     // field declared as enum type → context = null, seeMemberName = null.
                     val resolver = EnumValueResolver.getInstance(project)
                     val resolution = resolver.resolve(psiClass)
@@ -926,7 +926,7 @@ class DefaultPsiClassHelper(private val project: Project) : PsiClassHelper {
                     } else ObjectModel.single(JsonType.OBJECT)
                     ObjectModel.map(keyModel, valueModel)
                 } else if (isEnum(psiClass)) {
-                    // Delegate JSON type resolution to EnumValueResolver (D-CENTRAL).
+                    // Delegate JSON type resolution to EnumValueResolver.
                     val resolver = EnumValueResolver.getInstance(project)
                     val resolution = resolver.resolve(psiClass)
                     val jsonType = resolver.resolveJsonType(psiClass, resolution)

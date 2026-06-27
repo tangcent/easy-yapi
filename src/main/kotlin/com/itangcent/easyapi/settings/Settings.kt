@@ -64,7 +64,15 @@ data class Settings(
     override var gutterIconEnabled: Boolean = true,
     override var projectEnvironments: String = "",
     override var globalEnvironments: String = "",
-    override var enumFieldAutoInferEnabled: Boolean = false
+    override var enumFieldAutoInferEnabled: Boolean = false,
+    override var disabledGlobalRuleFiles: Array<String> = emptyArray(),
+    override var aiProvider: String = "OPENAI",
+    override var aiBaseUrl: String = "",
+    override var aiModel: String = "",
+    override var aiRequestTimeoutSec: Int = 60,
+    override var aiMaxRequests: Int = 100,
+    override var aiContextWindow: Int = 0,
+    override var disabledAutoRuleFiles: Array<String> = emptyArray()
 ) : ProjectSettingsSupport, ApplicationSettingsSupport {
 
     companion object {
@@ -122,6 +130,14 @@ data class Settings(
         if (projectEnvironments != other.projectEnvironments) return false
         if (globalEnvironments != other.globalEnvironments) return false
         if (enumFieldAutoInferEnabled != other.enumFieldAutoInferEnabled) return false
+        if (!disabledGlobalRuleFiles.contentEquals(other.disabledGlobalRuleFiles)) return false
+        if (aiProvider != other.aiProvider) return false
+        if (aiBaseUrl != other.aiBaseUrl) return false
+        if (aiModel != other.aiModel) return false
+        if (aiRequestTimeoutSec != other.aiRequestTimeoutSec) return false
+        if (aiMaxRequests != other.aiMaxRequests) return false
+        if (aiContextWindow != other.aiContextWindow) return false
+        if (!disabledAutoRuleFiles.contentEquals(other.disabledAutoRuleFiles)) return false
 
         return true
     }
@@ -170,6 +186,14 @@ data class Settings(
         result = 31 * result + projectEnvironments.hashCode()
         result = 31 * result + globalEnvironments.hashCode()
         result = 31 * result + enumFieldAutoInferEnabled.hashCode()
+        result = 31 * result + disabledGlobalRuleFiles.contentHashCode()
+        result = 31 * result + aiProvider.hashCode()
+        result = 31 * result + aiBaseUrl.hashCode()
+        result = 31 * result + aiModel.hashCode()
+    result = 31 * result + aiRequestTimeoutSec
+    result = 31 * result + aiMaxRequests
+    result = 31 * result + aiContextWindow
+    result = 31 * result + disabledAutoRuleFiles.contentHashCode()
         return result
     }
 }

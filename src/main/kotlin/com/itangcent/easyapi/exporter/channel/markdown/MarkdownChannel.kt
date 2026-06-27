@@ -46,7 +46,7 @@ class MarkdownChannel : ApiChannel, IdeaLog {
     }
 
     override suspend fun export(context: ExportContext): ExportResult {
-        LOG.debug("MarkdownChannel.export: endpoints=${context.endpointsToExport.size}")
+        LOG.info("MarkdownChannel.export: endpoints=${context.endpointsToExport.size}")
         val content = formatter.format(context.endpointsToExport, "API Documentation")
         return ExportResult.Success(
             count = context.endpointsToExport.size,

@@ -15,7 +15,7 @@ class OpenScriptExecutorAction : AnAction(), IdeaLog {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val console = project.console
-        console.debug("OpenScriptExecutorAction.actionPerformed: project=${project.name}")
+        console.info("OpenScriptExecutorAction.actionPerformed: project=${project.name}")
         ScriptExecutorDialog(project).show()
     }
 }

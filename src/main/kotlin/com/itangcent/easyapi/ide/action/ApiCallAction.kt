@@ -26,7 +26,7 @@ class ApiCallAction : EasyApiAction(), IdeaLog {
         val project = e.project ?: return
         val selection = resolveScope(e) ?: return
         val console = project.console
-        console.debug("ApiCallAction.actionPerformed: project=${project.name}")
+        console.info("ApiCallAction.actionPerformed: project=${project.name}")
 
         backgroundAsync {
             val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("API Dashboard")

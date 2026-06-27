@@ -37,7 +37,7 @@ class FieldFormatAction(
         val project = e.project ?: return
         val psiClass = findPsiClass(e) ?: return
         val console = project.console
-        console.debug("FieldFormatAction.actionPerformed: channel=${channel.id}, class=${psiClass.qualifiedName}")
+        console.info("FieldFormatAction.actionPerformed: channel=${channel.id}, class=${psiClass.qualifiedName}")
         try {
             val text = kotlinx.coroutines.runBlocking { channel.format(project, psiClass) }
             CopyPasteManager.getInstance().setContents(StringSelection(text))

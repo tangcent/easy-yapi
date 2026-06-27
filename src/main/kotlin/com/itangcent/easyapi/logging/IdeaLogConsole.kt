@@ -3,11 +3,11 @@ package com.itangcent.easyapi.logging
 object IdeaLogConsole : IdeaConsole, IdeaLog {
 
     override fun trace(msg: String) {
-        LOG.trace(msg)
+        LOG.info(msg)
     }
 
     override fun debug(msg: String) {
-        LOG.debug(msg)
+        LOG.info(msg)
     }
 
     override fun info(msg: String) {
@@ -19,7 +19,7 @@ object IdeaLogConsole : IdeaConsole, IdeaLog {
     }
 
     override fun error(msg: String, t: Throwable?) {
-        // Use warn level: LOG.error is prohibited (triggers intrusive popup); warn preserves severity without popup (R-CH-03).
+        // Use warn level: LOG.error is prohibited (triggers intrusive popup); warn preserves severity without popup.
         LOG.warn(msg, t)
     }
 }

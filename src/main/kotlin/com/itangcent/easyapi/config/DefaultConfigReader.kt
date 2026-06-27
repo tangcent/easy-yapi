@@ -15,11 +15,12 @@ import com.itangcent.easyapi.util.storage.LocalStorage
  * in a layered manner, with each source having a specific priority.
  *
  * Configuration sources are queried in order (highest priority first):
- * 1. **RuntimeConfigSource** - Dynamic runtime configuration, typically module-specific
- * 2. **BuiltInConfigSource** - Built-in configuration defined in plugin settings
- * 3. **ExtensionConfigSource** - Extension configurations (Swagger, Jackson, etc.)
- * 4. **RemoteConfigSource** - Configuration fetched from remote URLs
- * 5. **LocalFileConfigSource** - Configuration from local `.easy-api.config` files
+ * 1. **ProjectFileConfigSource** (priority 4) - Configuration from local `.easy.api.config` files (auto-detected + custom project files)
+ * 2. **ExtensionConfigSource** (priority 3) - Extension configurations (Swagger, Jackson, etc.)
+ * 3. **RemoteConfigSource** (priority 3) - Configuration fetched from remote URLs
+ * 4. **GlobalFileConfigSource** (priority 2) - User-managed global rule files
+ *
+ * (`RuntimeConfigSource` exists at priority 0 but is not registered here.)
  *
  * ## Automatic Reloading
  *
@@ -66,12 +67,14 @@ class DefaultConfigReader(
     private fun buildDelegate(): LayeredConfigReader {
         val settings = settingBinder.read()
         val configTextParser = ConfigTextParser(settings)
+        val disabledAuto = settings.disabledAutoRuleFiles.toSet()
+        val globalDir = java.nio.file.Path.of(System.getProperty("user.home"), ".easyapi")
         return LayeredConfigReader(
             sources = listOf(
-                BuiltInConfigSource(
-                    settings.builtInConfig?.isNotBlank() == true,
-                    configTextParser,
-                    settings.builtInConfig
+                GlobalFileConfigSource(
+                    globalDir,
+                    settings.disabledGlobalRuleFiles.toSet(),
+                    configTextParser
                 ),
                 ExtensionConfigSource(
                     project,
@@ -83,7 +86,11 @@ class DefaultConfigReader(
                     configTextParser,
                     cachedResourceResolver
                 ),
-                LocalFileConfigSource(project.basePath ?: "", configTextParser)
+                ProjectFileConfigSource(
+                    project.basePath ?: "",
+                    configTextParser,
+                    disabledFiles = disabledAuto
+                )
             )
         )
     }

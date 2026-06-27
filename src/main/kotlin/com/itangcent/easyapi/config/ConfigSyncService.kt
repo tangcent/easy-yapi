@@ -104,14 +104,25 @@ class ConfigSyncService(
     /**
      * Handles file change events from the Virtual File System.
      *
-     * Checks if any of the changed files match the config file pattern
-     * (`.easy.api.config*`) and schedules a debounced reload if so.
+     * Triggers a reload when a changed file is:
+     * - a legacy `.easy.api.config*` file anywhere in the project tree, OR
+     * - any regular file inside a `.easyapi/` folder (project or global
+     *   `~/.easyapi/`), per the 3.0 folder-based rule model.
      *
      * @param events List of file change events to process
      */
     private fun onFileChanges(events: List<VFileEvent>) {
         val configFileChanged = events.any { event ->
-            event.file?.name?.startsWith(".easy.api.config") == true
+            val file = event.file ?: return@any false
+            val name = file.name
+            val parent = file.parent
+            when {
+                // Legacy `.easy.api.config*` files (anywhere in the tree).
+                name.startsWith(".easy.api.config") -> true
+                // 3.0 folder model: any file inside a `.easyapi/` directory.
+                parent?.name == ".easyapi" -> true
+                else -> false
+            }
         }
         if (configFileChanged) {
             LOG.info("Config file changed, triggering reload")

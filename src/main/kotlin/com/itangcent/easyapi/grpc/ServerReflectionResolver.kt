@@ -38,7 +38,7 @@ class ServerReflectionResolver : DescriptorResolver, IdeaLog {
         serviceName: String,
         methodName: String
     ): ResolvedDescriptor? {
-        LOG.debug("ServerReflectionResolver.fetchReflectionData: serviceName=$serviceName, methodName=$methodName")
+        LOG.info("ServerReflectionResolver.fetchReflectionData: serviceName=$serviceName, methodName=$methodName")
         // Try v1 first (grpc-services >= 1.39), fall back to v1alpha
         val reflectionPackage = listOf(
             "io.grpc.reflection.v1",
@@ -49,14 +49,14 @@ class ServerReflectionResolver : DescriptorResolver, IdeaLog {
 
         return try {
             val reflectionStubClass = classLoader.loadClass("$reflectionPackage.ServerReflectionGrpc")
-            LOG.debug("ServerReflectionResolver: loaded reflection stub class: ${reflectionStubClass.name}")
+            LOG.info("ServerReflectionResolver: loaded reflection stub class: ${reflectionStubClass.name}")
             val newStubMethod = reflectionStubClass.getMethod("newStub", classLoader.loadClass("io.grpc.Channel"))
             val stub = newStubMethod.invoke(null, channel)
-            LOG.debug("ServerReflectionResolver: created stub: ${stub.javaClass.name}")
+            LOG.info("ServerReflectionResolver: created stub: ${stub.javaClass.name}")
 
             val serverReflectionRequestClass =
                 classLoader.loadClass("$reflectionPackage.ServerReflectionRequest")
-            LOG.debug("ServerReflectionResolver: loaded request class: ${serverReflectionRequestClass.name}")
+            LOG.info("ServerReflectionResolver: loaded request class: ${serverReflectionRequestClass.name}")
             val newBuilderMethod = serverReflectionRequestClass.getMethod("newBuilder")
             val requestBuilder = newBuilderMethod.invoke(null)
 
@@ -68,43 +68,43 @@ class ServerReflectionResolver : DescriptorResolver, IdeaLog {
 
             val buildMethod = requestBuilder.javaClass.getMethod("build")
             val request = buildMethod.invoke(requestBuilder)
-            LOG.debug("ServerReflectionResolver: created request: $request")
+            LOG.info("ServerReflectionResolver: created request: $request")
 
             val streamObserverClass = classLoader.loadClass("io.grpc.stub.StreamObserver")
-            LOG.debug("ServerReflectionResolver: loaded StreamObserver class")
+            LOG.info("ServerReflectionResolver: loaded StreamObserver class")
 
             val resultRef = AtomicReference<ResolvedDescriptor?>(null)
             val errorRef = AtomicReference<Throwable?>(null)
             val latch = CountDownLatch(1)
 
-            LOG.debug("ServerReflectionResolver: creating response observer proxy...")
+            LOG.info("ServerReflectionResolver: creating response observer proxy...")
             val responseObserver = Proxy.newProxyInstance(
                 classLoader,
                 arrayOf(streamObserverClass)
             ) { _, method, args ->
-                LOG.debug("ServerReflectionResolver: proxy called: ${method.name}")
+                LOG.info("ServerReflectionResolver: proxy called: ${method.name}")
                 when (method.name) {
                     "onNext" -> {
                         val response = args?.get(0) ?: return@newProxyInstance null
-                        LOG.debug("ServerReflectionResolver: onNext response type: ${response.javaClass.name}")
+                        LOG.info("ServerReflectionResolver: onNext response type: ${response.javaClass.name}")
                         try {
                             val getMessageResponseMethod = response.javaClass.getMethod("getMessageResponseCase")
                             val messageResponseCase = getMessageResponseMethod.invoke(response)
                             val getNumberMethod = messageResponseCase.javaClass.getMethod("getNumber")
                             val caseNumber = getNumberMethod.invoke(messageResponseCase) as Int
-                            LOG.debug("ServerReflectionResolver: message response case: $caseNumber")
+                            LOG.info("ServerReflectionResolver: message response case: $caseNumber")
 
                             if (caseNumber == 1) {
                                 val getFileDescriptorResponseMethod =
                                     response.javaClass.getMethod("getFileDescriptorResponse")
                                 val fdResponse = getFileDescriptorResponseMethod.invoke(response)
-                                LOG.debug("ServerReflectionResolver: file descriptor response: ${fdResponse?.javaClass?.name}")
+                                LOG.info("ServerReflectionResolver: file descriptor response: ${fdResponse?.javaClass?.name}")
                                 if (fdResponse != null) {
                                     val getFileDescriptorProtoListMethod =
                                         fdResponse.javaClass.getMethod("getFileDescriptorProtoList")
                                     val protoBytesList =
                                         getFileDescriptorProtoListMethod.invoke(fdResponse) as List<*>
-                                    LOG.debug("ServerReflectionResolver: proto bytes list size: ${protoBytesList.size}")
+                                    LOG.info("ServerReflectionResolver: proto bytes list size: ${protoBytesList.size}")
 
                                     for (protoBytes in protoBytesList) {
                                         // v1 returns ByteString, v1alpha returns byte[]
@@ -124,7 +124,7 @@ class ServerReflectionResolver : DescriptorResolver, IdeaLog {
                                             methodName
                                         )
                                         if (result != null) {
-                                            LOG.debug("ServerReflectionResolver: found reflection data!")
+                                            LOG.info("ServerReflectionResolver: found reflection data!")
                                             resultRef.set(result)
                                             break
                                         }
@@ -143,7 +143,7 @@ class ServerReflectionResolver : DescriptorResolver, IdeaLog {
                                     errorRef.set(RuntimeException("Reflection error: code=$errorCode, message=$errorMsg"))
                                 }
                             } else {
-                                LOG.debug("ServerReflectionResolver: unknown message response case: $caseNumber")
+                                LOG.info("ServerReflectionResolver: unknown message response case: $caseNumber")
                             }
                         } catch (e: Exception) {
                             errorRef.set(e)

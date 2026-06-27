@@ -972,7 +972,7 @@ class EnumResolutionTest {
     }
 
     // ================================================================
-    //  Req 1.3 — Simple enum with zero instance fields
+    //  Simple enum with zero instance fields
     // ================================================================
 
     class Case1_SimpleEnum : EasyApiLightCodeInsightFixtureTestCase() {
@@ -1031,7 +1031,7 @@ class EnumResolutionTest {
     }
 
     // ================================================================
-    //  Req 2 — @JsonValue annotation detection (Case 1b)
+    //  @JsonValue annotation detection (Case 1b)
     // ================================================================
 
     class Case1_JsonValueOnGetter : EasyApiLightCodeInsightFixtureTestCase() {
@@ -1186,7 +1186,7 @@ class EnumResolutionTest {
     }
 
     // ================================================================
-    //  Req 2 — @EnumValue annotation detection (Case 1b)
+    //  @EnumValue annotation detection (Case 1b)
     // ================================================================
 
     class Case1_EnumValue : EasyApiLightCodeInsightFixtureTestCase() {
@@ -1254,7 +1254,7 @@ class EnumResolutionTest {
     }
 
     // ================================================================
-    //  Req 7 — Type reconciliation (Case 2)
+    //  Type reconciliation (Case 2)
     // ================================================================
 
     class Case2_TypeReconciliation : EasyApiLightCodeInsightFixtureTestCase() {
@@ -1346,7 +1346,7 @@ class EnumResolutionTest {
     }
 
     // ================================================================
-    //  Req 4.2 — @see name()/name parity (Case 2)
+    //  @see name()/name parity (Case 2)
     // ================================================================
 
     class Case2_SeeNameParity : EasyApiLightCodeInsightFixtureTestCase() {
@@ -1409,7 +1409,7 @@ class EnumResolutionTest {
     }
 
     // ================================================================
-    //  Req 6 — Case 1 / Case 2 consistency
+    //  Case 1 / Case 2 consistency
     // ================================================================
 
     class Case1Case2Consistency : EasyApiLightCodeInsightFixtureTestCase() {
@@ -1468,7 +1468,7 @@ class EnumResolutionTest {
     }
 
     // ================================================================
-    //  Req 4.1 — @see with nonexistent member falls back to names
+    //  @see with nonexistent member falls back to names
     // ================================================================
 
     class Case2_SeeNonexistentMember : EasyApiLightCodeInsightFixtureTestCase() {

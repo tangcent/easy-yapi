@@ -125,7 +125,7 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
         for (signal in fullScanChannel) {
             try {
                 DumbModeHelper.waitForSmartMode(project)
-                LOG.debug("Scanning for API endpoints...")
+                LOG.info("Scanning for API endpoints...")
                 val endpoints = apiScanner.scanAll()
                 apiIndex.updateEndpoints(endpoints)
                 LOG.info("API scan completed, found ${endpoints.size} endpoints")
@@ -143,7 +143,7 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
             val now = System.currentTimeMillis()
             val timeSinceLastScan = now - lastScanTime
             if (timeSinceLastScan < minScanIntervalMs) {
-                LOG.debug("Throttling scan, only ${timeSinceLastScan}ms since last scan")
+                LOG.info("Throttling scan, only ${timeSinceLastScan}ms since last scan")
                 delay(minScanIntervalMs - timeSinceLastScan)
             }
 
@@ -159,11 +159,11 @@ class ApiIndexManager(private val project: Project) : Disposable, IdeaLog {
                 val changedClassNames = read { changedClasses.mapNotNull { it.qualifiedName }.toSet() }
 
                 if (changedClasses.isEmpty()) {
-                    LOG.debug("No API classes found in changed files")
+                    LOG.info("No API classes found in changed files")
                     continue
                 }
 
-                LOG.debug("Found ${changedClasses.size} API classes in changed files")
+                LOG.info("Found ${changedClasses.size} API classes in changed files")
 
                 val newEndpoints = apiScanner.scanClasses(changedClasses).toList()
                 val classEndpoints = changedClassNames.associateWith { className ->

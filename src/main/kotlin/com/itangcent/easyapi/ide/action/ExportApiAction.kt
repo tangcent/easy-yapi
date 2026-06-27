@@ -26,7 +26,7 @@ class ExportApiAction : AnAction(), IdeaLog {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val console = project.console
-        console.debug("ExportApiAction.actionPerformed: project=${project.name}")
+        console.info("ExportApiAction.actionPerformed: project=${project.name}")
         val selection = SelectedHelper.resolveSelection(e)
 
         backgroundAsync {

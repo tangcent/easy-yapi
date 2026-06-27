@@ -67,9 +67,42 @@ class EasyApiSettingsConfigurableTest : EasyApiLightCodeInsightFixtureTestCase()
         assertEquals("TAB_HTTP should be 'HTTP'", "HTTP", EasyApiSettingsConfigurable.TAB_HTTP)
         assertEquals("TAB_INTELLIGENT should be 'Intelligent'", "Intelligent", EasyApiSettingsConfigurable.TAB_INTELLIGENT)
         assertEquals("TAB_EXTENSIONS should be 'Extensions'", "Extensions", EasyApiSettingsConfigurable.TAB_EXTENSIONS)
-        assertEquals("TAB_REMOTE should be 'Remote'", "Remote", EasyApiSettingsConfigurable.TAB_REMOTE)
-        assertEquals("TAB_BUILT_IN should be 'Built-in'", "Built-in", EasyApiSettingsConfigurable.TAB_BUILT_IN)
+        assertEquals("TAB_RULES should be 'Rules'", "Rules", EasyApiSettingsConfigurable.TAB_RULES)
+        assertEquals("TAB_AI should be 'AI'", "AI", EasyApiSettingsConfigurable.TAB_AI)
         assertEquals("TAB_OTHER should be 'Other'", "Other", EasyApiSettingsConfigurable.TAB_OTHER)
         assertEquals("TAB_GRPC should be 'gRPC'", "gRPC", EasyApiSettingsConfigurable.TAB_GRPC)
+    }
+
+    /**
+     * Task 5.4: the Rules tab must be present and the legacy Built-in tab
+     * must be absent (replaced by Rules in 3.0).
+     */
+    fun testRulesTabAbsentFromMainTabsAndBuiltinTabAbsent() {
+        configurable.createComponent()
+        val tabs = configurable.tabsForTest()
+        // Rules is no longer an inner tab of the main
+        // EasyApi page — it lives only as the child node beside "Other"
+        // (EasyApiRulesConfigurable).
+        assertFalse(
+            "Rules tab must NOT be present in the main tabbed pane; got: $tabs",
+            tabs.any { it.equals("Rules", ignoreCase = true) }
+        )
+        assertFalse(
+            "Built-in tab should be absent (replaced by Rules in 3.0); got: $tabs",
+            tabs.any { it.equals("Built-in", ignoreCase = true) ||
+                       it.equals("BuiltIn", ignoreCase = true) }
+        )
+    }
+
+    /**
+     * A dedicated AI tab must be present at the top level.
+     */
+    fun testAiTabPresent() {
+        configurable.createComponent()
+        val tabs = configurable.tabsForTest()
+        assertTrue(
+            "AI tab must be present; got: $tabs",
+            tabs.any { it.equals("AI", ignoreCase = true) }
+        )
     }
 }

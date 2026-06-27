@@ -30,7 +30,7 @@ class ChannelExportAction(
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val console = project.console
-        console.debug("ChannelExportAction.actionPerformed: channel=$channelId, project=${project.name}")
+        console.info("ChannelExportAction.actionPerformed: channel=$channelId, project=${project.name}")
         val selection = SelectedHelper.resolveSelection(e)
 
         backgroundAsync {

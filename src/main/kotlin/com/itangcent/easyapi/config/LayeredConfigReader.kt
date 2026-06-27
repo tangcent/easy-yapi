@@ -25,26 +25,32 @@ class LayeredConfigReader(
 
     private data class Snapshot(
         val orderedEntries: List<Pair<String, String>>,
-        val valuesByKey: Map<String, List<String>>
+        val sourcesByKey: Map<String, List<SourceValue>>
     )
 
     private val snapshotRef: AtomicReference<Snapshot> = AtomicReference(
         Snapshot(emptyList(), emptyMap())
     )
 
-    private fun values(key: String): List<String>? = snapshotRef.get().valuesByKey[key]
+    private fun sources(key: String): List<SourceValue>? = snapshotRef.get().sourcesByKey[key]
 
     override fun getFirst(key: String): String? {
-        return values(key)?.firstOrNull()
+        return sources(key)?.firstOrNull()?.value
     }
 
     override fun getAll(key: String): List<String> {
-        return values(key).orEmpty()
+        return sources(key).orEmpty().map { it.value }
+    }
+
+    override fun sourcesForKey(key: String): List<SourceValue> {
+        return sources(key).orEmpty()
     }
 
     override suspend fun reload() {
         val allEntries = LinkedHashMap<String, MutableList<ConfigEntry>>()
+        val sourcePriorityById = HashMap<String, Int>()
         for (source in sources.sortedByDescending { it.priority }) {
+            sourcePriorityById[source.sourceId] = source.priority
             var count = 0
             for (entry in source.collect()) {
                 allEntries.computeIfAbsent(entry.key) { ArrayList() }.add(entry)
@@ -54,21 +60,27 @@ class LayeredConfigReader(
         }
 
         val orderedEntries = ArrayList<Pair<String, String>>()
-        val valuesByKey = LinkedHashMap<String, List<String>>()
-        val resolver = PropertyResolver(lookup = { k -> valuesByKey[k].orEmpty() })
+        val sourcesByKey = LinkedHashMap<String, List<SourceValue>>()
+        val resolver = PropertyResolver(lookup = { k -> sourcesByKey[k].orEmpty().map { it.value } })
 
         for ((key, entryList) in allEntries) {
-            val resolvedValues = ArrayList<String>()
+            val resolvedValues = ArrayList<SourceValue>()
             for (entry in entryList) {
                 val resolvedValue = resolveEntry(entry, resolver)
-                resolvedValues.add(resolvedValue)
+                resolvedValues.add(
+                    SourceValue(
+                        sourceId = entry.sourceId,
+                        priority = sourcePriorityById[entry.sourceId] ?: 0,
+                        value = resolvedValue
+                    )
+                )
                 orderedEntries.add(key to resolvedValue)
             }
-            valuesByKey[key] = resolvedValues
+            sourcesByKey[key] = resolvedValues
         }
 
-        snapshotRef.set(Snapshot(orderedEntries, valuesByKey))
-        LOG.info("Config reload complete: ${valuesByKey.size} keys from ${sources.size} sources")
+        snapshotRef.set(Snapshot(orderedEntries, sourcesByKey))
+        LOG.info("Config reload complete: ${sourcesByKey.size} keys from ${sources.size} sources")
     }
 
     override fun foreach(keyFilter: (String) -> Boolean, action: (String, String) -> Unit) {

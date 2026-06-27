@@ -16,7 +16,7 @@ import org.junit.AssumptionViolatedException
  * covering all enum resolution cases from the enum-resolution spec — and verifies
  * that every field in the resulting [ObjectModel] has the expected options.
  *
- * Cases covered (see `.spec/enum-resolution/requirements.md`):
+ * Cases covered:
  * - Case 1a: enum-typed field, default name serialization → STRING, constant names
  * - Case 1b: @JsonValue on getter → field's type, field's values
  * - Case 1b: @EnumValue on field → field's type, field's values

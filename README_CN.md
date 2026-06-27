@@ -154,7 +154,9 @@ EasyYapi 使用分层配置系统，多个配置源按优先级顺序处理：
 | 优先级 | 来源 | 说明 |
 |--------|------|------|
 | 最高 | Runtime | 执行期间设置的编程覆盖 |
-| | 本地文件 | 项目根目录下的 `.easy.api.config` |
+| | 项目规则 | `<project>/.easyapi/*.rules`（3.0 文件夹模型） |
+| | 全局规则 | `~/.easyapi/*.rules`（应用于本机所有项目） |
+| | 旧版项目文件 | 项目根目录（及祖先目录）下的 `.easy.api.config*` |
 | | 扩展 | 插件扩展配置（Swagger、校验等） |
 | | 远程 | 从 URL 获取的配置文件 |
 | 最低 | 内置 | 默认捆绑配置 |
@@ -165,6 +167,31 @@ EasyYapi 使用分层配置系统，多个配置源按优先级顺序处理：
 - **指令** — 控制解析行为（`#resolve`、`#ignore` 等）
 - **规则引擎** — Groovy 脚本、正则表达式、注解表达式、标签表达式
 - **远程配置** — 从 URL 加载共享配置（如 Swagger、javax.validation 预设）
+
+### 什么时候需要自定义规则？
+
+EasyApi 开箱即用即可理解标准 HTTP 框架（Spring MVC、WebFlux、JAX-RS、Feign）——**绝大多数项目无需自定义规则**。当存在扫描器无法感知的自定义框架行为时（例如某个 `jakarta.servlet.Filter` 要求一个请求头，或某个 `ResponseBodyAdvice` 将每个响应包装成统一信封），可使用内置 AI 助手或外部 skill 来检测并生成对应规则。完整自定义模式目录见[规则编写指南](src/main/resources/docs/knowledge-base/rule-guide.md)。
+
+## Skills
+
+EasyYapi 提供了一个外部 skill，让你喜欢的 AI 编程助手（Trae、Cursor、Cline、Continue 等）使用与内置助手相同的知识库来编写 EasyApi 规则文件。
+
+### 安装 skill
+
+```bash
+npx skills add tangcent/easy-yapi -g -y
+```
+
+该命令会全局安装 [`easy-yapi-assistant`](skills/easy-yapi-assistant/SKILL.md) skill。安装后，当你要求添加或修改 EasyApi 规则时，AI 助手会自动调用它。
+
+### 两种 AI 辅助编写规则的方式
+
+| 方式 | 运行位置 | 适用场景 |
+|------|----------|----------|
+| **内置 Rules 标签页 Chat / Magic** | IntelliJ 内（Settings → EasyApi → Rules → Chat / Magic） | 希望一切在 IntelliJ 内完成；agent 可调用 PSI 工具检查项目。 |
+| **外部 skill** | 任何具备文件访问能力的 AI 编程助手 | 已投入外部 AI 工作流的用户；助手使用自身的文件/PSI 访问能力。 |
+
+两种方式都读取同一份 [`docs/knowledge-base/rule-guide.md`](src/main/resources/docs/knowledge-base/rule-guide.md)，因此生成的规则内容保持一致。
 
 ## 开发
 
