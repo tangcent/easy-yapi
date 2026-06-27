@@ -63,7 +63,7 @@ yields `[user, admin]`.
 
 ## Rule Key Catalog
 
-Every key below is sourced from [RuleKeys.kt](../../main/kotlin/com/itangcent/easyapi/rule/RuleKeys.kt) and matches the output of the `list_rule_keys` AI tool.
+Every key below is sourced from [RuleKeys.kt](../../src/main/kotlin/com/itangcent/easyapi/rule/RuleKeys.kt) and matches the output of the `list_rule_keys` AI tool.
 
 ### API metadata
 

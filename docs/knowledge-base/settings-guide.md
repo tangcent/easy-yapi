@@ -172,7 +172,7 @@ Formerly the **Other (AI Assistant)** tab; promoted to a top-level tab in the
 | API Key | *(stored in PasswordSafe)* | API key for the provider. Stored securely in IntelliJ's `PasswordSafe`. Required for `OPENAI`, `ANTHROPIC`, `GEMINI`, `AZURE_OPENAI`. Not required for `OLLAMA`. | *(not in Settings — stored in PasswordSafe)* |
 | Model | *(provider default)* | Model name (e.g., `gpt-4`, `claude-3-5-sonnet`, `llama3`) | `aiModel` |
 | Request Timeout | `60` (seconds) | Per-request timeout for AI API calls | `aiRequestTimeoutSec` |
-| Max Agent Steps | `8` | Maximum number of Perception-Reasoning-Action steps per turn | `aiMaxAgentSteps` |
+| Max Requests | `100` | The maximum number of requests to allow per-turn when using an agent. When the limit is reached, will ask to confirm to continue. | `aiMaxRequests` |
 
 ### Test Connection button
 
