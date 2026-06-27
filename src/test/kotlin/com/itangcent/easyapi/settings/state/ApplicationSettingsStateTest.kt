@@ -167,7 +167,7 @@ class ApplicationSettingsStateTest {
         assertEquals("", s.aiModel)
         assertEquals(60, s.aiRequestTimeoutSec)
         assertEquals(100, s.aiMaxRequests)
-        assertEquals(0, s.aiContextWindow)
+        assertEquals(128_000, s.aiContextWindow)
     }
 
     @Test

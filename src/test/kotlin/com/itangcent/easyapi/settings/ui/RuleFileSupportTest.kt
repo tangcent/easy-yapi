@@ -8,7 +8,11 @@ import java.nio.file.Files
 
 /**
  * Unit tests for the pure-logic helpers in [RuleFileSupport]
- * (`formatSize`, `nameOf`, `fileSize`, `nextAvailableName`).
+ * (`nameOf`, `fileSize`, `nextAvailableName`).
+ *
+ * Byte-size formatting (`formatSize`) has been consolidated into
+ * [com.itangcent.easyapi.util.text.ByteSizeUtil] — see
+ * [com.itangcent.easyapi.util.text.ByteSizeUtilTest] for coverage.
  *
  * The UI-touched helpers (`copyPathToClipboard`, `deleteFile`,
  * `installRowInteractions`) require an IntelliJ [com.intellij.openapi.project.Project]
@@ -19,37 +23,6 @@ class RuleFileSupportTest {
 
     @get:Rule
     val tempFolder = TemporaryFolder()
-
-    // --- formatSize ---
-
-    @Test
-    fun formatSizeBytesUnderOneKb() {
-        assertEquals("0 B", RuleFileSupport.formatSize(0))
-        assertEquals("1 B", RuleFileSupport.formatSize(1))
-        assertEquals("512 B", RuleFileSupport.formatSize(512))
-        assertEquals("1023 B", RuleFileSupport.formatSize(1023))
-    }
-
-    @Test
-    fun formatSizeKilobytes() {
-        assertEquals("1.0 KB", RuleFileSupport.formatSize(1024))
-        assertEquals("1.5 KB", RuleFileSupport.formatSize(1536))
-        assertEquals("512.0 KB", RuleFileSupport.formatSize(512 * 1024))
-    }
-
-    @Test
-    fun formatSizeMegabytes() {
-        val oneMb = 1024L * 1024
-        assertEquals("1.0 MB", RuleFileSupport.formatSize(oneMb))
-        assertEquals("2.5 MB", RuleFileSupport.formatSize(oneMb * 5 / 2))
-    }
-
-    @Test
-    fun formatSizeGigabytes() {
-        val oneGb = 1024L * 1024 * 1024
-        assertEquals("1.0 GB", RuleFileSupport.formatSize(oneGb))
-        assertEquals("2.0 GB", RuleFileSupport.formatSize(oneGb * 2))
-    }
 
     // --- nameOf ---
 
