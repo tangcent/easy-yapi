@@ -5,8 +5,11 @@ import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
-import kotlinx.coroutines.delay
+import com.itangcent.easyapi.testFramework.waitUntil
+import com.itangcent.easyapi.testFramework.waitUntilNotEmpty
 import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -46,6 +49,26 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     override fun createConfigReader() = TestConfigReader.empty(project)
 
+    /**
+     * Waits until the index holds a non-empty endpoint list.
+     *
+     * A full scan may mark the cache valid before PSI is fully resolved, finding
+     * 0 endpoints. When that happens we re-request a scan so the index is
+     * repopulated once PSI resolves. The initial [waitUntil] on [ApiIndex.isReady]
+     * bounds the wait for the first scan, avoiding a hang on `endpoints()`'
+     * internal `awaitCacheReady()` if a scan fails before populating the cache.
+     */
+    private suspend fun waitForEndpoints(timeout: Duration = 30.seconds): List<ApiEndpoint> {
+        waitUntil(timeout = timeout) { apiIndex.isReady() }
+        return waitUntilNotEmpty(timeout = timeout) {
+            val eps = apiIndex.endpoints()
+            if (eps.isEmpty() && apiIndex.isValid()) {
+                apiIndexManager.requestScan()
+            }
+            eps
+        }
+    }
+
     fun testGetInstance() {
         assertNotNull("ApiIndexManager should be retrievable", apiIndexManager)
         assertSame("Should return same instance", apiIndexManager, ApiIndexManager.getInstance(project))
@@ -54,10 +77,8 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testRequestScan() = runTest {
         apiIndexManager.requestScan()
 
-        apiIndex.waitUntilValid()
+        val endpoints = waitForEndpoints()
 
-        // endpoints() awaits cacheReady, so no need for delay
-        val endpoints = apiIndex.endpoints()
         assertTrue("Cache should be valid after scan", apiIndex.isValid())
         assertTrue("Cache should have endpoints", endpoints.isNotEmpty())
     }
@@ -65,12 +86,12 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testMultipleRequestScanDoesNotDuplicate() = runTest {
         apiIndexManager.requestScan()
 
-        apiIndex.waitUntilValid()
-
-        val firstCount = apiIndex.endpoints().size
+        val firstCount = waitForEndpoints().size
 
         apiIndexManager.requestScan()
-        delay(2000)
+        // updateEndpoints replaces the cache (it does not append), so a second scan
+        // must not duplicate. Wait until the count settles back to firstCount.
+        waitUntil { apiIndex.endpoints().size == firstCount }
 
         val secondCount = apiIndex.endpoints().size
 
@@ -138,9 +159,7 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testStartAndStop() = runTest {
         apiIndexManager.requestScan()
 
-        apiIndex.waitUntilValid()
-
-        val endpoints = apiIndex.endpoints()
+        val endpoints = waitForEndpoints()
         assertTrue("Cache should have endpoints after start and scan", endpoints.isNotEmpty())
 
         apiIndexManager.stop()
@@ -159,9 +178,7 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testEndpointProperties() = runTest {
         apiIndexManager.requestScan()
 
-        apiIndex.waitUntilValid()
-
-        val endpoints = apiIndex.endpoints()
+        val endpoints = waitForEndpoints()
         assertTrue("Should have endpoints", endpoints.isNotEmpty())
 
         val endpoint = endpoints.first()
@@ -175,17 +192,9 @@ class ApiIndexManagerTest : EasyApiLightCodeInsightFixtureTestCase() {
         apiIndexManager.requestScan()
         apiIndexManager.requestScan()
 
-        apiIndex.waitUntilValid()
+        val endpoints = waitForEndpoints()
 
         assertTrue("Cache should be valid after scan", apiIndex.isValid())
-
-        val endpoints = apiIndex.endpoints()
         assertTrue("Should have endpoints", endpoints.isNotEmpty())
-    }
-}
-
-private suspend fun ApiIndex.waitUntilValid(deadline: Long = System.currentTimeMillis() + 15_000) {
-    while (!isValid() && System.currentTimeMillis() < deadline) {
-        delay(200)
     }
 }
