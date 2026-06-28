@@ -13,14 +13,19 @@ import com.intellij.util.ui.FormBuilder
 import com.intellij.ui.JBIntSpinner
 import com.intellij.util.ui.ListTableModel
 import com.intellij.util.ui.UIUtil
-import com.intellij.ide.passwordSafe.PasswordSafe
-import com.intellij.openapi.application.ApplicationManager
+import com.itangcent.easyapi.ai.AiApiKeyStore
+import com.itangcent.easyapi.ai.AIService
+import com.itangcent.easyapi.ai.AIServiceFactory
 import com.itangcent.easyapi.ai.AiProvider
+import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.TokenSizeUtils
 import com.itangcent.easyapi.ai.credentials.CredentialScanner
 import com.itangcent.easyapi.ai.credentials.DefaultCredentialScanner
 import com.itangcent.easyapi.ai.credentials.DetectionResult
 import com.itangcent.easyapi.cache.AppCacheRepository
 import com.itangcent.easyapi.cache.ProjectCacheRepository
+import com.itangcent.easyapi.core.threading.backgroundAsync
+import com.itangcent.easyapi.core.threading.swingAsync
 import com.itangcent.easyapi.exporter.postman.PostmanApiClient
 import com.itangcent.easyapi.exporter.postman.Workspace
 import com.itangcent.easyapi.exporter.postman.asCached
@@ -1078,15 +1083,15 @@ class AiAssistantSection : SettingsPanel {
     /**
      * Dropdown option for the Context Window combo. [tokens] is the stored
      * value; [label] is shown in the UI. The presets themselves live in
-     * [com.itangcent.easyapi.ai.TokenSizeUtils].
+     * [TokenSizeUtils].
      */
     data class ContextWindowOption(val tokens: Int, val label: String) {
         override fun toString(): String = label
     }
 
     private val contextWindowOptions: Array<ContextWindowOption> =
-        com.itangcent.easyapi.ai.TokenSizeUtils.presets
-            .map { label -> ContextWindowOption(com.itangcent.easyapi.ai.TokenSizeUtils.parse(label), label) }
+        TokenSizeUtils.presets
+            .map { label -> ContextWindowOption(TokenSizeUtils.parse(label), label) }
             .toTypedArray()
 
     private val contextWindowCombo = ComboBox(contextWindowOptions).apply {
@@ -1254,14 +1259,14 @@ class AiAssistantSection : SettingsPanel {
     /**
      * Reads the current context window value from the combo. Handles preset
      * selections, raw integer strings, and "8k"/"1m" style shorthand via
-     * [com.itangcent.easyapi.ai.TokenSizeUtils.parse].
+     * [TokenSizeUtils.parse].
      */
     private fun contextWindowValue(): Int {
         val item = contextWindowCombo.selectedItem ?: return 0
         return when (item) {
             is ContextWindowOption -> item.tokens
             is Number -> item.toInt()
-            is String -> com.itangcent.easyapi.ai.TokenSizeUtils.parse(item)
+            is String -> TokenSizeUtils.parse(item)
             else -> 0
         }
     }
@@ -1274,8 +1279,8 @@ class AiAssistantSection : SettingsPanel {
      * Factory seam for the AI service. Production uses [AIServiceFactory.create];
      * tests override this to inject a fake.
      */
-    internal var aiServiceFactory: (com.itangcent.easyapi.ai.AiSettings) -> com.itangcent.easyapi.ai.AIService =
-        { settings -> com.itangcent.easyapi.ai.AIServiceFactory.create(settings) }
+    internal var aiServiceFactory: (AiSettings) -> AIService =
+        { settings -> AIServiceFactory.create(settings) }
 
     /**
      * Result handler seam (mirrors [detectHandler]).
@@ -1287,7 +1292,7 @@ class AiAssistantSection : SettingsPanel {
 
     private fun onTestConnectionClicked() {
         // Build AiSettings from the on-screen fields (not from persisted settings).
-        val settings = com.itangcent.easyapi.ai.AiSettings(
+        val settings = AiSettings(
             provider = currentProvider(),
             baseUrl = baseUrlField.text.trim(),
             apiKey = String(apiKeyField.password),
@@ -1300,10 +1305,10 @@ class AiAssistantSection : SettingsPanel {
         testConnectionButton.text = "Testing…"
         setStatus("Testing connection…", ok = true)
 
-        com.itangcent.easyapi.core.threading.backgroundAsync {
+        backgroundAsync {
             val result = runCatching { aiServiceFactory(settings).testConnection() }
                 .getOrElse { Result.failure(it) }
-            com.itangcent.easyapi.core.threading.swingAsync {
+            swingAsync {
                 testConnectionButton.isEnabled = true
                 testConnectionButton.text = previousLabel
                 if (testConnectionResultHandler != null) {
@@ -1351,15 +1356,15 @@ class AiAssistantSection : SettingsPanel {
         val previousLabel = autoDetectButton.text
         autoDetectButton.text = "Detecting…"
 
-        com.itangcent.easyapi.core.threading.backgroundAsync {
+        backgroundAsync {
             val result = runCatching { credentialScanner.scan() }
                 .getOrElse {
-                    com.itangcent.easyapi.core.threading.swingAsync {
+                    swingAsync {
                         setStatus("Auto-detect failed: ${it.message}", ok = false)
                     }
                     DetectionResult.Miss
                 }
-            com.itangcent.easyapi.core.threading.swingAsync {
+            swingAsync {
                 autoDetectButton.isEnabled = true
                 autoDetectButton.text = previousLabel
                 if (detectHandler != null) {
@@ -1442,9 +1447,7 @@ class AiAssistantSection : SettingsPanel {
         setContextWindowValue(s.aiContextWindow)
         updateContextWindowTooltip(provider)
         // API key from PasswordSafe
-        apiKeyField.text = passwordSafe()
-            .getPassword(null, com.itangcent.easyapi.ai.AiSettings::class.java, "ai-api-key")
-            ?.toString() ?: ""
+        apiKeyField.text = AiApiKeyStore.loadApiKey()
         // Reset edit flags AFTER writing fields — the document listeners above would
         // have set them to true.
         userEditedBaseUrl = false
@@ -1463,8 +1466,7 @@ class AiAssistantSection : SettingsPanel {
         settings.aiContextWindow = contextWindowValue()
         // API key to PasswordSafe
         val key = String(apiKeyField.password)
-        passwordSafe()
-            .storePassword(null, com.itangcent.easyapi.ai.AiSettings::class.java, "ai-api-key", key)
+        AiApiKeyStore.saveApiKey(key)
     }
 
     override fun isModified(settings: Settings?): Boolean {
@@ -1477,9 +1479,7 @@ class AiAssistantSection : SettingsPanel {
         if ((maxAgentStepsSpinner.value as Number).toInt() != s.aiMaxRequests) return true
         if (contextWindowValue() != s.aiContextWindow) return true
         // Password field — compare against PasswordSafe
-        val storedKey = passwordSafe()
-            .getPassword(null, com.itangcent.easyapi.ai.AiSettings::class.java, "ai-api-key")
-            ?.toString() ?: ""
+        val storedKey = AiApiKeyStore.loadApiKey()
         if (String(apiKeyField.password) != storedKey) return true
         return false
     }
@@ -1513,9 +1513,6 @@ class AiAssistantSection : SettingsPanel {
         override fun removeUpdate(e: javax.swing.event.DocumentEvent?) = onChange()
         override fun changedUpdate(e: javax.swing.event.DocumentEvent?) = onChange()
     }
-
-    private fun passwordSafe(): PasswordSafe =
-        ApplicationManager.getApplication().getService(PasswordSafe::class.java)
 
     // --- Test helpers (used by AiAssistantSectionTest) ---
 
