@@ -5,15 +5,25 @@ import java.io.File
 
 /**
  * Asserts that the external EasyYapi assistant skill ships in the
- * repository and points at the authoritative documentation and the rule
- * key catalog. If a future doc move breaks any pointer, this test fails
- * before the release.
+ * repository and mirrors the built-in agent's knowledge base and
+ * rule-key catalog. If a future doc move breaks any pointer, this test
+ * fails before the release.
+ *
+ * The `docs/knowledge-base/` folder at the repo root is the single source
+ * of truth; the skill's bundled `docs/` folder and the plugin resources
+ * should both carry verbatim copies (kept in sync by the `syncKnowledgeBase`
+ * Gradle task).
  */
 class EasyYapiAssistantSkillTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    private val skillFile: File by lazy {
-        File(System.getProperty("user.dir")).resolve("skills/easy-yapi-assistant/SKILL.md")
-    }
+    private val repoRoot: File by lazy { File(System.getProperty("user.dir")) }
+
+    private val skillDir: File by lazy { repoRoot.resolve("skills/easy-yapi-assistant") }
+
+    /** Bundled knowledge-base docs live under `docs/` next to SKILL.md. */
+    private val skillDocsDir: File by lazy { skillDir.resolve("docs") }
+
+    private val skillFile: File by lazy { skillDir.resolve("SKILL.md") }
 
     fun testSkillFileExists() {
         assertTrue(
@@ -25,8 +35,12 @@ class EasyYapiAssistantSkillTest : EasyApiLightCodeInsightFixtureTestCase() {
     fun testSkillBodyReferencesRuleGuide() {
         val body = skillBody()
         assertTrue(
-            "skill must reference docs/knowledge-base/rule-guide.md (the authoritative rule guide)",
-            body.contains("docs/knowledge-base/rule-guide.md")
+            "skill must reference the bundled rule-guide.md (the authoritative rule guide)",
+            body.contains("rule-guide.md")
+        )
+        assertTrue(
+            "skill must document the syncKnowledgeBase Gradle task that keeps the bundled copy in sync",
+            body.contains("syncKnowledgeBase")
         )
     }
 
@@ -50,6 +64,48 @@ class EasyYapiAssistantSkillTest : EasyApiLightCodeInsightFixtureTestCase() {
         val (name, description) = parseFrontmatter(skillBody())
         assertTrue("frontmatter `name` must be non-empty", name.isNotBlank())
         assertTrue("frontmatter `description` must be non-empty", description.isNotBlank())
+    }
+
+    /**
+     * Every knowledge-base page must be bundled verbatim under the skill's
+     * `docs/` folder so the external skill mirrors the built-in agent's
+     * `get_plugin_doc` surface.
+     */
+    fun testSkillBundlesFullKnowledgeBase() {
+        val canonicalDir = repoRoot.resolve("docs/knowledge-base")
+        assertTrue("canonical docs/knowledge-base/ must exist", canonicalDir.isDirectory)
+        val expected = canonicalDir.listFiles { f -> f.isFile && f.name.endsWith(".md") }
+            ?.map { it.name } ?: emptyList()
+        assertTrue("knowledge-base must contain at least rule-guide.md", expected.contains("rule-guide.md"))
+        assertTrue("skill docs/ subfolder must exist", skillDocsDir.isDirectory)
+        expected.forEach { name ->
+            val bundled = skillDocsDir.resolve(name)
+            assertTrue("skill must bundle knowledge-base page in docs/: $name", bundled.isFile)
+            assertEquals(
+                "skill's docs/$name must match the canonical copy verbatim (run ./gradlew syncKnowledgeBase)",
+                canonicalDir.resolve(name).readText(),
+                bundled.readText()
+            )
+        }
+    }
+
+    /**
+     * The plugin JAR resources must also carry the verbatim knowledge base.
+     */
+    fun testPluginResourcesMatchCanonicalKnowledgeBase() {
+        val canonicalDir = repoRoot.resolve("docs/knowledge-base")
+        val resourceDir = repoRoot.resolve("src/main/resources/docs/knowledge-base")
+        assertTrue("plugin resource dir must exist: $resourceDir", resourceDir.isDirectory)
+        canonicalDir.listFiles { f -> f.isFile && f.name.endsWith(".md") }
+            ?.forEach { canonical ->
+                val res = resourceDir.resolve(canonical.name)
+                assertTrue("plugin resources must include ${canonical.name}", res.isFile)
+                assertEquals(
+                    "plugin resource ${canonical.name} must match canonical (run ./gradlew syncKnowledgeBase)",
+                    canonical.readText(),
+                    res.readText()
+                )
+            }
     }
 
     // -------------------------------------------------------------------------

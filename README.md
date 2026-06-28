@@ -191,7 +191,7 @@ This installs the [`easy-yapi-assistant`](skills/easy-yapi-assistant/SKILL.md) s
 | **Built-in Rules-tab Chat / Magic** | Inside IntelliJ (Settings → EasyApi → Rules → Chat / Magic) | Users who want everything inside IntelliJ; the agent can call PSI tools to inspect the project. |
 | **External skill** | Any AI coding assistant with file access | Users already invested in an external AI workflow; the assistant uses its own file/PSI access. |
 
-Both approaches read the same [`docs/knowledge-base/rule-guide.md`](src/main/resources/docs/knowledge-base/rule-guide.md), so the rule content they produce is consistent.
+The built-in assistant reads [`docs/knowledge-base/rule-guide.md`](src/main/resources/docs/knowledge-base/rule-guide.md) from the plugin, while the external skill bundles its own copy (`skills/easy-yapi-assistant/rule-guide.md`) — the repo file isn't available after `npx skills add`, which publishes only the `skills/easy-yapi-assistant/` folder. The two copies are kept in sync, so both approaches produce consistent rule content.
 
 ## Development
 

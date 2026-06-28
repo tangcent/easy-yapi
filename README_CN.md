@@ -191,7 +191,7 @@ npx skills add tangcent/easy-yapi -g -y
 | **内置 Rules 标签页 Chat / Magic** | IntelliJ 内（Settings → EasyApi → Rules → Chat / Magic） | 希望一切在 IntelliJ 内完成；agent 可调用 PSI 工具检查项目。 |
 | **外部 skill** | 任何具备文件访问能力的 AI 编程助手 | 已投入外部 AI 工作流的用户；助手使用自身的文件/PSI 访问能力。 |
 
-两种方式都读取同一份 [`docs/knowledge-base/rule-guide.md`](src/main/resources/docs/knowledge-base/rule-guide.md)，因此生成的规则内容保持一致。
+内置助手从插件内读取 [`docs/knowledge-base/rule-guide.md`](src/main/resources/docs/knowledge-base/rule-guide.md)，而外部 skill 捆绑了它自己的副本（`skills/easy-yapi-assistant/rule-guide.md`）——仓库文件在 `npx skills add` 后并不可用，因为该命令只发布 `skills/easy-yapi-assistant/` 目录。两份副本保持同步，因此两种方式生成的规则内容保持一致。
 
 ## 开发
 
