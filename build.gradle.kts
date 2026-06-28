@@ -175,3 +175,77 @@ kover {
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Knowledge-base sync
+//
+// `docs/knowledge-base/` at the repo root is the single source of truth for
+// the plugin documentation consumed by both AI rule-authoring surfaces:
+//   1. The built-in IntelliJ agent — reads it from the plugin JAR at runtime
+//      via the `get_plugin_doc` tool (every *.md under that folder).
+//   2. The external `easy-yapi-assistant` skill — ships a verbatim copy next
+//      to its SKILL.md so it works after `npx skills add` (which publishes
+//      only the skills/ folder, not the repo tree).
+//
+// This task copies the canonical files into both destinations. It is wired
+// into `processResources` so the JAR always ships fresh docs, and can be run
+// standalone (`./gradlew syncKnowledgeBase`) to refresh the git-tracked skill
+// copy before commit. The copies are content-equality-checked, so an
+// unchanged source produces no git diff (idempotent).
+// ─────────────────────────────────────────────────────────────────────────────
+val knowledgeBaseSourceDir = file("docs/knowledge-base")
+val knowledgeBaseResourceDir = file("src/main/resources/docs/knowledge-base")
+// The skill bundles its docs under a `docs/` subfolder next to SKILL.md to
+// keep the skill root tidy (SKILL.md + docs/ + scripts/).
+val knowledgeBaseSkillDir = file("skills/easy-yapi-assistant/docs")
+
+val syncKnowledgeBase by tasks.registering {
+    group = "documentation"
+    description = "Sync docs/knowledge-base/*.md into the plugin resources and the easy-yapi-assistant skill folder."
+
+    // Re-run whenever any source doc changes (Gradle up-to-date checks).
+    val sourceFiles = fileTree(knowledgeBaseSourceDir) { include("*.md") }
+    inputs.files(sourceFiles)
+    // Declared outputs so the task is considered up-to-date when inputs are
+    // unchanged — keeping the destinations git-clean.
+    outputs.files(fileTree(knowledgeBaseResourceDir) { include("*.md") })
+    outputs.files(fileTree(knowledgeBaseSkillDir) { include("*.md") })
+    outputs.upToDateWhen { true }
+
+    // Resolve destination directories once, at configuration time.
+    val pluginDestDir: File = knowledgeBaseResourceDir
+    val skillDestDir: File = knowledgeBaseSkillDir
+
+    doLast {
+        val sources = sourceFiles.files.sortedBy { it.name }
+        logger.lifecycle("Syncing ${sources.size} knowledge-base doc(s) to plugin resources and skill folder:")
+        sources.forEach { source ->
+            val name = source.name
+            // Plugin resources: every knowledge-base doc ships in the JAR
+            // (the get_plugin_doc tool exposes overview/index/rule-guide/
+            // settings-guide/usage-guide/easyapi-script-reference).
+            copyFileIfDifferent(source, File(pluginDestDir, name))
+            // Skill folder: all canonical knowledge-base pages are bundled so
+            // the external skill mirrors the built-in agent's `get_plugin_doc`
+            // surface as closely as possible (works after `npx skills add`,
+            // which publishes only the skills/ folder). They live under a
+            // `docs/` subfolder to keep the skill root tidy.
+            copyFileIfDifferent(source, File(skillDestDir, name))
+            logger.lifecycle("  - $name")
+        }
+    }
+}
+
+/** Copies only when content differs, so an unchanged source stays git-clean. */
+fun copyFileIfDifferent(source: File, target: File) {
+    target.parentFile.mkdirs()
+    if (target.isFile && target.readText() == source.readText()) {
+        return
+    }
+    source.copyTo(target, overwrite = true)
+}
+
+// Ensure the JAR always ships docs synced from the canonical source.
+tasks.named("processResources") {
+    dependsOn("syncKnowledgeBase")
+}

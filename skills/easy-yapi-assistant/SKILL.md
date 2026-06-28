@@ -5,10 +5,17 @@ description: "Help author EasyApi rule files (.easyapi/ folder). Invoke when the
 
 # EasyApi Rule Authoring Assistant
 
-This skill helps you write or modify EasyApi rule files for the user's
-project. EasyApi rules are key=value entries in `.rules` / `.properties`
-files that the EasyApi IntelliJ plugin reads to customise API export
-(YApi/Postman/Markdown), field naming, annotations, and more.
+This skill is the **external mirror of EasyApi's built-in rule-authoring
+agent**. It helps you write or modify EasyApi rule files (`.rules` /
+`.properties` files in `.easyapi/`) that the EasyApi IntelliJ plugin reads to
+customise API export (YApi/Postman/Markdown), field naming, annotations, and
+more.
+
+It runs the **same perceive → reason → act loop** as the built-in agent and
+exposes the **same capability surface**: the same rule guide and key catalog,
+and CLI equivalents of every built-in perception tool. The only difference is
+*how* each capability is delivered — the built-in agent calls IntelliJ PSI
+tools; you read files and search the codebase directly.
 
 ## When to Use
 
@@ -20,41 +27,43 @@ Invoke this skill when:
 - The user mentions `easy.api`, `EasyApi`, or `easyapi` in a request about
   config or rule authoring.
 
-## Self-Contained References (read these first)
+## Bundled Knowledge Base (read these first — they ARE the built-in agent's docs)
 
-This skill ships with **bundled reference files** alongside `SKILL.md` so it
-works after `npx skills add tangcent/easy-yapi -g -y` even when the easy-yapi
-repo / plugin JAR is not present in the user's project. Always read these
-first — do **not** rely on memory or guess syntax:
+This skill ships the **same knowledge-base pages** the plugin bundles for its
+built-in agent's `get_plugin_doc` tool, copied verbatim into the bundled
+`docs/` folder next to `SKILL.md`. They are kept in sync by the
+`syncKnowledgeBase` Gradle task in the easy-yapi repo, so the rule content the
+built-in and external agents produce is identical. Always read the relevant
+page first — do **not** rely on memory or guess syntax.
 
-- `rule-guide.md` — the rule file format, filter syntax, expression prefixes,
-  Groovy binding reference, recipes, and the Custom-Pattern Catalog.
-- `rule-keys.md` — the complete rule-key catalog (snapshot of `RuleKeys.kt`).
+| Bundled file | Built-in `get_plugin_doc` name | What it covers |
+|--------------|--------------------------------|----------------|
+| `docs/rule-guide.md` | `rule-guide` | **The source of truth.** Rule file format, filter syntax, expression prefixes, Groovy binding reference, recipes, and the Custom-Pattern Catalog. |
+| `docs/index.md` | `index` | Knowledge-base index / topic map. |
+| `docs/README.md` | `overview` | Overview of EasyApi concepts. |
+| `docs/settings-guide.md` | `settings-guide` | Plugin settings reference. |
+| `docs/usage-guide.md` | `usage-guide` | Usage guidance. |
+| `docs/easyapi-script-reference.md` | `easyapi-script-reference` | Scripting reference. |
+| `docs/rule-keys.md` | *(built-in `list_rule_keys` tool)* | Complete rule-key catalog (snapshot of `RuleKeys.kt`). |
 
-> Repo-only references that are **not** available after install (and must
-> not be depended on at runtime): `docs/knowledge-base/*`,
-> `src/main/resources/ai/agent-preamble.md`, and
-> `src/main/kotlin/.../RuleKeys.kt`. The critical content from the agent
-> preamble is inlined below under "Critical Rule File Format" and "Critical
-> Quality Rules" so you don't need the original file.
+## Toolset — CLI mirrors of the built-in agent tools
 
-## Bundled Scripts (CLI mirrors of the built-in AI tools)
+The built-in agent has a fixed set of perception/action tools. You provide
+equivalent capability by reading files and searching the codebase. Use the
+mapping below so your workflow tracks the built-in agent's.
 
-The skill ships with **3 shell scripts** in `scripts/` that mirror the
-perception tools the built-in IntelliJ agent has. Run them from the project
+### EasyApi-domain tools (bundled as `scripts/`)
+
+These mirror the EasyApi-specific perception tools. Run them from the project
 root (the CWD when the assistant is invoked). They auto-detect the project
-root and `~/.easyapi/` so you never need to hard-code paths.
+root and `~/.easyapi/` so you never hard-code paths.
 
-Only EasyApi-domain-specific tools are mirrored (locating and resolving
-`.easyapi/` rule files across project + global scopes). General codebase
-perception — finding classes by annotation or supertype — is left to your
-own file/grep capabilities.
-
-| Script | Mirrors built-in tool | What it does |
-|--------|-----------------------|--------------|
-| `scripts/list_rule_files.sh` | *(ambient: `RuleFileResolver.listRuleFiles`)* | Lists every `.properties` / `.rules` file in `<project>/.easyapi/` and `~/.easyapi/`, labeled `[global]` / `[project]`. |
-| `scripts/read_rule_file.sh <name>` | `read_rule_file` | Reads a rule file by name. Supports `global:` / `project:` scope prefixes. Resolves against tracked `.easyapi/` dirs — never guesses home paths. |
-| `scripts/get_existing_rules_for_key.sh <key> [<key>...]` | `get_existing_rules_for_key` | Finds all configured values for a key across project + global rule files. Prints `file:line: <line content>` so you can reason about precedence. |
+| Built-in tool | Your equivalent | What it does |
+|---------------|-----------------|--------------|
+| `list_rule_keys` | Read bundled `docs/rule-keys.md` | Lists every supported rule key (≡ `RuleKeys.kt` snapshot). |
+| `get_plugin_doc` | Read the bundled `*.md` pages above | Reads a knowledge-base page. |
+| `read_rule_file` | `scripts/read_rule_file.sh <name>` | Reads a rule file by name. Supports `global:` / `project:` scope prefixes. Resolves against tracked `.easyapi/` dirs — never guesses home paths. |
+| `get_existing_rules_for_key` | `scripts/get_existing_rules_for_key.sh <key> [<key>...]` | Finds all configured values for a key across project + global rule files. Prints `file:line: <line content>` so you can reason about precedence. |
 
 **Usage examples:**
 ```bash
@@ -71,36 +80,79 @@ scripts/get_existing_rules_for_key.sh field.name
 scripts/get_existing_rules_for_key.sh api.tag method.additional.header
 ```
 
-> Scripts that are **not** provided (and why):
-> - `list_rule_keys` → covered by bundled `rule-keys.md`.
-> - `get_plugin_doc` → covered by bundled `rule-guide.md`.
-> - `find_classes_by_annotation` / `find_classes_by_supertype` / `get_psi_class_info`
->   / `get_psi_method_info` → general codebase perception. You already have
->   file/grep capabilities to search source for annotations, supertypes, and
->   class/method structure. See Step 4 for the patterns to look for.
-> - `list_project_endpoints` → needs IntelliJ's `ApiIndex` cache (not
->   available from CLI).
-> - `ask_clarification` → ask the user via your own UI.
-> - `propose_rule_content` / `write_rule_file` → you write directly to the
->   `.easyapi/` file (with diff confirmation — Step 7).
+### General codebase-perception tools (your file/grep capabilities)
+
+The built-in agent has PSI tools to inspect source. You use file reads +
+`rg`/`grep` instead. `rg` is assumed available (it ships with most AI coding
+assistants); fall back to `grep -rn` if it isn't.
+
+| Built-in tool | Your equivalent | Notes |
+|---------------|-----------------|-------|
+| `get_psi_class_info` | Read the class source file; or `rg` for its fields/methods | Find the file by simple name first (below), then read it. Resolve the FQN from the package + import. |
+| `get_psi_method_info` | Read the method in the class source file | For overloads, disambiguate by parameter count when you read it. |
+| `find_classes_by_annotation` | `rg -t java -t kt "<@AnnotationFqn or @Simple>" ` then resolve imports | Always confirm the FQN from the import / package — `@Simple` names collide. |
+| `find_classes_by_supertype` | `rg -t java -t kt "extends\\s+<Type>\\|implements\\s+.*<Type>"` then resolve imports | **The most common blind spot** — annotation-only scans miss inheritance-declared components (filters extending `OncePerRequestFilter`). Use BOTH this and the annotation scan. |
+| `list_project_endpoints` | *(no CLI equivalent — see below)* | Needs IntelliJ's `ApiIndex` cache, which is unavailable outside the IDE. |
+
+**Standard discovery patterns** (the Custom-Pattern Catalog signals to look
+for — full recipes are in bundled `docs/rule-guide.md`):
+```bash
+# Find servlet filters (extends OncePerRequestFilter, implements Filter)
+rg -t java -t kt "extends\s+OncePerRequestFilter|implements\s+.*Filter"
+
+# Find interceptors
+rg -t java -t kt "implements\s+HandlerInterceptor"
+
+# Find response wrappers (ResponseBodyAdvice)
+rg -t java -t kt "implements\s+ResponseBodyAdvice"
+
+# Find argument resolvers
+rg -t java -t kt "implements\s+HandlerMethodArgumentResolver"
+
+# Find annotated controllers (resolve imports to confirm the FQN)
+rg -t java -t kt "@RestController"
+```
+
+Always resolve imports / same-package usage to confirm the FQN, and exclude
+the supertype itself from results — these are the same nuances the built-in
+agent's PSI tools handle automatically.
+
+**`list_project_endpoints` has no CLI equivalent** — it needs the plugin's
+`ApiIndex` cache, which only exists inside a running IntelliJ. You do not
+need the endpoint list to author rules: rules are about the request/response
+*contract* (headers, param injection, response unwrapping), which you detect
+from source via the discovery patterns above. If the user references a
+specific endpoint, read the controller method's source directly.
+
+### Batch mode (mirror the built-in agent's batching)
+
+The built-in agent's `find_classes_by_*`, `get_psi_class_info`, and
+`get_existing_rules_for_key` accept arrays to probe multiple items in one
+request. Mirror this by batching your searches — e.g. one
+`rg -t java -t kt "extends\s+OncePerRequestFilter|implements\s+.*Filter|implements\s+HandlerInterceptor"`
+covers filters + interceptors in one pass instead of three, and
+`get_existing_rules_for_key.sh field.name field.ignore api.tag` checks three
+keys at once. Prefer the combined form.
 
 ## Workflow
 
 Work in a **perceive → reason → act** loop, mirroring the built-in agent.
 
-### Step 1: Read the Authoritative Rule Guide (Perceive)
+### Step 1: Perceive — read the authoritative guide
 
-Read the bundled `rule-guide.md` (next to this `SKILL.md`) first. It is the
+Read the bundled `docs/rule-guide.md` first. It is the
 source of truth for the rule file format, the full rule-key catalog, filter
-syntax, expression prefixes, recipes, and the Custom-Pattern Catalog.
+syntax, expression prefixes, recipes, and the Custom-Pattern Catalog. If the
+topic is settings/usage/scripting rather than rules, read the corresponding
+bundled page instead.
 
-### Step 2: Find the Right Rule Key (Perceive)
+### Step 2: Perceive — find the right rule key
 
-If the rule key isn't obvious from the guide, scan the bundled `rule-keys.md`
+If the rule key isn't obvious from the guide, scan the bundled `docs/rule-keys.md`
 catalog. **Never invent keys not in that catalog** — unknown keys are silently
 ignored by the plugin's config loader.
 
-### Step 3: Inspect Existing Rules (Perceive)
+### Step 3: Perceive — inspect existing rules
 
 Before proposing changes, read any existing rule files in:
 - `<project>/.easyapi/` (project-scoped rules — the 3.0 model).
@@ -121,58 +173,24 @@ scripts/read_rule_file.sh security.properties
 scripts/get_existing_rules_for_key.sh field.name api.tag
 ```
 
-This avoids duplicating or contradicting existing rules. EasyApi merges rules
-in priority order; the project folder overrides the global folder, which
-overrides the built-in rules.
+EasyApi merges rules in priority order; the project folder overrides the
+global folder, which overrides the built-in rules.
 
-### Step 4: Detect Custom Framework Patterns (Perceive)
+### Step 4: Perceive — detect custom framework patterns
 
 **Most projects do not need custom rules.** EasyApi understands standard HTTP
 frameworks (Spring MVC, WebFlux, JAX-RS, Feign) out of the box. Before
 proposing a rule, scan the project for the **Custom-Pattern Catalog** signals
-documented in the bundled `rule-guide.md` (section "Custom-Pattern Catalog").
+documented in the bundled `docs/rule-guide.md` (section "Custom-Pattern Catalog").
 
-**Use your own file/grep tools** to find inheritance-declared components
-(the most common blind spot — annotation-only scans miss them):
+Use the discovery patterns under "General codebase-perception tools" above —
+`find_classes_by_supertype` (your `extends`/`implements` scan) is the most
+common blind spot, since annotation-only scans miss inheritance-declared
+components. For each candidate, ask: *does it change the request/response
+contract invisibly?* If yes, apply the catalog recipe. If no, no rule is
+needed.
 
-```bash
-# Find servlet filters (extends OncePerRequestFilter, implements Filter)
-rg -t java -t kt "extends\s+OncePerRequestFilter|implements\s+.*Filter"
-
-# Find interceptors
-rg -t java -t kt "implements\s+HandlerInterceptor"
-
-# Find response wrappers
-rg -t java -t kt "implements\s+ResponseBodyAdvice"
-
-# Find argument resolvers
-rg -t java -t kt "implements\s+HandlerMethodArgumentResolver"
-
-# Find custom annotated controllers (resolve imports to confirm the FQN)
-rg -t java -t kt "@RestController"
-```
-
-Remember to resolve imports / same-package usage to confirm the FQN, and
-exclude the supertype itself from results — these are the same nuances you
-handle whenever searching any codebase.
-
-Additional signals to scan for:
-
-- `jakarta.servlet.Filter` / `javax.servlet.Filter` / `HandlerInterceptor` /
-  `org.springframework.web.server.WebFilter` — implementations that require a
-  header on every request.
-- `ResponseBodyAdvice` — implementations that wrap every response in an
-  envelope like `{ code, data, msg }`.
-- `HandlerMethodArgumentResolver` — implementations that inject a parameter
-  the source signature does not declare.
-- Meta-annotations — a custom annotation composed from `@RequestMapping`.
-- Custom security annotations (e.g. `@RequirePermission`) that should become
-  an `api.tag` or a Postman header.
-
-For each candidate, ask: *does it change the request/response contract
-invisibly?* If yes, apply the catalog recipe. If no, no rule is needed.
-
-### Step 5: Reason — Is a Rule Actually Needed? (Reason)
+### Step 5: Reason — is a rule actually needed?
 
 Confirm a rule is required before drafting. Standard framework behaviour is
 already handled automatically — do not re-declare defaults such as
@@ -181,19 +199,26 @@ write rules for **invisible contracts** the plugin cannot detect (custom
 filters, interceptors, argument resolvers, response wrappers, non-standard
 annotations).
 
-### Step 6: Draft the New Rule Content (Act)
+If the request is ambiguous, ask the user a short clarifying question with
+concrete options (single/multi choice) so they can answer quickly — mirroring
+the built-in agent's `ask_clarification`. Fall back to a plain-text question
+only when you can't enumerate options.
+
+### Step 6: Act — draft the new rule content
 
 Propose new rule content in the rule file format documented in the guide:
 - `<key>[<filter>]=<value>` (one rule per line; filter optional).
 - Groovy scripts for advanced cases (`groovy:` prefix filter, or a multi-line
   groovy value-block — see Critical Quality Rule 2).
 
-### Step 7: Insert and Show the Diff (Act)
+### Step 7: Act — insert and show the diff
 
 Insert the new rules into a file in `.easyapi/` (project) or `~/.easyapi/`
 (global). **Always show the user the diff before applying** — EasyApi rules
 affect API export across the whole project, so the user must confirm the
-change.
+change. This mirrors the built-in agent's `propose_rule_content` →
+user-confirmed "Save…" flow; the only difference is you write the file
+directly instead of staging it through a UI.
 
 ## Critical Rule File Format (follow exactly — inlined from the agent preamble)
 
@@ -222,32 +247,6 @@ There is **no `~` prefix** and **no bare `class:` prefix** — the older
 `class:com.example.Foo` and `~regex` forms are invalid; use `$class:` and
 `#regex:` respectively.
 
-### Built-in agent toolset (for reference)
-
-The plugin's built-in agent has these tools. You — the external assistant —
-provide equivalent capability via your own file/codebase access (read the
-project's `.easyapi/` files directly, search the codebase for annotations /
-supertypes, etc.):
-
-| Tool | Kind | What it does |
-|------|------|--------------|
-| `list_rule_keys` | perception | Lists every rule key (≡ bundled `rule-keys.md`). |
-| `get_plugin_doc` | perception | Reads a knowledge-base page (≡ bundled `rule-guide.md`). |
-| `read_rule_file` | perception | Reads a rule file by name (`security.properties`) or scope-prefixed name (`global:jwt.rules`). Refuses source files. |
-| `list_project_endpoints` | perception | Lists cached HTTP endpoints in the project. |
-| `get_psi_class_info` | perception | Class info by FQN (fields, methods, annotations). Supports batch via `fqns` array. |
-| `get_psi_method_info` | perception | Method info by class FQN + method name. |
-| `find_classes_by_annotation` | perception | Classes annotated with given FQN(s). Supports batch. |
-| `find_classes_by_supertype` | perception | Classes extending/implementing given supertype(s). Supports batch. Use BOTH this and the annotation tool — inheritance-declared components (filters extending `OncePerRequestFilter`) are invisible to the annotation tool. |
-| `get_existing_rules_for_key` | perception | All configured values for a key, with source + priority. Supports batch. |
-| `ask_clarification` | perception | Asks structured clarifying questions (single_choice / multi_choice / free_text). |
-| `propose_rule_content` | action (staging) | Stages a proposed rule file; user confirms via a "Save…" UI. Validated against the key catalog before staging. |
-
-`write_rule_file` is intentionally NOT registered — the disk write happens
-only through the user-confirmed "Save…" UI flow. As the external assistant,
-you write directly to the `.easyapi/` file but **must** show the diff and get
-the user's confirmation first (Step 7).
-
 ## Critical Quality Rules (follow exactly — inlined from the agent preamble)
 
 These mirror the rules the built-in agent enforces via its system prompt.
@@ -261,6 +260,9 @@ Jackson / etc.).
 
 - If an equivalent rule already exists, do NOT write a duplicate. Tell the
   user where it already lives and skip it.
+- If a broader rule already covers your case (e.g. a `groovy:` filter matching
+  a package prefix, and you were about to add one for a sub-package), do NOT
+  add a narrower duplicate unless it overrides with a different value.
 - Extension-source rules (Swagger annotations, Jackson modules, etc.) are
   already in effect. Never re-declare what the extension already provides
   (e.g. `api.status[@java.lang.Deprecated]=deprecated` is handled by the
@@ -326,6 +328,7 @@ These keys do **not** exist — use the correct alternative:
 | Does NOT exist | Use instead |
 |----------------|-------------|
 | `api.header` | `method.additional.header` |
+| `api.header.additional` | `method.additional.header` |
 | `path.prefix` | `class.prefix.path` / `endpoint.prefix.path` |
 
 `method.additional.header` and `method.additional.param` values are **JSON
@@ -341,26 +344,30 @@ AI assistant, briefly explain:
   IntelliJ with EasyApi installed, open Settings → EasyApi → Rules, edit a
   rule file, and click **Chat** (reveals the inline AI panel) or **Magic**
   (runs a built-in review-and-detect instruction). The plugin's agent runs a
-  perceive→reason→act loop, calls its perception tools to inspect the project,
-  and stages a proposal the user reviews and saves. Best for users who want
-  everything inside IntelliJ.
+  perceive→reason→act loop, calls its PSI perception tools to inspect the
+  project, and stages a proposal the user reviews and saves. Best for users
+  who want everything inside IntelliJ.
 - **This skill (external assistant)** — Use your existing AI coding assistant
   (Trae, Cursor, Cline, Continue, etc.) which already has access to the
-  project's files. The skill bundles the same rule guide and key catalog and
-  gives the assistant the same workflow. Best for users already invested in
-  an external AI workflow.
+  project's files. The skill bundles the **same** knowledge-base pages and
+  gives the assistant the same workflow, mapping each built-in PSI tool to a
+  CLI equivalent. Best for users already invested in an external AI workflow.
 
-Both approaches share the same rule file format and key catalog (the built-in
-agent reads the repo's `docs/knowledge-base/rule-guide.md`; this skill ships
-an identical copy as bundled `rule-guide.md`), so the rule content they
-produce is consistent.
+Both approaches share the same knowledge base (the built-in agent reads it
+from the plugin JAR via `get_plugin_doc`; this skill ships a verbatim copy,
+kept in sync by the `syncKnowledgeBase` Gradle task), so the rule content
+they produce is consistent.
 
 ## What This Skill Does NOT Do
 
-- It cannot call the plugin's runtime AI tools (`list_rule_keys`,
-  `get_psi_class_info`, etc.). You — the external assistant — provide the
-  file/codebase access via your own capabilities (read the project's
-  `.easyapi/` files directly, grep the codebase for annotations/supertypes).
+- It cannot call the plugin's runtime AI tools directly. You — the external
+  assistant — provide equivalent capability via the bundled scripts (rule
+  files + existing keys) and your own file/grep access (PSI inspection +
+  class discovery).
+- It cannot enumerate the project's cached HTTP endpoints
+  (`list_project_endpoints`) — that requires the plugin's `ApiIndex` cache,
+  which only exists inside a running IntelliJ. You don't need it: rules are
+  about contracts detectable from source.
 - It does not configure or test AI providers. The built-in assistant's
   configuration lives in IntelliJ Settings → EasyApi → AI.
 - It does not modify the EasyApi plugin itself or its bundled config.
@@ -368,23 +375,13 @@ produce is consistent.
 ## Reference Pointers
 
 **Bundled with this skill (available after `npx skills add` — read these):**
-- `rule-guide.md` — rule file format, filter syntax, recipes, Custom-Pattern
+- `docs/rule-guide.md` — rule file format, filter syntax, recipes, Custom-Pattern
   Catalog, Groovy binding reference.
-- `rule-keys.md` — complete rule-key catalog (snapshot of `RuleKeys.kt`).
-- `scripts/` — 3 CLI tools mirroring the built-in AI perception tools (see
-  "Bundled Scripts" section above).
-
-**Repo-only (NOT available after install — do not depend on at runtime):**
-- `docs/knowledge-base/rule-guide.md` — the source the bundled copy is
-  generated from.
-- `docs/knowledge-base/{README,index,settings-guide,usage-guide,easyapi-script-reference}.md`
-- `src/main/kotlin/com/itangcent/easyapi/rule/RuleKeys.kt` — the source the
-  bundled `rule-keys.md` is generated from.
-- `src/main/resources/ai/agent-preamble.md` — the built-in agent's system
-  prompt; its critical content is inlined above (Critical Rule File Format +
-  Critical Quality Rules).
-- `src/main/kotlin/com/itangcent/easyapi/ai/tools/` — the built-in agent's
-  tool implementations.
+- `docs/rule-keys.md` — complete rule-key catalog (snapshot of `RuleKeys.kt`).
+- `docs/index.md`, `docs/README.md`, `docs/settings-guide.md`, `docs/usage-guide.md`,
+  `docs/easyapi-script-reference.md` — the rest of the knowledge base.
+- `scripts/` — CLI tools mirroring the built-in AI perception tools (see
+  "EasyApi-domain tools" above).
 
 Plugin home: https://github.com/tangcent/easy-yapi
 
@@ -394,9 +391,9 @@ User asks: "Add a rule that renames the `createTime` field to `created_at`
 in all exported APIs."
 
 Workflow:
-1. Read the bundled `rule-guide.md` — find the field-rename section / the
+1. Read the bundled `docs/rule-guide.md` — find the field-rename section / the
    `field.name` key.
-2. Check the bundled `rule-keys.md` — confirm the key is `field.name` (alias
+2. Check the bundled `docs/rule-keys.md` — confirm the key is `field.name` (alias
    `json.rule.field.name`), mode `replace`.
 3. **Run `scripts/get_existing_rules_for_key.sh field.name`** — confirm no
    `field.name` rule already covers this.
@@ -410,13 +407,14 @@ Workflow:
 
 ## Forbidden Patterns
 
-- **Do not** invent rule keys not present in the bundled `rule-keys.md`.
+- **Do not** invent rule keys not present in the bundled `docs/rule-keys.md`.
   Unknown keys are silently ignored by the plugin's config loader.
 - **Do not** use the `filter?key=value` form, the `~` regex prefix, or the
   bare `class:` prefix — they are invalid. Use `key[filter]=value`,
   `#regex:`, and `$class:` respectively.
-- **Do not** use the non-existent keys `api.header` or `path.prefix` — use
-  `method.additional.header` / `class.prefix.path` / `endpoint.prefix.path`.
+- **Do not** use the non-existent keys `api.header`, `api.header.additional`,
+  or `path.prefix` — use `method.additional.header` / `class.prefix.path` /
+  `endpoint.prefix.path`.
 - **Do not** generate blanket `field.ignore` rules from field-name patterns
   (password / secret / token) — see Quality Rule 3.
 - **Do not** re-declare framework defaults (Spring MVC / JAX-RS / Feign
@@ -426,6 +424,3 @@ Workflow:
 - **Do not** modify the plugin's bundled `src/main/resources/extensions/*.config`
   files. Those are the plugin's own; user rules go in `.easyapi/` or
   `~/.easyapi/`.
-- **Do not** reference repo-only paths (`docs/knowledge-base/*`,
-  `src/main/resources/ai/agent-preamble.md`, `src/main/kotlin/.../RuleKeys.kt`)
-  at runtime — they are absent after install. Use the bundled copies.
