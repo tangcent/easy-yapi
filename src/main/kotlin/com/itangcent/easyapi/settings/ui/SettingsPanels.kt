@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.settings.ui
 
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
@@ -1308,7 +1309,10 @@ class AiAssistantSection : SettingsPanel {
         backgroundAsync {
             val result = runCatching { aiServiceFactory(settings).testConnection() }
                 .getOrElse { Result.failure(it) }
-            swingAsync {
+            // The Settings dialog is modal, so a plain `swingAsync` (which uses
+            // ModalityState.nonModal()) would be deferred until the dialog closes.
+            // Use ModalityState.any() so the result surfaces while the dialog is open.
+            swingAsync(ModalityState.any()) {
                 testConnectionButton.isEnabled = true
                 testConnectionButton.text = previousLabel
                 if (testConnectionResultHandler != null) {
@@ -1359,12 +1363,14 @@ class AiAssistantSection : SettingsPanel {
         backgroundAsync {
             val result = runCatching { credentialScanner.scan() }
                 .getOrElse {
-                    swingAsync {
+                    // ModalityState.any(): see onTestConnectionClicked for rationale.
+                    swingAsync(ModalityState.any()) {
                         setStatus("Auto-detect failed: ${it.message}", ok = false)
                     }
                     DetectionResult.Miss
                 }
-            swingAsync {
+            // ModalityState.any(): see onTestConnectionClicked for rationale.
+            swingAsync(ModalityState.any()) {
                 autoDetectButton.isEnabled = true
                 autoDetectButton.text = previousLabel
                 if (detectHandler != null) {
