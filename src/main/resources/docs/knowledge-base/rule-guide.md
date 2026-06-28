@@ -27,25 +27,20 @@ A rule file is a UTF-8 text file with one rule per line:
 ```
 # Comments start with #
 # Format: <key>[<filter>]=<value>
-#   filter   — optional; restricts the rule to matching classes/fields/methods
+#   filter   — optional; goes INSIDE [...] AFTER the key
 #   key      — a rule key from the catalog below
 #   value    — literal text, expression, or script
 
 # A rule with no filter applies to every element:
 api.status=disabled
 
-# A rule with a class filter applies only to matching classes:
-class.is.spring.ctrl=groovy: it.hasAnn("org.springframework.stereotype.Controller")
-
-# A rule with an indexed filter (key[filter]=value):
+# A rule with a filter applies only to matching elements:
 api.tag[$class:com.example.UserController]=user
 ```
 
 ### Filter
 
-The filter is the text **inside** `[...]` after the rule key. It restricts the
-rule to elements that match. A rule with no `[...]` always applies. See
-[Filter Syntax](#filter-syntax) below.
+The filter goes **inside `[...]` after the key** — there is no `filter?key=value` form. It restricts the rule to elements that match. See [Filter Syntax](#filter-syntax) below.
 
 ### Quoting & escaping
 
@@ -68,7 +63,7 @@ yields `[user, admin]`.
 
 ## Rule Key Catalog
 
-Every key below is sourced from [RuleKeys.kt](../../main/kotlin/com/itangcent/easyapi/rule/RuleKeys.kt) and matches the output of the `list_rule_keys` AI tool.
+Every key below is sourced from [RuleKeys.kt](../../src/main/kotlin/com/itangcent/easyapi/rule/RuleKeys.kt) and matches the output of the `list_rule_keys` AI tool.
 
 ### API metadata
 
@@ -214,10 +209,7 @@ Every key below is sourced from [RuleKeys.kt](../../main/kotlin/com/itangcent/ea
 
 ## Filter Syntax
 
-Filters appear **inside** `[...]` after the rule key and restrict the rule to
-matching elements. A filter is a single expression that the rule engine
-evaluates against the current PSI element (class, method, field, parameter, or
-type). A rule with no `[...]` always applies.
+Filters appear **inside `[...]` after the key** and restrict the rule to matching elements. A filter is a single expression that the rule engine evaluates against the current PSI element (class, method, field, parameter, or type).
 
 ```
 <key>[<filter>]=<value>
@@ -226,10 +218,10 @@ type). A rule with no `[...]` always applies.
 ### Examples
 
 ```
-# Apply to the exact class "com.example.UserController"
+# Apply to all elements of the class UserController
 api.tag[$class:com.example.UserController]=user
 
-# Apply to elements whose canonical text matches a regex
+# Apply to fields whose name matches a regex
 field.name[#regex:.*List.*]=${it.name}s
 
 # Apply to methods annotated with @Deprecated
@@ -237,9 +229,6 @@ api.status[@org.springframework.lang.Deprecated]=deprecated
 
 # Apply to classes tagged #internal
 api.status[#internal]=internal
-
-# Package-prefix match via groovy (wildcards are NOT supported by $class:)
-api.tag[groovy: it.containingClass().name().startsWith("com.example.web.")]=web
 ```
 
 ---
@@ -250,13 +239,19 @@ The rule engine dispatches an expression to a parser based on its prefix. The fo
 
 | Prefix | Parser | Description | Example |
 |--------|--------|-------------|---------|
-| `$class:` | ClassMatchParser | Matches by **exact** fully-qualified class name. Wildcards are NOT supported — for package/pattern matching use `groovy:` or `#regex:`. | `$class:com.example.UserController` |
+| `$class:` | ClassMatchParser | Exact fully-qualified class-name match (no wildcards). For package/pattern matching use `groovy:`. | `$class:com.example.UserController` |
 | `@` | AnnotationExpressionParser | Matches elements annotated with the given annotation | `@org.springframework.web.bind.annotation.RestController` |
-| `#regex:` | RegexParser | Matches by regex against the element's canonical text; captures groups for use in the value | `#regex:Mono<(.*?)>` |
+| `#regex:` | RegexParser | Matches by regex; captured groups available as `${1}`, `${2}` in the value | `#regex:Mono<(.*?)>` |
 | `#` | TagExpressionParser | Matches elements tagged with the given tag (from comments or annotations) | `#internal` |
 | `!` | NegationParser | Negates the following expression | `!@java.lang.Deprecated` |
 | `groovy:` | GroovyScriptParser | Runs a Groovy script; truthy result = match | `groovy: it.hasAnn("X")` |
-| *(none)* | LiteralParser / TypeMatchParser | A literal value, or a type name matched against the element's type | `api.status=disabled` |
+| *(none)* | LiteralParser | A literal string value (no filter — always matches) | `api.status=disabled` |
+
+> There is **no** `~` prefix and **no** bare `class:` prefix. The older
+> `class:com.example.Foo` and `~regex` forms are invalid — use `$class:` and
+> `#regex:` respectively. `$class:` does exact matches only; for package or
+> pattern matching use `groovy:` (e.g.
+> `groovy: it.containingClass()?.name()?.startsWith("com.example.web.")`).
 
 ### Capture groups (`#regex:`)
 
@@ -342,33 +337,20 @@ the same catalog when scanning your project.
 
 ## Custom-Pattern Catalog
 
-> **Rule format reminder:** every rule below uses `<key>[<filter>]=<value>`.
-> The filter goes **inside** `[...]` after the key — never before it. Valid
-> filter prefixes are `$class:` (exact class match, no wildcards), `@`
-> (annotation), `#regex:` (regex), `#` (tag), `!` (negation), `groovy:`
-> (script). There is no `~` prefix and no `class:` prefix (use `$class:`).
-
-> **Header / param value format:** `method.additional.header` and
-> `method.additional.param` values are **JSON objects** (one per line), not
-> `Name:Value` pairs:
-> ```
-> {"name":"Authorization","value":"Bearer ${token}","desc":"auth token","required":true}
-> ```
-
 | Pattern | Detection signal (FQN / shape to search for) | Rule recipe |
 |---------|----------------------------------------------|-------------|
-| **Filter / Interceptor requiring a header** | `jakarta.servlet.Filter`, `jakarta.servlet.http.HttpFilter`, `javax.servlet.Filter`, `org.springframework.web.servlet.HandlerInterceptor` — implementations often call `request.getHeader("X-…")` in `doFilter` / `preHandle`. Use `find_classes_by_annotation` + `get_psi_class_info` to scan implementors. | Add the header to every endpoint (no filter — applies globally): `method.additional.header={"name":"X-My-Header","value":"required-value","desc":"","required":true}`. Or scope it to a package via groovy: `method.additional.header[groovy: it.containingClass().name().startsWith("com.example.web.")]={"name":"X-My-Header","value":"\${value}","desc":"","required":true}`. |
-| **WebFilter (Spring WebFlux)** | `org.springframework.web.server.WebFilter` — `filter()` that inspects `ServerHttpRequest`. | Same as above — `method.additional.header=…`. |
+| **Filter / Interceptor requiring a header** | `jakarta.servlet.Filter`, `jakarta.servlet.http.HttpFilter`, `javax.servlet.Filter`, `org.springframework.web.servlet.HandlerInterceptor` — implementations often call `request.getHeader("X-…")` in `doFilter` / `preHandle`. Use `find_classes_by_annotation` + `get_psi_class_info` to scan implementors. | Add the header to every endpoint (no filter — applies globally): `method.additional.header={"name":"X-My-Header","value":"required-value","desc":"","required":true}`, or scope it: `method.additional.header[groovy: it.containingClass()?.name()?.startsWith("com.example.web.")]={"name":"X-My-Header","value":"\${value}","desc":"","required":true}`. |
+| **WebFilter (Spring WebFlux)** | `org.springframework.web.server.WebFilter` — `filter()` that inspects `ServerHttpRequest`. | Same as above — `method.additional.header={…}`. |
 | **Response wrapper (`@ControllerAdvice` + `ResponseBodyAdvice`)** | `org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice` — implementations wrap the body in `{ code, data, msg }`. Search for implementors; check the `beforeBodyWrite` return type. | Unwrap the response for documentation: `json.rule.convert[#regex:com\.example\.common\.ApiResult<(.*?)>]=${1}` (repeat for each wrapper type). |
-| **Custom argument resolver (injects hidden param)** | `org.springframework.web.method.support.HandlerMethodArgumentResolver` — `supportsParameter` checks for a custom annotation or type; `resolveArgument` returns the value. The parameter is **not** declared in the source signature. | Inject the param into the docs: `api.param.parse.before[groovy: it.containingClass().name().startsWith("com.example.web.")]=com.example.CurrentUser:current_user:the current user`. Or use `api.param.parse.before[@com.example.CurrentUser]=…` if annotated. |
+| **Custom argument resolver (injects hidden param)** | `org.springframework.web.method.support.HandlerMethodArgumentResolver` — `supportsParameter` checks for a custom annotation or type; `resolveArgument` returns the value. The parameter is **not** declared in the source signature. | Inject the param into the docs: `api.param.parse.before[groovy: it.containingClass()?.name()?.startsWith("com.example.web.")]=com.example.CurrentUser:current_user:the current user`. Or use `api.param.parse.before[@com.example.CurrentUser]=…` if annotated. |
 | **Meta-annotations (composed `@RequestMapping`)** | A custom annotation like `@GetRestApi` that is itself annotated `@GetMapping`. Search by `find_classes_by_annotation` for `@org.springframework.web.bind.annotation.RequestMapping` (meta-annotated types). | Tell EasyApi to treat the custom annotation as a controller method marker: `class.is.spring.ctrl=groovy: it.hasAnn("com.example.GetRestApi")`. |
-| **Field naming convention (snake_case / camelCase mismatch)** | The DTO uses `camelCase`, but the API contract is `snake_case` (or vice-versa). Often visible in Jackson `@JsonNaming` or a `PropertyNamingStrategy`. | `field.name[groovy: it.containingClass().name().startsWith("com.example.dto.")]=groovy: it.name().replaceAll("([A-Z])") { "_" + it[1].toLowerCase() }` |
-| **Field ignores (sensitive fields)** | Fields named `password`, `secret`, `token`, `apiKey` that should never appear in exports. | `field.ignore[#regex:.*password.*]=true` · `field.ignore[#regex:.*(secret\|token\|apikey).*]=true` |
-| **Required / mock / default for a field** | A field is always required by the API but has no `@NotNull` in source, or needs a mock value for the exported example. | `field.required[groovy: it.containingClass().name().startsWith("com.example.dto.")]=name,email` · `field.mock[$class:com.example.dto.User]=age:18` |
-| **Path prefix per module / package** | Every controller in `com.example.admin` should be prefixed `/admin` in the docs, even if `@RequestMapping` doesn't declare it. | `class.prefix.path[groovy: it.name().startsWith("com.example.admin.")]=/admin` |
-| **Enum representation** | The API exposes an enum as `{ "name": "ACTIVE", "value": 1 }` but EasyApi exports just the name. | `json.rule.convert[$class:com.example.Status]=groovy: '{"name":"' + it.name() + '","value":' + it.ann("com.example.Code")?.value() + '}'` |
-| **Status / version tag** | Every endpoint in `v2` package should carry `api.status=v2` or an `api.tag=v2`. | `api.tag[groovy: it.containingClass().name().startsWith("com.example.v2.")]=v2` |
-| **`@RequirePermission("admin")` → tag / header** | A custom security annotation that should become an `api.tag` or a Postman header. Search by `find_classes_by_annotation("@com.example.RequirePermission")`. | `api.tag[@com.example.RequirePermission]=admin` · `method.additional.header[@com.example.RequirePermission]={"name":"X-Permission","value":"\${it.ann('com.example.RequirePermission')?.value()}","desc":"","required":true}` |
+| **Field naming convention (snake_case / camelCase mismatch)** | The DTO uses `camelCase`, but the API contract is `snake_case` (or vice-versa). Often visible in Jackson `@JsonNaming` or a `PropertyNamingStrategy`. | `field.name[groovy: it.containingClass()?.name()?.startsWith("com.example.dto.")]=groovy: it.name().replaceAll("([A-Z])") { "_" + it[1].toLowerCase() }` |
+| **Field ignores (sensitive fields)** | Specific fields that should never appear in exports. **Never blanket-ignore by name pattern** (e.g. `.*password.*`) — `password`/`secret`/`token` are often legitimate API inputs. | `field.ignore[groovy: it.name() == "internalCache" && it.containingClass()?.name() == "com.example.UserDto"]=true` |
+| **Required / mock / default for a field** | A field is always required by the API but has no `@NotNull` in source, or needs a mock value for the exported example. | `field.required[groovy: it.containingClass()?.name()?.startsWith("com.example.dto.")]=name,email` · `field.mock[$class:com.example.dto.User]=groovy: it.name()=="age" ? 18 : null` |
+| **Path prefix per module / package** | Every controller in `com.example.admin` should be prefixed `/admin` in the docs, even if `@RequestMapping` doesn't declare it. | `class.prefix.path[groovy: it.name()?.startsWith("com.example.admin.")]=/admin` |
+| **Enum representation** | The API exposes an enum as `{ "name": "ACTIVE", "value": 1 }` but EasyApi exports just the name. | `json.rule.convert[$class:com.example.Status]={"name":"${it.name()}","value":${it.ann("com.example.Code")?.value()}}` |
+| **Status / version tag** | Every endpoint in `v2` package should carry `api.status=v2` or an `api.tag=v2`. | `api.tag[groovy: it.containingClass()?.name()?.startsWith("com.example.v2.")]=v2` |
+| **`@RequirePermission("admin")` → tag / header** | A custom security annotation that should become an `api.tag` or a Postman header. Search by `find_classes_by_annotation("@com.example.RequirePermission")`. | `api.tag[@com.example.RequirePermission]=admin` · `method.additional.header[@com.example.RequirePermission]={"name":"X-Permission","value":"\${it.ann(\"com.example.RequirePermission\")?.value()}","desc":"","required":true}` |
 
 > **Detection tip for the AI assistant:** before proposing a rule, call
 > `find_classes_by_annotation` for each FQN above, then `get_psi_class_info`
@@ -381,18 +363,15 @@ the same catalog when scanning your project.
 
 ### 1. Rename an API endpoint
 
-`$class:` matches exact class names. To target a specific method, use a groovy
-filter:
-
 ```
-api.name[groovy: it.containingClass().name() == "com.example.UserCtrl" && it.name() == "getUserName"]=Fetch User
+api.name[groovy: it.name() == "getUserName" && it.containingClass()?.name() == "com.example.UserCtrl"]=Fetch User
 ```
 
 ### 2. Tag all endpoints in a controller
 
 ```
-api.tag[$class:com.example.UserCtrl]=user
-api.tag[$class:com.example.UserCtrl]=admin
+api.tag[groovy: it.containingClass()?.name() == "com.example.UserCtrl"]=user
+api.tag[groovy: it.containingClass()?.name() == "com.example.UserCtrl"]=admin
 ```
 
 ### 3. Mark deprecated methods
@@ -401,16 +380,19 @@ api.tag[$class:com.example.UserCtrl]=admin
 api.status[@java.lang.Deprecated]=deprecated
 ```
 
-### 4. Ignore a field from serialization
+> Note: the built-in extension already sets `api.status=deprecated` for
+> `@Deprecated` methods — this recipe illustrates the filter syntax only.
+
+### 4. Ignore a specific field from serialization
 
 ```
-field.ignore[#regex:.*password.*]=true
+field.ignore[groovy: it.name() == "internalCache" && it.containingClass()?.name() == "com.example.UserDto"]=true
 ```
 
-### 5. Add a prefix to all fields in a DTO
+### 5. Add a prefix to all fields in a DTO package
 
 ```
-field.name.prefix[groovy: it.containingClass().name().startsWith("com.example.dto.")]=prop_
+field.name.prefix[groovy: it.containingClass()?.name()?.startsWith("com.example.dto.")]=prop_
 ```
 
 ### 6. Custom type conversion for Reactor types
@@ -422,16 +404,16 @@ json.rule.convert[#regex:reactor\.core\.publisher\.Mono<(.*?)>]=${1}
 ### 7. Add a pre-request script for Postman export
 
 ```
-postman.prerequest[$class:com.example.UserCtrl]=pm.environment.set("ts", System.currentTimeMillis())
+postman.prerequest[groovy: it.containingClass()?.name() == "com.example.UserCtrl"]=pm.environment.set("ts", System.currentTimeMillis())
 ```
 
-### 8. Conditional ignore via Groovy
+### 8. Conditional ignore via Groovy filter
 
 ```
 ignore[groovy: it.hasAnn("java.lang.Deprecated")]=true
 ```
 
-### 9. Inject an additional field
+### 9. Inject an additional field into a class
 
 ```
 json.additional.field[$class:com.example.UserInfo]={"name":"version","type":"string","desc":"API version"}
@@ -456,20 +438,7 @@ Before EasyApi 3.0, rule editing happened in a dedicated "Built-in" tab inside t
 
 ### Common gotchas
 
-- **Filter syntax changed:** 2.x used `filter?key=value`. 3.0 uses
-  `key[filter]=value` — the filter goes **inside** `[...]` after the key.
-  Rewrite any `class:com.example.Foo?key=value` as `key[$class:com.example.Foo]=value`.
-  Note: `class:` (without `$`) is NOT a valid filter prefix in 3.0 — use `$class:`.
-- **`$class:` is exact-match only:** wildcards like `$class:com.example.*Controller`
-  do NOT work. For package/pattern matching, use a `groovy:` filter
-  (e.g. `groovy: it.containingClass().name().startsWith("com.example.")`) or
-  `#regex:`.
-- **No `~` regex prefix:** use `#regex:` instead.
-- **Header / param values are JSON:** `method.additional.header` takes a JSON
-  object per line (`{"name":"…","value":"…","desc":"…","required":…}`), not
-  `Name:Value`.
-- **Removed keys:** `api.header` and `path.prefix` do not exist. Use
-  `method.additional.header` and `class.prefix.path` / `endpoint.prefix.path`.
+- **Filter syntax changed:** 2.x accepted a bare `class:com.example.Foo` form. 3.0 requires the `$class:` prefix (exact match, no wildcards); the bare `class:` form is invalid. Package/pattern matching is done with `groovy:` filters. Filters also moved **inside `[...]` after the key** — there is no longer a `filter?key=value` form.
 - **Aliases preserved:** `doc.param`, `doc.field`, `json.rule.field.name`, `class.is.ctrl`, `project`, `module` all still work.
 - **Merge modes added:** 2.x used "last wins" for everything. 3.0 introduces `MERGE` / `MERGE_DISTINCT` — see [Aggregation Modes](#aggregation-modes).
 

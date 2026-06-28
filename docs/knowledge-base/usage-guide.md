@@ -2,7 +2,7 @@
 
 This guide walks through the most common EasyApi workflows — installation, first export, the API Dashboard, search, field conversion, pre/post scripts, and AI-assisted rule creation.
 
-> For the full rule key catalog and filter syntax, see the [Rule Authoring Guide](easyapi-rule-guide.md). For settings reference, see the [Settings Guide](easyapi-settings-guide.md). For Postman-compatible Groovy scripting, see the [Script Reference](easyapi-script-reference.md).
+> For the full rule key catalog and filter syntax, see the [Rule Authoring Guide](rule-guide.md). For settings reference, see the [Settings Guide](settings-guide.md). For Postman-compatible Groovy scripting, see the [Script Reference](easyapi-script-reference.md).
 
 ---
 
@@ -121,7 +121,7 @@ This tells EasyApi: whenever you encounter a type matching `Mono<X>`, treat it a
 #regex:java\.time\.LocalDateTime?json.rule.convert=string
 ```
 
-See the [Rule Authoring Guide](easyapi-rule-guide.md#json-rules) for the full list of JSON-related rule keys.
+See the [Rule Authoring Guide](rule-guide.md#json-rules) for the full list of JSON-related rule keys.
 
 ---
 
@@ -184,4 +184,4 @@ EasyApi 3.0 includes an AI assistant that can author rules for you in natural la
 
 The assistant **never writes files without your explicit approval** — every action tool requires an Approve click.
 
-For the full rule key catalog, see the [Rule Authoring Guide](easyapi-rule-guide.md).
+For the full rule key catalog, see the [Rule Authoring Guide](rule-guide.md).

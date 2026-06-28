@@ -6,7 +6,7 @@ search this list.
 ## A
 
 - **AI assistant** → [usage-guide §AI-assisted Rule Creation](usage-guide.md#ai-assisted-rule-creation)
-- **AI provider configuration** → [settings-guide §Other (AI Assistant)](settings-guide.md#other-ai-assistant)
+- **AI provider configuration** → [settings-guide §AI](settings-guide.md#ai)
 - **Aggregation modes (MERGE / MERGE_DISTINCT)** → [rule-guide §Aggregation Modes](rule-guide.md#aggregation-modes)
 - **Annotations, detecting custom** → [rule-guide §Custom-Pattern Catalog](rule-guide.md#custom-pattern-catalog)
 - **`api.*` rule keys** → [rule-guide §API metadata](rule-guide.md#api-metadata)
@@ -26,7 +26,7 @@ search this list.
 ## D
 
 - **Dashboard** → [usage-guide §API Dashboard](usage-guide.md#api-dashboard)
-- **`doc.*` rule keys** → [rule-guide §Documentation rules](rule-guide.md#documentation-rules)
+- **`doc.*` rule keys** → [rule-guide §Field rules](rule-guide.md#field-rules)
 - **Disabled rule files** → [README §Where rules live](README.md#where-rules-live-30-model)
 
 ## E
