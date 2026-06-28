@@ -117,6 +117,15 @@ class AiChatPanel(
     private var session: ConversationSession? = null
 
     /**
+     * The button panel of the most recent proposal card, while its actions
+     * (Apply/Save/Copy) are still live. Nulled once the proposal is consumed
+     * — either by clicking "Apply to editor" or by starting a new turn, since
+     * a consumed/superseded proposal is stale and its actions should no longer
+     * be reachable. The card itself stays in the transcript (read-only).
+     */
+    private var liveProposalButtonPanel: JPanel? = null
+
+    /**
      * True while a clarification card is awaiting the user. While set,
      * the input area stays enabled and a typed reply resolves the pending
      * clarification instead of starting a new turn.
@@ -350,6 +359,9 @@ class AiChatPanel(
      */
     private fun startTurn(displayText: String, agentMessage: String) {
         if (turnJob?.isActive == true) return
+        // Committing to a new turn supersedes any pending proposal — freeze its
+        // actions before doing anything else, so a stale card can't be acted on.
+        freezeLiveProposalButtons(outdated = true)
         val sess = bindSession() ?: run {
             // AI not configured — show the banner instead of a (suppressed) balloon.
             refreshConfiguredState()
@@ -744,6 +756,9 @@ class AiChatPanel(
         text.trim().removeSuffix("?").let { if (it.length > 24) it.take(24) + "…" else it }
 
     private fun appendProposalCard(content: String, suggestedFileName: String) {
+        // A fresh proposal supersedes any previous one: freeze its actions so the
+        // user can't act on a stale card.
+        freezeLiveProposalButtons()
         val card = JPanel(BorderLayout(4, 4)).apply {
             border = EmptyBorder(6, 12, 6, 6)
             alignmentX = Component.LEFT_ALIGNMENT
@@ -764,6 +779,8 @@ class AiChatPanel(
         val copyBtn = JButton("Copy")
         applyBtn.addActionListener {
             onApplyProposal?.invoke(area.text)
+            // The proposal is consumed — its actions are now stale.
+            freezeLiveProposalButtons()
             NotificationUtils.notifyInfo(project, "EasyApi AI Assistant", "Applied to editor.")
         }
         saveBtn.addActionListener { saveProposal(content, suggestedFileName) }
@@ -780,8 +797,30 @@ class AiChatPanel(
         buttons.add(saveBtn)
         buttons.add(copyBtn)
         card.add(buttons, BorderLayout.SOUTH)
+        liveProposalButtonPanel = buttons
         transcriptBox.add(card)
         transcriptBox.add(Box.createVerticalStrut(4))
+    }
+
+    /**
+     * Replaces the live proposal card's action buttons (Apply/Save/Copy) with a
+     * small "(applied)" / "(outdated)" hint and stops tracking it. The proposal
+     * content stays visible read-only — only the now-stale actions are removed.
+     * Safe to call when no proposal is live (no-op).
+     */
+    private fun freezeLiveProposalButtons(outdated: Boolean = false) {
+        val buttons = liveProposalButtonPanel ?: return
+        val card = buttons.parent ?: run {
+            liveProposalButtonPanel = null
+            return
+        }
+        buttons.removeAll()
+        buttons.add(JLabel(if (outdated) "(outdated)" else "(applied)").apply {
+            foreground = UIUtil.getContextHelpForeground()
+        })
+        card.revalidate()
+        card.repaint()
+        liveProposalButtonPanel = null
     }
 
     // -------------------------------------------------------------------------
@@ -843,6 +882,7 @@ class AiChatPanel(
         cancelRunningTurn()
         AiAssistantService.getInstance(project).resetConversation()
         session = null
+        liveProposalButtonPanel = null
         transcriptBox.removeAll()
         transcriptBox.revalidate()
         transcriptBox.repaint()

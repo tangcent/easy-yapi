@@ -126,6 +126,55 @@ class AiChatPanelTest : EasyApiLightCodeInsightFixtureTestCase() {
             panel.clickApplyToEditorForTest()
         )
         assertEquals("api.name=cool", applied)
+        // The proposal is consumed — its actions must be removed so it can't be
+        // applied again (it's now stale).
+        assertFalse(
+            "Apply-to-editor button should be gone after it was applied",
+            panel.clickApplyToEditorForTest()
+        )
+        panel.dispose()
+    }
+
+    fun testNewProposalFreezesPreviousProposal() {
+        val panel = AiChatPanel(project)
+        val applied = mutableListOf<String>()
+        panel.onApplyProposal = { applied.add(it) }
+        panel.renderEventForTest(
+            AgentEvent.ProposalReady(Proposal("api.name=first", "custom.rules"))
+        )
+        // Render a second proposal — it supersedes the first.
+        panel.renderEventForTest(
+            AgentEvent.ProposalReady(Proposal("api.name=second", "custom.rules"))
+        )
+        // Only the latest proposal's apply button should remain; clicking it
+        // applies "second", proving the first proposal's actions were frozen.
+        assertTrue(
+            "latest proposal's apply button should still be present",
+            panel.clickApplyToEditorForTest()
+        )
+        assertEquals(
+            "second apply should win after the first was superseded",
+            listOf("api.name=second"),
+            applied
+        )
+        panel.dispose()
+    }
+
+    fun testNewMessageFreezesPendingProposal() {
+        val panel = AiChatPanel(project)
+        val applied = mutableListOf<String>()
+        panel.onApplyProposal = { applied.add(it) }
+        panel.renderEventForTest(
+            AgentEvent.ProposalReady(Proposal("api.name=cool", "custom.rules"))
+        )
+        // Sending a new message supersedes the pending proposal: its apply
+        // button must be gone even if the new turn never runs (no session).
+        panel.typeAndSendForTest("anything")
+        assertFalse(
+            "apply button should be gone once a new message is sent",
+            panel.clickApplyToEditorForTest()
+        )
+        assertTrue("no apply should have fired", applied.isEmpty())
         panel.dispose()
     }
 

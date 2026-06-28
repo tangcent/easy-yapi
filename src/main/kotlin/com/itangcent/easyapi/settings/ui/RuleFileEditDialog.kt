@@ -3,6 +3,7 @@ package com.itangcent.easyapi.settings.ui
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
 import com.itangcent.easyapi.ai.ui.AiChatPanel
@@ -59,6 +60,14 @@ class RuleFileEditDialog(
         columns = 80
         isEditable = true
     }
+
+    /**
+     * Snapshot of the file's content/name as last loaded (or saved), used by
+     * [isContentModified] to detect unsaved edits before closing. Null until the
+     * initial load completes — treated as "no changes yet" while still loading.
+     */
+    private var loadedName: String? = null
+    private var loadedContent: String? = null
 
     /**
      * Inline AI assistant. Hidden until the user
@@ -177,8 +186,12 @@ class RuleFileEditDialog(
                     .getOrElse { "" }
             }
             withContext(Dispatchers.Main) {
-                nameField.text = Paths.get(filePath).fileName.toString()
+                val name = Paths.get(filePath).fileName.toString()
+                nameField.text = name
                 contentArea.text = content
+                // Snapshot the loaded state so unsaved-change detection works.
+                loadedName = name
+                loadedContent = content
             }
         }
     }
@@ -270,8 +283,48 @@ class RuleFileEditDialog(
                     .onFailure { LOG.warn("ConfigReader.reload failed after edit", it) }
             }
             withContext(Dispatchers.Main) {
+                // Refresh the snapshot so a subsequent Cancel isn't flagged as unsaved.
+                loadedName = newName
+                loadedContent = content
                 close(OK_EXIT_CODE)
             }
+        }
+    }
+
+    /**
+     * True if the on-screen name or content differs from what was last loaded
+     * (or saved). While the initial load is still in flight (`loadedContent ==
+     * null`), reports false — there's nothing to discard yet.
+     */
+    internal fun isContentModified(): Boolean {
+        val savedContent = loadedContent ?: return false
+        val savedName = loadedName ?: return false
+        return nameField.text.trim() != savedName.trim() || contentArea.text != savedContent
+    }
+
+    /**
+     * Intercepts Cancel / window-close (X). If there are unsaved edits, asks the
+     * user whether to save before closing or discard the changes; "Cancel" in
+     * that prompt keeps the editor open.
+     */
+    override fun doCancelAction() {
+        if (!isContentModified()) {
+            super.doCancelAction()
+            return
+        }
+        val choice = Messages.showYesNoCancelDialog(
+            this.contentPane,
+            "The rule file has unsaved changes.\nSave before closing?",
+            "Unsaved Changes",
+            "Save",
+            "Discard",
+            "Cancel",
+            Messages.getQuestionIcon()
+        )
+        when (choice) {
+            Messages.YES -> doOKAction()
+            Messages.NO -> super.doCancelAction()
+            // CANCEL (or closed): stay in the editor.
         }
     }
 
@@ -279,5 +332,37 @@ class RuleFileEditDialog(
         runCatching { aiChatPanel.dispose() }
         scope.cancel()
         super.dispose()
+    }
+
+    // --- Test helpers ---
+
+    /** Sets the content area text directly (test-only). */
+    internal fun setContentForTest(content: String) {
+        contentArea.text = content
+    }
+
+    /** Sets the name field text directly (test-only). */
+    internal fun setNameForTest(name: String) {
+        nameField.text = name
+    }
+
+    /** Returns the snapshot content captured on load (test-only). */
+    internal fun snapshotContent(): String? = loadedContent
+
+    /**
+     * Simulates the async load having completed — sets the form fields and the
+     * snapshot (test-only). Avoids depending on [Dispatchers.Main] scheduling,
+     * which plain `runBlocking` does not advance.
+     */
+    internal fun simulateLoadedForTest(name: String, content: String) {
+        nameField.text = name
+        contentArea.text = content
+        loadedName = name
+        loadedContent = content
+    }
+
+    /** Disposes the dialog from tests (dispose() is protected on DialogWrapper). */
+    internal fun disposeForTest() {
+        dispose()
     }
 }
