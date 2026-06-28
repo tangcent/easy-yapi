@@ -1,8 +1,6 @@
 package com.itangcent.easyapi.ai
 
 import com.intellij.openapi.project.Project
-import com.intellij.ide.passwordSafe.PasswordSafe
-import com.intellij.openapi.application.ApplicationManager
 import com.itangcent.easyapi.settings.SettingBinder
 
 /**
@@ -31,10 +29,8 @@ data class AiSettings(
     val contextWindow: Int = provider.contextWindow
 ) {
     companion object {
-        private const val API_KEY_STORE_KEY = "ai-api-key"
-
         /**
-         * Loads AI settings from [SettingBinder] + [PasswordSafe].
+         * Loads AI settings from [SettingBinder] + [AiApiKeyStore].
          *
          * @return `null` if the provider requires an API key but none is stored,
          * or if the base URL / model cannot be resolved.
@@ -45,9 +41,7 @@ data class AiSettings(
 .getOrDefault(AiProvider.OPENAI)
             val baseUrl = s.aiBaseUrl.takeIf { it.isNotBlank() }
                 ?: provider.defaultBaseUrl ?: return null
-            val apiKey = passwordSafe().getPassword(
-                null, AiSettings::class.java, API_KEY_STORE_KEY
-            )?.toString() ?: ""
+            val apiKey = AiApiKeyStore.loadApiKey()
             if (provider.requiresApiKey && apiKey.isBlank()) return null
             val model = s.aiModel.takeIf { it.isNotBlank() }
                 ?: provider.defaultModel ?: return null
@@ -61,9 +55,5 @@ data class AiSettings(
                 s.aiRequestTimeoutSec, s.aiMaxRequests, contextWindow
             )
         }
-
-        /** Resolve PasswordSafe via the application service container. */
-        private fun passwordSafe(): PasswordSafe =
-            ApplicationManager.getApplication().getService(PasswordSafe::class.java)
     }
 }
