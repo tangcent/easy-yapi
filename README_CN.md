@@ -4,6 +4,7 @@
 [![codecov](https://codecov.io/gh/tangcent/easy-yapi/branch/master/graph/badge.svg?token=J6RUGI54XV)](https://codecov.io/gh/tangcent/easy-yapi)
 [![](https://img.shields.io/jetbrains/plugin/v/12458?color=blue&label=version)](https://plugins.jetbrains.com/plugin/12458-easyyapi)
 [![](https://img.shields.io/jetbrains/plugin/d/12458)](https://plugins.jetbrains.com/plugin/12458-easyyapi)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/tangcent/easy-yapi)
 
 [English](README.md) | 中文
 
