@@ -5,9 +5,11 @@ import com.intellij.openapi.actionSystem.ActionUiKind
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.editor.Editor
 import com.intellij.pom.Navigatable
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
@@ -222,17 +224,131 @@ class SelectedHelperTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNull(selection)
     }
 
+    // ---- Editor text selection spanning multiple methods (issue #1407) ----
+
+    /**
+     * Simulates selecting text in the editor that spans multiple controller
+     * methods. The [SelectionScope] should include every [PsiMethod] whose
+     * text range intersects the selection.
+     *
+     * Steps:
+     * a. Load the PSI class (UserCtrl).
+     * b. Get the methods (greeting, get, create).
+     * c. Set the editor selection from greeting's start to create's end.
+     * d. Verify that SelectedHelper resolves a scope containing all three.
+     */
+    fun testResolveSelectionWithEditorSelectionSpanningMultipleMethods() {
+        // a. Load UserCtrl.java and its dependencies, then open it in the editor.
+        loadFile("spring/RestController.java")
+        loadFile("spring/RequestMapping.java")
+        loadFile("spring/GetMapping.java")
+        loadFile("spring/PostMapping.java")
+        loadFile("spring/PutMapping.java")
+        loadFile("spring/PathVariable.java")
+        loadFile("spring/RequestBody.java")
+        loadFile("spring/ModelAttribute.java")
+        loadFile("annotation/Public.java")
+        loadFile("model/IResult.java")
+        loadFile("model/Result.java")
+        loadFile("model/UserInfo.java")
+        loadFile("api/BaseController.java")
+        val userCtrlFile = loadFile("api/UserCtrl.java")
+        myFixture.configureFromExistingVirtualFile(userCtrlFile.virtualFile)
+
+        // b. Get the methods.
+        val userCtrl = findClass("com.itangcent.api.UserCtrl")!!
+        val greetingMethod = userCtrl.findMethodsByName("greeting", false).first()
+        val getMethod = userCtrl.findMethodsByName("get", false).first()
+        val createMethod = userCtrl.findMethodsByName("create", false).first()
+
+        // c. Set the editor selection spanning from greeting to create.
+        val startOffset = greetingMethod.textOffset
+        val endOffset = createMethod.textRange.endOffset
+        myFixture.editor.selectionModel.setSelection(startOffset, endOffset)
+
+        // d. Verify the SelectionScope includes all three methods.
+        val event = createEvent(
+            editor = myFixture.editor,
+            psiFile = userCtrlFile
+        )
+        val selection = SelectedHelper.resolveSelection(event)
+        assertNotNull("Selection should not be null when editor has a selection", selection)
+
+        val selectedMethods = selection!!.methods().toSet()
+        assertTrue(
+            "Scope should include greeting(), actual: ${selectedMethods.map { it.name }}",
+            selectedMethods.contains(greetingMethod)
+        )
+        assertTrue(
+            "Scope should include get(), actual: ${selectedMethods.map { it.name }}",
+            selectedMethods.contains(getMethod)
+        )
+        assertTrue(
+            "Scope should include create(), actual: ${selectedMethods.map { it.name }}",
+            selectedMethods.contains(createMethod)
+        )
+    }
+
+    /**
+     * Simulates selecting text within a single method. The [SelectionScope]
+     * should include exactly that one method.
+     */
+    fun testResolveSelectionWithEditorSelectionWithinSingleMethod() {
+        loadFile("spring/RestController.java")
+        loadFile("spring/RequestMapping.java")
+        loadFile("spring/GetMapping.java")
+        loadFile("spring/PostMapping.java")
+        loadFile("spring/PutMapping.java")
+        loadFile("spring/PathVariable.java")
+        loadFile("spring/RequestBody.java")
+        loadFile("spring/ModelAttribute.java")
+        loadFile("annotation/Public.java")
+        loadFile("model/IResult.java")
+        loadFile("model/Result.java")
+        loadFile("model/UserInfo.java")
+        loadFile("api/BaseController.java")
+        val userCtrlFile = loadFile("api/UserCtrl.java")
+        myFixture.configureFromExistingVirtualFile(userCtrlFile.virtualFile)
+
+        val userCtrl = findClass("com.itangcent.api.UserCtrl")!!
+        val greetingMethod = userCtrl.findMethodsByName("greeting", false).first()
+        val createMethod = userCtrl.findMethodsByName("create", false).first()
+
+        // Select a small range entirely within greeting().
+        val startOffset = greetingMethod.textOffset + 1
+        val endOffset = greetingMethod.textRange.endOffset - 1
+        myFixture.editor.selectionModel.setSelection(startOffset, endOffset)
+
+        val event = createEvent(
+            editor = myFixture.editor,
+            psiFile = userCtrlFile
+        )
+        val selection = SelectedHelper.resolveSelection(event)
+        assertNotNull(selection)
+
+        val selectedMethods = selection!!.methods().toList()
+        assertEquals(
+            "Should select exactly one method, actual: ${selectedMethods.map { it.name }}",
+            1, selectedMethods.size
+        )
+        assertEquals(greetingMethod, selectedMethods.first())
+        // create() should NOT be in the scope.
+        assertFalse(selectedMethods.contains(createMethod))
+    }
+
     // ---- Helper ----
 
     private fun createEvent(
         psiElement: PsiElement? = null,
         navigatables: Array<Navigatable>? = null,
-        psiFile: com.intellij.psi.PsiFile? = null
+        psiFile: PsiFile? = null,
+        editor: Editor? = null
     ): AnActionEvent {
         val data = mutableMapOf<String, Any?>()
         if (psiElement != null) data[CommonDataKeys.PSI_ELEMENT.name] = psiElement
         if (navigatables != null) data[CommonDataKeys.NAVIGATABLE_ARRAY.name] = navigatables
         if (psiFile != null) data[CommonDataKeys.PSI_FILE.name] = psiFile
+        if (editor != null) data[CommonDataKeys.EDITOR.name] = editor
         return AnActionEvent.createEvent(MapDataContext(data), Presentation(), "test", ActionUiKind.NONE, null)
     }
 

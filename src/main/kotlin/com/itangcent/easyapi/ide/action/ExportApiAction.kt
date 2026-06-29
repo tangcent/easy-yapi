@@ -12,7 +12,6 @@ import com.itangcent.easyapi.ide.dialog.ExportDialogResult
 import com.itangcent.easyapi.ide.support.SelectedHelper
 import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.ide.support.runWithProgress
-import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
@@ -32,18 +31,11 @@ class ExportApiAction : AnAction(), IdeaLog {
         backgroundAsync {
             if (!DumbModeHelper.waitForSmartModeOrNotify(project)) return@backgroundAsync
 
-            val apiIndex = ApiIndex.getInstance(project)
             val scanner = ApiScanner.getInstance(project)
-            val endpoints = if (selection != null) {
-                val classes = selection.classes().toList()
-                if (classes.isNotEmpty()) {
-                    scanner.scanClasses(classes).toList()
-                } else {
-                    apiIndex.endpoints()
-                }
-            } else {
-                apiIndex.endpoints()
-            }
+            // scanSelection respects method-level selections (issue #1407):
+            // when the user selects specific controller methods, only those
+            // methods' endpoints are shown in the dialog.
+            val endpoints = scanner.scanSelection(selection)
 
             swing {
                 val result = ExportDialog.show(project, endpoints.size, endpoints)
@@ -67,15 +59,8 @@ class ExportApiAction : AnAction(), IdeaLog {
                 val endpoints = if (dialogResult.selectedEndpoints.isNotEmpty()) {
                     dialogResult.selectedEndpoints.map { it.endpoint }
                 } else {
-                    val apiIndex = ApiIndex.getInstance(project)
-                    if (selection != null) {
-                        val scanner = ApiScanner.getInstance(project)
-                        val classes = selection.classes().toList()
-                        if (classes.isNotEmpty()) scanner.scanClasses(classes).toList()
-                        else apiIndex.endpoints()
-                    } else {
-                        apiIndex.endpoints()
-                    }
+                    val scanner = ApiScanner.getInstance(project)
+                    scanner.scanSelection(selection, indicator)
                 }
 
                 val exportResult = orchestrator.exportViaChannel(

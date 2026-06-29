@@ -2,6 +2,7 @@ package com.itangcent.easyapi.dashboard
 
 import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.exporter.model.HttpMetadata
+import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.testFramework.TestConfigReader
 import com.itangcent.easyapi.settings.update
@@ -116,11 +117,85 @@ class ApiScannerTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testPreClassificationRoutesToCorrectExporter() = runTest {
         val endpoints = apiScanner.scanAll()
-        
+
         endpoints.forEach { endpoint ->
             val httpMeta = endpoint.metadata as? HttpMetadata
             assertNotNull("Endpoint should have HTTP metadata", httpMeta)
             assertTrue("Path should not be empty", httpMeta!!.path.isNotEmpty())
         }
+    }
+
+    // Regression for https://github.com/tangcent/easy-yapi/issues/1407
+    // Selecting specific controller methods must export only those methods,
+    // not every endpoint in the containing class.
+    fun testScanSelectionWithSingleMethodReturnsOnlyThatEndpoint() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull("UserCtrl should be loaded", psiClass)
+        val greetingMethod = findMethod(psiClass!!, "greeting")
+        assertNotNull("greeting method should exist", greetingMethod)
+
+        val endpoints = apiScanner.scanSelection(SelectionScope(listOf(greetingMethod!!)))
+
+        assertEquals(
+            "Should export only the selected method's endpoint",
+            1,
+            endpoints.size
+        )
+        assertEquals(
+            "Exported endpoint should come from the selected method",
+            greetingMethod,
+            endpoints.first().sourceMethod
+        )
+    }
+
+    fun testScanSelectionWithMultipleMethodsReturnsOnlyThoseEndpoints() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull("UserCtrl should be loaded", psiClass)
+        val greetingMethod = findMethod(psiClass!!, "greeting")!!
+        val createMethod = findMethod(psiClass, "create")!!
+
+        val endpoints = apiScanner.scanSelection(
+            SelectionScope(listOf(greetingMethod, createMethod))
+        )
+
+        // A method with multi-path mappings (e.g. @PostMapping({"/add", "/admin/add"}))
+        // may produce multiple endpoints, so assert on distinct source methods.
+        val exportedMethods = endpoints.mapNotNull { it.sourceMethod }.toSet()
+        assertEquals(
+            "Exported endpoints should come from exactly the two selected methods",
+            setOf(greetingMethod, createMethod),
+            exportedMethods
+        )
+    }
+
+    fun testScanSelectionWithMethodDoesNotExportSiblingMethods() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull("UserCtrl should be loaded", psiClass)
+        val greetingMethod = findMethod(psiClass!!, "greeting")!!
+
+        val endpoints = apiScanner.scanSelection(SelectionScope(listOf(greetingMethod)))
+
+        // UserCtrl has many endpoints (greeting, get, create, update, ...).
+        // Only the selected one should be exported.
+        val nonGreetingEndpoints = endpoints.filter { it.sourceMethod != greetingMethod }
+        assertTrue(
+            "No sibling methods should be exported when one method is selected, " +
+                "but found: ${nonGreetingEndpoints.map { it.sourceMethod?.name }}",
+            nonGreetingEndpoints.isEmpty()
+        )
+    }
+
+    fun testScanSelectionWithClassReturnsAllClassEndpoints() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull("UserCtrl should be loaded", psiClass)
+
+        val selectionEndpoints = apiScanner.scanSelection(SelectionScope(listOf(psiClass!!)))
+        val classEndpoints = apiScanner.scanClasses(listOf(psiClass)).toList()
+
+        assertEquals(
+            "Class selection should export the same endpoints as scanClasses",
+            classEndpoints.size,
+            selectionEndpoints.size
+        )
     }
 }

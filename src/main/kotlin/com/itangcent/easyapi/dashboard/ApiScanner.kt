@@ -6,6 +6,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.searches.AnnotatedElementsSearch
 import com.itangcent.easyapi.core.threading.IdeDispatchers
@@ -15,10 +16,13 @@ import com.itangcent.easyapi.exporter.ClassExporter
 import com.itangcent.easyapi.exporter.ClassExporterRegistry
 import com.itangcent.easyapi.exporter.core.CompositeApiClassRecognizer
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
+import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.ide.DumbModeHelper
+import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.logging.console
+import com.itangcent.easyapi.psi.type.areMethodsRelated
 import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
@@ -126,6 +130,57 @@ class ApiScanner(private val project: Project) {
             }
         }
         return endpoints.asSequence()
+    }
+
+    /**
+     * Scans the current [selection] for API endpoints, respecting method-level
+     * selections.
+     *
+     * Behavior:
+     * - If the selection contains [PsiMethod]s, only the endpoints whose
+     *   `sourceMethod` matches (or is related to) one of the selected methods
+     *   are returned. The containing classes are scanned first to obtain
+     *   candidate endpoints, then the result is filtered. This fixes the issue
+     *   where selecting a subset of controller methods still exported every
+     *   endpoint in the class.
+     * - Otherwise, if the selection contains classes, all endpoints from those
+     *   classes are returned (same as [scanClasses]).
+     * - Otherwise, the cached project endpoints from [ApiIndex] are returned.
+     *
+     * @param selection The resolved user selection, or `null` for whole project.
+     * @param indicator Optional progress indicator from the caller.
+     * @return List of discovered endpoints, filtered by the selection scope.
+     */
+    suspend fun scanSelection(
+        selection: SelectionScope?,
+        indicator: ProgressIndicator? = null
+    ): List<ApiEndpoint> {
+        if (selection == null) {
+            return ApiIndex.getInstance(project).endpoints()
+        }
+
+        val selectedMethods: List<PsiMethod> = selection.methods().toList()
+        if (selectedMethods.isNotEmpty()) {
+            val containingClasses = read {
+                selectedMethods.mapNotNull { it.containingClass }.distinct()
+            }
+            val candidates = if (containingClasses.isNotEmpty()) {
+                scanClasses(containingClasses, indicator).toList()
+            } else {
+                ApiIndex.getInstance(project).endpoints()
+            }
+            return candidates.filter { endpoint ->
+                val source = endpoint.sourceMethod ?: return@filter false
+                selectedMethods.any { selected -> areMethodsRelated(selected, source) }
+            }
+        }
+
+        val classes = selection.classes().toList()
+        return if (classes.isNotEmpty()) {
+            scanClasses(classes, indicator).toList()
+        } else {
+            ApiIndex.getInstance(project).endpoints()
+        }
     }
 
     /**
