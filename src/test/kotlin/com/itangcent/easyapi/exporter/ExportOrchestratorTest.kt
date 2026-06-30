@@ -2,6 +2,7 @@ package com.itangcent.easyapi.exporter
 
 import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
+import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportResult
@@ -140,6 +141,61 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull(result)
         // With real endpoints found, the export should succeed or fail gracefully
         // but either way the notifyInfo path is exercised
+    }
+
+    /**
+     * Verifies that a method-level [SelectionScope] causes the orchestrator
+     * to export only the selected method's endpoints, not every endpoint in
+     * the containing class (issue #1407).
+     */
+    fun testOrchestrateExportWithMethodSelectionExportsOnlySelectedMethod() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull("UserCtrl should be loaded", psiClass)
+        val greetingMethod = psiClass!!.findMethodsByName("greeting", false).first() as PsiMethod
+
+        // Export with only the greeting method selected.
+        val methodSelection = SelectionScope(listOf(greetingMethod))
+        val methodResult = orchestrator.orchestrateExport(methodSelection, "markdown", testFileConfig)
+
+        // Export with the entire class selected, for comparison.
+        val classSelection = SelectionScope(listOf(psiClass))
+        val classResult = orchestrator.orchestrateExport(classSelection, "markdown", testFileConfig)
+
+        assertNotNull("Method selection result should not be null", methodResult)
+        assertNotNull("Class selection result should not be null", classResult)
+
+        if (methodResult is ExportResult.Success && classResult is ExportResult.Success) {
+            assertEquals(
+                "Method selection should export exactly 1 endpoint (greeting)",
+                1, methodResult.count
+            )
+            assertTrue(
+                "Class selection ($classResult.count) should export more endpoints than single method (${methodResult.count})",
+                classResult.count > methodResult.count
+            )
+        }
+    }
+
+    /**
+     * Verifies that a multi-method [SelectionScope] exports endpoints from
+     * exactly those methods, not the entire class (issue #1407).
+     */
+    fun testOrchestrateExportWithMultipleMethodSelectionExportsOnlyThoseMethods() = runTest {
+        val psiClass = findClass("com.itangcent.api.UserCtrl")
+        assertNotNull("UserCtrl should be loaded", psiClass)
+        val greetingMethod = psiClass!!.findMethodsByName("greeting", false).first() as PsiMethod
+        val getMethod = psiClass.findMethodsByName("get", false).first() as PsiMethod
+
+        val selection = SelectionScope(listOf(greetingMethod, getMethod))
+        val result = orchestrator.orchestrateExport(selection, "markdown", testFileConfig)
+
+        assertNotNull(result)
+        if (result is ExportResult.Success) {
+            assertEquals(
+                "Should export exactly 2 endpoints (greeting + get)",
+                2, result.count
+            )
+        }
     }
 
     fun testOrchestrateExportWithUnknownChannelReturnsError() = runTest {

@@ -4,9 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.dashboard.ApiScanner
 import com.itangcent.easyapi.exporter.channel.ApiChannelRegistry
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
@@ -17,13 +15,11 @@ import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.ide.support.SelectionScope
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.settings.settings
-import kotlinx.coroutines.withContext
 
 @Service(Service.Level.PROJECT)
 class ExportOrchestrator(private val project: Project) : IdeaLog {
 
     private val apiScanner: ApiScanner = ApiScanner.getInstance(project)
-    private val apiIndex: ApiIndex = ApiIndex.getInstance(project)
     private val channelRegistry: ApiChannelRegistry = ApiChannelRegistry.getInstance(project)
 
     companion object {
@@ -130,14 +126,9 @@ class ExportOrchestrator(private val project: Project) : IdeaLog {
         selection: SelectionScope?,
         indicator: ProgressIndicator? = null
     ): List<ApiEndpoint> {
-        if (selection != null) {
-            val classes = withContext(IdeDispatchers.ReadAction) {
-                selection.classes().toList()
-            }
-            if (classes.isNotEmpty()) {
-                return apiScanner.scanClasses(classes, indicator).toList()
-            }
-        }
-        return apiIndex.endpoints()
+        // scanSelection respects method-level selections (issue #1407): when the
+        // user selects specific controller methods, only those methods' endpoints
+        // are returned instead of every endpoint in the containing class.
+        return apiScanner.scanSelection(selection, indicator)
     }
 }

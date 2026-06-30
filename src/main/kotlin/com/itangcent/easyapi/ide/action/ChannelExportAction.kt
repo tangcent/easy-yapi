@@ -3,7 +3,6 @@ package com.itangcent.easyapi.ide.action
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.itangcent.easyapi.cache.api.ApiIndex
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.dashboard.ApiScanner
@@ -37,18 +36,10 @@ class ChannelExportAction(
             if (!DumbModeHelper.waitForSmartModeOrNotify(project)) return@backgroundAsync
 
             val scanner = ApiScanner.getInstance(project)
-            val apiIndex = ApiIndex.getInstance(project)
-
-            val endpoints = if (selection != null) {
-                val classes = selection.classes().toList()
-                if (classes.isNotEmpty()) {
-                    scanner.scanClasses(classes).toList()
-                } else {
-                    apiIndex.endpoints()
-                }
-            } else {
-                apiIndex.endpoints()
-            }
+            // scanSelection respects method-level selections (issue #1407):
+            // when the user selects specific controller methods, only those
+            // methods' endpoints are exported directly, without a dialog.
+            val endpoints = scanner.scanSelection(selection)
 
             if (endpoints.isEmpty()) {
                 swing {

@@ -4,9 +4,10 @@ import com.intellij.ide.projectView.impl.nodes.ClassTreeNode
 import com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.util.TextRange
 import com.intellij.pom.Navigatable
 import com.intellij.psi.*
-import com.itangcent.easyapi.core.threading.readAsync
+import com.intellij.psi.util.PsiTreeUtil
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.util.FileType
 
@@ -40,6 +41,23 @@ object SelectedHelper {
      * @return A [SelectionScope] containing the selected elements, or null if nothing selected
      */
     fun resolveSelection(event: AnActionEvent): SelectionScope? {
+        // Check for an editor text selection first — if the user has selected
+        // a range spanning one or more methods, include all of them in the
+        // scope. This handles the case where the user selects text across
+        // multiple controller methods in the editor (issue #1407).
+        val editor = event.getData(CommonDataKeys.EDITOR)
+        val psiFile = event.getData(CommonDataKeys.PSI_FILE)
+        if (editor != null && psiFile != null) {
+            val selectionStart = editor.selectionModel.selectionStart
+            val selectionEnd = editor.selectionModel.selectionEnd
+            if (selectionStart < selectionEnd) {
+                val methods = collectMethodsInRange(psiFile, selectionStart, selectionEnd)
+                if (methods.isNotEmpty()) {
+                    return SelectionScope(methods)
+                }
+            }
+        }
+
         // Prefer PSI_ELEMENT — it represents the actual element at the cursor
         // in the source file. This correctly handles clicks on annotations,
         // type references (String, UserInfo, etc.), and other non-class elements.
@@ -62,7 +80,6 @@ object SelectedHelper {
             }
         }
 
-        val psiFile = event.getData(CommonDataKeys.PSI_FILE)
         if (psiFile != null) {
             return SelectionScope(listOf(psiFile))
         }
@@ -94,6 +111,27 @@ object SelectedHelper {
             current = current.parent
         }
         return null
+    }
+
+    /**
+     * Collects all [PsiMethod]s in [psiFile] whose text range intersects
+     * with the range `[startOffset, endOffset)`.
+     *
+     * Used to resolve an editor text selection that spans multiple methods.
+     * Methods are returned in source order (the order they appear in the file).
+     */
+    private fun collectMethodsInRange(
+        psiFile: PsiFile,
+        startOffset: Int,
+        endOffset: Int
+    ): List<PsiMethod> {
+        val selectionRange = TextRange(startOffset, endOffset)
+        return PsiTreeUtil.findChildrenOfType(psiFile, PsiMethod::class.java)
+            .filter { method ->
+                val methodRange = method.textRange
+                methodRange != null && selectionRange.intersects(methodRange)
+            }
+            .sortedBy { it.textOffset }
     }
 
     private fun resolveNavigatable(navigatable: Navigatable): Any? {
