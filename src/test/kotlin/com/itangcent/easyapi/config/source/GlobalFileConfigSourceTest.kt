@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.config.source
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.parser.DirectiveSnapshot
+import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -21,30 +23,43 @@ class GlobalFileConfigSourceTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
-    private lateinit var realParser: ConfigTextParser
+    private lateinit var realParserProject: Project
+    private lateinit var mockParserProject: Project
     private lateinit var mockParser: ConfigTextParser
 
     @Before
     fun setUp() {
-        realParser = ConfigTextParser(Settings())
+        realParserProject = newProjectWithRealParser()
         mockParser = mock()
+        mockParserProject = mock()
+        whenever(mockParserProject.getService(ConfigTextParser::class.java)).thenReturn(mockParser)
+    }
+
+    private fun newProjectWithRealParser(): Project {
+        val project = mock<Project>()
+        val settingBinder = mock<SettingBinder>()
+        whenever(settingBinder.read()).thenReturn(Settings())
+        whenever(project.getService(SettingBinder::class.java)).thenReturn(settingBinder)
+        val realParser = ConfigTextParser(project)
+        whenever(project.getService(ConfigTextParser::class.java)).thenReturn(realParser)
+        return project
     }
 
     @Test
     fun testPriority() {
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), realParser)
+        val source = GlobalFileConfigSource(realParserProject, tempFolder.root.toPath(), emptySet())
         assertEquals(2, source.priority)
     }
 
     @Test
     fun testSourceId() {
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), realParser)
+        val source = GlobalFileConfigSource(realParserProject, tempFolder.root.toPath(), emptySet())
         assertEquals("global-file", source.sourceId)
     }
 
     @Test
     fun testEmptyFileList() = runBlocking {
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), realParser)
+        val source = GlobalFileConfigSource(realParserProject, tempFolder.root.toPath(), emptySet())
         val entries = source.collect().toList()
         assertTrue(entries.isEmpty())
     }
@@ -54,7 +69,7 @@ class GlobalFileConfigSourceTest {
         val configFile = tempFolder.newFile("global.easy.api.config")
         configFile.writeText("api.name=Test API\napi.version=1.0.0")
 
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), realParser)
+        val source = GlobalFileConfigSource(realParserProject, tempFolder.root.toPath(), emptySet())
         val entries = source.collect().toList()
 
         assertEquals(2, entries.size)
@@ -79,7 +94,7 @@ class GlobalFileConfigSourceTest {
             .thenReturn(parsedEntries1)
             .thenReturn(parsedEntries2)
 
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), mockParser)
+        val source = GlobalFileConfigSource(mockParserProject, tempFolder.root.toPath(), emptySet())
         val entries = source.collect().toList()
 
         assertEquals(2, entries.size)
@@ -95,9 +110,9 @@ class GlobalFileConfigSourceTest {
         disabled.writeText("api.name=Hidden")
 
         val source = GlobalFileConfigSource(
+            realParserProject,
             tempFolder.root.toPath(),
-            disabledFiles = setOf(disabled.absolutePath),
-            configTextParser = realParser
+            disabledFiles = setOf(disabled.absolutePath)
         )
         val entries = source.collect().toList()
 
@@ -111,7 +126,7 @@ class GlobalFileConfigSourceTest {
         val realFile = tempFolder.newFile("real.config")
         realFile.writeText("api.name=Real")
 
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), realParser)
+        val source = GlobalFileConfigSource(realParserProject, tempFolder.root.toPath(), emptySet())
         val entries = source.collect().toList()
 
         assertEquals(1, entries.size)
@@ -123,7 +138,7 @@ class GlobalFileConfigSourceTest {
         val configFile = tempFolder.newFile("check.config")
         configFile.writeText("api.name=Check")
 
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), realParser)
+        val source = GlobalFileConfigSource(realParserProject, tempFolder.root.toPath(), emptySet())
         val entries = source.collect().toList()
 
         assertTrue(entries.isNotEmpty())
@@ -139,7 +154,7 @@ class GlobalFileConfigSourceTest {
             sequenceOf(ConfigEntry("api.name", "YamlTest", "global-file", DirectiveSnapshot()))
         )
 
-        val source = GlobalFileConfigSource(tempFolder.root.toPath(), emptySet(), mockParser)
+        val source = GlobalFileConfigSource(mockParserProject, tempFolder.root.toPath(), emptySet())
         val entries = source.collect().toList()
 
         assertEquals(1, entries.size)

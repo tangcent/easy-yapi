@@ -1,17 +1,27 @@
 package com.itangcent.easyapi.config
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.model.ConfigSource
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.parser.DirectiveSnapshot
+import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
 import org.junit.Test
 import kotlinx.coroutines.runBlocking
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class LayeredConfigReaderTest {
 
-    private val parser = ConfigTextParser(null)
+    private val parser: ConfigTextParser = run {
+        val project = mock<Project>()
+        val settingBinder = mock<SettingBinder>()
+        whenever(settingBinder.read()).thenReturn(Settings())
+        whenever(project.getService(SettingBinder::class.java)).thenReturn(settingBinder)
+        ConfigTextParser(project)
+    }
 
     @Test
     fun testConfigTextParserMultilineBlock() {
@@ -21,7 +31,7 @@ field.ignore=groovy:```
 ```
 api.name=test
 """.trimIndent()
-        val entries = parser.parse(text, "test").toList()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
         assertEquals(2, entries.size)
         assertEquals("field.ignore", entries[0].key)
         assertTrue(entries[0].value.startsWith("groovy:"))
@@ -39,7 +49,7 @@ ignored.classes=```
 ```
 api.name=test
 """.trimIndent()
-        val entries = parser.parse(text, "test").toList()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
         assertEquals(2, entries.size)
         assertEquals("ignored.classes", entries[0].key)
         assertTrue(entries[0].value.contains("java.lang.Class"))
@@ -53,7 +63,7 @@ api.name=test
 field.ignore=groovy:!it.containingClass().name().startsWith("java.lang")
 api.name=test
 """.trimIndent()
-        val entries = parser.parse(text, "test").toList()
+        val entries = runBlocking { parser.parse(text, "test").toList() }
         assertEquals(2, entries.size)
         assertEquals("field.ignore", entries[0].key)
         assertTrue(entries[0].value.startsWith("groovy:"))

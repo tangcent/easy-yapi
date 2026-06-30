@@ -2,7 +2,6 @@ package com.itangcent.easyapi.config.source
 
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.config.LayeredConfigReader
-import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.exporter.model.HttpMethod
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter

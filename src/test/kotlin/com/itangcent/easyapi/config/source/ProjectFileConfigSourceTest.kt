@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.config.source
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.parser.DirectiveSnapshot
@@ -19,29 +20,32 @@ class ProjectFileConfigSourceTest {
     @get:Rule
     val tempFolder = TemporaryFolder()
 
+    private lateinit var project: Project
     private lateinit var configTextParser: ConfigTextParser
     private lateinit var projectFileConfigSource: ProjectFileConfigSource
 
     @Before
     fun setUp() {
         configTextParser = mock()
+        project = mock()
+        whenever(project.getService(ConfigTextParser::class.java)).thenReturn(configTextParser)
     }
 
     @Test
     fun testPriority() {
-        projectFileConfigSource = ProjectFileConfigSource("/tmp", configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, "/tmp")
         assertEquals(4, projectFileConfigSource.priority)
     }
 
     @Test
     fun testSourceId() {
-        projectFileConfigSource = ProjectFileConfigSource("/tmp", configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, "/tmp")
         assertEquals("project", projectFileConfigSource.sourceId)
     }
 
     @Test
     fun testCollectWithNoConfigFiles() {
-        projectFileConfigSource = ProjectFileConfigSource(tempFolder.root.absolutePath, configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, tempFolder.root.absolutePath)
 
         runBlocking {
             val entries = projectFileConfigSource.collect().toList()
@@ -58,11 +62,11 @@ class ProjectFileConfigSourceTest {
             ConfigEntry("server", "https://api.example.com", "project", DirectiveSnapshot())
         )
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(parsedEntries)
-
-        projectFileConfigSource = ProjectFileConfigSource(tempFolder.root.absolutePath, configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, tempFolder.root.absolutePath)
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(parsedEntries)
+
             val entries = projectFileConfigSource.collect().toList()
             assertEquals(1, entries.size)
             assertEquals("server", entries[0].key)
@@ -79,11 +83,11 @@ class ProjectFileConfigSourceTest {
             ConfigEntry("timeout", "30000", "project", DirectiveSnapshot())
         )
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(parsedEntries)
-
-        projectFileConfigSource = ProjectFileConfigSource(tempFolder.root.absolutePath, configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, tempFolder.root.absolutePath)
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(parsedEntries)
+
             val entries = projectFileConfigSource.collect().toList()
             assertEquals(1, entries.size)
             assertEquals("timeout", entries[0].key)
@@ -99,11 +103,11 @@ class ProjectFileConfigSourceTest {
             ConfigEntry("server", "https://api.example.com", "project", DirectiveSnapshot())
         )
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(parsedEntries)
-
-        projectFileConfigSource = ProjectFileConfigSource(tempFolder.root.absolutePath, configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, tempFolder.root.absolutePath)
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(parsedEntries)
+
             val entries = projectFileConfigSource.collect().toList()
             assertEquals(1, entries.size)
         }
@@ -111,7 +115,7 @@ class ProjectFileConfigSourceTest {
 
     @Test
     fun testSetProjectBasePath() {
-        projectFileConfigSource = ProjectFileConfigSource("/tmp", configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, "/tmp")
         assertEquals("project", projectFileConfigSource.sourceId)
 
         projectFileConfigSource.setProjectBasePath("/new/path")
@@ -133,13 +137,13 @@ class ProjectFileConfigSourceTest {
             ConfigEntry("timeout", "30000", "project", DirectiveSnapshot())
         )
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull()))
-.thenReturn(parsedEntries1)
-.thenReturn(parsedEntries2)
-
-        projectFileConfigSource = ProjectFileConfigSource(tempFolder.root.absolutePath, configTextParser)
+        projectFileConfigSource = ProjectFileConfigSource(project, tempFolder.root.absolutePath)
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull()))
+                .thenReturn(parsedEntries1)
+                .thenReturn(parsedEntries2)
+
             val entries = projectFileConfigSource.collect().toList()
             assertEquals(2, entries.size)
         }
@@ -184,17 +188,17 @@ class ProjectFileConfigSourceTest {
         val configFile = tempFolder.newFile(".easy.api.config")
         configFile.writeText("api.name=SkipMe")
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(
-            sequenceOf(ConfigEntry("api.name", "SkipMe", "project", DirectiveSnapshot()))
-        )
-
         projectFileConfigSource = ProjectFileConfigSource(
+            project,
             tempFolder.root.absolutePath,
-            configTextParser,
             disabledFiles = setOf(configFile.absolutePath)
         )
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(
+                sequenceOf(ConfigEntry("api.name", "SkipMe", "project", DirectiveSnapshot()))
+            )
+
             val entries = projectFileConfigSource.collect().toList()
             assertTrue("disabled file should be skipped", entries.isEmpty())
         }
@@ -205,16 +209,16 @@ class ProjectFileConfigSourceTest {
         val easyapiDir = tempFolder.newFolder(".easyapi")
         val ruleFile = java.io.File(easyapiDir, "rule.properties").apply { writeText("api.name=FromFolder") }
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(
-            sequenceOf(ConfigEntry("api.name", "FromFolder", "project", DirectiveSnapshot()))
-        )
-
         projectFileConfigSource = ProjectFileConfigSource(
-            tempFolder.root.absolutePath,
-            configTextParser
+            project,
+            tempFolder.root.absolutePath
         )
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(
+                sequenceOf(ConfigEntry("api.name", "FromFolder", "project", DirectiveSnapshot()))
+            )
+
             val entries = projectFileConfigSource.collect().toList()
             assertEquals(1, entries.size)
             assertEquals("FromFolder", entries[0].value)
@@ -228,16 +232,16 @@ class ProjectFileConfigSourceTest {
         val legacyFile = tempFolder.newFile(".easy.api.config")
         legacyFile.writeText("api.name=Legacy")
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull()))
-.thenReturn(sequenceOf(ConfigEntry("api.name", "Folder", "project", DirectiveSnapshot())))
-.thenReturn(sequenceOf(ConfigEntry("api.name", "Legacy", "project", DirectiveSnapshot())))
-
         projectFileConfigSource = ProjectFileConfigSource(
-            tempFolder.root.absolutePath,
-            configTextParser
+            project,
+            tempFolder.root.absolutePath
         )
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull()))
+                .thenReturn(sequenceOf(ConfigEntry("api.name", "Folder", "project", DirectiveSnapshot())))
+                .thenReturn(sequenceOf(ConfigEntry("api.name", "Legacy", "project", DirectiveSnapshot())))
+
             val entries = projectFileConfigSource.collect().toList()
             assertEquals(2, entries.size)
         }
@@ -248,17 +252,17 @@ class ProjectFileConfigSourceTest {
         val easyapiDir = tempFolder.newFolder(".easyapi")
         val ruleFile = java.io.File(easyapiDir, "rule.properties").apply { writeText("api.name=Skip") }
 
-        whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(
-            sequenceOf(ConfigEntry("api.name", "Skip", "project", DirectiveSnapshot()))
-        )
-
         projectFileConfigSource = ProjectFileConfigSource(
+            project,
             tempFolder.root.absolutePath,
-            configTextParser,
             disabledFiles = setOf(ruleFile.absolutePath)
         )
 
         runBlocking {
+            whenever(configTextParser.parse(any(), any(), anyOrNull())).thenReturn(
+                sequenceOf(ConfigEntry("api.name", "Skip", "project", DirectiveSnapshot()))
+            )
+
             val entries = projectFileConfigSource.collect().toList()
             assertTrue("disabled folder file should be skipped", entries.isEmpty())
         }
