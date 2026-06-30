@@ -19,3 +19,4 @@ bin/
 .temp
 __pycache__/
 .easyapi/
+/.codegraph/

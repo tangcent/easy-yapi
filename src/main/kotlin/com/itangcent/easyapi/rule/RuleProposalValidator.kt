@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.rule
 
 import com.itangcent.easyapi.util.json.GsonUtils
+import com.itangcent.easyapi.util.text.KeyValueLineParser
 import kotlin.reflect.full.memberProperties
 
 /**
@@ -70,7 +71,7 @@ object RuleProposalValidator {
             // Plain comment (### is a directive, handled elsewhere; treat as
             // non-rule for this check).
             if (line.startsWith("#")) return@forEachIndexed
-            val parsed = splitKeyFilterValue(line) ?: run {
+            val parsed = KeyValueLineParser.splitKeyFilterValue(line) ?: run {
                 // Not a key=value line — skip (directives, stray text). We do
                 // not error on every non-kv line to avoid false positives on
                 // constructs the parser supports but this checker doesn't model.
@@ -115,37 +116,6 @@ object RuleProposalValidator {
         if (filter.startsWith("class:")) return FilterIssue.Deprecated
         if (VALID_FILTER_PREFIXES.any { filter.startsWith(it) }) return null
         return FilterIssue.Invalid
-    }
-
-    /**
-     * Split a `key[filter]=value` / `key=value` line, honoring bracket depth
-     * so `=`/`:` inside a filter or value don't trip the split. Mirrors the
-     * semantics of `ConfigTextParser.splitKeyValue` without reusing it (that
-     * parser folds `key[...]` into the key and doesn't expose the filter).
-     */
-    private fun splitKeyFilterValue(line: String): Triple<String, String?, String>? {
-        var bracketDepth = 0
-        var eqIdx = -1
-        for (i in line.indices) {
-            when (line[i]) {
-                '[' -> bracketDepth++
-                ']' -> if (bracketDepth > 0) bracketDepth--
-                '=', ':' -> if (bracketDepth == 0 && i > 0) {
-                    eqIdx = i
-                    break
-                }
-            }
-        }
-        if (eqIdx <= 0) return null
-        val left = line.substring(0, eqIdx).trim()
-        val value = line.substring(eqIdx + 1).trim()
-        if (left.isEmpty()) return null
-        val bracketStart = left.indexOf('[')
-        if (bracketStart < 0 || !left.endsWith("]")) return Triple(left, null, value)
-        val key = left.substring(0, bracketStart).trim()
-        val filter = left.substring(bracketStart + 1, left.length - 1).trim()
-        if (key.isEmpty() || filter.isEmpty()) return Triple(left, null, value)
-        return Triple(key, filter, value)
     }
 
     private fun isParsableJson(text: String): Boolean = runCatching {

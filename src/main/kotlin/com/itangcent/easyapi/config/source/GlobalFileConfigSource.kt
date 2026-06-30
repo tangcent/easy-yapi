@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.config.source
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.model.ConfigSource
 import com.itangcent.easyapi.config.parser.ConfigTextParser
+import com.itangcent.easyapi.config.parseFiles
 import com.itangcent.easyapi.logging.IdeaLog
 import java.nio.file.Files
 import java.nio.file.Path
@@ -18,16 +20,16 @@ import java.nio.file.Path
  * (3) so bundled framework extensions take precedence, but provides
  * user-managed global defaults that other project-specific sources override.
  *
- * Non-existent or unreadable files are skipped with a warning — never thrown.
+ * File reading and parsing is delegated to [parseFiles].
  *
+ * @param project The IntelliJ project, used to obtain [ConfigTextParser]
  * @param globalDir The `~/.easyapi` directory to scan
  * @param disabledFiles Absolute paths of files to skip (in [disabledGlobalRuleFiles])
- * @param configTextParser Parser for configuration text
  */
 class GlobalFileConfigSource(
+    private val project: Project,
     private val globalDir: Path,
-    private val disabledFiles: Set<String>,
-    private val configTextParser: ConfigTextParser
+    private val disabledFiles: Set<String>
 ) : ConfigSource {
     companion object : IdeaLog {
 
@@ -52,15 +54,6 @@ class GlobalFileConfigSource(
         val files = listFiles(globalDir).filter {
             it.toAbsolutePath().toString() !in disabledFiles
         }
-        if (files.isEmpty()) return emptySequence()
-
-        return sequence {
-            for (file in files) {
-                val content = runCatching { Files.readString(file, Charsets.UTF_8) }
-                    .onFailure { LOG.warn("GlobalFileConfigSource: failed to read $file", it) }
-                    .getOrNull() ?: continue
-                yieldAll(configTextParser.parse(content, sourceId, file.parent?.toString()).toList())
-            }
-        }
+        return ConfigTextParser.getInstance(project).parseFiles(files, sourceId)
     }
 }

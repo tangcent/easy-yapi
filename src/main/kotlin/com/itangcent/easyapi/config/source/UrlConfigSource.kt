@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.config.source
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.model.ConfigSource
 import com.itangcent.easyapi.config.parser.ConfigTextParser
@@ -16,26 +17,25 @@ import com.itangcent.easyapi.config.resource.CachedResourceResolver
  *
  * @param urls List of remote configuration URLs
  * @param configTextParser Parser for configuration text
- * @param cachedResourceResolver Resolver for fetching and caching remote content
+ * @param project The IntelliJ project, used to obtain [CachedResourceResolver]
  */
-class RemoteConfigSource(
+class UrlConfigSource(
     private val urls: List<String>,
     private val configTextParser: ConfigTextParser,
-    private val cachedResourceResolver: CachedResourceResolver
+    private val project: Project
 ) : ConfigSource {
     override val priority: Int = 3
     override val sourceId: String = "remote"
 
     override suspend fun collect(): Sequence<ConfigEntry> {
         if (urls.isEmpty()) return emptySequence()
-        val contents = urls.map { url -> url to cachedResourceResolver.get(url) }
-        return sequence {
-            for ((url, content) in contents) {
-                if (content != null) {
-                    val baseDir = url.substringBeforeLast('/', missingDelimiterValue = url)
-                    yieldAll(configTextParser.parse(content, sourceId, baseDir))
-                }
-            }
+        val resolver = CachedResourceResolver.getInstance(project)
+        val result = ArrayList<ConfigEntry>()
+        for (url in urls) {
+            val content = resolver.get(url) ?: continue
+            val baseDir = url.substringBeforeLast('/', missingDelimiterValue = url)
+            result += configTextParser.parse(content, sourceId, baseDir)
         }
+        return result.asSequence()
     }
 }

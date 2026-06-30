@@ -7,7 +7,12 @@ import kotlinx.coroutines.runBlocking
 
 class ExtensionConfigSourceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
-    private val configTextParser = ConfigTextParser(null)
+    private lateinit var configTextParser: ConfigTextParser
+
+    override fun setUp() {
+        super.setUp()
+        configTextParser = ConfigTextParser.getInstance(project)
+    }
 
     fun testPriority() {
         val source = ExtensionConfigSource(project, null, configTextParser)

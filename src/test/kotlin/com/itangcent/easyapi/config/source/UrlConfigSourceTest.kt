@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.config.source
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.parser.DirectiveSnapshot
@@ -14,36 +15,40 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-class RemoteConfigSourceTest {
+class UrlConfigSourceTest {
 
+    private lateinit var project: Project
     private lateinit var cachedResourceResolver: CachedResourceResolver
     private lateinit var configTextParser: ConfigTextParser
-    private lateinit var remoteConfigSource: RemoteConfigSource
+    private lateinit var urlConfigSource: UrlConfigSource
 
     @Before
     fun setUp() {
+        project = mock()
         cachedResourceResolver = mock()
         configTextParser = mock()
+        whenever(project.getService(CachedResourceResolver::class.java))
+            .thenReturn(cachedResourceResolver)
     }
 
     @Test
     fun testPriority() {
-        remoteConfigSource = RemoteConfigSource(emptyList(), configTextParser, cachedResourceResolver)
-        assertEquals(3, remoteConfigSource.priority)
+        urlConfigSource = UrlConfigSource(emptyList(), configTextParser, project)
+        assertEquals(3, urlConfigSource.priority)
     }
 
     @Test
     fun testSourceId() {
-        remoteConfigSource = RemoteConfigSource(emptyList(), configTextParser, cachedResourceResolver)
-        assertEquals("remote", remoteConfigSource.sourceId)
+        urlConfigSource = UrlConfigSource(emptyList(), configTextParser, project)
+        assertEquals("remote", urlConfigSource.sourceId)
     }
 
     @Test
     fun testCollectWithEmptyUrls() {
-        remoteConfigSource = RemoteConfigSource(emptyList(), configTextParser, cachedResourceResolver)
-        
+        urlConfigSource = UrlConfigSource(emptyList(), configTextParser, project)
+
         runBlocking {
-            val entries = remoteConfigSource.collect().toList()
+            val entries = urlConfigSource.collect().toList()
             assertTrue(entries.isEmpty())
         }
     }
@@ -55,16 +60,16 @@ class RemoteConfigSourceTest {
         val parsedEntries = sequenceOf(
             ConfigEntry("server", "https://api.example.com", "remote", DirectiveSnapshot())
         )
-        
+
         runBlocking {
             whenever(cachedResourceResolver.get(url)).thenReturn(content)
             whenever(configTextParser.parse(content, "remote", "https://fake-local-test.example")).thenReturn(parsedEntries)
         }
-        
-        remoteConfigSource = RemoteConfigSource(listOf(url), configTextParser, cachedResourceResolver)
-        
+
+        urlConfigSource = UrlConfigSource(listOf(url), configTextParser, project)
+
         runBlocking {
-            val entries = remoteConfigSource.collect().toList()
+            val entries = urlConfigSource.collect().toList()
             assertEquals(1, entries.size)
             assertEquals("server", entries[0].key)
             assertEquals("https://api.example.com", entries[0].value)
@@ -77,7 +82,7 @@ class RemoteConfigSourceTest {
         val url2 = "https://fake-local-test.example/config2.txt"
         val content1 = "server=https://api1.example.com"
         val content2 = "token=abc123"
-        
+
         runBlocking {
             whenever(cachedResourceResolver.get(url1)).thenReturn(content1)
             whenever(cachedResourceResolver.get(url2)).thenReturn(content2)
@@ -88,11 +93,11 @@ class RemoteConfigSourceTest {
                 sequenceOf(ConfigEntry("token", "abc123", "remote", DirectiveSnapshot()))
             )
         }
-        
-        remoteConfigSource = RemoteConfigSource(listOf(url1, url2), configTextParser, cachedResourceResolver)
-        
+
+        urlConfigSource = UrlConfigSource(listOf(url1, url2), configTextParser, project)
+
         runBlocking {
-            val entries = remoteConfigSource.collect().toList()
+            val entries = urlConfigSource.collect().toList()
             assertEquals(2, entries.size)
         }
     }
@@ -100,15 +105,15 @@ class RemoteConfigSourceTest {
     @Test
     fun testCollectWithNullContent() {
         val url = "https://fake-local-test.example/config.txt"
-        
+
         runBlocking {
             whenever(cachedResourceResolver.get(url)).thenReturn(null)
         }
-        
-        remoteConfigSource = RemoteConfigSource(listOf(url), configTextParser, cachedResourceResolver)
-        
+
+        urlConfigSource = UrlConfigSource(listOf(url), configTextParser, project)
+
         runBlocking {
-            val entries = remoteConfigSource.collect().toList()
+            val entries = urlConfigSource.collect().toList()
             assertTrue(entries.isEmpty())
             verify(configTextParser, never()).parse(any(), any(), any())
         }
@@ -119,7 +124,7 @@ class RemoteConfigSourceTest {
         val url1 = "https://fake-local-test.example/config1.txt"
         val url2 = "https://fake-local-test.example/config2.txt"
         val content2 = "token=abc123"
-        
+
         runBlocking {
             whenever(cachedResourceResolver.get(url1)).thenReturn(null)
             whenever(cachedResourceResolver.get(url2)).thenReturn(content2)
@@ -127,11 +132,11 @@ class RemoteConfigSourceTest {
                 sequenceOf(ConfigEntry("token", "abc123", "remote", DirectiveSnapshot()))
             )
         }
-        
-        remoteConfigSource = RemoteConfigSource(listOf(url1, url2), configTextParser, cachedResourceResolver)
-        
+
+        urlConfigSource = UrlConfigSource(listOf(url1, url2), configTextParser, project)
+
         runBlocking {
-            val entries = remoteConfigSource.collect().toList()
+            val entries = urlConfigSource.collect().toList()
             assertEquals(1, entries.size)
             assertEquals("token", entries[0].key)
         }

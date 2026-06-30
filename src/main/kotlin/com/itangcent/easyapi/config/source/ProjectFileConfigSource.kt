@@ -1,8 +1,10 @@
 package com.itangcent.easyapi.config.source
 
+import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.model.ConfigSource
 import com.itangcent.easyapi.config.parser.ConfigTextParser
+import com.itangcent.easyapi.config.parseFiles
 import com.itangcent.easyapi.logging.IdeaLog
 import java.nio.file.Files
 import java.nio.file.Path
@@ -25,13 +27,15 @@ import java.nio.file.Paths
  * This source has the highest priority (4) so project-specific rules win
  * over extension, remote, and global sources.
  *
+ * File reading and parsing is delegated to [parseFiles].
+ *
+ * @param project The IntelliJ project, used to obtain [ConfigTextParser]
  * @param projectBasePath The project base directory path
- * @param configTextParser Parser for configuration text
  * @param disabledFiles Absolute paths of files to skip
  */
 class ProjectFileConfigSource(
+    private val project: Project,
     private var projectBasePath: String,
-    private val configTextParser: ConfigTextParser,
     private val disabledFiles: Set<String> = emptySet()
 ) : ConfigSource {
     companion object : IdeaLog {
@@ -81,18 +85,7 @@ class ProjectFileConfigSource(
         val configFiles = (easyapiFolderFiles(projectBasePath) + legacyFiles(projectBasePath))
             .filter { it.toAbsolutePath().toString() !in disabledFiles }
 
-        if (configFiles.isEmpty()) return emptySequence()
-
-        return sequence {
-            for (file in configFiles) {
-                val content = runCatching { Files.readString(file, Charsets.UTF_8) }
-                    .onFailure { LOG.warn("ProjectFileConfigSource: failed to read $file", it) }
-                    .getOrNull() ?: continue
-                val entries = configTextParser.parse(content, sourceId, file.parent?.toString()).toList()
-                LOG.info("Loaded ${entries.size} entries from project config file: $file")
-                yieldAll(entries)
-            }
-        }
+        return ConfigTextParser.getInstance(project).parseFiles(configFiles, sourceId)
     }
 
     fun setProjectBasePath(path: String) {
