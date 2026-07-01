@@ -38,9 +38,14 @@ data class Proposal(val content: String, val suggestedFileName: String)
  * main editor — so there is no caret/active source file in the editor sense.
  * What the agent actually needs to know is: which rule file is being edited,
  * and what other rule files already exist.
+ *
+ * [userLanguage] carries the detected Markdown template locale  — a
+ * BCP-47 tag (e.g. `zh-CN`, `ja`) when the user appears to want non-English
+ * output, or `null` when English / undetermined (no suggestion to surface).
  */
 data class Ambient(
     val projectName: String,
     val editingRuleFile: String?,
-    val existingRuleFiles: List<String>
+    val existingRuleFiles: List<String>,
+    val userLanguage: String? = null
 )

@@ -30,7 +30,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
             logLevel = 40
             outputCharset = "GBK"
             outputDemo = false
-            markdownFormatType = com.itangcent.easyapi.settings.MarkdownFormatType.ULTIMATE.name
         }
         panel.resetFrom(settings)
 
@@ -43,7 +42,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         assertEquals(40, target.logLevel)
         assertEquals("GBK", target.outputCharset)
         assertFalse(target.outputDemo)
-        assertEquals(com.itangcent.easyapi.settings.MarkdownFormatType.ULTIMATE.name, target.markdownFormatType)
     }
 
     fun testIsModifiedNullSettings() {
@@ -66,7 +64,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
             logLevel = 100
             outputCharset = "ISO-8859-1"
             outputDemo = false
-            markdownFormatType = com.itangcent.easyapi.settings.MarkdownFormatType.ULTIMATE.name
         }
         panel.resetFrom(modified)
 
@@ -83,7 +80,6 @@ class GeneralSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestCase(
         assertEquals(100, target.logLevel)
         assertEquals("ISO-8859-1", target.outputCharset)
         assertFalse(target.outputDemo)
-        assertEquals(com.itangcent.easyapi.settings.MarkdownFormatType.ULTIMATE.name, target.markdownFormatType)
     }
 
     fun testResetFromNullDoesNotThrow() {

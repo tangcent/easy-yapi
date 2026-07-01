@@ -61,7 +61,6 @@ interface ApplicationSettingsSupport {
     var logLevel: Int
     var outputDemo: Boolean
     var outputCharset: String
-    var markdownFormatType: String
     var builtInConfig: String?
     var remoteConfig: Array<String>
     /** When true, automatically scan APIs on file changes */
@@ -133,7 +132,6 @@ interface ApplicationSettingsSupport {
         newSetting.logLevel = this.logLevel
         newSetting.outputDemo = this.outputDemo
         newSetting.outputCharset = this.outputCharset
-        newSetting.markdownFormatType = this.markdownFormatType
         newSetting.builtInConfig = this.builtInConfig
         newSetting.httpTimeOut = this.httpTimeOut
         newSetting.unsafeSsl = this.unsafeSsl

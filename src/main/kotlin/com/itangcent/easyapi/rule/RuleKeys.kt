@@ -118,4 +118,16 @@ object RuleKeys {
 
     // ── Properties rules ──────────────────────────────────────────
     val PROPERTIES_PREFIX = RuleKey.string("properties.prefix")
+
+    // ── Markdown export templates ─────────────────────────────────
+    // NOTE: These are document-level config read via `ConfigReader.getFirst(...)`,
+    // never evaluated by `RuleEngine` against a PSI element. They live here only so
+    // `list_rule_keys` surfaces them . The AI proposal half of markdown
+    // template discovery is added in Phase 4.
+    //
+    // `markdown.template` accepts either a local file path OR a remote http(s) URL —
+    // the resolver auto-detects by the `http(s)://` prefix. The separate `.file` and
+    // `.url` keys were merged into this single key for simpler configuration.
+    val MARKDOWN_TEMPLATE = RuleKey.string("markdown.template")
+    val MARKDOWN_TEMPLATE_LANGUAGE = RuleKey.string("markdown.template.language")
 }

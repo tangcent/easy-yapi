@@ -44,6 +44,13 @@ object SystemPromptBuilder : IdeaLog {
         if (amb.existingRuleFiles.isNotEmpty()) {
             parts += "other rule files: ${amb.existingRuleFiles.joinToString(", ")}"
         }
+        // Surface the detected Markdown template locale so the agent can decide
+        // whether to propose `markdown.template.language=<tag>`. `en`/null
+        // mean "default (English) template" — no hint, no proposal.
+        val lang = amb.userLanguage
+        if (lang != null && lang != "en") {
+            parts += "user language: $lang"
+        }
         return AiMessage.System(parts.joinToString("; ") + ".")
     }
 

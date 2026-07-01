@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.settings.ui
 
 import com.itangcent.easyapi.settings.HttpClientType
-import com.itangcent.easyapi.settings.MarkdownFormatType
 import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
 import org.junit.Test
@@ -245,39 +244,6 @@ class IntelligentSettingsPanelLogicTest {
     fun testIntelligentSettingsPanel_componentNotNull() {
         val panel = IntelligentSettingsPanel()
         assertNotNull(panel.component)
-    }
-}
-
-class MarkdownSettingsPanelLogicTest {
-
-    @Test
-    fun testMarkdownFormatType_simple() {
-        assertEquals("SIMPLE", MarkdownFormatType.SIMPLE.name)
-        assertNotNull(MarkdownFormatType.SIMPLE.desc)
-    }
-
-    @Test
-    fun testMarkdownFormatType_ultimate() {
-        assertEquals("ULTIMATE", MarkdownFormatType.ULTIMATE.name)
-        assertNotNull(MarkdownFormatType.ULTIMATE.desc)
-    }
-
-    @Test
-    fun testMarkdownFormatType_valueOf() {
-        assertEquals(MarkdownFormatType.SIMPLE, MarkdownFormatType.valueOf("SIMPLE"))
-        assertEquals(MarkdownFormatType.ULTIMATE, MarkdownFormatType.valueOf("ULTIMATE"))
-    }
-
-    @Test
-    fun testSettings_markdownFormatTypeDefault() {
-        val settings = Settings()
-        assertEquals(MarkdownFormatType.SIMPLE.name, settings.markdownFormatType)
-    }
-
-    @Test
-    fun testSettings_markdownFormatTypeUltimate() {
-        val settings = Settings(markdownFormatType = MarkdownFormatType.ULTIMATE.name)
-        assertEquals(MarkdownFormatType.ULTIMATE.name, settings.markdownFormatType)
     }
 }
 

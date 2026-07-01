@@ -36,7 +36,6 @@ Framework recognition and output formatting.
 | Form Expanded | `true` | Expand form parameters in the exported tree | `formExpanded` |
 | Output Demo | `true` | Include demo/example values in exports | `outputDemo` |
 | Output Charset | `UTF-8` | Character encoding for exported files | `outputCharset` |
-| Markdown Format | `SIMPLE` | Markdown export format (`SIMPLE` or `DETAILED`) | `markdownFormatType` |
 | Log Level | `100` (SILENT) | Console verbosity. Lower = more verbose. `100`=SILENT, `50`=WARN, `20`=INFO, `10`=DEBUG, `0`=TRACE | `logLevel` |
 | Gutter Icon | `true` | Show gutter icons for API endpoints in the editor | `gutterIconEnabled` |
 | Switch Notice | `true` | Show a notification when switching settings scope | `switchNotice` |

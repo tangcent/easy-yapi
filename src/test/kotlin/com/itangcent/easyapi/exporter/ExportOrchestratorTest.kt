@@ -16,7 +16,7 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var orchestrator: ExportOrchestrator
     private var previousDialog: TestDialog? = null
-    private val testFileConfig = ChannelConfig.FileConfig(outputDir = "/tmp", fileName = "export_test")
+    private val testFileConfig = ChannelConfig.MarkdownConfig(outputDir = "/tmp", fileName = "export_test")
 
     override fun setUp() {
         super.setUp()
@@ -105,7 +105,7 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testExportViaChannelWithCustomChannelConfig() = runTest {
         val endpoints = listOf(createTestEndpoint())
-        val channelConfig = ChannelConfig.FileConfig(
+        val channelConfig = ChannelConfig.MarkdownConfig(
             outputDir = "/tmp",
             fileName = "test"
         )

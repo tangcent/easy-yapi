@@ -126,6 +126,27 @@ Confirm a hit with `get_psi_class_info`, then ask: *does it change the
 request/response contract invisibly?* If yes, apply the catalog recipe.
 If no, no rule is needed.
 
+## Markdown language template
+
+When the ambient `user language` is non-English AND no
+`markdown.template.language` rule is already in effect AND the user's
+request touches Markdown export or asks for localized docs, propose
+`markdown.template.language=<tag>` (a single-line rule). Check
+`get_existing_rules_for_key` first to avoid duplicates, and follow the
+standard rule-quality rules below (one proposal, no silent writes).
+
+- Do **not** author a full custom template when a bundled template
+  covers the locale — `zh-CN` ships bundled; `en` (or unset) uses the
+  default English template and needs no rule. A bundled template is
+  always preferred over a hand-authored one because it tracks
+  structural changes to the default.
+- If no bundled template exists for the locale, tell the user, fall
+  back to English for this export, and suggest the "Copy default
+  template" affordance in the Markdown export panel so they can author
+  a localized copy as a starting point.
+- This proposal flows through `propose_rule_content` like any other
+  rule — the user reviews and saves. Never write the rule silently.
+
 ## Writing rules — quality rules (CRITICAL — follow exactly)
 
 ### 1. Check existing rules before writing (avoid duplicates)
