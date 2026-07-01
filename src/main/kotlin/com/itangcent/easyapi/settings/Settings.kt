@@ -53,7 +53,6 @@ data class Settings(
     override var logLevel: Int = 100, // SILENT — console off by default
     override var outputDemo: Boolean = true,
     override var outputCharset: String = "UTF-8",
-    override var markdownFormatType: String = MarkdownFormatType.SIMPLE.name,
     override var builtInConfig: String? = null,
     override var remoteConfig: Array<String> = emptyArray(),
     override var autoScanEnabled: Boolean = true,
@@ -118,7 +117,6 @@ data class Settings(
         if (httpClient != other.httpClient) return false
         if (extensionConfigs != other.extensionConfigs) return false
         if (outputCharset != other.outputCharset) return false
-        if (markdownFormatType != other.markdownFormatType) return false
         if (builtInConfig != other.builtInConfig) return false
         if (!remoteConfig.contentEquals(other.remoteConfig)) return false
         if (autoScanEnabled != other.autoScanEnabled) return false
@@ -174,7 +172,6 @@ data class Settings(
         result = 31 * result + httpClient.hashCode()
         result = 31 * result + extensionConfigs.hashCode()
         result = 31 * result + outputCharset.hashCode()
-        result = 31 * result + markdownFormatType.hashCode()
         result = 31 * result + (builtInConfig?.hashCode() ?: 0)
         result = 31 * result + remoteConfig.contentHashCode()
         result = 31 * result + autoScanEnabled.hashCode()

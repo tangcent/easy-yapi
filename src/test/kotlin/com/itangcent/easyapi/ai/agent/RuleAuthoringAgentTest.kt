@@ -73,8 +73,10 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
         // Step 2: LLM calls propose_rule_content with the staged rule.
         aiService.enqueueToolCalls(
-            AiToolCall("c2", "propose_rule_content",
-                """{"content":"# rule","suggestedFileName":"rules.easy.api.config"}"""),
+            AiToolCall(
+                "c2", "propose_rule_content",
+                """{"content":"# rule","suggestedFileName":"rules.easy.api.config"}"""
+            ),
             content = null
         )
 
@@ -156,8 +158,10 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         // Step 1: list_rule_keys + propose_rule_content in the SAME response.
         aiService.enqueueToolCalls(
             AiToolCall("c1", "list_rule_keys", "{}"),
-            AiToolCall("c2", "propose_rule_content",
-                """{"content":"# rule","suggestedFileName":"r.easy.api.config"}""")
+            AiToolCall(
+                "c2", "propose_rule_content",
+                """{"content":"# rule","suggestedFileName":"r.easy.api.config"}"""
+            )
         )
 
         val outcome = agent.runTurn("perceive then propose", memory)
@@ -186,8 +190,10 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
 
         // Step 1: LLM asks to write_rule_file (gated ACTION). Gate rejects.
         aiService.enqueueToolCalls(
-            AiToolCall("c1", "write_rule_file",
-                """{"path":"/tmp/x.easy.api.config","content":"# x"}""")
+            AiToolCall(
+                "c1", "write_rule_file",
+                """{"path":"/tmp/x.easy.api.config","content":"# x"}"""
+            )
         )
         // Step 2: LLM gives up and answers with plain text.
         aiService.enqueueText("OK I won't write that file.")
@@ -200,16 +206,20 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         val writeTool = tools.let { reg ->
             // recover the fake to assert it wasn't called
             (reg.javaClass.getDeclaredField("tools").apply { isAccessible = true }
-.get(reg) as List<AiTool>)
-.filterIsInstance<WriteRuleFileFakeTool>().single()
+                .get(reg) as List<AiTool>)
+                .filterIsInstance<WriteRuleFileFakeTool>().single()
         }
-        assertFalse("write_rule_file must not execute when approval is rejected",
-            writeTool.executed)
+        assertFalse(
+            "write_rule_file must not execute when approval is rejected",
+            writeTool.executed
+        )
 
         // Event sequence: ApprovalRequested present, Observed carries an Error.
         val phases = events.collected.map { it::class.simpleName }
-        assertTrue("ApprovalRequested must be emitted for gated ACTION tools",
-            phases.contains("ApprovalRequested"))
+        assertTrue(
+            "ApprovalRequested must be emitted for gated ACTION tools",
+            phases.contains("ApprovalRequested")
+        )
         // Approval gate was actually consulted.
         assertTrue(approvalGate.wasConsulted)
         // The observed result should be an error.
@@ -242,8 +252,10 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         val requests = aiService.requests()
         assertEquals(2, requests.size)
         // The second request carries more messages than the first.
-        assertTrue("turn 2 transcript must include turn 1 history",
-            requests[1].messages.size > requests[0].messages.size)
+        assertTrue(
+            "turn 2 transcript must include turn 1 history",
+            requests[1].messages.size > requests[0].messages.size
+        )
         // The second request contains the first turn's user "hello".
         assertTrue(requests[1].messages.any {
             it is com.itangcent.easyapi.ai.AiMessage.User && it.content == "hello"
@@ -304,6 +316,178 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
+    // --- Markdown language-template proposals  ---
+
+    /**
+     * Script 6 : ambient `userLanguage=zh-CN` → the ambient
+     * System message sent to the LLM includes the `user language: zh-CN`
+     * hint, and a scripted `propose_rule_content` call staging
+     * `markdown.template.language=zh-CN` is staged in `memory.proposal`.
+     *
+     * This is the end-to-end integration test for the locale-detection →
+     * ambient-hint → agent-proposal chain.
+     */
+    fun testProposesLanguageRuleWhenAmbientNonEnglish() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool(), ProposeRuleContentFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        // Step 1: LLM perceives (list_rule_keys).
+        aiService.enqueueToolCalls(
+            AiToolCall("c1", "list_rule_keys", "{}")
+        )
+        // Step 2: LLM proposes a language rule (terminal).
+        aiService.enqueueToolCalls(
+            AiToolCall(
+                "c2", "propose_rule_content",
+                """{"content":"markdown.template.language=zh-CN","suggestedFileName":"markdown-language.rules"}"""
+            ),
+            content = null
+        )
+
+        val ambient = Ambient(
+            projectName = project.name,
+            editingRuleFile = null,
+            existingRuleFiles = emptyList(),
+            userLanguage = "zh-CN"
+        )
+        val outcome = agent.runTurn(
+            "help me export Markdown docs in Chinese", memory, ambient
+        )
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Proposed, outcome)
+        assertNotNull(memory.proposal)
+        assertEquals("markdown-language.rules", memory.proposal?.suggestedFileName)
+        assertTrue(
+            "proposal content should include markdown.template.language=zh-CN: ${memory.proposal?.content}",
+            memory.proposal?.content?.contains("markdown.template.language=zh-CN") == true
+        )
+
+        // The ambient hint reached the LLM: the ambient System message
+        // (the one starting with "Context: project") contains "user language: zh-CN".
+        // We filter to the ambient message specifically — the preamble also mentions
+        // "user language" in its instruction text, so checking all System messages
+        // would give a false positive.
+        val firstRequest = aiService.requests().first()
+        val ambientMsg = firstRequest.messages
+            .filterIsInstance<AiMessage.System>()
+            .firstOrNull { it.content.startsWith("Context: project") }
+        assertNotNull("ambient message should be present in the first request", ambientMsg)
+        assertTrue(
+            "ambient message should include 'user language: zh-CN' hint: ${ambientMsg?.content}",
+            ambientMsg!!.content.contains("user language: zh-CN", ignoreCase = true)
+        )
+    }
+
+    /**
+     * Script 7 : ambient `userLanguage=null` (English) → the
+     * ambient System message does NOT include a `user language` hint, so
+     * the LLM has no signal to propose a language rule. A scripted non-
+     * language proposal is staged correctly (the flow still works —
+     * English just means no hint).
+     */
+    fun testDoesNotSurfaceLanguageHintWhenAmbientEnglish() = runBlocking {
+        val tools = ToolRegistry(listOf(ListRuleKeysFakeTool(), ProposeRuleContentFakeTool()))
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        // Step 1: LLM perceives.
+        aiService.enqueueToolCalls(
+            AiToolCall("c1", "list_rule_keys", "{}")
+        )
+        // Step 2: LLM proposes a non-language rule (e.g. a header rule).
+        aiService.enqueueToolCalls(
+            AiToolCall(
+                "c2", "propose_rule_content",
+                """{"content":"method.additional.header={\"name\":\"X-Foo\",\"value\":\"bar\"}","suggestedFileName":"headers.rules"}"""
+            ),
+            content = null
+        )
+
+        val ambient = Ambient(
+            projectName = project.name,
+            editingRuleFile = null,
+            existingRuleFiles = emptyList(),
+            userLanguage = null  // English / undetermined
+        )
+        val outcome = agent.runTurn("add a header to every POST", memory, ambient)
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Proposed, outcome)
+        assertNotNull(memory.proposal)
+        // The proposal does NOT contain a language rule.
+        assertFalse(
+            "English ambient should not prompt a language-rule proposal: ${memory.proposal?.content}",
+            memory.proposal?.content?.contains("markdown.template.language=") == true
+        )
+
+        // The ambient message sent to the LLM does NOT include the hint.
+        // Filter to the ambient message specifically (starts with "Context: project")
+        // — the preamble also mentions "user language" in its instruction text.
+        val firstRequest = aiService.requests().first()
+        val ambientMsg = firstRequest.messages
+            .filterIsInstance<AiMessage.System>()
+            .firstOrNull { it.content.startsWith("Context: project") }
+        assertNotNull("ambient message should be present in the first request", ambientMsg)
+        assertFalse(
+            "ambient message should NOT include 'user language' hint when userLanguage is null: ${ambientMsg?.content}",
+            ambientMsg!!.content.contains("user language", ignoreCase = true)
+        )
+    }
+
+    /**
+     * Script 8 : the language-rule proposal flows through
+     * `propose_rule_content` (the user-approval gate), NOT through a silent
+     * `write_rule_file`. Even when the LLM proposes a rule, the file is not
+     * written to disk — the proposal is staged for the user to review.
+     */
+    fun testLanguageRuleProposalStagedNotWritten() = runBlocking {
+        val writeTool = WriteRuleFileFakeTool()
+        val tools = ToolRegistry(
+            listOf(ListRuleKeysFakeTool(), ProposeRuleContentFakeTool(), writeTool)
+        )
+        val events = captureEvents()
+        val agent = RuleAuthoringAgent(aiService, tools, ctx, events.flow)
+
+        // Step 1: LLM perceives.
+        aiService.enqueueToolCalls(
+            AiToolCall("c1", "list_rule_keys", "{}")
+        )
+        // Step 2: LLM proposes a language rule via the staging action.
+        aiService.enqueueToolCalls(
+            AiToolCall(
+                "c2", "propose_rule_content",
+                """{"content":"markdown.template.language=zh-CN","suggestedFileName":"markdown-language.rules"}"""
+            ),
+            content = null
+        )
+
+        val ambient = Ambient(
+            projectName = project.name,
+            editingRuleFile = null,
+            existingRuleFiles = emptyList(),
+            userLanguage = "zh-CN"
+        )
+        val outcome = agent.runTurn(
+            "help me export Markdown docs in Chinese", memory, ambient
+        )
+        events.cancelAndCollect()
+
+        assertEquals(TurnOutcome.Proposed, outcome)
+        // The write tool was never called — the proposal is staged, not written.
+        assertFalse(
+            "write_rule_file must not execute — proposal flows through propose_rule_content",
+            writeTool.executed
+        )
+        // The proposal is staged for user review.
+        assertNotNull(memory.proposal)
+        assertTrue(
+            "proposal should contain the language rule",
+            memory.proposal?.content?.contains("markdown.template.language=zh-CN") == true
+        )
+    }
+
     // --- Helpers ---
 
     /**
@@ -331,7 +515,8 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
         return EventCapture(flow, job, collected)
     }
 
-    private fun scope() = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined)
+    private fun scope() =
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Unconfined)
 
     private class EventCapture(
         val flow: MutableSharedFlow<AgentEvent>,
@@ -369,6 +554,7 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
             ),
             "required" to listOf("content", "suggestedFileName")
         )
+
         override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
             val content = args["content"] as? String
             val suggestedFileName = args["suggestedFileName"] as? String ?: "rules.easy.api.config"
@@ -393,6 +579,7 @@ class RuleAuthoringAgentTest : EasyApiLightCodeInsightFixtureTestCase() {
             ),
             "required" to listOf("path", "content")
         )
+
         override suspend fun execute(args: Map<String, Any?>, ctx: ToolContext): ToolResult {
             executed = true
             return ToolResult.Text("wrote")

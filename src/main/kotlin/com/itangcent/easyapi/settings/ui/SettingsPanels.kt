@@ -40,7 +40,6 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.text.ByteSizeUtil
 import com.itangcent.easyapi.settings.HttpClientType
-import com.itangcent.easyapi.settings.MarkdownFormatType
 import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
 import com.itangcent.easyapi.settings.Settings
@@ -91,7 +90,6 @@ interface SettingsPanel {
  * - Framework support toggles (Feign, JAX-RS, Actuator)
  * - Logging level selection
  * - Output charset and demo settings
- * - Markdown format selection
  * - Cache management
  */
 class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel {
@@ -123,7 +121,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
     private val outputDemoCheckBox = JBCheckBox("Output demo in markdown", true).apply {
         toolTipText = "Include example/demo values in generated markdown documentation"
     }
-    private val markdownFormatTypeCombo = ComboBox(MarkdownFormatType.values())
 
     private val projectCacheSizeLabel = JBLabel("0 B")
     private val globalCacheSizeLabel = JBLabel("0 B")
@@ -395,7 +392,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         .addLabeledComponent("Log Level:", logLevelCombo)
         .addLabeledComponent("Output Charset:", outputCharsetCombo)
         .addComponent(outputDemoCheckBox)
-        .addLabeledComponent("Markdown Format:", markdownFormatTypeCombo)
         .addComponent(createTitledPanel("Cache Management", listOf(cachePanel)))
         .addComponent(createRepositoryPanel())
         .addComponentFillVertically(JPanel(), 0)
@@ -412,9 +408,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         logLevelCombo.selectedItem = CommonSettingsHelper.VerbosityLevel.toLevel(settings?.logLevel ?: 0)
         outputCharsetCombo.selectedItem = settings?.outputCharset ?: "UTF-8"
         outputDemoCheckBox.isSelected = settings?.outputDemo ?: true
-        markdownFormatTypeCombo.selectedItem = settings?.markdownFormatType?.let {
-            runCatching { MarkdownFormatType.valueOf(it) }.getOrNull()
-        } ?: MarkdownFormatType.SIMPLE
         refreshCacheSizes()
 
         val userRepos = settings?.grpcRepositories?.mapNotNull { RepositoryConfig.parse(it) }
@@ -436,8 +429,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 0
         settings.outputCharset = outputCharsetCombo.selectedItem?.toString() ?: "UTF-8"
         settings.outputDemo = outputDemoCheckBox.isSelected
-        settings.markdownFormatType =
-            (markdownFormatTypeCombo.selectedItem as? MarkdownFormatType)?.name ?: MarkdownFormatType.SIMPLE.name
 
         val repos = repositoryTableModel.items.map { RepositoryConfig.serialize(it) }
         settings.grpcRepositories = repos.toTypedArray()
@@ -456,7 +447,6 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
                 (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level != s.logLevel ||
                 outputCharsetCombo.selectedItem?.toString() != s.outputCharset ||
                 outputDemoCheckBox.isSelected != s.outputDemo ||
-                markdownFormatTypeCombo.selectedItem?.toString() != s.markdownFormatType ||
                 !currentRepos.contentEquals(s.grpcRepositories)
     }
 
@@ -1708,7 +1698,6 @@ class OtherSettingsPanel : SettingsPanel {
         settings.logLevel = imported.logLevel
         settings.outputDemo = imported.outputDemo
         settings.outputCharset = imported.outputCharset
-        settings.markdownFormatType = imported.markdownFormatType
         settings.builtInConfig = imported.builtInConfig
         settings.remoteConfig = imported.remoteConfig
     }

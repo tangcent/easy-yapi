@@ -67,6 +67,8 @@ search this list.
 
 - **Magic button (Rules tab)** → [README §AI-assisted rule authoring](README.md#ai-assisted-rule-authoring)
 - **Markdown export** → [usage-guide §First Export](usage-guide.md#first-export)
+- **Markdown language template** → [rule-guide §Markdown rules](rule-guide.md#markdown-rules)
+- **`markdown.*` rule keys** → [rule-guide §Markdown rules](rule-guide.md#markdown-rules)
 - **Merge modes** → [rule-guide §Aggregation Modes](rule-guide.md#aggregation-modes)
 
 ## O

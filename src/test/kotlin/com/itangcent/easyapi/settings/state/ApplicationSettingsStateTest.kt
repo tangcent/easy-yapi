@@ -1,7 +1,6 @@
 package com.itangcent.easyapi.settings.state
 
 import com.itangcent.easyapi.settings.HttpClientType
-import com.itangcent.easyapi.settings.MarkdownFormatType
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
 import org.junit.Assert.*
 import org.junit.Test
@@ -33,7 +32,6 @@ class ApplicationSettingsStateTest {
         assertEquals(100, s.logLevel) // SILENT — console off by default
         assertTrue(s.outputDemo)
         assertEquals("UTF-8", s.outputCharset)
-        assertEquals(MarkdownFormatType.SIMPLE.name, s.markdownFormatType)
         assertNull(s.builtInConfig)
         assertArrayEquals(emptyArray(), s.remoteConfig)
         assertTrue(s.autoScanEnabled)

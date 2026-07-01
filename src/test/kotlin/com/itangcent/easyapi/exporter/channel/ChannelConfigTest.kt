@@ -121,11 +121,13 @@ class ChannelConfigTest {
             is ChannelConfig.FileConfig -> "file:${config.fileName}"
             is ChannelConfig.PostmanConfig -> "postman:${config.collectionName}"
             is ChannelConfig.YapiConfig -> "yapi:${config.selectedToken}"
+            is ChannelConfig.MarkdownConfig -> "markdown:${config.fileName}"
         }
 
         assertEquals("empty", describe(ChannelConfig.Empty))
         assertEquals("file:api.md", describe(ChannelConfig.FileConfig(fileName = "api.md")))
         assertEquals("postman:MyAPI", describe(ChannelConfig.PostmanConfig(collectionName = "MyAPI")))
         assertEquals("yapi:token123", describe(ChannelConfig.YapiConfig(selectedToken = "token123")))
+        assertEquals("markdown:api.md", describe(ChannelConfig.MarkdownConfig(fileName = "api.md")))
     }
 }

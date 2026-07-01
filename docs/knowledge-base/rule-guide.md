@@ -205,6 +205,43 @@ Every key below is sourced from [RuleKeys.kt](../../src/main/kotlin/com/itangcen
 |-----|------|------|-------------|
 | `properties.prefix` | string | replace | Prefix applied to properties file keys |
 
+### Markdown rules
+
+| Key | Type | Mode | Description |
+|-----|------|------|-------------|
+| `markdown.template.language` | string | replace | BCP-47 locale tag selecting a bundled language template for Markdown export (e.g. `zh-CN`, `ja`, `pt-BR`). When unset (or `en`), the default English template is used. |
+| `markdown.template` | string | replace | Inline Markdown template content. Overrides every tier below it. |
+| `markdown.template.file` | string | replace | Path to a local Markdown template file. |
+| `markdown.template.url` | string | replace | Remote URL serving a Markdown template. |
+
+#### Bundled language templates
+
+The plugin ships localized Markdown templates under
+`src/main/resources/markdown/templates/`. Setting
+`markdown.template.language=<tag>` selects the bundled template for that
+locale. The resolver applies **BCP-47 fallback** (RFC 4647 §3.4) when the
+exact tag is not bundled:
+
+1. **Exact match** — the full tag (e.g. `zh-TW`, `pt-BR`).
+2. **Language-only** — the language subtag (e.g. `zh-TW` → `zh`).
+3. **First `lang-*` sibling** — any other bundled locale starting with
+   `"<lang>-"`, tried in sorted order (e.g. `zh-TW` → `zh-CN` when no
+   `zh` template exists).
+
+So a Traditional Chinese user (`zh-TW`) resolves to the `zh` template if
+bundled, otherwise to `zh-CN` — same script family, far better than
+falling through to English.
+
+Bundled locales (the `en` default is not in the registry — it uses the
+default template):
+
+`ar`, `de`, `es`, `fr`, `hi`, `id`, `it`, `ja`, `ko`, `nl`, `pl`, `pt`,
+`pt-BR`, `ru`, `th`, `tr`, `uk`, `vi`, `zh`, `zh-CN`, `zh-TW`.
+
+Adding a new locale requires only a new `<locale>.md.tpl` resource and
+one entry in `BundledLanguageTemplates.LOCALE_TO_RESOURCE` — no renderer
+or resolver code change.
+
 ---
 
 ## Filter Syntax

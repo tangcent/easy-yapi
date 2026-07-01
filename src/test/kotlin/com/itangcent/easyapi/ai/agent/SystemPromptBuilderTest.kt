@@ -110,4 +110,78 @@ class SystemPromptBuilderTest {
         Assert.assertTrue("existing files", text.contains("built-in.rules"))
         Assert.assertTrue("existing files", text.contains("security.rules"))
     }
+
+    // ── Ambient user-language hint  ─────────────────────────────────
+
+    @Test
+    fun `ambient message includes user language hint when userLanguage is non-null`() {
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                userLanguage = "zh-CN"
+            )
+        )
+        val text = msg.content
+        Assert.assertTrue(
+            "ambient should include 'user language: zh-CN' hint when userLanguage='zh-CN': $text",
+            text.contains("user language: zh-CN", ignoreCase = true)
+        )
+    }
+
+    @Test
+    fun `ambient message omits user language hint when userLanguage is null`() {
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                userLanguage = null
+            )
+        )
+        val text = msg.content
+        Assert.assertFalse(
+            "ambient should NOT include user-language hint when userLanguage is null: $text",
+            text.contains("user language", ignoreCase = true)
+        )
+    }
+
+    @Test
+    fun `ambient message omits user language hint when userLanguage is en`() {
+        // 'en' means "use the default (English) template" — no hint should be surfaced
+        // (matches AmbientPerception.capture, which returns null for 'en' rules; this test
+        // pins the contract defensively in case an Ambient is constructed directly with 'en').
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                userLanguage = "en"
+            )
+        )
+        val text = msg.content
+        Assert.assertFalse(
+            "ambient should NOT include user-language hint when userLanguage='en': $text",
+            text.contains("user language", ignoreCase = true)
+        )
+    }
+
+    @Test
+    fun `ambient message includes user language hint for non-en locale`() {
+        // Any non-'en', non-null BCP-47 tag should surface the hint (not just zh-CN).
+        val msg = SystemPromptBuilder.ambient(
+            Ambient(
+                projectName = "demo",
+                editingRuleFile = null,
+                existingRuleFiles = emptyList(),
+                userLanguage = "ja"
+            )
+        )
+        val text = msg.content
+        Assert.assertTrue(
+            "ambient should include 'user language: ja' hint for non-en locale: $text",
+            text.contains("user language: ja", ignoreCase = true)
+        )
+    }
 }

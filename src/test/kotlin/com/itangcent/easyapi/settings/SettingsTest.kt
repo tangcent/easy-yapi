@@ -33,7 +33,6 @@ class SettingsTest {
         assertEquals(100, settings.logLevel) // SILENT — console off by default
         assertTrue(settings.outputDemo)
         assertEquals("UTF-8", settings.outputCharset)
-        assertEquals(MarkdownFormatType.SIMPLE.name, settings.markdownFormatType)
         assertNull(settings.builtInConfig)
         assertArrayEquals(emptyArray(), settings.remoteConfig)
         assertTrue(settings.autoScanEnabled)

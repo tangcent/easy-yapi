@@ -1,6 +1,5 @@
 package com.itangcent.easyapi.settings.ui
 
-import com.itangcent.easyapi.settings.MarkdownFormatType
 import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
 import org.junit.Test
@@ -98,7 +97,6 @@ class GeneralSettingsPanelLogicTest {
         assertEquals(100, settings.logLevel)
         assertEquals("UTF-8", settings.outputCharset)
         assertTrue(settings.outputDemo)
-        assertEquals(MarkdownFormatType.SIMPLE.name, settings.markdownFormatType)
     }
 
     @Test
@@ -113,8 +111,7 @@ class GeneralSettingsPanelLogicTest {
             switchNotice = false,
             logLevel = 40,
             outputCharset = "GBK",
-            outputDemo = false,
-            markdownFormatType = MarkdownFormatType.ULTIMATE.name
+            outputDemo = false
         )
         assertTrue(settings.feignEnable)
         assertFalse(settings.jaxrsEnable)
@@ -126,7 +123,6 @@ class GeneralSettingsPanelLogicTest {
         assertEquals(40, settings.logLevel)
         assertEquals("GBK", settings.outputCharset)
         assertFalse(settings.outputDemo)
-        assertEquals(MarkdownFormatType.ULTIMATE.name, settings.markdownFormatType)
     }
 
     @Test
@@ -151,26 +147,6 @@ class GeneralSettingsPanelLogicTest {
         assertTrue(s2.feignEnable)
         assertEquals(20, s2.logLevel)
         assertEquals(40, s1.logLevel) // original unchanged
-    }
-
-    @Test
-    fun testMarkdownFormatType_values() {
-        val values = MarkdownFormatType.values()
-        assertEquals(2, values.size)
-        assertEquals(MarkdownFormatType.SIMPLE, values[0])
-        assertEquals(MarkdownFormatType.ULTIMATE, values[1])
-    }
-
-    @Test
-    fun testMarkdownFormatType_valueOf() {
-        assertEquals(MarkdownFormatType.SIMPLE, MarkdownFormatType.valueOf("SIMPLE"))
-        assertEquals(MarkdownFormatType.ULTIMATE, MarkdownFormatType.valueOf("ULTIMATE"))
-    }
-
-    @Test
-    fun testMarkdownFormatType_desc() {
-        assertNotNull(MarkdownFormatType.SIMPLE.desc)
-        assertNotNull(MarkdownFormatType.ULTIMATE.desc)
     }
 
     @Test
