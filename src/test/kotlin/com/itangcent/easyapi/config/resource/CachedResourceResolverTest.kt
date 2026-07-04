@@ -4,7 +4,8 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.logging.IdeaConsole
 import com.itangcent.easyapi.logging.IdeaConsoleProvider
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.HttpSettings
+import com.itangcent.easyapi.testFramework.ConstantSettingBinder
 import com.itangcent.easyapi.util.storage.LocalStorage
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -31,8 +32,8 @@ class CachedResourceResolverTest {
         val ideaConsoleProvider = mock<IdeaConsoleProvider>()
         whenever(ideaConsoleProvider.getConsole()).thenReturn(console)
 
-        val settingBinder = mock<SettingBinder>()
-        whenever(settingBinder.read()).thenReturn(Settings(httpTimeOut = 60))
+        val settingBinder = ConstantSettingBinder()
+        settingBinder.save(HttpSettings(httpTimeOut = 60))
 
         whenever(project.getService(LocalStorage::class.java)).thenReturn(localStorage)
         whenever(project.getService(IdeaConsoleProvider::class.java)).thenReturn(ideaConsoleProvider)

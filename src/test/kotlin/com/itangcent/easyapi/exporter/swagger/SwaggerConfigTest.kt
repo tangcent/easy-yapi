@@ -51,8 +51,7 @@ class SwaggerConfigTest {
                 "field.ignore",
                 "field.doc",
                 "field.required",
-                "method.doc",
-                "api.tag"
+                "method.doc"
         )
 
         expectedKeys.forEach { key ->
@@ -118,8 +117,6 @@ class SwaggerConfigTest {
 
         assertTrue("method.doc should map to ApiOperation#value",
                 config["method.doc"]?.contains("@io.swagger.annotations.ApiOperation#value") == true)
-        assertTrue("api.tag should map to ApiOperation#tags",
-                config["api.tag"]?.contains("@io.swagger.annotations.ApiOperation#tags") == true)
     }
 
 

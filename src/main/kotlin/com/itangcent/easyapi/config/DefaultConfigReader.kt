@@ -5,7 +5,9 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.source.*
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
+import com.itangcent.easyapi.settings.settings
 
 /**
  * Default implementation of [ConfigReader] that reads configuration from multiple sources
@@ -40,8 +42,6 @@ class DefaultConfigReader(
     private val project: Project
 ) : ConfigReader {
 
-    private val settingBinder = SettingBinder.getInstance(project)
-
     @Volatile
     private var delegate: LayeredConfigReader = buildDelegate()
 
@@ -59,24 +59,25 @@ class DefaultConfigReader(
     }
 
     private fun buildDelegate(): LayeredConfigReader {
-        val settings = settingBinder.read()
+        val ruleFileSettings = project.settings<RuleFileSettings>()
+        val envSettings = project.settings<EnvironmentSettings>()
         val configTextParser = ConfigTextParser.getInstance(project)
-        val disabledAuto = settings.disabledAutoRuleFiles.toSet()
+        val disabledAuto = envSettings.disabledAutoRuleFiles.toSet()
         val globalDir = java.nio.file.Path.of(System.getProperty("user.home"), ".easyapi")
         return LayeredConfigReader(
             sources = listOf(
                 GlobalFileConfigSource(
                     project,
                     globalDir,
-                    settings.disabledGlobalRuleFiles.toSet()
+                    ruleFileSettings.disabledGlobalRuleFiles.toSet()
                 ),
                 ExtensionConfigSource(
                     project,
-                    ExtensionConfigRegistry.stringToCodes(settings.extensionConfigs),
+                    ExtensionConfigRegistry.stringToCodes(ruleFileSettings.extensionConfigs),
                     configTextParser
                 ),
                 UrlConfigSource(
-                    parseUrls(settings.remoteConfig.joinToString("\n")),
+                    parseUrls(ruleFileSettings.remoteConfig.joinToString("\n")),
                     configTextParser,
                     project
                 ),

@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.settings
 
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.HttpSettings
 import com.itangcent.easyapi.settings.state.ApplicationSettingsState
 import org.junit.Assert.*
 import org.junit.Test
@@ -7,8 +9,8 @@ import org.junit.Test
 class SettingsDefaultsTest {
 
     @Test
-    fun `test Settings default httpTimeOut is 30 seconds`() {
-        val settings = Settings()
+    fun `test HttpSettings default httpTimeOut is 30 seconds`() {
+        val settings = HttpSettings()
         assertEquals("Default httpTimeOut should be 30 seconds", 30, settings.httpTimeOut)
     }
 
@@ -23,32 +25,32 @@ class SettingsDefaultsTest {
     }
 
     @Test
-    fun `test Settings and ApplicationSettingsState have matching defaults`() {
-        val settings = Settings()
+    fun `test HttpSettings and ApplicationSettingsState have matching defaults`() {
+        val settings = HttpSettings()
         val appState = ApplicationSettingsState.State()
 
         assertEquals(
-            "httpTimeOut defaults should match between Settings and ApplicationSettingsState",
+            "httpTimeOut defaults should match between HttpSettings and ApplicationSettingsState",
             settings.httpTimeOut,
             appState.httpTimeOut
         )
     }
 
     @Test
-    fun `test Settings default unsafeSsl is false`() {
-        val settings = Settings()
+    fun `test HttpSettings default unsafeSsl is false`() {
+        val settings = HttpSettings()
         assertFalse(settings.unsafeSsl)
     }
 
     @Test
-    fun `test Settings default httpClient is APACHE`() {
-        val settings = Settings()
+    fun `test HttpSettings default httpClient is APACHE`() {
+        val settings = HttpSettings()
         assertEquals(HttpClientType.APACHE.value, settings.httpClient)
     }
 
     @Test
-    fun `test Settings default gutterIconEnabled is true`() {
-        val settings = Settings()
+    fun `test GeneralSettings default gutterIconEnabled is true`() {
+        val settings = GeneralSettings()
         assertTrue("gutterIconEnabled should default to true", settings.gutterIconEnabled)
     }
 
@@ -62,19 +64,19 @@ class SettingsDefaultsTest {
     }
 
     @Test
-    fun `test Settings and ApplicationSettingsState have matching gutterIconEnabled defaults`() {
-        val settings = Settings()
+    fun `test GeneralSettings and ApplicationSettingsState have matching gutterIconEnabled defaults`() {
+        val settings = GeneralSettings()
         val appState = ApplicationSettingsState.State()
         assertEquals(
-            "gutterIconEnabled defaults should match between Settings and ApplicationSettingsState",
+            "gutterIconEnabled defaults should match between GeneralSettings and ApplicationSettingsState",
             settings.gutterIconEnabled,
             appState.gutterIconEnabled
         )
     }
 
     @Test
-    fun `test Settings default enumFieldAutoInferEnabled is false`() {
-        val settings = Settings()
+    fun `test GeneralSettings default enumFieldAutoInferEnabled is false`() {
+        val settings = GeneralSettings()
         assertFalse(
             "Default enumFieldAutoInferEnabled should be false",
             settings.enumFieldAutoInferEnabled
@@ -91,11 +93,11 @@ class SettingsDefaultsTest {
     }
 
     @Test
-    fun `test Settings and ApplicationSettingsState have matching enumFieldAutoInferEnabled defaults`() {
-        val settings = Settings()
+    fun `test GeneralSettings and ApplicationSettingsState have matching enumFieldAutoInferEnabled defaults`() {
+        val settings = GeneralSettings()
         val appState = ApplicationSettingsState.State()
         assertEquals(
-            "enumFieldAutoInferEnabled defaults should match between Settings and ApplicationSettingsState",
+            "enumFieldAutoInferEnabled defaults should match between GeneralSettings and ApplicationSettingsState",
             settings.enumFieldAutoInferEnabled,
             appState.enumFieldAutoInferEnabled
         )

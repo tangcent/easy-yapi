@@ -46,7 +46,7 @@ class AntiPatternGateTest {
      * `LOG.debug` / `LOG.trace` are filtered out of `idea.log` by default, so they
      * are invisible when investigating bugs. `LOG.info` is the floor for diagnostics
      * on the `LOG` channel; genuinely opt-in verbose trace belongs on the `console`
-     * channel (`project.console.debug/trace`). See AGENTS.md → Logging, Rule 2.
+     * channel (`project.console.debug/trace`).
      */
     @Test
     fun noDebugTraceOnLogChannel() {

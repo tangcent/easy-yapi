@@ -1,6 +1,6 @@
 package com.itangcent.easyapi.ai.tools
 
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.agent.AgentMemory
 import com.itangcent.easyapi.ai.agent.ApprovalGate
 import com.itangcent.easyapi.config.source.RuleFileResolver
@@ -18,7 +18,7 @@ class ToolRegistryTest : EasyApiLightCodeInsightFixtureTestCase() {
         ctx = ToolContext(
             project = project,
             configReader = com.itangcent.easyapi.config.ConfigReader.getInstance(project),
-            aiSettings = AiSettings(
+            aiSettings = AiRuntimeConfig(
                 provider = com.itangcent.easyapi.ai.AiProvider.OPENAI,
                 baseUrl = "", apiKey = "", model = "",
                 requestTimeoutSec = 30, maxRequests = 8

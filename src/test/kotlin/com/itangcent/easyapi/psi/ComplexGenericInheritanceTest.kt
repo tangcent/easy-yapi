@@ -9,7 +9,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  * Tests for complex generic type resolution through deep inheritance hierarchies
  * where type parameters are wrapped/transformed when passed to parent classes.
  *
- * Reproduces the bug from https://github.com/tangcent/easy-yapi/issues/1326
+ * Reproduces the bug from https://github.com/tangcent/easy-api/issues/1326
  *
  * Hierarchy under test:
  *   BaseResult<D> { D content; boolean success; String errorCode; String errorMsg; }

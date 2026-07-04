@@ -20,6 +20,7 @@ import com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver
 import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.psi.helper.UnifiedAnnotationHelper
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
 import kotlinx.coroutines.runBlocking
@@ -70,7 +71,7 @@ class ApiMethodLineMarkerProvider : LineMarkerProvider {
     }
 
     private fun isGutterIconEnabled(project: Project): Boolean {
-        return project.settings.gutterIconEnabled
+        return project.settings<GeneralSettings>().gutterIconEnabled
     }
 
     private fun isApiMethod(method: PsiMethod): Boolean {

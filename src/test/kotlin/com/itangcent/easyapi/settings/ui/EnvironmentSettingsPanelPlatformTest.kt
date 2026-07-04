@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.settings.ui
 
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
+import com.itangcent.easyapi.settings.module.IntelligentSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import com.itangcent.easyapi.util.json.GsonUtils
 
@@ -13,14 +15,18 @@ class EnvironmentSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestC
     }
 
     fun testResetFromAndApplyToDefaultSettings() {
-        val settings = com.itangcent.easyapi.settings.Settings()
-        panel.resetFrom(settings)
+        val envSettings = EnvironmentSettings()
+        val globalEnvSettings = IntelligentSettings()
+        panel.resetFrom(envSettings)
+        panel.resetGlobalEnvsFrom(globalEnvSettings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = EnvironmentSettings()
+        val globalTarget = IntelligentSettings()
         panel.applyTo(target)
+        panel.applyGlobalEnvsTo(globalTarget)
 
         assertEquals("", target.projectEnvironments)
-        assertEquals("", target.globalEnvironments)
+        assertEquals("", globalTarget.globalEnvironments)
     }
 
     fun testResetFromWithProjectEnvironments() {
@@ -29,12 +35,12 @@ class EnvironmentSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestC
                 mapOf("name" to "dev", "scope" to "PROJECT", "variables" to mapOf("URL" to "http://localhost:8080"))
             ))
         )
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val settings = EnvironmentSettings().apply {
             this.projectEnvironments = projectEnvJson
         }
         panel.resetFrom(settings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = EnvironmentSettings()
         panel.applyTo(target)
 
         assertTrue(target.projectEnvironments.isNotBlank())
@@ -46,13 +52,14 @@ class EnvironmentSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestC
                 mapOf("name" to "prod", "scope" to "GLOBAL", "variables" to mapOf("URL" to "https://prod.example.com"))
             ))
         )
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val globalEnvSettings = IntelligentSettings().apply {
             this.globalEnvironments = globalEnvJson
         }
-        panel.resetFrom(settings)
+        panel.resetFrom(EnvironmentSettings())
+        panel.resetGlobalEnvsFrom(globalEnvSettings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
-        panel.applyTo(target)
+        val target = IntelligentSettings()
+        panel.applyGlobalEnvsTo(target)
 
         assertTrue(target.globalEnvironments.isNotBlank())
     }
@@ -66,29 +73,39 @@ class EnvironmentSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestC
     }
 
     fun testResetFromEmptyEnvironments() {
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val envSettings = EnvironmentSettings().apply {
             projectEnvironments = ""
+        }
+        val globalEnvSettings = IntelligentSettings().apply {
             globalEnvironments = ""
         }
-        panel.resetFrom(settings)
+        panel.resetFrom(envSettings)
+        panel.resetGlobalEnvsFrom(globalEnvSettings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = EnvironmentSettings()
+        val globalTarget = IntelligentSettings()
         panel.applyTo(target)
+        panel.applyGlobalEnvsTo(globalTarget)
 
         assertEquals("", target.projectEnvironments)
-        assertEquals("", target.globalEnvironments)
+        assertEquals("", globalTarget.globalEnvironments)
     }
 
     fun testResetFromMalformedJson() {
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val envSettings = EnvironmentSettings().apply {
             projectEnvironments = "not-valid-json"
+        }
+        val globalEnvSettings = IntelligentSettings().apply {
             globalEnvironments = "also-not-valid"
         }
-        panel.resetFrom(settings)
+        panel.resetFrom(envSettings)
+        panel.resetGlobalEnvsFrom(globalEnvSettings)
         // Should not throw, just ignore malformed JSON
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = EnvironmentSettings()
+        val globalTarget = IntelligentSettings()
         panel.applyTo(target)
+        panel.applyGlobalEnvsTo(globalTarget)
         // Should produce empty environments
     }
 
@@ -108,16 +125,21 @@ class EnvironmentSettingsPanelPlatformTest : EasyApiLightCodeInsightFixtureTestC
                 mapOf("name" to "prod", "scope" to "GLOBAL", "variables" to mapOf("URL" to "https://prod.example.com"))
             ))
         )
-        val settings = com.itangcent.easyapi.settings.Settings().apply {
+        val envSettings = EnvironmentSettings().apply {
             this.projectEnvironments = projectEnvJson
+        }
+        val globalEnvSettings = IntelligentSettings().apply {
             this.globalEnvironments = globalEnvJson
         }
-        panel.resetFrom(settings)
+        panel.resetFrom(envSettings)
+        panel.resetGlobalEnvsFrom(globalEnvSettings)
 
-        val target = com.itangcent.easyapi.settings.Settings()
+        val target = EnvironmentSettings()
+        val globalTarget = IntelligentSettings()
         panel.applyTo(target)
+        panel.applyGlobalEnvsTo(globalTarget)
 
         assertTrue(target.projectEnvironments.isNotBlank())
-        assertTrue(target.globalEnvironments.isNotBlank())
+        assertTrue(globalTarget.globalEnvironments.isNotBlank())
     }
 }

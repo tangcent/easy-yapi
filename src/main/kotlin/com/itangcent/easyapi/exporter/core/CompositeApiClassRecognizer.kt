@@ -9,8 +9,10 @@ import com.itangcent.easyapi.exporter.grpc.GrpcServiceRecognizer
 import com.itangcent.easyapi.exporter.jaxrs.JaxRsResourceRecognizer
 import com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointRecognizer
 import com.itangcent.easyapi.exporter.springmvc.SpringControllerRecognizer
-import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.settings.SettingsChangeListener
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.GrpcSettings
+import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.settings.onSettingsChanged
 
 /**
@@ -33,19 +35,20 @@ class CompositeApiClassRecognizer(private val project: Project) {
     }
 
     private fun buildRecognizers(): List<ApiClassRecognizer> {
-        val settings = project.settings
+        val generalSettings = project.settings<GeneralSettings>()
+        val grpcSettings = project.settings<GrpcSettings>()
         return buildList {
             add(SpringControllerRecognizer())
-            if (settings.jaxrsEnable) {
+            if (generalSettings.jaxrsEnable) {
                 add(JaxRsResourceRecognizer(enabled = true))
             }
-            if (settings.feignEnable) {
+            if (generalSettings.feignEnable) {
                 add(FeignClientRecognizer(enabled = true))
             }
-            if (settings.actuatorEnable) {
+            if (generalSettings.actuatorEnable) {
                 add(ActuatorEndpointRecognizer(enabled = true))
             }
-            if (settings.grpcEnable) {
+            if (grpcSettings.grpcEnable) {
                 add(GrpcServiceRecognizer())
             }
         }

@@ -1,8 +1,8 @@
 package com.itangcent.easyapi.dashboard.sync
 
-import com.itangcent.easyapi.exporter.postman.UploadResult
-import com.itangcent.easyapi.exporter.postman.model.PostmanEnvironmentDetail
-import com.itangcent.easyapi.exporter.postman.model.PostmanEnvironmentValue
+import com.itangcent.easyapi.exporter.channel.postman.UploadResult
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanEnvironmentDetail
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanEnvironmentValue
 import com.itangcent.easyapi.script.env.Environment
 import com.itangcent.easyapi.script.env.EnvironmentScope
 import org.junit.Assert.*

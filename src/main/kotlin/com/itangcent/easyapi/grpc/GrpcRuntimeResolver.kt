@@ -6,8 +6,8 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.repository.RepositoryService
 import com.itangcent.easyapi.repository.RepositoryType
-import com.itangcent.easyapi.settings.DefaultSettingBinder
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.GrpcSettings
+import com.itangcent.easyapi.settings.settings
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -43,16 +43,12 @@ class GrpcRuntimeResolver(private val project: Project) {
         fun getInstance(project: Project): GrpcRuntimeResolver = project.service()
     }
 
-    private val settingBinder: SettingBinder by lazy {
-        DefaultSettingBinder.getInstance(project)
-    }
-
     private val repositoryService: RepositoryService by lazy {
         RepositoryService.getInstance(project)
     }
 
     private fun getArtifactConfigs(): List<GrpcArtifactConfig> {
-        val settings = settingBinder.read()
+        val settings = project.settings<GrpcSettings>()
         val userConfigs = settings.grpcArtifactConfigs
             .mapNotNull { GrpcArtifactConfig.parse(it) }
         val additionalJars = settings.grpcAdditionalJars
@@ -220,7 +216,7 @@ class GrpcRuntimeResolver(private val project: Project) {
             }
         }
 
-        val additionalJars = settingBinder.read().grpcAdditionalJars
+        val additionalJars = project.settings<GrpcSettings>().grpcAdditionalJars
             .mapNotNull { Paths.get(it) }
             .filter { Files.exists(it) }
         allJars.addAll(additionalJars)
@@ -328,7 +324,7 @@ class GrpcRuntimeResolver(private val project: Project) {
             }
         }
 
-        val additionalJars = settingBinder.read().grpcAdditionalJars
+        val additionalJars = project.settings<GrpcSettings>().grpcAdditionalJars
             .mapNotNull { Paths.get(it) }
             .filter { Files.exists(it) }
         allJars.addAll(additionalJars)

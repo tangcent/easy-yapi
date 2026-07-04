@@ -15,6 +15,7 @@ import com.itangcent.easyapi.core.event.ActionCompletedTopic
 import com.itangcent.easyapi.core.event.ActionCompletedTopic.Companion.syncPublish
 import com.itangcent.easyapi.core.threading.readSync
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.DefaultSettingBinder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.io.InputStreamReader
@@ -54,14 +55,15 @@ import java.io.InputStreamReader
  *
  * ## Customizing Settings
  *
- * For test cases that need customized settings, call [settingBinder.update].
+ * For test cases that need customized settings, call
+ * `SettingBinder.getInstance(project).update(ModuleType::class)`.
  * There are two common scenarios:
  *
  * **1. Update settings in `setUp()` (applies to all tests in the class):**
  * ```kotlin
  * override fun setUp() {
  *     super.setUp()
- *     settingBinder.update {
+ *     SettingBinder.getInstance(project).update(IntelligentSettings::class) {
  *         enableUrlTemplating = false
  *     }
  * }
@@ -70,7 +72,7 @@ import java.io.InputStreamReader
  * **2. Update settings in test method (applies only to that specific test):**
  * ```kotlin
  * fun testSomething() {
- *     settingBinder.update {
+ *     SettingBinder.getInstance(project).update(IntelligentSettings::class) {
  *         enableUrlTemplating = false
  *     }
  *     // test code
@@ -118,9 +120,24 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
     protected val settingBinder
         get() = SettingBinder.getInstance(project)
 
+    /**
+     * The [LoggedErrorProcessor] captured in [setUp] so it can be restored in
+     * [tearDown]. See [KotlinGistErrorSuppressor] for the rationale.
+     */
+    private var previousErrorProcessor: com.intellij.testFramework.LoggedErrorProcessor? = null
+
     override fun setUp() {
         super.setUp()
+        // Suppress the Kotlin plugin's `kotlin-library-kind` gist diagnostic,
+        // which otherwise escalates to a TestLoggerAssertionError and aborts
+        // every test that traverses a class's methods in the light fixture.
+        previousErrorProcessor = KotlinGistErrorSuppressor.install()
         loadCommonJDKClasses()
+        // Register DefaultSettingBinder as the SettingBinder project service.
+        project.registerServiceInstance(
+            serviceInterface = SettingBinder::class.java,
+            instance = DefaultSettingBinder(project)
+        )
         val configReader = createConfigReader() ?: TestConfigReader.empty(project)
         project.registerServiceInstance(
             serviceInterface = ConfigReader::class.java,
@@ -141,6 +158,7 @@ abstract class EasyApiLightCodeInsightFixtureTestCase : LightJavaCodeInsightFixt
         try {
             project.syncPublish(ActionCompletedTopic.TOPIC)
         } finally {
+            previousErrorProcessor?.let { KotlinGistErrorSuppressor.uninstall(it) }
             super.tearDown()
         }
     }

@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.ai.tools
 
 import com.intellij.openapi.application.ApplicationManager
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.AiProvider
 import com.itangcent.easyapi.ai.agent.AgentMemory
 import com.itangcent.easyapi.ai.agent.ApprovalGate
@@ -26,7 +26,7 @@ class FindClassesBySupertypeToolTest : EasyApiLightCodeInsightFixtureTestCase() 
     private fun ctx(): ToolContext = ToolContext(
         project = project,
         configReader = ConfigReader.getInstance(project),
-        aiSettings = AiSettings(
+        aiSettings = AiRuntimeConfig(
             provider = AiProvider.OPENAI,
             baseUrl = "", apiKey = "", model = "",
             requestTimeoutSec = 30, maxRequests = 8

@@ -3,6 +3,7 @@ package com.itangcent.easyapi.rule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Test
 
 /**
  * Tests for [RuleProposalValidator].
@@ -18,7 +19,7 @@ class RuleProposalValidatorTest {
             # A clean rule file
             api.name=My API
             method.additional.header={"name":"Authorization","value":"Bearer ${'$'}{token}","required":true}
-            api.tag[${'$'}class:com.example.web.UserController]=user
+            method.doc[${'$'}class:com.example.web.UserController]=user
         """.trimIndent()
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
@@ -34,15 +35,15 @@ class RuleProposalValidatorTest {
     }
 
     fun testBareClassFilterIsOnlyAWarning() {
-        val content = "api.tag[class:com.example.web.UserController]=user"
+        val content = "method.doc[class:com.example.web.UserController]=user"
         val result = RuleProposalValidator.validate(content)
-        // `api.tag` is valid; bare `class:` is deprecated but not invalid.
+        // `method.doc` is valid; bare `class:` is deprecated but not invalid.
         assertTrue("errors: ${result.errors}", result.ok)
         assertTrue(result.warnings.any { it.contains("deprecated") && it.contains("class:") })
     }
 
     fun testInvalidFilterPrefixIsBlocked() {
-        val content = "api.tag[~com.example.UserController]=user"
+        val content = "method.doc[~com.example.UserController]=user"
         val result = RuleProposalValidator.validate(content)
         assertFalse(result.ok)
         assertTrue(result.errors.any { it.contains("invalid filter") })
@@ -56,7 +57,7 @@ class RuleProposalValidatorTest {
     }
 
     fun testValidDollarClassFilterPasses() {
-        val content = "api.tag[\${'$'}class:com.example.web.UserController]=user"
+        val content = "method.doc[\${'$'}class:com.example.web.UserController]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
@@ -144,32 +145,32 @@ class RuleProposalValidatorTest {
     // -------------------------------------------------------------------------
 
     fun testAtPrefixFilterPasses() {
-        val content = "api.tag[@com.example.WebController]=user"
+        val content = "method.doc[@com.example.WebController]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
 
     fun testRegexPrefixFilterPasses() {
-        val content = "api.tag[#regex:.*Controller]=user"
+        val content = "method.doc[#regex:.*Controller]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
 
     fun testTagPrefixFilterPasses() {
         // `#<tag>` — a hash-prefixed tag, distinct from `#regex:`.
-        val content = "api.tag[#spring]=user"
+        val content = "method.doc[#spring]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
 
     fun testNotPrefixFilterPasses() {
-        val content = "api.tag[!com.example.InternalController]=user"
+        val content = "method.doc[!com.example.InternalController]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
 
     fun testGroovyPrefixFilterPasses() {
-        val content = "api.tag[groovy: it.name().contains(\"Controller\")]=user"
+        val content = "method.doc[groovy: it.name().contains(\"Controller\")]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
@@ -179,10 +180,10 @@ class RuleProposalValidatorTest {
     // -------------------------------------------------------------------------
 
     fun testEmptyFilterBracketIsTreatedAsNoFilter() {
-        // `api.tag[]=value` — empty filter → treated as no filter (no prefix
+        // `method.doc[]=value` — empty filter → treated as no filter (no prefix
         // check), so no error. This exercises the `filter.isEmpty()` branch
         // in splitKeyFilterValue.
-        val content = "api.tag[]=user"
+        val content = "method.doc[]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
@@ -202,7 +203,7 @@ class RuleProposalValidatorTest {
     fun testBracketEqualsInsideFilterDoesNotSplitEarly() {
         // `=` inside `[...]` must not be treated as the key=value separator.
         // Here the filter contains `=` and the real `=` is after the `]`.
-        val content = "api.tag[#regex:a=b]=user"
+        val content = "method.doc[#regex:a=b]=user"
         val result = RuleProposalValidator.validate(content)
         assertTrue("errors: ${result.errors}", result.ok)
     }
@@ -242,7 +243,7 @@ class RuleProposalValidatorTest {
         // Two distinct hard errors should both appear in the result.
         val content = """
             api.unknown_key=foo
-            api.tag[~invalid]=bar
+            method.doc[~invalid]=bar
         """.trimIndent()
         val result = RuleProposalValidator.validate(content)
         assertFalse(result.ok)
@@ -268,5 +269,48 @@ class RuleProposalValidatorTest {
         assertTrue(ok.ok)
         val notOk = RuleValidation(errors = listOf("e"), warnings = emptyList())
         assertFalse(notOk.ok)
+    }
+
+    // -------------------------------------------------------------------------
+    // No-project fallback path: only general RuleKeys are recognized.
+    // Channel-specific keys (hopp.*, yapi.*) and implicit keys (max.deep,
+    // markdown.template.url.*) are NOT recognized when project == null.
+    // The project-scoped path (which DOES recognize them) needs a real
+    // IntelliJ Project + ChannelRegistry and is covered by integration tests.
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun testNoProjectAcceptsGeneralKey() {
+        // Regression: the no-project fallback path still accepts general keys.
+        val result = RuleProposalValidator.validate("api.name=Foo", project = null)
+        assertTrue("errors: ${result.errors}", result.ok)
+    }
+
+    @Test
+    fun testNoProjectRejectsChannelSpecificKey() {
+        // yapi.project is a channel-specific key (YapiRuleKeys) —
+        // without a project, the fallback path only knows general RuleKeys,
+        // so it must be rejected as unknown.
+        val result = RuleProposalValidator.validate("yapi.project=123", project = null)
+        assertFalse(result.ok)
+        assertTrue(result.errors.any { it.contains("unknown rule key") && it.contains("yapi.project") })
+    }
+
+    @Test
+    fun testNoProjectRejectsImplicitKey() {
+        // max.deep is an implicit key (read by DefaultPsiClassHelper via
+        // configReader.getFirst("max.deep")) — without a project, the
+        // fallback path doesn't know about implicit keys.
+        val result = RuleProposalValidator.validate("max.deep=5", project = null)
+        assertFalse(result.ok)
+        assertTrue(result.errors.any { it.contains("unknown rule key") && it.contains("max.deep") })
+    }
+
+    @Test
+    fun testDefaultValidateUsesNoProjectFallback() {
+        // Calling validate(content) without the project argument must still
+        // work (backward compatibility) and use the general-only fallback.
+        val result = RuleProposalValidator.validate("api.name=Foo")
+        assertTrue("errors: ${result.errors}", result.ok)
     }
 }

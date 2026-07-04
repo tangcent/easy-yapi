@@ -1,6 +1,12 @@
 package com.itangcent.easyapi.config.source
 
 import com.itangcent.easyapi.exporter.model.HttpMethod
+import com.itangcent.easyapi.exporter.channel.yapi.YapiMetaRuleKeys
+import com.itangcent.easyapi.exporter.channel.yapi.YapiMetadataPopulator
+import com.itangcent.easyapi.exporter.channel.yapi.mock
+import com.itangcent.easyapi.exporter.channel.yapi.open
+import com.itangcent.easyapi.exporter.channel.yapi.status
+import com.itangcent.easyapi.exporter.channel.yapi.tags
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.springmvc.SpringMvcClassExporter
 import com.itangcent.easyapi.extension.ExtensionConfigRegistry
@@ -15,11 +21,11 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  * Integration test for the `yapi` extension.
  *
  * The extension defines rules for:
- *   - [RuleKeys.API_TAG]: `api.tag[@java.lang.Deprecated]=deprecated`, `api.tag[#deprecated]=deprecated`,
+ *   - [YapiMetaRuleKeys.API_TAG]: `api.tag[@java.lang.Deprecated]=deprecated`, `api.tag[#deprecated]=deprecated`,
  *     `api.tag[#tag]=...` (and kotlin variants)
- *   - [RuleKeys.API_STATUS]: `api.status[#undone]=undone`, `api.status[#todo]=undone`
- *   - [RuleKeys.API_OPEN]: `api.open[#open]=true`
- *   - [RuleKeys.FIELD_MOCK]: `field.mock=#mock`
+ *   - [YapiMetaRuleKeys.API_STATUS]: `api.status[#undone]=undone`, `api.status[#todo]=undone`
+ *   - [YapiMetaRuleKeys.API_OPEN]: `api.open[#open]=true`
+ *   - [YapiMetaRuleKeys.FIELD_MOCK]: `field.mock=#mock`
  */
 class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
@@ -63,7 +69,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a method with `@open` doc tag should resolve
-     * [RuleKeys.API_OPEN] to `true`.
+     * [YapiMetaRuleKeys.API_OPEN] to `true`.
      */
     fun testApiOpenRuleForMethodWithOpenTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
@@ -73,7 +79,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find getPublicInfo method", publicMethod)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val open = ruleEngine.evaluate(RuleKeys.API_OPEN, publicMethod!!)
+        val open = ruleEngine.evaluate(YapiMetaRuleKeys.API_OPEN, publicMethod!!)
         assertTrue(
             "API_OPEN should be true for method with @open doc tag",
             open
@@ -82,7 +88,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a method without `@open` doc tag should resolve
-     * [RuleKeys.API_OPEN] to `false`.
+     * [YapiMetaRuleKeys.API_OPEN] to `false`.
      */
     fun testApiOpenRuleForMethodWithoutOpenTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
@@ -92,7 +98,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find getPrivateInfo method", privateMethod)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val open = ruleEngine.evaluate(RuleKeys.API_OPEN, privateMethod!!)
+        val open = ruleEngine.evaluate(YapiMetaRuleKeys.API_OPEN, privateMethod!!)
         assertFalse(
             "API_OPEN should be false for method without @open doc tag",
             open
@@ -101,7 +107,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a method with `@undone` doc tag should resolve
-     * [RuleKeys.API_STATUS] to `"undone"`.
+     * [YapiMetaRuleKeys.API_STATUS] to `"undone"`.
      */
     fun testApiStatusRuleForMethodWithUndoneTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
@@ -111,7 +117,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find createItem method", createMethod)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val status = ruleEngine.evaluate(RuleKeys.API_STATUS, createMethod!!)
+        val status = ruleEngine.evaluate(YapiMetaRuleKeys.API_STATUS, createMethod!!)
         assertEquals(
             "API_STATUS should be 'undone' for method with @undone doc tag",
             "undone",
@@ -121,7 +127,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a method with `@todo` doc tag should resolve
-     * [RuleKeys.API_STATUS] to `"undone"`.
+     * [YapiMetaRuleKeys.API_STATUS] to `"undone"`.
      */
     fun testApiStatusRuleForMethodWithTodoTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
@@ -131,7 +137,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find updateItem method", updateMethod)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val status = ruleEngine.evaluate(RuleKeys.API_STATUS, updateMethod!!)
+        val status = ruleEngine.evaluate(YapiMetaRuleKeys.API_STATUS, updateMethod!!)
         assertEquals(
             "API_STATUS should be 'undone' for method with @todo doc tag",
             "undone",
@@ -141,7 +147,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a method without `@undone`/`@todo` doc tag should resolve
-     * [RuleKeys.API_STATUS] to `null`.
+     * [YapiMetaRuleKeys.API_STATUS] to `null`.
      */
     fun testApiStatusRuleForMethodWithoutStatusTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
@@ -151,7 +157,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find getPublicInfo method", publicMethod)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val status = ruleEngine.evaluate(RuleKeys.API_STATUS, publicMethod!!)
+        val status = ruleEngine.evaluate(YapiMetaRuleKeys.API_STATUS, publicMethod!!)
         assertNull(
             "API_STATUS should be null for method without @undone/@todo doc tag",
             status
@@ -160,7 +166,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a field with `@mock 123` doc tag should resolve
-     * [RuleKeys.FIELD_MOCK] to `"123"`.
+     * [YapiMetaRuleKeys.FIELD_MOCK] to `"123"`.
      */
     fun testFieldMockRuleForFieldWithMockTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.ItemDTO")
@@ -170,7 +176,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find id field", idField)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val mock = ruleEngine.evaluate(RuleKeys.FIELD_MOCK, idField!!)
+        val mock = ruleEngine.evaluate(YapiMetaRuleKeys.FIELD_MOCK, idField!!)
         assertEquals(
             "FIELD_MOCK should be '123' for field with @mock 123 doc tag",
             "123",
@@ -180,7 +186,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a field without `@mock` doc tag should resolve
-     * [RuleKeys.FIELD_MOCK] to `null`.
+     * [YapiMetaRuleKeys.FIELD_MOCK] to `null`.
      */
     fun testFieldMockRuleForFieldWithoutMockTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.ItemDTO")
@@ -190,7 +196,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find description field", descField)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val mock = ruleEngine.evaluate(RuleKeys.FIELD_MOCK, descField!!)
+        val mock = ruleEngine.evaluate(YapiMetaRuleKeys.FIELD_MOCK, descField!!)
         assertNull(
             "FIELD_MOCK should be null for field without @mock doc tag",
             mock
@@ -199,7 +205,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a method in a class annotated `@java.lang.Deprecated`
-     * should resolve [RuleKeys.API_TAG] to include `"deprecated"`.
+     * should resolve [YapiMetaRuleKeys.API_TAG] to include `"deprecated"`.
      */
     fun testApiTagRuleForDeprecatedClass() = runTest {
         val psiClass = findClass("com.itangcent.yapi.DeprecatedController")
@@ -209,7 +215,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find oldMethod", oldMethod)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val tag = ruleEngine.evaluate(RuleKeys.API_TAG, oldMethod!!)
+        val tag = ruleEngine.evaluate(YapiMetaRuleKeys.API_TAG, oldMethod!!)
         assertNotNull("API_TAG should not be null for method in @Deprecated class", tag)
         assertTrue(
             "API_TAG should contain 'deprecated' for method in @Deprecated class. Was: $tag",
@@ -219,7 +225,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     /**
      * The core rule: a method with `@deprecated` javadoc tag should resolve
-     * [RuleKeys.API_TAG] to include `"deprecated"`.
+     * [YapiMetaRuleKeys.API_TAG] to include `"deprecated"`.
      */
     fun testApiTagRuleForMethodWithDeprecatedDocTag() = runTest {
         val psiClass = findClass("com.itangcent.yapi.DeprecatedDocController")
@@ -229,7 +235,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertNotNull("Should find oldMethod", oldMethod)
 
         val ruleEngine = RuleEngine.getInstance(project)
-        val tag = ruleEngine.evaluate(RuleKeys.API_TAG, oldMethod!!)
+        val tag = ruleEngine.evaluate(YapiMetaRuleKeys.API_TAG, oldMethod!!)
         assertNotNull("API_TAG should not be null for method with @deprecated doc tag", tag)
         assertTrue(
             "API_TAG should contain 'deprecated' for method with @deprecated doc tag. Was: $tag",
@@ -243,7 +249,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
         assertNotNull("Should find YapiController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val publicEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
@@ -260,7 +266,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
         assertNotNull("Should find YapiController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val privateEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
@@ -277,7 +283,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
         assertNotNull("Should find YapiController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val createEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
@@ -295,7 +301,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
         assertNotNull("Should find YapiController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val updateEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
@@ -313,7 +319,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
         assertNotNull("Should find YapiController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val createEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
@@ -346,7 +352,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.YapiController")
         assertNotNull("Should find YapiController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val createEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.POST &&
@@ -369,7 +375,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.DeprecatedController")
         assertNotNull("Should find DeprecatedController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val oldEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
@@ -386,7 +392,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.DeprecatedDocController")
         assertNotNull("Should find DeprecatedDocController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val oldEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
@@ -403,7 +409,7 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         val psiClass = findClass("com.itangcent.yapi.DeprecatedDocController")
         assertNotNull("Should find DeprecatedDocController", psiClass)
 
-        val endpoints = exporter.export(psiClass!!)
+        val endpoints = exportWithYapiMetadata(psiClass!!)
 
         val newEndpoint = endpoints.find {
             it.httpMetadata?.method == HttpMethod.GET &&
@@ -414,6 +420,15 @@ class YapiConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
             "Endpoint without @deprecated javadoc tag should not have 'deprecated' tag",
             newEndpoint?.tags?.contains("deprecated") == true
         )
+    }
+
+    /**
+     * Exports endpoints and populates YApi-specific metadata (tags/status/open)
+     * via [YapiMetadataPopulator], mirroring what the easy-yapi export pipeline does.
+     */
+    private suspend fun exportWithYapiMetadata(psiClass: com.intellij.psi.PsiClass): List<com.itangcent.easyapi.exporter.model.ApiEndpoint> {
+        val ruleEngine = RuleEngine.getInstance(project)
+        return exporter.export(psiClass).map { YapiMetadataPopulator.populate(it, ruleEngine) }
     }
 
     private fun findField(model: ObjectModel, name: String): FieldModel? {

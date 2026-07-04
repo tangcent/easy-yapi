@@ -1,8 +1,9 @@
 package com.itangcent.easyapi.settings.ui
 
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettings
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettingsPanel
 import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
-import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -11,7 +12,7 @@ class PostmanSettingsPanelTest {
     @Test
     fun testResetFromWithDefaults() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings()
+        val settings = PostmanSettings()
         panel.resetFrom(settings)
         assertFalse("Panel should not be modified after reset with defaults", panel.isModified(settings))
     }
@@ -19,7 +20,7 @@ class PostmanSettingsPanelTest {
     @Test
     fun testResetFromWithCustomSettings() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply {
+        val settings = PostmanSettings().apply {
             postmanToken = "test-token-123"
             postmanWorkspace = "workspace-456"
             postmanExportMode = PostmanExportMode.UPDATE_EXISTING.name
@@ -36,9 +37,9 @@ class PostmanSettingsPanelTest {
     @Test
     fun testApplyTo() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings()
+        val settings = PostmanSettings()
 
-        val customSettings = Settings().apply {
+        val customSettings = PostmanSettings().apply {
             postmanToken = "my-token"
             postmanWorkspace = "my-workspace"
             postmanExportMode = PostmanExportMode.UPDATE_EXISTING.name
@@ -50,7 +51,7 @@ class PostmanSettingsPanelTest {
         }
         panel.resetFrom(customSettings)
 
-        val targetSettings = Settings()
+        val targetSettings = PostmanSettings()
         panel.applyTo(targetSettings)
 
         assertEquals("my-token", targetSettings.postmanToken)
@@ -62,7 +63,7 @@ class PostmanSettingsPanelTest {
     @Test
     fun testIsModifiedReturnsFalseWhenNoChanges() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings()
+        val settings = PostmanSettings()
         panel.resetFrom(settings)
         assertFalse(panel.isModified(settings))
     }
@@ -70,14 +71,14 @@ class PostmanSettingsPanelTest {
     @Test
     fun testIsModifiedReturnsTrueWhenTokenChanged() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply {
+        val settings = PostmanSettings().apply {
             postmanToken = "original-token"
         }
         panel.resetFrom(settings)
 
         // Modify the token field directly (simulating user input)
         // Since we can't directly access private fields, we test through the round-trip
-        val newSettings = Settings().apply {
+        val newSettings = PostmanSettings().apply {
             postmanToken = "different-token"
         }
         panel.resetFrom(newSettings)
@@ -87,12 +88,12 @@ class PostmanSettingsPanelTest {
     @Test
     fun testIsModifiedReturnsTrueWhenBuildExampleChanged() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply {
+        val settings = PostmanSettings().apply {
             postmanBuildExample = true
         }
         panel.resetFrom(settings)
 
-        val newSettings = Settings().apply {
+        val newSettings = PostmanSettings().apply {
             postmanBuildExample = false
         }
         panel.resetFrom(newSettings)
@@ -102,12 +103,12 @@ class PostmanSettingsPanelTest {
     @Test
     fun testIsModifiedReturnsTrueWhenWrapCollectionChanged() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply {
+        val settings = PostmanSettings().apply {
             wrapCollection = false
         }
         panel.resetFrom(settings)
 
-        val newSettings = Settings().apply {
+        val newSettings = PostmanSettings().apply {
             wrapCollection = true
         }
         panel.resetFrom(newSettings)
@@ -117,12 +118,12 @@ class PostmanSettingsPanelTest {
     @Test
     fun testIsModifiedReturnsTrueWhenAutoMergeScriptChanged() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply {
+        val settings = PostmanSettings().apply {
             autoMergeScript = false
         }
         panel.resetFrom(settings)
 
-        val newSettings = Settings().apply {
+        val newSettings = PostmanSettings().apply {
             autoMergeScript = true
         }
         panel.resetFrom(newSettings)
@@ -140,7 +141,7 @@ class PostmanSettingsPanelTest {
         val panel = PostmanSettingsPanel()
         panel.resetFrom(null)
         // Should not throw and should handle null gracefully
-        val settings = Settings()
+        val settings = PostmanSettings()
         assertFalse(panel.isModified(settings))
     }
 

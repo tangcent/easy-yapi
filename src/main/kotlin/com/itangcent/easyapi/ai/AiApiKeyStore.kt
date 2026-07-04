@@ -30,7 +30,7 @@ object AiApiKeyStore {
      * key and orphan previously stored credentials.
      */
     internal val attributes: CredentialAttributes = CredentialAttributes(
-        serviceName = AiSettings::class.java.name,
+        serviceName = AiRuntimeConfig::class.java.name,
         userName = API_KEY_STORE_KEY
     )
 

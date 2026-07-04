@@ -1,5 +1,7 @@
 package com.itangcent.easyapi.rule
 
+import kotlin.reflect.full.memberProperties
+
 /**
  * A typed rule key that carries the expected return type and aggregation mode.
  *
@@ -64,5 +66,20 @@ sealed class RuleKey<T>(
 
         fun event(name: String, mode: EventRuleMode = EventRuleMode.IGNORE_ERROR, aliases: List<String> = emptyList()) =
             EventKey(name, mode, aliases)
+
+        /**
+         * Reflects over [instance]'s Kotlin properties and returns every value
+         * that is a [RuleKey]. Used to enumerate the keys declared in an
+         * `object` (e.g. [RuleKeys], `HoppscotchRuleKeys`, `YapiRuleKeys`)
+         * without listing each property by name.
+         *
+         * Properties that are not [RuleKey] instances (or whose getter throws)
+         * are silently skipped — this is intentional so utility helpers or
+         * unrelated constants can coexist in the same object.
+         */
+        fun collectFrom(instance: Any): List<RuleKey<*>> =
+            instance::class.memberProperties.mapNotNull { prop ->
+                runCatching { prop.getter.call(instance) as? RuleKey<*> }.getOrNull()
+            }
     }
 }

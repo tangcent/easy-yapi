@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.settings
 
 import com.intellij.openapi.util.Disposer
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import org.junit.Assert.*
 
@@ -35,7 +36,7 @@ class SettingsChangeListenerTest : EasyApiLightCodeInsightFixtureTestCase() {
             callCount++
         }
 
-        settingBinder.save(Settings())
+        settingBinder.save(GeneralSettings())
         assertEquals("Saving settings should fire settingsChanged", 1, callCount)
     }
 }

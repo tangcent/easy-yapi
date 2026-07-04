@@ -30,7 +30,7 @@ import org.jetbrains.annotations.ApiStatus
  * [AiChatResponse]) and LangChain4j's types ([ChatMessage], [ToolSpecification],
  * [ChatResponse]). The underlying [ChatModel.chat] is blocking, so calls are
  * dispatched to [Dispatchers.IO] with a timeout derived from
- * [AiSettings.requestTimeoutSec].
+ * [AiRuntimeConfig.requestTimeoutSec].
  *
  * @param chatModel The LangChain4j chat model (provider-specific, built by
  * [AIServiceFactory]).
@@ -38,7 +38,7 @@ import org.jetbrains.annotations.ApiStatus
  */
 class LangChain4jAIService(
     private val chatModel: ChatModel,
-    private val settings: AiSettings
+    private val settings: AiRuntimeConfig
 ) : AIService {
 
     override suspend fun chat(request: AiChatRequest): AiChatResponse {

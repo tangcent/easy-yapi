@@ -12,12 +12,6 @@ class RuleKeysTest2 {
     }
 
     @Test
-    fun testApiTagKey() {
-        assertEquals("api.tag", RuleKeys.API_TAG.name)
-        assertTrue(RuleKeys.API_TAG is RuleKey.StringKey)
-    }
-
-    @Test
     fun testIgnoreKey() {
         assertEquals("ignore", RuleKeys.IGNORE.name)
         assertTrue(RuleKeys.IGNORE is RuleKey.BooleanKey)
@@ -88,14 +82,5 @@ class RuleKeysTest2 {
     @Test
     fun testPostmanPrerequest_merge() {
         assertEquals(StringRuleMode.MERGE, (RuleKeys.POSTMAN_PREREQUEST as RuleKey.StringKey).stringMode)
-    }
-
-    @Test
-    fun testYapiProjectKey() {
-        assertEquals("yapi.project", RuleKeys.YAPI_PROJECT.name)
-        assertTrue(RuleKeys.YAPI_PROJECT is RuleKey.StringKey)
-        assertTrue(RuleKeys.YAPI_PROJECT.aliases.contains("project"))
-        assertTrue(RuleKeys.YAPI_PROJECT.aliases.contains("module"))
-        assertEquals(listOf("yapi.project", "project", "module"), RuleKeys.YAPI_PROJECT.allNames)
     }
 }

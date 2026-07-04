@@ -2,8 +2,8 @@ package com.itangcent.easyapi.exporter.channel.markdown
 
 import com.itangcent.easyapi.config.ConfigReader
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
-import com.itangcent.easyapi.exporter.markdown.MarkdownExportMetadata
-import com.itangcent.easyapi.exporter.markdown.template.RemoteTemplateFetcher
+import com.itangcent.easyapi.exporter.channel.markdown.MarkdownExportMetadata
+import com.itangcent.easyapi.exporter.channel.markdown.template.RemoteTemplateFetcher
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.testFramework.ApiFixtures
@@ -61,7 +61,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -83,7 +83,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -105,7 +105,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
             val context = ExportContext(
                 project = project,
                 endpoints = endpoints,
-                channelConfig = ChannelConfig.MarkdownConfig(templatePath = tempFile.absolutePath),
+                channelConfig = MarkdownConfig(templatePath = tempFile.absolutePath),
             )
             val result = channel.export(context)
 
@@ -128,7 +128,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -150,7 +150,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -171,7 +171,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -202,7 +202,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -234,7 +234,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -261,7 +261,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
             val context = ExportContext(
                 project = project,
                 endpoints = endpoints,
-                channelConfig = ChannelConfig.MarkdownConfig(),
+                channelConfig = MarkdownConfig(),
             )
             val result = channel.export(context)
 
@@ -289,7 +289,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
             val context = ExportContext(
                 project = project,
                 endpoints = endpoints,
-                channelConfig = ChannelConfig.MarkdownConfig(),
+                channelConfig = MarkdownConfig(),
             )
             val result = channel.export(context)
 
@@ -313,7 +313,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
         val context = ExportContext(
             project = project,
             endpoints = endpoints,
-            channelConfig = ChannelConfig.MarkdownConfig(),
+            channelConfig = MarkdownConfig(),
         )
         val result = channel.export(context)
 
@@ -343,7 +343,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
             val context = ExportContext(
                 project = project,
                 endpoints = endpoints,
-                channelConfig = ChannelConfig.MarkdownConfig(),
+                channelConfig = MarkdownConfig(),
             )
             val result = channel.export(context)
 
@@ -373,7 +373,7 @@ class MarkdownChannelTemplateTest : EasyApiLightCodeInsightFixtureTestCase() {
             val context = ExportContext(
                 project = project,
                 endpoints = endpoints,
-                channelConfig = ChannelConfig.MarkdownConfig(),
+                channelConfig = MarkdownConfig(),
             )
             val result = channel.export(context)
 

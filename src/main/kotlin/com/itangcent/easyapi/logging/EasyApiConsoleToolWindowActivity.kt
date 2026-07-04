@@ -4,9 +4,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.openapi.wm.ToolWindowManager
 import com.itangcent.easyapi.core.threading.swingAsync
-import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.onSettingsChanged
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
+import com.itangcent.easyapi.settings.onSettingsChanged
 
 /**
  * Dynamically shows/hides the "EasyAPI" console tool window based on the configured
@@ -31,7 +31,7 @@ class EasyApiConsoleToolWindowActivity : ProjectActivity {
     }
 
     private fun updateAvailability(project: Project) {
-        val logLevel = project.settings.logLevel
+        val logLevel = project.settings<GeneralSettings>().logLevel
         val available = logLevel <= LogLevel.ERROR.threshold
 
         // ToolWindow.setAvailable must be called on EDT.

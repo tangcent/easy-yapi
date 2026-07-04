@@ -4,6 +4,7 @@ import com.intellij.openapi.ui.TestDialog
 import com.intellij.openapi.ui.TestDialogManager
 import com.intellij.psi.PsiMethod
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
+import com.itangcent.easyapi.exporter.channel.markdown.MarkdownConfig
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.HttpMethod
@@ -16,7 +17,7 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var orchestrator: ExportOrchestrator
     private var previousDialog: TestDialog? = null
-    private val testFileConfig = ChannelConfig.MarkdownConfig(outputDir = "/tmp", fileName = "export_test")
+    private val testFileConfig = MarkdownConfig(outputDir = "/tmp", fileName = "export_test")
 
     override fun setUp() {
         super.setUp()
@@ -105,7 +106,7 @@ class ExportOrchestratorTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     fun testExportViaChannelWithCustomChannelConfig() = runTest {
         val endpoints = listOf(createTestEndpoint())
-        val channelConfig = ChannelConfig.MarkdownConfig(
+        val channelConfig = MarkdownConfig(
             outputDir = "/tmp",
             fileName = "test"
         )

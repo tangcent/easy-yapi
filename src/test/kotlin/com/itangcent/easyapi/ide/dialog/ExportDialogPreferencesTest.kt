@@ -27,7 +27,6 @@ class ExportDialogPreferencesPersistenceTest : EasyApiLightCodeInsightFixtureTes
         assertNull("Last postman workspace name should be null", prefs.lastPostmanWorkspaceName)
         assertNull("Last postman collection ID should be null", prefs.lastPostmanCollectionId)
         assertNull("Last postman collection name should be null", prefs.lastPostmanCollectionName)
-        assertNull("Last yapi token should be null", prefs.lastYapiToken)
     }
 
     fun testSaveAndLoadPreferences() {
@@ -62,19 +61,6 @@ class ExportDialogPreferencesPersistenceTest : EasyApiLightCodeInsightFixtureTes
         assertEquals("My Workspace", loaded.lastPostmanWorkspaceName)
         assertEquals("col-456", loaded.lastPostmanCollectionId)
         assertEquals("My Collection", loaded.lastPostmanCollectionName)
-    }
-
-    fun testSaveAndLoadYapiToken() {
-        val prefs = ExportDialogPreferences(
-            lastExportFormat = "YAPI",
-            lastYapiToken = "abc123def456"
-        )
-
-        persistence.save(prefs)
-        val loaded = persistence.load()
-
-        assertEquals("YAPI", loaded.lastExportFormat)
-        assertEquals("abc123def456", loaded.lastYapiToken)
     }
 
     fun testOverwritePreferences() {
@@ -180,8 +166,7 @@ class ExportDialogPreferencesPersistenceTest : EasyApiLightCodeInsightFixtureTes
             lastPostmanWorkspaceId = "workspace-id",
             lastPostmanWorkspaceName = "Workspace Name",
             lastPostmanCollectionId = "collection-id",
-            lastPostmanCollectionName = "Collection Name",
-            lastYapiToken = "yapi-token-abc"
+            lastPostmanCollectionName = "Collection Name"
         )
         
         persistence.save(prefs)
@@ -194,7 +179,6 @@ class ExportDialogPreferencesPersistenceTest : EasyApiLightCodeInsightFixtureTes
         assertEquals("Workspace Name", loaded.lastPostmanWorkspaceName)
         assertEquals("collection-id", loaded.lastPostmanCollectionId)
         assertEquals("Collection Name", loaded.lastPostmanCollectionName)
-        assertEquals("yapi-token-abc", loaded.lastYapiToken)
     }
 
     fun testMultipleSaveLoadCycles() {
@@ -219,7 +203,6 @@ class ExportDialogPreferencesPersistenceTest : EasyApiLightCodeInsightFixtureTes
         assertNull(prefs.lastPostmanWorkspaceName)
         assertNull(prefs.lastPostmanCollectionId)
         assertNull(prefs.lastPostmanCollectionName)
-        assertNull(prefs.lastYapiToken)
     }
 
     fun testPreferencesDataClassCopy() {
@@ -230,8 +213,7 @@ class ExportDialogPreferencesPersistenceTest : EasyApiLightCodeInsightFixtureTes
             lastPostmanWorkspaceId = "ws-1",
             lastPostmanWorkspaceName = "WS",
             lastPostmanCollectionId = "col-1",
-            lastPostmanCollectionName = "Col",
-            lastYapiToken = "yapi-tok"
+            lastPostmanCollectionName = "Col"
         )
         
         val copy = original.copy()
@@ -243,7 +225,6 @@ class ExportDialogPreferencesPersistenceTest : EasyApiLightCodeInsightFixtureTes
         assertEquals(original.lastPostmanWorkspaceName, copy.lastPostmanWorkspaceName)
         assertEquals(original.lastPostmanCollectionId, copy.lastPostmanCollectionId)
         assertEquals(original.lastPostmanCollectionName, copy.lastPostmanCollectionName)
-        assertEquals(original.lastYapiToken, copy.lastYapiToken)
     }
 
     fun testPreferencesDataClassEquality() {

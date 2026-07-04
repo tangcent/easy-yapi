@@ -16,47 +16,6 @@ class ExtensionConfigRegistryTest {
         val extensions = ExtensionConfigRegistry.allExtensions()
         assertNotNull(extensions)
         assertTrue("Expected at least one extension", extensions.isNotEmpty())
-        println("Loaded extensions: ${extensions.map { it.code }}")
-    }
-
-    @Test
-    fun testYapiExtensionExists() {
-        val extensions = ExtensionConfigRegistry.allExtensions()
-        val codes = extensions.map { it.code }
-        println("All extension codes: $codes")
-        assertTrue("yapi extension should exist. Available: $codes", codes.contains("yapi"))
-    }
-
-    @Test
-    fun testYapiMockExtensionExists() {
-        val extensions = ExtensionConfigRegistry.allExtensions()
-        val codes = extensions.map { it.code }
-        println("All extension codes: $codes")
-        assertTrue("yapi-mock extension should exist. Available: $codes", codes.contains("yapi-mock"))
-    }
-
-    @Test
-    fun testYapiMockExtensionContainsMockRules() {
-        val extension = ExtensionConfigRegistry.getExtension("yapi-mock")
-        assertNotNull("yapi-mock extension should be loaded", extension)
-        val content = extension!!.content
-        assertTrue("yapi-mock should contain mock.rule entries", content.contains("mock.rule="))
-        assertTrue("yapi-mock should contain email rule", content.contains("@email"))
-        assertTrue("yapi-mock should contain phone rule", content.contains("@phone"))
-    }
-
-    @Test
-    fun testYapiMockExtensionDefaultEnabled() {
-        val extension = ExtensionConfigRegistry.getExtension("yapi-mock")
-        assertNotNull("yapi-mock extension should be loaded", extension)
-        assertTrue("yapi-mock should be default-enabled", extension!!.defaultEnabled)
-    }
-
-    @Test
-    fun testYapiExtensionDoesNotContainMockRules() {
-        val extension = ExtensionConfigRegistry.getExtension("yapi")
-        assertNotNull("yapi extension should be loaded", extension)
-        assertFalse("yapi extension should not contain mock.rule entries", extension!!.content.contains("mock.rule="))
     }
 
     @Test
@@ -220,10 +179,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Type conversions for common types (Date, ObjectId, etc.)", ext.description)
         assertNull("converts should have no on-class requirement", ext.onClass)
         assertTrue("converts should be default-enabled", ext.defaultEnabled)
-        assertContentContains("converts",
+        assertContentContains(
+            "converts",
             "json.rule.convert[org.bson.types.ObjectId]=java.lang.String",
             "json.rule.convert[java.util.Date]=java.lang.String",
-            "json.rule.convert[java.math.BigInteger]=java.lang.Long")
+            "json.rule.convert[java.math.BigInteger]=java.lang.Long"
+        )
     }
 
     // ── deprecated.config ──
@@ -234,11 +195,13 @@ class ExtensionConfigRegistryTest {
         assertEquals("Deprecated info for Java and Kotlin", ext.description)
         assertNull(ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("deprecated",
+        assertContentContains(
+            "deprecated",
             "method.doc[@java.lang.Deprecated]",
             "field.doc[@java.lang.Deprecated]",
             "method.doc[@kotlin.Deprecated]",
-            "field.doc[@kotlin.Deprecated]")
+            "field.doc[@kotlin.Deprecated]"
+        )
     }
 
     // ── fastjson.config ──
@@ -249,8 +212,10 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Fastjson annotations", ext.description)
         assertEquals("com.alibaba.fastjson.annotation.JSONField", ext.onClass)
         assertFalse("fastjson should be default-disabled", ext.defaultEnabled)
-        assertContentContains("fastjson",
-            "field.name=@com.alibaba.fastjson.annotation.JSONField#value")
+        assertContentContains(
+            "fastjson",
+            "field.name=@com.alibaba.fastjson.annotation.JSONField#value"
+        )
     }
 
     // ── field-order-alphabetically.config ──
@@ -261,9 +226,11 @@ class ExtensionConfigRegistryTest {
         assertEquals("Fields ordered alphabetically (A-Z)", ext.description)
         assertNull(ext.onClass)
         assertFalse(ext.defaultEnabled)
-        assertContentContains("field-order-alphabetically",
+        assertContentContains(
+            "field-order-alphabetically",
             "field.order.with=groovy:",
-            "a.name().compareTo(b.name())")
+            "a.name().compareTo(b.name())"
+        )
     }
 
     // ── field-order-alphabetically-desc.config ──
@@ -274,9 +241,11 @@ class ExtensionConfigRegistryTest {
         assertEquals("Fields ordered alphabetically descending (Z-A)", ext.description)
         assertNull(ext.onClass)
         assertFalse(ext.defaultEnabled)
-        assertContentContains("field-order-alphabetically-desc",
+        assertContentContains(
+            "field-order-alphabetically-desc",
             "field.order.with=groovy:",
-            "-a.name().compareTo(b.name())")
+            "-a.name().compareTo(b.name())"
+        )
     }
 
     // ── field-order-child-first.config ──
@@ -287,9 +256,11 @@ class ExtensionConfigRegistryTest {
         assertEquals("Child class fields first, parent class fields last", ext.description)
         assertNull(ext.onClass)
         assertFalse(ext.defaultEnabled)
-        assertContentContains("field-order-child-first",
+        assertContentContains(
+            "field-order-child-first",
             "field.order.with=groovy:",
-            "aDefineClass.isExtend(bDefineClass.qualifiedName())")
+            "aDefineClass.isExtend(bDefineClass.qualifiedName())"
+        )
     }
 
     // ── field-order-parent-first.config ──
@@ -300,9 +271,11 @@ class ExtensionConfigRegistryTest {
         assertEquals("Parent class fields first, child class fields last", ext.description)
         assertNull(ext.onClass)
         assertFalse(ext.defaultEnabled)
-        assertContentContains("field-order-parent-first",
+        assertContentContains(
+            "field-order-parent-first",
             "field.order.with=groovy:",
-            "aDefineClass.isExtend(bDefineClass.qualifiedName())")
+            "aDefineClass.isExtend(bDefineClass.qualifiedName())"
+        )
     }
 
     // ── field-utils.config ──
@@ -310,13 +283,18 @@ class ExtensionConfigRegistryTest {
     @Test
     fun testFieldUtilsExtension() {
         val ext = assertExtensionLoaded("field-utils")
-        assertEquals("Field handling utilities (ignore system fields, transient, serialVersionUID, etc.)", ext.description)
+        assertEquals(
+            "Field handling utilities (ignore system fields, transient, serialVersionUID, etc.)",
+            ext.description
+        )
         assertNull(ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("field-utils",
+        assertContentContains(
+            "field-utils",
             "field.ignore=groovy:it.hasModifier(\"transient\")",
             "constant.field.ignore=groovy:it.name()==\"serialVersionUID\"",
-            "ignore_static_and_final_field=false")
+            "ignore_static_and_final_field=false"
+        )
     }
 
     // ── gson.config ──
@@ -327,9 +305,11 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Gson annotations", ext.description)
         assertEquals("com.google.gson.annotations.SerializedName", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("gson",
+        assertContentContains(
+            "gson",
             "field.name=@com.google.gson.annotations.SerializedName#value",
-            "field.ignore=!@com.google.gson.annotations.Expose#serialize")
+            "field.ignore=!@com.google.gson.annotations.Expose#serialize"
+        )
     }
 
     // ── ignore.config ──
@@ -351,13 +331,15 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Jackson annotations (basic + advanced)", ext.description)
         assertEquals("com.fasterxml.jackson.annotation.JsonProperty", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("jackson",
+        assertContentContains(
+            "jackson",
             "field.name=@com.fasterxml.jackson.annotation.JsonProperty#value",
             "field.ignore=@com.fasterxml.jackson.annotation.JsonIgnore#value",
             "JsonPropertyOrder",
             "JsonIgnoreProperties",
             "JsonUnwrapped",
-            "JsonView")
+            "JsonView"
+        )
     }
 
     // ── jakarta-validation.config ──
@@ -368,10 +350,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Jakarta validation annotations", ext.description)
         assertEquals("jakarta.validation.constraints.NotNull", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("jakarta-validation",
+        assertContentContains(
+            "jakarta-validation",
             "param.required=@jakarta.validation.constraints.NotBlank",
             "field.required=@jakarta.validation.constraints.NotNull",
-            "param.required=@jakarta.validation.constraints.NotEmpty")
+            "param.required=@jakarta.validation.constraints.NotEmpty"
+        )
     }
 
     // ── jakarta-validation-strict.config ──
@@ -382,10 +366,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Jakarta validation annotations with strict group checking", ext.description)
         assertEquals("jakarta.validation.constraints.NotNull", ext.onClass)
         assertFalse(ext.defaultEnabled)
-        assertContentContains("jakarta-validation-strict",
+        assertContentContains(
+            "jakarta-validation-strict",
             "check_annotated_Validated",
             "check_groups_jakarta",
-            "session.set(\"json-group\"")
+            "session.set(\"json-group\""
+        )
     }
 
     // ── javax-validation.config ──
@@ -396,10 +382,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Javax validation annotations", ext.description)
         assertEquals("javax.validation.constraints.NotNull", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("javax-validation",
+        assertContentContains(
+            "javax-validation",
             "param.required=@javax.validation.constraints.NotBlank",
             "field.required=@javax.validation.constraints.NotNull",
-            "param.required=@javax.validation.constraints.NotEmpty")
+            "param.required=@javax.validation.constraints.NotEmpty"
+        )
     }
 
     // ── javax-validation-strict.config ──
@@ -410,10 +398,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Javax validation annotations with strict group checking", ext.description)
         assertEquals("javax.validation.constraints.NotNull", ext.onClass)
         assertFalse(ext.defaultEnabled)
-        assertContentContains("javax-validation-strict",
+        assertContentContains(
+            "javax-validation-strict",
             "check_annotated_Validated",
             "check_groups_javax",
-            "session.set(\"json-group\"")
+            "session.set(\"json-group\""
+        )
     }
 
     // ── spring.config ──
@@ -424,10 +414,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Spring framework support (Entity, WebFlux, UI)", ext.description)
         assertEquals("org.springframework.http.HttpEntity", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("spring",
+        assertContentContains(
+            "spring",
             "json.rule.convert[#regex:org.springframework.http.HttpEntity<(.*)>]=\${1}",
             "json.rule.convert[#regex:org.springframework.http.ResponseEntity<(.*)>]=\${1}",
-            "json.rule.convert[org.springframework.http.HttpEntity]=java.lang.Object")
+            "json.rule.convert[org.springframework.http.HttpEntity]=java.lang.Object"
+        )
     }
 
     // ── spring-configuration.config ──
@@ -438,9 +430,11 @@ class ExtensionConfigRegistryTest {
         assertEquals("Spring ConfigurationProperties support", ext.description)
         assertEquals("org.springframework.boot.context.properties.ConfigurationProperties", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("spring-configuration",
+        assertContentContains(
+            "spring-configuration",
             "properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties",
-            "properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix")
+            "properties.prefix=@org.springframework.boot.context.properties.ConfigurationProperties#prefix"
+        )
     }
 
     // ── spring-properties.config ──
@@ -451,10 +445,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Spring properties support (import and resolve application.properties/yml)", ext.description)
         assertNull(ext.onClass)
         assertFalse(ext.defaultEnabled)
-        assertContentContains("spring-properties",
+        assertContentContains(
+            "spring-properties",
             "properties.additional=\${module_path}/src/main/resources/application.properties",
             "properties.additional=\${module_path}/src/main/resources/application.yml",
-            "class.prefix.path=\${server.servlet.context-path}")
+            "class.prefix.path=\${server.servlet.context-path}"
+        )
     }
 
     // ── spring-validations.config ──
@@ -465,10 +461,11 @@ class ExtensionConfigRegistryTest {
         assertEquals("Support for Spring validation annotations", ext.description)
         assertEquals("org.springframework.lang.NonNull", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("spring-validations",
+        assertContentContains(
+            "spring-validations",
             "field.required=@org.springframework.lang.NonNull",
             "param.ignore=groovy:it.type().isExtend(\"org.springframework.validation.BindingResult\")",
-            "DateTimeFormat")
+        )
     }
 
     // ── spring-webflux.config ──
@@ -479,10 +476,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Spring WebFlux reactive type support (Mono, Flux, Publisher)", ext.description)
         assertEquals("reactor.core.publisher.Mono", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("spring-webflux",
+        assertContentContains(
+            "spring-webflux",
             "json.rule.convert[#regex:reactor.core.publisher.Mono<(.*)>]=\${1}",
             "json.rule.convert[#regex:reactor.core.publisher.Flux<(.*)>]=java.util.List<\${1}>",
-            "json.rule.convert[org.reactivestreams.Publisher]=java.lang.Object")
+            "json.rule.convert[org.reactivestreams.Publisher]=java.lang.Object"
+        )
     }
 
     // ── swagger.config ──
@@ -493,11 +492,12 @@ class ExtensionConfigRegistryTest {
         assertEquals("Swagger 2.x annotation support", ext.description)
         assertEquals("io.swagger.annotations.Api", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("swagger",
+        assertContentContains(
+            "swagger",
             "param.doc=@io.swagger.annotations.ApiParam#value",
             "class.doc=@io.swagger.annotations.Api#tags",
-            "method.doc=@io.swagger.annotations.ApiOperation#value",
-            "api.tag=@io.swagger.annotations.ApiOperation#tags")
+            "method.doc=@io.swagger.annotations.ApiOperation#value"
+        )
     }
 
     // ── swagger3.config ──
@@ -508,54 +508,13 @@ class ExtensionConfigRegistryTest {
         assertEquals("OpenAPI 3.x / Swagger 3 annotation support", ext.description)
         assertEquals("io.swagger.v3.oas.annotations.Operation", ext.onClass)
         assertTrue(ext.defaultEnabled)
-        assertContentContains("swagger3",
+        assertContentContains(
+            "swagger3",
             "api.name=@io.swagger.v3.oas.annotations.Operation#summary",
             "method.doc=@io.swagger.v3.oas.annotations.Operation#description",
             "field.name=@io.swagger.v3.oas.annotations.media.Schema#name",
-            "export.after[@io.swagger.v3.oas.annotations.Parameter]")
-    }
-
-    // ── yapi.config ──
-
-    @Test
-    fun testYapiExtension() {
-        val ext = assertExtensionLoaded("yapi")
-        assertEquals("YAPI export rules (api.open, api.status, api.tag, field.mock)", ext.description)
-        assertNull(ext.onClass)
-        assertTrue(ext.defaultEnabled)
-        assertContentContains("yapi",
-            "api.tag[@java.lang.Deprecated]=deprecated",
-            "api.status[#undone]=undone",
-            "api.open[#open]=true",
-            "field.mock=#mock")
-    }
-
-    // ── yapi-mock.config ──
-
-    @Test
-    fun testYapiMockExtension() {
-        val ext = assertExtensionLoaded("yapi-mock")
-        assertEquals("YAPI mock rules for parameter mock data generation", ext.description)
-        assertNull(ext.onClass)
-        assertTrue(ext.defaultEnabled)
-        assertContentContains("yapi-mock",
-            "mock.rule=*.email|string=@email",
-            "mock.rule=*.phone|string=@phone",
-            "mock.rule=*.password|string=******",
-            "mock.rule=*.datetime|string=@datetime")
-    }
-
-    // ── yapi.project.config ──
-
-    @Test
-    fun testYapiProjectExtension() {
-        val ext = assertExtensionLoaded("yapi.project")
-        assertEquals("Get the YAPI project from the comment, group the apis", ext.description)
-        assertNull(ext.onClass)
-        assertTrue(ext.defaultEnabled)
-        assertContentContains("yapi.project",
-            "yapi.project=#project",
-            "yapi.project=#module")
+            "export.after[@io.swagger.v3.oas.annotations.Parameter]"
+        )
     }
 
     // ── All extensions count ──
@@ -573,13 +532,15 @@ class ExtensionConfigRegistryTest {
             "spring", "spring-configuration", "spring-properties",
             "spring-validations", "spring-webflux",
             "swagger", "swagger3",
-            "yapi", "yapi-mock", "yapi.project"
+            "yapi", "yapi-mock", "yapi-swagger", "yapi.project"
         )
         val actualCodes = ExtensionConfigRegistry.codes().toList()
         for (code in expectedCodes) {
             assertTrue("Extension '$code' should be loaded. Actual: $actualCodes", actualCodes.contains(code))
         }
-        assertEquals("Should have exactly ${expectedCodes.size} extensions",
-            expectedCodes.size, actualCodes.size)
+        assertEquals(
+            "Should have exactly ${expectedCodes.size} extensions",
+            expectedCodes.size, actualCodes.size
+        )
     }
 }

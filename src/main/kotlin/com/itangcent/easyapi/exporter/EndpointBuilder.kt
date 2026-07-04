@@ -15,8 +15,8 @@ import com.itangcent.easyapi.psi.model.ObjectModelUtils
 import com.itangcent.easyapi.psi.type.PrimitiveKind
 import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.TypeResolver
+import com.itangcent.easyapi.settings.module.IntelligentSettings
 import com.itangcent.easyapi.settings.settings
-import com.itangcent.easyapi.settings.Settings
 
 /**
  * Shared utility for building API endpoint components across all framework exporters.
@@ -40,7 +40,7 @@ import com.itangcent.easyapi.settings.Settings
  */
 class EndpointBuilder(private val project: Project) {
 
-    private val settings: Settings get() = project.settings
+    private val settings get() = project.settings<IntelligentSettings>()
     private val docHelper: DocHelper by lazy { UnifiedDocHelper.getInstance(project) }
     private val metadataResolver: DocMetadataResolver get() = DocMetadataResolver.getInstance(project)
 

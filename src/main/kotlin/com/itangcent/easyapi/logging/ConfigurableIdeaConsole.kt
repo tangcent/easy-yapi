@@ -1,16 +1,14 @@
 package com.itangcent.easyapi.logging
 
-import com.itangcent.easyapi.settings.Settings
-
 /**
  * A settings-aware wrapper around [IdeaConsole] that filters log output based on configured log level.
  *
  * Delegates actual logging to the wrapped [IdeaConsole] instance, but only outputs messages
- * that meet or exceed the configured log level threshold from [Settings].
+ * that meet or exceed the configured log level threshold.
  *
  * ## Log Level Filtering
  *
- * `Settings.logLevel` uses the same 0/10/20/30/40/100 scale as [LogLevel.threshold]:
+ * `logLevel` uses the same 0/10/20/30/40/100 scale as [LogLevel.threshold]:
  * - TRACE (0): Most verbose, includes all messages
  * - DEBUG (10): Debug and above
  * - INFO (20): Informational and above
@@ -26,13 +24,13 @@ import com.itangcent.easyapi.settings.Settings
  * and would flood `idea.log`).
  *
  * @param delegate The underlying [IdeaConsole] to delegate to
- * @param settings The settings containing the log level configuration
+ * @param logLevel The configured log level threshold (from [com.itangcent.easyapi.settings.module.GeneralSettings])
  * @see IdeaConsole for the console interface
  * @see DefaultIdeaConsole for the default implementation
  */
 class ConfigurableIdeaConsole(
     private val delegate: IdeaConsole,
-    private val settings: Settings
+    private val logLevel: Int
 ) : IdeaConsole, IdeaLog {
 
     override fun trace(msg: String) {
@@ -69,7 +67,7 @@ class ConfigurableIdeaConsole(
     }
 
     private fun enabled(level: LogLevel): Boolean {
-        val configured = settings.logLevel.coerceIn(0, 100)
+        val configured = logLevel.coerceIn(0, 100)
         if (configured >= 100) return false
         return level.threshold >= configured
     }

@@ -1,5 +1,6 @@
 package com.itangcent.easyapi.settings.state
 
+import com.itangcent.easyapi.settings.PostmanExportMode
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -11,7 +12,7 @@ class ProjectSettingsStateTest {
         val s = state.state
         assertNotNull(s)
         assertNull(s.postmanWorkspace)
-        assertEquals(defaultPostmanExportMode(), s.postmanExportMode)
+        assertEquals(PostmanExportMode.CREATE_NEW.name, s.postmanExportMode)
         assertNull(s.postmanCollections)
         assertTrue(s.postmanBuildExample)
         assertTrue(s.builtInConfig)

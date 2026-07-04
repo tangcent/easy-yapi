@@ -110,44 +110,6 @@ class SwaggerConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
-    fun testApiOperationExtractsTags() = runTest {
-        val psiClass = findClass("com.itangcent.swagger.ProductController")
-        assertNotNull("Should find ProductController", psiClass)
-
-        val endpoints = exporter.export(psiClass!!)
-
-        val getEndpoint = endpoints.find {
-            it.httpMetadata?.method == HttpMethod.GET &&
-            it.httpMetadata?.path?.contains("{id}") == true
-        }
-        assertNotNull("Should find GET /product/get/{id} endpoint", getEndpoint)
-        assertTrue(
-            "Tags should be extracted from @ApiOperation#tags",
-            getEndpoint?.tags?.contains("product") == true
-        )
-    }
-
-    fun testApiOperationExtractsMultipleTags() = runTest {
-        val psiClass = findClass("com.itangcent.swagger.ProductController")
-        assertNotNull("Should find ProductController", psiClass)
-
-        val endpoints = exporter.export(psiClass!!)
-
-        val searchEndpoint = endpoints.find {
-            it.httpMetadata?.method == HttpMethod.GET &&
-            it.httpMetadata?.path?.contains("search") == true
-        }
-        assertNotNull("Should find GET /product/search endpoint", searchEndpoint)
-        assertTrue(
-            "Tags should contain 'product' from @ApiOperation#tags array",
-            searchEndpoint?.tags?.contains("product") == true
-        )
-        assertTrue(
-            "Tags should contain 'search' from @ApiOperation#tags array",
-            searchEndpoint?.tags?.contains("search") == true
-        )
-    }
-
     // ── @ApiParam: param.doc, param.default.value, param.required, param.ignore ──
 
     fun testApiParamExtractsDescription() = runTest {

@@ -15,8 +15,6 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JPasswordField
-import javax.swing.JScrollPane
-import javax.swing.JTextArea
 import javax.swing.JTextField
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -76,7 +74,7 @@ object ValidationUtils {
  * Abstract base class for settings panels with validation support.
  * Provides validation error tracking and display.
  */
-abstract class ValidatedPanel : JPanel(BorderLayout()), SettingsPanel {
+abstract class ValidatedPanel : JPanel(BorderLayout()), SettingsPanel<Settings> {
     /** Map of components to their validation error messages */
     protected val validationErrors = mutableMapOf<JComponent, String>()
     
@@ -111,20 +109,16 @@ abstract class ValidatedPanel : JPanel(BorderLayout()), SettingsPanel {
 
 /**
  * Enhanced general settings panel with validation.
- * 
+ *
  * Provides UI for:
  * - Built-in configuration toggle
  * - Postman export options
- * - YAPI server and token configuration
  */
 class EnhancedGeneralSettingsPanel : ValidatedPanel() {
     private val builtInCheckbox = JCheckBox("Enable built-in configuration")
     private val postmanExampleCheckbox = JCheckBox("Build example in Postman export")
     private val postmanMergeScriptCheckbox = JCheckBox("Auto-merge scripts in Postman export")
-    
-    private val yapiServerField = JTextField(30)
-    private val yapiTokenTextArea = JTextArea(4, 30)
-    
+
     private val resetButton = JButton("Reset to Defaults")
     
     override val component: JComponent = this
@@ -159,43 +153,15 @@ class EnhancedGeneralSettingsPanel : ValidatedPanel() {
         row++
         gbc.gridy = row
         mainPanel.add(postmanMergeScriptCheckbox, gbc)
-        
-        row++
-        gbc.gridy = row
-        gbc.gridwidth = 2
-        mainPanel.add(createSectionHeader("Yapi Settings"), gbc)
-        
-        row++
-        gbc.gridy = row
-        gbc.gridwidth = 1
-        gbc.gridx = 0
-        mainPanel.add(JBLabel("Yapi Server URL:"), gbc)
-        gbc.gridx = 1
-        mainPanel.add(yapiServerField, gbc)
-        
-        row++
-        gbc.gridy = row
-        gbc.gridwidth = 1
-        gbc.gridx = 0
-        gbc.anchor = GridBagConstraints.NORTHWEST
-        mainPanel.add(JBLabel("tokens:"), gbc)
-        gbc.gridx = 1
-        gbc.fill = GridBagConstraints.BOTH
-        gbc.weighty = 1.0
-        mainPanel.add(JScrollPane(yapiTokenTextArea), gbc)
-        gbc.fill = GridBagConstraints.HORIZONTAL
-        gbc.weighty = 0.0
-        gbc.anchor = GridBagConstraints.CENTER
-        
+
         row++
         gbc.gridy = row
         gbc.gridx = 0
         gbc.gridwidth = 2
         mainPanel.add(createButtonPanel(), gbc)
-        
+
         add(mainPanel, BorderLayout.CENTER)
-        
-        setupValidation()
+
         setupTooltips()
         setupResetButton()
     }
@@ -213,29 +179,10 @@ class EnhancedGeneralSettingsPanel : ValidatedPanel() {
         }
     }
     
-    private fun setupValidation() {
-        yapiServerField.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent?) = validateYapiServer()
-            override fun removeUpdate(e: DocumentEvent?) = validateYapiServer()
-            override fun changedUpdate(e: DocumentEvent?) = validateYapiServer()
-        })
-    }
-    
-    private fun validateYapiServer() {
-        val text = yapiServerField.text
-        if (text.isNotBlank() && !ValidationUtils.validateUrl(text)) {
-            addValidationError(yapiServerField, "Invalid URL format. Must be http:// or https://")
-        } else {
-            clearValidationError(yapiServerField)
-        }
-    }
-    
     private fun setupTooltips() {
         builtInCheckbox.toolTipText = "Enable built-in configuration rules for common frameworks"
         postmanExampleCheckbox.toolTipText = "Generate example responses in Postman collections"
         postmanMergeScriptCheckbox.toolTipText = "Automatically merge pre-request and test scripts"
-        yapiServerField.toolTipText = "Yapi server URL (e.g., http://yapi.example.com)"
-        yapiTokenTextArea.toolTipText = "Yapi tokens in properties format: module=token (one per line). Tokens can also be entered at export time."
     }
     
     private fun setupResetButton() {
@@ -248,36 +195,20 @@ class EnhancedGeneralSettingsPanel : ValidatedPanel() {
         builtInCheckbox.isSelected = true
         postmanExampleCheckbox.isSelected = false
         postmanMergeScriptCheckbox.isSelected = true
-        yapiServerField.text = ""
-        yapiTokenTextArea.text = ""
     }
     
     override fun resetFrom(settings: Settings?) {
-        builtInCheckbox.isSelected = true
-        postmanExampleCheckbox.isSelected = settings?.postmanBuildExample ?: false
-        postmanMergeScriptCheckbox.isSelected = settings?.autoMergeScript ?: true
-        yapiServerField.text = settings?.yapiServer ?: ""
-        yapiTokenTextArea.text = settings?.yapiTokens ?: ""
+        // no-op: self-contained panel
     }
-    
+
     override fun applyTo(settings: Settings) {
         if (hasValidationErrors()) {
             throw IllegalArgumentException("Validation errors:\n${getValidationErrors()}")
         }
-        
-        settings.postmanBuildExample = postmanExampleCheckbox.isSelected
-        settings.autoMergeScript = postmanMergeScriptCheckbox.isSelected
-        settings.yapiServer = yapiServerField.text.takeIf { it.isNotBlank() }
-        settings.yapiTokens = yapiTokenTextArea.text.takeIf { it.isNotBlank() }
+        // no-op: self-contained panel
     }
-    
-    override fun isModified(settings: Settings?): Boolean {
-        val s = settings ?: return false
-        return postmanExampleCheckbox.isSelected != s.postmanBuildExample ||
-            postmanMergeScriptCheckbox.isSelected != s.autoMergeScript ||
-            yapiServerField.text != (s.yapiServer ?: "") ||
-            yapiTokenTextArea.text != (s.yapiTokens ?: "")
-    }
+
+    override fun isModified(settings: Settings?): Boolean = false
 }
 
 class EnhancedOtherSettingsPanel : ValidatedPanel() {
@@ -393,25 +324,15 @@ class EnhancedOtherSettingsPanel : ValidatedPanel() {
     }
     
     override fun resetFrom(settings: Settings?) {
-        charsetField.text = settings?.outputCharset ?: "UTF-8"
-        unsafeSslCheckbox.isSelected = settings?.unsafeSsl ?: false
-        httpTimeoutField.text = (settings?.httpTimeOut ?: 30_000).toString()
+        // no-op: self-contained panel
     }
-    
+
     override fun applyTo(settings: Settings) {
         if (hasValidationErrors()) {
             throw IllegalArgumentException("Validation errors:\n${getValidationErrors()}")
         }
-        
-        settings.outputCharset = charsetField.text.ifBlank { "UTF-8" }
-        settings.unsafeSsl = unsafeSslCheckbox.isSelected
-        settings.httpTimeOut = httpTimeoutField.text.toIntOrNull() ?: 30_000
+        // no-op: self-contained panel
     }
-    
-    override fun isModified(settings: Settings?): Boolean {
-        val s = settings ?: return false
-        return charsetField.text != s.outputCharset ||
-            unsafeSslCheckbox.isSelected != s.unsafeSsl ||
-            httpTimeoutField.text != s.httpTimeOut.toString()
-    }
+
+    override fun isModified(settings: Settings?): Boolean = false
 }

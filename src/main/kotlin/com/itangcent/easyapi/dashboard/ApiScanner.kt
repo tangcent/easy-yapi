@@ -23,6 +23,7 @@ import com.itangcent.easyapi.ide.support.runWithProgress
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.logging.console
 import com.itangcent.easyapi.psi.type.areMethodsRelated
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
@@ -353,9 +354,7 @@ class ApiScanner(private val project: Project) {
         exporters: List<ClassExporter>,
         indicator: ProgressIndicator?
     ): List<ApiEndpoint> {
-        val settings = project.settings
-
-        return if (settings.concurrentScanEnabled) {
+        return if (project.settings<GeneralSettings>().concurrentScanEnabled) {
             scanClassesConcurrently(psiClasses, exporters, indicator)
         } else {
             scanClassesSequentially(psiClasses, exporters, indicator)

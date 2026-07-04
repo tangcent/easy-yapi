@@ -2,54 +2,63 @@ package com.itangcent.easyapi.settings
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.idea.facet.getInstance
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import kotlin.reflect.KClass
 
 /**
- * Interface for reading and saving plugin settings.
+ * Generic read/save of any [Settings].
  *
- * Provides a simple abstraction for settings persistence.
- * Implementations handle the actual storage mechanism.
+ * Reflects on each module's `@StorageScope`-annotated properties and routes
+ * reads/writes to the unified [com.itangcent.easyapi.settings.state.UnifiedAppSettingsState]
+ * (for [Scope.APPLICATION] fields) or [com.itangcent.easyapi.settings.state.UnifiedProjectSettingsState]
+ * (for [Scope.PROJECT] fields), with values serialized as `String` and coerced
+ * back to the property type on read.
  *
  * ## Usage
  * ```kotlin
- * // Read settings
- * val settings = settingBinder.read()
- * 
- * // Update settings
- * settingBinder.update {
+ * val binder = SettingBinder.getInstance(project)
+ *
+ * // Read a module
+ * val postman = binder.read<PostmanSettings>()
+ *
+ * // Update a module
+ * binder.update(PostmanSettings::class) {
  *     postmanToken = "new-token"
  * }
- * 
- * // Save settings
- * settingBinder.save(newSettings)
+ *
+ * // Save a module
+ * binder.save(postman)
  * ```
  *
  * @see DefaultSettingBinder for the default implementation
- * @see Settings for the settings model
+ * @see Settings
+ * @see StorageScope
  */
 interface SettingBinder {
     /**
-     * Reads the current settings.
+     * Reads the current settings for the given module type.
      *
-     * @return The current settings
+     * Missing/unrecognized state yields the type's defaults (no crash — R-A-5).
+     *
+     * @param type the settings module class
+     * @return the populated settings instance
      */
-    fun read(): Settings
+    fun <T : Settings> read(type: KClass<T>): T
 
     /**
-     * Saves the settings.
+     * Saves the settings, persisting each annotated property to its scoped
+     * `PersistentStateComponent`. Fires [SettingsChangeListener] after save.
      *
-     * @param settings The settings to save, or null to reset
+     * @param settings the settings to persist
      */
-    fun save(settings: Settings)
+    fun <T : Settings> save(settings: T)
 
     /**
      * Tries to read settings without creating defaults.
      *
-     * @return The current settings, or null if not set
+     * @param type the settings module class
+     * @return the current settings, or null if not set
      */
-    fun tryRead(): Settings?
+    fun <T : Settings> tryRead(type: KClass<T>): T?
 
     companion object {
         fun getInstance(project: Project): SettingBinder = project.service()
@@ -57,98 +66,30 @@ interface SettingBinder {
 }
 
 /**
+ * Reads settings for the reified type.
+ *
+ * Convenience for `binder.read(T::class)`.
+ */
+inline fun <reified T : Settings> SettingBinder.read(): T = read(T::class)
+
+/**
+ * Tries to read settings for the reified type.
+ */
+inline fun <reified T : Settings> SettingBinder.tryRead(): T? = tryRead(T::class)
+
+/**
  * Updates settings using the given updater function.
  *
- * @param updater The function to modify settings
+ * Reads, applies the updater, and saves.
  */
-fun SettingBinder.update(updater: Settings.() -> Unit) {
-    this.read().also(updater).let { this.save(it) }
-}
-
-
-val Project.settings get() = SettingBinder.getInstance(this).read()
-
-/**
- * A cached wrapper for SettingBinder.
- *
- * Caches settings in memory to avoid repeated reads.
- * Thread-safe implementation using volatile and synchronized.
- * Cache expires after [cacheTimeoutMillis] milliseconds (default 30 seconds).
- *
- * Note: The cache returns the same Settings instance to avoid expensive deep copies.
- * Callers should NOT mutate the returned Settings object - use [SettingBinder.update]
- * or call [save] with a modified copy instead. This is safe because:
- * 1. Cache expires every 30 seconds, limiting staleness
- * 2. [save] creates a defensive copy before caching
- *
- * @param delegate The underlying SettingBinder
- * @param cacheTimeoutMillis Cache timeout
- */
-class CachedSettingBinder(
-    private val delegate: SettingBinder,
-    private val cacheTimeoutMillis: Duration
-) : SettingBinder {
-    @Volatile
-    private var cached: Settings? = null
-
-    @Volatile
-    private var expireAt: Long = 0L
-
-    private fun isCacheExpired(): Boolean {
-        return System.currentTimeMillis() > expireAt
-    }
-
-    private fun updateCache(settings: Settings) {
-        cached = settings
-        expireAt = System.currentTimeMillis() + cacheTimeoutMillis.inWholeMilliseconds
-    }
-
-    override fun read(): Settings {
-        val cachedResult = cached
-        if (cachedResult != null && !isCacheExpired()) {
-            return cachedResult
-        }
-        return synchronized(this) {
-            val recheckCache = cached
-            if (recheckCache != null && !isCacheExpired()) {
-                recheckCache
-            } else {
-                delegate.read().also {
-                    updateCache(it)
-                }
-            }
-        }
-    }
-
-    override fun save(settings: Settings) {
-        delegate.save(settings)
-        updateCache(settings.copy())
-    }
-
-    override fun tryRead(): Settings? {
-        val cachedResult = cached
-        if (cachedResult != null && !isCacheExpired()) {
-            return cachedResult
-        }
-        return synchronized(this) {
-            val recheckCache = cached
-            if (recheckCache != null && !isCacheExpired()) {
-                recheckCache
-            } else {
-                delegate.tryRead()?.also {
-                    updateCache(it)
-                }
-            }
-        }
-    }
+fun <T : Settings> SettingBinder.update(type: KClass<T>, updater: T.() -> Unit) {
+    this.read(type).also(updater).let { this.save(it) }
 }
 
 /**
- * Wraps this SettingBinder with a caching layer.
+ * Typed convenience accessor: `project.settings<PostmanSettings>()`.
  *
- * @param cacheTimeoutMillis Cache timeout in milliseconds, defaults to 30000 (30 seconds)
- * @return A cached SettingBinder
+ * Returns the module's current settings via [SettingBinder].
  */
-fun SettingBinder.lazy(cacheTimeoutMillis: Duration): SettingBinder {
-    return CachedSettingBinder(this, cacheTimeoutMillis)
-}
+inline fun <reified T : Settings> Project.settings(): T =
+    SettingBinder.getInstance(this).read(T::class)

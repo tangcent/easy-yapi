@@ -6,7 +6,10 @@ import com.intellij.openapi.project.Project
 import com.itangcent.easyapi.config.model.ConfigEntry
 import com.itangcent.easyapi.config.resource.ConfigResourceLoader
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettings
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.HttpSettings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.text.KeyValueLineParser
 
@@ -61,7 +64,39 @@ class ConfigTextParser(
     private val resourceLoader: ConfigResourceLoader get() = ConfigResourceLoader.getInstance(project)
 
     suspend fun parse(text: String, sourceId: String, baseDir: String? = null): Sequence<ConfigEntry> {
-        return parseLines(text.lines(), sourceId, baseDir, DirectiveState(), project.settings).asSequence()
+        return parseLines(text.lines(), sourceId, baseDir, DirectiveState(), buildSettingResolver()).asSequence()
+    }
+
+    /**
+     * Builds the setting-key resolver used by [DirectiveParser] for `###if`
+     * conditions. Resolves general-module keys via [settings] reads.
+     *
+     * Channel-specific directive keys (e.g. `hoppscotchToken`, `yapiServer`)
+     * are no longer resolved via the legacy `Settings.extensions` carrier.
+     * Known general/HTTP/rule-file/postman keys resolve to their module field
+     * values; unknown keys return null (the `###if` condition evaluates to false).
+     */
+    private fun buildSettingResolver(): (String) -> String? {
+        val general = project.settings<GeneralSettings>()
+        val http = project.settings<HttpSettings>()
+        val ruleFile = project.settings<RuleFileSettings>()
+        val postman = project.settings<PostmanSettings>()
+        return { key ->
+            when (key) {
+                "builtInConfig" -> ruleFile.builtInConfig
+                "remoteConfig" -> ruleFile.remoteConfig.joinToString("\n")
+                "extensionConfig" -> ruleFile.extensionConfigs
+                "logLevel" -> general.logLevel.toString()
+                "httpTimeOut" -> http.httpTimeOut.toString()
+                "unsafeSsl" -> http.unsafeSsl.toString()
+                "httpClient" -> http.httpClient
+                "postmanToken" -> postman.postmanToken
+                "feignEnable" -> general.feignEnable.toString()
+                "jaxrsEnable" -> general.jaxrsEnable.toString()
+                "actuatorEnable" -> general.actuatorEnable.toString()
+                else -> null
+            }
+        }
     }
 
     private suspend fun parseLines(
@@ -69,9 +104,9 @@ class ConfigTextParser(
         sourceId: String,
         baseDir: String?,
         state: DirectiveState,
-        settings: Settings
+        resolveSetting: (String) -> String?
     ): List<ConfigEntry> {
-        val directiveParser = DirectiveParser(state, settings)
+        val directiveParser = DirectiveParser(state, resolveSetting)
         val result = ArrayList<ConfigEntry>()
 
         var i = 0
@@ -89,7 +124,7 @@ class ConfigTextParser(
             if (line.startsWith(INCLUDE_DIRECTIVE)) {
                 if (state.isActive()) {
                     val path = line.removePrefix(INCLUDE_DIRECTIVE).trim()
-                    include(path, sourceId, baseDir, state, settings, result)
+                    include(path, sourceId, baseDir, state, resolveSetting, result)
                 }
                 continue
             }
@@ -122,7 +157,7 @@ class ConfigTextParser(
 
             // Legacy include form, kept for backward compatibility.
             if (key == "properties.additional") {
-                include(value, sourceId, baseDir, state, settings, result)
+                include(value, sourceId, baseDir, state, resolveSetting, result)
                 continue
             }
 
@@ -144,7 +179,7 @@ class ConfigTextParser(
         sourceId: String,
         baseDir: String?,
         state: DirectiveState,
-        settings: Settings,
+        resolveSetting: (String) -> String?,
         result: MutableList<ConfigEntry>
     ) {
         val loaded = resourceLoader.load(pathOrUrl, baseDir)
@@ -155,7 +190,7 @@ class ConfigTextParser(
                     sourceId,
                     loaded.baseDir,
                     state,
-                    settings
+                    resolveSetting
                 )
             )
         } else if (!state.ignoreNotFoundFile) {

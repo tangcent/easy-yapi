@@ -18,19 +18,19 @@ import com.itangcent.easyapi.core.threading.IdeDispatchers
 import com.itangcent.easyapi.core.threading.background
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
-import com.itangcent.easyapi.exporter.channel.ApiChannel
+import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
-import com.itangcent.easyapi.exporter.markdown.MarkdownExportMetadata
-import com.itangcent.easyapi.exporter.markdown.template.BundledLanguageTemplates
-import com.itangcent.easyapi.exporter.markdown.template.DefaultMarkdownTemplate
-import com.itangcent.easyapi.exporter.markdown.template.FetchResult
-import com.itangcent.easyapi.exporter.markdown.template.MarkdownTemplateRenderer
-import com.itangcent.easyapi.exporter.markdown.template.MarkdownTemplateResolver
-import com.itangcent.easyapi.exporter.markdown.template.RemoteTemplateFetcher
-import com.itangcent.easyapi.exporter.markdown.template.RenderContext
-import com.itangcent.easyapi.exporter.markdown.template.TemplateConfig
-import com.itangcent.easyapi.exporter.markdown.template.TemplateModelBuilder
+import com.itangcent.easyapi.exporter.channel.markdown.MarkdownExportMetadata
+import com.itangcent.easyapi.exporter.channel.markdown.template.BundledLanguageTemplates
+import com.itangcent.easyapi.exporter.channel.markdown.template.DefaultMarkdownTemplate
+import com.itangcent.easyapi.exporter.channel.markdown.template.FetchResult
+import com.itangcent.easyapi.exporter.channel.markdown.template.MarkdownTemplateRenderer
+import com.itangcent.easyapi.exporter.channel.markdown.template.MarkdownTemplateResolver
+import com.itangcent.easyapi.exporter.channel.markdown.template.RemoteTemplateFetcher
+import com.itangcent.easyapi.exporter.channel.markdown.template.RenderContext
+import com.itangcent.easyapi.exporter.channel.markdown.template.TemplateConfig
+import com.itangcent.easyapi.exporter.channel.markdown.template.TemplateModelBuilder
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.exporter.model.ExportContext
 import com.itangcent.easyapi.exporter.model.ExportResult
@@ -43,16 +43,16 @@ import java.io.File
 import javax.swing.*
 
 /**
- * [ApiChannel] that exports API endpoints as Markdown documentation.
+ * [Channel] that exports API endpoints as Markdown documentation.
  *
  * Supports both HTTP and gRPC endpoints. Exposes a top-level IDE action
  * for quick access.
  *
- * @see ApiChannel
+ * @see Channel
  * @see MarkdownTemplateResolver
  * @see MarkdownTemplateRenderer
  */
-class MarkdownChannel : ApiChannel, IdeaLog {
+class MarkdownChannel : Channel, IdeaLog {
 
     override val id: String = "markdown"
     override val displayName: String = "Markdown"
@@ -67,7 +67,7 @@ class MarkdownChannel : ApiChannel, IdeaLog {
     override suspend fun export(context: ExportContext): ExportResult {
         LOG.info("MarkdownChannel.export: endpoints=${context.endpointsToExport.size}")
         val project = context.project
-        val markdownConfig = context.channelConfig as? ChannelConfig.MarkdownConfig
+        val markdownConfig = context.channelConfig as? MarkdownConfig
         val templateConfig = markdownConfig?.let {
             TemplateConfig(
                 templateInline = it.templateInline,
@@ -139,7 +139,7 @@ class MarkdownChannel : ApiChannel, IdeaLog {
         config: ChannelConfig
     ): Boolean {
         val metadata = result.metadata as? MarkdownExportMetadata ?: return false
-        val markdownConfig = config as? ChannelConfig.MarkdownConfig
+        val markdownConfig = config as? MarkdownConfig
 
         val targetFile = resolveTargetFile(project, markdownConfig, "api_documentation.md")
             ?: throw CancellationException("User cancelled file selection")
@@ -161,7 +161,7 @@ class MarkdownChannel : ApiChannel, IdeaLog {
 
     private suspend fun resolveTargetFile(
         project: Project,
-        markdownConfig: ChannelConfig.MarkdownConfig?,
+        markdownConfig: MarkdownConfig?,
         defaultFileName: String
     ): File? {
         val outputDir = markdownConfig?.outputDir
@@ -321,9 +321,9 @@ private class MarkdownOptionsPanel(private val project: Project) : ChannelOption
         add(inlineScroll)
     }
 
-    override fun buildConfig(): ChannelConfig.MarkdownConfig {
+    override fun buildConfig(): MarkdownConfig {
         val selectedLanguage = languageCombo.selectedItem as? String
-        return ChannelConfig.MarkdownConfig(
+        return MarkdownConfig(
             outputDir = outputDirField.text.takeIf { it.isNotBlank() },
             fileName = fileNameField.text.takeIf { it.isNotBlank() },
             templatePath = templateFileField.text.takeIf { it.isNotBlank() },

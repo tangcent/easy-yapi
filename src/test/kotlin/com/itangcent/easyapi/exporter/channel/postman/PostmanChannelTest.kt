@@ -6,12 +6,12 @@ import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.HttpMetadata
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.HttpMethod
-import com.itangcent.easyapi.exporter.postman.PostmanExportMetadata
-import com.itangcent.easyapi.exporter.postman.model.CollectionInfo
-import com.itangcent.easyapi.exporter.postman.model.PostmanCollection
-import com.itangcent.easyapi.exporter.postman.model.PostmanItem
-import com.itangcent.easyapi.exporter.postman.model.PostmanRequest
-import com.itangcent.easyapi.exporter.postman.model.PostmanUrl
+import com.itangcent.easyapi.exporter.channel.postman.PostmanExportMetadata
+import com.itangcent.easyapi.exporter.channel.postman.model.CollectionInfo
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanCollection
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanItem
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanRequest
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanUrl
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -143,7 +143,7 @@ class PostmanChannelTest : EasyApiLightCodeInsightFixtureTestCase() {
             project = project,
             endpoints = listOf(endpoint),
             channelId = "postman",
-            channelConfig = ChannelConfig.PostmanConfig(collectionName = "My Collection")
+            channelConfig = PostmanConfig(collectionName = "My Collection")
         )
         val result = channel.export(context)
         assertTrue(result is ExportResult.Success)

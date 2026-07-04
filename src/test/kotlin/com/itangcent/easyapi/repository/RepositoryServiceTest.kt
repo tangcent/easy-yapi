@@ -1,22 +1,14 @@
 package com.itangcent.easyapi.repository
 
-import com.intellij.testFramework.registerServiceInstance
-import com.itangcent.easyapi.settings.DefaultSettingBinder
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.GrpcSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
 
     private lateinit var repositoryService: RepositoryService
-    private lateinit var defaultSettingBinder: DefaultSettingBinder
 
     override fun setUp() {
         super.setUp()
-        defaultSettingBinder = DefaultSettingBinder(project)
-        project.registerServiceInstance(
-            serviceInterface = DefaultSettingBinder::class.java,
-            instance = defaultSettingBinder
-        )
         repositoryService = RepositoryService(project)
     }
 
@@ -27,7 +19,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetRepositoriesReturnsEnabledRepositories() {
-        defaultSettingBinder.save(Settings(grpcRepositories = arrayOf(
+        settingBinder.save(GrpcSettings(grpcRepositories = arrayOf(
             "maven:true:/path/to/.m2/repository",
             "gradle:false:/path/to/.gradle/caches"
         )))
@@ -40,7 +32,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetRepositoriesFallsBackToDefaultsWhenAllDisabled() {
-        defaultSettingBinder.save(Settings(grpcRepositories = arrayOf(
+        settingBinder.save(GrpcSettings(grpcRepositories = arrayOf(
             "maven:false:/path/to/.m2/repository",
             "gradle:false:/path/to/.gradle/caches"
         )))
@@ -51,7 +43,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetAllRepositoriesIncludesDisabled() {
-        defaultSettingBinder.save(Settings(grpcRepositories = arrayOf(
+        settingBinder.save(GrpcSettings(grpcRepositories = arrayOf(
             "maven:true:/path/to/.m2/repository",
             "gradle:false:/path/to/.gradle/caches"
         )))
@@ -62,7 +54,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetRepositoriesIgnoresInvalidEntries() {
-        defaultSettingBinder.save(Settings(grpcRepositories = arrayOf(
+        settingBinder.save(GrpcSettings(grpcRepositories = arrayOf(
             "maven:true:/path/to/.m2/repository",
             "invalid-entry",
             "",
@@ -76,7 +68,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetRepositoriesWithCustomRepository() {
-        defaultSettingBinder.save(Settings(grpcRepositories = arrayOf(
+        settingBinder.save(GrpcSettings(grpcRepositories = arrayOf(
             "custom:true:/custom/repo/path"
         )))
 
@@ -88,7 +80,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetRepositoriesWithGradleRepository() {
-        defaultSettingBinder.save(Settings(grpcRepositories = arrayOf(
+        settingBinder.save(GrpcSettings(grpcRepositories = arrayOf(
             "gradle:true:/path/to/.gradle/caches"
         )))
 
@@ -105,7 +97,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetRepositoriesWithEmptyArrayFallsBackToDefaults() {
-        defaultSettingBinder.save(Settings(grpcRepositories = emptyArray()))
+        settingBinder.save(GrpcSettings(grpcRepositories = emptyArray()))
 
         val repos = repositoryService.getRepositories()
 
@@ -113,7 +105,7 @@ class RepositoryServiceTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testGetAllRepositoriesWithEmptyArrayFallsBackToDefaults() {
-        defaultSettingBinder.save(Settings(grpcRepositories = emptyArray()))
+        settingBinder.save(GrpcSettings(grpcRepositories = emptyArray()))
 
         val repos = repositoryService.getAllRepositories()
 

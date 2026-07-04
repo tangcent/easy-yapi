@@ -18,7 +18,7 @@ import com.itangcent.easyapi.ai.AiApiKeyStore
 import com.itangcent.easyapi.ai.AIService
 import com.itangcent.easyapi.ai.AIServiceFactory
 import com.itangcent.easyapi.ai.AiProvider
-import com.itangcent.easyapi.ai.AiSettings
+import com.itangcent.easyapi.ai.AiRuntimeConfig
 import com.itangcent.easyapi.ai.TokenSizeUtils
 import com.itangcent.easyapi.ai.credentials.CredentialScanner
 import com.itangcent.easyapi.ai.credentials.DefaultCredentialScanner
@@ -27,9 +27,9 @@ import com.itangcent.easyapi.cache.AppCacheRepository
 import com.itangcent.easyapi.cache.ProjectCacheRepository
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swingAsync
-import com.itangcent.easyapi.exporter.postman.PostmanApiClient
-import com.itangcent.easyapi.exporter.postman.Workspace
-import com.itangcent.easyapi.exporter.postman.asCached
+import com.itangcent.easyapi.exporter.channel.postman.PostmanApiClient
+import com.itangcent.easyapi.exporter.channel.postman.Workspace
+import com.itangcent.easyapi.exporter.channel.postman.asCached
 import com.itangcent.easyapi.repository.DefaultRepositories
 import com.itangcent.easyapi.repository.RepositoryConfig
 import com.itangcent.easyapi.repository.RepositoryType
@@ -40,10 +40,21 @@ import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.util.json.GsonUtils
 import com.itangcent.easyapi.util.text.ByteSizeUtil
 import com.itangcent.easyapi.settings.HttpClientType
+import com.itangcent.easyapi.settings.SettingBinder
 import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
 import com.itangcent.easyapi.settings.Settings
-import com.itangcent.easyapi.settings.YapiExportMode
+import com.itangcent.easyapi.settings.module.AiSettings
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.GrpcSettings
+import com.itangcent.easyapi.settings.module.HttpSettings
+import com.itangcent.easyapi.settings.module.IntelligentSettings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
+import com.itangcent.easyapi.settings.settings
+import com.itangcent.easyapi.settings.update
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import java.awt.*
 import java.io.File
 import javax.swing.*
@@ -54,9 +65,12 @@ import kotlin.concurrent.thread
  * Interface for settings UI panels.
  *
  * Provides a contract for panels that display and edit plugin settings.
- * Each panel handles a specific category of settings.
+ * Each panel handles a specific category of settings, typed by the
+ * [Settings] it reads from / writes to.
+ *
+ * @param T the settings module type this panel binds to
  */
-interface SettingsPanel {
+interface SettingsPanel<T : Settings> {
     /** The UI component for this panel */
     val component: JComponent
 
@@ -65,14 +79,14 @@ interface SettingsPanel {
      *
      * @param settings The settings to display
      */
-    fun resetFrom(settings: Settings?)
+    fun resetFrom(settings: T?)
 
     /**
      * Applies the panel UI values to the given settings.
      *
      * @param settings The settings to modify
      */
-    fun applyTo(settings: Settings)
+    fun applyTo(settings: T)
 
     /**
      * Checks if the panel has unsaved changes.
@@ -80,7 +94,7 @@ interface SettingsPanel {
      * @param settings The current settings
      * @return true if the panel has modifications
      */
-    fun isModified(settings: Settings?): Boolean
+    fun isModified(settings: T?): Boolean
 }
 
 /**
@@ -92,7 +106,7 @@ interface SettingsPanel {
  * - Output charset and demo settings
  * - Cache management
  */
-class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel {
+class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<GeneralSettings> {
     private val feignEnable = JBCheckBox("Enable Feign client support").apply {
         toolTipText = "Enable parsing of Feign client interfaces as API endpoints"
     }
@@ -397,7 +411,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         .addComponentFillVertically(JPanel(), 0)
         .panel
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: GeneralSettings?) {
         feignEnable.isSelected = settings?.feignEnable ?: false
         jaxrsEnable.isSelected = settings?.jaxrsEnable ?: true
         actuatorEnable.isSelected = settings?.actuatorEnable ?: false
@@ -409,8 +423,15 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         outputCharsetCombo.selectedItem = settings?.outputCharset ?: "UTF-8"
         outputDemoCheckBox.isSelected = settings?.outputDemo ?: true
         refreshCacheSizes()
+    }
 
-        val userRepos = settings?.grpcRepositories?.mapNotNull { RepositoryConfig.parse(it) }
+    /**
+     * Resets the repositories table from [GrpcSettings.grpcRepositories].
+     * Called separately by the configurable because `grpcRepositories` belongs
+     * to [GrpcSettings], not [GeneralSettings].
+     */
+    fun resetRepositoriesFrom(grpcSettings: GrpcSettings?) {
+        val userRepos = grpcSettings?.grpcRepositories?.mapNotNull { RepositoryConfig.parse(it) }
         repositoryTableModel.items = if (!userRepos.isNullOrEmpty()) {
             userRepos.toMutableList()
         } else {
@@ -418,7 +439,7 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         }
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: GeneralSettings) {
         settings.feignEnable = feignEnable.isSelected
         settings.jaxrsEnable = jaxrsEnable.isSelected
         settings.actuatorEnable = actuatorEnable.isSelected
@@ -429,14 +450,20 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
         settings.logLevel = (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level ?: 0
         settings.outputCharset = outputCharsetCombo.selectedItem?.toString() ?: "UTF-8"
         settings.outputDemo = outputDemoCheckBox.isSelected
-
-        val repos = repositoryTableModel.items.map { RepositoryConfig.serialize(it) }
-        settings.grpcRepositories = repos.toTypedArray()
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    /**
+     * Applies the repositories table to [GrpcSettings.grpcRepositories].
+     * Called separately by the configurable because `grpcRepositories` belongs
+     * to [GrpcSettings], not [GeneralSettings].
+     */
+    fun applyRepositoriesTo(grpcSettings: GrpcSettings) {
+        val repos = repositoryTableModel.items.map { RepositoryConfig.serialize(it) }
+        grpcSettings.grpcRepositories = repos.toTypedArray()
+    }
+
+    override fun isModified(settings: GeneralSettings?): Boolean {
         val s = settings ?: return false
-        val currentRepos = repositoryTableModel.items.map { RepositoryConfig.serialize(it) }.toTypedArray()
         return feignEnable.isSelected != s.feignEnable ||
                 jaxrsEnable.isSelected != s.jaxrsEnable ||
                 actuatorEnable.isSelected != s.actuatorEnable ||
@@ -446,8 +473,18 @@ class GeneralSettingsPanel(private val project: com.intellij.openapi.project.Pro
                 switchNotice.isSelected != s.switchNotice ||
                 (logLevelCombo.selectedItem as? CommonSettingsHelper.VerbosityLevel)?.level != s.logLevel ||
                 outputCharsetCombo.selectedItem?.toString() != s.outputCharset ||
-                outputDemoCheckBox.isSelected != s.outputDemo ||
-                !currentRepos.contentEquals(s.grpcRepositories)
+                outputDemoCheckBox.isSelected != s.outputDemo
+    }
+
+    /**
+     * Checks if the repositories table has been modified relative to
+     * [GrpcSettings.grpcRepositories].
+     * Called separately by the configurable because `grpcRepositories` belongs
+     * to [GrpcSettings], not [GeneralSettings].
+     */
+    fun isRepositoriesModified(grpcSettings: GrpcSettings?): Boolean {
+        val currentRepos = repositoryTableModel.items.map { RepositoryConfig.serialize(it) }.toTypedArray()
+        return !currentRepos.contentEquals(grpcSettings?.grpcRepositories ?: emptyArray())
     }
 
     companion object : IdeaLog
@@ -472,261 +509,7 @@ object CommonSettingsHelper {
     }
 }
 
-class PostmanSettingsPanel : SettingsPanel {
-    private val postmanToken = JBPasswordField().apply { columns = 30 }
-    private val postmanWorkspace = ComboBox<String>().apply { isEditable = true }
-    private val fetchWorkspacesButton = JButton("Fetch")
-    private val postmanExportModeCombo = ComboBox(PostmanExportMode.values())
-    private val postmanBuildExample = JBCheckBox("Build example", true).apply {
-        toolTipText = "Generate example request/response bodies in Postman collections"
-    }
-    private val wrapCollection = JBCheckBox("Wrap collection").apply {
-        toolTipText = "Wrap exported endpoints in a Postman collection folder instead of exporting directly"
-    }
-    private val autoMergeScript = JBCheckBox("Auto merge script").apply {
-        toolTipText = "Automatically merge pre-request and test scripts when updating existing Postman collections"
-    }
-    private val postmanJson5FormatTypeCombo = ComboBox(PostmanJson5FormatType.values())
-    private val postmanCollectionsField = JBTextArea(5, 40)
-
-    // Cache fetched workspaces: id -> name
-    private var fetchedWorkspaces: List<Pair<String, String>> = emptyList()
-
-    init {
-        fetchWorkspacesButton.addActionListener { fetchWorkspaces() }
-    }
-
-    override val component: JComponent = FormBuilder.createFormBuilder()
-        .addLabeledComponent("Postman Token:", createTokenPanel())
-        .addLabeledComponent("Workspace:", createWorkspacePanel())
-        .addLabeledComponent("Export Mode:", postmanExportModeCombo)
-        .addComponent(postmanBuildExample)
-        .addComponent(wrapCollection)
-        .addComponent(autoMergeScript)
-        .addLabeledComponent("JSON5 Format Type:", postmanJson5FormatTypeCombo)
-        .addLabeledComponent("Collections (module:collectionId per line):", JScrollPane(postmanCollectionsField))
-        .addComponentFillVertically(JPanel(), 0)
-        .panel
-
-    private fun createTokenPanel(): JPanel {
-        return JPanel(BorderLayout(4, 0)).apply {
-            add(postmanToken, BorderLayout.CENTER)
-            val helpLabel = JLabel("(Get token from Postman Integrations Dashboard)")
-            helpLabel.foreground = UIUtil.getInactiveTextColor()
-            add(helpLabel, BorderLayout.EAST)
-        }
-    }
-
-    private fun createWorkspacePanel(): JPanel {
-        return JPanel(BorderLayout(4, 0)).apply {
-            add(postmanWorkspace, BorderLayout.CENTER)
-            add(fetchWorkspacesButton, BorderLayout.EAST)
-        }
-    }
-
-    private fun fetchWorkspaces() {
-        val token = String(postmanToken.password).trim()
-        if (token.isBlank()) {
-            Messages.showWarningDialog("Please enter a Postman token first.", "Fetch Workspaces")
-            return
-        }
-        fetchWorkspacesButton.isEnabled = false
-        fetchWorkspacesButton.text = "..."
-        val savedSelection = postmanWorkspace.selectedItem as? String
-        thread {
-            var errorMsg: String? = null
-            val workspaces = try {
-                LOG.info("fetchWorkspaces: creating ApacheHttpClient...")
-                val httpClient = ApacheHttpClient()
-                LOG.info("fetchWorkspaces: creating CachedPostmanApiClient with token length=${token.length}")
-                val postmanClient = PostmanApiClient(
-                    apiKey = token,
-                    httpClient = httpClient
-                ).asCached()
-                LOG.info("fetchWorkspaces: calling listWorkspaces...")
-                val result = kotlinx.coroutines.runBlocking {
-                    postmanClient.listWorkspaces(useCache = false)
-                }
-                LOG.info("fetchWorkspaces: listWorkspaces returned ${result.size} items")
-                result.map { it.id to it.name }
-            } catch (e: Exception) {
-                LOG.warn("fetchWorkspaces: exception: ${e.javaClass.name}: ${e.message}", e)
-                errorMsg = "${e.javaClass.simpleName}: ${e.message}"
-                emptyList()
-            }
-            LOG.info("Postman workspaces fetch: found ${workspaces.size} workspaces")
-            SwingUtilities.invokeLater {
-                fetchedWorkspaces = workspaces
-                val model = DefaultComboBoxModel<String>()
-                workspaces.forEach { (id, name) -> model.addElement("$name ($id)") }
-                postmanWorkspace.model = model
-                if (savedSelection != null) {
-                    for (i in 0 until model.size) {
-                        if (model.getElementAt(i).contains(savedSelection)) {
-                            postmanWorkspace.selectedIndex = i
-                            break
-                        }
-                    }
-                }
-                fetchWorkspacesButton.isEnabled = true
-                fetchWorkspacesButton.text = "Fetch"
-                if (workspaces.isEmpty()) {
-                    val detail = if (errorMsg != null) "\n\nError: $errorMsg" else ""
-                    Messages.showInfoMessage("No workspaces found. Check your token.$detail", "Fetch Workspaces")
-                }
-            }
-        }
-    }
-
-    override fun resetFrom(settings: Settings?) {
-        postmanToken.text = settings?.postmanToken ?: ""
-
-        val currentWorkspace = settings?.postmanWorkspace ?: ""
-        val cachedWorkspaces = loadCachedWorkspaces()
-
-        val model = DefaultComboBoxModel<String>()
-        if (cachedWorkspaces.isNotEmpty()) {
-            cachedWorkspaces.forEach { (id, name) -> model.addElement("$name ($id)") }
-        }
-        val existingElements = (0 until model.size).map { model.getElementAt(it) }
-        if (currentWorkspace.isNotBlank() && !existingElements.any { it.contains(currentWorkspace) }) {
-            model.addElement(currentWorkspace)
-        }
-        if (model.size == 0) {
-            model.addElement("")
-        }
-        postmanWorkspace.model = model
-        if (currentWorkspace.isNotBlank()) {
-            for (i in 0 until model.size) {
-                if (model.getElementAt(i).contains(currentWorkspace)) {
-                    postmanWorkspace.selectedIndex = i
-                    break
-                }
-            }
-        }
-
-        postmanExportModeCombo.selectedItem = settings?.postmanExportMode?.let {
-            runCatching { PostmanExportMode.valueOf(it) }.getOrNull()
-        } ?: PostmanExportMode.CREATE_NEW
-        postmanBuildExample.isSelected = settings?.postmanBuildExample ?: true
-        wrapCollection.isSelected = settings?.wrapCollection ?: false
-        autoMergeScript.isSelected = settings?.autoMergeScript ?: false
-        postmanJson5FormatTypeCombo.selectedItem = settings?.postmanJson5FormatType?.let {
-            runCatching { PostmanJson5FormatType.valueOf(it) }.getOrNull()
-        } ?: PostmanJson5FormatType.EXAMPLE_ONLY
-        postmanCollectionsField.text = settings?.postmanCollections ?: ""
-    }
-
-    private fun loadCachedWorkspaces(): List<Pair<String, String>> {
-        return try {
-            val cached = AppCacheRepository.getInstance().read("postman/workspaces.json")
-            if (cached != null) {
-                val workspaces = GsonUtils.fromJson<Array<Workspace>>(cached)
-                workspaces.map { ws -> ws.id to ws.name }
-            } else {
-                emptyList()
-            }
-        } catch (e: Exception) {
-            LOG.warn("Failed to load cached workspaces", e)
-            emptyList()
-        }
-    }
-
-    override fun applyTo(settings: Settings) {
-        settings.postmanToken = String(postmanToken.password).takeIf { it.isNotBlank() }
-        settings.postmanWorkspace = extractWorkspaceId((postmanWorkspace.selectedItem as? String).orEmpty())
-        settings.postmanExportMode = (postmanExportModeCombo.selectedItem as? PostmanExportMode)?.name
-        settings.postmanBuildExample = postmanBuildExample.isSelected
-        settings.wrapCollection = wrapCollection.isSelected
-        settings.autoMergeScript = autoMergeScript.isSelected
-        settings.postmanJson5FormatType = (postmanJson5FormatTypeCombo.selectedItem as? PostmanJson5FormatType)?.name
-            ?: PostmanJson5FormatType.EXAMPLE_ONLY.name
-        settings.postmanCollections = postmanCollectionsField.text.takeIf { it.isNotBlank() }
-    }
-
-    /**
-     * Extracts workspace ID from display format "name (id)" or returns raw value.
-     */
-    private fun extractWorkspaceId(value: String): String? {
-        val trimmed = value.trim()
-        if (trimmed.isBlank()) return null
-        // Match "name (id)" format
-        val match = Regex(".*\\((.+)\\)$").find(trimmed)
-        return match?.groupValues?.get(1)?.trim() ?: trimmed
-    }
-
-    override fun isModified(settings: Settings?): Boolean {
-        val s = settings ?: return false
-        return String(postmanToken.password) != (s.postmanToken ?: "") ||
-                (extractWorkspaceId((postmanWorkspace.selectedItem as? String).orEmpty()) ?: "") != (s.postmanWorkspace
-            ?: "") ||
-                postmanExportModeCombo.selectedItem?.toString() != s.postmanExportMode ||
-                postmanBuildExample.isSelected != s.postmanBuildExample ||
-                wrapCollection.isSelected != s.wrapCollection ||
-                autoMergeScript.isSelected != s.autoMergeScript ||
-                postmanJson5FormatTypeCombo.selectedItem?.toString() != s.postmanJson5FormatType ||
-                postmanCollectionsField.text != (s.postmanCollections ?: "")
-    }
-
-    companion object : IdeaLog
-}
-
-class YapiSettingsPanel : SettingsPanel {
-    private val yapiServer = JBTextField()
-    private val yapiTokens = JBTextArea(5, 40)
-    private val enableUrlTemplating = JBCheckBox("Enable URL templating", true)
-    private val switchNotice = JBCheckBox("Switch notice", true)
-    private val yapiExportModeCombo = ComboBox(YapiExportMode.entries.toTypedArray())
-    private val yapiReqBodyJson5 = JBCheckBox("Request body JSON5")
-    private val yapiResBodyJson5 = JBCheckBox("Response body JSON5")
-
-    override val component: JComponent = FormBuilder.createFormBuilder()
-        .addLabeledComponent("Yapi Server:", yapiServer)
-        .addLabeledComponent("Tokens (module=token per line):", JScrollPane(yapiTokens))
-        .addComponent(enableUrlTemplating)
-        .addComponent(switchNotice)
-        .addLabeledComponent("Export Mode:", yapiExportModeCombo)
-        .addComponent(yapiReqBodyJson5)
-        .addComponent(yapiResBodyJson5)
-        .addComponentFillVertically(JPanel(), 0)
-        .panel
-
-    override fun resetFrom(settings: Settings?) {
-        yapiServer.text = settings?.yapiServer ?: ""
-        yapiTokens.text = settings?.yapiTokens ?: ""
-        enableUrlTemplating.isSelected = settings?.enableUrlTemplating ?: true
-        switchNotice.isSelected = settings?.switchNotice ?: true
-        yapiExportModeCombo.selectedItem = settings?.yapiExportMode?.let {
-            runCatching { YapiExportMode.valueOf(it) }.getOrNull()
-        } ?: YapiExportMode.ALWAYS_UPDATE
-        yapiReqBodyJson5.isSelected = settings?.yapiReqBodyJson5 ?: false
-        yapiResBodyJson5.isSelected = settings?.yapiResBodyJson5 ?: false
-    }
-
-    override fun applyTo(settings: Settings) {
-        settings.yapiServer = yapiServer.text.takeIf { it.isNotBlank() }
-        settings.yapiTokens = yapiTokens.text.takeIf { it.isNotBlank() }
-        settings.enableUrlTemplating = enableUrlTemplating.isSelected
-        settings.switchNotice = switchNotice.isSelected
-        settings.yapiExportMode =
-            (yapiExportModeCombo.selectedItem as? YapiExportMode)?.name ?: YapiExportMode.ALWAYS_UPDATE.name
-        settings.yapiReqBodyJson5 = yapiReqBodyJson5.isSelected
-        settings.yapiResBodyJson5 = yapiResBodyJson5.isSelected
-    }
-
-    override fun isModified(settings: Settings?): Boolean {
-        val s = settings ?: return false
-        return yapiServer.text != (s.yapiServer ?: "") ||
-                yapiTokens.text != (s.yapiTokens ?: "") ||
-                enableUrlTemplating.isSelected != s.enableUrlTemplating ||
-                switchNotice.isSelected != s.switchNotice ||
-                yapiExportModeCombo.selectedItem?.toString() != s.yapiExportMode ||
-                yapiReqBodyJson5.isSelected != s.yapiReqBodyJson5 ||
-                yapiResBodyJson5.isSelected != s.yapiResBodyJson5
-    }
-}
-
-class HttpSettingsPanel : SettingsPanel {
+class HttpSettingsPanel : SettingsPanel<HttpSettings> {
     private val httpClientCombo = ComboBox(HttpClientType.values().map { it.value }.toTypedArray())
     private val httpTimeout = JBTextField("30")
     private val unsafeSsl = JBCheckBox("Allow unsafe SSL").apply {
@@ -740,19 +523,19 @@ class HttpSettingsPanel : SettingsPanel {
         .addComponentFillVertically(JPanel(), 0)
         .panel
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: HttpSettings?) {
         httpClientCombo.selectedItem = settings?.httpClient ?: HttpClientType.APACHE.value
         httpTimeout.text = settings?.httpTimeOut?.toString() ?: "30"
         unsafeSsl.isSelected = settings?.unsafeSsl ?: false
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: HttpSettings) {
         settings.httpClient = httpClientCombo.selectedItem?.toString() ?: HttpClientType.APACHE.value
         settings.httpTimeOut = httpTimeout.text.toIntOrNull() ?: 30
         settings.unsafeSsl = unsafeSsl.isSelected
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun isModified(settings: HttpSettings?): Boolean {
         val s = settings ?: return false
         return httpClientCombo.selectedItem?.toString() != s.httpClient ||
                 httpTimeout.text != s.httpTimeOut.toString() ||
@@ -760,7 +543,7 @@ class HttpSettingsPanel : SettingsPanel {
     }
 }
 
-class IntelligentSettingsPanel : SettingsPanel {
+class IntelligentSettingsPanel : SettingsPanel<IntelligentSettings> {
     private val queryExpanded = JBCheckBox("Query expanded", true).apply {
         toolTipText = "Expand query parameters into individual fields in the exported API documentation"
     }
@@ -793,36 +576,61 @@ class IntelligentSettingsPanel : SettingsPanel {
         .addComponentFillVertically(JPanel(), 0)
         .panel
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: IntelligentSettings?) {
         queryExpanded.isSelected = settings?.queryExpanded ?: true
         formExpanded.isSelected = settings?.formExpanded ?: true
         inferReturnMain.isSelected = settings?.inferReturnMain ?: true
         enableUrlTemplating.isSelected = settings?.enableUrlTemplating ?: true
         pathMultiCombo.selectedItem = settings?.pathMulti ?: "ALL"
-        enumFieldAutoInferEnabled.isSelected = settings?.enumFieldAutoInferEnabled ?: false
     }
 
-    override fun applyTo(settings: Settings) {
+    /**
+     * Resets the `enumFieldAutoInferEnabled` checkbox from [GeneralSettings].
+     * Called separately by the configurable because `enumFieldAutoInferEnabled`
+     * belongs to [GeneralSettings], not [IntelligentSettings].
+     */
+    fun resetEnumFieldFrom(generalSettings: GeneralSettings?) {
+        enumFieldAutoInferEnabled.isSelected = generalSettings?.enumFieldAutoInferEnabled ?: false
+    }
+
+    override fun applyTo(settings: IntelligentSettings) {
         settings.queryExpanded = queryExpanded.isSelected
         settings.formExpanded = formExpanded.isSelected
         settings.inferReturnMain = inferReturnMain.isSelected
         settings.enableUrlTemplating = enableUrlTemplating.isSelected
         settings.pathMulti = pathMultiCombo.selectedItem?.toString() ?: "ALL"
-        settings.enumFieldAutoInferEnabled = enumFieldAutoInferEnabled.isSelected
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    /**
+     * Applies the `enumFieldAutoInferEnabled` checkbox to [GeneralSettings].
+     * Called separately by the configurable because `enumFieldAutoInferEnabled`
+     * belongs to [GeneralSettings], not [IntelligentSettings].
+     */
+    fun applyEnumFieldTo(generalSettings: GeneralSettings) {
+        generalSettings.enumFieldAutoInferEnabled = enumFieldAutoInferEnabled.isSelected
+    }
+
+    override fun isModified(settings: IntelligentSettings?): Boolean {
         val s = settings ?: return false
         return queryExpanded.isSelected != s.queryExpanded ||
                 formExpanded.isSelected != s.formExpanded ||
                 inferReturnMain.isSelected != s.inferReturnMain ||
                 enableUrlTemplating.isSelected != s.enableUrlTemplating ||
-                pathMultiCombo.selectedItem?.toString() != s.pathMulti ||
-                enumFieldAutoInferEnabled.isSelected != s.enumFieldAutoInferEnabled
+                pathMultiCombo.selectedItem?.toString() != s.pathMulti
+    }
+
+    /**
+     * Checks if the `enumFieldAutoInferEnabled` checkbox has been modified
+     * relative to [GeneralSettings.enumFieldAutoInferEnabled].
+     * Called separately by the configurable because `enumFieldAutoInferEnabled`
+     * belongs to [GeneralSettings], not [IntelligentSettings].
+     */
+    fun isEnumFieldModified(generalSettings: GeneralSettings?): Boolean {
+        return enumFieldAutoInferEnabled.isSelected != (generalSettings?.enumFieldAutoInferEnabled ?: false)
     }
 }
 
-class ExtensionConfigPanel : SettingsPanel {
+class ExtensionConfigPanel : SettingsPanel<RuleFileSettings> {
     private val extensionList = CheckBoxList<String>()
     private val preview = JBTextArea()
 
@@ -844,7 +652,7 @@ class ExtensionConfigPanel : SettingsPanel {
         extensionList.addListSelectionListener { refreshPreview() }
     }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: RuleFileSettings?) {
         val selected = ExtensionConfigRegistry.stringToCodes(settings?.extensionConfigs ?: "").toSet()
         ExtensionConfigRegistry.allExtensions().forEachIndexed { index, extension ->
             val isSelected =
@@ -854,11 +662,11 @@ class ExtensionConfigPanel : SettingsPanel {
         refreshPreview()
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: RuleFileSettings) {
         settings.extensionConfigs = ExtensionConfigRegistry.codesToString(selectedCodes().toTypedArray())
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun isModified(settings: RuleFileSettings?): Boolean {
         val s = settings ?: return false
         val currentSelected = selectedCodes().toSet()
         val savedSelected = ExtensionConfigRegistry.stringToCodes(s.extensionConfigs ?: "").toSet()
@@ -903,7 +711,7 @@ class ExtensionConfigPanel : SettingsPanel {
     }
 }
 
-class RemoteConfigPanel : SettingsPanel {
+class RemoteConfigPanel : SettingsPanel<RuleFileSettings> {
     private val list = CheckBoxList<String>()
     private val preview = JBTextArea()
     private val add = JButton("Add")
@@ -951,7 +759,7 @@ class RemoteConfigPanel : SettingsPanel {
         refresh.addActionListener { refreshPreview(force = true) }
     }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: RuleFileSettings?) {
         val raw = settings?.remoteConfig ?: emptyArray()
         remoteItems = raw.map {
             val clean = it.trim()
@@ -960,11 +768,11 @@ class RemoteConfigPanel : SettingsPanel {
         refreshList()
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: RuleFileSettings) {
         settings.remoteConfig = remoteItems.map { if (it.first) it.second else "!${it.second}" }.toTypedArray()
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun isModified(settings: RuleFileSettings?): Boolean {
         val s = settings ?: return false
         val current = remoteItems.map { if (it.first) it.second else "!${it.second}" }
         return current != s.remoteConfig.toList()
@@ -1005,7 +813,7 @@ class RemoteConfigPanel : SettingsPanel {
  * - Provider combo (pre-fills base URL + model on change if user hasn't edited)
  * - Base URL, API Key (PasswordSafe), Model
  * - Request Timeout, Max Requests spinners
- * - "Test Connection" button — builds `AiSettings` from
+ * - "Test Connection" button — builds `AiRuntimeConfig` from
  * on-screen fields, calls `AIServiceFactory.create(settings).testConnection()`
  * on `backgroundAsync`, surfaces result via `NotificationUtils`)
  *
@@ -1013,7 +821,7 @@ class RemoteConfigPanel : SettingsPanel {
  * [Settings]. All other fields are backed by [Settings] and tracked via
  * [resetFrom]/[applyTo]/[isModified].
  */
-class AiAssistantSection : SettingsPanel {
+class AiAssistantSection : SettingsPanel<AiSettings> {
 
     private val providerCombo = ComboBox(AiProvider.values().map { it.displayName }.toTypedArray()).apply {
         toolTipText =
@@ -1270,7 +1078,7 @@ class AiAssistantSection : SettingsPanel {
      * Factory seam for the AI service. Production uses [AIServiceFactory.create];
      * tests override this to inject a fake.
      */
-    internal var aiServiceFactory: (AiSettings) -> AIService =
+    internal var aiServiceFactory: (AiRuntimeConfig) -> AIService =
         { settings -> AIServiceFactory.create(settings) }
 
     /**
@@ -1283,7 +1091,7 @@ class AiAssistantSection : SettingsPanel {
 
     private fun onTestConnectionClicked() {
         // Build AiSettings from the on-screen fields (not from persisted settings).
-        val settings = AiSettings(
+        val settings = AiRuntimeConfig(
             provider = currentProvider(),
             baseUrl = baseUrlField.text.trim(),
             apiKey = String(apiKeyField.password),
@@ -1430,7 +1238,7 @@ class AiAssistantSection : SettingsPanel {
     private fun currentProvider(): AiProvider =
         AiProvider.values().getOrElse(providerCombo.selectedIndex) { AiProvider.OPENAI }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: AiSettings?) {
         val s = settings ?: return
         val provider = runCatching { AiProvider.valueOf(s.aiProvider) }.getOrDefault(AiProvider.OPENAI)
         providerCombo.selectedIndex = provider.ordinal
@@ -1452,7 +1260,7 @@ class AiAssistantSection : SettingsPanel {
         userEditedContextWindow = false
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: AiSettings) {
         val provider = currentProvider()
         settings.aiProvider = provider.name
         settings.aiBaseUrl = baseUrlField.text.trim()
@@ -1465,7 +1273,7 @@ class AiAssistantSection : SettingsPanel {
         AiApiKeyStore.saveApiKey(key)
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun isModified(settings: AiSettings?): Boolean {
         val s = settings ?: return false
         val provider = currentProvider()
         if (provider.name != s.aiProvider) return true
@@ -1592,10 +1400,9 @@ class AiAssistantSection : SettingsPanel {
     }
 }
 
-class OtherSettingsPanel : SettingsPanel {
+class OtherSettingsPanel(private val project: com.intellij.openapi.project.Project) : SettingsPanel<Settings> {
     private val importButton = JButton("Import Settings")
     private val exportButton = JButton("Export Settings")
-    private var currentSettings: Settings? = null
 
     override val component: JComponent = JPanel(BorderLayout()).apply {
         border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -1609,7 +1416,7 @@ class OtherSettingsPanel : SettingsPanel {
             border = BorderFactory.createTitledBorder("Info")
             val infoText = JBTextArea().apply {
                 text = """
-                    |EasyYapi Plugin Settings
+                    |easyapi Plugin Settings
                     |
                     |Import/Export your settings as JSON file.
                     |
@@ -1626,30 +1433,26 @@ class OtherSettingsPanel : SettingsPanel {
 
     init {
         importButton.addActionListener {
-            val settings = currentSettings ?: return@addActionListener
             val chooser = JFileChooser()
             chooser.dialogTitle = "Import Settings"
             chooser.fileSelectionMode = JFileChooser.FILES_ONLY
             if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                 val file = chooser.selectedFile ?: return@addActionListener
                 runCatching {
-                    val imported = GsonUtils.fromJson<Settings>(file.readText())
-                    applyImported(settings, imported)
-                    resetFrom(settings)
+                    applyImported(file.readText())
                 }.onFailure {
                     Messages.showErrorDialog("Import failed: ${it.message}", "EasyApi Settings")
                 }
             }
         }
         exportButton.addActionListener {
-            val settings = currentSettings ?: return@addActionListener
             val chooser = JFileChooser()
             chooser.dialogTitle = "Export Settings"
             chooser.fileSelectionMode = JFileChooser.FILES_ONLY
             if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
                 val file = chooser.selectedFile ?: return@addActionListener
                 runCatching {
-                    file.writeText(GsonUtils.toJson(settings))
+                    file.writeText(exportSettings())
                 }.onFailure {
                     Messages.showErrorDialog("Export failed: ${it.message}", "EasyApi Settings")
                 }
@@ -1658,7 +1461,7 @@ class OtherSettingsPanel : SettingsPanel {
     }
 
     override fun resetFrom(settings: Settings?) {
-        currentSettings = settings
+        // No mutable Other-specific state; import/export operates directly on modules.
     }
 
     override fun applyTo(settings: Settings) {
@@ -1670,36 +1473,115 @@ class OtherSettingsPanel : SettingsPanel {
         return false
     }
 
-    private fun applyImported(settings: Settings, imported: Settings) {
-        settings.feignEnable = imported.feignEnable
-        settings.jaxrsEnable = imported.jaxrsEnable
-        settings.actuatorEnable = imported.actuatorEnable
-        settings.postmanToken = imported.postmanToken
-        settings.postmanWorkspace = imported.postmanWorkspace
-        settings.postmanExportMode = imported.postmanExportMode
-        settings.postmanCollections = imported.postmanCollections
-        settings.postmanBuildExample = imported.postmanBuildExample
-        settings.wrapCollection = imported.wrapCollection
-        settings.autoMergeScript = imported.autoMergeScript
-        settings.postmanJson5FormatType = imported.postmanJson5FormatType
-        settings.queryExpanded = imported.queryExpanded
-        settings.formExpanded = imported.formExpanded
-        settings.yapiServer = imported.yapiServer
-        settings.yapiTokens = imported.yapiTokens
-        settings.enableUrlTemplating = imported.enableUrlTemplating
-        settings.switchNotice = imported.switchNotice
-        settings.yapiExportMode = imported.yapiExportMode
-        settings.yapiReqBodyJson5 = imported.yapiReqBodyJson5
-        settings.yapiResBodyJson5 = imported.yapiResBodyJson5
-        settings.httpTimeOut = imported.httpTimeOut
-        settings.unsafeSsl = imported.unsafeSsl
-        settings.httpClient = imported.httpClient
-        settings.extensionConfigs = imported.extensionConfigs
-        settings.logLevel = imported.logLevel
-        settings.outputDemo = imported.outputDemo
-        settings.outputCharset = imported.outputCharset
-        settings.builtInConfig = imported.builtInConfig
-        settings.remoteConfig = imported.remoteConfig
+    /**
+     * Imports settings from a JSON file (flat format compatible with the
+     * legacy `Settings` god-object) and distributes fields across modules.
+     */
+    private fun applyImported(json: String) {
+        val obj = JsonParser.parseString(json)?.takeIf { it.isJsonObject }?.asJsonObject ?: return
+        val binder = SettingBinder.getInstance(project)
+
+        binder.update(com.itangcent.easyapi.settings.module.GeneralSettings::class) {
+            obj.get("feignEnable")?.asBoolean?.let { feignEnable = it }
+            obj.get("jaxrsEnable")?.asBoolean?.let { jaxrsEnable = it }
+            obj.get("actuatorEnable")?.asBoolean?.let { actuatorEnable = it }
+            obj.get("autoScanEnabled")?.asBoolean?.let { autoScanEnabled = it }
+            obj.get("concurrentScanEnabled")?.asBoolean?.let { concurrentScanEnabled = it }
+            obj.get("gutterIconEnabled")?.asBoolean?.let { gutterIconEnabled = it }
+            obj.get("switchNotice")?.asBoolean?.let { switchNotice = it }
+            obj.get("enumFieldAutoInferEnabled")?.asBoolean?.let { enumFieldAutoInferEnabled = it }
+            obj.get("logLevel")?.asInt?.let { logLevel = it }
+            obj.get("outputDemo")?.asBoolean?.let { outputDemo = it }
+            obj.get("outputCharset")?.asString?.let { outputCharset = it }
+        }
+
+        binder.update(com.itangcent.easyapi.settings.module.HttpSettings::class) {
+            obj.get("httpTimeOut")?.asInt?.let { httpTimeOut = it }
+            obj.get("unsafeSsl")?.asBoolean?.let { unsafeSsl = it }
+            obj.get("httpClient")?.asString?.let { httpClient = it }
+        }
+
+        binder.update(com.itangcent.easyapi.settings.module.IntelligentSettings::class) {
+            obj.get("queryExpanded")?.asBoolean?.let { queryExpanded = it }
+            obj.get("formExpanded")?.asBoolean?.let { formExpanded = it }
+            obj.get("inferReturnMain")?.asBoolean?.let { inferReturnMain = it }
+            obj.get("enableUrlTemplating")?.asBoolean?.let { enableUrlTemplating = it }
+            obj.get("pathMulti")?.asString?.let { pathMulti = it }
+            obj.get("globalEnvironments")?.asString?.let { globalEnvironments = it }
+        }
+
+        binder.update(com.itangcent.easyapi.settings.module.RuleFileSettings::class) {
+            obj.get("extensionConfigs")?.asString?.let { extensionConfigs = it }
+            obj.get("builtInConfig")?.asString?.let { builtInConfig = it }
+            obj.get("remoteConfig")?.takeIf { it.isJsonArray }?.asJsonArray?.map { it.asString }
+                ?.toTypedArray()?.let { remoteConfig = it }
+            obj.get("disabledGlobalRuleFiles")?.takeIf { it.isJsonArray }?.asJsonArray?.map { it.asString }
+                ?.toTypedArray()?.let { disabledGlobalRuleFiles = it }
+        }
+
+        binder.update(com.itangcent.easyapi.exporter.channel.postman.PostmanSettings::class) {
+            obj.get("postmanToken")?.asString?.let { postmanToken = it }
+            obj.get("postmanWorkspace")?.asString?.let { postmanWorkspace = it }
+            obj.get("postmanExportMode")?.asString?.let { postmanExportMode = it }
+            obj.get("postmanCollections")?.asString?.let { postmanCollections = it }
+            obj.get("postmanBuildExample")?.asBoolean?.let { postmanBuildExample = it }
+            obj.get("wrapCollection")?.asBoolean?.let { wrapCollection = it }
+            obj.get("autoMergeScript")?.asBoolean?.let { autoMergeScript = it }
+            obj.get("postmanJson5FormatType")?.asString?.let { postmanJson5FormatType = it }
+        }
+    }
+
+    /**
+     * Exports all module settings as a flat JSON object (compatible with the
+     * legacy `Settings` god-object format).
+     */
+    private fun exportSettings(): String {
+        val obj = JsonObject()
+        val binder = SettingBinder.getInstance(project)
+
+        val general = binder.read(com.itangcent.easyapi.settings.module.GeneralSettings::class)
+        obj.addProperty("feignEnable", general.feignEnable)
+        obj.addProperty("jaxrsEnable", general.jaxrsEnable)
+        obj.addProperty("actuatorEnable", general.actuatorEnable)
+        obj.addProperty("autoScanEnabled", general.autoScanEnabled)
+        obj.addProperty("concurrentScanEnabled", general.concurrentScanEnabled)
+        obj.addProperty("gutterIconEnabled", general.gutterIconEnabled)
+        obj.addProperty("switchNotice", general.switchNotice)
+        obj.addProperty("enumFieldAutoInferEnabled", general.enumFieldAutoInferEnabled)
+        obj.addProperty("logLevel", general.logLevel)
+        obj.addProperty("outputDemo", general.outputDemo)
+        obj.addProperty("outputCharset", general.outputCharset)
+
+        val http = binder.read(com.itangcent.easyapi.settings.module.HttpSettings::class)
+        obj.addProperty("httpTimeOut", http.httpTimeOut)
+        obj.addProperty("unsafeSsl", http.unsafeSsl)
+        obj.addProperty("httpClient", http.httpClient)
+
+        val intelligent = binder.read(com.itangcent.easyapi.settings.module.IntelligentSettings::class)
+        obj.addProperty("queryExpanded", intelligent.queryExpanded)
+        obj.addProperty("formExpanded", intelligent.formExpanded)
+        obj.addProperty("inferReturnMain", intelligent.inferReturnMain)
+        obj.addProperty("enableUrlTemplating", intelligent.enableUrlTemplating)
+        obj.addProperty("pathMulti", intelligent.pathMulti)
+        obj.addProperty("globalEnvironments", intelligent.globalEnvironments)
+
+        val ruleFile = binder.read(com.itangcent.easyapi.settings.module.RuleFileSettings::class)
+        obj.addProperty("extensionConfigs", ruleFile.extensionConfigs)
+        obj.addProperty("builtInConfig", ruleFile.builtInConfig)
+        obj.add("remoteConfig", GsonUtils.GSON.toJsonTree(ruleFile.remoteConfig))
+        obj.add("disabledGlobalRuleFiles", GsonUtils.GSON.toJsonTree(ruleFile.disabledGlobalRuleFiles))
+
+        val postman = binder.read(com.itangcent.easyapi.exporter.channel.postman.PostmanSettings::class)
+        obj.addProperty("postmanToken", postman.postmanToken)
+        obj.addProperty("postmanWorkspace", postman.postmanWorkspace)
+        obj.addProperty("postmanExportMode", postman.postmanExportMode)
+        obj.addProperty("postmanCollections", postman.postmanCollections)
+        obj.addProperty("postmanBuildExample", postman.postmanBuildExample)
+        obj.addProperty("wrapCollection", postman.wrapCollection)
+        obj.addProperty("autoMergeScript", postman.autoMergeScript)
+        obj.addProperty("postmanJson5FormatType", postman.postmanJson5FormatType)
+
+        return GsonUtils.toJson(obj)
     }
 }
 

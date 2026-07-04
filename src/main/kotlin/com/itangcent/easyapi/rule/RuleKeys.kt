@@ -17,9 +17,6 @@ object RuleKeys {
 
     // ── API metadata ──────────────────────────────────────────────
     val API_NAME = RuleKey.string("api.name")
-    val API_TAG             = RuleKey.string("api.tag", StringRuleMode.MERGE_DISTINCT)
-    val API_STATUS          = RuleKey.string("api.status")
-    val API_OPEN            = RuleKey.boolean("api.open")
     val FOLDER_NAME = RuleKey.string("folder.name")
     val IGNORE = RuleKey.boolean("ignore")
 
@@ -54,9 +51,9 @@ object RuleKeys {
     val FIELD_DEFAULT_VALUE = RuleKey.string("field.default.value")
     val FIELD_DOC = RuleKey.string("field.doc", StringRuleMode.MERGE_DISTINCT, aliases = listOf("doc.field"))
     val FIELD_DEMO = RuleKey.string("field.demo")
+    val FIELD_MOCK = RuleKey.string("field.mock")
     val FIELD_ORDER = RuleKey.string("field.order")
     val FIELD_ORDER_WITH = RuleKey.string("field.order.with")
-    val FIELD_MOCK = RuleKey.string("field.mock")
     val FIELD_ADVANCED = RuleKey.string("field.advanced", StringRuleMode.MERGE)
 
     // ── JSON rules ────────────────────────────────────────────────
@@ -106,12 +103,6 @@ object RuleKeys {
     val POSTMAN_HOST = RuleKey.string("postman.host")
     val POSTMAN_FORMAT_AFTER = RuleKey.event("postman.format.after", EventRuleMode.THROW_IN_ERROR)
 
-    // ── YAPI rules ────────────────────────────────────────────────
-    val YAPI_PROJECT = RuleKey.string("yapi.project", aliases = listOf("project", "module"))
-    val YAPI_EXPORT_BEFORE = RuleKey.event("yapi.export.before", EventRuleMode.THROW_IN_ERROR)
-    val YAPI_SAVE_BEFORE   = RuleKey.event("yapi.save.before", EventRuleMode.THROW_IN_ERROR)
-    val YAPI_SAVE_AFTER    = RuleKey.event("yapi.save.after", EventRuleMode.THROW_IN_ERROR)
-
     // ── Enum rules ────────────────────────────────────────────────
     val ENUM_USE_CUSTOM = RuleKey.string("enum.use.custom")
     val CONSTANT_FIELD_IGNORE = RuleKey.boolean("constant.field.ignore")
@@ -122,8 +113,7 @@ object RuleKeys {
     // ── Markdown export templates ─────────────────────────────────
     // NOTE: These are document-level config read via `ConfigReader.getFirst(...)`,
     // never evaluated by `RuleEngine` against a PSI element. They live here only so
-    // `list_rule_keys` surfaces them . The AI proposal half of markdown
-    // template discovery is added in Phase 4.
+    // `list_rule_keys` surfaces them.
     //
     // `markdown.template` accepts either a local file path OR a remote http(s) URL —
     // the resolver auto-detects by the `http(s)://` prefix. The separate `.file` and

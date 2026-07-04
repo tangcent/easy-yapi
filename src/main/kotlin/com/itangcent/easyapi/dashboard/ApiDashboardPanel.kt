@@ -17,8 +17,8 @@ import com.itangcent.easyapi.cache.api.ApiIndexManager
 import com.itangcent.easyapi.core.threading.backgroundAsync
 import com.itangcent.easyapi.core.threading.swing
 import com.itangcent.easyapi.exporter.ExportOrchestrator
-import com.itangcent.easyapi.exporter.channel.ApiChannelRegistry
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
+import com.itangcent.easyapi.exporter.channel.ChannelRegistry
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.ExportResult
 import com.itangcent.easyapi.exporter.model.path
@@ -339,7 +339,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
             })
             popupMenu.add(createMenuItem("Copy as cURL") {
                 val host = endpointDetailsPanel.getSelectedHost()
-                val curl = com.itangcent.easyapi.exporter.curl.CurlFormatter.format(endpoint, host)
+                val curl = com.itangcent.easyapi.exporter.channel.curl.CurlFormatter.format(endpoint, host)
                 val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
                 val selection = java.awt.datatransfer.StringSelection(curl)
                 clipboard.setContents(selection, null)
@@ -390,7 +390,7 @@ class ApiDashboardPanel(private val project: Project) : JPanel(BorderLayout()), 
      * @param endpoints The list of endpoints to export
      */
     private fun addExportMenuItems(menu: JMenu, endpoints: List<ApiEndpoint>) {
-        val channelRegistry = ApiChannelRegistry.getInstance(project)
+        val channelRegistry = ChannelRegistry.getInstance(project)
         val channels = channelRegistry.getAvailableChannels(endpoints)
         channels.forEach { channel ->
             menu.add(createMenuItem("Export to ${channel.displayName}") {

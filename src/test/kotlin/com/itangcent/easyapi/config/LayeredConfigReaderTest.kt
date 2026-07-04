@@ -6,7 +6,7 @@ import com.itangcent.easyapi.config.model.ConfigSource
 import com.itangcent.easyapi.config.parser.ConfigTextParser
 import com.itangcent.easyapi.config.parser.DirectiveSnapshot
 import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.testFramework.ConstantSettingBinder
 import org.junit.Assert.*
 import org.junit.Test
 import kotlinx.coroutines.runBlocking
@@ -17,8 +17,7 @@ class LayeredConfigReaderTest {
 
     private val parser: ConfigTextParser = run {
         val project = mock<Project>()
-        val settingBinder = mock<SettingBinder>()
-        whenever(settingBinder.read()).thenReturn(Settings())
+        val settingBinder = ConstantSettingBinder()
         whenever(project.getService(SettingBinder::class.java)).thenReturn(settingBinder)
         ConfigTextParser(project)
     }
@@ -26,11 +25,11 @@ class LayeredConfigReaderTest {
     @Test
     fun testConfigTextParserMultilineBlock() {
         val text = """
-field.ignore=groovy:```
-    return session.get("json-ignore", fieldContext.path())
-```
-api.name=test
-""".trimIndent()
+            field.ignore=groovy:```
+                return session.get("json-ignore", fieldContext.path())
+            ```
+            api.name=test
+        """.trimIndent()
         val entries = runBlocking { parser.parse(text, "test").toList() }
         assertEquals(2, entries.size)
         assertEquals("field.ignore", entries[0].key)
@@ -43,12 +42,12 @@ api.name=test
     @Test
     fun testConfigTextParserMultilineBlockWithoutPrefix() {
         val text = """
-ignored.classes=```
-    java.lang.Class,
-    java.lang.ClassLoader
-```
-api.name=test
-""".trimIndent()
+            ignored.classes=```
+                java.lang.Class,
+                java.lang.ClassLoader
+            ```
+            api.name=test
+        """.trimIndent()
         val entries = runBlocking { parser.parse(text, "test").toList() }
         assertEquals(2, entries.size)
         assertEquals("ignored.classes", entries[0].key)
@@ -60,9 +59,9 @@ api.name=test
     @Test
     fun testConfigTextParserInlineValue() {
         val text = """
-field.ignore=groovy:!it.containingClass().name().startsWith("java.lang")
-api.name=test
-""".trimIndent()
+            field.ignore=groovy:!it.containingClass().name().startsWith("java.lang")
+            api.name=test
+        """.trimIndent()
         val entries = runBlocking { parser.parse(text, "test").toList() }
         assertEquals(2, entries.size)
         assertEquals("field.ignore", entries[0].key)
@@ -92,16 +91,16 @@ api.name=test
     fun testGetAllWithSingleSource() = runBlocking {
         val source = TestConfigSource(
             listOf(
-                ConfigEntry("api.tag", "tag1", "test"),
-                ConfigEntry("api.tag", "tag2", "test"),
-                ConfigEntry("api.tag", "tag3", "test")
+                ConfigEntry("method.doc", "tag1", "test"),
+                ConfigEntry("method.doc", "tag2", "test"),
+                ConfigEntry("method.doc", "tag3", "test")
             ),
             priority = 0
         )
         val reader = LayeredConfigReader(listOf(source))
         reader.reload()
 
-        val tags = reader.getAll("api.tag")
+        val tags = reader.getAll("method.doc")
         assertEquals(3, tags.size)
         assertTrue(tags.contains("tag1"))
         assertTrue(tags.contains("tag2"))
@@ -176,8 +175,10 @@ api.name=test
     fun testIgnoreUnresolved() = runBlocking {
         val source = TestConfigSource(
             listOf(
-                ConfigEntry("api.value", "\${unresolved.property}", "test",
-                    DirectiveSnapshot(ignoreUnresolved = true))
+                ConfigEntry(
+                    "api.value", "\${unresolved.property}", "test",
+                    DirectiveSnapshot(ignoreUnresolved = true)
+                )
             ),
             priority = 0
         )
@@ -252,20 +253,20 @@ api.name=test
     @Test
     fun testSourcesForKeyConsistentWithGetAll() = runBlocking {
         val source1 = TestConfigSource(
-            listOf(ConfigEntry("api.tag", "a", "s1")),
+            listOf(ConfigEntry("method.doc", "a", "s1")),
             priority = 5,
             sourceId = "s1"
         )
         val source2 = TestConfigSource(
-            listOf(ConfigEntry("api.tag", "b", "s2")),
+            listOf(ConfigEntry("method.doc", "b", "s2")),
             priority = 2,
             sourceId = "s2"
         )
         val reader = LayeredConfigReader(listOf(source1, source2))
         reader.reload()
 
-        val all = reader.getAll("api.tag")
-        val sourceValues = reader.sourcesForKey("api.tag")
+        val all = reader.getAll("method.doc")
+        val sourceValues = reader.sourcesForKey("method.doc")
         assertEquals(all, sourceValues.map { it.value })
     }
 

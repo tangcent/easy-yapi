@@ -3,10 +3,10 @@ package com.itangcent.easyapi.ide.dialog
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.table.JBTable
-import com.itangcent.easyapi.exporter.channel.ApiChannel
-import com.itangcent.easyapi.exporter.channel.ApiChannelRegistry
+import com.itangcent.easyapi.exporter.channel.Channel
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
 import com.itangcent.easyapi.exporter.channel.ChannelOptionsPanel
+import com.itangcent.easyapi.exporter.channel.ChannelRegistry
 import com.itangcent.easyapi.exporter.model.ApiEndpoint
 import com.itangcent.easyapi.exporter.model.httpMetadata
 import com.itangcent.easyapi.exporter.model.path
@@ -23,8 +23,8 @@ class ExportDialog(
     private val endpoints: List<ApiEndpoint> = emptyList()
 ) : DialogWrapper(project) {
 
-    private val channelRegistry = ApiChannelRegistry.getInstance(project)
-    private val availableChannels: List<ApiChannel> = channelRegistry.getAvailableChannels(endpoints)
+    private val channelRegistry = ChannelRegistry.getInstance(project)
+    private val availableChannels: List<Channel> = channelRegistry.getAvailableChannels(endpoints)
 
     private val channelComboBox = JComboBox(availableChannels.map { it.displayName }.toTypedArray()).apply {
         if (availableChannels.isNotEmpty()) {
@@ -46,7 +46,7 @@ class ExportDialog(
     private val selectAllBtn = JButton("Select All")
     private val deselectAllBtn = JButton("Deselect All")
 
-    var selectedChannel: ApiChannel? = null
+    var selectedChannel: Channel? = null
         private set
 
     var channelConfig: ChannelConfig = ChannelConfig.Empty
@@ -141,7 +141,7 @@ class ExportDialog(
         }
     }
 
-    private fun findSelectedChannel(): ApiChannel? {
+    private fun findSelectedChannel(): Channel? {
         val idx = channelComboBox.selectedIndex
         return if (idx >= 0 && idx < availableChannels.size) availableChannels[idx] else null
     }

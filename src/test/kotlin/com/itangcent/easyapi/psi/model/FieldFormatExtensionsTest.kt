@@ -13,8 +13,7 @@ import com.itangcent.easyapi.testFramework.TestConfigReader
  * Locks the canonical rendering of `model/UserInfo.java` so any drift
  * introduced by refactoring is caught at CI time. The golden files were
  * captured from the pre-refactor `FieldsToJsonAction` / `FieldsToJson5Action`
- * / `FieldsToPropertiesAction` behavior (Phase 1 of the field-format-service
- * spec) and are byte-identical to that output.
+ * / `FieldsToPropertiesAction` behavior and are byte-identical to that output.
  *
  * The extensions are pure delegations:
  * - [toJson] → [ObjectModelJsonConverter.toJson]

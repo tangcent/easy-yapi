@@ -90,7 +90,6 @@ class GrpcClassExporterTest : EasyApiLightCodeInsightFixtureTestCase() {
             "/com.itangcent.grpc.EchoService/echo", echoEndpoint!!.path)
         assertEquals("Should be UNARY streaming type", 
             GrpcStreamingType.UNARY, echoEndpoint.grpcMetadata?.streamingType)
-        assertTrue("Tags should contain gRPC", echoEndpoint.tags.contains("gRPC"))
     }
 
     /**

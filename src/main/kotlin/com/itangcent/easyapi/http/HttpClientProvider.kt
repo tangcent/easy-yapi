@@ -9,6 +9,7 @@ import com.itangcent.easyapi.http.HttpClientProvider.Companion.getInstance
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.rule.engine.RuleEngine
 import com.itangcent.easyapi.settings.HttpClientType
+import com.itangcent.easyapi.settings.module.HttpSettings
 import com.itangcent.easyapi.settings.settings
 
 /**
@@ -37,7 +38,7 @@ class HttpClientProvider(private val project: Project) {
         httpTimeOut: Int? = null,
         unsafeSsl: Boolean? = null
     ): HttpClient {
-        val settings = project.settings
+        val settings = project.settings<HttpSettings>()
         val resolvedHttpClient = httpClient ?: settings.httpClient ?: HttpClientType.APACHE.value
         val resolvedHttpTimeOutSec = httpTimeOut ?: settings.httpTimeOut ?: 30
         val resolvedHttpTimeOutMs = resolvedHttpTimeOutSec * 1000
@@ -79,8 +80,19 @@ class HttpClientProvider(private val project: Project) {
     }
 }
 
+/**
+ * Wraps this [HttpClient] with request/response logging via [LoggingHttpClient].
+ */
 fun HttpClient.logging() = LoggingHttpClient(this)
 
+/**
+ * A decorator that logs HTTP request and response details to the IDE log.
+ *
+ * Logs the request method and URL before execution, and logs the response status,
+ * elapsed time, and body (or failure message) after execution.
+ *
+ * All other [HttpClient] operations are delegated to the underlying client.
+ */
 class LoggingHttpClient(private val delegate: HttpClient) : HttpClient by delegate {
     companion object : IdeaLog
 
@@ -103,3 +115,4 @@ class LoggingHttpClient(private val delegate: HttpClient) : HttpClient by delega
         }
     }
 }
+

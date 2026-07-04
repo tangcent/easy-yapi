@@ -13,6 +13,11 @@ class ChannelExportActionTest : EasyApiLightCodeInsightFixtureTestCase() {
         assertEquals("Export to Postman", action.toString())
     }
 
+    fun testToStringWithDifferentChannel() {
+        val action = ChannelExportAction("hoppscotch", "Hoppscotch")
+        assertEquals("Export to Hoppscotch", action.toString())
+    }
+
     fun testActionUpdateThread() {
         val action = ChannelExportAction("test", "Test")
         assertEquals(

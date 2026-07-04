@@ -20,6 +20,7 @@ import com.itangcent.easyapi.psi.type.ResolvedType
 import com.itangcent.easyapi.psi.type.TypeResolver
 import com.itangcent.easyapi.rule.RuleKeys
 import com.itangcent.easyapi.rule.engine.RuleEngine
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.util.text.PathVariablePattern
 import com.itangcent.easyapi.util.ide.ProjectClassAvailabilityService
@@ -57,9 +58,8 @@ class FeignClassExporter(
     override val frameworkName: String = "Feign"
 
     override suspend fun isEnabled(): Boolean {
-        val settings = project.settings
         val availabilityService = ProjectClassAvailabilityService.getInstance(project)
-        return settings.feignEnable &&
+        return project.settings<GeneralSettings>().feignEnable &&
                 availabilityService.hasAnyClassInProject(FeignClientRecognizer.FEIGN_ANNOTATIONS)
     }
 

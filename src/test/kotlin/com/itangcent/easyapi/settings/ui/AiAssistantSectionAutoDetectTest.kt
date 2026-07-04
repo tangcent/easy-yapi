@@ -2,7 +2,7 @@ package com.itangcent.easyapi.settings.ui
 
 import com.itangcent.easyapi.ai.AiProvider
 import com.itangcent.easyapi.ai.credentials.DetectionResult
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.AiSettings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
 /**
@@ -151,7 +151,7 @@ class AiAssistantSectionAutoDetectTest : EasyApiLightCodeInsightFixtureTestCase(
 
     private fun freshSection(): AiAssistantSection {
         val section = AiAssistantSection()
-        section.resetFrom(Settings())
+        section.resetFrom(AiSettings())
         return section
     }
 }

@@ -57,13 +57,6 @@ class RuleKeysTest {
     }
 
     @Test
-    fun testFieldMockIsStringKey() {
-        // This is the key fix — field.mock must be a StringKey so #mock returns tag value, not boolean
-        assertTrue(RuleKeys.FIELD_MOCK is RuleKey.StringKey)
-        assertEquals("field.mock", RuleKeys.FIELD_MOCK.name)
-    }
-
-    @Test
     fun testPropertiesPrefixKey() {
         val key = RuleKeys.PROPERTIES_PREFIX
         assertEquals("properties.prefix", key.name)

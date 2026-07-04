@@ -6,16 +6,17 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.exporter.postman.CachedPostmanApiClient
-import com.itangcent.easyapi.exporter.postman.PostmanApiClient
-import com.itangcent.easyapi.exporter.postman.Workspace
-import com.itangcent.easyapi.exporter.postman.asCached
-import com.itangcent.easyapi.exporter.postman.model.PostmanEnvironmentInfo
+import com.itangcent.easyapi.exporter.channel.postman.CachedPostmanApiClient
+import com.itangcent.easyapi.exporter.channel.postman.PostmanApiClient
+import com.itangcent.easyapi.exporter.channel.postman.Workspace
+import com.itangcent.easyapi.exporter.channel.postman.asCached
+import com.itangcent.easyapi.exporter.channel.postman.model.PostmanEnvironmentInfo
 import com.itangcent.easyapi.http.HttpClientProvider
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.logging.IdeaLog
 import com.itangcent.easyapi.script.env.EnvironmentService
-import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettings
+import com.itangcent.easyapi.settings.settings
 import kotlinx.coroutines.runBlocking
 import javax.swing.SwingUtilities
 
@@ -313,7 +314,7 @@ class EnvironmentSyncService(private val project: Project) {
     }
 
     private fun getPostmanToken(): String? {
-        return SettingBinder.getInstance(project).read().postmanToken
+        return project.settings<PostmanSettings>().postmanToken
     }
 
     private fun createCachedClient(token: String, workspaceId: String?): CachedPostmanApiClient {

@@ -10,7 +10,8 @@ import com.itangcent.easyapi.config.source.GlobalFileConfigSource
 import com.itangcent.easyapi.config.source.ProjectFileConfigSource
 import com.itangcent.easyapi.ide.support.NotificationUtils
 import com.itangcent.easyapi.logging.IdeaLog
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
 import com.itangcent.easyapi.util.file.UniqueFileNameUtils
 import com.itangcent.easyapi.util.text.ByteSizeUtil
 import kotlinx.coroutines.Dispatchers
@@ -160,7 +161,7 @@ class GlobalRulesSubTab(
      * Used in tests to point at a temp directory.
      */
     private val globalDirOverride: Path? = null
-) : SettingsPanel, IdeaLog {
+) : SettingsPanel<RuleFileSettings>, IdeaLog {
 
     override val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(GlobalRulesSubTab::class.java)
 
@@ -290,7 +291,7 @@ class GlobalRulesSubTab(
     fun listedFiles(): List<String> =
         GlobalFileConfigSource.listFiles(globalDir()).map { it.toAbsolutePath().toString() }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: RuleFileSettings?) {
         val disabled = settings?.disabledGlobalRuleFiles?.toSet().orEmpty()
         rows.clear()
         GlobalFileConfigSource.listFiles(globalDir()).forEach { p ->
@@ -301,11 +302,11 @@ class GlobalRulesSubTab(
         refreshTable()
     }
 
-    override fun applyTo(settings: Settings) {
+    override fun applyTo(settings: RuleFileSettings) {
         settings.disabledGlobalRuleFiles = rows.filter { !it.enabled }.map { it.path }.toTypedArray()
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun isModified(settings: RuleFileSettings?): Boolean {
         val s = settings ?: return rows.any { !it.enabled }
         val disabledNow = rows.filter { !it.enabled }.map { it.path }.toSet()
         return disabledNow != s.disabledGlobalRuleFiles.toSet()
@@ -322,7 +323,7 @@ class GlobalRulesSubTab(
 class ProjectRulesSubTab(
     private val project: Project,
     private val basePath: String? = project.basePath
-) : SettingsPanel, IdeaLog {
+) : SettingsPanel<RuleFileSettings>, IdeaLog {
 
     override val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(ProjectRulesSubTab::class.java)
 
@@ -436,35 +437,70 @@ class ProjectRulesSubTab(
     fun listedEasyapiFiles(): List<String> =
         ProjectFileConfigSource.easyapiFolderFiles(basePath ?: "").map { it.toAbsolutePath().toString() }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: RuleFileSettings?) {
+        // Reloads files from disk with all enabled. The disabled state is applied
+        // separately via [resetAutoRuleFilesFrom] because `disabledAutoRuleFiles`
+        // belongs to [EnvironmentSettings], not [RuleFileSettings].
         val base = basePath ?: ""
-        val disabled = settings?.disabledAutoRuleFiles?.toSet().orEmpty()
         easyapiRows.clear()
         ProjectFileConfigSource.easyapiFolderFiles(base).forEach { p ->
             val abs = p.toAbsolutePath().toString()
-            easyapiRows.add(RuleFileRow(abs, abs !in disabled, RuleFileSupport.fileSize(abs)))
+            easyapiRows.add(RuleFileRow(abs, enabled = true, RuleFileSupport.fileSize(abs)))
         }
         easyapiRows.sortBy { it.path }
-
-        // Legacy files are not displayed but their
-        // disabled state must be preserved so applyTo doesn't re-enable them.
-        val easyapiPaths = easyapiRows.map { it.path }.toSet()
-        preservedDisabledLegacyPaths = disabled.filter { it !in easyapiPaths }.toSet()
-
+        preservedDisabledLegacyPaths = emptySet()
         refreshEasyapi()
     }
 
-    override fun applyTo(settings: Settings) {
-        val disabledEasyapi = easyapiRows.filter { !it.enabled }.map { it.path }.toSet()
-        // Carry over previously-disabled legacy paths (not shown in the UI).
-        settings.disabledAutoRuleFiles = (disabledEasyapi + preservedDisabledLegacyPaths).toTypedArray()
+    /**
+     * Applies the disabled state from [EnvironmentSettings.disabledAutoRuleFiles].
+     * Called separately by the configurable because `disabledAutoRuleFiles`
+     * belongs to [EnvironmentSettings], not [RuleFileSettings].
+     */
+    fun resetAutoRuleFilesFrom(environmentSettings: EnvironmentSettings?) {
+        val disabled = environmentSettings?.disabledAutoRuleFiles?.toSet().orEmpty()
+        easyapiRows.forEach { row ->
+            row.enabled = row.path !in disabled
+        }
+        // Legacy files are not displayed but their disabled state must be preserved
+        // so applyAutoRuleFilesTo doesn't re-enable them.
+        val easyapiPaths = easyapiRows.map { it.path }.toSet()
+        preservedDisabledLegacyPaths = disabled.filter { it !in easyapiPaths }.toSet()
+        refreshEasyapi()
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    override fun applyTo(settings: RuleFileSettings) {
+        // No RuleFileSettings fields in this sub-tab; the disabled state is written
+        // via [applyAutoRuleFilesTo] to [EnvironmentSettings].
+    }
+
+    /**
+     * Applies the disabled state to [EnvironmentSettings.disabledAutoRuleFiles].
+     * Called separately by the configurable because `disabledAutoRuleFiles`
+     * belongs to [EnvironmentSettings], not [RuleFileSettings].
+     */
+    fun applyAutoRuleFilesTo(environmentSettings: EnvironmentSettings) {
+        val disabledEasyapi = easyapiRows.filter { !it.enabled }.map { it.path }.toSet()
+        // Carry over previously-disabled legacy paths (not shown in the UI).
+        environmentSettings.disabledAutoRuleFiles = (disabledEasyapi + preservedDisabledLegacyPaths).toTypedArray()
+    }
+
+    override fun isModified(settings: RuleFileSettings?): Boolean {
+        // No RuleFileSettings fields in this sub-tab; modification is checked
+        // via [isAutoRuleFilesModified] against [EnvironmentSettings].
+        return false
+    }
+
+    /**
+     * Checks if the disabled state has been modified relative to
+     * [EnvironmentSettings.disabledAutoRuleFiles].
+     * Called separately by the configurable because `disabledAutoRuleFiles`
+     * belongs to [EnvironmentSettings], not [RuleFileSettings].
+     */
+    fun isAutoRuleFilesModified(environmentSettings: EnvironmentSettings?): Boolean {
         val disabledNow = easyapiRows.filter { !it.enabled }.map { it.path }.toSet() +
             preservedDisabledLegacyPaths
-        val s = settings ?: return disabledNow.isNotEmpty()
-        return disabledNow != s.disabledAutoRuleFiles.toSet()
+        return disabledNow != (environmentSettings?.disabledAutoRuleFiles?.toSet() ?: emptySet<String>())
     }
 
     private fun easyapiTableModel() = ListTableModel<RuleFileRow>(
@@ -500,7 +536,7 @@ class ProjectRulesSubTab(
  *
  * Delegates [SettingsPanel] operations to the three sub-panels.
  */
-class RulesTabPanel(private val project: Project) : SettingsPanel, IdeaLog {
+class RulesTabPanel(private val project: Project) : SettingsPanel<RuleFileSettings>, IdeaLog {
 
     override val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(RulesTabPanel::class.java)
 
@@ -517,21 +553,49 @@ class RulesTabPanel(private val project: Project) : SettingsPanel, IdeaLog {
         add(tabs, BorderLayout.CENTER)
     }
 
-    override fun resetFrom(settings: Settings?) {
+    override fun resetFrom(settings: RuleFileSettings?) {
         projectRulesSubTab.resetFrom(settings)
         globalRulesSubTab.resetFrom(settings)
         remoteRulesSubTab.resetFrom(settings)
     }
 
-    override fun applyTo(settings: Settings) {
+    /**
+     * Resets the disabled-auto-rule-files state from [EnvironmentSettings].
+     * Called separately by the configurable because `disabledAutoRuleFiles`
+     * belongs to [EnvironmentSettings], not [RuleFileSettings].
+     */
+    fun resetAutoRuleFilesFrom(environmentSettings: EnvironmentSettings?) {
+        projectRulesSubTab.resetAutoRuleFilesFrom(environmentSettings)
+    }
+
+    override fun applyTo(settings: RuleFileSettings) {
         projectRulesSubTab.applyTo(settings)
         globalRulesSubTab.applyTo(settings)
         remoteRulesSubTab.applyTo(settings)
     }
 
-    override fun isModified(settings: Settings?): Boolean {
+    /**
+     * Applies the disabled-auto-rule-files state to [EnvironmentSettings].
+     * Called separately by the configurable because `disabledAutoRuleFiles`
+     * belongs to [EnvironmentSettings], not [RuleFileSettings].
+     */
+    fun applyAutoRuleFilesTo(environmentSettings: EnvironmentSettings) {
+        projectRulesSubTab.applyAutoRuleFilesTo(environmentSettings)
+    }
+
+    override fun isModified(settings: RuleFileSettings?): Boolean {
         return projectRulesSubTab.isModified(settings) ||
             globalRulesSubTab.isModified(settings) ||
             remoteRulesSubTab.isModified(settings)
+    }
+
+    /**
+     * Checks if the disabled-auto-rule-files state has been modified relative
+     * to [EnvironmentSettings].
+     * Called separately by the configurable because `disabledAutoRuleFiles`
+     * belongs to [EnvironmentSettings], not [RuleFileSettings].
+     */
+    fun isAutoRuleFilesModified(environmentSettings: EnvironmentSettings?): Boolean {
+        return projectRulesSubTab.isAutoRuleFilesModified(environmentSettings)
     }
 }

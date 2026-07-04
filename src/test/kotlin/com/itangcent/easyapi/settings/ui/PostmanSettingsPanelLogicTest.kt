@@ -1,8 +1,9 @@
 package com.itangcent.easyapi.settings.ui
 
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettings
+import com.itangcent.easyapi.exporter.channel.postman.PostmanSettingsPanel
 import com.itangcent.easyapi.settings.PostmanExportMode
 import com.itangcent.easyapi.settings.PostmanJson5FormatType
-import com.itangcent.easyapi.settings.Settings
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -78,7 +79,7 @@ class PostmanSettingsPanelLogicTest {
     @Test
     fun testPostmanSettingsPanel_resetFromDefault_notModified() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings()
+        val settings = PostmanSettings()
         panel.resetFrom(settings)
         assertFalse(panel.isModified(settings))
     }
@@ -86,7 +87,7 @@ class PostmanSettingsPanelLogicTest {
     @Test
     fun testPostmanSettingsPanel_resetFromCustom_notModified() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply {
+        val settings = PostmanSettings().apply {
             postmanToken = "test-token-12345678"
             postmanWorkspace = "workspace-456"
             postmanExportMode = PostmanExportMode.UPDATE_EXISTING.name
@@ -103,10 +104,10 @@ class PostmanSettingsPanelLogicTest {
     @Test
     fun testPostmanSettingsPanel_applyTo_defaultSettings() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings()
+        val settings = PostmanSettings()
         panel.resetFrom(settings)
 
-        val target = Settings()
+        val target = PostmanSettings()
         panel.applyTo(target)
 
         // After resetFrom + applyTo, target should match original
@@ -116,7 +117,7 @@ class PostmanSettingsPanelLogicTest {
     @Test
     fun testPostmanSettingsPanel_applyTo_customSettings() {
         val panel = PostmanSettingsPanel()
-        val customSettings = Settings().apply {
+        val customSettings = PostmanSettings().apply {
             postmanToken = "my-token-12345678"
             postmanWorkspace = "my-workspace"
             postmanExportMode = PostmanExportMode.UPDATE_EXISTING.name
@@ -128,7 +129,7 @@ class PostmanSettingsPanelLogicTest {
         }
         panel.resetFrom(customSettings)
 
-        val target = Settings()
+        val target = PostmanSettings()
         panel.applyTo(target)
 
         assertEquals("my-token-12345678", target.postmanToken)
@@ -148,7 +149,7 @@ class PostmanSettingsPanelLogicTest {
         val panel = PostmanSettingsPanel()
         panel.resetFrom(null)
         // Should not throw
-        val settings = Settings()
+        val settings = PostmanSettings()
         assertFalse(panel.isModified(settings))
     }
 
@@ -164,12 +165,12 @@ class PostmanSettingsPanelLogicTest {
     fun testPostmanSettingsPanel_workspaceIdExtraction() {
         // When workspace is set as "Name (id)" format, applyTo should extract the id
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply {
+        val settings = PostmanSettings().apply {
             postmanWorkspace = "ws-12345"
         }
         panel.resetFrom(settings)
 
-        val target = Settings()
+        val target = PostmanSettings()
         panel.applyTo(target)
         // The workspace should be extracted or preserved
         assertNotNull(target.postmanWorkspace)
@@ -180,10 +181,10 @@ class PostmanSettingsPanelLogicTest {
     @Test
     fun testPostmanSettingsPanel_isModified_differentBuildExample() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply { postmanBuildExample = true }
+        val settings = PostmanSettings().apply { postmanBuildExample = true }
         panel.resetFrom(settings)
 
-        val differentSettings = Settings().apply { postmanBuildExample = false }
+        val differentSettings = PostmanSettings().apply { postmanBuildExample = false }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
@@ -191,10 +192,10 @@ class PostmanSettingsPanelLogicTest {
     @Test
     fun testPostmanSettingsPanel_isModified_differentWrapCollection() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply { wrapCollection = false }
+        val settings = PostmanSettings().apply { wrapCollection = false }
         panel.resetFrom(settings)
 
-        val differentSettings = Settings().apply { wrapCollection = true }
+        val differentSettings = PostmanSettings().apply { wrapCollection = true }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
@@ -202,10 +203,10 @@ class PostmanSettingsPanelLogicTest {
     @Test
     fun testPostmanSettingsPanel_isModified_differentAutoMergeScript() {
         val panel = PostmanSettingsPanel()
-        val settings = Settings().apply { autoMergeScript = false }
+        val settings = PostmanSettings().apply { autoMergeScript = false }
         panel.resetFrom(settings)
 
-        val differentSettings = Settings().apply { autoMergeScript = true }
+        val differentSettings = PostmanSettings().apply { autoMergeScript = true }
         panel.resetFrom(differentSettings)
         assertTrue(panel.isModified(settings))
     }
@@ -214,7 +215,7 @@ class PostmanSettingsPanelLogicTest {
 
     @Test
     fun testSettings_postmanFieldsDefault() {
-        val settings = Settings()
+        val settings = PostmanSettings()
         assertNull(settings.postmanToken)
         assertNull(settings.postmanWorkspace)
         assertEquals(PostmanExportMode.CREATE_NEW.name, settings.postmanExportMode)
@@ -227,15 +228,15 @@ class PostmanSettingsPanelLogicTest {
 
     @Test
     fun testSettings_postmanFieldsEquality() {
-        val s1 = Settings(postmanToken = "abc", postmanWorkspace = "ws1")
-        val s2 = Settings(postmanToken = "abc", postmanWorkspace = "ws1")
+        val s1 = PostmanSettings(postmanToken = "abc", postmanWorkspace = "ws1")
+        val s2 = PostmanSettings(postmanToken = "abc", postmanWorkspace = "ws1")
         assertEquals(s1, s2)
     }
 
     @Test
     fun testSettings_postmanFieldsInequality() {
-        val s1 = Settings(postmanToken = "abc")
-        val s2 = Settings(postmanToken = "def")
+        val s1 = PostmanSettings(postmanToken = "abc")
+        val s2 = PostmanSettings(postmanToken = "def")
         assertNotEquals(s1, s2)
     }
 }

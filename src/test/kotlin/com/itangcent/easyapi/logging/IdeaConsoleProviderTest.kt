@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.logging
 
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 
@@ -12,14 +13,14 @@ class IdeaConsoleProviderTest : EasyApiLightCodeInsightFixtureTestCase() {
      * Restores `logLevel` after each test that mutates it so tests stay isolated.
      */
     private fun withLogLevel(level: Int, block: () -> Unit) {
-        val original = testSettingBinder.read().logLevel
+        val original = testSettingBinder.read(GeneralSettings::class).logLevel
         try {
-            val settings = testSettingBinder.read()
+            val settings = testSettingBinder.read(GeneralSettings::class)
             settings.logLevel = level
             testSettingBinder.save(settings)
             block()
         } finally {
-            val settings = testSettingBinder.read()
+            val settings = testSettingBinder.read(GeneralSettings::class)
             settings.logLevel = original
             testSettingBinder.save(settings)
         }
@@ -120,7 +121,7 @@ class IdeaConsoleProviderTest : EasyApiLightCodeInsightFixtureTestCase() {
             assertTrue("Should start as IdeaLogConsole", silentConsole is IdeaLogConsole)
 
             // Switch to WARN
-            val settings = testSettingBinder.read()
+            val settings = testSettingBinder.read(GeneralSettings::class)
             settings.logLevel = LogLevel.WARN.threshold
             testSettingBinder.save(settings)
 
@@ -149,8 +150,8 @@ class IdeaConsoleProviderTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testProjectSettingsExtensionReturnsSettings() {
-        val settings = project.settings
-        assertNotNull("Project.settings should return non-null Settings", settings)
+        val settings = project.settings<GeneralSettings>()
+        assertNotNull("settings<GeneralSettings> should return non-null", settings)
         assertTrue(
             "Default logLevel should be SILENT (100)",
             settings.logLevel >= 100

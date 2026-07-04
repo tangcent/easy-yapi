@@ -1,7 +1,7 @@
 package com.itangcent.easyapi.exporter.model
 
 import com.itangcent.easyapi.exporter.channel.ChannelConfig
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.exporter.channel.postman.PostmanConfig
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -91,9 +91,9 @@ class ExportContextTest {
         assertEquals("markdown", context.channelId)
         assertEquals(ChannelConfig.Empty, context.channelConfig)
 
-        val modified = context.withChannel("postman", ChannelConfig.PostmanConfig(collectionName = "Test"))
+        val modified = context.withChannel("postman", PostmanConfig(collectionName = "Test"))
         assertEquals("postman", modified.channelId)
-        assertTrue(modified.channelConfig is ChannelConfig.PostmanConfig)
+        assertTrue(modified.channelConfig is PostmanConfig)
     }
 
     @Test

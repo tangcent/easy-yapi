@@ -84,26 +84,7 @@ class Swagger3ConfigIntegrationTest : EasyApiLightCodeInsightFixtureTestCase() {
         )
     }
 
-    fun testOperationExtractsTags() = runTest {
-        val psiClass = findClass("com.itangcent.swagger3.OrderController")
-        assertNotNull("Should find OrderController", psiClass)
-
-        val endpoints = exporter.export(psiClass!!)
-        val createEndpoint = endpoints.find {
-            it.httpMetadata?.method == HttpMethod.POST
-        }
-        assertNotNull("Should find POST endpoint", createEndpoint)
-        assertTrue(
-            "Tags should be extracted from @Operation#tags",
-            createEndpoint?.tags?.contains("order") == true
-        )
-        assertTrue(
-            "Multiple tags should be extracted from @Operation#tags array",
-            createEndpoint?.tags?.contains("create") == true
-        )
-    }
-
-    // ── @Tag: api.tag, class.doc ─────────────────────────────────
+    // ── class.doc ─────────────────────────────────
 
     fun testTagExtractsClassDescription() = runTest {
         val psiClass = findClass("com.itangcent.swagger3.OrderController")

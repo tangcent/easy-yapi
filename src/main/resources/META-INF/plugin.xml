@@ -22,7 +22,7 @@
 
     <extensionPoints>
         <extensionPoint name="classExporter" interface="com.itangcent.easyapi.exporter.ClassExporter" area="IDEA_PROJECT" dynamic="true"/>
-        <extensionPoint name="apiChannel" interface="com.itangcent.easyapi.exporter.channel.ApiChannel" dynamic="true"/>
+        <extensionPoint name="channel" interface="com.itangcent.easyapi.exporter.channel.Channel" area="IDEA_PROJECT" dynamic="true"/>
         <extensionPoint name="fieldFormatChannel" interface="com.itangcent.easyapi.ide.fieldformat.FieldFormatChannel" dynamic="true"/>
     </extensionPoints>
 
@@ -32,11 +32,11 @@
         <classExporter implementation="com.itangcent.easyapi.exporter.jaxrs.JaxRsClassExporter"/>
         <classExporter implementation="com.itangcent.easyapi.exporter.springmvc.ActuatorEndpointExporter"/>
         <classExporter implementation="com.itangcent.easyapi.exporter.grpc.GrpcClassExporter"/>
-        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.markdown.MarkdownChannel"/>
-        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.postman.PostmanChannel"/>
-        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.yapi.YapiChannel"/>
-        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.curl.CurlChannel"/>
-        <apiChannel implementation="com.itangcent.easyapi.exporter.channel.httpclient.HttpClientChannel"/>
+        <channel implementation="com.itangcent.easyapi.exporter.channel.markdown.MarkdownChannel"/>
+        <channel implementation="com.itangcent.easyapi.exporter.channel.postman.PostmanChannel"/>
+        <channel implementation="com.itangcent.easyapi.exporter.channel.yapi.YapiChannel"/>
+        <channel implementation="com.itangcent.easyapi.exporter.channel.curl.CurlChannel"/>
+        <channel implementation="com.itangcent.easyapi.exporter.channel.httpclient.HttpClientChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.JsonFieldFormatChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.Json5FieldFormatChannel"/>
         <fieldFormatChannel implementation="com.itangcent.easyapi.ide.fieldformat.PropertiesFieldFormatChannel"/>
@@ -46,6 +46,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.itangcent.easyapi.core.EasyApiApplicationService"/>
         <applicationService serviceImplementation="com.itangcent.easyapi.settings.state.ApplicationSettingsState"/>
+        <!-- Unified settings state (replaces all per-module *SettingsState classes) -->
+        <applicationService serviceImplementation="com.itangcent.easyapi.settings.state.UnifiedAppSettingsState"/>
+        <!-- Migration flag + activity (Phase 2) -->
+        <applicationService serviceImplementation="com.itangcent.easyapi.settings.migration.MigrationFlag"/>
         <applicationService serviceImplementation="com.itangcent.easyapi.cache.AppCacheRepository"/>
         <projectService serviceImplementation="com.itangcent.easyapi.core.EasyApiProjectService"/>
         <projectService serviceImplementation="com.itangcent.easyapi.core.event.EventBus"/>
@@ -60,17 +64,19 @@
         <projectService serviceInterface="com.itangcent.easyapi.settings.SettingBinder"
                         serviceImplementation="com.itangcent.easyapi.settings.DefaultSettingBinder"/>
         <projectService serviceImplementation="com.itangcent.easyapi.settings.state.ProjectSettingsState"/>
-        <projectService serviceInterface="com.itangcent.easyapi.exporter.yapi.YapiSettingsHelper"
-                        serviceImplementation="com.itangcent.easyapi.exporter.yapi.DefaultYapiSettingsHelper"/>
+        <!-- Unified project-level settings state (replaces all per-module *ProjectSettingsState classes) -->
+        <projectService serviceImplementation="com.itangcent.easyapi.settings.state.UnifiedProjectSettingsState"/>
+        <projectService serviceInterface="com.itangcent.easyapi.exporter.channel.yapi.YapiSettingsHelper"
+                        serviceImplementation="com.itangcent.easyapi.exporter.channel.yapi.DefaultYapiSettingsHelper"/>
 
-        <projectService serviceInterface="com.itangcent.easyapi.util.markdown.MarkdownRender"
-                        serviceImplementation="com.itangcent.easyapi.util.markdown.BundledMarkdownRender"/>
+        <projectService serviceInterface="com.itangcent.easyapi.exporter.channel.yapi.markdown.MarkdownRender"
+                        serviceImplementation="com.itangcent.easyapi.exporter.channel.yapi.markdown.BundledMarkdownRender"/>
         <projectService serviceImplementation="com.itangcent.easyapi.exporter.grpc.GrpcMethodResolver"/>
         <projectService serviceImplementation="com.itangcent.easyapi.grpc.CompositeDescriptorResolver"/>
 
         <projectService serviceImplementation="com.itangcent.easyapi.exporter.EndpointBuilder"/>
         <projectService serviceImplementation="com.itangcent.easyapi.exporter.ClassExporterRegistry"/>
-        <projectService serviceImplementation="com.itangcent.easyapi.exporter.channel.ApiChannelRegistry"/>
+        <projectService serviceImplementation="com.itangcent.easyapi.exporter.channel.ChannelRegistry"/>
         <projectService serviceImplementation="com.itangcent.easyapi.psi.helper.DocMetadataResolver"/>
         <projectService serviceImplementation="com.itangcent.easyapi.cache.VcsBranchChangeListener"/>
         <projectService serviceImplementation="com.itangcent.easyapi.ide.PropertiesService"/>
@@ -78,6 +84,7 @@
         <postStartupActivity implementation="com.itangcent.easyapi.ide.ApiIndexStartupActivity"/>
         <postStartupActivity implementation="com.itangcent.easyapi.ide.action.ChannelActionInitActivity"/>
         <postStartupActivity implementation="com.itangcent.easyapi.logging.EasyApiConsoleToolWindowActivity"/>
+        <postStartupActivity implementation="com.itangcent.easyapi.settings.migration.SettingsMigrationActivity"/>
 
         <projectConfigurable groupId="null"
                              displayName="EasyApi"

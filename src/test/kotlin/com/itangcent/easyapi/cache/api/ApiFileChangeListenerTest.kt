@@ -1,6 +1,7 @@
 package com.itangcent.easyapi.cache.api
 
 import com.itangcent.easyapi.settings.SettingBinder
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
 import com.itangcent.easyapi.testFramework.EasyApiLightCodeInsightFixtureTestCase
 import kotlinx.coroutines.delay
@@ -40,9 +41,9 @@ class ApiFileChangeListenerTest : EasyApiLightCodeInsightFixtureTestCase() {
     }
 
     fun testAutoScanDisabled() {
-        val settings = project.settings
-        settings.autoScanEnabled = false
-        SettingBinder.getInstance(project).save(settings)
+        project.settings<GeneralSettings>().autoScanEnabled = false
+        // The update via SettingBinder persists the mutated module state.
+        SettingBinder.getInstance(project).save(project.settings<GeneralSettings>())
 
         listener.start()
         listener.after(mutableListOf())
@@ -52,7 +53,7 @@ class ApiFileChangeListenerTest : EasyApiLightCodeInsightFixtureTestCase() {
         }
 
         // Reset
-        settings.autoScanEnabled = true
-        SettingBinder.getInstance(project).save(settings)
+        project.settings<GeneralSettings>().autoScanEnabled = true
+        SettingBinder.getInstance(project).save(project.settings<GeneralSettings>())
     }
 }

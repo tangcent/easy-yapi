@@ -22,6 +22,16 @@ class ChannelQuickActionGroupLogicTest {
             actionId
         )
     }
+
+    @Test
+    fun testActionIdPrefixWithDifferentChannelId() {
+        val channelId = "hoppscotch"
+        val actionId = ChannelQuickActionGroup.ACTION_ID_PREFIX + channelId
+        assertEquals(
+            "com.itangcent.easy_api.actions.channel.hoppscotch",
+            actionId
+        )
+    }
 }
 
 class ChannelActionInitActivityLogicTest {

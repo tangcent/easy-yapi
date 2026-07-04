@@ -117,7 +117,6 @@ class ObjectModelBuilderTest {
                 required = true,
                 defaultValue = "1",
                 options = options,
-                mock = "@integer(1,2)",
                 demo = "1",
                 advanced = mapOf("format" to "int32")
             )
@@ -127,7 +126,6 @@ class ObjectModelBuilderTest {
         assertTrue(field.required)
         assertEquals("1", field.defaultValue)
         assertEquals(2, field.options!!.size)
-        assertEquals("@integer(1,2)", field.mock)
         assertEquals("1", field.demo)
         assertEquals(mapOf("format" to "int32"), field.advanced)
     }

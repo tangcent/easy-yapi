@@ -3,9 +3,9 @@ package com.itangcent.easyapi.logging
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.itangcent.easyapi.settings.SettingBinder
-import com.itangcent.easyapi.settings.onSettingsChanged
+import com.itangcent.easyapi.settings.module.GeneralSettings
 import com.itangcent.easyapi.settings.settings
+import com.itangcent.easyapi.settings.onSettingsChanged
 
 /**
  * Provides a project-level [IdeaConsole] instance for logging within the IDE.
@@ -37,12 +37,9 @@ import com.itangcent.easyapi.settings.settings
 @Service(Service.Level.PROJECT)
 class IdeaConsoleProvider(private val project: Project) {
 
-    private val settingBinder: SettingBinder by lazy { SettingBinder.getInstance(project) }
-
     private val ideaConsole: IdeaConsole by lazy {
-        val settings = project.settings
         val delegate = DefaultIdeaConsole(project)
-        ConfigurableIdeaConsole(delegate, settings)
+        ConfigurableIdeaConsole(delegate, project.settings<GeneralSettings>().logLevel)
     }
 
     /**
@@ -55,7 +52,7 @@ class IdeaConsoleProvider(private val project: Project) {
      * @return The [IdeaConsole] instance for this project
      */
     fun getConsole(): IdeaConsole {
-        return if (settingBinder.read().logLevel > LogLevel.ERROR.threshold) {
+        return if (project.settings<GeneralSettings>().logLevel > LogLevel.ERROR.threshold) {
             IdeaLogConsole
         } else {
             ideaConsole

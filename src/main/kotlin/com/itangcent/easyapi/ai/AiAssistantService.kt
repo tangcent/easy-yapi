@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.asSharedFlow
  * here, not in the chat panel. The panel subscribes to
  * [events] and drives the agent via [runTurn].
  * - **Lazy agent** — the [RuleAuthoringAgent] is created only on first
- * use, and only when [AiSettings.load] returns non-null.
+ * use, and only when [AiRuntimeConfig.load] returns non-null.
  * - **Single active turn** — only one [runTurn] may be active at a time;
  * the panel holds the [Job] and cancels it via the Stop button.
  *
@@ -52,12 +52,12 @@ class AiAssistantService(private val project: Project) : Disposable, IdeaLog {
      * Factory seam for the AI service. Production uses [AIServiceFactory.create];
      * tests override this to inject a [FakeAIService].
      */
-    internal var aiServiceFactory: (AiSettings) -> AIService =
+    internal var aiServiceFactory: (AiRuntimeConfig) -> AIService =
         { settings -> AIServiceFactory.create(settings) }
 
     /**
      * Returns the active session, lazily creating it from the current
-     * [AiSettings].
+     * [AiRuntimeConfig].
      *
      * If settings have changed since the last build (different hash), the
      * session is rebuilt — discarding any in-flight proposal but keeping
@@ -67,7 +67,7 @@ class AiAssistantService(private val project: Project) : Disposable, IdeaLog {
      * @return `null` if AI settings are not configured (no provider / key).
      */
     fun session(): ConversationSession? {
-        val settings = AiSettings.load(project) ?: run {
+        val settings = AiRuntimeConfig.load(project) ?: run {
             LOG.info("session(): AI settings not configured for project ${project.name}")
             return null
         }
@@ -86,7 +86,7 @@ class AiAssistantService(private val project: Project) : Disposable, IdeaLog {
     }
 
     /** Builds a [ConversationSession] from resolved [settings]. */
-    private fun buildSession(settings: AiSettings): ConversationSession {
+    private fun buildSession(settings: AiRuntimeConfig): ConversationSession {
         val aiService = aiServiceFactory(settings)
         val configReader = ConfigReader.getInstance(project)
         val ruleFileResolver = RuleFileResolver(project)
@@ -117,7 +117,7 @@ class AiAssistantService(private val project: Project) : Disposable, IdeaLog {
     }
 
     /** Whether AI is configured and ready (i.e., [session] would return non-null). */
-    fun isConfigured(): Boolean = AiSettings.load(project) != null
+    fun isConfigured(): Boolean = AiRuntimeConfig.load(project) != null
 
     /**
      * Discard the current conversation — clears memory and emits nothing

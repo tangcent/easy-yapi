@@ -3,9 +3,9 @@ package com.itangcent.easyapi.exporter.channel
 import javax.swing.JComponent
 
 /**
- * UI panel for configuring an [ApiChannel] before export.
+ * UI panel for configuring a [Channel] before export.
  *
- * Implementations are created by [ApiChannel.createOptionsPanel] and shown
+ * Implementations are created by [Channel.createOptionsPanel] and shown
  * in the export dialog when the user selects a channel.
  *
  * ## Implementing

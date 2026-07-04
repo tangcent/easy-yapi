@@ -1,6 +1,9 @@
 package com.itangcent.easyapi.settings.ui
 
-import com.itangcent.easyapi.settings.Settings
+import com.itangcent.easyapi.settings.module.AiSettings
+import com.itangcent.easyapi.settings.module.EnvironmentSettings
+import com.itangcent.easyapi.settings.module.GeneralSettings
+import com.itangcent.easyapi.settings.module.RuleFileSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -10,7 +13,7 @@ class SettingsPanelsParityTest {
 
     @Test
     fun testExtensionPanelSerializationFlow() {
-        val settings = Settings().apply {
+        val settings = RuleFileSettings().apply {
             extensionConfigs = "jackson,gson"
         }
         val panel = ExtensionConfigPanel()
@@ -22,7 +25,7 @@ class SettingsPanelsParityTest {
 
     @Test
     fun testRemotePanelSerializationFlow() {
-        val settings = Settings().apply {
+        val settings = RuleFileSettings().apply {
             remoteConfig = arrayOf("https://a.example/config", "!https://b.example/config")
         }
         val panel = RemoteConfigPanel()
@@ -38,62 +41,67 @@ class SettingsPanelsParityTest {
 
     @Test
     fun testIntelligentPanelEnumFieldAutoInferEnabledRoundTrip() {
-        val settings = Settings().apply {
+        val settings = GeneralSettings().apply {
             enumFieldAutoInferEnabled = true
         }
         val panel = IntelligentSettingsPanel()
-        panel.resetFrom(settings)
-        assertFalse(panel.isModified(settings))
-        panel.applyTo(settings)
+        panel.resetEnumFieldFrom(settings)
+        assertFalse(panel.isEnumFieldModified(settings))
+        panel.applyEnumFieldTo(settings)
         assertEquals(true, settings.enumFieldAutoInferEnabled)
     }
 
     @Test
     fun testIntelligentPanelEnumFieldAutoInferEnabledChangeDetected() {
-        val settings = Settings().apply {
+        val settings = GeneralSettings().apply {
             enumFieldAutoInferEnabled = false
         }
         val panel = IntelligentSettingsPanel()
-        panel.resetFrom(settings)
-        assertFalse(panel.isModified(settings))
+        panel.resetEnumFieldFrom(settings)
+        assertFalse(panel.isEnumFieldModified(settings))
         settings.enumFieldAutoInferEnabled = true
-        assertTrue(panel.isModified(settings))
+        assertTrue(panel.isEnumFieldModified(settings))
     }
 
     /**
-     * Task 5.4: verify that the new Rules-tab fields round-trip through
-     * `Settings`. The Rules tab UI itself uses `ToolbarDecorator` (which
-     * requires the IntelliJ Application), so we test the data-model
+     * Verify that the new Rules-tab fields round-trip through
+     * the module data classes. The Rules tab UI itself uses `ToolbarDecorator`
+     * (which requires the IntelliJ Application), so we test the data-model
      * round-trip here and rely on `ProjectRulesSubTabTest` /
      * `GlobalRulesSubTabTest` for the fixture-based UI round-trip.
      */
     @Test
     fun testRulesFieldsRoundTripThroughSettings() {
-        val settings = Settings().apply {
-            disabledAutoRuleFiles = arrayOf("/tmp/auto.rules")
+        val ruleFileSettings = RuleFileSettings().apply {
             disabledGlobalRuleFiles = arrayOf("/tmp/global-disabled.rules")
         }
-        val copy = settings.copy()
-        assertEquals(settings.disabledAutoRuleFiles.toList(), copy.disabledAutoRuleFiles.toList())
-        assertEquals(settings.disabledGlobalRuleFiles.toList(), copy.disabledGlobalRuleFiles.toList())
+        val envSettings = EnvironmentSettings().apply {
+            disabledAutoRuleFiles = arrayOf("/tmp/auto.rules")
+        }
+        val ruleFileCopy = ruleFileSettings.copy()
+        val envCopy = envSettings.copy()
+        assertEquals(ruleFileSettings.disabledGlobalRuleFiles.toList(), ruleFileCopy.disabledGlobalRuleFiles.toList())
+        assertEquals(envSettings.disabledAutoRuleFiles.toList(), envCopy.disabledAutoRuleFiles.toList())
     }
 
     /**
-     * Task 5.4: verify `Settings.equals`/`hashCode` include the new Rules
-     * fields (silent parity-test failures occur otherwise).
+     * Verify module data class `equals`/`hashCode` include the
+     * Rules fields (silent parity-test failures occur otherwise).
      */
     @Test
     fun testSettingsEqualityIncludesRulesFields() {
-        val base = Settings()
-        assertFalse("disabledAutoRuleFiles should affect equality",
-            base == base.copy(disabledAutoRuleFiles = arrayOf("/x")))
+        val ruleBase = RuleFileSettings()
         assertFalse("disabledGlobalRuleFiles should affect equality",
-            base == base.copy(disabledGlobalRuleFiles = arrayOf("/x")))
+            ruleBase == ruleBase.copy(disabledGlobalRuleFiles = arrayOf("/x")))
+
+        val envBase = EnvironmentSettings()
+        assertFalse("disabledAutoRuleFiles should affect equality",
+            envBase == envBase.copy(disabledAutoRuleFiles = arrayOf("/x")))
     }
 
     @Test
     fun testSettingsEqualityIncludesAiContextWindow() {
-        val base = Settings()
+        val base = AiSettings()
         assertFalse("aiContextWindow should affect equality",
             base == base.copy(aiContextWindow = 200_000))
     }
